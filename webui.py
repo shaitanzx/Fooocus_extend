@@ -15,18 +15,152 @@ import modules.style_sorter as style_sorter
 import modules.meta_parser
 import args_manager
 import copy
+import requests
 import launch
+import re
+import urllib.request
+import zipfile
+import threading
+import math
+import numpy as np
 
 from modules.sdxl_styles import legal_style_names
 from modules.private_logger import get_current_html_path
 from modules.ui_gradio_extensions import reload_javascript
 from modules.auth import auth_enabled, check_auth
+from modules.module_translate import translate, GoogleTranslator
+from urllib.parse import urlparse, parse_qs, unquote
+from modules.model_loader import load_file_from_url
+from rembg import remove
+from PIL import Image
+from gradio.components import label
 from modules.util import is_json
 
 def get_task(*args):
+    argsList = list(args)
+    toT = argsList.pop() 
+    srT = argsList.pop() 
+    trans_automate = argsList.pop() 
+    trans_enable = argsList.pop() 
+
+    if trans_enable:      
+        if trans_automate:
+            positive, negative = translate(argsList[2], argsList[3], srT, toT)            
+            argsList[2] = positive
+            argsList[3] = negative
+            
+    args = tuple(argsList)
     args = list(args)
     args.pop(0)
 
+    return worker.AsyncTask(args=args)
+QUEUE = []
+finished_batch=False
+
+
+def unzip_file(zip_file_obj):
+    extract_folder = "./batch_images"
+    if not os.path.exists(extract_folder):
+      os.makedirs(extract_folder)    
+    zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
+    zip_ref.extractall(extract_folder)
+    zip_ref.close()
+    return
+def batch_cleaner():
+    QUEUE.clear()
+def output_zip():
+  directory=modules.config.path_outputs
+  zip_file='outputs.zip'
+  with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
+  zipf.close()
+  current_dir = os.getcwd()
+  file_path = os.path.join(current_dir, "outputs.zip")
+  return file_path
+
+def stop_clicked_batch():
+    global finished_batch
+    print (finished_batch)
+    finished_batch=True
+    return
+ 
+def delete_out(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                delete_out(file_path)
+                os.rmdir(file_path)
+        except Exception as e:
+                print(f'Failed to delete {file_path}. Reason: {e}')
+    return
+def clear_outputs():
+  directory=modules.config.path_outputs
+  delete_out(directory)
+  return 
+def clearer():
+  directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
+  delete_out(directory)
+  return       
+def queue_add(*args):
+    lora_args=3*(int(modules.config.default_max_lora_number))
+    args = list(args)
+    scale=args.pop()
+    for f_name in os.listdir('./batch_images'):       
+        img = Image.open('./batch_images/'+f_name)
+
+        if args[(16+lora_args)]:
+          if (args[(17+lora_args)] == 'uov'):
+            args[(19+lora_args)]=np.array(img)
+          if (args[(17+lora_args)] == 'ip'):
+            width, height = img.size
+            if scale=="to ORIGINAL":
+              aspect = math.gcd(width, height)
+              args[6]=f'{width}×{height} <span style="color: grey;"> ∣ {width // aspect}:{height // aspect}</span>'
+            if scale=="to OUTPUT":
+              new_width, new_height = args[6].replace('×', ' ').split(' ')[:2]
+              new_width = int(new_width)
+              new_height = int(new_height)
+              ratio = min(float(new_width) / width, float(new_height) / height)
+              w = int(width * ratio)
+              h = int(height * ratio)
+              img = img.resize((w, h), Image.LANCZOS)
+            args[(65+lora_args)]=np.array(img)
+        args=tuple(args)
+        QUEUE.append(args)
+        args = list(args)
+    return
+def queue_start(*args):
+    global finished_batch
+    finished_batch=False 
+    passed=1       
+    for arg in QUEUE:
+        if not finished_batch:
+          print (f"[QUEUE] {passed} / {len(QUEUE)}")
+          currentTask=get_task_batch(arg)
+          yield from generate_clicked(currentTask)
+          passed+=1
+    QUEUE.clear()
+
+def get_task_batch(*args):
+    argsList = list(args[0])
+    toT = argsList.pop() 
+    srT = argsList.pop() 
+    trans_automate = argsList.pop() 
+    trans_enable = argsList.pop() 
+    if trans_enable:      
+        if trans_automate:
+            positive, negative = translate(argsList[2], argsList[3], srT, toT)            
+            argsList[2] = positive
+            argsList[3] = negative            
+    args = tuple(argsList)
+    args = list(args)
+    args.pop(0)
     return worker.AsyncTask(args=args)
 
 def generate_clicked(task: worker.AsyncTask):
@@ -252,18 +386,192 @@ with shared.gradio_root:
                         metadata_input_image.upload(trigger_metadata_preview, inputs=metadata_input_image,
                                                     outputs=metadata_json, queue=False, show_progress=True)
 
+            batch_checkbox = gr.Checkbox(label='Batch', value=False, container=False, elem_classes='min_check')
+            with gr.Row(visible=False) as batch_panel:
+
+                with gr.Row():
+                  file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'])                 
+                  with gr.Column():
+                    def update_radio(value):
+                      return gr.update(value=value)
+                    ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
+                    gr.HTML('* "Batch Mode" is powered by Shahmatist^RMDA')
+                with gr.Row():
+                  with gr.Column():
+                    add_to_queue = gr.Button(label="Add to queue", value="Add to queue (0)", elem_id='add_to_queue', visible=True)
+                    batch_start = gr.Button(value='Start queue', visible=True)
+                    batch_stop = gr.Button(value='Stop queue', visible=False)
+                    batch_clear = gr.Button(value='Clear queue')
+                    queue_empty = gr.Textbox(show_label=False, value = 'Queue is empty', container=False, visible=True, interactive=False)
+                    queue_unzip = gr.Textbox(show_label=False, value = 'File unZipping', container=False, visible=False, interactive=False)
+                    queue_adding = gr.Textbox(show_label=False, value = 'Queuing', container=False, visible=False, interactive=False)
+                    queue_ready = gr.Textbox(show_label=False, value = 'Queue is ready', container=False, visible=False, interactive=False)
+                    queue_process = gr.Textbox(show_label=False, value = 'Queue in progress', container=False, visible=False, interactive=False)
+                    queue_compl = gr.Textbox(show_label=False, value = 'Queue processing completed', container=False, visible=False, interactive=False)
+                with gr.Row():
+                  with gr.Column():
+                    file_out=gr.File(label="Download a ZIP file", file_count='single')
+                    save_output = gr.Button(value='Output --> ZIP')
+                    clear_output = gr.Button(value='Clear Output')
+
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
             input_image_checkbox.change(lambda x: gr.update(visible=x), inputs=input_image_checkbox,
                                         outputs=image_input_panel, queue=False, show_progress=False, _js=switch_js)
             ip_advanced.change(lambda: None, queue=False, show_progress=False, _js=down_js)
+            batch_checkbox.change(lambda x: gr.update(visible=x), inputs=batch_checkbox,
+                                        outputs=batch_panel, queue=False, show_progress=False, _js=switch_js)
 
             current_tab = gr.Textbox(value='uov', visible=False)
             uov_tab.select(lambda: 'uov', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             inpaint_tab.select(lambda: 'inpaint', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             desc_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
+            def downloader(civitai_api_key,downloader_checkpoint,downloader_loras,downloader_embd,downloader_vae):
+              if not civitai_api_key:
+                return
+              model_dir=modules.config.paths_checkpoints[0]+'/'
+              urls_download = downloader_checkpoint
+              download_files (model_dir,urls_download,civitai_api_key)
+              model_dir=modules.config.paths_loras[0]+'/'
+              urls_download = downloader_loras
+              download_files (model_dir,urls_download,civitai_api_key)
+              model_dir=modules.config.path_embeddings+'/'
+              urls_download = downloader_embd
+              download_files (model_dir,urls_download,civitai_api_key)
+              model_dir=modules.config.path_vae+'/'
+              urls_download = downloader_vae
+              download_files (model_dir,urls_download,civitai_api_key)
+              return civitai_api_key
+            def download_files (model_dir,urls_download,civitai_api_key):
+              if not urls_download:
+                return
+              URLs_paths = urls_download.replace(' ', '').split(',')
+              for main_url in URLs_paths:
+                URL=main_url.split('?')
+                url_down = URL[0] + '?token='+civitai_api_key
+                USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                headers = {
+                  'Authorization': f'Bearer {civitai_api_key}',
+                  'User-Agent': USER_AGENT,
+                  }
+                class NoRedirection(urllib.request.HTTPErrorProcessor):
+                    def http_response(self, request, response):
+                        return response
+                    https_response = http_response
+                request = urllib.request.Request(url_down, headers=headers)
+                opener = urllib.request.build_opener(NoRedirection)
+                response = opener.open(request)
+                if response.status in [301, 302, 303, 307, 308]:
+                    redirect_url = response.getheader('Location')
+                    parsed_url = urlparse(redirect_url)
+                    query_params = parse_qs(parsed_url.query)
+                    content_disposition = query_params.get('response-content-disposition', [None])[0]
+                    if content_disposition:
+                        filename = unquote(content_disposition.split('filename=')[1].strip('"'))
+                    else:
+                        raise Exception('Unable to determine filename')
+                    response = urllib.request.urlopen(redirect_url)
+                elif response.status == 404:
+                    raise Exception('File not found')
+                else:
+                    raise Exception('No redirect found, something went wrong')
+                load_file_from_url(url=url_down,model_dir=model_dir,file_name=filename)
+              return
+
+
+            with gr.Row(elem_classes='extend_row'):
+               with gr.Accordion('Extention', open=False):
+                  with gr.TabItem(label='Model Dowloader') as download_tab:
+                        with gr.Row():
+                            civitai_api_key=downloader_checkpoint=gr.Textbox(label='Civitai API Key', show_label=True, interactive=True, value='')
+                        with gr.Row():
+                            downloader_checkpoint=gr.Textbox(label='Checkpoint Link', show_label=True, interactive=True, value='')
+                        with gr.Row():
+                            downloader_loras=gr.Textbox(label='Lora Link', show_label=True, interactive=True)
+                        with gr.Row():
+                            downloader_embd=gr.Textbox(label='Embedding Link', show_label=True, interactive=True)
+                        with gr.Row():
+                            downloader_vae=gr.Textbox(label='VAE Link', show_label=True, interactive=True)
+                        with gr.Row():
+                            download_start = gr.Button(value='Start Download')
+                        
+                        gr.HTML('For apply emmbeding, in the prompt field use a record like (embedding:file_name:1.1)')
+                        gr.HTML('* "Model Downloader" is powered by Shahmatist^RMDA')
+                  with gr.TabItem(label='Prompt Translate') as promp_tr_tab:       
+                    langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
+                    langs_sup = list(langs_sup.values())
+
+                    def change_lang(src, dest):
+                            if src != 'auto' and src != dest:
+                                return [src, dest]
+                            return ['en','auto']
+                        
+                    def show_viewtrans(checkbox):
+                        return {viewstrans: gr.update(visible=checkbox)} 
+                                       
+                    with gr.Row():
+                            translate_enabled = gr.Checkbox(label='Enable translate', value=False, elem_id='translate_enabled_el')
+                            translate_automate = gr.Checkbox(label='Auto translate "Prompt and Negative prompt" before Generate', value=True, interactive=True, elem_id='translate_enabled_el')
+                            
+                    with gr.Row():
+                            gtrans = gr.Button(value="Translate")        
+
+                            srcTrans = gr.Dropdown(['auto']+langs_sup, value='auto', label='From', interactive=True)
+                            toTrans = gr.Dropdown(langs_sup, value='en', label='To', interactive=True)
+                            change_src_to = gr.Button(value="🔃")
+                            
+                    with gr.Row():
+                            adv_trans = gr.Checkbox(label='See translated prompts after click Generate', value=False)          
+                            
+                    with gr.Box(visible=False) as viewstrans:
+                            gr.Markdown('Tranlsated prompt & negative prompt')
+                            with gr.Row():
+                                p_tr = gr.Textbox(label='Prompt translate', show_label=False, value='', lines=2, placeholder='Translated text prompt')
+
+                            with gr.Row():            
+                                p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
+                    gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
+
+                  with gr.TabItem(label='Photopea') as photopea_tab:
+                    PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
+                    PHOTOPEA_IFRAME_ID = 'webui-photopea-iframe'
+                    PHOTOPEA_IFRAME_HEIGHT = '800px'
+                    PHOTOPEA_IFRAME_WIDTH = '100%'
+                    PHOTOPEA_IFRAME_LOADED_EVENT = 'onPhotopeaLoaded'
+
+                    def get_photopea_url_params():
+                      return '#%7B%22resources%22:%5B%22data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIAAQMAAADOtka5AAAAAXNSR0IB2cksfwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAANQTFRF////p8QbyAAAADZJREFUeJztwQEBAAAAgiD/r25IQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfBuCAAAB0niJ8AAAAABJRU5ErkJggg==%22%5D%7D'
+
+                    with gr.Row():
+                          photopea = gr.HTML(
+                            f'''
+                            <iframe id='{PHOTOPEA_IFRAME_ID}' 
+                            src = '{PHOTOPEA_MAIN_URL}{get_photopea_url_params()}' 
+                            width = '{PHOTOPEA_IFRAME_WIDTH}' 
+                            height = '{PHOTOPEA_IFRAME_HEIGHT}'
+                            onload = '{PHOTOPEA_IFRAME_LOADED_EVENT}(this)'>'''
+                          )
+                    with gr.Row():
+                          gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
+
+
+                  with gr.TabItem(label='Remove Background') as rembg_tab:
+                        def rembg_run(path, progress=gr.Progress(track_tqdm=True)):
+                          input = Image.open(path)
+                          output = remove(input)
+                          return output
+                        with gr.Row():
+                            with gr.Column():
+                                rembg_input = gr.Image(label='Drag above image to here', source='upload', type='filepath', height=380)
+                            with gr.Column():
+                                rembg_output = gr.Image(label='rembg Output', interactive=False, height=380)
+                        with gr.Row():
+                          rembg_button = gr.Button(value='Remove Background', interactive=True)
+                        with gr.Row():
+                          gr.Markdown('Powered by [🪄 rembg 2.0.53](https://github.com/danielgatis/rembg/releases/tag/v2.0.53)')
+                        rembg_button.click(rembg_run, inputs=rembg_input, outputs=rembg_output, show_progress='full')
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
 
         with gr.Column(scale=1, visible=modules.config.default_advanced_checkbox) as advanced_column:
@@ -569,7 +877,7 @@ with shared.gradio_root:
                     modules.config.update_files()
                     results = [gr.update(choices=modules.config.model_filenames)]
                     results += [gr.update(choices=['None'] + modules.config.model_filenames)]
-                    results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
+                    results += [gr.update(choices=['None'] + modules.config.vae_filenames)]
                     if not args_manager.args.disable_preset_selection:
                         results += [gr.update(choices=modules.config.available_presets)]
                     for i in range(modules.config.default_max_lora_number):
@@ -629,6 +937,17 @@ with shared.gradio_root:
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
                                  queue=False, show_progress=False) \
             .then(fn=lambda: None, _js='refresh_grid_delayed', queue=False, show_progress=False)
+        def seeTranlateAfterClick(adv_trans, prompt, negative_prompt="", srcTrans="auto", toTrans="en"):
+            if(adv_trans):
+                positive, negative = translate(prompt, negative_prompt, srcTrans, toTrans)
+                return [positive, negative]   
+            return ["", ""]
+        
+        gtrans.click(translate, inputs=[prompt, negative_prompt, srcTrans, toTrans], outputs=[prompt, negative_prompt])
+        gtrans.click(translate, inputs=[prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr])
+        
+        change_src_to.click(change_lang, inputs=[srcTrans,toTrans], outputs=[toTrans,srcTrans])
+        adv_trans.change(show_viewtrans, inputs=adv_trans, outputs=[viewstrans])
 
         def inpaint_mode_change(mode):
             assert mode in modules.flags.inpaint_options
@@ -688,6 +1007,7 @@ with shared.gradio_root:
             ctrls += [save_metadata_to_images, metadata_scheme]
 
         ctrls += ip_ctrls
+        ctrls += [translate_enabled, translate_automate, srcTrans, toTrans]
 
         def parse_meta(raw_prompt_txt, is_generating):
             loaded_json = None
@@ -725,9 +1045,55 @@ with shared.gradio_root:
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
             .then(fn=generate_clicked, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
             .then(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[generate_button, stop_button, skip_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
+            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+        ctrls_batch = ctrls[:]
+        ctrls_batch.append(ratio)
+        download_start.click(lambda: (gr.update(value='Downloading...', interactive=False)),outputs=download_start) \
+            .then(downloader, inputs=[civitai_api_key,downloader_checkpoint,downloader_loras,downloader_embd,downloader_vae],outputs=civitai_api_key) \
+            .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls, queue=False, show_progress=False) \
+            .then(lambda: (gr.update(value='Start Download', interactive=True)),outputs=download_start)
+        batch_stop.click(stop_clicked_batch, queue=False, show_progress=False, _js='cancelGenerateForever')
+        save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
+            .then(fn=output_zip, outputs=file_out) \
+            .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
+        add_to_queue.click(lambda: (gr.update(visible=False), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)),
+                              outputs=[queue_compl, add_to_queue, queue_empty, queue_unzip, queue_adding, queue_ready, queue_process]) \
+              .then(fn=unzip_file,inputs=file_in) \
+              .then(lambda: (gr.update(visible=False), gr.update(visible=True)),
+                              outputs=[queue_unzip, queue_adding]) \
+              .then(fn=queue_add, inputs=ctrls_batch) \
+              .then(lambda: (gr.update(visible=False), gr.update(visible=True)),
+                              outputs=[queue_adding, queue_ready]) \
+              .then(lambda: (gr.update(value=f"Add to queue ({len(QUEUE)})")), outputs=[add_to_queue]) \
+              .then(clearer) \
+              .then(lambda: (gr.update(interactive=True)),outputs=[add_to_queue])
+        clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
+              .then(clear_outputs) \
+              .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
+        batch_clear.click(lambda: (gr.update(visible=False),gr.update(interactive=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)),
+                              outputs=[queue_compl,batch_clear, queue_empty, queue_unzip, queue_adding, queue_ready, queue_process]) \
+              .then(fn=batch_cleaner) \
+              .then(lambda: (gr.update(visible=False), gr.update(visible=True)),
+                              outputs=[queue_process, queue_empty]) \
+              .then(lambda: (gr.update(value=f"Add to queue ({len(QUEUE)})")), outputs=[add_to_queue]) \
+              .then(lambda: (gr.update(interactive=True)),outputs=[batch_clear])
+        batch_start.click(lambda: (gr.update(visible=False), gr.update(visible=True, interactive=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True),gr.update(visible=False)),
+                              outputs=[batch_start, batch_stop, queue_empty, queue_unzip, queue_adding, queue_ready, queue_process,queue_compl]) \
+            .then(lambda: (gr.update(visible=False, interactive=False), [], True),
+                              outputs=[generate_button, gallery, state_is_generating]) \
+            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+            .then(fn=queue_start, inputs=ctrls, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
+            .then(lambda: (gr.update(visible=True, interactive=True), False),
+                  outputs=[generate_button, state_is_generating]) \
+            .then(fn=update_history_link, outputs=history_link) \
+            .then(lambda: (gr.update(visible=False), gr.update(visible=True), gr.update(value=f"Add to queue ({len(QUEUE)})")), 
+                  outputs=[queue_process, queue_compl, add_to_queue]) \
+            .then(lambda: (gr.update(visible=False), gr.update(visible=True)),outputs=[batch_stop, batch_start]) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
 
         reset_button.click(lambda: [worker.AsyncTask(args=[]), False, gr.update(visible=True, interactive=True)] +
