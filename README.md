@@ -6,7 +6,16 @@ Extender for Fooocus
 (Любые заимствования кода без указания авторства и разрешения автора считается плагиатом и неуважением к автору - если такие найдутся, то будут здесь указаны)
 
 
-<a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a>
+| Colab | Info
+| --- | --- |
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend.ipynb) | Fooocus_extend with autoupdate from Original Colab
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_upd.ipynb) | Fooocus_extend without autoupdate from Original Colab. Base Version 2.3.
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb) | Fooocus Official
+
+
+
+
+
 
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/83797030-bd0d-49a7-80a5-6398105b3c20)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/e59e3400-0d75-4428-bbee-46e7011dbaa1)
