@@ -11,11 +11,7 @@ Extender for Fooocus
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend.ipynb) | Fooocus_extend with autoupdate from Original Colab
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_upd.ipynb) | Fooocus_extend without autoupdate from Original Colab. Base Version 2.4.1
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb) | Fooocus Official
-
-
-
-
-
+[Download](https://github.com/shaitanzx/Fooocus_extend/releases/download/v4/fooocus_extend.7z) | Local version for Windows
 
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/83797030-bd0d-49a7-80a5-6398105b3c20)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/5b6fd1de-0d8c-4832-97b2-853260c4c313)
