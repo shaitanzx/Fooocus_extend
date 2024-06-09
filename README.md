@@ -61,6 +61,27 @@ Photopea - online image editor
 
 Remove Background - remove background from image
 
+Batch - mode of group processing of images using Image Prompt
+1. Upload a ZIP file - upload ONE archive with reference images. File names must not contain spaces. The archive must not contain directories.
+2. Scale Method - change permissions of input and output files
+  - Not Scale - no additional changes will be made to the files
+  - to ORIGINAL - the output file resolution will correspond to the resolution of the input file (reference).
+  - to OUTPUT - before processing the generation, the resolution of the input file will be adjusted to the resolution of the output file with preserving the proportions.
+3. Add to queue - unpacking of the downloaded archive into a folder for batch processing. The number of already existing unpacked files is specified in brackets
+4. Start queue - start processing. After successful processing of all files, the folder is cleared. During the processing you can stop it. The stopping is performed only after the current task is completed
+5. Clear queue - Clearing the folder with input files
+6. Output-->ZIP - Archiving the folder with finished generations
+7. Download a ZIP - window for downloading the archive with ready generations
+8. Clear Output - clearing the folder with ready generations
+
+To perform a batch operation, you need to 
+- make all Fooocus settings in advance (select the models you need, make ImagePrompt settings, fix Seed if necessary, etc.).
+- activate Input Image
+- select the ‘Upscale or Variation’ or ‘Image Prompt’ tab, as the processing mode will be performed depending on the selected tab. In case the ‘Image Prompt’ tab will be opened, the loading of reference images will be performed only in the first cell.
+- download and unpack the archive with reference images
+- start processing
+- after the end of processing, create an archive with ready generations and download it to your computer
+
 Порядок запуска
 1.	Выбрать профиль
 2.	Выбрать тему (светлая, темная)
