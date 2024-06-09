@@ -132,6 +132,7 @@ Change log
 
 V4 (current version)
 1. Select tunnel (gradio, cloudflared)
+2. Add Batch Mode
 
 V3
 1. Add Photopea
