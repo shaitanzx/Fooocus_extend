@@ -5,7 +5,7 @@ import os
 import datetime
 import shutil
 
-DIR_FOOOCUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Fooocus")
+DIR_FOOOCUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "")
 PATH_TO_WEBUI = os.path.join(DIR_FOOOCUS, "webui.py")
 
 PATH_OBJ_DATA_PATCHER = [
