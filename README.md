@@ -19,7 +19,7 @@ Extender for Fooocus
 
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/83797030-bd0d-49a7-80a5-6398105b3c20)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/5b6fd1de-0d8c-4832-97b2-853260c4c313)
-![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/5211a026-0eb9-4838-b650-8aeeed097e9b)
+![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/09276692-f630-45c2-9605-9ff33d561e18)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/bfc44a92-dc55-4896-8e9d-ca62c36a664d)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/db746844-fae7-4e16-91f9-881df70a3c77)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/a117eea0-8278-4a03-b2d6-8f5d21ce6bb7)
