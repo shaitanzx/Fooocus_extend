@@ -13,12 +13,12 @@ Extender for Fooocus
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb) | Fooocus Official
 [Download](https://github.com/shaitanzx/Fooocus_extend/releases/download/v4/fooocus_extend.7z) | Local version for Windows
 
-![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/83797030-bd0d-49a7-80a5-6398105b3c20)
+![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/57764ad0-fb92-4287-b99e-9a30d230ad04)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/5b6fd1de-0d8c-4832-97b2-853260c4c313)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/09276692-f630-45c2-9605-9ff33d561e18)
-![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/bfc44a92-dc55-4896-8e9d-ca62c36a664d)
-![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/db746844-fae7-4e16-91f9-881df70a3c77)
-![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/a117eea0-8278-4a03-b2d6-8f5d21ce6bb7)
+![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/0157efcb-7e5c-47ae-9946-726bbe439b7c)
+![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/63e60153-f787-4da1-b60a-4ccea562ed9e)
+![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/0aa0ad1d-d54e-4a83-87c1-ee8f974a7993)
 ![image](https://github.com/shaitanzx/Fooocus_extend/assets/162459965/dede024d-ec0b-41a0-9b33-f85b1e986e5d)
 
 
