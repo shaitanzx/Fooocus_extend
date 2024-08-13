@@ -261,9 +261,7 @@ def get_task_batch(*args):
                           gr.Markdown('Powered by [🪄 rembg 2.0.53](https://github.com/danielgatis/rembg/releases/tag/v2.0.53)')
                         rembg_button.click(rembg_run, inputs=rembg_input, outputs=rembg_output, show_progress='full')\n"""],
     
-	["""                        black_out_nsfw.change(lambda x: gr.update(value=x, interactive=not x),
-                                              inputs=black_out_nsfw, outputs=disable_preview, queue=False,
-                                                         show_progress=False)""",""" \\
+	["                        black_out_nsfw.change(lambda x: gr.update(value=x, interactive=not x),\n                                              inputs=black_out_nsfw, outputs=disable_preview, queue=False,\n                                                         show_progress=False)",""" \\
                                               .then (civitai_helper_nsfw,inputs=black_out_nsfw)\n"""],
 
 
