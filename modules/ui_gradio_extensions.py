@@ -39,6 +39,8 @@ def javascript_html():
     head += f'<script type="text/javascript" src="{edit_attention_js_path}"></script>\n'
     head += f'<script type="text/javascript" src="{viewer_js_path}"></script>\n'
     head += f'<script type="text/javascript" src="{image_viewer_js_path}"></script>\n'
+    civitai_js_path = webpath('md_lib/civitai_helper.js')
+    head += f'<script type="text/javascript" src="{civitai_js_path}"></script>\n'
     head += f'<meta name="samples-path" content="{samples_path}">\n'
 
     if args_manager.args.theme:
