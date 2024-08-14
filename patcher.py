@@ -261,11 +261,8 @@ def get_task_batch(*args):
                           gr.Markdown('Powered by [🪄 rembg 2.0.53](https://github.com/danielgatis/rembg/releases/tag/v2.0.53)')
                         rembg_button.click(rembg_run, inputs=rembg_input, outputs=rembg_output, show_progress='full')\n"""],
     
-	["                                                         show_progress=False)\n""","""
-                        black_out_nsfw.change(civitai_helper_nsfw,inputs=black_out_nsfw)\n"""],
-
-
-	
+	["                                                         show_progress=False)\n","""
+						black_out_nsfw.change(civitai_helper_nsfw,inputs=black_out_nsfw)\n"""],
 	
 	["            .then(fn=lambda: None, _js='refresh_grid_delayed', queue=False, show_progress=False)\n","""
         def seeTranlateAfterClick(adv_trans, prompt, negative_prompt="", srcTrans="auto", toTrans="en"):
@@ -280,11 +277,11 @@ def get_task_batch(*args):
         change_src_to.click(change_lang, inputs=[srcTrans,toTrans], outputs=[toTrans,srcTrans])
         adv_trans.change(show_viewtrans, inputs=adv_trans, outputs=[viewstrans])\n"""],
 
-["        ctrls += enhance_ctrls\n","        ctrls += [translate_enabled, translate_automate, srcTrans, toTrans]\n"],
+	["        ctrls += enhance_ctrls\n","        ctrls += [translate_enabled, translate_automate, srcTrans, toTrans]\n"],
 
-["            .then(fn=generate_clicked, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \\\n","""            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \\\n"""],
+	["            .then(fn=generate_clicked, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \\\n","""            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \\\n"""],
 
-["            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')\n","""
+	["            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')\n","""
         ctrls_batch = ctrls[:]
         ctrls_batch.append(ratio)
         add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
