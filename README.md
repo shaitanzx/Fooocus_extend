@@ -32,7 +32,7 @@ Extender for Fooocus
 " target="_blank"><img src="http://img.youtube.com/vi/VuXzHu4PLsk/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
 
-Startup order
+***Startup order***
 1. Select a profile
 2. Select a theme (light, dark)
 3. Select a tunnel - when gradio does not work, you can use the alternative cloudflared tunnel
@@ -40,21 +40,22 @@ Startup order
 5. GoogleDrive_output – enable saving of all generation results to your Google Drive
 6. Launch colab
 
-Civitai Helper
+***Civitai Helper***
+
 This module allows you to download models from the website chivitai.com. To download, be sure to indicate the Civitai API key
 To apply Embedding, in the prompt field use a record like (embedding:file_name:1.1)
 
-Prompt Translate
+***Prompt Translate***
 1. Enable Translate - enable the extension
 2. Translate - translation of the prompt into English without starting generation
 3. Auto translate "Prompt and Negative prompt" before Generate - enable automatic translation of positive and negative prompts into English before generation
 4. See translated prompts after click Generate - show translations of prompts after generation is completed
 
-Photopea - online image editor
+***Photopea*** - online image editor
 
-Remove Background - remove background from image
+***Remove Background*** - remove background from image
 
-Batch - batch image processing mode
+***Batch*** - batch image processing mode
 Upload a ZIP file - uploading an archive with images. File names must not contain spaces or symbols in various language encodings other than Latin
 Select method
 - NOT Scale - during processing, the original image will not change its size and processing will proceed in accordance with the selected
@@ -67,7 +68,7 @@ Output-->ZIP - archiving processed images
 Download a ZIP file - downloading the archive
 Clear OUTPUT - deleting the archive and all processed images
 
-Порядок запуска
+***Порядок запуска***
 1.	Выбрать профиль
 2.	Выбрать тему (светлая, темная)
 3.	Выбрать тунель - когда gradio не работает, можно воспользоваться альтернативным тунелем cloudflared
@@ -75,21 +76,22 @@ Clear OUTPUT - deleting the archive and all processed images
 5.	GoogleDrive_output – включение сохранения всех результатов генераций на свой гуглдиск
 6.	Запустить колаб
 
-Civitai Helper
+***Civitai Helper***
+
 Данный модуль позволяет загрузить модели с сайта civitai.com. Для скачивание обязательно укажите Civitai API key  
 Для применения embedding, в поле промпта используйте запись типа (embedding:file_name:1.1)
 
-Prompt Translate
+***Prompt Translate***
 1. Enable Translate - включение расширения
 2. Translate - перевод промпта на англйский язык без запуска генерации
 3. Auto translate "Prompt and Negative prompt" before Generate - включение автоматического перевода положительного и отрицательного промптов на английский язык перед генерацией
 4. See translated prompts after click Generate - показывать переводы промптов после выполнения генерации
 
-Photopea - онлайн редактор изображений
+***Photopea*** - онлайн редактор изображений
 
-Remove Background - удаление фона с изображения
+***Remove Background*** - удаление фона с изображения
 
-Batch - режим групповой обработки изображений
+***Batch*** - режим групповой обработки изображений
 Upload a ZIP file - зарузка арихива с изображеними. Файлы в именах не должны иметь пробелов и символов в различных языковых кодировках, кроме латинской
 Select method
 - NOT Scale - при обработке исходное изображене не будет изменять свои размеров и обработка будет идти в соответствии с выбранным 
@@ -103,7 +105,7 @@ Download a ZIP file - скачивание архива
 Clear OUTPUT - удаление архива и всех обработанных изображений
 
 
-Change log
+***Change log***
 
 V5(current version)
 1. Model Downloader replaced with Civitai Helper
