@@ -42,6 +42,8 @@ from md_lib import md_config
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
+  print(md_config.ch_nsfw_threshold)
+  print(black_out_nsfw)
   return
 civitai_helper_nsfw(modules.config.default_black_out_nsfw)
 def get_task(*args):
@@ -1007,8 +1009,8 @@ with shared.gradio_root:
 
                         black_out_nsfw.change(lambda x: gr.update(value=x, interactive=not x),
                                               inputs=black_out_nsfw, outputs=disable_preview, queue=False,
-                                                         show_progress=False) \
-                                              .then (civitai_helper_nsfw,inputs=black_out_nsfw)
+                                                         show_progress=False)
+                        black_out_nsfw.change(civitai_helper_nsfw,inputs=black_out_nsfw)
 
 
                         if not args_manager.args.disable_image_log:
