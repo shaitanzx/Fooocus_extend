@@ -10,9 +10,9 @@ PATH_TO_WEBUI = os.path.join(DIR_FOOOCUS, "modules/ui_gradio_extentions.py")
 
 PATH_OBJ_DATA_PATCHER = [
     ["# based on https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/v1.6.0/modules/ui_gradio_extensions.py\n","# patched\n"],
-    ["    head += f'<script type="text/javascript" src="{image_viewer_js_path}"></script>\\n'\n","""
-    civitai_js_path = webpath('md_lib/civitai_helper.js')
-    head += f'<script type="text/javascript" src="{civitai_js_path}"></script>\\n'\n"""]
+    ["    head += f\'<script type=\"text/javascript\" src=\"{image_viewer_js_path}\"></script>\\n\'\n","""
+    civitai_js_path = webpath(\'md_lib/civitai_helper.js\')
+    head += f\'<script type="text/javascript\" src=\"{civitai_js_path}\"></script>\\n\'\n"""]
 ]    
 
 def search_and_path():
