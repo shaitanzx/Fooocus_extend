@@ -6,7 +6,7 @@ Extender for Fooocus
 (Любые заимствования кода без указания авторства и разрешения автора считается плагиатом и неуважением к автору - если такие найдутся, то будут здесь указаны)
 <table>
   <tr>
-    <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend without autoupdate. Base version 2.5.0</td>
+    <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend without autoupdate. Base version 2.5.5</td>
   </tr>
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend with autoupdate from original repository.</td>
@@ -40,16 +40,9 @@ Startup order
 5. GoogleDrive_output – enable saving of all generation results to your Google Drive
 6. Launch colab
 
-Model Dowloader
-1. CivitAI_API_KEY - required for downloading models from civitai.com It is best to use your personal key, not a third-party one, since if necessary, you can always view ONLY YOUR download history on the site. To do this, you need to register on the website civitai.com and then in the settings you can get the key.
-2. Checkpoint Link – adding links to models from civitai.com. If you need to load several models, links to them can be specified separated by commas (,) without spaces
-3. Lora Link - adding links to Lora from the site civitai.com. If you need to download several Loras, links to them can be specified separated by commas (,) without spaces.
-4. Embedding Link - adding links to Embedding from the site civitai.com. If you need to download several Loras, links to them can be specified separated by commas (,) without spaces.
-5. VAE Link - adding links to VAE from the site civitai.com. If you need to download several Loras, links to them can be specified separated by commas (,) without spaces.
-6. Start Download - start downloading all files via links
-7. If CivitAI_API_KEY is absent, then the download not started
-8. After downloading all the files, in the Model tab in Advanced mode, you need to update the list of models (click Refresh All Files)
-9. To apply Embedding, in the prompt field use a record like (embedding:file_name:1.1)
+Civitai Helper
+This module allows you to download models from the website chivitai.com. To download, be sure to indicate the Civitai API key
+To apply Embedding, in the prompt field use a record like (embedding:file_name:1.1)
 
 Prompt Translate
 1. Enable Translate - enable the extension
@@ -82,16 +75,9 @@ Clear OUTPUT - deleting the archive and all processed images
 5.	GoogleDrive_output – включение сохранения всех результатов генераций на свой гуглдиск
 6.	Запустить колаб
 
-Model Dowloader
-1.	CivitAI_API_KEY – необходим для загрузки моделей с civitai.com  Лучше всего использовать свой личный ключ, а не сторонний, так как в случае необходимости на сайте всегда можно посмотреть ТОЛЬКО СВОЮ историю загрузок. Для этого необходимо зарегистрироваться на сайте civitai.com и далее в настройках можно получить ключ.
-2.	Checkpoint Link – добавление ссылок на модели с сайта civitai.com. При необходимости загрузки нескольких моделей, ссылки на них можно указывать через запятую (,) без пробелов
-3.	Lora Link - добавление ссылок на Lora с сайта civitai.com. При необходимости загрузки нескольких Lora, ссылки на них можно указывать через запятую (,)  без пробелов.
-4.	Embedding Link - добавление ссылок на Embedding с сайта civitai.com. При необходимости загрузки нескольких Lora, ссылки на них можно указывать через запятую (,)  без пробелов.
-5.	VAE Link - добавление ссылок на VAE с сайта civitai.com. При необходимости загрузки нескольких Lora, ссылки на них можно указывать через запятую (,)  без пробелов.
-6.	Start Download - запуск скачивание всех файлов по ссылкам
-7.	Если отстутсвует CivitAI_API_KEY, то загрузка производиться не будет
-8.	После загрузки всех файлов, во вкладке Model в режиме Advanced, необходимо обновить список моделей (нажать Refresh All Files) 
-9.	Для применения embedding, в поле промпта используйте запись типа (embedding:file_name:1.1)
+Civitai Helper
+Данный модуль позволяет загрузить модели с сайта civitai.com. Для скачивание обязательно укажите Civitai API key  
+Для применения embedding, в поле промпта используйте запись типа (embedding:file_name:1.1)
 
 Prompt Translate
 1. Enable Translate - включение расширения
@@ -118,7 +104,11 @@ Clear OUTPUT - удаление архива и всех обработанны�
 
 
 Change log
-V4(current version)
+
+V5(current version)
+1. Model Downloader replaced with Civitai Helper
+
+V4
 1. Add VAE download
 2. Add Batch mode
 
