@@ -6,7 +6,7 @@ import datetime
 import shutil
 
 DIR_FOOOCUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Fooocus")
-PATH_TO_WEBUI = os.path.join(DIR_FOOOCUS, "modules/ui_gradio_extentions.py")
+PATH_TO_WEBUI = os.path.join(DIR_FOOOCUS, "modules/ui_gradio_extensions.py")
 
 PATH_OBJ_DATA_PATCHER = [
     ["# based on https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/v1.6.0/modules/ui_gradio_extensions.py\n","# patched\n"],
@@ -57,11 +57,11 @@ def search_and_path():
             os.remove(patchedFileName)
         else:
             # Rename to webui.py and backup original
-            if not os.path.exists(os.path.join(DIR_FOOOCUS, "modules/ui_gradio_extentions_original.py")):
-                shutil.copy(PATH_TO_WEBUI, os.path.join(DIR_FOOOCUS, "modules/ui_gradio_extentions_original.py"))
+            if not os.path.exists(os.path.join(DIR_FOOOCUS, "modules/ui_gradio_extensions_original.py")):
+                shutil.copy(PATH_TO_WEBUI, os.path.join(DIR_FOOOCUS, "modules/ui_gradio_extensions_original.py"))
             else:
                 currentDateTime = datetime.datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-                shutil.copy(PATH_TO_WEBUI, os.path.join(DIR_FOOOCUS, f"modules/ui_gradio_extentions_original_{currentDateTime}.py"))
+                shutil.copy(PATH_TO_WEBUI, os.path.join(DIR_FOOOCUS, f"modules/ui_gradio_extensions_original_{currentDateTime}.py"))
 
             shutil.move(patchedFileName, PATH_TO_WEBUI)
 
