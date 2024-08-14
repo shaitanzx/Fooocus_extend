@@ -17,12 +17,18 @@ Extender for Fooocus
 </table>
 
 ![image](https://github.com/user-attachments/assets/468487b8-8d4e-454c-ba92-1c9e5b60feb7)
-![image](https://github.com/user-attachments/assets/d820cbbe-dd26-43fa-8ff7-79ece4733f69)
-![image](https://github.com/user-attachments/assets/02cfefd2-7ab4-45ce-9a28-38cba008897c)
-![image](https://github.com/user-attachments/assets/0dae1b83-d393-4601-ba7a-663a7e263c1c)
-![image](https://github.com/user-attachments/assets/d8da2d79-73ea-476c-8c72-af4ec8351e08)
-![image](https://github.com/user-attachments/assets/6b3cf591-b857-448c-bb8a-cf3f78429b11)
-
+![image](https://github.com/user-attachments/assets/88d51e58-49c3-4b46-9455-39de97c67f16)
+![image](https://github.com/user-attachments/assets/05d3e317-3a05-434d-bb9d-9e017e6110bb)
+![image](https://github.com/user-attachments/assets/e8ef96a2-5dc3-496f-8940-6fe531b80697)
+![image](https://github.com/user-attachments/assets/28704aa3-7a95-4ad5-b6d6-ff044ff103dc)
+![image](https://github.com/user-attachments/assets/6ff1277f-f0ae-4917-9773-505912351a3e)
+![image](https://github.com/user-attachments/assets/257d2944-c5ef-40ca-b330-4f370c54bddc)
+![image](https://github.com/user-attachments/assets/d4ab118e-06b8-4b3c-be70-83a7501b36ee)
+![image](https://github.com/user-attachments/assets/e0138862-9ebb-4a84-8b46-96593e8e108c)
+![image](https://github.com/user-attachments/assets/15750c0d-4597-468d-ba7b-3812d608d087)
+![image](https://github.com/user-attachments/assets/f3e2e442-3c31-4038-ad75-103e5dc880b8)
+![image](https://github.com/user-attachments/assets/749eabcb-2ef6-4809-8177-cdd6a690b36a)
+![image](https://github.com/user-attachments/assets/afd366ed-827f-4004-a031-dde28dae99a5)
 
 
 Сlick on the picture below to watch the video of previouse version
