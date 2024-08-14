@@ -261,7 +261,11 @@ def get_task_batch(*args):
                           gr.Markdown('Powered by [🪄 rembg 2.0.53](https://github.com/danielgatis/rembg/releases/tag/v2.0.53)')
                         rembg_button.click(rembg_run, inputs=rembg_input, outputs=rembg_output, show_progress='full')\n"""],
     
+	["                                                         show_progress=False)\n""","""
+                        black_out_nsfw.change(civitai_helper_nsfw,inputs=black_out_nsfw)\n"""],
 
+
+	
 	
 	["            .then(fn=lambda: None, _js='refresh_grid_delayed', queue=False, show_progress=False)\n","""
         def seeTranlateAfterClick(adv_trans, prompt, negative_prompt="", srcTrans="auto", toTrans="en"):
@@ -289,6 +293,10 @@ def get_task_batch(*args):
               .then(lambda: (gr.update(visible=False)),outputs=[status_batch]) \\
               .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \\
               .then(lambda: (gr.update(interactive=True)),outputs=[add_to_queue])
+        download_start.click(lambda: (gr.update(value='Downloading...', interactive=False)),outputs=download_start) \\
+            .then(downloader, inputs=[civitai_api_key,downloader_checkpoint,downloader_loras,downloader_embd,downloader_vae],outputs=civitai_api_key) \\
+            .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls, queue=False, show_progress=False) \\
+            .then(lambda: (gr.update(value='Start Download', interactive=True)),outputs=download_start)
         clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \\
               .then(clear_outputs) \\
               .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
