@@ -42,8 +42,6 @@ from md_lib import md_config
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
-  print(md_config.ch_nsfw_threshold)
-  print(black_out_nsfw)
   return
 civitai_helper_nsfw(modules.config.default_black_out_nsfw)
 def get_task(*args):
