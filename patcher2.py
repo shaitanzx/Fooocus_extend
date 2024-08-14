@@ -69,7 +69,7 @@ def search_and_path():
 
 
 def start_path():
-    print("""=== Script for patching file webui.py for Fooocus ===
+    print("""=== Script for patching file modules/ui_gradio_extensions.py for Fooocus ===
 > Extension: 'Extention Panel'
 > Author: Shahmatist/RMDA
 === ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ===""")
