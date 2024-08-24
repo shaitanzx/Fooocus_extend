@@ -112,8 +112,12 @@ Clear OUTPUT - удаление архива и всех обработанны�
 
 
 ***Change log***
+V6 (current version) (temporarily only Colab without autoupdate)
+1.Add Prompt Batch Mode
+2.Rename Batch Mode to Images Batch Mode
+3.Fixed an incorrect start random number in Batch Mode
 
-V5(current version)
+V5
 1. Model Downloader replaced with Civitai Helper
 
 V4
