@@ -40,6 +40,8 @@ from modules.util import is_json
 from md_lib import civitai_helper
 from md_lib import md_config
 
+#import pandas
+
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
   return
@@ -115,6 +117,7 @@ def queue_new(*args):
     global finished_batch
     finished_batch=False 
     args = list(args)
+    seed_random = args.pop()
     scale=args.pop()    
     lora_args=3*(int(modules.config.default_max_lora_number))
     batch_all=len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
@@ -140,13 +143,39 @@ def queue_new(*args):
                       h = int(height * ratio)
                       img = img.resize((w, h), Image.LANCZOS)
                   args[(65+lora_args)]=np.array(img)
-        print (f"[QUEUE] {passed} / {batch_all}")
+        print (f"[Images QUEUE] {passed} / {batch_all}")
         passed+=1
         currentTask=get_task_batch(args)
         yield from generate_clicked(currentTask)
         args=copy[:]
+        if seed_random:
+          args[9]=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
     clearer()
     return
+def queue_new_prompt(*args):
+  global finished_batch
+  finished_batch=False
+  args = list(args)
+  seed_random = args.pop()
+  batch_args = args.pop()
+  batch_args.reverse()
+  copy = args[:]
+  passed=1
+  while batch_args and not finished_batch:
+      print (f"[Prompts QUEUE] Element #{passed}")
+      one_batch_args=batch_args.pop()
+      args[2]=one_batch_args[0]
+      args[3]=one_batch_args[1]
+      currentTask=get_task_batch(args)
+      yield from generate_clicked(currentTask)
+      args=copy[:]
+      if seed_random:
+        args[9]=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+      passed+=1
+  return 
+def prompt_clearer(batch_prompt):
+  batch_prompt=[{'prompt': '', 'negative prompt': ''}]
+  return batch_prompt
 
 def get_task_batch(*args):
     argsList = list(args[0])
@@ -677,7 +706,10 @@ with shared.gradio_root:
 
             input_image_checkbox.change(lambda x: gr.update(visible=x), inputs=input_image_checkbox,
                                         outputs=image_input_panel, queue=False, show_progress=False, _js=switch_js)
-            batch_checkbox = gr.Checkbox(label='Batch', value=False, container=False, elem_classes='min_check')
+            with gr.Row(elem_classes='advanced_check_row'):
+                batch_checkbox = gr.Checkbox(label='Images Batch', value=False, container=False, elem_classes='min_check')
+                prompt_checkbox = gr.Checkbox(label='Prompts Batch', value=False, container=False, elem_classes='min_check')
+
             with gr.Row(visible=False) as batch_panel:
 
                 with gr.Row():
@@ -686,7 +718,7 @@ with shared.gradio_root:
                     def update_radio(value):
                       return gr.update(value=value)
                     ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
-                    gr.HTML('* "Batch Mode" is powered by Shahmatist^RMDA')
+                    gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
                 with gr.Row():
                   with gr.Column():
                     add_to_queue = gr.Button(label="Add to queue", value='Add to queue ({}'.format(len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))]))+')', elem_id='add_to_queue', visible=True)
@@ -704,6 +736,33 @@ with shared.gradio_root:
             ip_advanced.change(lambda: None, queue=False, show_progress=False, _js=down_js)
             batch_checkbox.change(lambda x: gr.update(visible=x), inputs=batch_checkbox,
                                         outputs=batch_panel, queue=False, show_progress=False, _js=switch_js)
+            with gr.Row(visible=False) as prompt_panel:
+
+
+                def prompts_delete(batch_prompt):
+                  if len(batch_prompt) > 1:
+                      removed=batch_prompt.pop()
+                  return batch_prompt
+
+
+                with gr.Column():
+                    batch_prompt=gr.Dataframe(
+                      headers=["prompt", "negative prompt"],
+                      datatype=["str", "str"],
+                      row_count=1, wrap=True,
+                      col_count=(2, "fixed"), type="array", interactive=True)
+                    with gr.Row():
+                      prompt_delete=gr.Button(value="Delete last row")
+                      prompt_clear=gr.Button(value="Clear Batch")
+                      prompt_start=gr.Button(value="Start batch", visible=True)
+                      prompt_stop=gr.Button(value="Stop batch", visible=False)
+                    with gr.Row():
+                      gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
+                
+                prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
+                prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
+            prompt_checkbox.change(lambda x: gr.update(visible=x), inputs=prompt_checkbox,
+                                        outputs=prompt_panel, queue=False, show_progress=False, _js=switch_js)
 
             current_tab = gr.Textbox(value='uov', visible=False)
             uov_tab.select(lambda: 'uov', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
@@ -1304,6 +1363,7 @@ with shared.gradio_root:
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
         ctrls_batch = ctrls[:]
         ctrls_batch.append(ratio)
+        ctrls_batch.append(seed_random)
         add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
                                     outputs=[add_to_queue, status_batch]) \
               .then(fn=unzip_file,inputs=file_in) \
@@ -1323,12 +1383,24 @@ with shared.gradio_root:
               .then(lambda: (gr.update(interactive=True),gr.update(visible=False)),outputs=[batch_clear,status_batch])
         batch_start.click(lambda: (gr.update(visible=False),gr.update(visible=False), gr.update(visible=True, interactive=True),gr.update(visible=True,value='Queue in progress')),
                           outputs=[generate_button,batch_start, batch_stop, status_batch]) \
+              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=queue_new, inputs=ctrls_batch, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(lambda: (gr.update(visible=True),gr.update(visible=False), gr.update(visible=True),gr.update(visible=False)),
                           outputs=[generate_button,batch_stop, batch_start,status_batch]) \
               .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue])
         batch_stop.click(stop_clicked_batch, queue=False, show_progress=False, _js='cancelGenerateForever')
-
+        ctrls_prompt = ctrls[:]
+        ctrls_prompt.append(batch_prompt)
+        ctrls_prompt.append(seed_random)
+        prompt_start.click(lambda: (gr.update(visible=False),gr.update(visible=False), gr.update(visible=True, interactive=True)),
+                              outputs=[generate_button,prompt_start, prompt_stop]) \
+              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+              .then(fn=queue_new_prompt,inputs=ctrls_prompt, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(lambda: (gr.update(visible=True),gr.update(visible=False), gr.update(visible=True)),
+                          outputs=[generate_button,prompt_stop, prompt_start]) \
+              .then(fn=update_history_link, outputs=history_link) \
+              .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+        prompt_stop.click(stop_clicked_batch, queue=False, show_progress=False, _js='cancelGenerateForever')
         reset_button.click(lambda: [worker.AsyncTask(args=[]), False, gr.update(visible=True, interactive=True)] +
                                    [gr.update(visible=False)] * 6 +
                                    [gr.update(visible=True, value=[])],
