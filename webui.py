@@ -1392,12 +1392,12 @@ with shared.gradio_root:
         ctrls_prompt = ctrls[:]
         ctrls_prompt.append(batch_prompt)
         ctrls_prompt.append(seed_random)
-        prompt_start.click(lambda: (gr.update(visible=False),gr.update(visible=False), gr.update(visible=True, interactive=True)),
-                              outputs=[generate_button,prompt_start, prompt_stop]) \
+        prompt_start.click(lambda: (gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(visible=False),gr.update(visible=False), gr.update(visible=True, interactive=True)),
+                              outputs=[batch_prompt,prompt_delete,prompt_clear,generate_button,prompt_start, prompt_stop]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=queue_new_prompt,inputs=ctrls_prompt, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(visible=True),gr.update(visible=False), gr.update(visible=True)),
-                          outputs=[generate_button,prompt_stop, prompt_start]) \
+              .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True),gr.update(visible=False), gr.update(visible=True)),
+                          outputs=[batch_prompt,prompt_delete,prompt_clear,generate_button,prompt_stop, prompt_start]) \
               .then(fn=update_history_link, outputs=history_link) \
               .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
         prompt_stop.click(stop_clicked_batch, queue=False, show_progress=False, _js='cancelGenerateForever')
