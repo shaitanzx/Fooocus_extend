@@ -77,6 +77,8 @@ Clear OUTPUT - deleting the archive and all processed images
 ***Images Prompts*** - group prompt processing mode
 Enter positive and negative prompts into the table. Click Start batch to start executing the generation queue with the current settings for models, styles, and everything else.
 
+***Wildcards*** - visual management of Wildcard and Words/phrases of wildcard for substitution into positive prompt
+
 ***Порядок запуска***
 1.	Выбрать профиль
 2.	Выбрать тему (светлая, темная)
@@ -116,11 +118,14 @@ Clear OUTPUT - удаление архива и всех обработанны�
 ***Images Prompts*** - режим групповой обработки промптов
 Введите в таблицу положительные и отрицательные промпты. Нажмите Start batch для начала выполнения очереди генерации с текущими настройками моделей, стилей и всего остального
 
+***Wildcards*** - визуальное управление Wildcard и подстановочными фразами для подстановки в положительный промпт
+
 ***Change log***
 V6 (current version) (temporarily only Colab without autoupdate)
 1.Add Prompt Batch Mode
 2.Rename Batch Mode to Images Batch Mode
 3.Fixed an incorrect start random number in Batch Mode
+4.Add visual management of Wildcard and Words/phrases of wildcard
 
 V5
 1. Model Downloader replaced with Civitai Helper
