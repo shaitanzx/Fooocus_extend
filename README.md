@@ -61,7 +61,7 @@ To apply Embedding, in the prompt field use a record like (embedding:file_name:1
 
 ***Remove Background*** - remove background from image
 
-***Batch*** - batch image processing mode
+***Images Batch*** - batch image processing mode
 Upload a ZIP file - uploading an archive with images. File names must not contain spaces or symbols in various language encodings other than Latin
 Select method
 - NOT Scale - during processing, the original image will not change its size and processing will proceed in accordance with the selected
@@ -73,6 +73,9 @@ Clear queue - clearing the queue
 Output-->ZIP - archiving processed images
 Download a ZIP file - downloading the archive
 Clear OUTPUT - deleting the archive and all processed images
+
+***Images Prompts*** - group prompt processing mode
+Enter positive and negative prompts into the table. Click Start batch to start executing the generation queue with the current settings for models, styles, and everything else.
 
 ***Порядок запуска***
 1.	Выбрать профиль
@@ -97,7 +100,7 @@ Clear OUTPUT - deleting the archive and all processed images
 
 ***Remove Background*** - удаление фона с изображения
 
-***Batch*** - режим групповой обработки изображений
+***Images Batch*** - режим групповой обработки изображений
 Upload a ZIP file - зарузка арихива с изображеними. Файлы в именах не должны иметь пробелов и символов в различных языковых кодировках, кроме латинской
 Select method
 - NOT Scale - при обработке исходное изображене не будет изменять свои размеров и обработка будет идти в соответствии с выбранным 
@@ -110,6 +113,8 @@ Output-->ZIP - архивирование обработанных изобра�
 Download a ZIP file - скачивание архива
 Clear OUTPUT - удаление архива и всех обработанных изображений
 
+***Images Prompts*** - режим групповой обработки промптов
+Введите в таблицу положительные и отрицательные промпты. Нажмите Start batch для начала выполнения очереди генерации с текущими настройками моделей, стилей и всего остального
 
 ***Change log***
 V6 (current version) (temporarily only Colab without autoupdate)
