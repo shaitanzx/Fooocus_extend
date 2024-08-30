@@ -336,7 +336,7 @@ def add_wildcards_and_array_to_prompt(wildcard, prompt, state_params):
     else:
         new_tag = f'__{wildcard}__'
         
-    prompt = f'{prompt.strip()}{new_tag}'
+    prompt = f'{prompt.strip()} {new_tag}'
     return gr.update(value=prompt), gr.Dataset.update(label=f'{wildcard}:', samples=get_words_of_wildcard_samples(wildcard)), gr.update(open=True)
 
 def add_word_to_prompt(wildcard, index, prompt):
