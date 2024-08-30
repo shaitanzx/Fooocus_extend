@@ -125,12 +125,18 @@ Clear OUTPUT - удаление архива и всех обработанны�
 ***Wildcards*** - визуальное управление Wildcard и подстановочными фразами для подстановки в положительный промпт
 
 ***Change log***
-___
+
+
+
 V6 (current version) (temporarily only Colab without autoupdate)
-Add Prompt Batch Mode
-Rename Batch Mode to Images Batch Mode
-Fixed an incorrect start random number in Batch Mode
-Add visual management of Wildcard and Words/phrases of wildcard
+
+1.Add Prompt Batch Mode
+
+2.Rename Batch Mode to Images Batch Mode
+
+3.Fixed an incorrect start random number in Batch Mode
+
+4.Add visual management of Wildcard and Words/phrases of wildcard
 
 V5
 1. Model Downloader replaced with Civitai Helper
