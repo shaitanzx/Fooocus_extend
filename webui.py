@@ -363,7 +363,7 @@ with shared.gradio_root:
 
                     stop_button.click(stop_clicked, inputs=currentTask, outputs=currentTask, queue=False, show_progress=False, _js='cancelGenerateForever')
                     skip_button.click(skip_clicked, inputs=currentTask, outputs=currentTask, queue=False, show_progress=False)
-            with gr.Accordion(label='Wildcards Prompts', visible=True, open=False) as prompt_wildcards:
+            with gr.Accordion(label='Wildcards', visible=True, open=False) as prompt_wildcards:
                 wildcards_list = gr.Dataset(components=[prompt], label='Wildcards:', samples=wildcards.get_wildcards_samples(), visible=True, samples_per_page=14)
                 with gr.Accordion(label='Words/phrases of wildcard', visible=True, open=False) as words_in_wildcard:
                     wildcard_tag_name_selection = gr.Dataset(components=[prompt], label='Words/phrases:', samples=wildcards.get_words_of_wildcard_samples(), visible=True, samples_per_page=30, type='index')
@@ -372,7 +372,7 @@ with shared.gradio_root:
                 wildcards_array = [prompt_wildcards, words_in_wildcard, wildcards_list, wildcard_tag_name_selection]
                 wildcards_array_show =lambda x: [gr.update(visible=True)] * 2 + [gr.Dataset.update(visible=True, samples=wildcards.get_wildcards_samples()), gr.Dataset.update(visible=True, samples=wildcards.get_words_of_wildcard_samples(x["wildcard_in_wildcards"]))]
                 wildcards_array_hidden = [gr.update(visible=False)] * 2 + [gr.Dataset.update(visible=False, samples=wildcards.get_wildcards_samples()), gr.Dataset.update(visible=False, samples=wildcards.get_words_of_wildcard_samples())]
-                gr.HTML('* \"Wildcards Prompts\" is powered by SimpleSDXL. <a href="https://github.com/metercai/SimpleSDXL" target="_blank">\U0001F4D4 Document</a>')
+                gr.HTML('* \"Wildcards\" is powered by SimpleSDXL. <a href="https://github.com/metercai/SimpleSDXL" target="_blank">\U0001F4D4 Document</a>')
 
             with gr.Row(elem_classes='advanced_check_row'):
                 input_image_checkbox = gr.Checkbox(label='Input Image', value=modules.config.default_image_prompt_checkbox, container=False, elem_classes='min_check')
