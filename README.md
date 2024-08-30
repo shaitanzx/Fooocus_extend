@@ -125,7 +125,9 @@ Clear OUTPUT - удаление архива и всех обработанны�
 ***Wildcards*** - визуальное управление Wildcard и подстановочными фразами для подстановки в положительный промпт
 
 ***Change log***
-V6 (current version) (temporarily only Colab without autoupdate)
+
+V6 (current version) 
+(temporarily only Colab without autoupdate)
 1.Add Prompt Batch Mode
 2.Rename Batch Mode to Images Batch Mode
 3.Fixed an incorrect start random number in Batch Mode
