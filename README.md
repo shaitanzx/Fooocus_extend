@@ -9,9 +9,6 @@ Extender for Fooocus
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend without autoupdate. Base version 2.5.5</td>
   </tr>
   <tr>
-    <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend with autoupdate from original repository.</td>
-  </tr>
-  <tr>
     <td><a href="https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Original Fooocus Colab</td>
   </tr>
 </table>
@@ -126,17 +123,13 @@ Clear OUTPUT - удаление архива и всех обработанны�
 
 ***Change log***
 
-
-
 V6 (current version) (temporarily only Colab without autoupdate)
 
-1.Add Prompt Batch Mode
-
-2.Rename Batch Mode to Images Batch Mode
-
-3.Fixed an incorrect start random number in Batch Mode
-
-4.Add visual management of Wildcard and Words/phrases of wildcard
+1. Add Prompt Batch Mode
+2. Rename Batch Mode to Images Batch Mode
+3. Fixed an incorrect start random number in Batch Mode
+4. Add visual management of Wildcard and Words/phrases of wildcard
+5. Added the ability to set any resolution for the generated image
 
 V5
 1. Model Downloader replaced with Civitai Helper
