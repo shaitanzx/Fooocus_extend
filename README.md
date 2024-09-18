@@ -80,6 +80,10 @@ Enter positive and negative prompts into the table. Click Start batch to start e
 
 ***Wildcards*** - visual management of Wildcard and Words/phrases of wildcard for substitution into positive prompt
 
+***Prompt Batch*** - allows you to enter multiple positive and negative prompts for sequential generation with the current settings
+
+***OneButtonPrompt*** - prompt generator with the ability to customize styles and image themes
+
 ***Порядок запуска***
 1.	Выбрать профиль
 2.	Выбрать тему (светлая, темная)
@@ -121,6 +125,10 @@ Clear OUTPUT - удаление архива и всех обработанны�
 
 ***Wildcards*** - визуальное управление Wildcard и подстановочными фразами для подстановки в положительный промпт
 
+***Prompt Batch*** - позволяет ввести несколько положительных и отрицательных промптов для последовательной генерации с текущими настройками
+
+***OneButtonPrompt*** - генератор промптов с возможность настрокаи стилей и тем изображений
+
 ***Change log***
 
 V6 (current version) (temporarily only Colab without autoupdate)
@@ -130,6 +138,7 @@ V6 (current version) (temporarily only Colab without autoupdate)
 3. Fixed an incorrect start random number in Batch Mode
 4. Add visual management of Wildcard and Words/phrases of wildcard
 5. Added the ability to set any resolution for the generated image
+6. Add OneButtonPrompt
 
 V5
 1. Model Downloader replaced with Civitai Helper
