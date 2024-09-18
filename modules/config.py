@@ -651,13 +651,13 @@ default_save_only_final_enhanced_image = get_config_item_or_set_default(
 )
 default_save_metadata_to_images = get_config_item_or_set_default(
     key='default_save_metadata_to_images',
-    default_value=False,
+    default_value=True,
     validator=lambda x: isinstance(x, bool),
     expected_type=bool
 )
 default_metadata_scheme = get_config_item_or_set_default(
     key='default_metadata_scheme',
-    default_value=MetadataScheme.FOOOCUS.value,
+    default_value=MetadataScheme.A1111.value,
     validator=lambda x: x in [y[1] for y in modules.flags.metadata_scheme if y[1] == x],
     expected_type=str
 )
