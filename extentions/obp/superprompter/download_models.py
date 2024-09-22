@@ -1,6 +1,7 @@
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 import torch
 import os
+import sentencepiece
 
 def download_models():
     model_name = "roborovski/superprompt-v1"
