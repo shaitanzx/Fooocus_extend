@@ -117,13 +117,7 @@ This extension allows you to remove the background on an uploaded image with a s
   </tr>
 </table>
 
-All suggestions and questions can be voiced in the [Telegram group][https://t.me/+xlhhGmrz9SlmYzg6]
-
-
-[Telegram-group](sfefregrgtrgetgr)
-
-https://t.me/+xlhhGmrz9SlmYzg6
-
+All suggestions and questions can be voiced in the [Telegram-group](https://t.me/+xlhhGmrz9SlmYzg6)
 
 ***Change log***
 
