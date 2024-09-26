@@ -85,7 +85,6 @@ In this tab you can start the image generation queue by generated samples. Befor
 ![image](https://github.com/user-attachments/assets/01250bff-947c-4aea-ab49-3c2a9e7715ac)
 ![image](https://github.com/user-attachments/assets/90a67800-9351-4dc7-a3e2-1c292d1f66b1)
 ![image](https://github.com/user-attachments/assets/1c032293-6d51-435f-bf38-b26be5b8de9d)
-![image](https://github.com/user-attachments/assets/200bc5c8-1c06-4251-b63b-9a8d03e12a60)
 ![image](https://github.com/user-attachments/assets/5bb8f655-40df-46b7-8cbd-86dcaf6b8f14)
 ![image](https://github.com/user-attachments/assets/854de34d-5614-4a32-8f78-a0bf41038478)
 ![image](https://github.com/user-attachments/assets/8c36f474-098c-4ee8-85dc-f681652dc4ff)
