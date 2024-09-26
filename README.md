@@ -119,6 +119,11 @@ This extension allows you to remove the background on an uploaded image with a s
 
 All suggestions and questions can be voiced in the [Telegram-group](https://t.me/+xlhhGmrz9SlmYzg6)
 
+![image](https://github.com/user-attachments/assets/5cf86b6d-e378-4d85-aed1-c48920b6c107)
+
+
+
+
 ***Change log***
 
 V6 (current version) (temporarily only Colab without autoupdate)
