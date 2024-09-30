@@ -12,7 +12,7 @@ BUTTONS = {
     "rename_model_button": False,
     "remove_model_button": False,
 }
-ch_civiai_api_key="paste API key"
+ch_civiai_api_key=""
 ch_dl_lyco_to_lora=False
 ch_open_url_with_js=True
 ch_hide_buttons=[x for x, y in BUTTONS.items() if y]
