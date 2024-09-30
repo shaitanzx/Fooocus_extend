@@ -28,7 +28,7 @@ def civitai_help():
                         lines=1,
                         max_lines=1,
                         value=md_config.ch_civiai_api_key,
-                        placeholder="Civitai API key",
+                        placeholder="paste API key",
                         elem_id="ch_dl_url"
                     )
                     dl_apply = gr.Button(
