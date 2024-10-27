@@ -27,14 +27,16 @@ This module allows you not to memorise existing files with wildcard words, but t
 
 4.	**Image Batch** (batch image processing)
 
-![image](https://github.com/user-attachments/assets/d7f3e8ec-1d97-4f6d-b0a7-4d7122f325e7)
+![image](https://github.com/user-attachments/assets/50e6b777-22ef-44e8-9b1e-35e2c91bb9d8)
 
-  In a nutshell, this module allows you to create images based on existing images. To better understand this module, I advise you to do some experiments yourself. But I would like to note that its application allows you to use your images as references and change their style depending on the prompt and the selected model. First you need to create a zip-archive with your images. There should be no subfolders in the archive, file names should not use characters other than Latin. Upload the prepared archive to the Upload a zip file window.  Next, you should choose the mode of changing the resolution of images
+
+ In a nutshell, this module allows you to upscale and create images based on existing images. To better understand this module, I advise you to do some experiments yourself. But I would like to note that its application allows you to use your images as references and change their style depending on the prompt and the selected model. First you need to create a zip-archive with your images. There should be no subfolders in the archive, file names should not use characters other than Latin. Upload the prepared archive to the Upload a zip file window. Next, you should choose the mode of changing the resolution of images
 - Not scale - the generation will not take into account the resolution of the original image
 - to ORIGINAL - this means that immediately before generation the resolution equal to the resolution of the original image will be selected.
 - to OUTPUT - in this case first the resolution of the original image will be changed to the generated one with preserving the proportions, and then the generation will start
   
-Since the whole generation process takes place in Input Image mode, you need to open this panel. Depending on what you want to do with your original images, select the Upscale or ImagePrompt tab. If you've decided to just upscale your images, then you just select the tab you want and proceed to launch. If you want to use your images as a reference, then open the ImagePrompt tab, adjust the weight and stop steps of the first cell of the tab. In order not to make a mistake with the settings, I advise you to place one of your images in the first cell beforehand and perform some generation in the normal mode, and after selecting the settings, proceed to group processing. I remind you that the Input Image panel should be active and open in the corresponding tab until the end of group generation.
+Since the whole generation process takes place in Input Image mode, you need to open this panel. Depending on what you want to do with your original images, select the Upscale or ImagePrompt tab. If you've decided to just upscale your images, then you just select the tab you want and proceed to launch. If you want to use your images as a reference, then open the ImagePrompt tab, adjust the weight and stop steps of the cell of the tab. In order not to make a mistake with the settings, I advise you to place one of your images in the cell beforehand and perform some generation in the normal mode, and after selecting the settings, proceed to group processing. I remind you that the Input Image panel should be active and open in the corresponding tab until the end of group generation.
+If you are processing in ImagePromp mode, you can choose which one your images will be loaded into. This allows you to select other reference images and ControlNet modes for other cells.
 
 Clicking the Add to queue button will unpack the previously downloaded archive and put all jobs in the queue. The number of queued jobs will be indicated in brackets.
 
@@ -50,15 +52,19 @@ Clear Output - clears the output folder. It should be noted that it clears not o
 
 5.	**Prompt Batch** (batch processing of prompts)
 
-![image](https://github.com/user-attachments/assets/1c73a095-d36b-4452-baf3-a86d7667118d)
+![image](https://github.com/user-attachments/assets/ad6d71ed-8f3b-458f-af7e-b58ea1bd280d)
 
 This module allows you to start generating several prompts in the queue for execution. To do this, you need to fill in the table In the prompt column enter a positive prompt, and in the negative prompt column enter a negative prompt respectively. Clicking on New row will add an empty row to the end of the table. Delete last row deletes the last row of the table. Start batch starts execution of the prompt queue for generation.
+You can also choose to add base positive and negative prompts.
+None - basic prompts will not be added.
+Prefix - base prompts will be added before prompts from the table.
+Suffix - base samples will be added after samples from the table.
 
 Now let's look at the Extention panel. Here are some extensions for Stable Forge adapted for Fooocus
 
 1.	**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
    
-![image](https://github.com/user-attachments/assets/43827b70-a96a-4180-b177-f0b24d566a2c)
+![image](https://github.com/user-attachments/assets/64bc1e3d-efdc-4782-8070-fe5a181a2d45)
 
 In the ‘Main’ tab, you can select the preset of the prompt generation theme, as well as specify unchanging prompt prefixes and suffixes.
 
@@ -66,46 +72,64 @@ In the ‘Main’ tab, you can select the preset of the prompt generation theme,
 
 In the ‘Workflow assist’ tab you can generate 5 prompts, transfer each of them to the Fooocus prompt field and also to the Workflow field. If you select Workflow mode, it will generate not a new prompt, but variations of the prompt specified in the Workflow text field. The level of variation is selected by the engine located just below it
 
-![image](https://github.com/user-attachments/assets/aadadc7d-2641-4f1b-9ea4-4d99b14e11bc)
-![image](https://github.com/user-attachments/assets/b2048816-522e-44cc-9b65-af7af5eb2f6c)
-![image](https://github.com/user-attachments/assets/d24c6c43-cd1e-460d-b9e9-e49b926064f0)
+![image](https://github.com/user-attachments/assets/66816520-eddd-40d7-984f-6e8eeb6ba0ef)
 
 In this tab you can select the prompt syntax for different generation models, the length of the prompt, and enable the prompt generation enhancer.
 
-![image](https://github.com/user-attachments/assets/97ab92ea-c064-453a-bf51-a0de2f4d2fdb)
+![image](https://github.com/user-attachments/assets/f04d4527-d9fc-41e6-93f9-05ba9608b524)
 
 This is where you can control the generation of negative prompts
 
-![image](https://github.com/user-attachments/assets/b8d3a7e4-4377-4d87-887f-6f1e472ab8ad)
+![image](https://github.com/user-attachments/assets/94dd93f3-9d7e-4d70-9884-83a255d55414)
 
 In this tab you can start the image generation queue by generated samples. Before starting you need to specify the aspect ratio of the generated image (Size to generate), the number of generated prompts (Generation of prompts), and the models to use (Model to use).
 
 2.	**Civitai Helper**
 
-![image](https://github.com/user-attachments/assets/01250bff-947c-4aea-ab49-3c2a9e7715ac)
-![image](https://github.com/user-attachments/assets/90a67800-9351-4dc7-a3e2-1c292d1f66b1)
-![image](https://github.com/user-attachments/assets/1c032293-6d51-435f-bf38-b26be5b8de9d)
-![image](https://github.com/user-attachments/assets/5bb8f655-40df-46b7-8cbd-86dcaf6b8f14)
-![image](https://github.com/user-attachments/assets/854de34d-5614-4a32-8f78-a0bf41038478)
-![image](https://github.com/user-attachments/assets/8c36f474-098c-4ee8-85dc-f681652dc4ff)
+![image](https://github.com/user-attachments/assets/b59821d4-8954-4012-ad12-f1bdc62d2dec)
 
 This extension allows you to download models for generation from the civitai website.  To download a model you first need to specify your Civitai_API_key. In the Download Model section in the Civitai URL field you need to specify a link to the required model from the browser address bar and click Get Model Info by Civitai URL. After analysing the link you will be given information about the model. You will also be able to select the version of the model before downloading. This extension also allows you to find duplicates of downloaded models and check for updates. In addition, there is a group download option.
 
 3.	**Prompt Translate**
 
-![image](https://github.com/user-attachments/assets/833a8076-dc19-4876-b195-51a55c1b95e9)
+![image](https://github.com/user-attachments/assets/de7d569a-3f1e-41ac-b47a-731ea28063be)
 
 Allows to translate both positive and negative prompts from any language into English, both before generation and directly during generation.
 
 4.	**Photopea** - a free online analogue of Photoshop
 
-![image](https://github.com/user-attachments/assets/161007bc-d3da-4548-a53c-864580ca24e9)
+![image](https://github.com/user-attachments/assets/7c5b5cf2-292e-407a-9713-41b58034cbe0)
 
 5.	**Remove Background**
 
-![image](https://github.com/user-attachments/assets/3801c52d-97fc-4953-a250-421a8a3924ca)
+![image](https://github.com/user-attachments/assets/398d6ba2-5413-490a-8fe0-11435a50e34c)
+
 
 This extension allows you to remove the background on an uploaded image with a single button
+
+6.	**OpenPoseEditor**
+
+![image](https://github.com/user-attachments/assets/00acf39e-58f0-415c-bce3-f21a20a443a7)
+
+This module allows you to create skeletons for subsequent image creation using OpenPose ControlNet. You can also create a skeleton from an existing image.
+
+7.	**OpenPose ControlNet**
+
+![image](https://github.com/user-attachments/assets/bd2459d0-7d88-4c09-9eb0-80c24ab5b61b)
+
+Allows you to create an image based on the pose skeleton.
+
+8.	**Recolor ControlNet**
+
+![image](https://github.com/user-attachments/assets/5209e584-36ec-4577-a330-9b32070bc6de)
+
+Allows you to colorize an image based on a black and white image.
+
+9.	**Scribble ControlNet**
+
+![image](https://github.com/user-attachments/assets/e356ad7d-89fd-4ff0-b5f4-e21494bac61a)
+
+Allows you to color an image based on a sketch.
 
 <table>
   <tr>
@@ -125,7 +149,16 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
-V6 (current version) (temporarily only Colab without autoupdate)
+V7 (current version)
+1. Add OpenPoseEditor
+2. Fix bug in Image Batch Mode
+3. Added cell selection in Image Batch Mode
+4. Added selection of adding base prompts in Prompt Batch Mode
+5. Add OpenPose ControlNet
+6. Add Recolor ControlNet
+7. Add Scribble ControlNet
+
+V6
 
 1. Add Prompt Batch Mode
 2. Rename Batch Mode to Images Batch Mode
