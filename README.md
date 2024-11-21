@@ -148,8 +148,10 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+Curent Google Colab version
+1. Save Image Grid for Each Batch
 
-V7 (current version)
+V7 (current local version)
 1. Add OpenPoseEditor
 2. Fix bug in Image Batch Mode
 3. Added cell selection in Image Batch Mode
