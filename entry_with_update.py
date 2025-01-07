@@ -43,4 +43,3 @@ except Exception as e:
     print(str(e))
 
 print('Update succeeded.')
-from launch import *
