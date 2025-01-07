@@ -52,7 +52,7 @@ def prepare_environment():
                         exit(0)
             elif platform.system() == "Linux":
                 run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
-   def install_requirements(requirements_file):
+    def install_requirements(requirements_file):
       with open(requirements_file, 'r', encoding='utf-8') as file:
         for line in file:
             line = line.strip()
