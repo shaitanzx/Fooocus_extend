@@ -33,7 +33,7 @@ def is_installed(package):
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
-
+    print ('aaaaaaaaaaaaaaaaaaaaaaaaaaaa',command)
     if "install" in command:
         module_name = command.split("install")[-1].strip().split()[0]
         print(f"Installing module: {module_name}")
