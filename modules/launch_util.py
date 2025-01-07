@@ -36,9 +36,11 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
 
     if "install" in command:
         module_name = command.split("install")[-1].strip().split()[0]
-        print(f"Installing module: {module_name}")
-        
-    if desc is not None:
+        if desc is not None:
+            print(f"Installing {desc} ({module_name})...")
+        else:
+            print(f"Installing {module_name}...")
+    elif desc is not None:
         print(desc)
 
     run_kwargs = {
