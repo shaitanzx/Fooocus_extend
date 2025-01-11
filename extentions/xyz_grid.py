@@ -30,6 +30,7 @@ import modules.config
 import modules.flags
 from modules.sdxl_styles import legal_style_names
 from modules.private_logger import log
+import html
 
 fill_values_symbol = "\U0001f4d2"  # рџ“’
 
@@ -338,8 +339,8 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
         
         if currentTask.draw_legend:
                 font=cv2.FONT_HERSHEY_COMPLEX
-                font_scale=2
-                thickness=5
+                font_scale=1
+                thickness=3
 
                 if hor_text[0]:
                   extend_h=wall.shape[0] + 100
@@ -368,15 +369,15 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
                   (title_text_width, title_text_height), _ = cv2.getTextSize(title_text[z], font, font_scale, thickness)
                   cv2.putText(image_extended, title_text[z], (int((image_extended.shape[1]-title_text_width)/2),20+title_text_height), font, font_scale, text_color, thickness)
                   wall=image_extended
-        meta_xyz=[('Base prompt','prompt',currentTask.args[1])]
+        meta_xyz=[('Base prompt','prompt',html.escape(currentTask.args[1], quote=True))]
         if hor_text[0]:
             for i in range(len(hor_text)):
-              meta_xyz.append((f'X axis {i+1}:', f'X axis {i+1}:', hor_text[i]))
+              meta_xyz.append((f'X axis {i+1}:', f'X axis {i+1}:', html.escape(hor_text[i], quote=True)))
         if vert_text[0]:
             for i in range(len(vert_text)):
-              meta_xyz.append((f'Y axis {i+1}:', f'Y axis {i+1}:', vert_text[i]))
+              meta_xyz.append((f'Y axis {i+1}:', f'Y axis {i+1}:', html.escape(vert_text[i], quote=True)))
         if title_text[z]:
-            meta_xyz.append((f'Z axis:', 'Z axis', title_text[z]))
+            meta_xyz.append((f'Z axis:', 'Z axis', html.escape(title_text[z], quote=True)))
 
         log(wall, metadata=meta_xyz, metadata_parser=None, output_format=None, task=None, persist_image=True)
 
