@@ -83,7 +83,7 @@ def xyz_plot_ext(currentTask):
     temp_var=[]
     for i, currentTask in enumerate(xyz_task):
         currentTask.results+=temp_var
-        print(f"[X/Y/Z Plot] Image Generation {i + 1}:")
+        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}:\033[0m")
         if not finished_batch:
             if currentTask.translate_enabled:      
               if currentTask.translate_automate:
