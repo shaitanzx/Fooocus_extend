@@ -307,8 +307,8 @@ def pr_batch_start(p):
         p.negative_prompt= one_batch_args[1] + p.negative_prompt
       else:
         p.negative_prompt=one_batch_args[1]
-      
-      yield from generate_clicked(p)
+      if len(p.prompt)>0:
+        yield from generate_clicked(p)
       p = copy.deepcopy(pc)
       if p.seed_random:
         p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
