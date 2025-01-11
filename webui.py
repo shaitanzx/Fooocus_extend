@@ -273,7 +273,7 @@ def im_batch_run(p):
                   h = int(height * ratio)
                   img = img.resize((w, h), Image.LANCZOS)
               p.cn_tasks[p.image_mode].append([np.array(img), p.ip_stop_batch, p.ip_weight_batch])
-        print (f"\033[91m [Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         passed+=1
         p.input_image_checkbox=True
         if p.translate_enabled:
@@ -294,7 +294,7 @@ def pr_batch_start(p):
   pc = copy.deepcopy(p)
   passed=1
   while batch_prompt and not finished_batch:
-      print (f"\033[91m [Prompts QUEUE] Element #{passed} \033[0m")
+      print (f"\033[91m[Prompts QUEUE] Element #{passed} \033[0m")
       one_batch_args=batch_prompt.pop()
       if p.positive_batch=='Prefix':
         p.prompt= p.original_prompt + one_batch_args[0]
