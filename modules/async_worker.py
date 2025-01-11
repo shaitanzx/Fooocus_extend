@@ -178,7 +178,6 @@ class AsyncTask:
         self.grid_theme = args.pop()
         self.always_random = args.pop()
         self.translate_enabled = args.pop()
-        self.translate_automate = args.pop()
         self.srcTrans = args.pop()
         self.toTrans = args.pop()
         self.original_prompt = args.pop()

@@ -230,10 +230,8 @@ def get_task(*args):
     argsList = list(args)
     toT = argsList.pop() 
     srT = argsList.pop() 
-    trans_automate = argsList.pop() 
     trans_enable = argsList.pop() 
     if trans_enable:      
-        if trans_automate:
             positive, negative = translate(argsList[2], argsList[3], srT, toT)            
             argsList[2] = positive
             argsList[3] = negative
@@ -275,10 +273,13 @@ def im_batch_run(p):
                   h = int(height * ratio)
                   img = img.resize((w, h), Image.LANCZOS)
               p.cn_tasks[p.image_mode].append([np.array(img), p.ip_stop_batch, p.ip_weight_batch])
-        print (f"[Images QUEUE] {passed} / {batch_all}. Filename: {f_name}")
+        print (f"\033[91m [Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         passed+=1
         p.input_image_checkbox=True
-
+        if p.translate_enabled:
+                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
+                  p.prompt = positive
+                  p.negative_prompt = negative
         yield from generate_clicked(p)
         p = copy.deepcopy(pc)
         if p.seed_random:
@@ -293,7 +294,7 @@ def pr_batch_start(p):
   pc = copy.deepcopy(p)
   passed=1
   while batch_prompt and not finished_batch:
-      print (f"[Prompts QUEUE] Element #{passed}")
+      print (f"\033[91m [Prompts QUEUE] Element #{passed} \033[0m")
       one_batch_args=batch_prompt.pop()
       if p.positive_batch=='Prefix':
         p.prompt= p.original_prompt + one_batch_args[0]
@@ -309,7 +310,6 @@ def pr_batch_start(p):
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
         if p.translate_enabled:
-              if p.translate_automate:
                   positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
                   p.prompt = positive
                   p.negative_prompt = negative
@@ -489,8 +489,6 @@ with shared.gradio_root:
                     def skip_clicked(currentTask):
                         import ldm_patched.modules.model_management as model_management
                         currentTask.last_stop = 'skip'
-                        global finished_batch
-                        finished_batch=True
                         if (currentTask.processing):
                             model_management.interrupt_current_processing()
                         return currentTask
@@ -1213,8 +1211,6 @@ with shared.gradio_root:
                                        
                     with gr.Row():
                             translate_enabled = gr.Checkbox(label='Enable translate', value=False, elem_id='translate_enabled_el')
-                            translate_automate = gr.Checkbox(label='Auto translate "Prompt and Negative prompt" before Generate', value=True, interactive=True, elem_id='translate_enabled_el')
-                            
                     with gr.Row():
                             gtrans = gr.Button(value="Translate")        
 
@@ -1828,11 +1824,11 @@ with shared.gradio_root:
             .then(style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False)
         
         ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
-        ctrls += [translate_enabled, translate_automate, srcTrans, toTrans, prompt, negative_prompt]
+        ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
         ctrls += [model,base_model,size,amountofimages,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,seed_random]
         ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [batch_prompt,positive_batch,negative_batch]
-        ctrls += [translate_enabled, translate_automate, srcTrans, toTrans]
+        ctrls += [translate_enabled, srcTrans, toTrans]
         xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[xyz_start, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
