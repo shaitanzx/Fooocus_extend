@@ -296,18 +296,23 @@ def pr_batch_start(p):
       print (f"[Prompts QUEUE] Element #{passed}")
       one_batch_args=batch_prompt.pop()
       if p.positive_batch=='Prefix':
-        p.prompt= p.prompt + one_batch_args[0]
+        p.prompt= p.original_prompt + one_batch_args[0]
       elif p.positive_batch=='Suffix':
-        p.prompt= one_batch_args[0] + p.prompt
+        p.prompt= one_batch_args[0] + p.original_prompt
       else:
         p.prompt=one_batch_args[0]
       if p.negative_batch=='Prefix':
-        p.negative_prompt= p.negative_prompt + one_batch_args[1]
+        p.negative_prompt= p.original_negative + one_batch_args[1]
       elif p.negative_batch=='Suffix':
-        p.negative_prompt= one_batch_args[1] + p.negative_prompt
+        p.negative_prompt= one_batch_args[1] + p.original_negative
       else:
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
+        if p.translate_enabled:
+              if p.translate_automate:
+                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
+                  p.prompt = positive
+                  p.negative_prompt = negative
         yield from generate_clicked(p)
       p = copy.deepcopy(pc)
       if p.seed_random:
