@@ -85,8 +85,7 @@ def xyz_plot_ext(currentTask):
         currentTask.results+=temp_var
         print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}:\033[0m")
         if not finished_batch:
-            if currentTask.translate_enabled:      
-              if currentTask.translate_automate:
+            if currentTask.translate_enabled:
                   positive, negative = translate(currentTask.prompt, currentTask.negative_prompt, currentTask.srcTrans, currentTask.toTrans)            
                   currentTask.prompt = positive
                   currentTask.negative_prompt = negative
@@ -1182,8 +1181,7 @@ with shared.gradio_root:
                         subject.change(ob_prompt.subjectsvalueforsubtypeobject,[subject],[chosensubjectsubtypeobject])
                         subject.change(ob_prompt.subjectsvalueforsubtypeconcept,[subject],[chosensubjectsubtypeconcept])
                         subject.change(ob_prompt.subjectsvalueforsubtypeobject,[subject],[chosensubjectsubtypehumanoid])
-                        genprom.click(ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
-                                outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
+                        
                         prompt1toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt1, outputs=workprompt)
                         prompt1toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt1, outputs=prompt)
                         prompt2toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt2, outputs=workprompt)
@@ -1829,6 +1827,13 @@ with shared.gradio_root:
         ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [batch_prompt,positive_batch,negative_batch]
         ctrls += [translate_enabled, srcTrans, toTrans]
+        def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
+            if translate_enabled:
+                  positive, _ = translate(workprompt, "", srcTrans, toTrans)
+            return positive
+        genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
+            .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
+                  outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
         xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[xyz_start, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
