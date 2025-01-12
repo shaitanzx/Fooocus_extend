@@ -1829,8 +1829,8 @@ with shared.gradio_root:
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
-                  positive, _ = translate(workprompt, "", srcTrans, toTrans)
-            return positive
+                  workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
+            return workprompt
         genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
             .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
                   outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
