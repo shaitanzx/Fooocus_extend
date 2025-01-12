@@ -42,7 +42,10 @@ def apply_field(field):
         setattr(p, field, x)
 
     return fun
-
+def apply_lora(field):
+    def set_lora(p,x,xs):
+      p.loras[field] = (p.loras[field][0], x)
+    return set_lora
 
 def apply_prompt(p, x, xs):
     if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
@@ -50,21 +53,6 @@ def apply_prompt(p, x, xs):
 
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
-
-def apply_lora1(p,x,xs):
-    p.loras[0] = (p.loras[0][0], x)
-
-def apply_lora2(p,x,xs):
-    p.loras[1] = (p.loras[1][0], x)
-
-def apply_lora3(p,x,xs):
-    p.loras[2] = (p.loras[2][0], x)
-
-def apply_lora4(p,x,xs):
-    p.loras[4] = (p.loras[3][0], x)
-
-def apply_lora5(p,x,xs):
-    p.loras[5] = (p.loras[4][0], x)    
 
 def apply_order(p, x, xs):
     token_order = []
@@ -297,11 +285,11 @@ axis_options = [
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
 	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold)),
-	AxisOption("LoRA 1 weight", float, apply_lora1, cost=0.6),
-  AxisOption("LoRA 2 weight", float, apply_lora2, cost=0.6),
-  AxisOption("LoRA 3 weight", float, apply_lora3, cost=0.6),
-  AxisOption("LoRA 4 weight", float, apply_lora4, cost=0.6),
-  AxisOption("LoRA 5 weight", float, apply_lora5, cost=0.6),
+	AxisOption("LoRA 1 weight", float, apply_lora(0), cost=0.6),
+  AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
+  AxisOption("LoRA 3 weight", float, apply_lora(2), cost=0.6),
+  AxisOption("LoRA 4 weight", float, apply_lora(3), cost=0.6),
+  AxisOption("LoRA 5 weight", float, apply_lora(4), cost=0.6),
 
 #	  AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
 #	  AxisOption("Refiner switch at", float, apply_field('refiner_switch_at')),
