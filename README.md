@@ -27,7 +27,8 @@ This module allows you not to memorise existing files with wildcard words, but t
 
 4.	**Image Batch** (batch image processing)
 
-![004](https://github.com/user-attachments/assets/6aa747e4-4b84-490f-b716-e1ba5b64be5b)
+![004](https://github.com/user-attachments/assets/d11708d9-0386-4771-bf36-6b2dd90028af)
+
 
 
 
@@ -52,7 +53,8 @@ If the execution proceeds without errors or interruptions, the queue will be cle
 
 5.	**Prompt Batch** (batch processing of prompts)
 
-![005](https://github.com/user-attachments/assets/983b2b96-9819-4c74-9c4f-44047435758b)
+![005](https://github.com/user-attachments/assets/15dffb7d-b5f9-4893-a930-6ac0e9d831cb)
+
 
 
 This module allows you to start generating several prompts in the queue for execution. To do this, you need to fill in the table In the prompt column enter a positive prompt, and in the negative prompt column enter a negative prompt respectively. Clicking on New row will add an empty row to the end of the table. Delete last row deletes the last row of the table. Start batch starts execution of the prompt queue for generation.
@@ -65,46 +67,55 @@ Now let's look at the Extention panel. Here are some extensions for Stable Forge
 
 1.	**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
    
-![009](https://github.com/user-attachments/assets/84b0707d-2846-429e-bb79-8e4934506a24)
+![009](https://github.com/user-attachments/assets/0f0005e7-1c0f-48b6-9c89-7ad1842d974e)
+
 
 In the ‘Main’ tab, you can select the preset of the prompt generation theme, as well as specify unchanging prompt prefixes and suffixes.
 
-![010](https://github.com/user-attachments/assets/2f5e788d-4be2-4bf9-8a7e-79e0a271078a)
+![010](https://github.com/user-attachments/assets/e3c65841-362e-424a-9534-9a4be605483a)
+
 
 In the ‘Workflow assist’ tab you can generate 5 prompts, transfer each of them to the Fooocus prompt field and also to the Workflow field. If you select Workflow mode, it will generate not a new prompt, but variations of the prompt specified in the Workflow text field. The level of variation is selected by the engine located just below it
 
-![011](https://github.com/user-attachments/assets/a8045069-55b5-408c-ae59-83dc2ffe72bb)
+![011](https://github.com/user-attachments/assets/83f70c92-a441-4f0f-b56e-b1c236f2e407)
+
 
 In this tab you can select the prompt syntax for different generation models, the length of the prompt, and enable the prompt generation enhancer.
 
-![012](https://github.com/user-attachments/assets/f3851d73-9a89-4913-8f4a-c1e425c40ce4)
+![012](https://github.com/user-attachments/assets/a215a97c-155d-4e3e-a729-74cdc8393148)
+
 
 This is where you can control the generation of negative prompts
 
-![_013](https://github.com/user-attachments/assets/a56eed42-2e7e-4a57-af07-98572cea5b39)
+![013](https://github.com/user-attachments/assets/f05e26cf-1c2f-4341-b3cd-5fbb9c552217)
+
 
 In this tab you can start the image generation queue by generated samples. Before starting you need to specify the aspect ratio of the generated image (Size to generate), the number of generated prompts (Generation of prompts), and the models to use (Model to use).
 
 2.	**Civitai Helper**
 
-![014](https://github.com/user-attachments/assets/07529ca2-4347-44ce-9617-de67ded8eb68)
+![014](https://github.com/user-attachments/assets/27814499-2c24-4421-a4f9-0c3503b5f66b)
+
 
 
 This extension allows you to download models for generation from the civitai website.  To download a model you first need to specify your Civitai_API_key. In the Download Model section in the Civitai URL field you need to specify a link to the required model from the browser address bar and click Get Model Info by Civitai URL. After analysing the link you will be given information about the model. You will also be able to select the version of the model before downloading. This extension also allows you to find duplicates of downloaded models and check for updates. In addition, there is a group download option.
 
 3.	**Prompt Translate**
 
-![006](https://github.com/user-attachments/assets/cb186d90-37fb-42ac-ac7c-3540a27785ee)
+![image](https://github.com/user-attachments/assets/6ddff3b1-5e98-43d4-b102-b61176c40c84)
+
 
 Allows to translate both positive and negative prompts from any language into English, both before generation and directly during generation.
 
 4.	**Photopea** - a free online analogue of Photoshop
 
-![007](https://github.com/user-attachments/assets/593af9cb-5904-49a6-aa47-0f29776b0608)
+![007](https://github.com/user-attachments/assets/bd75f089-dee9-4c7a-a24b-2dfa5da7d2fd)
+
 
 5.	**Remove Background**
 
-![008](https://github.com/user-attachments/assets/fc7ad2bc-eeaa-4378-9166-0377a361dcc0)
+![008](https://github.com/user-attachments/assets/f34a2aff-a2ad-4f53-8edb-0703a2c69386)
+
 
 This extension is designed to add background removal, image/video processing, and blending to your projects. It provides precise background removal with support for multiple models, chroma keying, foreground adjustments, and advanced effects. Whether you’re working with images or videos, this extension provides everything you need to efficiently process visual content.
 
@@ -124,7 +135,8 @@ Multi-threaded processing: Efficiently process large files with streaming and GP
 
 6.	**OpenPoseEditor**
 
-![015](https://github.com/user-attachments/assets/d00bb18d-8b7e-46c3-bfcf-b77d7cf0bacb)
+![015](https://github.com/user-attachments/assets/e0c7d4e6-e288-41da-ba57-622bfe601551)
+
 
 This module allows you to create skeletons for subsequent image creation using OpenPose ControlNet. You can also create a skeleton from an existing image.
 
@@ -148,7 +160,8 @@ Allows you to color an image based on a sketch.
 
 10. **X/Y/Z Plot**
 
-![19](https://github.com/user-attachments/assets/02f5f5b4-99d8-47f6-9983-0a578b7bf086)
+![019](https://github.com/user-attachments/assets/a0392f94-8ef0-4377-a2d6-9d260ba4a20c)
+
 
 This extension allows you to make image grids to make it easier to see the difference between different generation settings and choose the best option. You can change the following parameters - Styles, Steps, Aspect Ratio, Seed, Sharpness, CFG (Guidance) Scale, Checkpoint, Refiner, Clip skip, Sampler, Scheduler, VAE, Refiner swap method, Softness of ControlNet, and also replace words in the prompt and change their order
 
@@ -171,7 +184,7 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
-V8 (current local version)
+V8 (current version)
 1. Save Image Grid for Each Batch
 2. Add X/Y/Z Plot Extention
 3. Prompt Batch is now in the extensions panel
