@@ -47,6 +47,10 @@ def apply_lora(field):
       p.loras[field] = (p.loras[field][0], x)
     return set_lora
 
+def apply_ctrlnet(field1,field2):
+    def set_ctrl(p,x,sx):
+      p.cn_tasks[field1][0][field2]=x
+    return set_ctrl
 def apply_prompt(p, x, xs):
     if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
         raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
@@ -298,7 +302,21 @@ axis_options = [
 	AxisOption("Scheduler", str, apply_field("scheduler_name"), choices=lambda: sorted(modules.flags.scheduler_list, key=str.casefold)),
 	AxisOption("VAE", str, apply_field("vae_name"), cost=0.7, choices=lambda: ['Default (model)'] + list(modules.config.vae_filenames)),
 #	  AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold))
-	AxisOption("Softness of ControlNet", float, apply_field("controlnet_softness"))
+	AxisOption("Softness of ControlNet", float, apply_field("controlnet_softness")),
+  AxisOption("ImagePrompt stop at", float, apply_ctrlnet("ImagePrompt",1)),
+  AxisOption("ImagePrompt weight", float, apply_ctrlnet("ImagePrompt",2)),
+  AxisOption("PyraCanny stop at", float, apply_ctrlnet("PyraCanny",1)),
+  AxisOption("PyraCanny weight", float, apply_ctrlnet("PyraCanny",2)),
+  AxisOption("CPDS stop at", float, apply_ctrlnet("CPDS",1)),
+  AxisOption("CPDS weight", float, apply_ctrlnet("CPDS",2)),
+  AxisOption("FaceSwap stop at", float, apply_ctrlnet("FaceSwap",1)),
+  AxisOption("FaceSwap weight", float, apply_ctrlnet("FaceSwap",2)),
+  AxisOption("OpenPose stop at", float, apply_ctrlnet("OpenPose",1)),
+  AxisOption("OpenPose weight", float, apply_ctrlnet("OpenPose",2)),
+  AxisOption("Recolor stop at", float, apply_ctrlnet("Recolor",1)),
+  AxisOption("Recolor weight", float, apply_ctrlnet("Recolor",2)),
+  AxisOption("Scribble stop at", float, apply_ctrlnet("Scribble",1)),
+  AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2))
 ]
 
 def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results):
