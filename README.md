@@ -190,7 +190,8 @@ V8 (current version)
 3. Prompt Batch is now in the extensions panel
 4. Images Batch has become easier to manage while retaining its functionality
 5. Images Batch is now in the extensions panel
-6. The extension Remove Background has been changed
+6. Add support VAE and LyCoris in Civitai_Helper
+7. The extension Remove Background has been changed
 
 V7
 1. Add OpenPoseEditor
