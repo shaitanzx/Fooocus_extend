@@ -192,6 +192,7 @@ V8 (current version)
 5. Images Batch is now in the extensions panel
 6. Add support VAE and LyCoris in Civitai_Helper
 7. The extension Remove Background has been changed
+8. Add auto update on startup
 
 V7
 1. Add OpenPoseEditor
