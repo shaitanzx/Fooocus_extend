@@ -157,6 +157,76 @@ class AsyncTask:
         self.should_enhance = self.enhance_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
         self.images_to_enhance_count = 0
         self.enhance_stats = {}
+        self.x_type = args.pop()
+        self.x_values = args.pop()
+        self.x_values_dropdown = args.pop()
+        self.y_type = args.pop()
+        self.y_values = args.pop()
+        self.y_values_dropdown = args.pop()
+        self.z_type = args.pop()
+        self.z_values = args.pop()
+        self.z_values_dropdown = args.pop()
+        self.draw_legend = args.pop()
+        self.include_lone_images = args.pop()
+        self.include_sub_grids = args.pop()
+        self.no_fixed_seeds = args.pop()
+        self.vary_seeds_x = args.pop()
+        self.vary_seeds_y = args.pop()
+        self.vary_seeds_z = args.pop()
+        self.margin_size = args.pop()
+        self.csv_mode = args.pop()
+        self.grid_theme = args.pop()
+        self.always_random = args.pop()
+        self.translate_enabled = args.pop()
+        self.srcTrans = args.pop()
+        self.toTrans = args.pop()
+        self.original_prompt = args.pop()
+        self.original_negative = args.pop()
+        self.model = args.pop()
+        self.base_model = args.pop()
+        self.size = args.pop()
+        self.amountofimages = args.pop()
+        self.insanitylevel = args.pop()
+        self.subject = args.pop()
+        self.artist = args.pop()
+        self.imagetype = args.pop()
+        self.silentmode = args.pop()
+        self.workprompt = args.pop()
+        self.antistring = args.pop()
+        self.prefixprompt = args.pop()
+        self.suffixprompt = args.pop()
+        self.promptcompounderlevel = args.pop()
+        self.seperator = args.pop()
+        self.givensubject = args.pop()
+        self.smartsubject = args.pop()
+        self.giventypeofimage = args.pop()
+        self.imagemodechance = args.pop()
+        self.gender = args.pop()
+        self.chosensubjectsubtypeobject = args.pop()
+        self.chosensubjectsubtypehumanoid = args.pop()
+        self.chosensubjectsubtypeconcept = args.pop()
+        self.promptvariantinsanitylevel = args.pop()
+        self.givenoutfit = args.pop()
+        self.autonegativeprompt = args.pop()
+        self.autonegativepromptstrength = args.pop()
+        self.autonegativepromptenhance = args.pop()
+        self.base_model_obp = args.pop()
+        self.OBP_preset = args.pop()
+        self.amountoffluff = args.pop()
+        self.promptenhancer = args.pop()
+        self.presetprefix = args.pop()
+        self.presetsuffix = args.pop()
+        self.seed_random = args.pop()
+        self.ratio = args.pop()
+        self.image_action = args.pop()
+        self.image_mode = args.pop()
+        self.ip_stop_batch = args.pop()
+        self.ip_weight_batch = args.pop()
+        self.upscale_mode = args.pop()
+        self.batch_prompt = args.pop()
+        self.positive_batch = args.pop()
+        self.negative_batch = args.pop()
+        
 
 async_tasks = []
 
@@ -275,7 +345,45 @@ def worker():
 
         # must use deep copy otherwise gradio is super laggy. Do not use list.append() .
         async_task.results = async_task.results + [wall]
-        log(wall, metadata=[('Grid', 'Grid', 'Grid')], metadata_parser=None, output_format=None, task=None, persist_image=True)
+        d = [('', 'grid', 'GRID'),
+                 ('Prompt', 'prompt', async_task.prompt),
+                 ('Negative Prompt', 'negative_prompt', async_task.negative_prompt),
+                 ('Styles', 'styles',async_task.style_selections),
+                 ('Performance', 'performance', async_task.performance_selection.value),
+                 ('Steps', 'steps', async_task.steps),
+                 ('Resolution', 'resolution', async_task.aspect_ratios_selection),
+                 ('Guidance Scale', 'guidance_scale', async_task.cfg_scale),
+                 ('Sharpness', 'sharpness', async_task.sharpness),
+                 ('ADM Guidance', 'adm_guidance', str((
+                     async_task.adm_scaler_positive,
+                     async_task.adm_scaler_negative,
+                     async_task.adm_scaler_end))),
+                 ('Base Model', 'base_model', async_task.base_model_name),
+                 ('VAE', 'vae', async_task.vae_name),
+                 ('Refiner Model', 'refiner_model', async_task.refiner_model_name),
+                 ('Refiner Switch', 'refiner_switch', async_task.refiner_switch)]
+
+        if async_task.refiner_model_name != 'None':
+                if async_task.overwrite_switch > 0:
+                    d.append(('Overwrite Switch', 'overwrite_switch', async_task.overwrite_switch))
+                if async_task.refiner_swap_method != flags.refiner_swap_method:
+                    d.append(('Refiner Swap Method', 'refiner_swap_method', async_task.refiner_swap_method))
+        if async_task.clip_skip > 1:
+            d.append(('CLIP Skip', 'clip_skip', async_task.clip_skip))
+            d.append(('Sampler', 'sampler', async_task.sampler_name))
+            d.append(('Scheduler', 'scheduler', async_task.scheduler_name))
+            d.append(('VAE', 'vae', async_task.vae_name))
+
+        if async_task.freeu_enabled:
+                d.append(('FreeU', 'freeu',
+                          str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
+
+        for li, (n, w) in enumerate(async_task.loras):
+                if n != 'None':
+                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+
+        
+        log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True)
         return
 
     def process_task(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path,
@@ -283,6 +391,7 @@ def worker():
                      denoising_strength, final_scheduler_name, goals, initial_latent, steps, switch, positive_cond,
                      negative_cond, task, loras, tiled, use_expansion, width, height, base_progress, preparation_steps,
                      total_count, show_intermediate_results, persist_image=True):
+        
         if async_task.last_stop is not False:
             ldm_patched.modules.model_management.interrupt_current_processing()
         if 'cn' in goals:
@@ -393,7 +502,7 @@ def worker():
                                          loras, async_task.vae_name)
             d.append(('Metadata Scheme', 'metadata_scheme',
                       async_task.metadata_scheme.value if async_task.save_metadata_to_images else async_task.save_metadata_to_images))
-            d.append(('Version', 'version', 'Fooocus v' + fooocus_version.version))
+            d.append(('Version', 'version', 'Fooocus ' + fooocus_version.version))
             img_paths.append(log(x, d, metadata_parser, async_task.output_format, task, persist_image))
 
         return img_paths
@@ -678,6 +787,7 @@ def worker():
 
     def process_prompt(async_task, prompt, negative_prompt, base_model_additional_loras, image_number, disable_seed_increment, use_expansion, use_style,
                        use_synthetic_refiner, current_progress, advance_progress=False):
+        
         prompts = remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')
         negative_prompts = remove_empty_str([safe_str(p) for p in negative_prompt.splitlines()], default='')
         prompt = prompts[0]
@@ -1119,6 +1229,7 @@ def worker():
     @torch.inference_mode()
     def handler(async_task: AsyncTask):
         preparation_start_time = time.perf_counter()
+        
         async_task.processing = True
 
         async_task.outpaint_selections = [o.lower() for o in async_task.outpaint_selections]
@@ -1517,12 +1628,15 @@ def worker():
             print(f'Enhancement image time: {enhancement_image_time:.2f} seconds')
 
         stop_processing(async_task, processing_start_time)
+        
         return
 
     while True:
         time.sleep(0.01)
+        
         if len(async_tasks) > 0:
             task = async_tasks.pop(0)
+            
 
             try:
                 handler(task)

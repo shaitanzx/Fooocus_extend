@@ -52,9 +52,14 @@ def prepare_environment():
                         exit(0)
             elif platform.system() == "Linux":
                 run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
-
+    def install_requirements(requirements_file):
+      with open(requirements_file, 'r', encoding='utf-8') as file:
+        for line in file:
+            line = line.strip()
+            if line and not line.startswith('#'):  # Игнорируем пустые строки и комментарии
+                run_pip(f"install {line}", desc=line)
     if REINSTALL_ALL or not requirements_met(requirements_file):
-        run_pip(f"install -r \"{requirements_file}\"", "requirements")
+        install_requirements(requirements_file)
 
     return
 
@@ -148,5 +153,6 @@ config.default_base_model_name, config.checkpoint_downloads = download_models(
 
 config.update_files()
 init_cache(config.model_filenames, config.paths_checkpoints, config.lora_filenames, config.paths_loras)
-
+if not os.path.exists('batch_images'):
+    os.mkdir('batch_images')
 from webui import *

@@ -44,10 +44,13 @@ from extentions import wildcards
 
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 
-from extentions.op_edit.body import Body
+#from extentions.op_edit.body import Body
+from extentions.op_edit import main as op_editor
 from pathlib import Path
 import io
 import cv2
+from extentions import xyz_grid as xyz
+from extentions import geeky_remb as GeekyRemBExtras
 
 obp_prompt=[]
 
@@ -61,66 +64,96 @@ modules.config.default_aspect_ratio=modules.config.default_aspect_ratio.replace(
 
 ar_def=[1,1]
 swap_def=False
-cell_index='0'
+finished_batch=False
+batch_path='./batch_images'
 
-def queue_obp(*args):
+
+
+    
+
+
+def xyz_plot_ext(currentTask):
+    global finished_batch
+    finished_batch=False    
+    currentTask.generate_image_grid=False
+    currentTask.image_number=1
+    currentTask.prompt=currentTask.original_prompt
+    currentTask.negative_prompt=currentTask.original_negative
+    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
+    temp_var=[]
+    for i, currentTask in enumerate(xyz_task):
+        currentTask.results+=temp_var
+        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}:\033[0m")
+        if not finished_batch:
+            if currentTask.translate_enabled:
+                  positive, negative = translate(currentTask.prompt, currentTask.negative_prompt, currentTask.srcTrans, currentTask.toTrans)            
+                  currentTask.prompt = positive
+                  currentTask.negative_prompt = negative
+            if currentTask.always_random:
+                  currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+            yield from generate_clicked(currentTask)
+            temp_var=currentTask.results
+    xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
+    return
+
+def obp_start(p):
     global finished_batch
     finished_batch=False
-    args = list(args)
-    seed_random = args.pop()
-    presetsuffix=args.pop()
-    presetprefix=args.pop()
-    promptenhancer=args.pop()
-    amountoffluff=args.pop()
-    OBP_preset=args.pop()
+#    args = list(args)
+#    seed_random = p.seed_random
+    presetsuffix=p.presetsuffix
+    presetprefix=p.presetprefix
+    promptenhancer=p.promptenhancer
+    amountoffluff=p.amountoffluff
+    OBP_preset=p.OBP_preset
 
-    base_model_obp=args.pop()
-    autonegativepromptenhance=args.pop()
-    autonegativepromptstrength=args.pop()
-    autonegativeprompt=args.pop()
-    givenoutfit=args.pop()
-    promptvariantinsanitylevel=args.pop()
-    chosensubjectsubtypeconcept=args.pop()
-    chosensubjectsubtypehumanoid=args.pop()
-    chosensubjectsubtypeobject=args.pop()
-    gender=args.pop()
-    imagemodechance=args.pop()
-    giventypeofimage=args.pop()
+    base_model_obp=p.base_model_obp
+    autonegativepromptenhance=p.autonegativepromptenhance
+    autonegativepromptstrength=p.autonegativepromptstrength
+    autonegativeprompt=p.autonegativeprompt
+    givenoutfit=p.givenoutfit
+    promptvariantinsanitylevel=p.promptvariantinsanitylevel
+    chosensubjectsubtypeconcept=p.chosensubjectsubtypeconcept
+    chosensubjectsubtypehumanoid=p.chosensubjectsubtypehumanoid
+    chosensubjectsubtypeobject=p.chosensubjectsubtypeobject
+    gender=p.gender
+    imagemodechance=p.imagemodechance
+    giventypeofimage=p.giventypeofimage
 
-    smartsubject=args.pop()
-    givensubject=args.pop()
-    seperator=args.pop()
-    promptcompounderlevel=args.pop()
-    negative_prompt=args.pop()
-    suffixprompt=args.pop()
-    prefixprompt=args.pop()
-    antistring=args.pop()
-    workprompt=args.pop()
-    silentmode=args.pop()
-    imagetype=args.pop()
-    artist=args.pop()
-    subject=args.pop()
-    insanitylevel=args.pop()
-    amountofimages=args.pop()
-    aspect_ratios_selection=args.pop()
-    size=args.pop()
-    base_model=args.pop()
-    model=args.pop()
+    smartsubject=p.smartsubject
+    givensubject=p.givensubject
+    seperator=p.seperator
+    promptcompounderlevel=p.promptcompounderlevel
+#    negative_prompt=p.negative_prompt
+    suffixprompt=p.suffixprompt
+    prefixprompt=p.prefixprompt
+    antistring=p.antistring
+    workprompt=p.workprompt
+    silentmode=p.silentmode
+    imagetype=p.imagetype
+    artist=p.artist
+    subject=p.subject
+    insanitylevel=p.insanitylevel
+    amountofimages=p.amountofimages
+#    aspect_ratios_selection=p.aspect_ratios_selection
+    size=p.size
+#    base_model=p.base_model
+#    model=p.model
     
     sect_models=ob_prompt.modellist
-    cur_sect_models=model
+    cur_sect_models=p.model
     model_list=modules.config.model_filenames
-    cur_model=base_model
+    cur_model=p.base_model
 
     sect_ratios=ob_prompt.sizelist
-    cur_sect_ratios=size
+    cur_sect_ratios=p.size
     ratio_list=['768×1344 ∣ 4:7','896×1152 ∣ 7:9','1024×1024 ∣ 1:1','1152×896 ∣ 9:7','1344×768 ∣ 7:4']
-    cur_ratio=aspect_ratios_selection
+    cur_ratio=p.aspect_ratios_selection
 
-    originalnegativeprompt = negative_prompt
-    prompts=amountofimages
+    originalnegativeprompt = p.negative_prompt
+    prompts=p.amountofimages
 
-    if(silentmode==True and workprompt != ""):
+    if(p.silentmode==True and p.workprompt != ""):
         randomprompt = ob_prompt.createpromptvariant(workprompt, promptvariantinsanitylevel)
         print("Using provided workflow prompt")
         print(randomprompt)
@@ -128,7 +161,7 @@ def queue_obp(*args):
             randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
             randomprompt = randompromptlist[0]
             randomsubject = randompromptlist[1]
-    negativeprompt=negative_prompt
+    negativeprompt=p.negative_prompt
     if(autonegativeprompt):
             negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
     randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
@@ -177,14 +210,14 @@ def queue_obp(*args):
                   name_ratio=cur_ratio
               else:
                   name_ratio=ratio_list[(sect_ratios.index(cur_sect_ratios)-2)]
-              args[2]=randomprompt
-              args[3]=negativeprompt
-              args[13]=name_model
-              args[6]=name_ratio
-              currentTask=get_task_batch(args)
-              yield from generate_clicked(currentTask)
-              if seed_random:
-                  args[9]=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+              p.prompt=randomprompt
+              p.negative_prompt=negativeprompt
+              p.base_model_name=name_model
+              p.aspect_ratios_selection=name_ratio
+#              currentTask=get_task_batch(args)
+              yield from generate_clicked(p)
+              if p.seed_random:
+                  p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
 
 
 
@@ -196,11 +229,8 @@ def get_task(*args):
     argsList = list(args)
     toT = argsList.pop() 
     srT = argsList.pop() 
-    trans_automate = argsList.pop() 
     trans_enable = argsList.pop() 
-
     if trans_enable:      
-        if trans_automate:
             positive, negative = translate(argsList[2], argsList[3], srT, toT)            
             argsList[2] = positive
             argsList[3] = negative
@@ -208,153 +238,89 @@ def get_task(*args):
     args = tuple(argsList)
     args = list(args)
     args.pop(0)
-
     return worker.AsyncTask(args=args)
-finished_batch=False
-batch_path='./batch_images'
-
-def unzip_file(zip_file_obj):
-    extract_folder = "./batch_images"
-    if not os.path.exists(extract_folder):
-      os.makedirs(extract_folder)    
-    zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
-    zip_ref.extractall(extract_folder)
-    zip_ref.close()
-    return
-def output_zip():
-  directory=modules.config.path_outputs
-  zip_file='outputs.zip'
-  with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(directory):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
-  zipf.close()
-  current_dir = os.getcwd()
-  file_path = os.path.join(current_dir, "outputs.zip")
-  return file_path
-
-def stop_clicked_batch():
+     
+def im_batch_run(p):
     global finished_batch
-    finished_batch=True
-    return
- 
-def delete_out(directory):
-    for filename in os.listdir(directory):
-        file_path = os.path.join(directory, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.remove(file_path)
-            elif os.path.isdir(file_path):
-                delete_out(file_path)
-                os.rmdir(file_path)
-        except Exception as e:
-                print(f'Failed to delete {file_path}. Reason: {e}')
-    return
-def clear_outputs():
-  directory=modules.config.path_outputs
-  delete_out(directory)
-  return 
-def clearer():
-  directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
-  delete_out(directory)
-  return      
-def queue_new(*args):
-    global finished_batch
-    global cell_index
-    index = int(cell_index)*4
-    finished_batch=False 
-    args = list(args)
-    seed_random = args.pop()
-    scale=args.pop()    
-    lora_args=3*(int(modules.config.default_max_lora_number))
-    ip_cell=66+lora_args+index
-    
+    finished_batch=False
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
+    check=p.input_image_checkbox
     passed=1
     for f_name in batch_files:
       if not finished_batch:  
-        copy = args[:]
+        pc = copy.deepcopy(p)
         img = Image.open('./batch_images/'+f_name)
-        if args[(16+lora_args)]:
-            if (args[(17+lora_args)] == 'uov'): 
-              args[(19+lora_args)]=np.array(img)
-            if (args[(17+lora_args)] == 'ip'):
-                  width, height = img.size
-                  if scale=="to ORIGINAL":
-                      aspect = math.gcd(width, height)
-                      args[6]=f'{width}×{height} <span style="color: grey;"> ∣ {width // aspect}:{height // aspect}</span>'
-                  if scale=="to OUTPUT":
-                      new_width, new_height = args[6].replace('×', ' ').split(' ')[:2]
-                      new_width = int(new_width)
-                      new_height = int(new_height)
-                      ratio = min(float(new_width) / width, float(new_height) / height)
-                      w = int(width * ratio)
-                      h = int(height * ratio)
-                      img = img.resize((w, h), Image.LANCZOS)
-                  args[ip_cell]=np.array(img)
-        print (f"[Images QUEUE] {passed} / {batch_all}. Filename: {f_name}")
+        if not p.input_image_checkbox:
+            p.cn_tasks = {x: [] for x in flags.ip_list}
+        if p.image_action == 'Upscale': 
+              p.uov_input_image=np.array(img)
+              p.uov_method = p.upscale_mode
+              p.current_tab = 'uov'
+        else:
+              p.current_tab = 'ip'
+              width, height = img.size
+              if p.ratio=="to ORIGINAL":
+                  aspect = math.gcd(width, height)
+                  p.aspect_ratios_selection = f'{width}×{height} <span style="color: grey;"> ∣ {width // aspect}:{height // aspect}</span>'
+              if p.ratio=="to OUTPUT":
+                  new_width, new_height = p.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
+                  new_width = int(new_width)
+                  new_height = int(new_height)
+                  ratio = min(float(new_width) / width, float(new_height) / height)
+                  w = int(width * ratio)
+                  h = int(height * ratio)
+                  img = img.resize((w, h), Image.LANCZOS)
+              p.cn_tasks[p.image_mode].append([np.array(img), p.ip_stop_batch, p.ip_weight_batch])
+        print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         passed+=1
-        currentTask=get_task_batch(args)
-        yield from generate_clicked(currentTask)
-        args=copy[:]
-        if seed_random:
-          args[9]=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-    clearer()
+        p.input_image_checkbox=True
+        if p.translate_enabled:
+                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
+                  p.prompt = positive
+                  p.negative_prompt = negative
+        yield from generate_clicked(p)
+        p = copy.deepcopy(pc)
+        if p.seed_random:
+          p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+    p.input_image_checkbox=check
     return
-def queue_new_prompt(*args):
+def pr_batch_start(p):
   global finished_batch
   finished_batch=False
-  args = list(args)
-  base_neg_token = args.pop()
-  base_pos_token = args.pop()
-  seed_random = args.pop()
-  batch_args = args.pop()
-  batch_args.reverse()
-  copy = args[:]
+  p.batch_prompt.reverse()
+  batch_prompt=p.batch_prompt
+  pc = copy.deepcopy(p)
   passed=1
-  while batch_args and not finished_batch:
-      print (f"[Prompts QUEUE] Element #{passed}")
-      one_batch_args=batch_args.pop()
-      if base_pos_token=='Prefix':
-        args[2]= args[2] + one_batch_args[0]
-      elif base_pos_token=='Suffix':
-        args[2]= one_batch_args[0] + args[2]
+  while batch_prompt and not finished_batch:
+      print (f"\033[91m[Prompts QUEUE] Element #{passed} \033[0m")
+      one_batch_args=batch_prompt.pop()
+      if p.positive_batch=='Prefix':
+        p.prompt= p.original_prompt + one_batch_args[0]
+      elif p.positive_batch=='Suffix':
+        p.prompt= one_batch_args[0] + p.original_prompt
       else:
-        args[2]=one_batch_args[0]
-      if base_neg_token=='Prefix':
-        args[3]= args[3] + one_batch_args[1]
-      elif base_neg_token=='Suffix':
-        args[3]= one_batch_args[1] + args[3]
+        p.prompt=one_batch_args[0]
+      if p.negative_batch=='Prefix':
+        p.negative_prompt= p.original_negative + one_batch_args[1]
+      elif p.negative_batch=='Suffix':
+        p.negative_prompt= one_batch_args[1] + p.original_negative
       else:
-        args[3]=one_batch_args[1]
-      currentTask=get_task_batch(args)
-      yield from generate_clicked(currentTask)
-      args=copy[:]
-      if seed_random:
-        args[9]=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+        p.negative_prompt=one_batch_args[1]
+      if len(p.prompt)>0:
+        if p.translate_enabled:
+                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
+                  p.prompt = positive
+                  p.negative_prompt = negative
+        yield from generate_clicked(p)
+      p = copy.deepcopy(pc)
+      if p.seed_random:
+        p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
       passed+=1
   return 
-def prompt_clearer(batch_prompt):
-  batch_prompt=[{'prompt': '', 'negative prompt': ''}]
-  return batch_prompt
 
-def get_task_batch(*args):
-    argsList = list(args[0])
-    toT = argsList.pop() 
-    srT = argsList.pop() 
-    trans_automate = argsList.pop() 
-    trans_enable = argsList.pop() 
-    if trans_enable:      
-        if trans_automate:
-            positive, negative = translate(argsList[2], argsList[3], srT, toT)            
-            argsList[2] = positive
-            argsList[3] = negative            
-    args = tuple(argsList)
-    args = list(args)
-    args.pop(0)
-    return worker.AsyncTask(args=args)
+
+
 
 def generate_clicked(task: worker.AsyncTask):
     import ldm_patched.modules.model_management as model_management
@@ -513,6 +479,8 @@ with shared.gradio_root:
                     def stop_clicked(currentTask):
                         import ldm_patched.modules.model_management as model_management
                         currentTask.last_stop = 'stop'
+                        global finished_batch
+                        finished_batch=True
                         if (currentTask.processing):
                             model_management.interrupt_current_processing()
                         return currentTask
@@ -881,80 +849,145 @@ with shared.gradio_root:
 
             input_image_checkbox.change(lambda x: gr.update(visible=x), inputs=input_image_checkbox,
                                         outputs=image_input_panel, queue=False, show_progress=False, _js=switch_js)
-            with gr.Row(elem_classes='advanced_check_row'):
-                batch_checkbox = gr.Checkbox(label='Images Batch', value=False, container=False, elem_classes='min_check')
-                prompt_checkbox = gr.Checkbox(label='Prompts Batch', value=False, container=False, elem_classes='min_check')
 
-            with gr.Row(visible=False) as batch_panel:
-
-                with gr.Row():
-                  file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'])                 
-                  with gr.Column():
-                    def update_radio(value):
-                      return gr.update(value=value)
-                    ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
-                    gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
-                with gr.Row():
-                  with gr.Column():
-                    def cell_index_change(index):
-                      global cell_index
-                      cell_index = index
-                      return
-                    add_to_queue = gr.Button(label="Add to queue", value='Add to queue ({}'.format(len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))]))+')', elem_id='add_to_queue', visible=True)
-                    batch_start = gr.Button(value='Start queue', visible=True)
-                    batch_stop = gr.Button(value='Stop queue', visible=False)
-                    batch_clear = gr.Button(value='Clear queue')
-                    select_target_batch = gr.Dropdown([str(i) for i in range(modules.config.default_controlnet_image_count)], label="Use cell", value=cell_index, interactive=True, visible=(modules.config.default_controlnet_image_count > 1))
-                    status_batch = gr.Textbox(show_label=False, value = '', container=False, visible=False, interactive=False)
-                    select_target_batch.change(cell_index_change,inputs=select_target_batch)
-
-                with gr.Row():
-                  with gr.Column():
-                    file_out=gr.File(label="Download a ZIP file", file_count='single')
-                    save_output = gr.Button(value='Output --> ZIP')
-                    clear_output = gr.Button(value='Clear Output')
             ip_advanced.change(lambda: None, queue=False, show_progress=False, _js=down_js)
-            batch_checkbox.change(lambda x: gr.update(visible=x), inputs=batch_checkbox,
-                                        outputs=batch_panel, queue=False, show_progress=False, _js=switch_js)
-            with gr.Row(visible=False) as prompt_panel:
-
-
-                def prompts_delete(batch_prompt):
-                  if len(batch_prompt) > 1:
-                      removed=batch_prompt.pop()
-                  return batch_prompt
-
-
-                with gr.Column():
-                    batch_prompt=gr.Dataframe(
-                      headers=["prompt", "negative prompt"],
-                      datatype=["str", "str"],
-                      row_count=1, wrap=True,
-                      col_count=(2, "fixed"), type="array", interactive=True)
-                    with gr.Row():
-                      positive_batch = gr.Radio(label='Base positive prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
-                      negative_batch = gr.Radio(label='Base negative prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
-                    with gr.Row():
-                      prompt_delete=gr.Button(value="Delete last row")
-                      prompt_clear=gr.Button(value="Clear Batch")
-                      prompt_start=gr.Button(value="Start batch", visible=True)
-                      prompt_stop=gr.Button(value="Stop batch", visible=False)
-                    with gr.Row():
-                      gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
-                
-                prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
-                prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
-            prompt_checkbox.change(lambda x: gr.update(visible=x), inputs=prompt_checkbox,
-                                        outputs=prompt_panel, queue=False, show_progress=False, _js=switch_js)
-
             current_tab = gr.Textbox(value='uov', visible=False)
             uov_tab.select(lambda: 'uov', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             inpaint_tab.select(lambda: 'inpaint', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-			
             with gr.Row(elem_classes='extend_row'):
                 with gr.Accordion('Extention', open=False):
+                  with gr.TabItem(label='Civitai_helper') as download_tab:
+                        civitai_helper.civitai_help()
+                  with gr.TabItem(label='Image Batch') as im_batch:
+                        def unzip_file(zip_file_obj):
+                            extract_folder = "./batch_images"
+                            if not os.path.exists(extract_folder):
+                                os.makedirs(extract_folder)
+                            zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
+                            zip_ref.extractall(extract_folder)
+                            zip_ref.close()
+                            return
+                        def delete_out(directory):
+                            for filename in os.listdir(directory):
+                                file_path = os.path.join(directory, filename)
+                                try:
+                                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                                        os.remove(file_path)
+                                    elif os.path.isdir(file_path):
+                                            delete_out(file_path)
+                                            os.rmdir(file_path)
+                                except Exception as e:
+                                    print(f'Failed to delete {file_path}. Reason: {e}')
+                            return
+                        def clear_outputs():
+                            directory=modules.config.path_outputs
+                            delete_out(directory)
+                            return 
+                        def output_zip():
+                            directory=modules.config.path_outputs
+                            zip_file='outputs.zip'
+                            with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                                for root, dirs, files in os.walk(directory):
+                                    for file in files:
+                                        file_path = os.path.join(root, file)
+                                        zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
+                            zipf.close()
+                            current_dir = os.getcwd()
+                            file_path = os.path.join(current_dir, "outputs.zip")
+                            return file_path
+                        def clearer():
+                            if not finished_batch:
+                              directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
+                              delete_out(directory)
+                            return 
+                        
+                        
+                        with gr.Row():
+                          with gr.Column():
+                            file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'])
+                            
+                            def update_radio(value):
+                              return gr.update(value=value)
+                            ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
+                            
+
+                          with gr.Column():
+                            image_action = gr.Dropdown(choices=['Image Prompt','Upscale'], value='Image Prompt', label='Action',interactive=True)
+                            image_mode = gr.Dropdown(choices=flags.ip_list, value=flags.ip_list[0], label='Method',interactive=True)
+                            ip_stop_batch = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=flags.default_parameters[image_mode.value][0],interactive=True)
+                            ip_weight_batch = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=flags.default_parameters[image_mode.value][1],interactive=True)
+                            upscale_mode = gr.Dropdown(choices=flags.uov_list, value=flags.uov_list[0], label='Method',interactive=True,visible=False)
+                            add_to_queue = gr.Button(label="Add to queue", value='Add to queue ({}'.format(len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))]))+')', elem_id='add_to_queue', visible=True)
+                            batch_start = gr.Button(value='Start queue', visible=True)
+                            batch_clear = gr.Button(value='Clear queue')
+                            status_batch = gr.Textbox(show_label=False, value = '', container=False, visible=False, interactive=False)
+                          with gr.Column():
+                            file_out=gr.File(label="Download a ZIP file", file_count='single')
+                            save_output = gr.Button(value='Output --> ZIP')
+                            clear_output = gr.Button(value='Clear Output')
+                        with gr.Row():
+                          gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
+                        def image_action_change(image_action):
+                            if image_action=='Image Prompt':
+                              return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
+                            else:
+                              return gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=True)
+                        def image_mode_change(image_mode):
+                            ip_stop_batch=flags.default_parameters[image_mode][0]
+                            ip_weight_batch=flags.default_parameters[image_mode][1]
+                            return gr.update(value=ip_stop_batch), gr.update(value=ip_weight_batch)
+
+
+                        image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
+                        image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)    
+                        
+                        
+                        add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
+                                    outputs=[add_to_queue, status_batch]) \
+                                    .then(fn=unzip_file,inputs=file_in) \
+                                    .then(lambda: (gr.update(visible=False)),outputs=[status_batch]) \
+                                    .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
+                                    .then(lambda: (gr.update(interactive=True)),outputs=[add_to_queue])
+                        clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
+                                    .then(clear_outputs) \
+                                    .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
+                        save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
+                                    .then(fn=output_zip, outputs=file_out) \
+                                    .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
+                        batch_clear.click(lambda: (gr.update(interactive=False),  gr.update(visible=True,value='Queue is clearing')),
+                                    outputs=[batch_clear,status_batch]) \
+                                    .then(fn=clearer) \
+                                    .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
+                                    .then(lambda: (gr.update(interactive=True),gr.update(visible=False)),outputs=[batch_clear,status_batch])
+                  with gr.TabItem(label='Prompt Batch') as pr_batch:
+                        def prompt_clearer(batch_prompt):
+                            batch_prompt=[{'prompt': '', 'negative prompt': ''}]
+                            return batch_prompt
+                        def prompts_delete(batch_prompt):
+                            if len(batch_prompt) > 1:
+                                removed=batch_prompt.pop()
+                            return batch_prompt
+                        with gr.Row():
+#                            with gr.Column():
+                                batch_prompt=gr.Dataframe(
+                                    headers=["prompt", "negative prompt"],
+                                    datatype=["str", "str"],
+                                    row_count=1, wrap=True,
+                                    col_count=(2, "fixed"), type="array", interactive=True)
+                        with gr.Row():
+                                positive_batch = gr.Radio(label='Base positive prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
+                                negative_batch = gr.Radio(label='Base negative prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
+                        with gr.Row():
+                                prompt_delete=gr.Button(value="Delete last row")
+                                prompt_clear=gr.Button(value="Clear Batch")
+                                prompt_start=gr.Button(value="Start batch", visible=True)
+                        with gr.Row():
+                                gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
+                
+                        prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
+                        prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
                   with gr.TabItem(label='OBP') as obp_tab:
                         with gr.Tab("Main"):
                             with gr.Row(variant="compact"):
@@ -1127,7 +1160,7 @@ with shared.gradio_root:
                             with gr.Row(variant="compact"):
                                     with gr.Column(variant="compact"):
                                         start_obp = gr.Button("Start generating")
-                                        stop_obp = gr.Button("Stop generating")
+                                        
                         gr.HTML('* \"OneButtonPrompt\" is powered by AIrjen. <a href="https://github.com/AIrjen/OneButtonPrompt" target="_blank">\U0001F4D4 Document</a>')
                         gr.HTML('* Adaptation for Fooocus is powered by Shahmatist^RMDA')   
                         OBP_preset.change(ob_prompt.obppreset_changed,inputs=[OBP_preset],
@@ -1144,8 +1177,7 @@ with shared.gradio_root:
                         subject.change(ob_prompt.subjectsvalueforsubtypeobject,[subject],[chosensubjectsubtypeobject])
                         subject.change(ob_prompt.subjectsvalueforsubtypeconcept,[subject],[chosensubjectsubtypeconcept])
                         subject.change(ob_prompt.subjectsvalueforsubtypeobject,[subject],[chosensubjectsubtypehumanoid])
-                        genprom.click(ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
-                                outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
+                        
                         prompt1toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt1, outputs=workprompt)
                         prompt1toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt1, outputs=prompt)
                         prompt2toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt2, outputs=workprompt)
@@ -1157,8 +1189,7 @@ with shared.gradio_root:
                         prompt5toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
                         prompt5toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=prompt)
 
-                  with gr.TabItem(label='Civitai_helper') as download_tab:
-                        civitai_helper.civitai_help()
+
                   with gr.TabItem(label='Prompt Translate') as promp_tr_tab:       
                     langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                     langs_sup = list(langs_sup.values())
@@ -1173,8 +1204,6 @@ with shared.gradio_root:
                                        
                     with gr.Row():
                             translate_enabled = gr.Checkbox(label='Enable translate', value=False, elem_id='translate_enabled_el')
-                            translate_automate = gr.Checkbox(label='Auto translate "Prompt and Negative prompt" before Generate', value=True, interactive=True, elem_id='translate_enabled_el')
-                            
                     with gr.Row():
                             gtrans = gr.Button(value="Translate")        
 
@@ -1193,111 +1222,17 @@ with shared.gradio_root:
                             with gr.Row():            
                                 p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
                     gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
-                  with gr.TabItem(label='OpenPoseEditor', elem_id='op_edit_tab') as op_edit_tab:
-                    body_estimation = None
-                    presets_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extentions", "op_edit","presets.json")
-                    presets = {}
-
-                    try: 
-                      with open(presets_file) as file:
-                        presets = json.load(file)
-                    except FileNotFoundError:
-                      pass
-
-                    def pil2cv(in_image):
-                      out_image = np.array(in_image, dtype=np.uint8)
-
-                      if out_image.shape[2] == 3:
-                          out_image = cv2.cvtColor(out_image, cv2.COLOR_RGB2BGR)
-                      return out_image
-
-                    def candidate2li(li):
-                      res = []
-                      for x, y, *_ in li:
-                        res.append([x, y])
-                      return res
-
-                    def subset2li(li):
-                      res = []
-                      for r in li:
-                        for c in r:
-                          res.append(c)
-                      return res                    
-                    with gr.Row():
-                      with gr.Column():
-                        width_ope = gr.Slider(label="width", minimum=64, maximum=2048, value=512, step=64, interactive=True)
-                        height_ope = gr.Slider(label="height", minimum=64, maximum=2048, value=512, step=64, interactive=True)
-                        with gr.Row():
-                          add_ope = gr.Button(value="Add", variant="primary")
-                          # delete = gr.Button(value="Delete")
-                        with gr.Row():
-                          reset_btn_ope = gr.Button(value="Reset")
-                          json_input_ope = gr.UploadButton(label="Load from JSON", file_types=[".json"], elem_id="openpose_json_button")
-                          png_input_ope = gr.UploadButton(label="Detect from Image", file_types=["image"], type="bytes", elem_id="openpose_detect_button")
-                          bg_input_ope = gr.UploadButton(label="Add Background Image", file_types=["image"], elem_id="openpose_bg_button")
-                        with gr.Row():
-                          preset_list = gr.Dropdown(label="Presets", choices=sorted(presets.keys()), interactive=True)
-                          preset_load = gr.Button(value="Load Preset")
-                          preset_save = gr.Button(value="Save Preset")
-                        with gr.Row():
-                          json_output_ope = gr.Button(value="Save JSON")
-                          png_output_ope = gr.Button(value="Save PNG")
-                      with gr.Column():
-        # gradioooooo...
-                        canvas_ope = gr.HTML('<canvas id="openpose_editor_canvas" width="512" height="512" style="margin: 0.25rem; border-radius: 0.25rem; border: 0.5px solid"></canvas>')
-                        jsonbox_ope = gr.Text(label="json", elem_id="jsonbox", visible=False)
-                    def estimate(file):
-                      global body_estimation
-
-                      if body_estimation is None:
-                        model_path_ope = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "controlnet")
-                        model_file_ope = os.path.join(model_path_ope, "body_pose_model.pth")
-                        if not os.path.isfile(model_path_ope):
-
-                          load_file_from_url(
-                            url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/body_pose_model.pth",
-                            model_dir=model_path_ope,
-                            file_name='body_pose_model.pth')
+                  with gr.TabItem(label='Remove Background') as rembg_tab:
+                        GeekyRemBExtras.on_ui_tabs()
+                  with gr.TabItem(label=xyz.title()) as xyz_plot:
+                    x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random = xyz.ui()
+                    xyz_start=gr.Button(value="Start xyz",visible=True)
+                    gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
+                    gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
 
 
-                        body_estimation = Body(model_file_ope)
-        
-                      stream = io.BytesIO(file)
-                      img = Image.open(stream)
-                      candidate, subset = body_estimation(pil2cv(img))
-
-                      result = {
-                        "candidate": candidate2li(candidate),
-                        "subset": subset2li(subset),
-                      }
-      
-                      return str(result).replace("'", '"')
-
-                    def savePreset(name, data):
-                      if name:
-                        presets[name] = json.loads(data)
-                        with open(presets_file, "w") as file:
-                          json.dump(presets, file)
-                        return gr.update(choices=sorted(presets.keys()), value=name), json.dumps(data)
-                      return gr.update(), gr.update()
-
-                    dummy_component = gr.Label(visible=False)
-
-                    preset_ope = gr.Text(visible=False)
-                    width_ope.change(None, [width_ope, height_ope], None, _js="(w, h) => {resizeCanvas(w, h)}")
-                    height_ope.change(None, [width_ope, height_ope], None, _js="(w, h) => {resizeCanvas(w, h)}")
-                    png_output_ope.click(None, [], None, _js="savePNG")
-                    bg_input_ope.upload(None, [], [width_ope, height_ope], _js="() => {addBackground('openpose_bg_button')}")
-                    png_input_ope.upload(estimate, png_input_ope, jsonbox_ope)
-                    png_input_ope.upload(None, [], [width_ope, height_ope], _js="() => {addBackground('openpose_detect_button')}")
-                    add_ope.click(None, [], None, _js="addPose")
-                    reset_btn_ope.click(None, [], None, _js="resetCanvas")
-                    json_input_ope.upload(None, json_input_ope, [width_ope, height_ope], _js="() => {loadJSON('openpose_json_button')}")
-                    json_output_ope.click(None, None, None, _js="saveJSON")
-                    preset_save.click(savePreset, [dummy_component, dummy_component], [preset_list, preset_ope], _js="savePreset")
-                    preset_load.click(None, preset_ope, [width_ope, height_ope], _js="loadPreset")
-                    preset_list.change(lambda selected: json.dumps(presets[selected]), preset_list, preset_ope)
-
+                  with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
+                    op_editor.ui()
                   with gr.TabItem(label='Photopea') as photopea_tab:
                     PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
                     PHOTOPEA_IFRAME_ID = 'webui-photopea-iframe'
@@ -1319,23 +1254,6 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-
-
-                  with gr.TabItem(label='Remove Background') as rembg_tab:
-                        def rembg_run(path, progress=gr.Progress(track_tqdm=True)):
-                          input = Image.open(path)
-                          output = remove(input)
-                          return output
-                        with gr.Row():
-                            with gr.Column():
-                                rembg_input = gr.Image(label='Drag above image to here', source='upload', type='filepath', height=380)
-                            with gr.Column():
-                                rembg_output = gr.Image(label='rembg Output', interactive=False, height=380)
-                        with gr.Row():
-                          rembg_button = gr.Button(value='Remove Background', interactive=True)
-                        with gr.Row():
-                          gr.Markdown('Powered by [🪄 rembg 2.0.53](https://github.com/danielgatis/rembg/releases/tag/v2.0.53)')
-                        rembg_button.click(rembg_run, inputs=rembg_input, outputs=rembg_output, show_progress='full')
 
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
@@ -1872,7 +1790,7 @@ with shared.gradio_root:
                   enhance_input_image, enhance_checkbox, enhance_uov_method, enhance_uov_processing_order,
                   enhance_uov_prompt_type]
         ctrls += enhance_ctrls
-        ctrls += [translate_enabled, translate_automate, srcTrans, toTrans]
+        
 		
 
         def parse_meta(raw_prompt_txt, is_generating):
@@ -1905,6 +1823,40 @@ with shared.gradio_root:
 
         metadata_import_button.click(trigger_metadata_import, inputs=[metadata_input_image, state_is_generating], outputs=load_data_outputs, queue=False, show_progress=True) \
             .then(style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False)
+        
+        ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
+        ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
+        ctrls += [model,base_model,size,amountofimages,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,seed_random]
+        ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
+        ctrls += [batch_prompt,positive_batch,negative_batch]
+        ctrls += [translate_enabled, srcTrans, toTrans]
+        def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
+            if translate_enabled:
+                  workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
+            return workprompt
+        genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
+            .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
+                  outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
+        xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[xyz_start, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
+            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+            .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
+            .then(fn=xyz_plot_ext, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
+            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
+                  outputs=[xyz_start,generate_button, stop_button, skip_button, state_is_generating]) \
+            .then(fn=update_history_link, outputs=history_link) \
+            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+        start_obp.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[start_obp, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
+              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+              .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
+              .then(fn=obp_start,inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
+                  outputs=[start_obp,generate_button, stop_button, skip_button, state_is_generating]) \
+              .then(fn=update_history_link, outputs=history_link) \
+              .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+ 
         generate_button.click(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
@@ -1915,60 +1867,28 @@ with shared.gradio_root:
                   outputs=[generate_button, stop_button, skip_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        ctrls_batch = ctrls[:]
-        ctrls_batch.append(ratio)
-        ctrls_batch.append(seed_random)
-        add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
-                                    outputs=[add_to_queue, status_batch]) \
-              .then(fn=unzip_file,inputs=file_in) \
-              .then(lambda: (gr.update(visible=False)),outputs=[status_batch]) \
-              .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
-              .then(lambda: (gr.update(interactive=True)),outputs=[add_to_queue])
-        clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
-              .then(clear_outputs) \
-              .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
-        save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
-            .then(fn=output_zip, outputs=file_out) \
-            .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
-        batch_clear.click(lambda: (gr.update(interactive=False),  gr.update(visible=True,value='Queue is clearing')),
-                        outputs=[batch_clear,status_batch]) \
+
+        batch_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True,gr.update(visible=True,value='Queue in progress')),
+                              outputs=[batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating,status_batch]) \
+              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+              .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
+              .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(fn=clearer) \
-              .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
-              .then(lambda: (gr.update(interactive=True),gr.update(visible=False)),outputs=[batch_clear,status_batch])
-        batch_start.click(lambda: (gr.update(visible=False),gr.update(visible=False), gr.update(visible=True, interactive=True),gr.update(visible=True,value='Queue in progress')),
-                          outputs=[generate_button,batch_start, batch_stop, status_batch]) \
-              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-              .then(fn=queue_new, inputs=ctrls_batch, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(visible=True),gr.update(visible=False), gr.update(visible=True),gr.update(visible=False)),
-                          outputs=[generate_button,batch_stop, batch_start,status_batch]) \
+              .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False,gr.update(visible=False)),
+                  outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating,status_batch]) \
               .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue])
-        batch_stop.click(stop_clicked_batch, queue=False, show_progress=False, _js='cancelGenerateForever')
-        ctrls_prompt = ctrls[:]
-        ctrls_prompt.append(batch_prompt)
-        ctrls_prompt.append(seed_random)
-        ctrls_prompt.append(positive_batch)
-        ctrls_prompt.append(negative_batch)
-        prompt_start.click(lambda: (gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(visible=False),gr.update(visible=False), gr.update(visible=True, interactive=True)),
-                              outputs=[batch_prompt,prompt_delete,prompt_clear,generate_button,prompt_start, prompt_stop]) \
+
+        prompt_start.click(lambda: (gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[prompt_start,prompt_delete,prompt_clear,batch_prompt,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-              .then(fn=queue_new_prompt,inputs=ctrls_prompt, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True),gr.update(visible=False), gr.update(visible=True)),
-                          outputs=[batch_prompt,prompt_delete,prompt_clear,generate_button,prompt_stop, prompt_start]) \
+              .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
+              .then(fn=pr_batch_start,inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
+                  outputs=[prompt_start,batch_prompt,prompt_delete,prompt_clear,generate_button, stop_button, skip_button, state_is_generating]) \
               .then(fn=update_history_link, outputs=history_link) \
               .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        prompt_stop.click(stop_clicked_batch, queue=False, show_progress=False, _js='cancelGenerateForever')
-        ctrls_obp = ctrls[:]
-        obp_ctrl=[model,base_model,size,aspect_ratios_selection,amountofimages,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,negative_prompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,seed_random]
-        ctrls_obp.extend(obp_ctrl)
-        start_obp.click(lambda: (gr.update(visible=False),gr.update(interactive=False)),
-                              outputs=[generate_button,start_obp]) \
-              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-              .then(fn=queue_obp,inputs=ctrls_obp, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(visible=True),gr.update(interactive=True),gr.update(interactive=True)),
-                          outputs=[generate_button,start_obp,stop_obp]) \
-              .then(fn=update_history_link, outputs=history_link) \
-              .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        stop_obp.click(stop_clicked_batch, queue=False, show_progress=False, _js='cancelGenerateForever')
+
 
         reset_button.click(lambda: [worker.AsyncTask(args=[]), False, gr.update(visible=True, interactive=True)] +
                                    [gr.update(visible=False)] * 6 +

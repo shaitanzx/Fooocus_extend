@@ -37,8 +37,9 @@ folders = {
     "ti": md_config.path_emb,
 ##    "hyper": os.path.join(ROOT_PATH, "models", "hypernetworks"),
     "ckp": md_config.path_ckp,
-    "lora": md_config.path_lora
-##    "lycoris": os.path.join(ROOT_PATH, "models", "LyCORIS"),
+    "lora": md_config.path_lora,
+    "lycoris": md_config.path_lora,
+    "vae": md_config.path_vae
 }
 
 # Separate because the above is used for detecting supported models
