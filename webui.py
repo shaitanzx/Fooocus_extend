@@ -858,34 +858,8 @@ with shared.gradio_root:
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
                 with gr.Accordion('Extention', open=False):
-                  with gr.TabItem(label='Prompt Batch') as pr_batch:
-                        def prompt_clearer(batch_prompt):
-                            batch_prompt=[{'prompt': '', 'negative prompt': ''}]
-                            return batch_prompt
-                        def prompts_delete(batch_prompt):
-                            if len(batch_prompt) > 1:
-                                removed=batch_prompt.pop()
-                            return batch_prompt
-                        with gr.Row():
-#                            with gr.Column():
-                                batch_prompt=gr.Dataframe(
-                                    headers=["prompt", "negative prompt"],
-                                    datatype=["str", "str"],
-                                    row_count=1, wrap=True,
-                                    col_count=(2, "fixed"), type="array", interactive=True)
-                        with gr.Row():
-                                positive_batch = gr.Radio(label='Base positive prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
-                                negative_batch = gr.Radio(label='Base negative prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
-                        with gr.Row():
-                                prompt_delete=gr.Button(value="Delete last row")
-                                prompt_clear=gr.Button(value="Clear Batch")
-                                prompt_start=gr.Button(value="Start batch", visible=True)
-                        with gr.Row():
-                                gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
-                
-                        prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
-                        prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
-
+                  with gr.TabItem(label='Civitai_helper') as download_tab:
+                        civitai_helper.civitai_help()
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def unzip_file(zip_file_obj):
                             extract_folder = "./batch_images"
@@ -987,11 +961,33 @@ with shared.gradio_root:
                                     .then(fn=clearer) \
                                     .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
                                     .then(lambda: (gr.update(interactive=True),gr.update(visible=False)),outputs=[batch_clear,status_batch])
-                  with gr.TabItem(label=xyz.title()) as xyz_plot:
-                    x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random = xyz.ui()
-                    xyz_start=gr.Button(value="Start xyz",visible=True)
-                    gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
-                    gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
+                  with gr.TabItem(label='Prompt Batch') as pr_batch:
+                        def prompt_clearer(batch_prompt):
+                            batch_prompt=[{'prompt': '', 'negative prompt': ''}]
+                            return batch_prompt
+                        def prompts_delete(batch_prompt):
+                            if len(batch_prompt) > 1:
+                                removed=batch_prompt.pop()
+                            return batch_prompt
+                        with gr.Row():
+#                            with gr.Column():
+                                batch_prompt=gr.Dataframe(
+                                    headers=["prompt", "negative prompt"],
+                                    datatype=["str", "str"],
+                                    row_count=1, wrap=True,
+                                    col_count=(2, "fixed"), type="array", interactive=True)
+                        with gr.Row():
+                                positive_batch = gr.Radio(label='Base positive prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
+                                negative_batch = gr.Radio(label='Base negative prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
+                        with gr.Row():
+                                prompt_delete=gr.Button(value="Delete last row")
+                                prompt_clear=gr.Button(value="Clear Batch")
+                                prompt_start=gr.Button(value="Start batch", visible=True)
+                        with gr.Row():
+                                gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
+                
+                        prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
+                        prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
                   with gr.TabItem(label='OBP') as obp_tab:
                         with gr.Tab("Main"):
                             with gr.Row(variant="compact"):
@@ -1193,8 +1189,7 @@ with shared.gradio_root:
                         prompt5toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
                         prompt5toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=prompt)
 
-                  with gr.TabItem(label='Civitai_helper') as download_tab:
-                        civitai_helper.civitai_help()
+
                   with gr.TabItem(label='Prompt Translate') as promp_tr_tab:       
                     langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                     langs_sup = list(langs_sup.values())
@@ -1227,6 +1222,15 @@ with shared.gradio_root:
                             with gr.Row():            
                                 p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
                     gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
+                  with gr.TabItem(label='Remove Background') as rembg_tab:
+                        GeekyRemBExtras.on_ui_tabs()
+                  with gr.TabItem(label=xyz.title()) as xyz_plot:
+                    x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random = xyz.ui()
+                    xyz_start=gr.Button(value="Start xyz",visible=True)
+                    gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
+                    gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
+
+
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
                   with gr.TabItem(label='Photopea') as photopea_tab:
@@ -1250,8 +1254,7 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-                  with gr.TabItem(label='Remove Background') as rembg_tab:
-                        GeekyRemBExtras.on_ui_tabs()
+
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             enhance_checkbox.change(lambda x: gr.update(visible=x), inputs=enhance_checkbox,
