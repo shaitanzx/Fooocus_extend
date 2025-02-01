@@ -1350,6 +1350,8 @@ with shared.gradio_root:
                                          choices=flags.OutputFormat.list(),
                                          value=modules.config.default_output_format)
 
+                name_prefix = gr.Textbox(label='Filename Prefix', show_label=True)
+
                 negative_prompt = gr.Textbox(label='Negative Prompt', show_label=True, placeholder="Type prompt here.",
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
@@ -1825,6 +1827,7 @@ with shared.gradio_root:
         ctrls += [model,base_model,size,amountofimages,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,seed_random]
         ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [batch_prompt,positive_batch,negative_batch]
+        ctrls += [name_prefix]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
