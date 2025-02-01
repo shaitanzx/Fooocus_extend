@@ -63,9 +63,8 @@ None - basic prompts will not be added.
 Prefix - base prompts will be added before prompts from the table.
 Suffix - base samples will be added after samples from the table.
 
-Now let's look at the Extention panel. Here are some extensions for Stable Forge adapted for Fooocus
 
-1.	**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
+6.	**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
    
 ![009](https://github.com/user-attachments/assets/0f0005e7-1c0f-48b6-9c89-7ad1842d974e)
 
@@ -92,7 +91,7 @@ This is where you can control the generation of negative prompts
 
 In this tab you can start the image generation queue by generated samples. Before starting you need to specify the aspect ratio of the generated image (Size to generate), the number of generated prompts (Generation of prompts), and the models to use (Model to use).
 
-2.	**Civitai Helper**
+7.	**Civitai Helper**
 
 ![014](https://github.com/user-attachments/assets/27814499-2c24-4421-a4f9-0c3503b5f66b)
 
@@ -100,19 +99,19 @@ In this tab you can start the image generation queue by generated samples. Befor
 
 This extension allows you to download models for generation from the civitai website.  To download a model you first need to specify your Civitai_API_key. In the Download Model section in the Civitai URL field you need to specify a link to the required model from the browser address bar and click Get Model Info by Civitai URL. After analysing the link you will be given information about the model. You will also be able to select the version of the model before downloading. This extension also allows you to find duplicates of downloaded models and check for updates. In addition, there is a group download option.
 
-3.	**Prompt Translate**
+8.	**Prompt Translate**
 
 ![image](https://github.com/user-attachments/assets/6ddff3b1-5e98-43d4-b102-b61176c40c84)
 
 
 Allows to translate both positive and negative prompts from any language into English, both before generation and directly during generation.
 
-4.	**Photopea** - a free online analogue of Photoshop
+9.	**Photopea** - a free online analogue of Photoshop
 
 ![007](https://github.com/user-attachments/assets/bd75f089-dee9-4c7a-a24b-2dfa5da7d2fd)
 
 
-5.	**Remove Background**
+10.	**Remove Background**
 
 ![008](https://github.com/user-attachments/assets/f34a2aff-a2ad-4f53-8edb-0703a2c69386)
 
@@ -133,39 +132,39 @@ Video and image support: Easily process images and videos.
 
 Multi-threaded processing: Efficiently process large files with streaming and GPU support. Customizable output formats: Export to PNG, JPEG, MP4, AVI, and more.
 
-6.	**OpenPoseEditor**
+11.	**OpenPoseEditor**
 
 ![015](https://github.com/user-attachments/assets/e0c7d4e6-e288-41da-ba57-622bfe601551)
 
 
 This module allows you to create skeletons for subsequent image creation using OpenPose ControlNet. You can also create a skeleton from an existing image.
 
-7.	**OpenPose ControlNet**
+12.	**OpenPose ControlNet**
 
 ![016](https://github.com/user-attachments/assets/68af63fb-ab4f-48cb-aa2b-989dc57166a4)
 
 Allows you to create an image based on the pose skeleton.
 
-8.	**Recolor ControlNet**
+13.	**Recolor ControlNet**
 
 ![017](https://github.com/user-attachments/assets/b763ee5a-fc01-4f68-948a-beaf0dc39c3a)
 
 Allows you to colorize an image based on a black and white image.
 
-9.	**Scribble ControlNet**
+14.	**Scribble ControlNet**
 
 ![18](https://github.com/user-attachments/assets/39b4d80f-591d-4301-bb5a-c3cc47fb5325)
 
 Allows you to color an image based on a sketch.
 
-10. **X/Y/Z Plot**
+15. **X/Y/Z Plot**
 
 ![019](https://github.com/user-attachments/assets/a0392f94-8ef0-4377-a2d6-9d260ba4a20c)
 
 
 This extension allows you to make image grids to make it easier to see the difference between different generation settings and choose the best option. You can change the following parameters - Styles, Steps, Aspect Ratio, Seed, Sharpness, CFG (Guidance) Scale, Checkpoint, Refiner, Clip skip, Sampler, Scheduler, VAE, Refiner swap method, Softness of ControlNet, and also replace words in the prompt and change their order
 
-10. **Save Image Grid for Each Batch**
+16. **Save Image Grid for Each Batch**
 
 ![20](https://github.com/user-attachments/assets/033a6a71-7e14-478a-a3d4-307f021fecec)
 
@@ -192,6 +191,7 @@ V8 (current version)
 5. Images Batch is now in the extensions panel
 6. Add support VAE and LyCoris in Civitai_Helper
 7. The extension Remove Background has been changed
+8. Add auto update on startup
 
 V7
 1. Add OpenPoseEditor

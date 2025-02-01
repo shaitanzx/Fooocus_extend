@@ -36,6 +36,10 @@ try:
         repo.checkout_tree(repo.get(remote_commit.id))
         repo.reset(local_branch.target, pygit2.GIT_RESET_HARD)
         print("Fast-forward merge")
+        import fooocus_version
+        print('---------------------------------------')
+        print(f'Upadate to Fooocus {fooocus_version.version}')
+        print('---------------------------------------')
     elif merge_result & pygit2.GIT_MERGE_ANALYSIS_NORMAL:
         print("Update failed - Did you modify any file?")
 except Exception as e:

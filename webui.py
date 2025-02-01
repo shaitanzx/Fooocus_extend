@@ -99,8 +99,6 @@ def xyz_plot_ext(currentTask):
 def obp_start(p):
     global finished_batch
     finished_batch=False
-#    args = list(args)
-#    seed_random = p.seed_random
     presetsuffix=p.presetsuffix
     presetprefix=p.presetprefix
     promptenhancer=p.promptenhancer
@@ -124,7 +122,6 @@ def obp_start(p):
     givensubject=p.givensubject
     seperator=p.seperator
     promptcompounderlevel=p.promptcompounderlevel
-#    negative_prompt=p.negative_prompt
     suffixprompt=p.suffixprompt
     prefixprompt=p.prefixprompt
     antistring=p.antistring
@@ -135,10 +132,7 @@ def obp_start(p):
     subject=p.subject
     insanitylevel=p.insanitylevel
     amountofimages=p.amountofimages
-#    aspect_ratios_selection=p.aspect_ratios_selection
     size=p.size
-#    base_model=p.base_model
-#    model=p.model
     
     sect_models=ob_prompt.modellist
     cur_sect_models=p.model
@@ -153,18 +147,18 @@ def obp_start(p):
     originalnegativeprompt = p.negative_prompt
     prompts=p.amountofimages
 
-    if(p.silentmode==True and p.workprompt != ""):
-        randomprompt = ob_prompt.createpromptvariant(workprompt, promptvariantinsanitylevel)
-        print("Using provided workflow prompt")
-        print(randomprompt)
-    else:    
-            randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
-            randomprompt = randompromptlist[0]
-            randomsubject = randompromptlist[1]
-    negativeprompt=p.negative_prompt
-    if(autonegativeprompt):
-            negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
-    randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
+#    if(p.silentmode==True and p.workprompt != ""):
+#        randomprompt = ob_prompt.createpromptvariant(workprompt, promptvariantinsanitylevel)
+#        print("Using provided workflow prompt")
+#        print(randomprompt)
+#    else:    
+#            randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
+#            randomprompt = randompromptlist[0]
+#            randomsubject = randompromptlist[1]
+#    negativeprompt=p.negative_prompt
+#    if(autonegativeprompt):
+#            negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
+#    randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
 
 
 
@@ -179,7 +173,7 @@ def obp_start(p):
                 randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
                 randomprompt = randompromptlist[0]
                 randomsubject = randompromptlist[1]
-        negativeprompt=negative_prompt
+        negativeprompt=p.negative_prompt
         if(autonegativeprompt):
                 negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
         randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
@@ -438,6 +432,8 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 reload_javascript()
 
 title = f'Fooocus {fooocus_version.version}'
+
+
 
 if isinstance(args_manager.args.preset, str):
     title += ' ' + args_manager.args.preset
