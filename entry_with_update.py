@@ -38,7 +38,7 @@ try:
         print("Fast-forward merge")
         import fooocus_version
         print('---------------------------------------')
-        print(f'Upadate to Fooocus {fooocus_version}')
+        print(f'Upadate to Fooocus {fooocus_version.version}')
         print('---------------------------------------')
     elif merge_result & pygit2.GIT_MERGE_ANALYSIS_NORMAL:
         print("Update failed - Did you modify any file?")
