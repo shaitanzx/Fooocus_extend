@@ -44,7 +44,6 @@ from extentions import wildcards
 
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 
-#from extentions.op_edit.body import Body
 from extentions.op_edit import main as op_editor
 from pathlib import Path
 import io
@@ -61,16 +60,10 @@ modules.config.available_aspect_ratios_labels=[item.replace("<span style=\"color
 modules.config.available_aspect_ratios_labels+=[f'512×512  ∣ 1:1']
 modules.config.default_aspect_ratio=modules.config.default_aspect_ratio.replace("<span style=\"color: grey;\">", "").replace("</span>", "")
 
-
 ar_def=[1,1]
 swap_def=False
 finished_batch=False
 batch_path='./batch_images'
-
-
-
-    
-
 
 def xyz_plot_ext(currentTask):
     global finished_batch
@@ -147,11 +140,6 @@ def obp_start(p):
     originalnegativeprompt = p.negative_prompt
     prompts=p.amountofimages
 
-
-
-
-
-
     for generation in range(int(prompts)):
       if not finished_batch:
         if(silentmode==True and workprompt != ""):
@@ -197,12 +185,9 @@ def obp_start(p):
               p.negative_prompt=negativeprompt
               p.base_model_name=name_model
               p.aspect_ratios_selection=name_ratio
-#              currentTask=get_task_batch(args)
               yield from generate_clicked(p)
               if p.seed_random:
                   p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-
-
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
@@ -216,8 +201,7 @@ def get_task(*args):
     if trans_enable:      
             positive, negative = translate(argsList[2], argsList[3], srT, toT)            
             argsList[2] = positive
-            argsList[3] = negative
-            
+            argsList[3] = negative          
     args = tuple(argsList)
     args = list(args)
     args.pop(0)
@@ -301,9 +285,6 @@ def pr_batch_start(p):
         p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
       passed+=1
   return 
-
-
-
 
 def generate_clicked(task: worker.AsyncTask):
     import ldm_patched.modules.model_management as model_management
@@ -887,8 +868,7 @@ with shared.gradio_root:
                               directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
                               delete_out(directory)
                             return 
-                        
-                        
+                       
                         with gr.Row():
                           with gr.Column():
                             file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'])
@@ -896,7 +876,6 @@ with shared.gradio_root:
                             def update_radio(value):
                               return gr.update(value=value)
                             ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
-                            
 
                           with gr.Column():
                             image_action = gr.Dropdown(choices=['Image Prompt','Upscale'], value='Image Prompt', label='Action',interactive=True)
@@ -924,11 +903,8 @@ with shared.gradio_root:
                             ip_weight_batch=flags.default_parameters[image_mode][1]
                             return gr.update(value=ip_stop_batch), gr.update(value=ip_weight_batch)
 
-
                         image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
-                        image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)    
-                        
-                        
+                        image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
                         add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
                                     outputs=[add_to_queue, status_batch]) \
                                     .then(fn=unzip_file,inputs=file_in) \
@@ -955,7 +931,6 @@ with shared.gradio_root:
                                 removed=batch_prompt.pop()
                             return batch_prompt
                         with gr.Row():
-#                            with gr.Column():
                                 batch_prompt=gr.Dataframe(
                                     headers=["prompt", "negative prompt"],
                                     datatype=["str", "str"],
@@ -1787,8 +1762,6 @@ with shared.gradio_root:
                   enhance_input_image, enhance_checkbox, enhance_uov_method, enhance_uov_processing_order,
                   enhance_uov_prompt_type]
         ctrls += enhance_ctrls
-        
-		
 
         def parse_meta(raw_prompt_txt, is_generating):
             loaded_json = None
@@ -1848,7 +1821,7 @@ with shared.gradio_root:
             args.pop(0)
             p=worker.AsyncTask(args=args)
             data ={}
-            data["default_model"]=p.base_model_name,
+            data["base_model"]=p.base_model_name,
             data["default_refiner"]=p.refiner_model_name
             data["default_refiner_switch"]=p.refiner_switch
             data["default_loras"]=p.loras
@@ -1864,13 +1837,13 @@ with shared.gradio_root:
             data["default_image_number"]=p.image_number
             data["default_prompt_negative"]=p.negative_prompt
             data["default_styles"]=p.style_selections
-            data["default_aspect_ratio"]=p.aspect_ratios_selection
-            data["default_save_metadata_to_images"]=psave_metadata_to_images
+            data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
+            data["default_save_metadata_to_images"]=p.save_metadata_to_images
             data["default_vae"]=p.vae_name
             data["default_inpaint_engine_version"]=p.inpaint_engine
-            data["adm_guidance"]=f"({p.adm_scaler_positive},{adm_scaler_negative},{adm_scaler_end}"
+            data["adm_guidance"]=f"({p.adm_scaler_positive},{p.adm_scaler_negative},{p.adm_scaler_end})"
             data["refiner_swap_method"]=p.refiner_swap_method
-            data["adaptive_cfg"]=p.adaptive_cfg           
+            data["adaptive_cfg"]=p.adaptive_cfg
             save_path = 'presets/' + name + '.json'
             with open(save_path, "w", encoding="utf-8") as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
@@ -1893,9 +1866,6 @@ with shared.gradio_root:
         delete_preset_button.click(delete_preset,inputs=preset_have) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
 	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
-
-
-
         genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
             .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
                   outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
