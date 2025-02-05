@@ -1460,6 +1460,14 @@ with shared.gradio_root:
                 sharpness = gr.Slider(label='Image Sharpness', minimum=0.0, maximum=30.0, step=0.001,
                                       value=modules.config.default_sample_sharpness,
                                       info='Higher value means image and texture are sharper.')
+                preset_name = gr.Textbox(label='Filename new preset', show_label=True)
+                save_preset_button=gr.Button(value='Save preset')
+				
+				preset_have = gr.Dropdown(label='Preset',
+                                                   choices=modules.config.available_presets,
+                                                   value=args_manager.args.preset if args_manager.args.preset else "initial",
+                                                   interactive=True)
+				delete_preset_button=gr.Button(value='Save preset')
                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
                 dev_mode = gr.Checkbox(label='Developer Debug Mode', value=modules.config.default_developer_debug_mode_checkbox, container=False)
 
@@ -1833,6 +1841,45 @@ with shared.gradio_root:
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
             return workprompt
+
+        def to_dict(obj):
+            return obj.__dict__
+        def save_preset(*args):
+            argsList = list(args)
+            toT = argsList.pop() 
+            srT = argsList.pop() 
+            trans_enable = argsList.pop() 
+            args = tuple(argsList)
+            args = list(args)
+            args.pop(0)
+            p=worker.AsyncTask(args=args)
+            name='123'
+            json_p=to_dict(p)
+
+            remove_keys = ['args','yields','results','last_stop','processing','performance_loras','uov_input_image','outpaint_selections','inpaint_input_image','inpaint_mask_image_upload','cn_tasks','enhance_input_image','batch_prompt',,'seed']
+            for key in remove_keys:
+                json_p.pop(key, None)
+			json_p['metadata_scheme']=metadata_scheme
+			json_p['performance_selection']=performance_selection
+            save_path = 'presets/' + name + '.json'
+            with open(save_path, "w", encoding="utf-8") as json_file:
+                json.dump(json_p, json_file, ensure_ascii=False, indent=4)
+            return
+		def delete_preset (preset):
+		    if preset !='initial' or preset !='default'
+		         del_file = 'presets/' + name + '.json'
+			return
+		
+        save_preset_button.click(save_preset,inputs=ctrls) \
+	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
+	                   .then(lambda: (gr.update(value='')),outputs=preset_name)
+
+        delete_preset_button.click(delete_preset,inputs=preset_have) \
+	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
+	                   .then(lambda: (gr.update(value='')),outputs=preset_name)
+
+
+
         genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
             .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
                   outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
