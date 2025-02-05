@@ -1877,7 +1877,7 @@ with shared.gradio_root:
                 except Exception as e:
                     print(f"Error: {e}")  
             else:
-                print(f"Нельзя удалить пресет '{preset}'.")
+                print(f"Do not delete '{preset}'.")
             return
 		
         save_preset_button.click(save_preset,inputs=ctrls + [preset_name]) \
