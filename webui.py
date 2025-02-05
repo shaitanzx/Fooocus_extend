@@ -147,18 +147,7 @@ def obp_start(p):
     originalnegativeprompt = p.negative_prompt
     prompts=p.amountofimages
 
-#    if(p.silentmode==True and p.workprompt != ""):
-#        randomprompt = ob_prompt.createpromptvariant(workprompt, promptvariantinsanitylevel)
-#        print("Using provided workflow prompt")
-#        print(randomprompt)
-#    else:    
-#            randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
-#            randomprompt = randompromptlist[0]
-#            randomsubject = randompromptlist[1]
-#    negativeprompt=p.negative_prompt
-#    if(autonegativeprompt):
-#            negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
-#    randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
+
 
 
 
@@ -1858,17 +1847,33 @@ with shared.gradio_root:
             args = list(args)
             args.pop(0)
             p=worker.AsyncTask(args=args)
-            metadata_scheme=p.metadata_scheme.value
-            performance_selection=p.performance_selection.value
-            json_p=to_dict(p)
-            remove_keys = ['args','yields','results','last_stop','processing','performance_loras','uov_input_image','outpaint_selections','inpaint_input_image','inpaint_mask_image_upload','cn_tasks','enhance_input_image','batch_prompt','seed','metadata_scheme','performance_selection']
-            for key in remove_keys:
-                json_p.pop(key, None)
-            json_p['metadata_scheme']=metadata_scheme
-            json_p['performance_selection']=performance_selection
+            data ={}
+            data["default_model"]=p.base_model_name,
+            data["default_refiner"]=p.refiner_model_name
+            data["default_refiner_switch"]=p.refiner_switch
+            data["default_loras"]=p.loras
+            data["default_cfg_scale"]=p.cfg_scale
+            data["default_sample_sharpness"]=p.sharpness
+            data["default_cfg_tsnr"]=p.adaptive_cfg
+            data["default_clip_skip"]=p.clip_skip
+            data["default_sampler"]=p.sampler_name
+            data["default_scheduler"]=p.scheduler_name
+            data["default_overwrite_step"]=p.overwrite_step
+            data["default_overwrite_switch"]=p.overwrite_switch
+            data["default_performance"]=p.performance_selection.value
+            data["default_image_number"]=p.image_number
+            data["default_prompt_negative"]=p.negative_prompt
+            data["default_styles"]=p.style_selections
+            data["default_aspect_ratio"]=p.aspect_ratios_selection
+            data["default_save_metadata_to_images"]=psave_metadata_to_images
+            data["default_vae"]=p.vae_name
+            data["default_inpaint_engine_version"]=p.inpaint_engine
+            data["adm_guidance"]=f"({p.adm_scaler_positive},{adm_scaler_negative},{adm_scaler_end}"
+            data["refiner_swap_method"]=p.refiner_swap_method
+            data["adaptive_cfg"]=p.adaptive_cfg           
             save_path = 'presets/' + name + '.json'
             with open(save_path, "w", encoding="utf-8") as json_file:
-                json.dump(json_p, json_file, ensure_ascii=False, indent=4)
+                json.dump(data, json_file, ensure_ascii=False, indent=4)
             return
         def delete_preset (preset):
             if preset !='initial' and preset !='default':
