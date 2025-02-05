@@ -1469,7 +1469,7 @@ with shared.gradio_root:
                                                    choices=modules.config.available_presets,
                                                    value=args_manager.args.preset if args_manager.args.preset else "initial",
                                                    interactive=True)
-                    delete_preset_button=gr.Button(value='Save preset')
+                    delete_preset_button=gr.Button(value='Delete preset')
                 
                 dev_mode = gr.Checkbox(label='Developer Debug Mode', value=modules.config.default_developer_debug_mode_checkbox, container=False)
 
@@ -1871,18 +1871,23 @@ with shared.gradio_root:
                 json.dump(json_p, json_file, ensure_ascii=False, indent=4)
             return
         def delete_preset (preset):
-            name='123'
-            if preset !='initial' or preset !='default':
-                os.remove('presets/' + name + '.json')
+            if preset !='initial' and preset !='default':
+                try:
+                    os.remove('presets/' + preset + '.json')
+                except Exception as e:
+                    print(f"Error: {e}")  
+            else:
+                print(f"Нельзя удалить пресет '{preset}'.")
             return
 		
         save_preset_button.click(save_preset,inputs=ctrls + [preset_name]) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
-	                   .then(lambda: (gr.update(value='')),outputs=preset_name)
+	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name,preset_have])
+
 
         delete_preset_button.click(delete_preset,inputs=preset_have) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
-	                   .then(lambda: (gr.update(value='')),outputs=preset_name)
+	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
 
 
 
