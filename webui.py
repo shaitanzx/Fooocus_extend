@@ -1460,15 +1460,17 @@ with shared.gradio_root:
                 sharpness = gr.Slider(label='Image Sharpness', minimum=0.0, maximum=30.0, step=0.001,
                                       value=modules.config.default_sample_sharpness,
                                       info='Higher value means image and texture are sharper.')
-                preset_name = gr.Textbox(label='Filename new preset', show_label=True)
-                save_preset_button=gr.Button(value='Save preset')
-				
-				preset_have = gr.Dropdown(label='Preset',
+                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
+                with gr.Column() as sys_mangment:                 
+                    preset_name = gr.Textbox(label='Filename new preset', show_label=True, interactive=True)
+                    save_preset_button=gr.Button(value='Save preset')
+                
+                    preset_have = gr.Dropdown(label='Preset',
                                                    choices=modules.config.available_presets,
                                                    value=args_manager.args.preset if args_manager.args.preset else "initial",
                                                    interactive=True)
-				delete_preset_button=gr.Button(value='Save preset')
-                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
+                    delete_preset_button=gr.Button(value='Save preset')
+                
                 dev_mode = gr.Checkbox(label='Developer Debug Mode', value=modules.config.default_developer_debug_mode_checkbox, container=False)
 
                 with gr.Column(visible=modules.config.default_developer_debug_mode_checkbox) as dev_tools:
@@ -1844,8 +1846,11 @@ with shared.gradio_root:
 
         def to_dict(obj):
             return obj.__dict__
+        def get_value(value):
+            return value
         def save_preset(*args):
             argsList = list(args)
+            name=argsList.pop()
             toT = argsList.pop() 
             srT = argsList.pop() 
             trans_enable = argsList.pop() 
@@ -1853,24 +1858,25 @@ with shared.gradio_root:
             args = list(args)
             args.pop(0)
             p=worker.AsyncTask(args=args)
-            name='123'
+            metadata_scheme=p.metadata_scheme.value
+            performance_selection=p.performance_selection.value
             json_p=to_dict(p)
-
-            remove_keys = ['args','yields','results','last_stop','processing','performance_loras','uov_input_image','outpaint_selections','inpaint_input_image','inpaint_mask_image_upload','cn_tasks','enhance_input_image','batch_prompt',,'seed']
+            remove_keys = ['args','yields','results','last_stop','processing','performance_loras','uov_input_image','outpaint_selections','inpaint_input_image','inpaint_mask_image_upload','cn_tasks','enhance_input_image','batch_prompt','seed','metadata_scheme','performance_selection']
             for key in remove_keys:
                 json_p.pop(key, None)
-			json_p['metadata_scheme']=metadata_scheme
-			json_p['performance_selection']=performance_selection
+            json_p['metadata_scheme']=metadata_scheme
+            json_p['performance_selection']=performance_selection
             save_path = 'presets/' + name + '.json'
             with open(save_path, "w", encoding="utf-8") as json_file:
                 json.dump(json_p, json_file, ensure_ascii=False, indent=4)
             return
-		def delete_preset (preset):
-		    if preset !='initial' or preset !='default'
-		         del_file = 'presets/' + name + '.json'
-			return
+        def delete_preset (preset):
+            name='123'
+            if preset !='initial' or preset !='default':
+                os.remove('presets/' + name + '.json')
+            return
 		
-        save_preset_button.click(save_preset,inputs=ctrls) \
+        save_preset_button.click(save_preset,inputs=ctrls + [preset_name]) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
 	                   .then(lambda: (gr.update(value='')),outputs=preset_name)
 
