@@ -250,7 +250,6 @@ def parse_meta_from_preset(preset_content):
     assert isinstance(preset_content, dict)
     preset_prepared = {}
     items = preset_content
-
     for settings_key, meta_key in modules.config.possible_preset_keys.items():
         if settings_key == "default_loras":
             loras = getattr(modules.config, settings_key)
@@ -272,7 +271,8 @@ def parse_meta_from_preset(preset_content):
 
         if settings_key == "default_styles" or settings_key == "default_aspect_ratio":
             preset_prepared[meta_key] = str(preset_prepared[meta_key])
-
+    if 'base_model' in items:
+        preset_prepared['base_model']=items['base_model']
     return preset_prepared
 
 

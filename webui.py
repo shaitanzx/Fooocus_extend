@@ -1646,18 +1646,17 @@ with shared.gradio_root:
             def preset_selection_change(preset, is_generating, inpaint_mode):
                 preset_content = modules.config.try_get_preset_content(preset) if preset != 'initial' else {}
                 preset_prepared = modules.meta_parser.parse_meta_from_preset(preset_content)
-
                 default_model = preset_prepared.get('base_model')
                 previous_default_models = preset_prepared.get('previous_default_models', [])
                 checkpoint_downloads = preset_prepared.get('checkpoint_downloads', {})
                 embeddings_downloads = preset_prepared.get('embeddings_downloads', {})
                 lora_downloads = preset_prepared.get('lora_downloads', {})
                 vae_downloads = preset_prepared.get('vae_downloads', {})
-
                 preset_prepared['base_model'], preset_prepared['checkpoint_downloads'] = launch.download_models(
                     default_model, previous_default_models, checkpoint_downloads, embeddings_downloads, lora_downloads,
                     vae_downloads)
-
+                print(preset_prepared['base_model'])
+                print(preset_prepared['checkpoint_downloads'])
                 if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
                     del preset_prepared['prompt']
 
@@ -1821,7 +1820,7 @@ with shared.gradio_root:
             args.pop(0)
             p=worker.AsyncTask(args=args)
             data ={}
-            data["base_model"]=p.base_model_name,
+            data["base_model"]=p.base_model_name
             data["default_refiner"]=p.refiner_model_name
             data["default_refiner_switch"]=p.refiner_switch
             data["default_loras"]=p.loras
@@ -1843,7 +1842,6 @@ with shared.gradio_root:
             data["default_inpaint_engine_version"]=p.inpaint_engine
             data["adm_guidance"]=f"({p.adm_scaler_positive},{p.adm_scaler_negative},{p.adm_scaler_end})"
             data["refiner_swap_method"]=p.refiner_swap_method
-            data["adaptive_cfg"]=p.adaptive_cfg
             save_path = 'presets/' + name + '.json'
             with open(save_path, "w", encoding="utf-8") as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
