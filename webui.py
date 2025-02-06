@@ -1655,8 +1655,6 @@ with shared.gradio_root:
                 preset_prepared['base_model'], preset_prepared['checkpoint_downloads'] = launch.download_models(
                     default_model, previous_default_models, checkpoint_downloads, embeddings_downloads, lora_downloads,
                     vae_downloads)
-                print(preset_prepared['base_model'])
-                print(preset_prepared['checkpoint_downloads'])
                 if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
                     del preset_prepared['prompt']
 
@@ -1837,10 +1835,8 @@ with shared.gradio_root:
             data["default_prompt_negative"]=p.negative_prompt
             data["default_styles"]=p.style_selections
             data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
-            data["default_save_metadata_to_images"]=p.save_metadata_to_images
             data["default_vae"]=p.vae_name
             data["default_inpaint_engine_version"]=p.inpaint_engine
-            data["adm_guidance"]=f"({p.adm_scaler_positive},{p.adm_scaler_negative},{p.adm_scaler_end})"
             data["refiner_swap_method"]=p.refiner_swap_method
             save_path = 'presets/' + name + '.json'
             with open(save_path, "w", encoding="utf-8") as json_file:
