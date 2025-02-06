@@ -1426,16 +1426,18 @@ with shared.gradio_root:
                                       info='Higher value means image and texture are sharper.')
                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
                 with gr.Column() as sys_mangment:
-
+                    def path_change_action(path_checkpoints_set,path_loras_set, path_embeddings_set, path_vae_set, path_outputs):
+                      print (path_checkpoints_set,path_loras_set, path_embeddings_set, path_vae_set, path_outputs)
+                      return path_checkpoints_set,path_loras_set, path_embeddings_set, path_vae_set, path_outputs
                     path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=modules.config.paths_checkpoints, show_label=True, interactive=True)
                     path_loras_set = gr.Textbox(label='Loras path', value=modules.config.paths_loras, show_label=True, interactive=True)
                     path_embeddings_set = gr.Textbox(label='Embeddings path', value=modules.config.path_embeddings, show_label=True, interactive=True)
                     path_vae_set = gr.Textbox(label='VAE path', value=modules.config.path_vae, show_label=True, interactive=True)
                     path_outputs = gr.Textbox(label='Outputs path', value=modules.config.path_outputs, show_label=True, interactive=True)
                     path_change=gr.Button(value='Apply change paths')
-
-                    path_change.click(lambda: [path_checkpoints_set,path_loras_set, path_embeddings_set, path_vae_set, path_outputs, path_change],
-                              outputs=[modules.config.paths_checkpoints, modules.config.paths_loras, modules.config.path_embeddings, modules.config.path_vae, modules.config.path_outputs])
+                    
+                    path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set, path_embeddings_set, path_vae_set, path_outputs],
+                                outputs=[path_checkpoints_set,path_loras_set, path_embeddings_set, path_vae_set, path_outputs])
 
 
 
