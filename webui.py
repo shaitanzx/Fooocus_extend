@@ -1428,18 +1428,23 @@ with shared.gradio_root:
                                       info='Higher value means image and texture are sharper.')
                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
                 with gr.Column() as sys_mangment:
-                    
+                    def process_path(path):
+                        if '\\' in path:
+                            return path.replace('\\', '\\')
+                        else:
+                            return path
                     print('---------------------------------------------------',modules.config.paths_checkpoints,type(modules.config.paths_checkpoints))
                     print('---------------------------------------------------',modules.config.paths_loras,type(modules.config.paths_loras))
                     print('---------------------------------------------------',modules.config.path_embeddings,type(modules.config.path_embeddings))
                     print('---------------------------------------------------',modules.config.path_vae,type(modules.config.path_vae))
                     print('---------------------------------------------------',modules.config.path_outputs,type(modules.config.path_outputs))
+                    
 
-                    path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=modules.config.paths_checkpoints, show_label=True, interactive=True)
-                    path_loras_set = gr.Textbox(label='Loras path', value=modules.config.paths_loras, show_label=True, interactive=True)
-                    path_embeddings_set = gr.Textbox(label='Embeddings path', value=modules.config.path_embeddings, show_label=True, interactive=True)
-                    path_vae_set = gr.Textbox(label='VAE path', value=modules.config.path_vae, show_label=True, interactive=True)
-                    path_outputs_set = gr.Textbox(label='Outputs path', value=modules.config.path_outputs, show_label=True, interactive=True)
+                    path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=process_path(modules.config.paths_checkpoints), show_label=True, interactive=True)
+                    path_loras_set = gr.Textbox(label='Loras path', value=process_path(modules.config.paths_loras), show_label=True, interactive=True)
+                    path_embeddings_set = gr.Textbox(label='Embeddings path', value=(modules.config.path_embeddings), show_label=True, interactive=True)
+                    path_vae_set = gr.Textbox(label='VAE path', value=process_path(modules.config.path_vae), show_label=True, interactive=True)
+                    path_outputs_set = gr.Textbox(label='Outputs path', value=process_path(modules.config.path_outputs), show_label=True, interactive=True)
                     path_change=gr.Button(value='Apply change paths')
                     
                     
@@ -1880,12 +1885,18 @@ with shared.gradio_root:
 	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
 
 
+        def reverse_path(path):
+            if '\\' in path:
+                return path.replace('\\', '\\\\')
+            else:
+                return path
+
         def path_change_action(path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set):
-            modules.config.paths_checkpoints=ast.literal_eval(path_checkpoints_set)
-            modules.config.paths_loras=ast.literal_eval(path_loras_set)
-            modules.config.path_embeddings=path_embeddings_set
-            modules.config.path_vae=path_vae_set
-            modules.config.path_outputs=path_outputs_set
+            modules.config.paths_checkpoints=ast.literal_eval(reverse_path(path_checkpoints_set))
+            modules.config.paths_loras=ast.literal_eval(reverse_path(path_loras_set))
+            modules.config.path_embeddings=reverse_path(path_embeddings_set)
+            modules.config.path_vae=reverse_path(path_vae_set)
+            modules.config.path_outputs=(path_outputs_set)
             conf_path = "config.txt"
             with open(conf_path, "r", encoding="utf-8") as file:
                 data = json.load(file)
