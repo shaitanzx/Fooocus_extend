@@ -1427,39 +1427,6 @@ with shared.gradio_root:
                                       value=modules.config.default_sample_sharpness,
                                       info='Higher value means image and texture are sharper.')
                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
-                with gr.Column() as sys_mangment:
-                    def process_path(path):
-                        if '\\' in path:
-                            return path.replace('\\', '\\')
-                        else:
-                            return path
-                    print('---------------------------------------------------',modules.config.paths_checkpoints,type(modules.config.paths_checkpoints))
-                    print('---------------------------------------------------',modules.config.paths_loras,type(modules.config.paths_loras))
-                    print('---------------------------------------------------',modules.config.path_embeddings,type(modules.config.path_embeddings))
-                    print('---------------------------------------------------',modules.config.path_vae,type(modules.config.path_vae))
-                    print('---------------------------------------------------',modules.config.path_outputs,type(modules.config.path_outputs))
-                    
-
-                    path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=process_path(modules.config.paths_checkpoints), show_label=True, interactive=True)
-                    path_loras_set = gr.Textbox(label='Loras path', value=process_path(modules.config.paths_loras), show_label=True, interactive=True)
-                    path_embeddings_set = gr.Textbox(label='Embeddings path', value=(modules.config.path_embeddings), show_label=True, interactive=True)
-                    path_vae_set = gr.Textbox(label='VAE path', value=process_path(modules.config.path_vae), show_label=True, interactive=True)
-                    path_outputs_set = gr.Textbox(label='Outputs path', value=process_path(modules.config.path_outputs), show_label=True, interactive=True)
-                    path_change=gr.Button(value='Apply change paths')
-                    
-                    
-
-
-
-
-                    preset_name = gr.Textbox(label='Filename new preset', show_label=True, interactive=True)
-                    save_preset_button=gr.Button(value='Save preset')
-                
-                    preset_have = gr.Dropdown(label='Preset',
-                                                   choices=modules.config.available_presets,
-                                                   value=args_manager.args.preset if args_manager.args.preset else "initial",
-                                                   interactive=True)
-                    delete_preset_button=gr.Button(value='Delete preset')
                 
                 dev_mode = gr.Checkbox(label='Developer Debug Mode', value=modules.config.default_developer_debug_mode_checkbox, container=False)
 
@@ -1633,8 +1600,30 @@ with shared.gradio_root:
                         freeu_s2 = gr.Slider(label='S2', minimum=0, maximum=4, step=0.01, value=0.95)
                         freeu_ctrls = [freeu_enabled, freeu_b1, freeu_b2, freeu_s1, freeu_s2]
 
+                    with gr.Tab(label='Paths and Presets'):
+                      def process_path(path):
+                          if '\\' in path:
+                              return path.replace('\\', '\\')
+                          else:
+                              return path
+                      path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=process_path(modules.config.paths_checkpoints), show_label=True, interactive=True)
+                      path_loras_set = gr.Textbox(label='Loras path', value=process_path(modules.config.paths_loras), show_label=True, interactive=True)
+                      path_embeddings_set = gr.Textbox(label='Embeddings path', value=(modules.config.path_embeddings), show_label=True, interactive=True)
+                      path_vae_set = gr.Textbox(label='VAE path', value=process_path(modules.config.path_vae), show_label=True, interactive=True)
+                      path_outputs_set = gr.Textbox(label='Outputs path', value=process_path(modules.config.path_outputs), show_label=True, interactive=True)
+                      path_change=gr.Button(value='Apply change paths')
+                      preset_name = gr.Textbox(label='Filename new preset', show_label=True, interactive=True)
+                      save_preset_button=gr.Button(value='Save preset')
+                
+                      preset_have = gr.Dropdown(label='Preset',
+                                                   choices=modules.config.available_presets,
+                                                   value=args_manager.args.preset if args_manager.args.preset else "initial",
+                                                   interactive=True)
+                      delete_preset_button=gr.Button(value='Delete preset')
+
                 def dev_mode_checked(r):
                     return gr.update(visible=r)
+
 
                 dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
                                 queue=False, show_progress=False)
@@ -1884,7 +1873,7 @@ with shared.gradio_root:
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
 	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
 
-
+        
         def reverse_path(path):
             if '\\' in path:
                 return path.replace('\\', '\\\\')
@@ -1892,21 +1881,24 @@ with shared.gradio_root:
                 return path
 
         def path_change_action(path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set):
+            conf_path = "config.txt"
+            with open(conf_path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+            data["path_checkpoints"] = ast.literal_eval(reverse_path(path_checkpoints_set))
+            data["path_loras"] = ast.literal_eval(reverse_path(path_loras_set))
+            data["path_embeddings"] = path_embeddings_set
+            data["path_vae"] = path_vae_set
+            data["path_outputs"] = path_outputs_set
+            with open(conf_path, "w", encoding="utf-8") as file:
+                json.dump(data, file, indent=4, ensure_ascii=False)
+
+
             modules.config.paths_checkpoints=ast.literal_eval(reverse_path(path_checkpoints_set))
             modules.config.paths_loras=ast.literal_eval(reverse_path(path_loras_set))
             modules.config.path_embeddings=reverse_path(path_embeddings_set)
             modules.config.path_vae=reverse_path(path_vae_set)
-            modules.config.path_outputs=(path_outputs_set)
-            conf_path = "config.txt"
-            with open(conf_path, "r", encoding="utf-8") as file:
-                data = json.load(file)
-            data["path_checkpoints"] = modules.config.paths_checkpoints
-            data["path_loras"] = modules.config.paths_loras
-            data["path_embeddings"] = modules.config.path_embeddings
-            data["path_vae"] = modules.config.path_vae
-            data["path_outputs"] = modules.config.path_outputs
-            with open(conf_path, "w", encoding="utf-8") as file:
-                json.dump(data, file, indent=4, ensure_ascii=False)
+            modules.config.path_outputs=reverse_path(path_outputs_set)
+
             
             print('---------------------------------------------------',modules.config.paths_checkpoints,type(modules.config.paths_checkpoints))
             print('---------------------------------------------------',modules.config.paths_loras,type(modules.config.paths_loras))
@@ -1914,7 +1906,11 @@ with shared.gradio_root:
             print('---------------------------------------------------',modules.config.path_vae,type(modules.config.path_vae))
             print('---------------------------------------------------',modules.config.path_outputs,type(modules.config.path_outputs))
             return
-
+        print('---------------------------------------------------',modules.config.paths_checkpoints,type(modules.config.paths_checkpoints))
+        print('---------------------------------------------------',modules.config.paths_loras,type(modules.config.paths_loras))
+        print('---------------------------------------------------',modules.config.path_embeddings,type(modules.config.path_embeddings))
+        print('---------------------------------------------------',modules.config.path_vae,type(modules.config.path_vae))
+        print('---------------------------------------------------',modules.config.path_outputs,type(modules.config.path_outputs))
         path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
