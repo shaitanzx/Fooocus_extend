@@ -1607,7 +1607,7 @@ with shared.gradio_root:
                               return path
 
                       path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=process_path(', '.join(modules.config.paths_checkpoints)), show_label=True, interactive=True)
-                      path_loras_set = gr.Textbox(label='Loras path', value=process_path(modules.config.paths_loras), show_label=True, interactive=True)
+                      path_loras_set = gr.Textbox(label='Loras path', value=process_path(', '.join(modules.config.paths_loras)), show_label=True, interactive=True)
                       path_embeddings_set = gr.Textbox(label='Embeddings path', value=(modules.config.path_embeddings), show_label=True, interactive=True)
                       path_vae_set = gr.Textbox(label='VAE path', value=process_path(modules.config.path_vae), show_label=True, interactive=True)
                       path_outputs_set = gr.Textbox(label='Outputs path', value=process_path(modules.config.path_outputs), show_label=True, interactive=True)
