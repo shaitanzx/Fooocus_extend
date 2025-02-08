@@ -179,8 +179,10 @@ This setting may be useful when working on several projects to separate one from
 ![image](https://github.com/user-attachments/assets/db023eb1-3487-4d50-baed-9d0c0dc69cd5)
 
 Here you can change the paths to your models if they are already in other folders on the disk. If your Сheckponts or LORAs are in different folders, then the paths to them can be specified separated by commas (,). After changing the path, it is best to restart FooocusExtend.
+
 Also here you can create a new preset based on the existing settings, and delete any of the existing ones, except for default and initial.
 The preset saves the following parameters: base model, refiner, refiner_switch, loras settings, cfg scale, sharpness, CFG Mimicking from TSNR, clip_skip, sampler, scheduler, Forced Overwrite of Sampling Step, Forced Overwrite of Refiner Switch Step, performance, image number, prompt negative, styles selections, aspect ratio, vae, inpaint_engine_version
+
 
 <table>
   <tr>
@@ -197,7 +199,11 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
-V8 (current version)
+v8.0.1
+1. Add Filename Prefix
+2. Add Paths and Presets Settings
+
+V8
 1. Save Image Grid for Each Batch
 2. Add X/Y/Z Plot Extention
 3. Prompt Batch is now in the extensions panel
