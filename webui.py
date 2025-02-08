@@ -1827,7 +1827,6 @@ with shared.gradio_root:
         def save_preset(*args):
             argsList = list(args)
             loras_len=argsList.pop()
-            print(loras_len,type(loras_len))
             ctrl=[]
             for _ in range(loras_len):
                 temp_list = []
