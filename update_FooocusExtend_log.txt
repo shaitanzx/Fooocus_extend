@@ -1,0 +1,53 @@
+v8.0.1
+1. Add Filename Prefix
+2. Add Paths and Presets Settings
+
+V8 (current version)
+1. Save Image Grid for Each Batch
+2. Add X/Y/Z Plot Extention
+3. Prompt Batch is now in the extensions panel
+4. Images Batch has become easier to manage while retaining its functionality
+5. Images Batch is now in the extensions panel
+6. Add support VAE and LyCoris in Civitai_Helper
+7. The extension Remove Background has been changed
+8. Add auto update on startup
+
+V7
+1. Add OpenPoseEditor
+2. Fix bug in Image Batch Mode
+3. Added cell selection in Image Batch Mode
+4. Added selection of adding base prompts in Prompt Batch Mode
+5. Add OpenPose ControlNet
+6. Add Recolor ControlNet
+7. Add Scribble ControlNet
+
+V6
+
+1. Add Prompt Batch Mode
+2. Rename Batch Mode to Images Batch Mode
+3. Fixed an incorrect start random number in Batch Mode
+4. Add visual management of Wildcard and Words/phrases of wildcard
+5. Added the ability to set any resolution for the generated image
+6. Add OneButtonPrompt
+
+V5
+1. Model Downloader replaced with Civitai Helper
+
+V4
+1. Add VAE download
+2. Add Batch mode
+
+V3
+1. Add Photopea
+2. Add Remove Background
+3. Add Extention Panel
+4. All extensions are available in Extention Panel
+
+V2
+1. Added a Model Downloader to Fooocus webui instead of colab
+
+V1
+1. added the ability to download models from the civitai.com
+2. saving the generated image to Google Drive
+3. added prompt translator
+4. added a patch for the ability to work in free colab mode 
