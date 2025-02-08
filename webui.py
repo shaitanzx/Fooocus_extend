@@ -1824,7 +1824,16 @@ with shared.gradio_root:
             return value
         def save_preset(*args):
             argsList = list(args)
+            ctrl=[]
+            for x in range(modules.config.default_max_lora_number):
+              ctrl+=argsList.pop()
+            print ('aaaaaaaaaaaaaaaaaaaaaaaaaaa')
+            print(modules.config.default_max_lora_number)
+            print(ctrl)
             name=argsList.pop()
+           
+
+
             toT = argsList.pop() 
             srT = argsList.pop() 
             trans_enable = argsList.pop() 
@@ -1865,8 +1874,7 @@ with shared.gradio_root:
             else:
                 print(f"Do not delete '{preset}'.")
             return
-		
-        save_preset_button.click(save_preset,inputs=ctrls + [preset_name]) \
+        save_preset_button.click(save_preset,inputs=ctrls + [preset_name] + lora_ctrls) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
 	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name,preset_have])
         delete_preset_button.click(delete_preset,inputs=preset_have) \
