@@ -51,7 +51,6 @@ import cv2
 from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
-import ast
 
 obp_prompt=[]
 
@@ -1607,10 +1606,7 @@ with shared.gradio_root:
                           else:
                               return path
 
-                      test_path=['C:\\test\\']
-                      test1=', '.join(test_path)
-                      test2=process_path(test1)
-                      path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=test2, show_label=True, interactive=True)
+                      path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=process_path(', '.join(modules.config.paths_checkpoints)), show_label=True, interactive=True)
                       path_loras_set = gr.Textbox(label='Loras path', value=process_path(modules.config.paths_loras), show_label=True, interactive=True)
                       path_embeddings_set = gr.Textbox(label='Embeddings path', value=(modules.config.path_embeddings), show_label=True, interactive=True)
                       path_vae_set = gr.Textbox(label='VAE path', value=process_path(modules.config.path_vae), show_label=True, interactive=True)
@@ -1888,8 +1884,8 @@ with shared.gradio_root:
             conf_path = "config.txt"
             with open(conf_path, "r", encoding="utf-8") as file:
                 data = json.load(file)
-            data["path_checkpoints"] = ast.literal_eval(reverse_path(path_checkpoints_set))
-            data["path_loras"] = ast.literal_eval(reverse_path(path_loras_set))
+            data["path_checkpoints"] =path_checkpoints_set.split(',')
+            data["path_loras"] = path_loras_set.split(',')
             data["path_embeddings"] = path_embeddings_set
             data["path_vae"] = path_vae_set
             data["path_outputs"] = path_outputs_set
@@ -1897,8 +1893,8 @@ with shared.gradio_root:
                 json.dump(data, file, indent=4, ensure_ascii=False)
 
 
-            modules.config.paths_checkpoints=ast.literal_eval(reverse_path(path_checkpoints_set))
-            modules.config.paths_loras=ast.literal_eval(reverse_path(path_loras_set))
+            modules.config.paths_checkpoints=reverse_path(path_checkpoints_set.split(','))
+            modules.config.paths_loras=reverse_path(path_loras_set.split(','))
             modules.config.path_embeddings=reverse_path(path_embeddings_set)
             modules.config.path_vae=reverse_path(path_vae_set)
             modules.config.path_outputs=reverse_path(path_outputs_set)
