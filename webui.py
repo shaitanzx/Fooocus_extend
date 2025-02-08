@@ -1402,6 +1402,8 @@ with shared.gradio_root:
                                          inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
                 with gr.Group():
+
+                    lora_len = gr.Slider(label='Loraslen', minimum=0.0, maximum=100.0, step=1, value=modules.config.default_max_lora_number, visible=False)
                     lora_ctrls = []
 
                     for i, (enabled, filename, weight) in enumerate(modules.config.default_loras):
@@ -1824,16 +1826,17 @@ with shared.gradio_root:
             return value
         def save_preset(*args):
             argsList = list(args)
+            loras_len=argsList.pop()
+            print(loras_len,type(loras_len))
             ctrl=[]
-            for x in range(modules.config.default_max_lora_number):
-              ctrl+=argsList.pop()
-            print ('aaaaaaaaaaaaaaaaaaaaaaaaaaa')
-            print(modules.config.default_max_lora_number)
-            print(ctrl)
+            for _ in range(loras_len):
+                temp_list = []
+                for _ in range(3):
+                    temp_list.append(argsList.pop())
+                temp_list.reverse()
+                ctrl.append(temp_list)
+            ctrl.reverse()
             name=argsList.pop()
-           
-
-
             toT = argsList.pop() 
             srT = argsList.pop() 
             trans_enable = argsList.pop() 
@@ -1845,7 +1848,7 @@ with shared.gradio_root:
             data["base_model"]=p.base_model_name
             data["default_refiner"]=p.refiner_model_name
             data["default_refiner_switch"]=p.refiner_switch
-            data["default_loras"]=p.loras
+            data["default_loras"]=ctrl
             data["default_cfg_scale"]=p.cfg_scale
             data["default_sample_sharpness"]=p.sharpness
             data["default_cfg_tsnr"]=p.adaptive_cfg
@@ -1874,7 +1877,7 @@ with shared.gradio_root:
             else:
                 print(f"Do not delete '{preset}'.")
             return
-        save_preset_button.click(save_preset,inputs=ctrls + [preset_name] + lora_ctrls) \
+        save_preset_button.click(save_preset,inputs=ctrls + [preset_name] + lora_ctrls + [lora_len]) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
 	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name,preset_have])
         delete_preset_button.click(delete_preset,inputs=preset_have) \
