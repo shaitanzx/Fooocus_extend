@@ -406,7 +406,7 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
         if title_text[z]:
             meta_xyz.append((f'Z axis:', 'Z axis', html.escape(title_text[z], quote=True)))
 
-        log(wall, metadata=meta_xyz, metadata_parser=None, output_format=None, task=None, persist_image=True)
+        log(wall, metadata=meta_xyz, metadata_parser=None, output_format=None, task=None, persist_image=True,name_prefix=currentTask.name_prefix)
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
 re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")

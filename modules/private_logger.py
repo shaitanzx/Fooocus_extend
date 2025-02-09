@@ -21,10 +21,10 @@ def get_current_html_path(output_format=None):
     return html_name
 
 
-def log(img, metadata, metadata_parser: MetadataParser | None = None, output_format=None, task=None, persist_image=True) -> str:
+def log(img, metadata, metadata_parser: MetadataParser | None = None, output_format=None, task=None, persist_image=True,name_prefix='') -> str:
     path_outputs = modules.config.temp_path if args_manager.args.disable_image_log or not persist_image else modules.config.path_outputs
     output_format = output_format if output_format else modules.config.default_output_format
-    date_string, local_temp_filename, only_name = generate_temp_filename(folder=path_outputs, extension=output_format)
+    date_string, local_temp_filename, only_name = generate_temp_filename(folder=path_outputs, extension=output_format,name_prefix=name_prefix)
     os.makedirs(os.path.dirname(local_temp_filename), exist_ok=True)
 
     parsed_parameters = metadata_parser.to_string(metadata.copy()) if metadata_parser is not None else ''

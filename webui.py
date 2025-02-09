@@ -44,7 +44,6 @@ from extentions import wildcards
 
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 
-#from extentions.op_edit.body import Body
 from extentions.op_edit import main as op_editor
 from pathlib import Path
 import io
@@ -52,25 +51,17 @@ import cv2
 from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
+
 obp_prompt=[]
 
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
-modules.config.available_aspect_ratios_labels=[item.replace("<span style=\"color: grey;\">", "").replace("</span>", "") for item in modules.config.available_aspect_ratios_labels]
-modules.config.available_aspect_ratios_labels+=[f'512×512  ∣ 1:1']
-modules.config.default_aspect_ratio=modules.config.default_aspect_ratio.replace("<span style=\"color: grey;\">", "").replace("</span>", "")
-
 
 ar_def=[1,1]
 swap_def=False
 finished_batch=False
 batch_path='./batch_images'
-
-
-
-    
-
 
 def xyz_plot_ext(currentTask):
     global finished_batch
@@ -147,22 +138,6 @@ def obp_start(p):
     originalnegativeprompt = p.negative_prompt
     prompts=p.amountofimages
 
-#    if(p.silentmode==True and p.workprompt != ""):
-#        randomprompt = ob_prompt.createpromptvariant(workprompt, promptvariantinsanitylevel)
-#        print("Using provided workflow prompt")
-#        print(randomprompt)
-#    else:    
-#            randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
-#            randomprompt = randompromptlist[0]
-#            randomsubject = randompromptlist[1]
-#    negativeprompt=p.negative_prompt
-#    if(autonegativeprompt):
-#            negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
-#    randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
-
-
-
-
     for generation in range(int(prompts)):
       if not finished_batch:
         if(silentmode==True and workprompt != ""):
@@ -208,12 +183,9 @@ def obp_start(p):
               p.negative_prompt=negativeprompt
               p.base_model_name=name_model
               p.aspect_ratios_selection=name_ratio
-#              currentTask=get_task_batch(args)
               yield from generate_clicked(p)
               if p.seed_random:
                   p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-
-
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
@@ -227,8 +199,7 @@ def get_task(*args):
     if trans_enable:      
             positive, negative = translate(argsList[2], argsList[3], srT, toT)            
             argsList[2] = positive
-            argsList[3] = negative
-            
+            argsList[3] = negative          
     args = tuple(argsList)
     args = list(args)
     args.pop(0)
@@ -312,9 +283,6 @@ def pr_batch_start(p):
         p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
       passed+=1
   return 
-
-
-
 
 def generate_clicked(task: worker.AsyncTask):
     import ldm_patched.modules.model_management as model_management
@@ -898,8 +866,7 @@ with shared.gradio_root:
                               directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
                               delete_out(directory)
                             return 
-                        
-                        
+                       
                         with gr.Row():
                           with gr.Column():
                             file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'])
@@ -907,7 +874,6 @@ with shared.gradio_root:
                             def update_radio(value):
                               return gr.update(value=value)
                             ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
-                            
 
                           with gr.Column():
                             image_action = gr.Dropdown(choices=['Image Prompt','Upscale'], value='Image Prompt', label='Action',interactive=True)
@@ -935,11 +901,8 @@ with shared.gradio_root:
                             ip_weight_batch=flags.default_parameters[image_mode][1]
                             return gr.update(value=ip_stop_batch), gr.update(value=ip_weight_batch)
 
-
                         image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
-                        image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)    
-                        
-                        
+                        image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
                         add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
                                     outputs=[add_to_queue, status_batch]) \
                                     .then(fn=unzip_file,inputs=file_in) \
@@ -966,7 +929,6 @@ with shared.gradio_root:
                                 removed=batch_prompt.pop()
                             return batch_prompt
                         with gr.Row():
-#                            with gr.Column():
                                 batch_prompt=gr.Dataframe(
                                     headers=["prompt", "negative prompt"],
                                     datatype=["str", "str"],
@@ -1350,6 +1312,8 @@ with shared.gradio_root:
                                          choices=flags.OutputFormat.list(),
                                          value=modules.config.default_output_format)
 
+                name_prefix = gr.Textbox(label='Filename Prefix', show_label=True)
+
                 negative_prompt = gr.Textbox(label='Negative Prompt', show_label=True, placeholder="Type prompt here.",
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
@@ -1435,6 +1399,8 @@ with shared.gradio_root:
                                          inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
                 with gr.Group():
+
+                    lora_len = gr.Slider(label='Loraslen', minimum=0.0, maximum=100.0, step=1, value=modules.config.default_max_lora_number, visible=False)
                     lora_ctrls = []
 
                     for i, (enabled, filename, weight) in enumerate(modules.config.default_loras):
@@ -1459,6 +1425,7 @@ with shared.gradio_root:
                                       value=modules.config.default_sample_sharpness,
                                       info='Higher value means image and texture are sharper.')
                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
+                
                 dev_mode = gr.Checkbox(label='Developer Debug Mode', value=modules.config.default_developer_debug_mode_checkbox, container=False)
 
                 with gr.Column(visible=modules.config.default_developer_debug_mode_checkbox) as dev_tools:
@@ -1631,8 +1598,31 @@ with shared.gradio_root:
                         freeu_s2 = gr.Slider(label='S2', minimum=0, maximum=4, step=0.01, value=0.95)
                         freeu_ctrls = [freeu_enabled, freeu_b1, freeu_b2, freeu_s1, freeu_s2]
 
+                    with gr.Tab(label='Paths and Presets'):
+                      def process_path(path):
+                          if '\\' in path:
+                              return path.replace('\\', '\\')
+                          else:
+                              return path
+
+                      path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=process_path(', '.join(modules.config.paths_checkpoints)), show_label=True, interactive=True)
+                      path_loras_set = gr.Textbox(label='Loras path', value=process_path(', '.join(modules.config.paths_loras)), show_label=True, interactive=True)
+                      path_embeddings_set = gr.Textbox(label='Embeddings path', value=(modules.config.path_embeddings), show_label=True, interactive=True)
+                      path_vae_set = gr.Textbox(label='VAE path', value=process_path(modules.config.path_vae), show_label=True, interactive=True)
+                      path_outputs_set = gr.Textbox(label='Outputs path', value=process_path(modules.config.path_outputs), show_label=True, interactive=True)
+                      path_change=gr.Button(value='Apply change paths')
+                      preset_name = gr.Textbox(label='Filename new preset', show_label=True, interactive=True)
+                      save_preset_button=gr.Button(value='Save preset')
+                
+                      preset_have = gr.Dropdown(label='Preset',
+                                                   choices=modules.config.available_presets,
+                                                   value=args_manager.args.preset if args_manager.args.preset else "initial",
+                                                   interactive=True)
+                      delete_preset_button=gr.Button(value='Delete preset')
+
                 def dev_mode_checked(r):
                     return gr.update(visible=r)
+
 
                 dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
                                 queue=False, show_progress=False)
@@ -1670,18 +1660,15 @@ with shared.gradio_root:
             def preset_selection_change(preset, is_generating, inpaint_mode):
                 preset_content = modules.config.try_get_preset_content(preset) if preset != 'initial' else {}
                 preset_prepared = modules.meta_parser.parse_meta_from_preset(preset_content)
-
                 default_model = preset_prepared.get('base_model')
                 previous_default_models = preset_prepared.get('previous_default_models', [])
                 checkpoint_downloads = preset_prepared.get('checkpoint_downloads', {})
                 embeddings_downloads = preset_prepared.get('embeddings_downloads', {})
                 lora_downloads = preset_prepared.get('lora_downloads', {})
                 vae_downloads = preset_prepared.get('vae_downloads', {})
-
                 preset_prepared['base_model'], preset_prepared['checkpoint_downloads'] = launch.download_models(
                     default_model, previous_default_models, checkpoint_downloads, embeddings_downloads, lora_downloads,
                     vae_downloads)
-
                 if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
                     del preset_prepared['prompt']
 
@@ -1786,8 +1773,6 @@ with shared.gradio_root:
                   enhance_input_image, enhance_checkbox, enhance_uov_method, enhance_uov_processing_order,
                   enhance_uov_prompt_type]
         ctrls += enhance_ctrls
-        
-		
 
         def parse_meta(raw_prompt_txt, is_generating):
             loaded_json = None
@@ -1825,11 +1810,106 @@ with shared.gradio_root:
         ctrls += [model,base_model,size,amountofimages,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,seed_random]
         ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [batch_prompt,positive_batch,negative_batch]
+        ctrls += [name_prefix]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
             return workprompt
+
+        def to_dict(obj):
+            return obj.__dict__
+        def get_value(value):
+            return value
+        def save_preset(*args):
+            argsList = list(args)
+            loras_len=argsList.pop()
+            ctrl=[]
+            for _ in range(loras_len):
+                temp_list = []
+                for _ in range(3):
+                    temp_list.append(argsList.pop())
+                temp_list.reverse()
+                ctrl.append(temp_list)
+            ctrl.reverse()
+            name=argsList.pop()
+            toT = argsList.pop() 
+            srT = argsList.pop() 
+            trans_enable = argsList.pop() 
+            args = tuple(argsList)
+            args = list(args)
+            args.pop(0)
+            p=worker.AsyncTask(args=args)
+            data ={}
+            data["base_model"]=p.base_model_name
+            data["default_refiner"]=p.refiner_model_name
+            data["default_refiner_switch"]=p.refiner_switch
+            data["default_loras"]=ctrl
+            data["default_cfg_scale"]=p.cfg_scale
+            data["default_sample_sharpness"]=p.sharpness
+            data["default_cfg_tsnr"]=p.adaptive_cfg
+            data["default_clip_skip"]=p.clip_skip
+            data["default_sampler"]=p.sampler_name
+            data["default_scheduler"]=p.scheduler_name
+            data["default_overwrite_step"]=p.overwrite_step
+            data["default_overwrite_switch"]=p.overwrite_switch
+            data["default_performance"]=p.performance_selection.value
+            data["default_image_number"]=p.image_number
+            data["default_prompt_negative"]=p.negative_prompt
+            data["default_styles"]=p.style_selections
+            data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
+            data["default_vae"]=p.vae_name
+            data["default_inpaint_engine_version"]=p.inpaint_engine
+            save_path = 'presets/' + name + '.json'
+            with open(save_path, "w", encoding="utf-8") as json_file:
+                json.dump(data, json_file, ensure_ascii=False, indent=4)
+            return
+        def delete_preset (preset):
+            if preset !='initial' and preset !='default':
+                try:
+                    os.remove('presets/' + preset + '.json')
+                except Exception as e:
+                    print(f"Error: {e}")  
+            else:
+                print(f"Do not delete '{preset}'.")
+            return
+        save_preset_button.click(save_preset,inputs=ctrls + [preset_name] + lora_ctrls + [lora_len]) \
+	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
+	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name,preset_have])
+        delete_preset_button.click(delete_preset,inputs=preset_have) \
+	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
+	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
+
+        
+        def reverse_path(path):
+            if '\\' in path:
+                return path.replace('\\', '\\\\')
+            else:
+                return path
+
+        def path_change_action(path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set):
+            conf_path = "config.txt"
+            with open(conf_path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+            data["path_checkpoints"] =path_checkpoints_set.split(',')
+            data["path_loras"] = path_loras_set.split(',')
+            data["path_embeddings"] = path_embeddings_set
+            data["path_vae"] = path_vae_set
+            data["path_outputs"] = path_outputs_set
+            with open(conf_path, "w", encoding="utf-8") as file:
+                json.dump(data, file, indent=4, ensure_ascii=False)
+
+
+            modules.config.paths_checkpoints=reverse_path(path_checkpoints_set.split(','))
+            modules.config.paths_loras=reverse_path(path_loras_set.split(','))
+            modules.config.path_embeddings=reverse_path(path_embeddings_set)
+            modules.config.path_vae=reverse_path(path_vae_set)
+            modules.config.path_outputs=reverse_path(path_outputs_set)
+            return
+
+        path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
+            .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
+
         genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
             .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
                   outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])

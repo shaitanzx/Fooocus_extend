@@ -25,6 +25,7 @@ wildcards_max_bfs_depth = 64
 config_path = get_config_path('config_path', "./config.txt")
 config_example_path = get_config_path('config_example_path', "config_modification_tutorial.txt")
 config_dict = {}
+temp_dict = {}
 always_save_keys = []
 visited_keys = []
 
@@ -34,7 +35,6 @@ try:
 except Exception as e:
     print(f'Load default preset failed.')
     print(e)
-
 try:
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as json_file:
@@ -129,8 +129,12 @@ def try_get_preset_content(preset):
 
 available_presets = get_presets()
 preset = args_manager.args.preset
-config_dict.update(try_get_preset_content(preset))
-
+temp_dict.update(try_get_preset_content(preset))
+if 'base_model' in temp_dict:
+    key_remove=['default_model', 'checkpoint_downloads', 'embeddings_downloads', 'lora_downloads', 'previous_default_models']
+    for key in key_remove:
+        config_dict.pop(key, None)
+config_dict.update(temp_dict)
 def get_path_output() -> str:
     """
     Checking output path argument and overriding default path.
@@ -267,7 +271,7 @@ temp_path_cleanup_on_launch = get_config_item_or_set_default(
 )
 default_base_model_name = default_model = get_config_item_or_set_default(
     key='default_model',
-    default_value='model.safetensors',
+    default_value=config_dict['base_model'] if 'base_model' in config_dict else 'model.safetensors',
     validator=lambda x: isinstance(x, str),
     expected_type=str
 )
@@ -768,7 +772,7 @@ def add_ratio(x):
     a, b = x.replace('*', ' ').split(' ')[:2]
     a, b = int(a), int(b)
     g = math.gcd(a, b)
-    return f'{a}×{b} <span style="color: grey;"> \U00002223 {a // g}:{b // g}</span>'
+    return f'{a}×{b}  \U00002223 {a // g}:{b // g}'
 
 
 default_aspect_ratio = add_ratio(default_aspect_ratio)
