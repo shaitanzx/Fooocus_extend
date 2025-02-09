@@ -57,9 +57,6 @@ obp_prompt=[]
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
-#modules.config.available_aspect_ratios_labels=[item.replace("<span style=\"color: grey;\">", "").replace("</span>", "") for item in modules.config.available_aspect_ratios_labels]
-#modules.config.available_aspect_ratios_labels+=[f'512×512  ∣ 1:1']
-#modules.config.default_aspect_ratio=modules.config.default_aspect_ratio.replace("<span style=\"color: grey;\">", "").replace("</span>", "")
 
 ar_def=[1,1]
 swap_def=False
@@ -1908,19 +1905,8 @@ with shared.gradio_root:
             modules.config.path_embeddings=reverse_path(path_embeddings_set)
             modules.config.path_vae=reverse_path(path_vae_set)
             modules.config.path_outputs=reverse_path(path_outputs_set)
-
-            
-            print('---------------------------------------------------',modules.config.paths_checkpoints,type(modules.config.paths_checkpoints))
-            print('---------------------------------------------------',modules.config.paths_loras,type(modules.config.paths_loras))
-            print('---------------------------------------------------',modules.config.path_embeddings,type(modules.config.path_embeddings))
-            print('---------------------------------------------------',modules.config.path_vae,type(modules.config.path_vae))
-            print('---------------------------------------------------',modules.config.path_outputs,type(modules.config.path_outputs))
             return
-        print('---------------------------------------------------',modules.config.paths_checkpoints,type(modules.config.paths_checkpoints))
-        print('---------------------------------------------------',modules.config.paths_loras,type(modules.config.paths_loras))
-        print('---------------------------------------------------',modules.config.path_embeddings,type(modules.config.path_embeddings))
-        print('---------------------------------------------------',modules.config.path_vae,type(modules.config.path_vae))
-        print('---------------------------------------------------',modules.config.path_outputs,type(modules.config.path_outputs))
+
         path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
