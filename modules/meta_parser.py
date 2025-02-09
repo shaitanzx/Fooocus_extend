@@ -140,9 +140,14 @@ def get_resolution(key: str, fallback: str | None, source_dict: dict, results: l
             results.append(-1)
             results.append(-1)
         else:
-            results.append(gr.update())
-            results.append(int(width))
-            results.append(int(height))
+#            formatted = modules.config.add_ratio(f'{width}*{height}')
+            modules.config.available_aspect_ratios_labels[-1]=formatted
+            results.append(formatted)
+            results.append(-1)
+            results.append(-1)
+ #           results.append(gr.update())
+ #           results.append(int(width))
+ #           results.append(int(height))
     except:
         results.append(gr.update())
         results.append(gr.update())

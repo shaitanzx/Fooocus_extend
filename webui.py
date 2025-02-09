@@ -57,9 +57,9 @@ obp_prompt=[]
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
-modules.config.available_aspect_ratios_labels=[item.replace("<span style=\"color: grey;\">", "").replace("</span>", "") for item in modules.config.available_aspect_ratios_labels]
-modules.config.available_aspect_ratios_labels+=[f'512×512  ∣ 1:1']
-modules.config.default_aspect_ratio=modules.config.default_aspect_ratio.replace("<span style=\"color: grey;\">", "").replace("</span>", "")
+#modules.config.available_aspect_ratios_labels=[item.replace("<span style=\"color: grey;\">", "").replace("</span>", "") for item in modules.config.available_aspect_ratios_labels]
+#modules.config.available_aspect_ratios_labels+=[f'512×512  ∣ 1:1']
+#modules.config.default_aspect_ratio=modules.config.default_aspect_ratio.replace("<span style=\"color: grey;\">", "").replace("</span>", "")
 
 ar_def=[1,1]
 swap_def=False
