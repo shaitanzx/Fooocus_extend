@@ -43,7 +43,7 @@
     "default_overwrite_step": -1,
     "default_inpaint_engine_version": "None",
     "checkpoint_downloads": {
-        "prometheus_v2Aesthetic.safetensors": "https://civitai.com/api/download/models/709812?type=Model&format=SafeTensor&size=pruned&fp=fp16"
+        "prometheus_v2Aesthetic.safetensors": "https://civitai.com/api/download/models/709812?type=Model&format=SafeTensor&size=pruned&fp=fp16&token=43bb32496994f57c737b1d0a939d6859"
     },
     "embeddings_downloads": {},
     "lora_downloads": {},
