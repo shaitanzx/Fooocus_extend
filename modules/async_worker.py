@@ -226,7 +226,7 @@ class AsyncTask:
         self.batch_prompt = args.pop()
         self.positive_batch = args.pop()
         self.negative_batch = args.pop()
-        self.name_prefix = args.pop()
+        self.name_prefix = args.pop().strip().replace(" ", "_")
         
 
 async_tasks = []
