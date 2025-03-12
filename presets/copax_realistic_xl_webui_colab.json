@@ -1,0 +1,49 @@
+{
+    "default_model": "comradeshipXL_v17t4.safetensors",
+    "default_refiner": "None",
+    "default_refiner_switch": 0.5,
+    "default_loras": [
+        [
+            "MJ52.safetensors",
+            0.1
+        ],
+        [
+            "None",
+            1.0
+        ],
+        [
+            "None",
+            1.0
+        ],
+        [
+            "None",
+            1.0
+        ],
+        [
+            "None",
+            1.0
+        ]
+    ],
+    "default_cfg_scale": 4.0,
+    "default_sample_sharpness": 2.0,
+    "default_sampler": "dpmpp_2m_sde_gpu",
+    "default_scheduler": "karras",
+    "default_performance": "Speed",
+    "default_prompt": "",
+    "default_prompt_negative": "",
+    "default_styles": [
+        "Fooocus V2",
+        "Fooocus Enhance",
+        "Fooocus Sharp"
+    ],
+    "default_aspect_ratio": "1152*896",
+    "checkpoint_downloads": {
+        "comradeshipXL_v17t4.safetensors": "https://huggingface.co/Alptekinege/testdepo/resolve/main/comradeshipXL_v17t4.safetensors"
+    },
+    "embeddings_downloads": {},
+    "lora_downloads": {
+        "MJ52.safetensors": "https://huggingface.co/Alptekinege/testdepo/resolve/main/MJ52.safetensors"
+    },
+    "previous_default_models": [
+    ]
+}
