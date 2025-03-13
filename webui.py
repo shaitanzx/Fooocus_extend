@@ -217,6 +217,7 @@ def im_batch_run(p):
       if not finished_batch:  
         pc = copy.deepcopy(p)
         img = Image.open('./batch_images/'+f_name)
+        img_preview = img
         if not p.input_image_checkbox:
             p.cn_tasks = {x: [] for x in flags.ip_list}
         if p.image_action == 'Upscale': 
@@ -239,13 +240,15 @@ def im_batch_run(p):
                   img = img.resize((w, h), Image.LANCZOS)
               p.cn_tasks[p.image_mode].append([np.array(img), p.ip_stop_batch, p.ip_weight_batch])
         print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"Image Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         passed+=1
         p.input_image_checkbox=True
         if p.translate_enabled:
                   positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
                   p.prompt = positive
                   p.negative_prompt = negative
-        yield from generate_clicked(p)
+        yield from ([v1, v2, v3, v4, img_preview] for v1, v2, v3, v4 in generate_clicked(p))
+#        yield from generate_clicked(p)
         p = copy.deepcopy(pc)
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
@@ -261,7 +264,7 @@ def pr_batch_start(p):
   passed=1
   while batch_prompt and not finished_batch:
       print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
-      gr.Info(f"Batch Prompt: start element generation {passed}/{batch_len}") 
+      gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
       one_batch_args=batch_prompt.pop()
       if p.positive_batch=='Prefix':
         p.prompt= p.original_prompt + one_batch_args[0]
@@ -877,21 +880,20 @@ with shared.gradio_root:
                             def update_radio(value):
                               return gr.update(value=value)
                             ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
-
+                            preview_batch= gr.Image(type='filepath', label="Source Image",visible=False)
                           with gr.Column():
                             image_action = gr.Dropdown(choices=['Image Prompt','Upscale'], value='Image Prompt', label='Action',interactive=True)
                             image_mode = gr.Dropdown(choices=flags.ip_list, value=flags.ip_list[0], label='Method',interactive=True)
                             ip_stop_batch = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=flags.default_parameters[image_mode.value][0],interactive=True)
                             ip_weight_batch = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=flags.default_parameters[image_mode.value][1],interactive=True)
                             upscale_mode = gr.Dropdown(choices=flags.uov_list, value=flags.uov_list[0], label='Method',interactive=True,visible=False)
-                            add_to_queue = gr.Button(label="Add to queue", value='Add to queue ({}'.format(len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))]))+')', elem_id='add_to_queue', visible=True)
-                            batch_start = gr.Button(value='Start queue', visible=True)
-                            batch_clear = gr.Button(value='Clear queue')
-                            status_batch = gr.Textbox(show_label=False, value = '', container=False, visible=False, interactive=False)
                           with gr.Column():
                             file_out=gr.File(label="Download a ZIP file", file_count='single')
-                            save_output = gr.Button(value='Output --> ZIP')
-                            clear_output = gr.Button(value='Clear Output')
+                            
+                        with gr.Row():
+                          batch_start = gr.Button(value='Start queue', visible=True)
+                          save_output = gr.Button(value='Output --> ZIP')
+                          clear_output = gr.Button(value='Clear Output')
                         with gr.Row():
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
                         def image_action_change(image_action):
@@ -906,23 +908,19 @@ with shared.gradio_root:
 
                         image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
                         image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
-                        add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
-                                    outputs=[add_to_queue, status_batch]) \
-                                    .then(fn=unzip_file,inputs=file_in) \
-                                    .then(lambda: (gr.update(visible=False)),outputs=[status_batch]) \
-                                    .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
-                                    .then(lambda: (gr.update(interactive=True)),outputs=[add_to_queue])
+ #                       add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
+ #                                   outputs=[add_to_queue, status_batch]) \
+ #                                   .then(fn=unzip_file,inputs=file_in) \
+ #                                   .then(lambda: (gr.update(visible=False)),outputs=[status_batch]) \
+ #                                   .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
+ #                                   .then(lambda: (gr.update(interactive=True)),outputs=[add_to_queue])
                         clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
                                     .then(clear_outputs) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
                         save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
                                     .then(fn=output_zip, outputs=file_out) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
-                        batch_clear.click(lambda: (gr.update(interactive=False),  gr.update(visible=True,value='Queue is clearing')),
-                                    outputs=[batch_clear,status_batch]) \
-                                    .then(fn=clearer) \
-                                    .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
-                                    .then(lambda: (gr.update(interactive=True),gr.update(visible=False)),outputs=[batch_clear,status_batch])
+
                   with gr.TabItem(label='Prompt Batch') as pr_batch:
                         def prompt_clearer(batch_prompt):
                             batch_prompt=[{'prompt': '', 'negative prompt': ''}]
@@ -1967,16 +1965,16 @@ with shared.gradio_root:
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
 
-        batch_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True,gr.update(visible=True,value='Queue in progress')),
-                              outputs=[batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating,status_batch]) \
+        batch_start.click(lambda: (gr.update(visible=False),gr.update(visible=False),gr.update(visible=True),gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[file_in,ratio,preview_batch,batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
+              .then(fn=clearer) \
+              .then(fn=unzip_file,inputs=file_in) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(fn=clearer) \
+              .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery,preview_batch]) \
               .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
-              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False,gr.update(visible=False)),
-                  outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating,status_batch]) \
-              .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue])
+              .then(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=False),gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
+                  outputs=[file_in,ratio,preview_batch,batch_start,generate_button, stop_button, skip_button, state_is_generating])
 
         prompt_start.click(lambda: (gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[prompt_load,prompt_start,prompt_delete,prompt_clear,batch_prompt,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
