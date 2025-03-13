@@ -23,6 +23,7 @@ import zipfile
 import threading
 import math
 import numpy as np
+import pandas as pd
 from extras.inpaint_mask import SAMOptions
 
 from modules.sdxl_styles import legal_style_names
@@ -942,10 +943,29 @@ with shared.gradio_root:
                                 prompt_clear=gr.Button(value="Clear Batch")
                                 prompt_start=gr.Button(value="Start batch", visible=True)
                         with gr.Row():
+                                prompt_load=upload_button = gr.UploadButton(label="Load prompts from file",file_count="single")
+                        with gr.Row():
                                 gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
-                
+                        def loader_prompt(file):
+                            with open(file.name, 'r') as f:
+                                lines = [line.strip() for line in f.readlines()]  
+                                data = []
+                                i = 0
+                                while i < len(lines):
+                                    if lines[i] == "":
+                                        i += 1
+                                        continue
+                                    if i + 1 < len(lines) and lines[i + 1] != "":
+                                        data.append([lines[i], lines[i + 1]])
+                                        i += 2
+                                    else:
+                                        data.append([lines[i], ""])
+                                        i += 1
+                                df = pd.DataFrame(data, columns=["prompt", "negative prompt"])
+                            return df
                         prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
                         prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
+                        prompt_load.upload(fn=loader_prompt,inputs=upload_button,outputs=batch_prompt)
                   with gr.TabItem(label='OBP') as obp_tab:
                         with gr.Tab("Main"):
                             with gr.Row(variant="compact"):

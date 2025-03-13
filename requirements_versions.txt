@@ -24,5 +24,4 @@ groundingdino-py==0.4.0
 segment_anything==1.0
 piexif
 sentencepiece
-
 opencv-python
