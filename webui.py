@@ -261,7 +261,7 @@ def pr_batch_start(p):
   passed=1
   while batch_prompt and not finished_batch:
       print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
-      gr.Info(f"{passed}/{batch_len} Start generation") 
+      gr.Info(f"Batch Prompt: start element generation {passed}/{batch_len}") 
       one_batch_args=batch_prompt.pop()
       if p.positive_batch=='Prefix':
         p.prompt= p.original_prompt + one_batch_args[0]

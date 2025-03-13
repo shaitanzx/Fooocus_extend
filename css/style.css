@@ -422,5 +422,5 @@ div:has(> #positive_prompt) {
   word-wrap: break-word !important;
 }
 #dataframe_batch td:nth-child(1) { 
-  width: 20%;
+  width: 50%;
 }
