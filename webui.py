@@ -256,10 +256,12 @@ def pr_batch_start(p):
   finished_batch=False
   p.batch_prompt.reverse()
   batch_prompt=p.batch_prompt
+  batch_len=len(batch_prompt)
   pc = copy.deepcopy(p)
   passed=1
   while batch_prompt and not finished_batch:
-      print (f"\033[91m[Prompts QUEUE] Element #{passed} \033[0m")
+      print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
+      gr.Info(f"{passed}/{batch_len} Start generation") 
       one_batch_args=batch_prompt.pop()
       if p.positive_batch=='Prefix':
         p.prompt= p.original_prompt + one_batch_args[0]
@@ -934,7 +936,8 @@ with shared.gradio_root:
                                     headers=["prompt", "negative prompt"],
                                     datatype=["str", "str"],
                                     row_count=1, wrap=True,
-                                    col_count=(2, "fixed"), type="array", interactive=True)
+                                    col_count=(2, "fixed"), type="array", interactive=True,
+                                    elem_id="dataframe_batch")
                         with gr.Row():
                                 positive_batch = gr.Radio(label='Base positive prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
                                 negative_batch = gr.Radio(label='Base negative prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
@@ -1975,13 +1978,13 @@ with shared.gradio_root:
                   outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating,status_batch]) \
               .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue])
 
-        prompt_start.click(lambda: (gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[prompt_start,prompt_delete,prompt_clear,batch_prompt,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
+        prompt_start.click(lambda: (gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[prompt_load,prompt_start,prompt_delete,prompt_clear,batch_prompt,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
               .then(fn=pr_batch_start,inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[prompt_start,batch_prompt,prompt_delete,prompt_clear,generate_button, stop_button, skip_button, state_is_generating]) \
+              .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
+                  outputs=[prompt_load,prompt_start,batch_prompt,prompt_delete,prompt_clear,generate_button, stop_button, skip_button, state_is_generating]) \
               .then(fn=update_history_link, outputs=history_link) \
               .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
 
