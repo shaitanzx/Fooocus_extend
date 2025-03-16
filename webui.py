@@ -906,12 +906,7 @@ with shared.gradio_root:
 
                         image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
                         image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
- #                       add_to_queue.click(lambda: (gr.update(interactive=False), gr.update(visible=True,value='File unZipping')),
- #                                   outputs=[add_to_queue, status_batch]) \
- #                                   .then(fn=unzip_file,inputs=file_in) \
- #                                   .then(lambda: (gr.update(visible=False)),outputs=[status_batch]) \
- #                                   .then(lambda: (gr.update(value=f'Add to queue ({len([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])})')), outputs=[add_to_queue]) \
- #                                   .then(lambda: (gr.update(interactive=True)),outputs=[add_to_queue])
+ 
                         clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
                                     .then(clear_outputs) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
