@@ -1,5 +1,4 @@
 v8.0.3
-
 1. Some bug fix
 2. Add load prompt from files in PromptBatch
 3. The ImageBatch extension interface has been simplified
