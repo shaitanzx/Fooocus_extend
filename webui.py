@@ -52,7 +52,7 @@ import cv2
 from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
-
+from modules.extra_utils import get_files_from_folder
 obp_prompt=[]
 
 
@@ -1366,7 +1366,51 @@ with shared.gradio_root:
                 style_sorter.try_load_sorted_styles(
                     style_names=legal_style_names,
                     default_selected=modules.config.default_styles)
+                def style_load(file):
+                    folder='sdxl_styles'
+                    file_name = os.path.basename(file.name)
+                    save_path = os.path.join(folder, file_name)
+                    with open(file.name, "rb") as source_file:
+                        with open(save_path, "wb") as target_file:
+                            target_file.write(source_file.read())
+                    style_sorter.all_styles=[]
+                    styles_path = os.path.join(os.path.dirname(__file__), 'sdxl_styles/')
+                    modules.sdxl_styles.styles = {}
+                    
+                    styles_files = get_files_from_folder(styles_path, ['.json'])
 
+                    for x in ['sdxl_styles_fooocus.json',
+                              'sdxl_styles_sai.json',
+                              'sdxl_styles_mre.json',
+                              'sdxl_styles_twri.json',
+                              'sdxl_styles_diva.json',
+                              'sdxl_styles_marc_k3nt3l.json']:
+                          if x in styles_files:
+                              styles_files.remove(x)
+                              styles_files.append(x)
+
+                    for styles_file in styles_files:
+                      try:
+                        with open(os.path.join(styles_path, styles_file), encoding='utf-8') as f:
+                            for entry in json.load(f):
+                                name = modules.sdxl_styles.normalize_key(entry['name'])
+                                prompt = entry['prompt'] if 'prompt' in entry else ''
+                                negative_prompt = entry['negative_prompt'] if 'negative_prompt' in entry else ''
+                                modules.sdxl_styles.styles[name] = (prompt, negative_prompt)
+                      except Exception as e:
+                            print(str(e))
+                            print(f'Failed to load style file {styles_file}')
+
+                    style_keys = list(modules.sdxl_styles.styles.keys())
+                    fooocus_expansion = 'Fooocus V2'
+                    random_style_name = 'Random Style'
+                    legal_style_names = [fooocus_expansion, random_style_name] + style_keys
+                    style_sorter.try_load_sorted_styles(
+                    style_names=legal_style_names,
+                    default_selected=modules.config.default_styles)
+                    return gr.update(choices=copy.deepcopy(style_sorter.all_styles))
+                style_loader = gr.UploadButton(label="Load file of styles",file_count="single",file_types=['.json'])
+                
                 style_search_bar = gr.Textbox(show_label=False, container=False,
                                               placeholder="\U0001F50E Type here to search styles ...",
                                               value="",
@@ -1380,7 +1424,7 @@ with shared.gradio_root:
 
                 shared.gradio_root.load(lambda: gr.update(choices=copy.deepcopy(style_sorter.all_styles)),
                                         outputs=style_selections)
-
+                style_loader.upload(fn=style_load,inputs=style_loader,outputs=style_selections)
                 style_search_bar.change(style_sorter.search_styles,
                                         inputs=[style_selections, style_search_bar],
                                         outputs=style_selections,
