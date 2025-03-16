@@ -27,41 +27,51 @@ This module allows you not to memorise existing files with wildcard words, but t
 
 4.	**Image Batch** (batch image processing)
 
-![004](https://github.com/user-attachments/assets/d11708d9-0386-4771-bf36-6b2dd90028af)
+![image](https://github.com/user-attachments/assets/c99f5a4a-b26f-42f6-9871-3a464f4bb73d)
 
 
 
+ In a nutshell, this module allows you to perform group scaling of images, as well as create images based on a group of existing images using ImagePromt (ControlNet). To better understand this module, I suggest you do some experiments on your own. But I want to point out that using it allows you to use your images as references and change their style depending on the cue and the model you choose. First you need to create a zip archive with your images. The archive must not contain any subfolders, file names must not contain characters other than Latin. Upload the prepared archive to the "Upload zip file" window.
 
- In a nutshell, this module allows you to perform group upscaling of images, as well as create images based on a group of existing images using ImagePromt (ControlNet). To better understand this module, I advise you to conduct a few experiments yourself. But I want to note that its use allows you to use your images as references and change their style depending on the hint and the selected model. First, you need to create a zip archive with your images. The archive should not contain subfolders, the file names should not contain characters other than Latin. Upload the prepared archive to the "Upload zip file" window. Next, select the mode for changing the image resolution
-- Not scale - the generation will not take into account the resolution of the original image
-- to ORIGINAL - this means that immediately before generation the resolution equal to the resolution of the original image will be selected.
-- to OUTPUT - in this case first the resolution of the original image will be changed to the generated one with preserving the proportions, and then the generation will start
+ Next, select the mode of changing the image resolution
+- NOT scale - the source image resolution will not be taken into account during generation
+- to ORIGINAL - this means that immediately before generation the resolution equal to the resolution of the source image will be selected.
+- to OUTPUT - in this case, before generation the resolution of the source image will be changed to the generated one with preserving the proportions
   
-Depending on what you want to do with your source images, select "Action" - Upscale or ImagePrompt. In the "Method" drop-down list, select the appropriate image processing method. In case of using ImagePrompt, you also need to select the "Stop at " and "Weight" parameters.
+Depending on what you want to do with the source images, select Action - Upscale or ImagePrompt. From the Method drop-down list, select the appropriate image processing method. If you are using ImagePrompt, you must also select the "Stop at" and "Weight" options.
 
-Clicking the Add to queue button will unpack the previously downloaded archive and put all jobs in the queue. The number of queued jobs will be indicated in brackets.
+Start batch - starts the process for execution. 
 
-Start queue starts the queue for execution. 
+When the process is finished, click on Output->Zip button to create an archive with all previously created images from the output folder. The archive itself will appear in the "Download a Zip file" window. You can download it from there.
 
-Clear queue - clears the queue of existing jobs, but does not delete the last loaded archive.
+Clear Output - clear the output folder. It should be noted that not only the folder for the current date is cleared, but also the whole folder.
 
-When the queue is finished, click on Output->Zip to generate an archive with all previously generated images from the output folder. The archive itself will appear in the Download a Zip file window. From there you can actually download it.
-
-Clear Output - clears the output folder. It should be noted that it clears not only the folder for the current date, but the whole folder.
-
-If the execution proceeds without errors or interruptions, the queue will be cleared automatically, and the downloaded archive will remain in memory. Otherwise, the queue will not be cleared.
 
 5.	**Prompt Batch** (batch processing of prompts)
 
-![005](https://github.com/user-attachments/assets/15dffb7d-b5f9-4893-a930-6ac0e9d831cb)
+![image](https://github.com/user-attachments/assets/fe1a2177-d579-4ffc-bc42-118b34c93d99)
 
 
+This module allows you to run generation of several hints sequentially one after another. To do this, you should fill in the table. Enter a positive hint in the hint column and a negative hint in the negative hint column respectively. Clicking the New Row button will add an empty row to the end of the table. Delete Last Row deletes the last row of the table. Start batch starts the execution of the list of prompts to generate.
+You can also choose to add basic positive and negative hints.
+None - no base hints will be added.
+Prefix - base hints will be added before the table hints.
+Suffix - basic hints will be added after hints from the table.
 
-This module allows you to start generating several prompts in the queue for execution. To do this, you need to fill in the table In the prompt column enter a positive prompt, and in the negative prompt column enter a negative prompt respectively. Clicking on New row will add an empty row to the end of the table. Delete last row deletes the last row of the table. Start batch starts execution of the prompt queue for generation.
-You can also choose to add base positive and negative prompts.
-None - basic prompts will not be added.
-Prefix - base prompts will be added before prompts from the table.
-Suffix - base samples will be added after samples from the table.
+Load prompts from file - allows to load the list of positive and negative prompts from a text file into the table. The file can have any extension
+
+The file with prompts should have the following structure. First there is a line with a positive prompt, then a line with a negative one. If you don't need to specify the negative prompt, leave the line empty, but the line with the positive prompt must always be there.
+As an example, let's look at the following file
+
+---- start of file -------
+
+![image](https://github.com/user-attachments/assets/750dff48-0bcc-4a20-b754-2d40f443e938)
+
+------ end of file --------
+
+After loading it, the table will look as follows
+
+![image](https://github.com/user-attachments/assets/1f005878-cadc-443f-a76f-7f20dda088b2)
 
 
 6.	**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
@@ -199,6 +209,14 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v8.0.3
+1. Some bug fix
+2. Add load prompt from files in PromptBatch
+3. The ImageBatch extension interface has been simplified
+
+v8.0.2
+1. Some bug fix
 
 v8.0.1
 1. Add Filename Prefix
