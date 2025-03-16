@@ -1409,8 +1409,6 @@ with shared.gradio_root:
                     style_names=legal_style_names,
                     default_selected=modules.config.default_styles)
                     return gr.update(choices=copy.deepcopy(style_sorter.all_styles))
-                style_loader = gr.UploadButton(label="Load file of styles",file_count="single",file_types=['.json'])
-                
                 style_search_bar = gr.Textbox(show_label=False, container=False,
                                               placeholder="\U0001F50E Type here to search styles ...",
                                               value="",
@@ -1421,7 +1419,7 @@ with shared.gradio_root:
                                                     label='Selected Styles',
                                                     elem_classes=['style_selections'])
                 gradio_receiver_style_selections = gr.Textbox(elem_id='gradio_receiver_style_selections', visible=False)
-
+                style_loader = gr.UploadButton(label="Load file of styles",file_count="single",file_types=['.json'])
                 shared.gradio_root.load(lambda: gr.update(choices=copy.deepcopy(style_sorter.all_styles)),
                                         outputs=style_selections)
                 style_loader.upload(fn=style_load,inputs=style_loader,outputs=style_selections)
