@@ -889,7 +889,7 @@ with shared.gradio_root:
                             file_out=gr.File(label="Download a ZIP file", file_count='single')
                             
                         with gr.Row():
-                          batch_start = gr.Button(value='Start queue', visible=True)
+                          batch_start = gr.Button(value='Start batch', visible=True)
                           save_output = gr.Button(value='Output --> ZIP')
                           clear_output = gr.Button(value='Clear Output')
                         with gr.Row():
