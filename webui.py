@@ -24,6 +24,7 @@ import threading
 import math
 import numpy as np
 import pandas as pd
+import importlib
 from extras.inpaint_mask import SAMOptions
 
 from modules.sdxl_styles import legal_style_names
@@ -1404,10 +1405,11 @@ with shared.gradio_root:
                     style_keys = list(modules.sdxl_styles.styles.keys())
                     fooocus_expansion = 'Fooocus V2'
                     random_style_name = 'Random Style'
-                    legal_style_names = [fooocus_expansion, random_style_name] + style_keys
+                    modules.sdxl_styles.legal_style_names = [fooocus_expansion, random_style_name] + style_keys
                     style_sorter.try_load_sorted_styles(
-                    style_names=legal_style_names,
-                    default_selected=modules.config.default_styles)
+                        style_names=modules.sdxl_styles.legal_style_names,
+                        default_selected=modules.config.default_styles)
+                    importlib.reload(xyz)
                     return gr.update(choices=copy.deepcopy(style_sorter.all_styles))
                 style_search_bar = gr.Textbox(show_label=False, container=False,
                                               placeholder="\U0001F50E Type here to search styles ...",
