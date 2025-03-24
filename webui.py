@@ -938,8 +938,8 @@ with shared.gradio_root:
                                 prompt_clear=gr.Button(value="Clear Batch")
                                 prompt_start=gr.Button(value="Start batch", visible=True)
                         with gr.Row():
-                                pos_only=gr.Checkbox(label='only positive prompts', value=True)
-                                prompt_load=upload_button = gr.UploadButton(label="Load prompts from file",file_count="single")
+                                pos_only=gr.Checkbox(label='only positive prompts', value=True, elem_classes='min_check')
+                                prompt_load=upload_button = gr.UploadButton(label="Load prompts from file",file_count="single",scale=4)
                         with gr.Row():
                                 gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
                         def loader_prompt(file,pos_only):

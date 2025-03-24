@@ -418,7 +418,7 @@ div:has(> #positive_prompt) {
 }
 
 #dataframe_batch {
-  max-height: 1000px;
+  max-height: 800px;
   overflow-y: auto !important;
 }
 #dataframe_batch td {
