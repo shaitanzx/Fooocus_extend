@@ -49,8 +49,7 @@ Clear Output - clear the output folder. It should be noted that not only the fol
 
 5.	**Prompt Batch** (batch processing of prompts)
 
-![image](https://github.com/user-attachments/assets/fe1a2177-d579-4ffc-bc42-118b34c93d99)
-
+![image](https://github.com/user-attachments/assets/06ae0644-4e4b-4456-a92b-7699606d9ce0)
 
 This module allows you to run generation of several hints sequentially one after another. To do this, you should fill in the table. Enter a positive hint in the hint column and a negative hint in the negative hint column respectively. Clicking the New Row button will add an empty row to the end of the table. Delete Last Row deletes the last row of the table. Start batch starts the execution of the list of prompts to generate.
 You can also choose to add basic positive and negative hints.
@@ -58,21 +57,28 @@ None - no base hints will be added.
 Prefix - base hints will be added before the table hints.
 Suffix - basic hints will be added after hints from the table.
 
+only positive prompts - if this item is active, all prompts in the file will be considered positive, otherwise, both positive and negative prompts will be loaded
 Load prompts from file - allows to load the list of positive and negative prompts from a text file into the table. The file can have any extension
 
-The file with prompts should have the following structure. First there is a line with a positive prompt, then a line with a negative one. If you don't need to specify the negative prompt, leave the line empty, but the line with the positive prompt must always be there.
-As an example, let's look at the following file
-
+As an example, consider a file with the following contents
 ---- start of file -------
 
 ![image](https://github.com/user-attachments/assets/750dff48-0bcc-4a20-b754-2d40f443e938)
 
 ------ end of file --------
 
-After loading it, the table will look as follows
+If the item ‘only positive prompts’ is active, then the table with prompts will have the following form
+
+
+![image](https://github.com/user-attachments/assets/c5df613e-d5c4-4088-abad-bf727f84f041)
+
+
+Otherwise
 
 ![image](https://github.com/user-attachments/assets/1f005878-cadc-443f-a76f-7f20dda088b2)
 
+This means that in the first case all prompts in the file are treated as positive, and empty lines are ignored.
+In the second case, the file first contains a line with a positive prompt, followed by a line with a negative prompt. If you don't need to specify a negative hint, leave this line blank, but the positive hint line must always be there.
 
 6.	**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
    
@@ -193,6 +199,11 @@ Here you can change the paths to your models if they are already in other folder
 Also here you can create a new preset based on the existing settings, and delete any of the existing ones, except for default and initial.
 The preset saves the following parameters: base model, refiner, refiner_switch, loras settings, cfg scale, sharpness, CFG Mimicking from TSNR, clip_skip, sampler, scheduler, Forced Overwrite of Sampling Step, Forced Overwrite of Refiner Switch Step, performance, image number, prompt negative, styles selections, aspect ratio, vae, inpaint_engine_version
 
+19. **Load file of style**
+
+![image](https://github.com/user-attachments/assets/8dfc51ce-f6f9-4ffa-b66d-2ae6d3412477)
+
+Allows you to upload a file (in *.json format) with custom styles
 
 <table>
   <tr>
@@ -209,6 +220,11 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v8.0.4
+1. User style upload
+2. Fixed maximum height of PromptBatch
+3. Option to load only positive prompts
 
 v8.0.3
 1. Some bug fix
