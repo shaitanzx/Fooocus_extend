@@ -151,19 +151,19 @@ This module allows you to create skeletons for subsequent image creation using O
 
 12.	**OpenPose ControlNet**
 
-![016](https://github.com/user-attachments/assets/68af63fb-ab4f-48cb-aa2b-989dc57166a4)
+![016](https://github.com/user-attachments/assets/79e5b10a-0fcb-40d9-8d46-ec9869725919)
 
 Allows you to create an image based on the pose skeleton.
 
 13.	**Recolor ControlNet**
 
-![017](https://github.com/user-attachments/assets/b763ee5a-fc01-4f68-948a-beaf0dc39c3a)
+![017](https://github.com/user-attachments/assets/2de6044f-2c23-4728-bf72-564d55d78300)
 
 Allows you to colorize an image based on a black and white image.
 
 14.	**Scribble ControlNet**
 
-![18](https://github.com/user-attachments/assets/39b4d80f-591d-4301-bb5a-c3cc47fb5325)
+![018](https://github.com/user-attachments/assets/ad18e4f4-d8f8-410a-b4c8-822de3dfadd4)
 
 Allows you to color an image based on a sketch.
 
@@ -176,7 +176,7 @@ This extension allows you to make image grids to make it easier to see the diffe
 
 16. **Save Image Grid for Each Batch**
 
-![20](https://github.com/user-attachments/assets/033a6a71-7e14-478a-a3d4-307f021fecec)
+![020](https://github.com/user-attachments/assets/04aebc91-de87-428e-b664-83b6d597e23f)
 
 17. **Filename Prefix**
 
