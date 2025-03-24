@@ -417,6 +417,10 @@ div:has(> #positive_prompt) {
   background: none;
 }
 
+#dataframe_batch {
+  max-height: 800px;
+  overflow-y: auto !important;
+}
 #dataframe_batch td {
   white-space: normal !important;
   word-wrap: break-word !important;
@@ -424,3 +428,4 @@ div:has(> #positive_prompt) {
 #dataframe_batch td:nth-child(1) { 
   width: 50%;
 }
+

@@ -49,8 +49,7 @@ Clear Output - clear the output folder. It should be noted that not only the fol
 
 5.	**Prompt Batch** (batch processing of prompts)
 
-![image](https://github.com/user-attachments/assets/fe1a2177-d579-4ffc-bc42-118b34c93d99)
-
+![image](https://github.com/user-attachments/assets/06ae0644-4e4b-4456-a92b-7699606d9ce0)
 
 This module allows you to run generation of several hints sequentially one after another. To do this, you should fill in the table. Enter a positive hint in the hint column and a negative hint in the negative hint column respectively. Clicking the New Row button will add an empty row to the end of the table. Delete Last Row deletes the last row of the table. Start batch starts the execution of the list of prompts to generate.
 You can also choose to add basic positive and negative hints.
@@ -58,21 +57,28 @@ None - no base hints will be added.
 Prefix - base hints will be added before the table hints.
 Suffix - basic hints will be added after hints from the table.
 
+only positive prompts - if this item is active, all prompts in the file will be considered positive, otherwise, both positive and negative prompts will be loaded
 Load prompts from file - allows to load the list of positive and negative prompts from a text file into the table. The file can have any extension
 
-The file with prompts should have the following structure. First there is a line with a positive prompt, then a line with a negative one. If you don't need to specify the negative prompt, leave the line empty, but the line with the positive prompt must always be there.
-As an example, let's look at the following file
-
+As an example, consider a file with the following contents
 ---- start of file -------
 
 ![image](https://github.com/user-attachments/assets/750dff48-0bcc-4a20-b754-2d40f443e938)
 
 ------ end of file --------
 
-After loading it, the table will look as follows
+If the item ‘only positive prompts’ is active, then the table with prompts will have the following form
+
+
+![image](https://github.com/user-attachments/assets/c5df613e-d5c4-4088-abad-bf727f84f041)
+
+
+Otherwise
 
 ![image](https://github.com/user-attachments/assets/1f005878-cadc-443f-a76f-7f20dda088b2)
 
+This means that in the first case all prompts in the file are treated as positive, and empty lines are ignored.
+In the second case, the file first contains a line with a positive prompt, followed by a line with a negative prompt. If you don't need to specify a negative hint, leave this line blank, but the positive hint line must always be there.
 
 6.	**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
    
@@ -151,19 +157,19 @@ This module allows you to create skeletons for subsequent image creation using O
 
 12.	**OpenPose ControlNet**
 
-![016](https://github.com/user-attachments/assets/68af63fb-ab4f-48cb-aa2b-989dc57166a4)
+![016](https://github.com/user-attachments/assets/79e5b10a-0fcb-40d9-8d46-ec9869725919)
 
 Allows you to create an image based on the pose skeleton.
 
 13.	**Recolor ControlNet**
 
-![017](https://github.com/user-attachments/assets/b763ee5a-fc01-4f68-948a-beaf0dc39c3a)
+![017](https://github.com/user-attachments/assets/2de6044f-2c23-4728-bf72-564d55d78300)
 
 Allows you to colorize an image based on a black and white image.
 
 14.	**Scribble ControlNet**
 
-![18](https://github.com/user-attachments/assets/39b4d80f-591d-4301-bb5a-c3cc47fb5325)
+![018](https://github.com/user-attachments/assets/ad18e4f4-d8f8-410a-b4c8-822de3dfadd4)
 
 Allows you to color an image based on a sketch.
 
@@ -176,7 +182,7 @@ This extension allows you to make image grids to make it easier to see the diffe
 
 16. **Save Image Grid for Each Batch**
 
-![20](https://github.com/user-attachments/assets/033a6a71-7e14-478a-a3d4-307f021fecec)
+![020](https://github.com/user-attachments/assets/04aebc91-de87-428e-b664-83b6d597e23f)
 
 17. **Filename Prefix**
 
@@ -193,6 +199,11 @@ Here you can change the paths to your models if they are already in other folder
 Also here you can create a new preset based on the existing settings, and delete any of the existing ones, except for default and initial.
 The preset saves the following parameters: base model, refiner, refiner_switch, loras settings, cfg scale, sharpness, CFG Mimicking from TSNR, clip_skip, sampler, scheduler, Forced Overwrite of Sampling Step, Forced Overwrite of Refiner Switch Step, performance, image number, prompt negative, styles selections, aspect ratio, vae, inpaint_engine_version
 
+19. **Load file of style**
+
+![image](https://github.com/user-attachments/assets/8dfc51ce-f6f9-4ffa-b66d-2ae6d3412477)
+
+Allows you to upload a file (in *.json format) with custom styles
 
 <table>
   <tr>
@@ -209,6 +220,11 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v8.0.4
+1. User style upload
+2. Fixed maximum height of PromptBatch
+3. Option to load only positive prompts
 
 v8.0.3
 1. Some bug fix
