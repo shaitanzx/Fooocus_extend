@@ -938,29 +938,43 @@ with shared.gradio_root:
                                 prompt_clear=gr.Button(value="Clear Batch")
                                 prompt_start=gr.Button(value="Start batch", visible=True)
                         with gr.Row():
+                                pos_only=gr.Checkbox(label='only positive prompts', value=True)
                                 prompt_load=upload_button = gr.UploadButton(label="Load prompts from file",file_count="single")
                         with gr.Row():
                                 gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
-                        def loader_prompt(file):
+                        def loader_prompt(file,pos_only):
                             with open(file.name, 'r') as f:
-                                lines = [line.strip() for line in f.readlines()]  
+                                lines = [line.strip() for line in f.readlines()]
                                 data = []
                                 i = 0
-                                while i < len(lines):
-                                    if lines[i] == "":
-                                        i += 1
-                                        continue
-                                    if i + 1 < len(lines) and lines[i + 1] != "":
-                                        data.append([lines[i], lines[i + 1]])
-                                        i += 2
-                                    else:
-                                        data.append([lines[i], ""])
-                                        i += 1
-                                df = pd.DataFrame(data, columns=["prompt", "negative prompt"])
+                                if pos_only:  
+                                    
+                                    while i < len(lines):
+                                        if lines[i] == "":
+                                            i += 1
+                                            continue
+                                        if i + 1 < len(lines) and lines[i + 1] != "":
+                                            data.append([lines[i], lines[i + 1]])
+                                            i += 2
+                                        else:
+                                            data.append([lines[i], ""])
+                                            i += 1
+                                   
+                                else:
+                                    while i< len(lines):
+                                        if lines[i] == "":
+                                            i += 1
+                                            continue
+                                        else:
+                                            data.append([lines[i], ""])
+                                            i += 1
+                            df = pd.DataFrame(data, columns=["prompt", "negative prompt"])
                             return df
                         prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
                         prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
-                        prompt_load.upload(fn=loader_prompt,inputs=upload_button,outputs=batch_prompt)
+                        prompt_load.upload(lambda: gr.update(interactive=False), outputs=prompt_load) \
+                                .then (fn=loader_prompt,inputs=[upload_button,pos_only],outputs=batch_prompt) \
+                                .then (lambda: gr.update(interactive=True), outputs=prompt_load)
                   with gr.TabItem(label='OBP') as obp_tab:
                         with gr.Tab("Main"):
                             with gr.Row(variant="compact"):
@@ -1424,7 +1438,9 @@ with shared.gradio_root:
                 style_loader = gr.UploadButton(label="Load file of styles",file_count="single",file_types=['.json'])
                 shared.gradio_root.load(lambda: gr.update(choices=copy.deepcopy(style_sorter.all_styles)),
                                         outputs=style_selections)
-                style_loader.upload(fn=style_load,inputs=style_loader,outputs=style_selections)
+                style_loader.upload(lambda: gr.update(interactive=False), outputs=style_loader) \
+                        .then(fn=style_load,inputs=style_loader,outputs=style_selections) \
+                        .then (lambda: gr.update(interactive=True), outputs=style_loader)
                 style_search_bar.change(style_sorter.search_styles,
                                         inputs=[style_selections, style_search_bar],
                                         outputs=style_selections,
