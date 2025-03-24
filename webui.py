@@ -947,7 +947,7 @@ with shared.gradio_root:
                                 lines = [line.strip() for line in f.readlines()]
                                 data = []
                                 i = 0
-                                if pos_only:  
+                                if not pos_only:  
                                     
                                     while i < len(lines):
                                         if lines[i] == "":
@@ -1440,7 +1440,7 @@ with shared.gradio_root:
                                         outputs=style_selections)
                 style_loader.upload(lambda: gr.update(interactive=False), outputs=style_loader) \
                         .then(fn=style_load,inputs=style_loader,outputs=style_selections) \
-                        .then (lambda: gr.update(interactive=True), outputs=style_loader)
+                        .then(lambda: gr.update(interactive=True), outputs=style_loader)
                 style_search_bar.change(style_sorter.search_styles,
                                         inputs=[style_selections, style_search_bar],
                                         outputs=style_selections,
