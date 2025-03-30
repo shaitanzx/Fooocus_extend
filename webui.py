@@ -54,10 +54,6 @@ from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
-
-with open("extentions/gtm.html", "r", encoding="utf-8") as f:
-    tmg = f.read()
-
 obp_prompt=[]
 
 
@@ -1213,12 +1209,6 @@ with shared.gradio_root:
                             with gr.Row():            
                                 p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
                     gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
-                  with gr.TabItem(label='TextMaskGenerator') as tmg_tab:
-                    gr.HTML(tmg)
-                  
-                  
-                  
-                  
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
                   with gr.TabItem(label=xyz.title()) as xyz_plot:
