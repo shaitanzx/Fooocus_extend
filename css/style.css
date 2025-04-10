@@ -416,3 +416,16 @@ div:has(> #positive_prompt) {
 #inpaint_brush_color input[type=color]{
   background: none;
 }
+
+#dataframe_batch {
+  max-height: 800px;
+  overflow-y: auto !important;
+}
+#dataframe_batch td {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+#dataframe_batch td:nth-child(1) { 
+  width: 50%;
+}
+
