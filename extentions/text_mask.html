@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Быстрый текстовой редактор с созданием масок для ControlNet или Inpaint</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Bad+Script&family=Bebas+Neue&family=Caveat:wght@400;700&family=Comfortaa:wght@300;400;700&family=Cormorant:ital,wght@0,400;0,700;1,400&family=El+Messiri:wght@400;700&family=Gochi+Hand&family=Inter:wght@300;400;700&family=Jost:ital,wght@0,400;0,700;1,400&family=Kelly+Slab&family=Lobster&family=Marck+Script&family=Montserrat:ital,wght@0,400;0,700;1,400&family=Neucha&family=Noto+Sans:ital,wght@0,400;0,700;1,400&family=Open+Sans:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;700&family=PT+Sans:ital,wght@0,400;0,700;1,400&family=Pacifico&family=Pangolin&family=Philosopher:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Podkova:wght@400;700&family=Poiret+One&family=Press+Start+2P&family=Raleway:ital,wght@0,300;0,400;0,700;1,400&family=Roboto:ital,wght@0,400;0,700;1,400&family=Rubik+Mono+One&family=Russo+One&family=Ruslan+Display&family=Unbounded:wght@400;700&family=Yeseva+One&display=swap" rel="stylesheet">
+  
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  
+  <!-- Fabric.js для работы с canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  
+  <!-- FileSaver.js для сохранения файлов -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  
+  <!-- Feather Icons -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+  
+  <style>
+    :root {
+      --background: #121212;
+      --surface: #1e1e1e;
+      --surface-light: #2d2d2d;
+      --primary: #bb86fc;
+      --primary-variant: #3700b3;
+      --secondary: #03dac6;
+      --error: #cf6679;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-disabled: rgba(255, 255, 255, 0.5);
+      --border-radius: 8px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      background-color: var(--surface);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .author-info {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.3rem;
+    }
+
+    .author-info a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .author-info a:hover {
+      text-decoration: underline;
+    }
+    
+    main {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 60px);
+    }
+    
+    .editor-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--background);
+      padding: 1rem;
+      position: relative;
+    }
+    
+    .canvas-container {
+      box-shadow: var(--shadow);
+      background-color: #1a1a1a;
+      max-width: 100%;
+      max-height: 100%;
+      overflow: hidden;
+    }
+    
+    .upload-prompt {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 2rem;
+      border: 2px dashed var(--text-disabled);
+      border-radius: var(--border-radius);
+      width: 80%;
+      max-width: 500px;
+      height: 300px;
+      z-index: 10;
+      background-color: rgba(30, 30, 30, 0.9);
+      transition: all 0.3s ease;
+    }
+    
+    .upload-prompt.hidden {
+      display: none;
+    }
+    
+    .upload-icon {
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+    
+    .toolbar {
+      width: 320px;
+      background-color: var(--surface);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+    }
+    
+    .toolbar-section {
+      background-color: var(--surface-light);
+      border-radius: var(--border-radius);
+      padding: 1rem;
+    }
+    
+    .section-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .section-icon {
+      color: var(--primary);
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: var(--primary);
+      color: #000;
+      border: none;
+      border-radius: var(--border-radius);
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-variant);
+      color: var(--text-primary);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background-color: var(--surface);
+      color: var(--text-primary);
+    }
+    
+    .btn-secondary:hover {
+      background-color: var(--surface-light);
+    }
+    
+    .btn-success {
+      background-color: var(--secondary);
+      color: #000;
+    }
+    
+    .btn-success:hover {
+      background-color: #02beaa;
+    }
+    
+    .btn-full {
+      width: 100%;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .form-group {
+      margin-bottom: 0.75rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    select, input[type="range"], input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: var(--surface);
+      color: var(--text-primary);
+      border: 1px solid var(--text-disabled);
+      border-radius: var(--border-radius);
+      font-family: inherit;
+    }
+    
+    input[type="color"] {
+      width: 100%;
+      height: 40px;
+      background-color: var(--surface);
+      border: 1px solid var(--text-disabled);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+    }
+    
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.5rem center;
+      background-size: 1rem;
+      padding-right: 2rem;
+    }
+    
+    .text-style-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .text-style-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--surface);
+      color: var(--text-secondary);
+      border: 1px solid var(--text-disabled);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .text-style-btn:hover, .text-style-btn.active {
+      background-color: var(--primary);
+      color: #000;
+      border-color: var(--primary);
+    }
+    
+    .font-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.5rem;
+      padding: 0.5rem;
+      border-radius: var(--border-radius);
+      background-color: var(--surface);
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    
+    .preview-container {
+      display: none;
+      position: relative;
+      margin-top: 1rem;
+      height: 200px;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      background-color: var(--surface);
+    }
+    
+    .preview-container.visible {
+      display: block;
+    }
+    
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    
+    .font-group {
+      margin-bottom: 0.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .favorite-fonts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .font-chip {
+      padding: 0.25rem 0.5rem;
+      background-color: var(--surface);
+      border-radius: var(--border-radius);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .font-chip:hover {
+      background-color: var(--primary);
+      color: #000;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--surface);
+      color: var(--text-primary);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .toast.show {
+      opacity: 1;
+    }
+    
+    .preview-header {
+      font-size: 0.9rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+    }
+
+    .preview-section {
+      margin-bottom: 1rem;
+    }
+    
+    .loading-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    .loading-indicator.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 5px solid var(--primary);
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      animation: rotation 1s linear infinite;
+    }
+    
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    
+    /* Медиа-запросы для адаптивности */
+    @media (max-width: 768px) {
+      main {
+        flex-direction: column;
+      }
+      
+      .toolbar {
+        width: 100%;
+        height: 40%;
+      }
+      
+      .editor-container {
+        height: 60%;
+      }
+    }
+    
+    /* Для небольших устройств */
+    @media (max-width: 576px) {
+      .toolbar-section {
+        padding: 0.75rem;
+      }
+      
+      .btn {
+        padding: 0.4rem 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>Быстрый текстовой редактор с созданием масок для ControlNet или Inpaint</h1>
+      <div class="author-info">
+        Автор: <a href="https://t.me/neuro_art0" target="_blank">Nerual Dreming</a>, основатель <a href="https://ArtGeneration.me" target="_blank">ArtGeneration.me</a>, техноблогер и нейро-евангелист
+      </div>
+    </div>
+    <div class="btn-group">
+      <button id="clearProjectBtn" class="btn btn-secondary">
+        <i data-feather="trash-2"></i> Очистить
+      </button>
+    </div>
+  </header>
+  
+  <main>
+    <div class="editor-container">
+      <div id="uploadPrompt" class="upload-prompt">
+        <div class="upload-icon">
+          <i data-feather="image" width="48" height="48"></i>
+        </div>
+        <h2>Загрузите изображение</h2>
+        <p>Перетащите изображение сюда или нажмите, чтобы выбрать файл</p>
+        <input type="file" id="imageUpload" accept="image/*">
+        <button id="selectImageBtn" class="btn" style="margin-top: 1rem;">
+          <i data-feather="upload"></i> Выбрать изображение
+        </button>
+      </div>
+      <canvas id="canvas"></canvas>
+    </div>
+    
+    <div class="toolbar">
+      <div class="toolbar-section">
+        <div class="section-title">
+          <i data-feather="type" class="section-icon"></i> Добавление текста
+        </div>
+        <button id="addTextBtn" class="btn btn-full">
+          <i data-feather="plus"></i> Добавить текст
+        </button>
+      </div>
+      
+      <div id="textEditingSection" class="toolbar-section" style="display: none;">
+        <div class="section-title">
+          <i data-feather="edit-2" class="section-icon"></i> Редактирование текста
+        </div>
+        
+        <div class="form-group">
+          <label for="textInput">Текст</label>
+          <input type="text" id="textInput" placeholder="Введите текст...">
+        </div>
+        
+        <div class="text-style-buttons">
+          <button id="boldBtn" class="text-style-btn" title="Жирный">
+            <i data-feather="bold"></i>
+          </button>
+          <button id="italicBtn" class="text-style-btn" title="Курсив">
+            <i data-feather="italic"></i>
+          </button>
+          <button id="alignLeftBtn" class="text-style-btn" title="По левому краю">
+            <i data-feather="align-left"></i>
+          </button>
+          <button id="alignCenterBtn" class="text-style-btn" title="По центру">
+            <i data-feather="align-center"></i>
+          </button>
+          <button id="alignRightBtn" class="text-style-btn" title="По правому краю">
+            <i data-feather="align-right"></i>
+          </button>
+        </div>
+        
+        <div class="font-group">
+          <label>Популярные шрифты</label>
+          <div class="favorite-fonts">
+            <div class="font-chip" style="font-family: 'Montserrat'">Montserrat</div>
+            <div class="font-chip" style="font-family: 'Pacifico'">Pacifico</div>
+            <div class="font-chip" style="font-family: 'Oswald'">Oswald</div>
+            <div class="font-chip" style="font-family: 'Lobster'">Lobster</div>
+            <div class="font-chip" style="font-family: 'Caveat'">Caveat</div>
+            <div class="font-chip" style="font-family: 'Bebas Neue'">Bebas Neue</div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="fontSelect">Шрифт</label>
+          <select id="fontSelect">
+            <option value="Amatic SC" style="font-family: 'Amatic SC'">Amatic SC</option>
+            <option value="Bad Script" style="font-family: 'Bad Script'">Bad Script</option>
+            <option value="Bebas Neue" style="font-family: 'Bebas Neue'">Bebas Neue</option>
+            <option value="Caveat" style="font-family: 'Caveat'">Caveat</option>
+            <option value="Comfortaa" style="font-family: 'Comfortaa'">Comfortaa</option>
+            <option value="Cormorant" style="font-family: 'Cormorant'">Cormorant</option>
+            <option value="El Messiri" style="font-family: 'El Messiri'">El Messiri</option>
+            <option value="Gochi Hand" style="font-family: 'Gochi Hand'">Gochi Hand</option>
+            <option value="Inter" style="font-family: 'Inter'">Inter</option>
+            <option value="Jost" style="font-family: 'Jost'">Jost</option>
+            <option value="Kelly Slab" style="font-family: 'Kelly Slab'">Kelly Slab</option>
+            <option value="Lobster" style="font-family: 'Lobster'">Lobster</option>
+            <option value="Marck Script" style="font-family: 'Marck Script'">Marck Script</option>
+            <option value="Montserrat" style="font-family: 'Montserrat'" selected>Montserrat</option>
+            <option value="Neucha" style="font-family: 'Neucha'">Neucha</option>
+            <option value="Noto Sans" style="font-family: 'Noto Sans'">Noto Sans</option>
+            <option value="Open Sans" style="font-family: 'Open Sans'">Open Sans</option>
+            <option value="Oswald" style="font-family: 'Oswald'">Oswald</option>
+            <option value="PT Sans" style="font-family: 'PT Sans'">PT Sans</option>
+            <option value="Pacifico" style="font-family: 'Pacifico'">Pacifico</option>
+            <option value="Pangolin" style="font-family: 'Pangolin'">Pangolin</option>
+            <option value="Philosopher" style="font-family: 'Philosopher'">Philosopher</option>
+            <option value="Playfair Display" style="font-family: 'Playfair Display'">Playfair Display</option>
+            <option value="Podkova" style="font-family: 'Podkova'">Podkova</option>
+            <option value="Poiret One" style="font-family: 'Poiret One'">Poiret One</option>
+            <option value="Press Start 2P" style="font-family: 'Press Start 2P'">Press Start 2P</option>
+            <option value="Raleway" style="font-family: 'Raleway'">Raleway</option>
+            <option value="Roboto" style="font-family: 'Roboto'">Roboto</option>
+            <option value="Rubik Mono One" style="font-family: 'Rubik Mono One'">Rubik Mono One</option>
+            <option value="Russo One" style="font-family: 'Russo One'">Russo One</option>
+            <option value="Ruslan Display" style="font-family: 'Ruslan Display'">Ruslan Display</option>
+            <option value="Unbounded" style="font-family: 'Unbounded'">Unbounded</option>
+            <option value="Yeseva One" style="font-family: 'Yeseva One'">Yeseva One</option>
+          </select>
+        </div>
+        
+        <div class="font-preview" id="fontPreview">Предпросмотр шрифта</div>
+        
+        <div class="form-group">
+          <label for="fontSize">Размер шрифта: <span id="fontSizeValue">36</span>px</label>
+          <input type="range" id="fontSize" min="12" max="300" value="36">
+        </div>
+        
+        <div class="form-group">
+          <label for="textColor">Цвет текста</label>
+          <input type="color" id="textColor" value="#ffffff">
+        </div>
+        
+        <div class="form-group">
+          <label for="textOpacity">Прозрачность: <span id="opacityValue">100</span>%</label>
+          <input type="range" id="textOpacity" min="10" max="100" value="100">
+        </div>
+        
+        <div class="btn-group" style="margin-top: 1rem;">
+          <button id="deleteTextBtn" class="btn btn-secondary">
+            <i data-feather="trash-2"></i> Удалить
+          </button>
+          <button id="duplicateTextBtn" class="btn btn-secondary">
+            <i data-feather="copy"></i> Дублировать
+          </button>
+        </div>
+      </div>
+      
+      <div class="toolbar-section">
+        <div class="section-title">
+          <i data-feather="zap" class="section-icon"></i> Экспорт
+        </div>
+        
+        <div class="preview-section">
+          <div class="preview-header">Изображение с текстом:</div>
+          <button id="generateImageBtn" class="btn btn-full">
+            <i data-feather="image"></i> Сгенерировать изображение
+          </button>
+          
+          <div id="imagePreviewContainer" class="preview-container">
+            <img id="imagePreview" class="preview-image" alt="Предпросмотр изображения">
+            <button id="saveImageBtn" class="btn" style="position: absolute; bottom: 1rem; right: 1rem;">
+              <i data-feather="download"></i> Сохранить
+            </button>
+          </div>
+        </div>
+        
+        <div class="preview-section">
+          <div class="preview-header">Маска для ControlNet или Inpaint:</div>
+          <button id="generateMaskBtn" class="btn btn-full">
+            <i data-feather="sliders"></i> Сгенерировать маску
+          </button>
+          
+          <div id="maskPreviewContainer" class="preview-container">
+            <img id="maskPreview" class="preview-image" alt="Предпросмотр маски">
+            <button id="saveMaskBtn" class="btn" style="position: absolute; bottom: 1rem; right: 1rem;">
+              <i data-feather="download"></i> Сохранить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <div id="toast" class="toast">Изображение успешно сохранено!</div>
+  <div id="loadingIndicator" class="loading-indicator">
+    <div class="loader"></div>
+  </div>
+  
+  <script>
+    // Инициализация Feather Icons
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace();
+    });
+    
+    // Основные переменные
+    let canvas;
+    let uploadedImage = null;
+    let maskImage = null;
+    let coloredImage = null;
+    let selectedTextObject = null;
+    let textObjects = [];
+    
+    // Показать индикатор загрузки
+    function showLoading() {
+      document.getElementById('loadingIndicator').classList.add('visible');
+    }
+    
+    // Скрыть индикатор загрузки
+    function hideLoading() {
+      document.getElementById('loadingIndicator').classList.remove('visible');
+    }
+    
+    // Отображение toast-уведомления
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Инициализация canvas
+    function initCanvas() {
+      canvas = new fabric.Canvas('canvas', {
+        width: 800,
+        height: 600,
+        backgroundColor: '#1a1a1a',
+        preserveObjectStacking: true,
+        stopContextMenu: true
+      });
+      
+      // Обработчик выбора объекта
+      canvas.on('selection:created', handleObjectSelected);
+      canvas.on('selection:updated', handleObjectSelected);
+      canvas.on('selection:cleared', handleSelectionCleared);
+      canvas.on('object:modified', function() {
+        // Сбрасываем кэш при изменении объектов
+        maskImage = null;
+        coloredImage = null;
+      });
+      
+      // Обновление размеров интерфейса
+      updateCanvasSize();
+      window.addEventListener('resize', updateCanvasSize);
+    }
+    
+    // Обновление размеров canvas в зависимости от размера экрана
+    function updateCanvasSize() {
+      const container = document.querySelector('.editor-container');
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      if (uploadedImage) {
+        // Вычисление размеров с сохранением пропорций
+        let canvasWidth, canvasHeight;
+        
+        const imageRatio = uploadedImage.width / uploadedImage.height;
+        const containerRatio = containerWidth / containerHeight;
+        
+        if (imageRatio > containerRatio) {
+          canvasWidth = Math.min(containerWidth * 0.9, uploadedImage.width);
+          canvasHeight = canvasWidth / imageRatio;
+        } else {
+          canvasHeight = Math.min(containerHeight * 0.9, uploadedImage.height);
+          canvasWidth = canvasHeight * imageRatio;
+        }
+        
+        canvas.setDimensions({
+          width: canvasWidth,
+          height: canvasHeight
+        });
+        
+        // Масштабирование изображения пропорционально
+        const scale = canvasWidth / uploadedImage.width;
+        uploadedImage.set({
+          scaleX: scale,
+          scaleY: scale
+        });
+        
+        canvas.renderAll();
+      }
+    }
+    
+    // Загрузка изображения
+    function loadImage(file) {
+      showLoading();
+      
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        fabric.Image.fromURL(e.target.result, function(img) {
+          // Очистка холста и добавление нового изображения
+          canvas.clear();
+          textObjects = []; // Очищаем массив текстовых объектов
+          
+          uploadedImage = img;
+          
+          // Установка размеров холста
+          canvas.setDimensions({
+            width: img.width,
+            height: img.height
+          });
+          
+          // Добавление изображения к холсту
+          img.set({
+            selectable: false,
+            evented: false,
+            left: 0,
+            top: 0
+          });
+          
+          canvas.add(img);
+          canvas.sendToBack(img);
+          canvas.renderAll();
+          
+          // Обновление размеров холста
+          updateCanvasSize();
+          
+          // Скрытие окна загрузки
+          document.getElementById('uploadPrompt').classList.add('hidden');
+          
+          // Сброс кэшированных изображений
+          maskImage = null;
+          coloredImage = null;
+          
+          // Разблокировка кнопки добавления текста
+          document.getElementById('addTextBtn').disabled = false;
+          
+          hideLoading();
+        });
+      };
+      
+      reader.readAsDataURL(file);
+    }
+    
+    // Добавление нового текстового объекта
+    function addTextObject() {
+      if (!uploadedImage) {
+        showToast('Сначала загрузите изображение!');
+        return;
+      }
+      
+      const text = new fabric.IText('Ваш текст', {
+        left: canvas.width / 2,
+        top: canvas.height / 2,
+        fontFamily: 'Montserrat',
+        fontSize: 36,
+        fill: '#ffffff',
+        textAlign: 'center',
+        originX: 'center',
+        originY: 'center',
+        opacity: 1,
+        padding: 10,
+        shadow: new fabric.Shadow({
+          color: 'rgba(0,0,0,0.5)',
+          blur: 5,
+          offsetX: 2,
+          offsetY: 2
+        })
+      });
+      
+      canvas.add(text);
+      canvas.setActiveObject(text);
+      canvas.renderAll();
+      
+      textObjects.push(text);
+      
+      // Ограничение на количество текстовых объектов (максимум 5)
+      if (textObjects.length >= 5) {
+        document.getElementById('addTextBtn').disabled = true;
+      }
+      
+      // Сброс кэшированных изображений
+      maskImage = null;
+      coloredImage = null;
+      
+      return text;
+    }
+    
+    // Обработка выбора текстового объекта
+    function handleObjectSelected(event) {
+      const obj = canvas.getActiveObject();
+      
+      if (obj && obj.type && obj.type.includes('text')) {
+        selectedTextObject = obj;
+        
+        // Отображение панели редактирования текста
+        document.getElementById('textEditingSection').style.display = 'block';
+        
+        // Обновление значений в интерфейсе
+        document.getElementById('textInput').value = obj.text;
+        document.getElementById('fontSelect').value = obj.fontFamily;
+        document.getElementById('fontSize').value = obj.fontSize;
+        document.getElementById('fontSizeValue').textContent = obj.fontSize;
+        document.getElementById('textColor').value = obj.fill;
+        document.getElementById('textOpacity').value = obj.opacity * 100;
+        document.getElementById('opacityValue').textContent = Math.round(obj.opacity * 100);
+        
+        // Обновление предпросмотра шрифта
+        updateFontPreview(obj);
+        
+        // Обновление состояния кнопок стилей
+        document.getElementById('boldBtn').classList.toggle('active', obj.fontWeight === 'bold');
+        document.getElementById('italicBtn').classList.toggle('active', obj.fontStyle === 'italic');
+        
+        // Обновление выравнивания
+        document.getElementById('alignLeftBtn').classList.toggle('active', obj.textAlign === 'left');
+        document.getElementById('alignCenterBtn').classList.toggle('active', obj.textAlign === 'center');
+        document.getElementById('alignRightBtn').classList.toggle('active', obj.textAlign === 'right');
+      }
+    }
+    
+    // Обновление предпросмотра шрифта
+    function updateFontPreview(obj) {
+      const preview = document.getElementById('fontPreview');
+      
+      if (!obj) return;
+      
+      // Обновляем свойства превью
+      preview.style.fontFamily = obj.fontFamily;
+      preview.style.color = obj.fill;
+      preview.style.opacity = obj.opacity;
+      preview.style.fontWeight = obj.fontWeight || 'normal';
+      preview.style.fontStyle = obj.fontStyle || 'normal';
+      preview.textContent = obj.text || 'Предпросмотр шрифта';
+    }
+    
+    // Обработка отмены выбора объекта
+    function handleSelectionCleared() {
+      selectedTextObject = null;
+      document.getElementById('textEditingSection').style.display = 'none';
+    }
+    
+    // Обновление текста
+    function updateText(text) {
+      if (selectedTextObject) {
+        selectedTextObject.set('text', text);
+        updateFontPreview(selectedTextObject);
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        maskImage = null;
+        coloredImage = null;
+      }
+    }
+    
+    // Обновление шрифта с принудительной перерисовкой
+    function updateFont(fontFamily) {
+      if (!selectedTextObject) return;
+      
+      // Сохраняем текущий размер
+      const originalSize = selectedTextObject.fontSize;
+      
+      // Устанавливаем новый шрифт
+      selectedTextObject.set({
+        fontFamily: fontFamily,
+        padding: 10
+      });
+      
+      // Обновляем предпросмотр
+      updateFontPreview(selectedTextObject);
+      
+      // Немедленно рендерим, чтобы начать загрузку шрифта
+      canvas.renderAll();
+      
+      // Встряхиваем размер для принудительного обновления рендеринга
+      setTimeout(function() {
+        selectedTextObject.set('fontSize', originalSize + 1);
+        canvas.renderAll();
+        
+        setTimeout(function() {
+          selectedTextObject.set('fontSize', originalSize);
+          canvas.renderAll();
+        }, 100);
+      }, 100);
+      
+      // Сброс кэшированных изображений
+      maskImage = null;
+      coloredImage = null;
+    }
+    
+    // Обновление размера шрифта
+    function updateFontSize(size) {
+      if (selectedTextObject) {
+        const newSize = parseInt(size);
+        selectedTextObject.set({
+          fontSize: newSize,
+          padding: 10
+        });
+        
+        document.getElementById('fontSizeValue').textContent = size;
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        maskImage = null;
+        coloredImage = null;
+      }
+    }
+    
+    // Обновление цвета текста
+    function updateTextColor(color) {
+      if (selectedTextObject) {
+        selectedTextObject.set('fill', color);
+        document.getElementById('textColor').value = color;
+        updateFontPreview(selectedTextObject);
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        coloredImage = null;
+      }
+    }
+    
+    // Обновление прозрачности текста
+    function updateTextOpacity(opacity) {
+      if (selectedTextObject) {
+        const value = parseInt(opacity) / 100;
+        selectedTextObject.set('opacity', value);
+        document.getElementById('opacityValue').textContent = opacity;
+        updateFontPreview(selectedTextObject);
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        coloredImage = null;
+      }
+    }
+    
+    // Переключение жирного шрифта
+    function toggleBold() {
+      if (selectedTextObject) {
+        const isBold = selectedTextObject.fontWeight === 'bold';
+        selectedTextObject.set('fontWeight', isBold ? 'normal' : 'bold');
+        document.getElementById('boldBtn').classList.toggle('active');
+        updateFontPreview(selectedTextObject);
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        maskImage = null;
+        coloredImage = null;
+      }
+    }
+    
+    // Переключение курсива
+    function toggleItalic() {
+      if (selectedTextObject) {
+        const isItalic = selectedTextObject.fontStyle === 'italic';
+        selectedTextObject.set('fontStyle', isItalic ? 'normal' : 'italic');
+        document.getElementById('italicBtn').classList.toggle('active');
+        updateFontPreview(selectedTextObject);
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        maskImage = null;
+        coloredImage = null;
+      }
+    }
+    
+    // Установка выравнивания текста
+    function setTextAlign(align) {
+      if (selectedTextObject) {
+        selectedTextObject.set('textAlign', align);
+        
+        // Обновление состояния кнопок
+        document.getElementById('alignLeftBtn').classList.toggle('active', align === 'left');
+        document.getElementById('alignCenterBtn').classList.toggle('active', align === 'center');
+        document.getElementById('alignRightBtn').classList.toggle('active', align === 'right');
+        
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        maskImage = null;
+        coloredImage = null;
+      }
+    }
+    
+    // Удаление текущего текстового объекта
+    function deleteSelectedText() {
+      if (selectedTextObject) {
+        canvas.remove(selectedTextObject);
+        
+        // Удаление из массива текстовых объектов
+        const index = textObjects.indexOf(selectedTextObject);
+        if (index > -1) {
+          textObjects.splice(index, 1);
+        }
+        
+        // Сброс выбранного объекта
+        selectedTextObject = null;
+        document.getElementById('textEditingSection').style.display = 'none';
+        
+        // Разблокировка кнопки добавления текста
+        document.getElementById('addTextBtn').disabled = false;
+        
+        canvas.renderAll();
+        
+        // Сброс кэшированных изображений
+        maskImage = null;
+        coloredImage = null;
+      }
+    }
+    
+    // Дублирование выбранного текста
+    function duplicateSelectedText() {
+      if (selectedTextObject && textObjects.length < 5) {
+        // Клонирование объекта с небольшим смещением
+        selectedTextObject.clone(function(cloned) {
+          cloned.set({
+            left: selectedTextObject.left + 20,
+            top: selectedTextObject.top + 20
+          });
+          
+          canvas.add(cloned);
+          canvas.setActiveObject(cloned);
+          textObjects.push(cloned);
+          
+          // Блокировка кнопки добавления, если достигнут лимит
+          if (textObjects.length >= 5) {
+            document.getElementById('addTextBtn').disabled = true;
+          }
+          
+          // Сброс кэшированных изображений
+          maskImage = null;
+          coloredImage = null;
+        });
+      }
+    }
+    
+    // Генерация изображения с текстом
+    function generateImage() {
+      if (!uploadedImage) {
+        showToast('Сначала загрузите изображение!');
+        return;
+      }
+      
+      // Проверяем наличие текстовых объектов
+      const textObjs = canvas.getObjects().filter(obj => obj.type && obj.type.includes('text'));
+      if (textObjs.length === 0) {
+        showToast('Добавьте хотя бы один текстовый объект!');
+        return;
+      }
+      
+      // Обновляем массив textObjects, если он не синхронизирован с canvas
+      textObjects = textObjs;
+      
+      showLoading();
+      
+      // Если уже есть кэшированное изображение, используем его
+      if (coloredImage) {
+        document.getElementById('imagePreview').src = coloredImage;
+        document.getElementById('imagePreviewContainer').classList.add('visible');
+        hideLoading();
+        return;
+      }
+      
+      try {
+        // Клонируем текущий холст для создания изображения
+        const json = canvas.toJSON();
+        const tempCanvas = new fabric.Canvas(null);
+        tempCanvas.setDimensions({
+          width: uploadedImage.width,
+          height: uploadedImage.height
+        });
+        
+        // Загружаем данные в временный холст
+        tempCanvas.loadFromJSON(json, function() {
+          // Корректируем масштаб всех объектов
+          const scale = 1 / (uploadedImage.scaleX || 1);
+          
+          // Обновляем изображение основы
+          const objects = tempCanvas.getObjects();
+          if (objects.length > 0) {
+            const backgroundImage = objects[0]; // Первый объект - это фон
+            backgroundImage.set({
+              scaleX: 1,
+              scaleY: 1,
+              left: 0,
+              top: 0
+            });
+            
+            // Обновляем все текстовые объекты
+            tempCanvas.getObjects().forEach(obj => {
+              if (obj !== backgroundImage) {
+                // Пересчитываем позицию и размеры
+                obj.set({
+                  left: obj.left * scale,
+                  top: obj.top * scale,
+                  scaleX: obj.scaleX * scale,
+                  scaleY: obj.scaleY * scale
+                });
+                
+                // Для текстовых объектов также обновляем размер шрифта
+                if (obj.type && obj.type.includes('text')) {
+                  obj.set({
+                    fontSize: obj.fontSize * scale
+                  });
+                }
+              }
+            });
+            
+            tempCanvas.renderAll();
+            
+            // Преобразуем холст в dataURL
+            coloredImage = tempCanvas.toDataURL('image/png');
+            document.getElementById('imagePreview').src = coloredImage;
+            document.getElementById('imagePreviewContainer').classList.add('visible');
+            
+            // Уничтожаем временный холст
+            tempCanvas.dispose();
+            
+            showToast('Изображение успешно сгенерировано');
+            hideLoading();
+          } else {
+            showToast('Ошибка: нет объектов на холсте');
+            hideLoading();
+          }
+        });
+      } catch (error) {
+        console.error("Ошибка при создании изображения:", error);
+        showToast('Ошибка при создании изображения');
+        hideLoading();
+      }
+    }
+    
+    // Генерация маски
+    function generateMask() {
+      if (!uploadedImage) {
+        showToast('Сначала загрузите изображение!');
+        return;
+      }
+      
+      // Проверяем наличие текстовых объектов
+      const textObjs = canvas.getObjects().filter(obj => obj.type && obj.type.includes('text'));
+      if (textObjs.length === 0) {
+        showToast('Добавьте хотя бы один текстовый объект!');
+        return;
+      }
+      
+      // Обновляем массив textObjects, если он не синхронизирован с canvas
+      textObjects = textObjs;
+      
+      showLoading();
+      
+      // Если уже есть кэшированная маска, используем её
+      if (maskImage) {
+        document.getElementById('maskPreview').src = maskImage;
+        document.getElementById('maskPreviewContainer').classList.add('visible');
+        hideLoading();
+        return;
+      }
+      
+      try {
+        // Клонируем текущий холст для создания маски
+        const json = canvas.toJSON();
+        const tempCanvas = new fabric.Canvas(null);
+        tempCanvas.setDimensions({
+          width: uploadedImage.width,
+          height: uploadedImage.height
+        });
+        
+        // Загружаем данные в временный холст
+        tempCanvas.loadFromJSON(json, function() {
+          // Устанавливаем черный фон
+          tempCanvas.backgroundColor = 'black';
+          
+          // Корректируем масштаб всех объектов
+          const scale = 1 / (uploadedImage.scaleX || 1);
+          
+          // Проверяем и обрабатываем объекты
+          const objects = tempCanvas.getObjects();
+          if (objects.length > 0) {
+            // Удаляем изображение основы (первый объект)
+            const backgroundImage = objects[0];
+            tempCanvas.remove(backgroundImage);
+            
+            // Находим все текстовые объекты
+            const textObjs = objects.filter(obj => obj.type && obj.type.includes('text'));
+            
+            // Обновляем все текстовые объекты
+            textObjs.forEach(obj => {
+              // Пересчитываем позицию и размеры
+              obj.set({
+                left: obj.left * scale,
+                top: obj.top * scale,
+                scaleX: obj.scaleX * scale,
+                scaleY: obj.scaleY * scale,
+                fill: 'white',  // Делаем весь текст белым
+                opacity: 1,     // Делаем текст непрозрачным
+                shadow: null    // Удаляем тени
+              });
+              
+              // Для текстовых объектов также обновляем размер шрифта
+              if (obj.type.includes('text')) {
+                obj.set({
+                  fontSize: obj.fontSize * scale
+                });
+              }
+            });
+            
+            tempCanvas.renderAll();
+            
+            // Преобразуем холст в dataURL
+            maskImage = tempCanvas.toDataURL('image/png');
+            document.getElementById('maskPreview').src = maskImage;
+            document.getElementById('maskPreviewContainer').classList.add('visible');
+            
+            // Уничтожаем временный холст
+            tempCanvas.dispose();
+            
+            showToast('Маска успешно сгенерирована');
+            hideLoading();
+          } else {
+            showToast('Ошибка: нет объектов на холсте для маски');
+            hideLoading();
+          }
+        });
+      } catch (error) {
+        console.error("Ошибка при создании маски:", error);
+        showToast('Ошибка при создании маски');
+        hideLoading();
+      }
+    }
+    
+    // Функция для преобразования data URL в Blob
+    function dataURLtoBlob(dataURL) {
+      const arr = dataURL.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      
+      return new Blob([u8arr], { type: mime });
+    }
+    
+    // Сохранение файла
+    function saveFile(dataURL, fileName) {
+      if (!dataURL) {
+        showToast('Нечего сохранять, сначала сгенерируйте изображение');
+        return;
+      }
+      
+      try {
+        const blob = dataURLtoBlob(dataURL);
+        
+        // Используем FileSaver.js если доступен
+        if (window.saveAs) {
+          window.saveAs(blob, fileName);
+          showToast('Файл успешно сохранен!');
+          return;
+        }
+        
+        // Запасной вариант
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        
+        showToast('Файл успешно сохранен!');
+      } catch (error) {
+        console.error("Ошибка при сохранении файла:", error);
+        showToast('Ошибка при сохранении файла');
+      }
+    }
+    
+    // Сохранение изображения
+    function saveImage() {
+      showLoading();
+      
+      if (!coloredImage) {
+        generateImage();
+        setTimeout(() => {
+          saveFile(coloredImage, 'text-image.png');
+          hideLoading();
+        }, 500);
+      } else {
+        saveFile(coloredImage, 'text-image.png');
+        hideLoading();
+      }
+    }
+    
+    // Сохранение маски
+    function saveMask() {
+      showLoading();
+      
+      if (!maskImage) {
+        generateMask();
+        setTimeout(() => {
+          saveFile(maskImage, 'text-mask.png');
+          hideLoading();
+        }, 500);
+      } else {
+        saveFile(maskImage, 'text-mask.png');
+        hideLoading();
+      }
+    }
+    
+    // Очистка проекта (перезагрузка страницы)
+    function clearProject() {
+      if (confirm('Очистить проект? Все несохраненные изменения будут потеряны.')) {
+        window.location.reload();
+      }
+    }
+    
+    // Инициализация приложения
+    document.addEventListener('DOMContentLoaded', function() {
+      // Инициализация Fabric Canvas
+      initCanvas();
+      
+      // Обработчики событий для загрузки изображения
+      const uploadPrompt = document.getElementById('uploadPrompt');
+      const imageUpload = document.getElementById('imageUpload');
+      
+      // Загрузка по клику на кнопку
+      document.getElementById('selectImageBtn').addEventListener('click', function() {
+        imageUpload.click();
+      });
+      
+      // Загрузка при выборе файла
+      imageUpload.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+          loadImage(e.target.files[0]);
+        }
+      });
+      
+      // Drag and drop
+      uploadPrompt.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadPrompt.style.borderColor = 'var(--primary)';
+      });
+      
+      uploadPrompt.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadPrompt.style.borderColor = 'var(--text-disabled)';
+      });
+      
+      uploadPrompt.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadPrompt.style.borderColor = 'var(--text-disabled)';
+        
+        if (e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          if (file.type.match('image.*')) {
+            loadImage(file);
+          } else {
+            showToast('Пожалуйста, выберите изображение!');
+          }
+        }
+      });
+      
+      // Обработчики для работы с текстом
+      document.getElementById('addTextBtn').addEventListener('click', addTextObject);
+      document.getElementById('textInput').addEventListener('input', function(e) {
+        updateText(e.target.value);
+      });
+      document.getElementById('fontSelect').addEventListener('change', function(e) {
+        updateFont(e.target.value);
+      });
+      document.getElementById('fontSize').addEventListener('input', function(e) {
+        updateFontSize(e.target.value);
+      });
+      document.getElementById('textOpacity').addEventListener('input', function(e) {
+        updateTextOpacity(e.target.value);
+      });
+      document.getElementById('textColor').addEventListener('input', function(e) {
+        updateTextColor(e.target.value);
+      });
+      document.getElementById('boldBtn').addEventListener('click', toggleBold);
+      document.getElementById('italicBtn').addEventListener('click', toggleItalic);
+      document.getElementById('alignLeftBtn').addEventListener('click', function() {
+        setTextAlign('left');
+      });
+      document.getElementById('alignCenterBtn').addEventListener('click', function() {
+        setTextAlign('center');
+      });
+      document.getElementById('alignRightBtn').addEventListener('click', function() {
+        setTextAlign('right');
+      });
+      document.getElementById('deleteTextBtn').addEventListener('click', deleteSelectedText);
+      document.getElementById('duplicateTextBtn').addEventListener('click', duplicateSelectedText);
+      
+      // Выбор шрифта по клику на чип
+      document.querySelectorAll('.font-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+          const fontFamily = this.style.fontFamily;
+          const cleanFontName = fontFamily.replace(/['"]+/g, '');
+          document.getElementById('fontSelect').value = cleanFontName;
+          updateFont(cleanFontName);
+        });
+      });
+      
+      // Генерация и сохранение изображений
+      document.getElementById('generateImageBtn').addEventListener('click', generateImage);
+      document.getElementById('saveImageBtn').addEventListener('click', saveImage);
+      document.getElementById('generateMaskBtn').addEventListener('click', generateMask);
+      document.getElementById('saveMaskBtn').addEventListener('click', saveMask);
+      
+      // Очистка проекта
+      document.getElementById('clearProjectBtn').addEventListener('click', clearProject);
+    });
+  </script>
+</body>
+</html>

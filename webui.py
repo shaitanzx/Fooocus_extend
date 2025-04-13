@@ -1220,6 +1220,8 @@ with shared.gradio_root:
 
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
+                  with gr.TabItem(label='TextMask') as photopea_tab:
+                    text_mask=gr.file(value='extentions/text_mask.html')
                   with gr.TabItem(label='Photopea') as photopea_tab:
                     PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
                     PHOTOPEA_IFRAME_ID = 'webui-photopea-iframe'
