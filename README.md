@@ -2,7 +2,7 @@ I would like to introduce a new fork of the popular generative neural network **
 I would like to point out that this fork can be run both locally on your computer and via Google Colab. 
 Let's look at everything in order. 
 
-1.	**Launch**. If you will run it on a local machine, you can safely skip this item.
+1. **Launch**. If you will run it on a local machine, you can safely skip this item.
    
 ![image](https://github.com/user-attachments/assets/468487b8-8d4e-454c-ba92-1c9e5b60feb7)
 
