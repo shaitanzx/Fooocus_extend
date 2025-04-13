@@ -1226,6 +1226,12 @@ with shared.gradio_root:
                     text_mask=gr.File(value='extentions/text_mask.html')
                     text_mask_path = text_mask.value['name']
                     print("Начальный файл:", text_mask_path)
+                    def get_current_url(request=None):
+                      if hasattr(request, 'url'):
+                        return request.url
+                      return "URL не доступен"
+                    print(get_current_url())
+
                     text_mask_web=gr.HTML(value='<iframe src="extentions/text_mask.html"></iframe>')
                   with gr.TabItem(label='Photopea') as photopea_tab:
                     PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
