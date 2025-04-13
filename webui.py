@@ -32,7 +32,7 @@ from modules.private_logger import get_current_html_path
 from modules.ui_gradio_extensions import reload_javascript
 from modules.auth import auth_enabled, check_auth
 from extentions.module_translate import translate, GoogleTranslator
-from urllib.parse import urlparse, parse_qs, unquote
+from urllib.parse import urlparse, parse_qs, unquote,quote
 from modules.model_loader import load_file_from_url
 from rembg import remove
 from PIL import Image
@@ -54,6 +54,8 @@ from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
+
+
 obp_prompt=[]
 
 
@@ -1220,8 +1222,11 @@ with shared.gradio_root:
 
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
-                  with gr.TabItem(label='TextMask') as photopea_tab:
-                    text_mask=gr.file(value='extentions/text_mask.html')
+                  with gr.TabItem(label='TextMask') as text_mask__tab:
+                    text_mask=gr.File(value='extentions/text_mask.html')
+                    text_mask_path = text_mask.value['name']
+                    print("Начальный файл:", text_mask_path)
+                    text_mask_web=gr.HTML(value='<iframe src="extentions/text_mask.html"></iframe>')
                   with gr.TabItem(label='Photopea') as photopea_tab:
                     PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
                     PHOTOPEA_IFRAME_ID = 'webui-photopea-iframe'
@@ -1239,7 +1244,9 @@ with shared.gradio_root:
                             src = '{PHOTOPEA_MAIN_URL}{get_photopea_url_params()}' 
                             width = '{PHOTOPEA_IFRAME_WIDTH}' 
                             height = '{PHOTOPEA_IFRAME_HEIGHT}'
-                            onload = '{PHOTOPEA_IFRAME_LOADED_EVENT}(this)'>'''
+                            onload = '{PHOTOPEA_IFRAME_LOADED_EVENT}(this)'>
+                            </iframe>
+                            '''
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
