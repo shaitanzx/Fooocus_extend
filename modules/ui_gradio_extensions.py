@@ -49,7 +49,23 @@ def javascript_html():
 
     if args_manager.args.theme:
         head += f'<script type="text/javascript">set_theme(\"{args_manager.args.theme}\");</script>\n'
-    head +="<script type=\"text/javascript\">document.addEventListener('DOMContentLoaded', function() { const url = window.location.href; console.log(\"Текущий URL страницы:\", url); alert(\"Текущий URL: \" + url); });</script>"
+    head +="""
+<script type="text/javascript">
+function trackPageUrl() {
+    // Получаем полный URL
+    const fullUrl = window.location.href;
+    
+    // Удаляем всё после знака '?' (включая сам '?')
+    const baseUrl = fullUrl.split('?')[0];
+    
+    console.log("Базовый URL:", baseUrl);
+    alert("Базовый URL: " + baseUrl);
+    
+    return baseUrl;  // Для использования в Gradio
+}
+document.addEventListener('DOMContentLoaded', trackPageUrl);
+</script>
+"""
     return head
 
 

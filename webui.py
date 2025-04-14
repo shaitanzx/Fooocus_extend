@@ -409,22 +409,21 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 reload_javascript()
 
 title = f'Fooocus {fooocus_version.version}'
-def get_url(request: gr.Request):
-    url = request.headers.get("referer", "Не удалось получить URL")
-    print("Полученный URL:", url)  # Печатаем URL в консоль
-    return url
-
 
 if isinstance(args_manager.args.preset, str):
     title += ' ' + args_manager.args.preset
 
 shared.gradio_root = gr.Blocks(title=title).queue()
 
-with shared.gradio_root:
-    hidden_url = gr.Textbox(visible=False)
-    
-    # Загружаем URL в скрытый компонент
-    shared.gradio_root.load(get_url, inputs=None, outputs=hidden_url)
+with shared.gradio_root: 
+    url_output = gr.Textbox()
+    shared.gradio_root.load(
+        None,
+        None,
+        outputs=url_output,
+        js="() => trackPageUrl()"
+    )
+    print('ssssssss', url_output.value)   
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
