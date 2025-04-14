@@ -417,13 +417,6 @@ shared.gradio_root = gr.Blocks(title=title).queue()
 
 with shared.gradio_root: 
     url_output = gr.Textbox()
-    shared.gradio_root.load(
-        None,
-        None,
-        outputs=url_output,
-        js="() => trackPageUrl()"
-    )
-    print('ssssssss', url_output.value)   
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
@@ -836,7 +829,7 @@ with shared.gradio_root:
             ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
-                with gr.Accordion('Extention', open=False):
+                with gr.Accordion('Extention', open=False) as extention_accordion:
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
                   with gr.TabItem(label='Image Batch') as im_batch:
@@ -1262,7 +1255,10 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-
+                extention_accordion.expand(
+                    fn=lambda x: x,
+                    outputs=url_output,
+                    js="() => trackPageUrl()")
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             enhance_checkbox.change(lambda x: gr.update(visible=x), inputs=enhance_checkbox,
