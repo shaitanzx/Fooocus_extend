@@ -49,7 +49,7 @@ def javascript_html():
 
     if args_manager.args.theme:
         head += f'<script type="text/javascript">set_theme(\"{args_manager.args.theme}\");</script>\n'
-
+    head +="<script type=\"text/javascript\">document.addEventListener('DOMContentLoaded', function() { const url = window.location.href; console.log(\"Текущий URL страницы:\", url); alert(\"Текущий URL: \" + url); });</script>"
     return head
 
 
