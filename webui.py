@@ -1255,7 +1255,7 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-                extention_accordion.expand(
+                extention_accordion.change(
                     fn=lambda x: x,
                     outputs=url_output,
                     js="() => trackPageUrl()")
