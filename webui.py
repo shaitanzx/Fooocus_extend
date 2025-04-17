@@ -427,11 +427,7 @@ with shared.gradio_root:
         None,
         [],
         url_display,
-        _js="() => {
-    const baseUrl = window.location.origin;
-    console.log("Базовый URL:", baseUrl);
-    return baseUrl;
-}"
+        _js="() => window.location.href"
     )
     with gr.Row():
         with gr.Column(scale=2):
