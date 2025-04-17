@@ -32,7 +32,7 @@ from modules.private_logger import get_current_html_path
 from modules.ui_gradio_extensions import reload_javascript
 from modules.auth import auth_enabled, check_auth
 from extentions.module_translate import translate, GoogleTranslator
-from urllib.parse import urlparse, parse_qs, unquote,quote
+from urllib.parse import urlparse, parse_qs, unquote
 from modules.model_loader import load_file_from_url
 from rembg import remove
 from PIL import Image
@@ -54,8 +54,6 @@ from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
-
-
 obp_prompt=[]
 
 
@@ -410,13 +408,14 @@ reload_javascript()
 
 title = f'Fooocus {fooocus_version.version}'
 
+
+
 if isinstance(args_manager.args.preset, str):
     title += ' ' + args_manager.args.preset
 
 shared.gradio_root = gr.Blocks(title=title).queue()
 
-with shared.gradio_root: 
-    url_output = gr.Textbox()
+with shared.gradio_root:
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
@@ -829,7 +828,7 @@ with shared.gradio_root:
             ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
-                with gr.Accordion('Extention', open=False) as extention_accordion:
+                with gr.Accordion('Extention', open=False):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
                   with gr.TabItem(label='Image Batch') as im_batch:
@@ -1221,17 +1220,6 @@ with shared.gradio_root:
 
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
-                  with gr.TabItem(label='TextMask') as text_mask__tab:
-                    text_mask=gr.File(value='extentions/text_mask.html')
-                    text_mask_path = text_mask.value['name']
-                    print("Начальный файл:", text_mask_path)
-                    def get_current_url(request=None):
-                      if hasattr(request, 'url'):
-                        return request.url
-                      return "URL не доступен"
-                    print(get_current_url())
-
-                    text_mask_web=gr.HTML(value='<iframe src="extentions/text_mask.html"></iframe>')
                   with gr.TabItem(label='Photopea') as photopea_tab:
                     PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
                     PHOTOPEA_IFRAME_ID = 'webui-photopea-iframe'
@@ -1249,16 +1237,11 @@ with shared.gradio_root:
                             src = '{PHOTOPEA_MAIN_URL}{get_photopea_url_params()}' 
                             width = '{PHOTOPEA_IFRAME_WIDTH}' 
                             height = '{PHOTOPEA_IFRAME_HEIGHT}'
-                            onload = '{PHOTOPEA_IFRAME_LOADED_EVENT}(this)'>
-                            </iframe>
-                            '''
+                            onload = '{PHOTOPEA_IFRAME_LOADED_EVENT}(this)'>'''
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-                extention_accordion.change(
-                    fn=lambda x: x,
-                    outputs=url_output,
-                    js="() => trackPageUrl()")
+
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             enhance_checkbox.change(lambda x: gr.update(visible=x), inputs=enhance_checkbox,
