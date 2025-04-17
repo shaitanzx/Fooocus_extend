@@ -54,6 +54,7 @@ from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
+
 obp_prompt=[]
 
 
@@ -419,6 +420,15 @@ with shared.gradio_root:
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
+    text_mask=gr.File(value='extentions/text_mask.html')
+    url_display = gr.Textbox(label="Текущий URL")
+    
+    shared.gradio_root.load(
+        None,
+        [],
+        url_display,
+        _js="() => window.location.href"
+    )
     with gr.Row():
         with gr.Column(scale=2):
             with gr.Row():
