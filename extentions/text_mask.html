@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,8 +19,6 @@
   <!-- FileSaver.js для сохранения файлов -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   
-  <!-- Feather Icons -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
   
   <style>
     :root {
@@ -462,24 +460,18 @@
         Автор: <a href="https://t.me/neuro_art0" target="_blank">Nerual Dreming</a>, основатель <a href="https://ArtGeneration.me" target="_blank">ArtGeneration.me</a>, техноблогер и нейро-евангелист
       </div>
     </div>
-    <div class="btn-group">
-      <button id="clearProjectBtn" class="btn btn-secondary">
-        <i data-feather="trash-2"></i> Очистить
-      </button>
-    </div>
   </header>
   
   <main>
     <div class="editor-container">
       <div id="uploadPrompt" class="upload-prompt">
         <div class="upload-icon">
-          <i data-feather="image" width="48" height="48"></i>
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-image"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
         </div>
-        <h2>Загрузите изображение</h2>
-        <p>Перетащите изображение сюда или нажмите, чтобы выбрать файл</p>
+        <p>Drop image here</p>
         <input type="file" id="imageUpload" accept="image/*">
         <button id="selectImageBtn" class="btn" style="margin-top: 1rem;">
-          <i data-feather="upload"></i> Выбрать изображение
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Click to upload image
         </button>
       </div>
       <canvas id="canvas"></canvas>
@@ -487,44 +479,47 @@
     
     <div class="toolbar">
       <div class="toolbar-section">
-        <div class="section-title">
-          <i data-feather="type" class="section-icon"></i> Добавление текста
-        </div>
-        <button id="addTextBtn" class="btn btn-full">
-          <i data-feather="plus"></i> Добавить текст
-        </button>
+      <button id="clearProjectBtn" class="btn btn-full">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>Clear project
+      </button>
       </div>
-      
+
+      <div class="toolbar-section">
+        <button id="addTextBtn" class="btn btn-full">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add text
+        </button>
+      </div>	  
+	  
       <div id="textEditingSection" class="toolbar-section" style="display: none;">
         <div class="section-title">
-          <i data-feather="edit-2" class="section-icon"></i> Редактирование текста
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2 section-icon"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Edit text
         </div>
         
         <div class="form-group">
-          <label for="textInput">Текст</label>
-          <input type="text" id="textInput" placeholder="Введите текст...">
+          <label for="textInput">Text</label>
+          <input type="text" id="textInput" placeholder="Input text...">
         </div>
         
         <div class="text-style-buttons">
-          <button id="boldBtn" class="text-style-btn" title="Жирный">
-            <i data-feather="bold"></i>
+          <button id="boldBtn" class="text-style-btn" title="Bold">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bold"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
           </button>
-          <button id="italicBtn" class="text-style-btn" title="Курсив">
-            <i data-feather="italic"></i>
+          <button id="italicBtn" class="text-style-btn" title="Italic">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-italic"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg>
           </button>
-          <button id="alignLeftBtn" class="text-style-btn" title="По левому краю">
-            <i data-feather="align-left"></i>
+          <button id="alignLeftBtn" class="text-style-btn" title="Align Left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-align-left"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
           </button>
-          <button id="alignCenterBtn" class="text-style-btn" title="По центру">
-            <i data-feather="align-center"></i>
+          <button id="alignCenterBtn" class="text-style-btn" title="Align Center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-align-center"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
           </button>
-          <button id="alignRightBtn" class="text-style-btn" title="По правому краю">
-            <i data-feather="align-right"></i>
+          <button id="alignRightBtn" class="text-style-btn" title="Align Right">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-align-right"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
           </button>
         </div>
         
         <div class="font-group">
-          <label>Популярные шрифты</label>
+          <label>Popular fonts</label>
           <div class="favorite-fonts">
             <div class="font-chip" style="font-family: 'Montserrat'">Montserrat</div>
             <div class="font-chip" style="font-family: 'Pacifico'">Pacifico</div>
@@ -536,7 +531,7 @@
         </div>
         
         <div class="form-group">
-          <label for="fontSelect">Шрифт</label>
+          <label for="fontSelect">Font</label>
           <select id="fontSelect">
             <option value="Amatic SC" style="font-family: 'Amatic SC'">Amatic SC</option>
             <option value="Bad Script" style="font-family: 'Bad Script'">Bad Script</option>
@@ -574,62 +569,62 @@
           </select>
         </div>
         
-        <div class="font-preview" id="fontPreview">Предпросмотр шрифта</div>
+        <div class="font-preview" id="fontPreview">Font Preview</div>
         
         <div class="form-group">
-          <label for="fontSize">Размер шрифта: <span id="fontSizeValue">36</span>px</label>
+          <label for="fontSize">Font size: <span id="fontSizeValue">36</span>px</label>
           <input type="range" id="fontSize" min="12" max="300" value="36">
         </div>
         
         <div class="form-group">
-          <label for="textColor">Цвет текста</label>
+          <label for="textColor">Text color</label>
           <input type="color" id="textColor" value="#ffffff">
         </div>
         
         <div class="form-group">
-          <label for="textOpacity">Прозрачность: <span id="opacityValue">100</span>%</label>
+          <label for="textOpacity">Transparency: <span id="opacityValue">100</span>%</label>
           <input type="range" id="textOpacity" min="10" max="100" value="100">
         </div>
         
         <div class="btn-group" style="margin-top: 1rem;">
           <button id="deleteTextBtn" class="btn btn-secondary">
-            <i data-feather="trash-2"></i> Удалить
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> Delete
           </button>
           <button id="duplicateTextBtn" class="btn btn-secondary">
-            <i data-feather="copy"></i> Дублировать
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Duplicate
           </button>
         </div>
       </div>
       
       <div class="toolbar-section">
         <div class="section-title">
-          <i data-feather="zap" class="section-icon"></i> Экспорт
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-zap section-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Export
         </div>
         
         <div class="preview-section">
-          <div class="preview-header">Изображение с текстом:</div>
+          <div class="preview-header">Image with text:</div>
           <button id="generateImageBtn" class="btn btn-full">
-            <i data-feather="image"></i> Сгенерировать изображение
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-image"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> Generate image
           </button>
           
           <div id="imagePreviewContainer" class="preview-container">
-            <img id="imagePreview" class="preview-image" alt="Предпросмотр изображения">
+            <img id="imagePreview" class="preview-image" alt="Preview image">
             <button id="saveImageBtn" class="btn" style="position: absolute; bottom: 1rem; right: 1rem;">
-              <i data-feather="download"></i> Сохранить
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Save
             </button>
           </div>
         </div>
         
         <div class="preview-section">
-          <div class="preview-header">Маска для ControlNet или Inpaint:</div>
+          <div class="preview-header">Mask for ControlNet or Inpaint:</div>
           <button id="generateMaskBtn" class="btn btn-full">
-            <i data-feather="sliders"></i> Сгенерировать маску
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sliders"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg> Generate mask
           </button>
           
           <div id="maskPreviewContainer" class="preview-container">
-            <img id="maskPreview" class="preview-image" alt="Предпросмотр маски">
+            <img id="maskPreview" class="preview-image" alt="Preview mask">
             <button id="saveMaskBtn" class="btn" style="position: absolute; bottom: 1rem; right: 1rem;">
-              <i data-feather="download"></i> Сохранить
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Save
             </button>
           </div>
         </div>
@@ -637,16 +632,13 @@
     </div>
   </main>
   
-  <div id="toast" class="toast">Изображение успешно сохранено!</div>
+  <div id="toast" class="toast">Image saved successfully!</div>
   <div id="loadingIndicator" class="loading-indicator">
     <div class="loader"></div>
   </div>
   
   <script>
-    // Инициализация Feather Icons
-    document.addEventListener('DOMContentLoaded', () => {
-      feather.replace();
-    });
+
     
     // Основные переменные
     let canvas;
@@ -794,11 +786,11 @@
     // Добавление нового текстового объекта
     function addTextObject() {
       if (!uploadedImage) {
-        showToast('Сначала загрузите изображение!');
+        showToast('Upload an image first!');
         return;
       }
       
-      const text = new fabric.IText('Ваш текст', {
+      const text = new fabric.IText('Your text', {
         left: canvas.width / 2,
         top: canvas.height / 2,
         fontFamily: 'Montserrat',
@@ -880,7 +872,7 @@
       preview.style.opacity = obj.opacity;
       preview.style.fontWeight = obj.fontWeight || 'normal';
       preview.style.fontStyle = obj.fontStyle || 'normal';
-      preview.textContent = obj.text || 'Предпросмотр шрифта';
+      preview.textContent = obj.text || 'Font preview';
     }
     
     // Обработка отмены выбора объекта
@@ -1085,14 +1077,14 @@
     // Генерация изображения с текстом
     function generateImage() {
       if (!uploadedImage) {
-        showToast('Сначала загрузите изображение!');
+        showToast('Upload an image first!');
         return;
       }
       
       // Проверяем наличие текстовых объектов
       const textObjs = canvas.getObjects().filter(obj => obj.type && obj.type.includes('text'));
       if (textObjs.length === 0) {
-        showToast('Добавьте хотя бы один текстовый объект!');
+        showToast('Add at least one text object!');
         return;
       }
       
@@ -1164,16 +1156,16 @@
             // Уничтожаем временный холст
             tempCanvas.dispose();
             
-            showToast('Изображение успешно сгенерировано');
+            showToast('Image generated successfully');
             hideLoading();
           } else {
-            showToast('Ошибка: нет объектов на холсте');
+            showToast('Error: No objects on canvas');
             hideLoading();
           }
         });
       } catch (error) {
-        console.error("Ошибка при создании изображения:", error);
-        showToast('Ошибка при создании изображения');
+        console.error("Error creating image:", error);
+        showToast('Error creating image');
         hideLoading();
       }
     }
@@ -1181,14 +1173,14 @@
     // Генерация маски
     function generateMask() {
       if (!uploadedImage) {
-        showToast('Сначала загрузите изображение!');
+        showToast('Upload an image first!');
         return;
       }
       
       // Проверяем наличие текстовых объектов
       const textObjs = canvas.getObjects().filter(obj => obj.type && obj.type.includes('text'));
       if (textObjs.length === 0) {
-        showToast('Добавьте хотя бы один текстовый объект!');
+        showToast('Add at least one text object!');
         return;
       }
       
@@ -1263,16 +1255,16 @@
             // Уничтожаем временный холст
             tempCanvas.dispose();
             
-            showToast('Маска успешно сгенерирована');
+            showToast('Mask generated successfully');
             hideLoading();
           } else {
-            showToast('Ошибка: нет объектов на холсте для маски');
+            showToast('Error: No objects on canvas for mask');
             hideLoading();
           }
         });
       } catch (error) {
-        console.error("Ошибка при создании маски:", error);
-        showToast('Ошибка при создании маски');
+        console.error("Error creating mask:", error);
+        showToast('Error creating mask');
         hideLoading();
       }
     }
@@ -1295,7 +1287,7 @@
     // Сохранение файла
     function saveFile(dataURL, fileName) {
       if (!dataURL) {
-        showToast('Нечего сохранять, сначала сгенерируйте изображение');
+        showToast('Nothing to save, generate image first');
         return;
       }
       
@@ -1305,7 +1297,7 @@
         // Используем FileSaver.js если доступен
         if (window.saveAs) {
           window.saveAs(blob, fileName);
-          showToast('Файл успешно сохранен!');
+          showToast('The file was saved successfully.!');
           return;
         }
         
@@ -1319,10 +1311,10 @@
         document.body.removeChild(link);
         setTimeout(() => URL.revokeObjectURL(url), 5000);
         
-        showToast('Файл успешно сохранен!');
+        showToast('The file was saved successfully!');
       } catch (error) {
-        console.error("Ошибка при сохранении файла:", error);
-        showToast('Ошибка при сохранении файла');
+        console.error("Error saving file:", error);
+        showToast('Error saving file');
       }
     }
     
@@ -1360,7 +1352,7 @@
     
     // Очистка проекта (перезагрузка страницы)
     function clearProject() {
-      if (confirm('Очистить проект? Все несохраненные изменения будут потеряны.')) {
+      if (confirm('Clear project? All unsaved changes will be lost.')) {
         window.location.reload();
       }
     }
@@ -1409,7 +1401,7 @@
           if (file.type.match('image.*')) {
             loadImage(file);
           } else {
-            showToast('Пожалуйста, выберите изображение!');
+            showToast('Please select an image!');
           }
         }
       });
