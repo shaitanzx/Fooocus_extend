@@ -54,9 +54,6 @@ from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
-
-with open("extentions/text_mask.html", "r", encoding="utf-8") as file:
-    text_mask_content = file.read()
 obp_prompt=[]
 
 
@@ -1223,8 +1220,6 @@ with shared.gradio_root:
 
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
-                  with gr.TabItem(label='TextMaskGenerator') as text_mask:
-                    gr.HTML(value=text_mask_content)
                   with gr.TabItem(label='Photopea') as photopea_tab:
                     PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
                     PHOTOPEA_IFRAME_ID = 'webui-photopea-iframe'
