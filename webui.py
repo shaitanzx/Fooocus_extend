@@ -422,7 +422,11 @@ with shared.gradio_root:
     inpaint_engine_state = gr.State('empty')
     text_mask=gr.File(value='extentions/text_mask.html')
     url_display = gr.Textbox(label="Текущий URL")
-    
+    html_button=gr.Button(value='HTML')
+    out_html=gr.Textbox(label="Полный URL")
+    def html_load(url,file):
+        return f'{url}/file={file.name}'
+    html_button.click(html_load,inputs=[url_display,text_mask],outputs=out_html)
     shared.gradio_root.load(
         None,
         [],
