@@ -54,7 +54,7 @@ from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
-
+import chardet
 obp_prompt=[]
 
 
@@ -955,7 +955,11 @@ with shared.gradio_root:
                         with gr.Row():
                                 gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
                         def loader_prompt(file,pos_only):
-                            with open(file.name, 'r') as f:
+                            with open(file.name, 'rb') as f:
+                                raw_data = f.read(1000)
+                                result = chardet.detect(raw_data)
+                                encoding = result['encoding']
+                            with open(file.name, 'r', encoding=encoding) as f:
                                 lines = [line.strip() for line in f.readlines()]
                                 data = []
                                 i = 0
