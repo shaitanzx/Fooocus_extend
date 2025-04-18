@@ -26,3 +26,4 @@ segment_anything==1.0
 piexif
 sentencepiece
 opencv-python
+chardet
