@@ -70,7 +70,7 @@ def html_load(url,file):
                                 <iframe id='text_mask'
                                 src = '{url}/file={file.name}'
                                 width = '100%'
-                                height = '1408px'></iframe>''')
+                                height = '1080px'></iframe>''')
 def xyz_plot_ext(currentTask):
     global finished_batch
     finished_batch=False    
