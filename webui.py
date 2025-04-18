@@ -54,6 +54,7 @@ from extentions import xyz_grid as xyz
 from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
+import chardet
 obp_prompt=[]
 
 
@@ -64,7 +65,12 @@ ar_def=[1,1]
 swap_def=False
 finished_batch=False
 batch_path='./batch_images'
-
+def html_load(url,file):
+        return gr.update(value=f'''
+                                <iframe id='text_mask'
+                                src = '{url}/file={file.name}'
+                                width = '100%'
+                                height = '1080px'></iframe>''')
 def xyz_plot_ext(currentTask):
     global finished_batch
     finished_batch=False    
@@ -419,6 +425,12 @@ with shared.gradio_root:
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
+    text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
+    url_display = gr.Textbox(visible=False)
+
+    shared.gradio_root.load(
+       None,[],url_display,
+       _js="() => { const url = new URL(window.location.href); return url.origin; }"       )
     with gr.Row():
         with gr.Column(scale=2):
             with gr.Row():
@@ -943,7 +955,11 @@ with shared.gradio_root:
                         with gr.Row():
                                 gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
                         def loader_prompt(file,pos_only):
-                            with open(file.name, 'r') as f:
+                            with open(file.name, 'rb') as f:
+                                raw_data = f.read(1000)
+                                result = chardet.detect(raw_data)
+                                encoding = result['encoding']
+                            with open(file.name, 'r', encoding=encoding) as f:
                                 lines = [line.strip() for line in f.readlines()]
                                 data = []
                                 i = 0
@@ -1209,6 +1225,8 @@ with shared.gradio_root:
                             with gr.Row():            
                                 p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
                     gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
+                  with gr.TabItem(label='TextMask') as text_mask:
+                    mask=gr.HTML()                  
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
                   with gr.TabItem(label=xyz.title()) as xyz_plot:
@@ -1241,7 +1259,7 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-
+            text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             enhance_checkbox.change(lambda x: gr.update(visible=x), inputs=enhance_checkbox,

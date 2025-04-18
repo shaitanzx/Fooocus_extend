@@ -205,6 +205,27 @@ The preset saves the following parameters: base model, refiner, refiner_switch, 
 
 Allows you to upload a file (in *.json format) with custom styles
 
+20. **TextMask**
+
+![image](https://github.com/user-attachments/assets/1634a9b2-885d-49d8-a7cb-97417ed21568)
+
+Fast text editor with mask creation for ControlNet and Inpaint! 
+
+What this tool can do:
+- Adds up to 5 text blocks to any image
+- Supports fonts of any size up to 300px
+- Works with Cyrillic, hieroglyphics and other non-Latin characters
+- Generates black and white mask with one click
+- Lets you forget Photoshop for 90% of simple text tasks
+- Supports a sufficient number of fonts
+
+How to use:
+1. Upload an image
+2. Add and edit the text as you like
+3. Generate a mask in two clicks
+4. Download and use in ControlNet (CPDS or PyraCanny) or as a mask for Inpaint to stylise text and blend into an image.
+
+Translated with DeepL.com (free version)
 <table>
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend. Base version 2.5.5</td>
@@ -220,6 +241,10 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v8.1.0
+1. Some bug fix
+2. Add TextMask - Fast text editor with mask creation for ControlNet and Inpaint
 
 v8.0.4
 1. User style upload

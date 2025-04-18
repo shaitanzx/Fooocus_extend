@@ -1,7 +1,11 @@
+v8.1.0
+1. Some bug fix
+2. Add TextMask - Fast text editor with mask creation for ControlNet and Inpaint
+
 v8.0.4
-1.User style upload
-2.Fixed maximum height of PromptBatch
-3.Option to load only positive prompts
+1. User style upload
+2. Fixed maximum height of PromptBatch
+3. Option to load only positive prompts
 
 v8.0.3
 1. Some bug fix
