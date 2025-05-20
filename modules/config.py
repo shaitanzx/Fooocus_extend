@@ -308,31 +308,16 @@ default_loras_max_weight = get_config_item_or_set_default(
 default_loras = get_config_item_or_set_default(
     key='default_loras',
     default_value=[
-        [
-            True,
-            "None",
-            1.0
-        ],
-        [
-            True,
-            "None",
-            1.0
-        ],
-        [
-            True,
-            "None",
-            1.0
-        ],
-        [
-            True,
-            "None",
-            1.0
-        ],
-        [
-            True,
-            "None",
-            1.0
-        ]
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0],
+        [True, "None", 1.0]
     ],
     validator=lambda x: isinstance(x, list) and all(
         len(y) == 3 and isinstance(y[0], bool) and isinstance(y[1], str) and isinstance(y[2], numbers.Number)
