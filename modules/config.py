@@ -1022,3 +1022,11 @@ def downloading_sam_vit_h():
         file_name='sam_vit_h_4b8939.pth'
     )
     return os.path.join(path_sam, 'sam_vit_h_4b8939.pth')
+
+def downloading_inswapper():
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx',
+        model_dir=path_clip_vision,
+        file_name='inswapper_128.onnx'
+    )
+    return
