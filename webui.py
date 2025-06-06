@@ -849,7 +849,7 @@ with shared.gradio_root:
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
-                with gr.Accordion('in generation', open=False,elem_classes="nested-accordion"):
+                with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                             langs_sup = list(langs_sup.values())
@@ -889,6 +889,21 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
+                def gen_acc_name(translate,instant,inswapper,codeformer):
+                    main_name = "in generation" + (f" — {', '.join(filter(None, ['PromptTranslate enabled' if translate else None, 'InstantID enabled' if instant else None, 'Inswapper enabled' if inswapper else None, 'Codeformer enabled' if codeformer else None]))}" if any([translate, inswapper, codeformer]) else "")
+                    return gr.update(label=main_name)
+                translate_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
+                inswapper_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
+                codeformer_gen_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
+                enable_instant.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
+
+                
+                
+                
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def unzip_file(zip_file_obj):
