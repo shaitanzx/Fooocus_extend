@@ -55,6 +55,9 @@ from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
 import chardet
+from extentions.inswapper import face_swap
+from extentions.CodeFormer import codeformer
+import extentions.instantid.main as instantid
 obp_prompt=[]
 
 
@@ -669,6 +672,11 @@ with shared.gradio_root:
                         metadata_input_image.upload(trigger_metadata_preview, inputs=metadata_input_image,
                                                     outputs=metadata_json, queue=False, show_progress=True)
 
+                    
+
+
+
+
             with gr.Row(visible=modules.config.default_enhance_checkbox) as enhance_input_panel:
                 with gr.Tabs():
                     with gr.Tab(label='Upscale or Variation'):
@@ -840,7 +848,82 @@ with shared.gradio_root:
             ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
-                with gr.Accordion('Extention', open=False):
+              with gr.Accordion('Extention', open=False):
+                with gr.Accordion('in the process of generation', open=False,elem_classes="nested-accordion"):
+                        with gr.TabItem(label='InstantID') as instantid_tab:
+                            enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
+                        with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
+                            langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
+                            langs_sup = list(langs_sup.values())
+
+                            def change_lang(src, dest):
+                                if src != 'auto' and src != dest:
+                                    return [src, dest]
+                                return ['en','auto']
+                        
+                            def show_viewtrans(checkbox):
+                                return {viewstrans: gr.update(visible=checkbox)} 
+                                       
+                            with gr.Row():
+                                translate_enabled = gr.Checkbox(label='Enable translate', value=False, elem_id='translate_enabled_el')
+                            with gr.Row():
+                                gtrans = gr.Button(value="Translate")        
+
+                                srcTrans = gr.Dropdown(['auto']+langs_sup, value='auto', label='From', interactive=True)
+                                toTrans = gr.Dropdown(langs_sup, value='en', label='To', interactive=True)
+                                change_src_to = gr.Button(value="🔃")
+                            
+                            with gr.Row():
+                                adv_trans = gr.Checkbox(label='See translated prompts after click Generate', value=False)          
+                            
+                            with gr.Box(visible=False) as viewstrans:
+                                gr.Markdown('Tranlsated prompt & negative prompt')
+                                with gr.Row():
+                                    p_tr = gr.Textbox(label='Prompt translate', show_label=False, value='', lines=2, placeholder='Translated text prompt')
+
+                                with gr.Row():            
+                                    p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
+                            gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
+
+                        with gr.TabItem(label='inswapper_gen'):
+                            inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
+                        with gr.TabItem(label='codeformef_gen'):
+                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
+
+                with gr.Accordion('standalone', open=False,elem_classes="nested-accordion"):
+                  with gr.TabItem(label='inswapper'):
+                    with gr.Row():
+                        with gr.Column():
+                            inswap_source_image_indicies = gr.Text(label="Source Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+                            inswap_target_image_indicies = gr.Text(label = "Target Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+                        with gr.Column():
+                            inswap_original_image = grh.Image(label='Source Image', source='upload', type='numpy')
+                            inswap_source_image = grh.Image(label='Source Face Image', source='upload', type='numpy')
+                    with gr.Row():
+                        inswap_output=gr.Image(type="numpy", label="Output")
+                    with gr.Row():
+                        inswap_start=gr.Button(value='Start inswapper')
+                    with gr.Row():
+                        gr.HTML('* \"inswapper\" is powered by haofanwang. <a href="https://github.com/haofanwang/inswapper" target="_blank">\U0001F4D4 Document</a>')
+                    inswap_start.click(face_swap.perform_face_swap,inputs=[inswap_original_image, inswap_source_image, inswap_source_image_indicies, inswap_target_image_indicies],outputs=inswap_output)
+                  with gr.TabItem(label='CodeFormer'):
+                    with gr.Row():
+                      with gr.Column():
+                        codeformer_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
+                        codeformer_background_enhance=gr.Checkbox(label="Background Enchanced", value=True)
+                        codeformer_face_upsample=gr.Checkbox(label="Face Upsample", value=True)
+                        codeformer_upscale = gr.Slider(label='Upscale', minimum=1.0, maximum=4.0, step=1.0, value=1,interactive=True)
+                        codeformer_fidelity =gr.Slider(label='Codeformer_Fidelity', minimum=0, maximum=1, value=0.5, step=0.01, info='0 for better quality, 1 for better identity (default=0.5)')
+                      with gr.Column():
+                        codeformer_input=gr.Image(type="numpy", label="Input")
+                    with gr.Row():
+                        codeformer_output=gr.Image(type="numpy", label="Output")
+                    with gr.Row():
+                      codeformer_start=gr.Button(value='Start CodeFormer')
+                    with gr.Row():
+                        gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
+                    
+                    codeformer_start.click(codeformer.codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
                   with gr.TabItem(label='Image Batch') as im_batch:
@@ -1193,38 +1276,6 @@ with shared.gradio_root:
                         prompt5toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=prompt)
 
 
-                  with gr.TabItem(label='Prompt Translate') as promp_tr_tab:       
-                    langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
-                    langs_sup = list(langs_sup.values())
-
-                    def change_lang(src, dest):
-                            if src != 'auto' and src != dest:
-                                return [src, dest]
-                            return ['en','auto']
-                        
-                    def show_viewtrans(checkbox):
-                        return {viewstrans: gr.update(visible=checkbox)} 
-                                       
-                    with gr.Row():
-                            translate_enabled = gr.Checkbox(label='Enable translate', value=False, elem_id='translate_enabled_el')
-                    with gr.Row():
-                            gtrans = gr.Button(value="Translate")        
-
-                            srcTrans = gr.Dropdown(['auto']+langs_sup, value='auto', label='From', interactive=True)
-                            toTrans = gr.Dropdown(langs_sup, value='en', label='To', interactive=True)
-                            change_src_to = gr.Button(value="🔃")
-                            
-                    with gr.Row():
-                            adv_trans = gr.Checkbox(label='See translated prompts after click Generate', value=False)          
-                            
-                    with gr.Box(visible=False) as viewstrans:
-                            gr.Markdown('Tranlsated prompt & negative prompt')
-                            with gr.Row():
-                                p_tr = gr.Textbox(label='Prompt translate', show_label=False, value='', lines=2, placeholder='Translated text prompt')
-
-                            with gr.Row():            
-                                p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
-                    gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML()                  
                   with gr.TabItem(label='Remove Background') as rembg_tab:
@@ -1903,6 +1954,10 @@ with shared.gradio_root:
         ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [batch_prompt,positive_batch,negative_batch]
         ctrls += [name_prefix]
+        ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image]
+        ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity]
+        ctrls += [enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen]
+
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
