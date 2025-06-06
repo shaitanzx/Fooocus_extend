@@ -849,7 +849,7 @@ with shared.gradio_root:
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
-                with gr.Accordion('in the process of generation', open=False,elem_classes="nested-accordion"):
+                with gr.Accordion('in generation', open=False,elem_classes="nested-accordion"):
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                             langs_sup = list(langs_sup.values())
@@ -889,10 +889,7 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
-
-                with gr.Accordion('standalone', open=False,elem_classes="nested-accordion"):
-                  with gr.TabItem(label='Civitai_helper') as download_tab:
-                        civitai_helper.civitai_help()
+                with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def unzip_file(zip_file_obj):
                             extract_folder = "./batch_images"
@@ -1241,20 +1238,25 @@ with shared.gradio_root:
                         prompt4toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt4, outputs=prompt)
                         prompt5toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
                         prompt5toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=prompt)
-
-                  with gr.TabItem(label='Inswapper'):
-                    face_swap.inswapper_gui2()
-                  with gr.TabItem(label='CodeFormer'):
-                    codeformer.codeformer_gen_gui2()
-                  with gr.TabItem(label='TextMask') as text_mask:
-                    mask=gr.HTML()                  
-                  with gr.TabItem(label='Remove Background') as rembg_tab:
-                        GeekyRemBExtras.on_ui_tabs()
                   with gr.TabItem(label=xyz.title()) as xyz_plot:
                     x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random = xyz.ui()
                     xyz_start=gr.Button(value="Start xyz",visible=True)
                     gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
                     gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
+                  with gr.TabItem(label='Inswapper'):
+                    face_swap.inswapper_gui2()
+                  with gr.TabItem(label='CodeFormer'):
+                    codeformer.codeformer_gen_gui2()
+                  with gr.TabItem(label='Remove Background') as rembg_tab:
+                        GeekyRemBExtras.on_ui_tabs()
+
+                with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
+                  with gr.TabItem(label='Civitai_helper') as download_tab:
+                        civitai_helper.civitai_help()
+
+                  with gr.TabItem(label='TextMask') as text_mask:
+                    mask=gr.HTML()                  
+
 
 
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
