@@ -443,7 +443,6 @@ def worker():
         imgs=None 
             
         if (async_task.enable_instant == True and async_task.pre_gen == True) or async_task.enable_instant == False:
-            print('zzzzzzzzzzzzzzzzzzzz',async_task.last_stop)
             imgs = pipeline.process_diffusion(
                 positive_cond=positive_cond,
                 negative_cond=negative_cond,
