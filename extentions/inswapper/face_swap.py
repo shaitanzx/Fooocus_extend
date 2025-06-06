@@ -41,3 +41,19 @@ def perform_face_swap(images, inswapper_source_image, inswapper_source_image_ind
   else:
     return np.array(restored_img)
 
+def inswapper_gui2():
+    with gr.Row():
+      with gr.Column():
+        inswap_source_image = grh.Image(label='Source Face Image', source='upload', type='numpy')
+        inswap_source_image_indicies = gr.Text(label="Source Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+      with gr.Column():        
+        inswap_original_image = grh.Image(label='Source Image', source='upload', type='numpy')
+        inswap_target_image_indicies = gr.Text(label = "Target Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+    with gr.Row():
+        inswap_start=gr.Button(value='Start inswapper')
+    with gr.Row():
+        inswap_output=gr.Image(type="numpy", label="Output")
+    with gr.Row():
+        gr.HTML('* \"inswapper\" is powered by haofanwang. <a href="https://github.com/haofanwang/inswapper" target="_blank">\U0001F4D4 Document</a>')
+        
+    inswap_start.click(perform_face_swap,inputs=[inswap_original_image, inswap_source_image, inswap_source_image_indicies, inswap_target_image_indicies],outputs=inswap_output)
