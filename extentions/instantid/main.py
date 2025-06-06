@@ -425,6 +425,9 @@ def gui():
                 )
     with gr.Row():
             enhance_face_region = gr.Checkbox(label="Enhance non-face region", value=True,interactive=True)
+      with gr.Row():
+    gr.HTML('* \"InstantID\" is powered by InstantX Research. <a href="https://github.com/instantX-research/InstantID" target="_blank">\U0001F4D4 Document</a>')
+
 
     return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection,canny_strength,depth_strength,scheduler,enhance_face_region,pre_gen
 
