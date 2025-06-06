@@ -891,10 +891,6 @@ with shared.gradio_root:
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
 
                 with gr.Accordion('standalone', open=False,elem_classes="nested-accordion"):
-                  with gr.TabItem(label='Inswapper'):
-                    face_swap.inswapper_gui2()
-                  with gr.TabItem(label='CodeFormer'):
-                    codeformer.codeformer_gen_gui2()
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
                   with gr.TabItem(label='Image Batch') as im_batch:
@@ -1246,7 +1242,10 @@ with shared.gradio_root:
                         prompt5toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
                         prompt5toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=prompt)
 
-
+                  with gr.TabItem(label='Inswapper'):
+                    face_swap.inswapper_gui2()
+                  with gr.TabItem(label='CodeFormer'):
+                    codeformer.codeformer_gen_gui2()
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML()                  
                   with gr.TabItem(label='Remove Background') as rembg_tab:
