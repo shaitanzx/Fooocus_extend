@@ -1,5 +1,3 @@
-
-
 import sys
 import os
 import numpy as np
@@ -211,3 +209,21 @@ def codeformer_gen_gui():
     with gr.Row():
         gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
     return codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity
+def codeformer_gen_gui2():
+    with gr.Row():
+        with gr.Column():
+            codeformer_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
+            codeformer_background_enhance=gr.Checkbox(label="Background Enchanced", value=True)
+            codeformer_face_upsample=gr.Checkbox(label="Face Upsample", value=True)
+            codeformer_upscale = gr.Slider(label='Upscale', minimum=1.0, maximum=4.0, step=1.0, value=1,interactive=True)
+            codeformer_fidelity =gr.Slider(label='Codeformer_Fidelity', minimum=0, maximum=1, value=0.5, step=0.01, info='0 for better quality, 1 for better identity (default=0.5)')
+        with gr.Column():
+            codeformer_input=gr.Image(type="numpy", label="Input")
+    with gr.Row():
+        codeformer_start=gr.Button(value='Start CodeFormer')
+    with gr.Row():
+        codeformer_output=gr.Image(type="numpy", label="Output")
+    with gr.Row():
+        gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
+                    
+    codeformer_start.click(codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
