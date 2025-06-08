@@ -1,5 +1,3 @@
-import spaces
-
 import torch
 import torchvision.transforms.functional as TF
 import numpy as np
@@ -13,11 +11,11 @@ from diffusers import EulerDiscreteScheduler, T2IAdapter
 from huggingface_hub import hf_hub_download
 import gradio as gr
 
-from pipeline_t2i_adapter import PhotoMakerStableDiffusionXLAdapterPipeline
-from face_utils import FaceAnalysis2, analyze_faces
+from .pipeline_t2i_adapter import PhotoMakerStableDiffusionXLAdapterPipeline
+from .face_utils import FaceAnalysis2, analyze_faces
 
-from style_template import styles
-from aspect_ratio_template import aspect_ratios
+from .style_template import styles
+from .aspect_ratio_template import aspect_ratios
 """
 # global variable
 base_model_path = 'SG161222/RealVisXL_V4.0'
