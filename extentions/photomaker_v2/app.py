@@ -18,7 +18,7 @@ from face_utils import FaceAnalysis2, analyze_faces
 
 from style_template import styles
 from aspect_ratio_template import aspect_ratios
-
+"""
 # global variable
 base_model_path = 'SG161222/RealVisXL_V4.0'
 face_detector = FaceAnalysis2(providers=['CPUExecutionProvider', 'CUDAExecutionProvider'], allowed_modules=['detection', 'recognition'])
@@ -283,15 +283,8 @@ If you have any issues, leave the issue in the discussion page of the space. For
 css = '''
 .gradio-container {width: 85% !important}
 '''
-with gr.Blocks(css=css) as demo:
-    gr.Markdown(logo)
-    gr.Markdown(title)
-    gr.Markdown(description)
-    # gr.DuplicateButton(
-    #     value="Duplicate Space for private use ",
-    #     elem_id="duplicate-button",
-    #     visible=os.getenv("SHOW_DUPLICATE_BUTTON") == "1",
-    # )
+"""
+def gui():
     with gr.Row():
         with gr.Column():
             files = gr.Files(
@@ -427,7 +420,3 @@ with gr.Blocks(css=css) as demo:
         fn=upload_example_to_gallery,
         outputs=[uploaded_files, clear_button, files],
     )
-    
-    gr.Markdown(article)
-    
-demo.launch()
