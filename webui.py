@@ -216,7 +216,9 @@ def get_task(*args):
     args = tuple(argsList)
     args = list(args)
     args.pop(0)
-    return worker.AsyncTask(args=args)
+    task1 = worker.AsyncTask(args=args)
+    task2 = worker.AsyncTask(args=args)  # Можно изменить аргументы для второй задачи, если нужно
+    return [task1, task1]
      
 def im_batch_run(p):
     global finished_batch
@@ -300,27 +302,31 @@ def pr_batch_start(p):
       passed+=1
   return 
 
-def generate_clicked(task: worker.AsyncTask):
+def generate_clicked(tasks: list):
     import ldm_patched.modules.model_management as model_management
 
     with model_management.interrupt_processing_mutex:
         model_management.interrupt_processing = False
-    # outputs=[progress_html, progress_window, progress_gallery, gallery]
 
-    if len(task.args) == 0:
+    if not tasks:
         return
 
     execution_start_time = time.perf_counter()
     finished = False
-
+    # outputs=[progress_html, progress_window, progress_gallery, gallery]
     yield gr.update(visible=True, value=modules.html.make_progress_html(1, 'Waiting for task to start ...')), \
         gr.update(visible=True, value=None), \
         gr.update(visible=False, value=None), \
         gr.update(visible=False)
 
-    worker.async_tasks.append(task)
+    # Добавляем все задачи в список async_tasks
+    for task in tasks:
+        worker.async_tasks.append(task)
+    for task in tasks:
 
-    while not finished:
+      finished = False
+      while not finished:
+      
         time.sleep(0.01)
         if len(task.yields) > 0:
             flag, product = task.yields.pop(0)
@@ -357,10 +363,6 @@ def generate_clicked(task: worker.AsyncTask):
                     for filepath in product:
                         if isinstance(filepath, str) and os.path.exists(filepath):
                             os.remove(filepath)
-
-    execution_time = time.perf_counter() - execution_start_time
-    print(f'Total time: {execution_time:.2f} seconds')
-    return
 
 
 def sort_enhance_images(images, task):
