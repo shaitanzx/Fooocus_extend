@@ -30,6 +30,7 @@ chardet
 insightface==0.7.3
 lpips
 peft
-diffusers==0.26.1
+#diffusers==0.26.1
+diffusers==0.29.0
 huggingface-hub==0.23.2
 controlnet_aux

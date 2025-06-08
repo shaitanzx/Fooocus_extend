@@ -32,13 +32,7 @@ try:
 except:
     device = "cpu"
 
-MAX_SEED = np.iinfo(np.int32).max
-STYLE_NAMES = list(styles.keys())
-DEFAULT_STYLE_NAME = "Photographic (Default)"
-ASPECT_RATIO_LABELS = list(aspect_ratios)
-DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
 
-enable_doodle_arg = False
 photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker-V2", filename="photomaker-v2.bin", repo_type="model")
 
 if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
@@ -220,16 +214,21 @@ def get_example():
         ],
     ]
     return case
-
+"""
 ### Description and style
-logo = r"""
-<center><img src='https://photo-maker.github.io/assets/logo.png' alt='PhotoMaker logo' style="width:80px; margin-bottom:10px"></center>
-"""
-title = r"""
-<h1 align="center">PhotoMaker V2: Improved ID Fidelity and Better Controllability than PhotoMaker V1</h1>
-"""
 
-description = r"""
+
+
+
+
+def gui():
+    MAX_SEED = np.iinfo(np.int32).max
+    STYLE_NAMES = list(styles.keys())
+    DEFAULT_STYLE_NAME = "Photographic (Default)"
+    ASPECT_RATIO_LABELS = list(aspect_ratios)
+    DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
+    enable_doodle_arg = False
+    description = r"""
 <b>Official 🤗 Gradio demo</b> for <a href='https://github.com/TencentARC/PhotoMaker' target='_blank'><b>PhotoMaker: Customizing Realistic Human Photos via Stacked ID Embedding</b></a>.<br>
 How to use PhotoMaker V2 can be found in 🎬 <a href='https://photo-maker.github.io/assets/demo_pm_v2_full.mp4' target='_blank'>this video</a> 🎬.
 <br>
@@ -244,45 +243,17 @@ For previous version of PhotoMaker, you could use our original gradio demos [Pho
 5️⃣ Click the <b>Submit</b> button to start customizing.
 """
 
-article = r"""
 
-If PhotoMaker V2 is helpful, please help to ⭐ the <a href='https://github.com/TencentARC/PhotoMaker' target='_blank'>Github Repo</a>. Thanks! 
-[![GitHub Stars](https://img.shields.io/github/stars/TencentARC/PhotoMaker?style=social)](https://github.com/TencentARC/PhotoMaker)
----
-📝 **Citation**
-<br>
-If our work is useful for your research, please consider citing:
 
-```bibtex
-@article{li2023photomaker,
-  title={PhotoMaker: Customizing Realistic Human Photos via Stacked ID Embedding},
-  author={Li, Zhen and Cao, Mingdeng and Wang, Xintao and Qi, Zhongang and Cheng, Ming-Ming and Shan, Ying},
-  booktitle={IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2024}
-}
-```
-📋 **License**
-<br>
-Apache-2.0 LICENSE. Please refer to the [LICENSE file](https://huggingface.co/TencentARC/PhotoMaker/blob/main/LICENSE) for details.
-
-📧 **Contact**
-<br>
-If you have any questions, please feel free to reach me out at <b>zhenli1031@gmail.com</b>.
-"""
-
-tips = r"""
+    tips = r"""
 ### Usage tips of PhotoMaker
 1. Upload **more photos**of the person to be customized to **improve ID fidelty**.
 2. If you find that the image quality is poor when using doodle for control, you can reduce the conditioning scale and factor of the adapter.
 If you have any issues, leave the issue in the discussion page of the space. For a more stable (queue-free) experience, you can duplicate the space.
 """
-# We have provided some generate examples and comparisons at: [this website]().
-
-css = '''
-.gradio-container {width: 85% !important}
-'''
-"""
-def gui():
+    with gr.Row():
+        gr.Markdown(value=tips)
+        gr.Markdown(value=description)
     with gr.Row():
         with gr.Column():
             files = gr.Files(
@@ -304,15 +275,15 @@ def gui():
                 info="After enabling this option, PhotoMaker will generate content based on your doodle on the canvas, driven by the T2I-Adapter (Quality may be decreased)",
             )
             with gr.Accordion("T2I-Adapter-Doodle (Optional)", visible=False) as doodle_space:
-                with gr.Row():
-                    sketch_image = gr.Sketchpad(
-                        label="Canvas",
-                        type="pil",
-                        crop_size=[1024,1024],
-                        layers=False,
-                        canvas_size=(350, 350),
-                        brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
-                    )
+                #with gr.Row():
+                    #sketch_image = gr.Sketchpad(
+                    #    label="Canvas",
+                    #    type="pil",
+                    #    crop_size=[1024,1024],
+                    #    layers=False,
+                    #    canvas_size=(350, 350),
+                    #    brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
+                    #)
                     with gr.Group():
                         adapter_conditioning_scale = gr.Slider(
                             label="Adapter conditioning scale",
@@ -375,46 +346,46 @@ def gui():
             gallery = gr.Gallery(label="Generated Images")
             usage_tips = gr.Markdown(label="Usage tips of PhotoMaker", value=tips ,visible=False)
 
-        files.upload(fn=swap_to_gallery, inputs=files, outputs=[uploaded_files, clear_button, files])
-        remove_and_reupload.click(fn=remove_back_to_files, outputs=[uploaded_files, clear_button, files])
-        enable_doodle.select(fn=change_doodle_space, inputs=enable_doodle, outputs=doodle_space)
+        #files.upload(fn=swap_to_gallery, inputs=files, outputs=[uploaded_files, clear_button, files])
+        #remove_and_reupload.click(fn=remove_back_to_files, outputs=[uploaded_files, clear_button, files])
+        #enable_doodle.select(fn=change_doodle_space, inputs=enable_doodle, outputs=doodle_space)
 
-        input_list = [
-            files, 
-            prompt, 
-            negative_prompt, 
-            aspect_ratio, 
-            style, 
-            num_steps, 
-            style_strength_ratio, 
-            num_outputs, 
-            guidance_scale, 
-            seed,
-            enable_doodle,
-            sketch_image,
-            adapter_conditioning_scale,
-            adapter_conditioning_factor
-        ]
+        #input_list = [
+        #    files, 
+        #    prompt, 
+        #    negative_prompt, 
+        #    aspect_ratio, 
+        #    style, 
+        #    num_steps, 
+        #    style_strength_ratio, 
+        #    num_outputs, 
+        #    guidance_scale, 
+        #    seed,
+        #    enable_doodle,
+        #    sketch_image,
+        #    adapter_conditioning_scale,
+        #    adapter_conditioning_factor
+        #]
 
-        submit.click(
-            fn=remove_tips,
-            outputs=usage_tips,            
-        ).then(
-            fn=randomize_seed_fn,
-            inputs=[seed, randomize_seed],
-            outputs=seed,
-            queue=False,
-            api_name=False,
-        ).then(
-            fn=generate_image,
-            inputs=input_list,
-            outputs=[gallery, usage_tips]
-        )
+        #submit.click(
+        #    fn=remove_tips,
+        #    outputs=usage_tips,            
+        #).then(
+        #    fn=randomize_seed_fn,
+        #    inputs=[seed, randomize_seed],
+        #    outputs=seed,
+        #    queue=False,
+        #    api_name=False,
+        #).then(
+        #    fn=generate_image,
+        #    inputs=input_list,
+        #    outputs=[gallery, usage_tips]
+        #)
 
-    gr.Examples(
-        examples=get_example(),
-        inputs=[files, prompt, style, negative_prompt],
-        run_on_click=True,
-        fn=upload_example_to_gallery,
-        outputs=[uploaded_files, clear_button, files],
-    )
+    #gr.Examples(
+    #    examples=get_example(),
+    #    inputs=[files, prompt, style, negative_prompt],
+    #    run_on_click=True,
+    #    fn=upload_example_to_gallery,
+    #    outputs=[uploaded_files, clear_button, files],
+    #)

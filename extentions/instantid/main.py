@@ -433,7 +433,7 @@ def gui():
 3. If you find that text control is not as expected, decrease Adapter strength.
 4. If you find that realistic style is not good enough, go for our Github repo and use a more realistic base model.
 """
-            gr.Mardown(value=tips)
+            gr.Markdown(value=tips)
     with gr.Row():
         gr.HTML('* \"InstantID\" is powered by InstantX Research. <a href="https://github.com/instantX-research/InstantID" target="_blank">\U0001F4D4 Document</a>')
 
