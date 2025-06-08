@@ -425,7 +425,7 @@ def gui():
                 )
     with gr.Row():
             enhance_face_region = gr.Checkbox(label="Enhance non-face region", value=True,interactive=True)
-    with gr.Row()
+    with gr.Row():
             tips = r"""
 ### Usage tips of InstantID
 1. If you're not satisfied with the similarity, try increasing the weight of "IdentityNet Strength" and "Adapter Strength."    
