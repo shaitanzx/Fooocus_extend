@@ -469,6 +469,7 @@ def worker():
         #                           task,async_task.scheduler_id,async_task.enhance_face_region_id,
         #                           modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,loras,modules.config.paths_loras[0],async_task,
         #                           async_task.pre_gen,imgs)
+        photomaker_source_images = [Image.open(image.name) for image in async_task.photomaker_images]
         imgs=imgs = photomaker.generate_photomaker(photomaker_source_images, steps, task, width, height, async_task.cfg_scale, loras, async_task.sampler_name, async_task.scheduler_name, async_task)       
         del positive_cond, negative_cond  # Save memory
         if inpaint_worker.current_task is not None:
