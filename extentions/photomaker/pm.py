@@ -5,11 +5,11 @@ import gc
 #sys.path.append('../photomaker')
 
 from diffusers import EulerDiscreteScheduler,  DPMSolverMultistepScheduler, EulerAncestralDiscreteScheduler, DDIMScheduler
-from photomaker import PhotoMakerStableDiffusionXLPipeline
+from .pipeline import PhotoMakerStableDiffusionXLPipeline
 from huggingface_hub import hf_hub_download
 
-import modules.default_pipeline as pipeline
-import modules.config as config
+#import modules.default_pipeline as pipeline
+#import modules.config as config
 import ldm_patched.modules.model_management as model_management
 
 
