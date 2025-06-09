@@ -58,7 +58,7 @@ import chardet
 from extentions.inswapper import face_swap
 from extentions.CodeFormer import codeformer
 import extentions.instantid.main as instantid
-import extentions.photomaker_v2.app as photomaker
+import extentions.photomaker.app as photomaker
 obp_prompt=[]
 
 
@@ -883,7 +883,7 @@ with shared.gradio_root:
                                 with gr.Row():            
                                     p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
                             gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
-                        with gr.TabItem(label='Photomaker v2') as photomaker_tab:
+                        with gr.TabItem(label='Photomaker') as photomaker_tab:
                             photomaker.gui()
 
                         with gr.TabItem(label='InstantID') as instantid_tab:
