@@ -37,7 +37,11 @@ def unload_model():
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
-def generate_photomaker(prompt, input_id_images, negative_prompt, steps, seed, width, height, guidance_scale, loras, sampler_name, scheduler_name, async_task):
+def generate_photomaker(input_id_images, steps, task, width, height, guidance_scale, loras, sampler_name, scheduler_name, async_task):
+    seed=task['seed']
+    prompt=task['positive'][0]
+    negative_prompt=task['negative'][0]
+
     base_model_path = '/content/Fooocus_extend/models/checkpoints/realisticStockPhoto_v20.safetensors'
     photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker", filename="photomaker-v1.bin", repo_type="model")
 
