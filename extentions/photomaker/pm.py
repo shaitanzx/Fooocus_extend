@@ -2,6 +2,7 @@ import torch
 import os
 import sys
 import gc
+from PIL import Image
 #sys.path.append('../photomaker')
 
 from diffusers import EulerDiscreteScheduler,  DPMSolverMultistepScheduler, EulerAncestralDiscreteScheduler, DDIMScheduler
@@ -37,13 +38,14 @@ def unload_model():
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
 
-def generate_photomaker(input_id_images, steps, task, width, height, guidance_scale, loras, sampler_name, scheduler_name, async_task):
-    seed=task['seed']
+def generate_photomaker(input_images, steps, task, width, height, guidance_scale, loras, sampler_name, scheduler_name, async_task):
+    input_images=[Image.open(image.name) for image in input_images]
+    seed=task['task_seed']
     prompt=task['positive'][0]
     negative_prompt=task['negative'][0]
 
     base_model_path = '/content/Fooocus_extend/models/checkpoints/realisticStockPhoto_v20.safetensors'
-    photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker", filename="photomaker-v1.bin", repo_type="model")
+    photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker", filename="photomaker-v1.bin", repo_type="model", local_dir="extentions/photomaker/models")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pipe = PhotoMakerStableDiffusionXLPipeline.from_single_file(
