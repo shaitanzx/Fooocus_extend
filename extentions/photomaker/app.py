@@ -10,10 +10,11 @@ from huggingface_hub import hf_hub_download
 #import modules.default_pipeline as pipeline
 #import modules.config as config
 #import ldm_patched.modules.model_management as model_management
+
 def pm_start():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if str(device).__contains__("cuda") else torch.float32
-    #base_model_path = '/content/Fooocus_extend/models/checkpoints/realisticStockPhoto_v20.safetensors'
+    base_model_path = '/content/Fooocus_extend/models/checkpoints/realisticStockPhoto_v20.safetensors'
     photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker", filename="photomaker-v1.bin", local_dir="extentions/phoomaker/checkpoints", repo_type="model")
  
     pipe = PhotoMakerStableDiffusionXLPipeline.from_single_file(
@@ -178,5 +179,5 @@ def gui():
         photomaker_gallery_images = gr.Gallery(label="Source Face Images", columns=5, rows=1, height=200)
     with gr.Row():
         start_pm=gr.Button(value='Start')
-    start_pm(fn=pm_start)
+    start_pm(fn=pm_start,inputs=)
     photomaker_images.upload(fn=swap_to_gallery, inputs=photomaker_images, outputs=[photomaker_gallery_images, photomaker_images])
