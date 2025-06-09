@@ -1,4 +1,4 @@
-    import gradio as gr   
+import gradio as gr   
 def swap_to_gallery(files):
     # Преобразуем временные файлы в пути
     file_paths = [file.name for file in files]  # Получаем пути из временных файлов
