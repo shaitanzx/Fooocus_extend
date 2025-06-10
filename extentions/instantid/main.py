@@ -120,12 +120,18 @@ def start(face_image_path,pose_image_path,num_steps,identitynet_strength_ratio,a
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instantid/checkpoints")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instantid/checkpoints")
-    
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="LiheYoung/config.json", local_dir="extentions/instantid/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="LiheYoung/pytorch_model.bin", local_dir="extentions/instantid/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instantid/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instantid/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
+
     app = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
     app.prepare(ctx_id=0, det_size=(640, 640))
 
     # openpose = OpenposeDetector.from_pretrained("lllyasviel/ControlNet")
-    depth_anything = DepthAnything.from_pretrained("LiheYoung/depth_anything_vitl14",cache_dir='extentions/instantid/checkpoints/LiheYoung',force_download=False).to(device).eval()
+    depth_anything = DepthAnything.from_pretrained(f"extentions/instantid/checkpoints/LiheYoung").to(device).eval()
 
     transform = Compose([
         Resize(
@@ -152,15 +158,15 @@ def start(face_image_path,pose_image_path,num_steps,identitynet_strength_ratio,a
 
     # controlnet-pose/canny/depth
     # controlnet_pose_model = "thibaud/controlnet-openpose-sdxl-1.0"
-    controlnet_canny_model = "diffusers/controlnet-canny-sdxl-1.0-small"
-    controlnet_depth_model = "diffusers/controlnet-depth-sdxl-1.0-small"
+    controlnet_canny_model = f"extentions/instantid/checkpoints/canny_small"
+    controlnet_depth_model = f"extentions/instantid/checkpoints/depth_small"
 
     controlnet_canny = ControlNetModel.from_pretrained(
-        controlnet_canny_model,cache_dir='extentions/instantid/checkpoints/canny_small',force_download=False,torch_dtype=dtype
+        controlnet_canny_model,torch_dtype=dtype
     ).to(device)
 
     controlnet_depth = ControlNetModel.from_pretrained(
-        controlnet_depth_model,cache_dir='extentions/instantid/checkpoints/depth_small',force_download=False,torch_dtype=dtype
+        controlnet_depth_model,torch_dtype=dtype
     ).to(device)
 
 

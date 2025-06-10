@@ -29,7 +29,7 @@ opencv-python
 chardet
 insightface==0.7.3
 lpips
-peft
+peft==0.6.0
 diffusers==0.26.1
 huggingface-hub==0.23.2
 controlnet_aux
