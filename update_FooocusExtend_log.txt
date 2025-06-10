@@ -1,3 +1,10 @@
+v9.0.0
+1. Dividing extensions into groups
+2. Add InstantID module
+3. Add Inswapper module
+4. Add CodeFormer module
+5. Add InstanID styles
+
 v8.1.0
 1. Some bug fix
 2. Add TextMask - Fast text editor with mask creation for ControlNet and Inpaint
