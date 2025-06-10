@@ -890,7 +890,7 @@ with shared.gradio_root:
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
                 def gen_acc_name(translate,instant,inswapper,codeformer):
-                    main_name = "in generation" + (f" — {', '.join(filter(None, ['PromptTranslate enabled' if translate else None, 'InstantID enabled' if instant else None, 'Inswapper enabled' if inswapper else None, 'Codeformer enabled' if codeformer else None]))}" if any([translate, inswapper, codeformer]) else "")
+                    main_name = "in generation" + (f" — {', '.join(filter(None, ['PromptTranslate enabled' if translate else None, 'InstantID enabled' if instant else None, 'Inswapper enabled' if inswapper else None, 'Codeformer enabled' if codeformer else None]))}" if any([translate, instant, inswapper, codeformer]) else "")
                     return gr.update(label=main_name)
                 translate_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
