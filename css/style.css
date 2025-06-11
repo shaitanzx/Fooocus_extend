@@ -410,6 +410,20 @@ div:has(> #positive_prompt) {
   display: none; /* remove this to enable tooltip in preview image */
 }
 
+.nested-accordion {
+  margin: 10px 0 !important;
+  border: 3px solid #4a8cff !important;
+  padding-left: 15px !important;
+}
+.nested-accordion > .label {
+  font-weight: bold !important;
+  color: #4a8cff !important;
+}
+.gr-accordion:not(.nested-accordion) {
+    border: 1px solid #ddd !important;
+    margin-bottom: 20px !important;
+}
+
 #inpaint_canvas .canvas-tooltip-info {
   top: 2px;
 }

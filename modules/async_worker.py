@@ -1,8 +1,10 @@
 import threading
 
 from extras.inpaint_mask import generate_mask_from_image, SAMOptions
+import modules.config
 from modules.patch import PatchSettings, patch_settings, patch_all
 import modules.config
+import sys
 
 patch_all()
 
@@ -227,7 +229,31 @@ class AsyncTask:
         self.positive_batch = args.pop()
         self.negative_batch = args.pop()
         self.name_prefix = args.pop().strip().replace(" ", "_")
-        
+        self.inswapper_enabled = args.pop()
+        self.inswapper_source_image_indicies = args.pop()
+        self.inswapper_target_image_indicies = args.pop()
+        self.inswapper_source_image = args.pop()
+        self.codeformer_gen_enabled = args.pop()
+        self.codeformer_gen_preface = args.pop()
+        self.codeformer_gen_background_enhance = args.pop()
+        self.codeformer_gen_face_upsample = args.pop()
+        self.codeformer_gen_upscale = args.pop()
+        self.codeformer_gen_fidelity = args.pop()
+        self.enable_instant = args.pop()
+
+        self.face_file_id = args.pop()
+        self.pose_file_id = args.pop()
+        self.identitynet_strength_ratio = args.pop()
+        self.adapter_strength_ratio = args.pop()
+        self.controlnet_selection_id = args.pop()
+        self.canny_strength_id = args.pop()
+        self.depth_strength_id = args.pop()
+        self.scheduler_id = args.pop()
+        self.enhance_face_region_id = args.pop()
+        self.pre_gen = args.pop()
+ 
+
+    
 
 async_tasks = []
 
@@ -271,6 +297,11 @@ def worker():
     from modules.upscaler import perform_upscale
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
+    import extentions.instantid.main as instantid
+    sys.path.append(os.path.abspath('extentions/inswapper'))
+    from face_swap import perform_face_swap
+    sys.path.append(os.path.abspath('extentions/CodeFormer'))
+    from codeformer import codeformer_process
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -407,28 +438,52 @@ def worker():
                     positive_cond, negative_cond = core.apply_controlnet(
                         positive_cond, negative_cond,
                         pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
-        imgs = pipeline.process_diffusion(
-            positive_cond=positive_cond,
-            negative_cond=negative_cond,
-            steps=steps,
-            switch=switch,
-            width=width,
-            height=height,
-            image_seed=task['task_seed'],
-            callback=callback,
-            sampler_name=async_task.sampler_name,
-            scheduler_name=final_scheduler_name,
-            latent=initial_latent,
-            denoise=denoising_strength,
-            tiled=tiled,
-            cfg_scale=async_task.cfg_scale,
-            refiner_swap_method=async_task.refiner_swap_method,
-            disable_preview=async_task.disable_preview
-        )
+        imgs=None 
+            
+        if (async_task.enable_instant == True and async_task.pre_gen == True) or async_task.enable_instant == False:
+            imgs = pipeline.process_diffusion(
+                positive_cond=positive_cond,
+                negative_cond=negative_cond,
+                steps=steps,
+                switch=switch,
+                width=width,
+                height=height,
+                image_seed=task['task_seed'],
+                callback=callback,
+                sampler_name=async_task.sampler_name,
+                scheduler_name=final_scheduler_name,
+                latent=initial_latent,
+                denoise=denoising_strength,
+                tiled=tiled,
+                cfg_scale=async_task.cfg_scale,
+                refiner_swap_method=async_task.refiner_swap_method,
+                disable_preview=async_task.disable_preview
+            )
+        if async_task.enable_instant == True:
+            imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
+                                   async_task.identitynet_strength_ratio,async_task.adapter_strength_ratio,
+                                   async_task.canny_strength_id,async_task.depth_strength_id,async_task.controlnet_selection_id,async_task.cfg_scale,
+                                   task,async_task.scheduler_id,async_task.enhance_face_region_id,
+                                   modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,loras,modules.config.paths_loras[0],async_task,
+                                   async_task.pre_gen,imgs)
+        
         del positive_cond, negative_cond  # Save memory
         if inpaint_worker.current_task is not None:
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
+
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
+        if async_task.inswapper_enabled:
+            progressbar(async_task, current_progress, 'inswapper in progress ...')
+#            modules.config.downloading_inswapper()
+            imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
+
+        if async_task.codeformer_gen_enabled:
+            progressbar(async_task, current_progress, 'CodeFormer in progress ...')
+            imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
+                    async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
+                    async_task.codeformer_gen_fidelity)
+        
+        
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
