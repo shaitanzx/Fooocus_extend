@@ -29,7 +29,7 @@ The **“Extensions”** panel is divided into three groups:
 
 Allows to translate both positive and negative prompts from any language into English, both before generation and directly during generation.
 
-**InstantID**
+**InstantID** (works only in the local version) 
 ![image](https://github.com/user-attachments/assets/f12b7389-48b4-4659-a94d-5d01268ab179)
 
 The module allows you to generate an image with a reference face
