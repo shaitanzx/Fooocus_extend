@@ -120,8 +120,6 @@ def start(face_image_path,pose_image_path,num_steps,identitynet_strength_ratio,a
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instantid/checkpoints")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instantid/checkpoints")
-    #hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="LiheYoung/config.json", local_dir="extentions/instantid/checkpoints")
-    #hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="LiheYoung/pytorch_model.bin", local_dir="extentions/instantid/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instantid/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instantid/checkpoints")
