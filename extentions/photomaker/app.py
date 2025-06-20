@@ -234,7 +234,6 @@ def gui():
 ### Usage tips of PhotoMaker
 1. Upload **more photos**of the person to be customized to **improve ID fidelty**.
 2. If you find that the image quality is poor when using doodle for control, you can reduce the conditioning scale and factor of the adapter.
-If you have any issues, leave the issue in the discussion page of the space. For a more stable (queue-free) experience, you can duplicate the space.
 """
     MAX_SEED = np.iinfo(np.int32).max
     STYLE_NAMES = list(styles.keys())
@@ -242,6 +241,8 @@ If you have any issues, leave the issue in the discussion page of the space. For
     ASPECT_RATIO_LABELS = list(aspect_ratios)
     DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
     with gr.Blocks() as demo:
+        with gr.Row():
+            enable_instant = gr.Checkbox(label="Enabled", value=False)
         with gr.Row():
             with gr.Column():
                 files = gr.Files(
@@ -366,4 +367,8 @@ If you have any issues, leave the issue in the discussion page of the space. For
                 inputs=input_list,
                 outputs=[gallery]
             )
-        gr.Markdown(tips)
+        with gr.Row():
+          gr.Markdown(tips)
+        with gr.Row():
+          gr.HTML('* \"PhotoMaker\" is powered by TencentARC. <a href="https://github.com/TencentARC/PhotoMaker" target="_blank">\U0001F4D4 Document</a>')
+
