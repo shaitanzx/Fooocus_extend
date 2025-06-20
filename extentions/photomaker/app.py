@@ -10,12 +10,13 @@ from diffusers import EulerDiscreteScheduler, T2IAdapter
 
 from huggingface_hub import hf_hub_download
 import gradio as gr
+import modules.config
 
-from pipeline_t2i_adapter import PhotoMakerStableDiffusionXLAdapterPipeline
-from face_utils import FaceAnalysis2, analyze_faces
+from .pipeline_t2i_adapter import PhotoMakerStableDiffusionXLAdapterPipeline
+from .face_utils import FaceAnalysis2, analyze_faces
 
-from style_template import styles
-from aspect_ratio_template import aspect_ratios
+from .style_template import styles
+from .aspect_ratio_template import aspect_ratios
 
 # global variable
 
@@ -37,9 +38,10 @@ def generate_image(
     adapter_conditioning_factor,
     progress=gr.Progress(track_tqdm=True)
 ):
+    
 
-    base_model_path = 'SG161222/RealVisXL_V4.0'
-    face_detector = FaceAnalysis2(providers=['CPUExecutionProvider'], allowed_modules=['detection', 'recognition'])
+    base_model_path = '/content/Fooocus_extend/models/checkpoints/realisticStockPhoto_v20.safetensors'
+    face_detector = FaceAnalysis2(providers=['CPUExecutionProvider'],root="",allowed_modules=['detection', 'recognition'])
     face_detector.prepare(ctx_id=0, det_size=(640, 640))
 
 #try:
@@ -59,7 +61,7 @@ def generate_image(
     DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
 
     enable_doodle_arg = False
-    photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker-V2", filename="photomaker-v2.bin", repo_type="model")
+    photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker-V2", filename="photomaker-v2.bin", local_dir="extentions/photomaker/model", repo_type="model")
 
     if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
         torch_dtype = torch.bfloat16
@@ -71,10 +73,10 @@ def generate_image(
     
 # load adapter
     adapter = T2IAdapter.from_pretrained(
-        "TencentARC/t2i-adapter-sketch-sdxl-1.0", torch_dtype=torch_dtype, variant="fp16"
+        "TencentARC/t2i-adapter-sketch-sdxl-1.0", torch_dtype=torch_dtype, variant="fp16",cache_dir='extentions/photomaker/model'
     ).to(device)
 
-    pipe = PhotoMakerStableDiffusionXLAdapterPipeline.from_pretrained(
+    pipe = PhotoMakerStableDiffusionXLAdapterPipeline.from_single_file(
         base_model_path, 
         adapter=adapter, 
         torch_dtype=torch_dtype,
@@ -175,10 +177,11 @@ def generate_image(
         adapter_conditioning_scale=adapter_conditioning_scale,
         adapter_conditioning_factor=adapter_conditioning_factor,
     ).images
-    return images, gr.update(visible=True)
+    return images
 
-def swap_to_gallery(images):
-    return gr.update(value=images, visible=True), gr.update(visible=True), gr.update(visible=False)
+def swap_to_gallery(files):
+    file_paths = [file.name for file in files]  # Получаем пути из временных файлов
+    return gr.update(value=file_paths, visible=True), gr.update(visible=True), gr.update(visible=False)
 
 def upload_example_to_gallery(images, prompt, style, negative_prompt):
     return gr.update(value=images, visible=True), gr.update(visible=True), gr.update(visible=False)
@@ -196,8 +199,7 @@ def remove_tips():
     return gr.update(visible=False)
 
 def randomize_seed_fn(seed: int, randomize_seed: bool) -> int:
-    if randomize_seed:
-        seed = random.randint(0, MAX_SEED)
+    seed=42
     return seed
 
 def apply_style(style_name: str, positive: str, negative: str = "") -> tuple[str, str]:
@@ -227,8 +229,19 @@ def get_example():
     return case
 
 def gui():
-    with gr.Blocks(css=css) as demo:
-    
+
+    tips = r"""
+### Usage tips of PhotoMaker
+1. Upload **more photos**of the person to be customized to **improve ID fidelty**.
+2. If you find that the image quality is poor when using doodle for control, you can reduce the conditioning scale and factor of the adapter.
+If you have any issues, leave the issue in the discussion page of the space. For a more stable (queue-free) experience, you can duplicate the space.
+"""
+    MAX_SEED = np.iinfo(np.int32).max
+    STYLE_NAMES = list(styles.keys())
+    DEFAULT_STYLE_NAME = "Photographic (Default)"
+    ASPECT_RATIO_LABELS = list(aspect_ratios)
+    DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
+    with gr.Blocks() as demo:
         with gr.Row():
             with gr.Column():
                 files = gr.Files(
@@ -246,7 +259,7 @@ def gui():
                 submit = gr.Button("Submit")
 
                 enable_doodle = gr.Checkbox(
-                    label="Enable Drawing Doodle for Control", value=enable_doodle_arg,
+                    label="Enable Drawing Doodle for Control", value=False,
                     info="After enabling this option, PhotoMaker will generate content based on your doodle on the canvas, driven by the T2I-Adapter (Quality may be decreased)",
                 )
                 with gr.Accordion("T2I-Adapter-Doodle (Optional)", visible=False) as doodle_space:
@@ -257,7 +270,7 @@ def gui():
                             crop_size=[1024,1024],
                             layers=False,
                             canvas_size=(350, 350),
-                            brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
+                            #brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
                         )
                         with gr.Group():
                             adapter_conditioning_scale = gr.Slider(
@@ -319,7 +332,7 @@ def gui():
                     randomize_seed = gr.Checkbox(label="Randomize seed", value=True)
             with gr.Column():
                 gallery = gr.Gallery(label="Generated Images")
-                usage_tips = gr.Markdown(label="Usage tips of PhotoMaker", value=tips ,visible=False)
+                #usage_tips = gr.Markdown(label="Usage tips of PhotoMaker", value=tips ,visible=False)
 
             files.upload(fn=swap_to_gallery, inputs=files, outputs=[uploaded_files, clear_button, files])
             remove_and_reupload.click(fn=remove_back_to_files, outputs=[uploaded_files, clear_button, files])
@@ -351,5 +364,6 @@ def gui():
             ).then(
                 fn=generate_image,
                 inputs=input_list,
-                outputs=[gallery, usage_tips]
+                outputs=[gallery]
             )
+        gr.Markdown(tips)

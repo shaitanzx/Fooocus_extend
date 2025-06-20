@@ -64,7 +64,7 @@ from diffusers.utils import _get_model_file
 from safetensors import safe_open
 from huggingface_hub.utils import validate_hf_hub_args
 
-from module.model_v2 import PhotoMakerIDEncoder_CLIPInsightfaceExtendtoken
+from .module.model_v2 import PhotoMakerIDEncoder_CLIPInsightfaceExtendtoken
 
 
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.rescale_noise_cfg
