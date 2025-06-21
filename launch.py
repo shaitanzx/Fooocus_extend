@@ -60,6 +60,9 @@ def prepare_environment():
                     if platform.system() == 'Windows':
                         python_version = f"cp{sys.version_info.major}{sys.version_info.minor}"
                         line=f'wheel/insightface-0.7.3-{python_version}-{python_version}-win_amd64.whl'
+                if 'onnxruntime-gpu' in line:
+                    if platform.system() == 'Darwin':
+                        continue
                 run_pip(f"install {line}", desc=line)
     if REINSTALL_ALL or not requirements_met(requirements_file):
         install_requirements(requirements_file)
