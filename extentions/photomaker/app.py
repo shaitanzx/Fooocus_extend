@@ -36,10 +36,10 @@ def generate_image(
     use_doodle,
     sketch_image,
     adapter_conditioning_scale,
-    adapter_conditioning_factor,
-    progress=gr.Progress(track_tqdm=True)
+    adapter_conditioning_factor
 ):
-    
+    #,
+    #progress=gr.Progress(track_tqdm=True)
     
     base_model_path = modules.config.paths_checkpoints[0]+os.sep+'realisticStockPhoto_v20.safetensors'
     face_detector = FaceAnalysis2(providers=['CPUExecutionProvider'],root="",allowed_modules=['detection', 'recognition'])
