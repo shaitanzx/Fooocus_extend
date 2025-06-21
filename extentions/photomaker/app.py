@@ -4,6 +4,7 @@ import numpy as np
 import random
 import os
 import sys
+from PIL import Image
 
 from diffusers.utils import load_image
 from diffusers import EulerDiscreteScheduler, T2IAdapter
@@ -39,8 +40,8 @@ def generate_image(
     progress=gr.Progress(track_tqdm=True)
 ):
     
-
-    base_model_path = '/content/Fooocus_extend/models/checkpoints/realisticStockPhoto_v20.safetensors'
+    
+    base_model_path = modules.config.paths_checkpoints[0]+os.sep+'realisticStockPhoto_v20.safetensors'
     face_detector = FaceAnalysis2(providers=['CPUExecutionProvider'],root="",allowed_modules=['detection', 'recognition'])
     face_detector.prepare(ctx_id=0, det_size=(640, 640))
 
@@ -135,7 +136,8 @@ def generate_image(
         raise gr.Error(f"Cannot find any input face image! Please refer to step 1️⃣")
 
     input_id_images = []
-    for img in upload_images:
+    file_paths = [file.name for file in upload_images]
+    for img in file_paths:
         input_id_images.append(load_image(img))
     
     id_embed_list = []
@@ -203,6 +205,8 @@ def randomize_seed_fn(seed: int, randomize_seed: bool) -> int:
     return seed
 
 def apply_style(style_name: str, positive: str, negative: str = "") -> tuple[str, str]:
+    STYLE_NAMES = list(styles.keys())
+    DEFAULT_STYLE_NAME = "Photographic (Default)"
     p, n = styles.get(style_name, styles[DEFAULT_STYLE_NAME])
     return p.replace("{prompt}", positive), n + ' ' + negative
 
@@ -242,7 +246,7 @@ def gui():
     DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
     with gr.Blocks() as demo:
         with gr.Row():
-            enable_instant = gr.Checkbox(label="Enabled", value=False)
+            enable_pm = gr.Checkbox(label="Enabled", value=False)
         with gr.Row():
             with gr.Column():
                 files = gr.Files(
