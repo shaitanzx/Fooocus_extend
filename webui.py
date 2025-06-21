@@ -853,6 +853,18 @@ with shared.gradio_root:
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='Photomaker') as photomaker_tab:
                             photomaker.gui()
+                            sketch_image0 = grh.Image(
+                            label='Canvas',
+                            source='canvas',
+                            type='pil', 
+                            #canvas_size=[350, 350],
+                            tool='sketch',
+                            height=500,
+                            width=500,
+                            brush_color="#000000",
+                            show_label=False,
+                            interactive=True,
+                            elem_id='doodle_photomaker')
 
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)

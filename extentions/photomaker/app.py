@@ -11,6 +11,7 @@ from diffusers import EulerDiscreteScheduler, T2IAdapter
 
 from huggingface_hub import hf_hub_download
 import gradio as gr
+import modules.gradio_hijack as grh
 import modules.config
 
 from .pipeline_t2i_adapter import PhotoMakerStableDiffusionXLAdapterPipeline
@@ -269,14 +270,28 @@ def gui():
                 )
                 with gr.Accordion("T2I-Adapter-Doodle (Optional)", visible=False) as doodle_space:
                     with gr.Row():
-                        sketch_image = gr.Sketchpad(
-                            label="Canvas",
-                            type="pil",
-                            crop_size=[1024,1024],
-                            layers=False,
-                            canvas_size=(350, 350),
-                            #brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
-                        )
+                        #sketch_image = gr.Sketchpad(
+                        #    label="Canvas",
+                        #    type="pil",
+                        #    crop_size=[1024,1024],
+                        #    layers=False,
+                        #    canvas_size=(350, 350),
+                        #    #brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
+                        #)
+
+                        sketch_image = grh.Image(
+                            label='Canvas',
+                            source='canvas',
+                            type='pil', 
+                            #canvas_size=[350, 350],
+                            tool='sketch',
+                            height=500,
+                            width=500,
+                            brush_color="#000000",
+                            show_label=False,
+                            interactive=True,
+                            elem_id='doodle_photomaker')
+                    with gr.Row():
                         with gr.Group():
                             adapter_conditioning_scale = gr.Slider(
                                 label="Adapter conditioning scale",
