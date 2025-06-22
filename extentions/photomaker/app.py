@@ -105,7 +105,7 @@ def generate_image(
 
 
     if use_doodle:
-        sketch_image = sketch_image["composite"]
+        #sketch_image = sketch_image["composite"]
         r, g, b, a = sketch_image.split()
         sketch_image = a.convert("RGB")
         sketch_image = TF.to_tensor(sketch_image) > 0.5 # Inversion 
@@ -288,8 +288,10 @@ def gui():
                             height=500,
                             width=500,
                             brush_color="#000000",
+                            brush_radius=5,
                             show_label=False,
                             interactive=True,
+                            image_mode='RGBA',
                             elem_id='doodle_photomaker')
                     with gr.Row():
                         with gr.Group():
