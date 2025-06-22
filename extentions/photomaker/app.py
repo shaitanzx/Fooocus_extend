@@ -282,8 +282,7 @@ def gui():
                         sketch_image = grh.Image(
                             label='Canvas',
                             source='canvas',
-                            type='pil', 
-                            #canvas_size=[350, 350],
+                            type='pil',
                             tool='sketch',
                             height=500,
                             width=500,
@@ -291,8 +290,7 @@ def gui():
                             brush_radius=5,
                             show_label=False,
                             interactive=True,
-                            image_mode='RGBA',
-                            elem_id='doodle_photomaker')
+                            image_mode='RGBA')
                     with gr.Row():
                         with gr.Group():
                             adapter_conditioning_scale = gr.Slider(
