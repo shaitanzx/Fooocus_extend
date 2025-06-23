@@ -1,5 +1,6 @@
 /* based on https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/v1.6.0/style.css */
 
+
 .loader-container {
   display: flex; /* Use flex to align items horizontally */
   align-items: center; /* Center items vertically within the container */
@@ -407,6 +408,20 @@ div:has(> #positive_prompt) {
   text-align: center;
   border-radius: 5px 5px 0px 0px;
   display: none; /* remove this to enable tooltip in preview image */
+}
+
+.nested-accordion {
+  margin: 10px 0 !important;
+  border: 3px solid #4a8cff !important;
+  padding-left: 15px !important;
+}
+.nested-accordion > .label {
+  font-weight: bold !important;
+  color: #4a8cff !important;
+}
+.gr-accordion:not(.nested-accordion) {
+    border: 1px solid #ddd !important;
+    margin-bottom: 20px !important;
 }
 
 #inpaint_canvas .canvas-tooltip-info {

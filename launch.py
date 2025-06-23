@@ -56,10 +56,16 @@ def prepare_environment():
         for line in file:
             line = line.strip()
             if line and not line.startswith('#'):  # Игнорируем пустые строки и комментарии
+                if 'insightface' in line:
+                    if platform.system() == 'Windows':
+                        python_version = f"cp{sys.version_info.major}{sys.version_info.minor}"
+                        line=f'wheel/insightface-0.7.3-{python_version}-{python_version}-win_amd64.whl'
+                if 'onnxruntime-gpu' in line:
+                    if platform.system() == 'Darwin':
+                        continue
                 run_pip(f"install {line}", desc=line)
     if REINSTALL_ALL or not requirements_met(requirements_file):
         install_requirements(requirements_file)
-
     return
 
 
@@ -152,6 +158,8 @@ config.default_base_model_name, config.checkpoint_downloads = download_models(
 
 config.update_files()
 init_cache(config.model_filenames, config.paths_checkpoints, config.lora_filenames, config.paths_loras)
-if not os.path.exists('batch_images'):
-    os.mkdir('batch_images')
+
+
+os.makedirs("batch_images", exist_ok=True)
+
 from webui import *
