@@ -106,10 +106,13 @@ def generate_image(
 
     if use_doodle:
         #sketch_image = sketch_image["composite"]
-        r, g, b, a = sketch_image.split()
-        sketch_image = a.convert("RGB")
-        sketch_image = TF.to_tensor(sketch_image) > 0.5 # Inversion 
-        sketch_image = TF.to_pil_image(sketch_image.to(torch.float32))
+        #r, g, b, a = sketch_image.split()
+        #sketch_image = a.convert("RGB")
+        ##sketch_image = TF.to_tensor(sketch_image) > 0.5 # Inversion 
+        ##sketch_image = TF.to_pil_image(sketch_image.to(torch.float32))
+        sketch_image = 1.0 - TF.to_tensor(sketch_image)  # Явная инверсия
+        sketch_image = TF.to_pil_image(sketch_image)
+        ##
         adapter_conditioning_scale = adapter_conditioning_scale
         adapter_conditioning_factor = adapter_conditioning_factor
     else:
@@ -290,7 +293,7 @@ def gui():
                             brush_radius=5,
                             show_label=False,
                             interactive=True,
-                            image_mode='RGBA')
+                            image_mode='RGB')
                     with gr.Row():
                         with gr.Group():
                             adapter_conditioning_scale = gr.Slider(
