@@ -24,25 +24,25 @@ from .aspect_ratio_template import aspect_ratios
 
 
 def generate_image(
-    upload_images, 
-    prompt, 
-    negative_prompt, 
-    aspect_ratio_name, 
-    style_name, 
-    num_steps, 
+    upload_images, task,
+    output_w,output_h 
+    num_steps,
     style_strength_ratio, 
-    num_outputs, 
     guidance_scale, 
-    seed, 
     use_doodle,
     sketch_image,
     adapter_conditioning_scale,
-    adapter_conditioning_factor
+    adapter_conditioning_factor,
+    base_model_path,
+    loras,loras_path
 ):
+    prompt=task['positive'][0]
+    negative_prompt=task['negative'][0]
+    seed=task['task_seed']
     #,
     #progress=gr.Progress(track_tqdm=True)
     
-    base_model_path = modules.config.paths_checkpoints[0]+os.sep+'realisticStockPhoto_v20.safetensors'
+    #base_model_path = modules.config.paths_checkpoints[0]+os.sep+'realisticStockPhoto_v20.safetensors'
     face_detector = FaceAnalysis2(providers=['CPUExecutionProvider'],root="",allowed_modules=['detection', 'recognition'])
     face_detector.prepare(ctx_id=0, det_size=(640, 640))
 
@@ -56,11 +56,7 @@ def generate_image(
 #except:
 #    device = "cpu"
     device = "cuda"
-    MAX_SEED = np.iinfo(np.int32).max
-    STYLE_NAMES = list(styles.keys())
-    DEFAULT_STYLE_NAME = "Photographic (Default)"
-    ASPECT_RATIO_LABELS = list(aspect_ratios)
-    DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
+
 
     enable_doodle_arg = False
     photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker-V2", filename="photomaker-v2.bin", local_dir="extentions/photomaker/model", repo_type="model")
@@ -127,11 +123,11 @@ def generate_image(
         raise gr.Error(f"Cannot use multiple trigger words '{pipe.trigger_word}' in text prompt!")
 
     # determine output dimensions by the aspect ratio
-    output_w, output_h = aspect_ratios[aspect_ratio_name]
-    print(f"[Debug] Generate image using aspect ratio [{aspect_ratio_name}] => {output_w} x {output_h}")
+    #output_w, output_h = aspect_ratios[aspect_ratio_name]
+    #print(f"[Debug] Generate image using aspect ratio [{aspect_ratio_name}] => {output_w} x {output_h}")
 
     # apply the style template
-    prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
+    #prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
 
     if upload_images is None:
         raise gr.Error(f"Cannot find any input face image! Please refer to step 1️⃣")
@@ -170,7 +166,7 @@ def generate_image(
         height=output_h,
         input_id_images=input_id_images,
         negative_prompt=negative_prompt,
-        num_images_per_prompt=num_outputs,
+        num_images_per_prompt=1,
         num_inference_steps=num_steps,
         start_merge_step=start_merge_step,
         generator=generator,
