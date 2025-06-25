@@ -105,14 +105,11 @@ def generate_image(
 
 
     if use_doodle:
-        #sketch_image = sketch_image["composite"]
-        #r, g, b, a = sketch_image.split()
-        #sketch_image = a.convert("RGB")
-        ##sketch_image = TF.to_tensor(sketch_image) > 0.5 # Inversion 
-        ##sketch_image = TF.to_pil_image(sketch_image.to(torch.float32))
-        sketch_image = 1.0 - TF.to_tensor(sketch_image)  # Явная инверсия
-        sketch_image = TF.to_pil_image(sketch_image)
-        ##
+        sketch_image = sketch_image["composite"]
+        r, g, b, a = sketch_image.split()
+        sketch_image = a.convert("RGB")
+        sketch_image = TF.to_tensor(sketch_image) > 0.5 # Inversion 
+        sketch_image = TF.to_pil_image(sketch_image.to(torch.float32))
         adapter_conditioning_scale = adapter_conditioning_scale
         adapter_conditioning_factor = adapter_conditioning_factor
     else:
@@ -195,59 +192,19 @@ def upload_example_to_gallery(images, prompt, style, negative_prompt):
 def remove_back_to_files():
     return gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)
     
-def change_doodle_space(use_doodle):
-    if use_doodle:
-        return gr.update(visible=True)
-    else:
-        return gr.update(visible=False)
 
-def remove_tips():
-    return gr.update(visible=False)
 
-def randomize_seed_fn(seed: int, randomize_seed: bool) -> int:
-    seed=42
-    return seed
 
-def apply_style(style_name: str, positive: str, negative: str = "") -> tuple[str, str]:
-    STYLE_NAMES = list(styles.keys())
-    DEFAULT_STYLE_NAME = "Photographic (Default)"
-    p, n = styles.get(style_name, styles[DEFAULT_STYLE_NAME])
-    return p.replace("{prompt}", positive), n + ' ' + negative
 
 def get_image_path_list(folder_name):
     image_basename_list = os.listdir(folder_name)
     image_path_list = sorted([os.path.join(folder_name, basename) for basename in image_basename_list])
     return image_path_list
 
-def get_example():
-    case = [
-        [
-            get_image_path_list('./examples/scarletthead_woman'),
-            "instagram photo, portrait photo of a woman img, colorful, perfect face, natural skin, hard shadows, film grain",
-            "(No style)",
-            "(asymmetry, worst quality, low quality, illustration, 3d, 2d, painting, cartoons, sketch), open mouth",
-        ],
-        [
-            get_image_path_list('./examples/newton_man'),
-            "sci-fi, closeup portrait photo of a man img wearing the sunglasses in Iron man suit, face, slim body, high quality, film grain",
-            "(No style)",
-            "(asymmetry, worst quality, low quality, illustration, 3d, 2d, painting, cartoons, sketch), open mouth",
-        ],
-    ]
-    return case
+
 
 def gui():
 
-    tips = r"""
-### Usage tips of PhotoMaker
-1. Upload **more photos**of the person to be customized to **improve ID fidelty**.
-2. If you find that the image quality is poor when using doodle for control, you can reduce the conditioning scale and factor of the adapter.
-"""
-    MAX_SEED = np.iinfo(np.int32).max
-    STYLE_NAMES = list(styles.keys())
-    DEFAULT_STYLE_NAME = "Photographic (Default)"
-    ASPECT_RATIO_LABELS = list(aspect_ratios)
-    DEFAULT_ASPECT_RATIO = ASPECT_RATIO_LABELS[0]
     with gr.Blocks() as demo:
         with gr.Row():
             enable_pm = gr.Checkbox(label="Enabled", value=False)
@@ -260,40 +217,22 @@ def gui():
                 uploaded_files = gr.Gallery(label="Your images", visible=False, columns=5, rows=1, height=200)
                 with gr.Column(visible=False) as clear_button:
                     remove_and_reupload = gr.ClearButton(value="Remove and upload new ones", components=files, size="sm")
-                prompt = gr.Textbox(label="Prompt",
-                       info="Try something like 'a photo of a man/woman img', 'img' is the trigger word.",
-                       placeholder="A photo of a [man/woman img]...")
-                style = gr.Dropdown(label="Style template", choices=STYLE_NAMES, value=DEFAULT_STYLE_NAME)
-                aspect_ratio = gr.Dropdown(label="Output aspect ratio", choices=ASPECT_RATIO_LABELS, value=DEFAULT_ASPECT_RATIO)
-                submit = gr.Button("Submit")
 
                 enable_doodle = gr.Checkbox(
                     label="Enable Drawing Doodle for Control", value=False,
                     info="After enabling this option, PhotoMaker will generate content based on your doodle on the canvas, driven by the T2I-Adapter (Quality may be decreased)",
-                )
+                    viible=False)
                 with gr.Accordion("T2I-Adapter-Doodle (Optional)", visible=False) as doodle_space:
                     with gr.Row():
-                        #sketch_image = gr.Sketchpad(
-                        #    label="Canvas",
-                        #    type="pil",
-                        #    crop_size=[1024,1024],
-                        #    layers=False,
-                        #    canvas_size=(350, 350),
-                        #    #brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
-                        #)
+                        sketch_image = gr.Sketchpad(
+                            label="Canvas",
+                            type="pil",
+                            crop_size=[1024,1024],
+                            layers=False,
+                            canvas_size=(350, 350),
+                            #brush=gr.Brush(default_size=5, colors=["#000000"], color_mode="fixed")
+                        )
 
-                        sketch_image = grh.Image(
-                            label='Canvas',
-                            source='canvas',
-                            type='pil',
-                            tool='sketch',
-                            height=500,
-                            width=500,
-                            brush_color="#000000",
-                            brush_radius=5,
-                            show_label=False,
-                            interactive=True,
-                            image_mode='RGB')
                     with gr.Row():
                         with gr.Group():
                             adapter_conditioning_scale = gr.Slider(
@@ -312,18 +251,6 @@ def gui():
                                 value=0.8,
                             )
                 with gr.Accordion(open=False, label="Advanced Options"):
-                    negative_prompt = gr.Textbox(
-                        label="Negative Prompt", 
-                        placeholder="low quality",
-                        value="nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry",
-                    )
-                    num_steps = gr.Slider( 
-                        label="Number of sample steps",
-                        minimum=20,
-                        maximum=100,
-                        step=1,
-                        value=50,
-                    )
                     style_strength_ratio = gr.Slider(
                         label="Style strength (%)",
                         minimum=15,
@@ -331,66 +258,28 @@ def gui():
                         step=1,
                         value=20,
                     )
-                    num_outputs = gr.Slider(
-                        label="Number of output images",
-                        minimum=1,
-                        maximum=4,
-                        step=1,
-                        value=2,
-                    )
-                    guidance_scale = gr.Slider(
-                        label="Guidance scale",
-                        minimum=0.1,
-                        maximum=10.0,
-                        step=0.1,
-                        value=5,
-                    )
-                    seed = gr.Slider(
-                        label="Seed",
-                        minimum=0,
-                        maximum=MAX_SEED,
-                        step=1,
-                        value=0,
-                    )
-                    randomize_seed = gr.Checkbox(label="Randomize seed", value=True)
-            with gr.Column():
-                gallery = gr.Gallery(label="Generated Images")
-                #usage_tips = gr.Markdown(label="Usage tips of PhotoMaker", value=tips ,visible=False)
 
             files.upload(fn=swap_to_gallery, inputs=files, outputs=[uploaded_files, clear_button, files])
             remove_and_reupload.click(fn=remove_back_to_files, outputs=[uploaded_files, clear_button, files])
-            enable_doodle.select(fn=change_doodle_space, inputs=enable_doodle, outputs=doodle_space)
 
-            input_list = [
-                files, 
-                prompt, 
-                negative_prompt, 
-                aspect_ratio, 
-                style, 
-                num_steps, 
-                style_strength_ratio, 
-                num_outputs, 
-                guidance_scale, 
-                seed,
-                enable_doodle,
-                sketch_image,
-                adapter_conditioning_scale,
-                adapter_conditioning_factor
-            ]
+#            input_list = [
+#                files, 
+#                prompt, 
+#                negative_prompt, 
+#                aspect_ratio, 
+#                style, 
+#                num_steps, 
+#                style_strength_ratio, 
+#                num_outputs, 
+#                guidance_scale, 
+#                seed,
+#                enable_doodle,
+#                sketch_image,
+#                adapter_conditioning_scale,
+#                adapter_conditioning_factor
+#            ]
 
-            submit.click(
-                fn=randomize_seed_fn,
-                inputs=[seed, randomize_seed],
-                outputs=seed,
-                queue=False,
-                api_name=False,
-            ).then(
-                fn=generate_image,
-                inputs=input_list,
-                outputs=[gallery]
-            )
-        with gr.Row():
-          gr.Markdown(tips)
         with gr.Row():
           gr.HTML('* \"PhotoMaker\" is powered by TencentARC. <a href="https://github.com/TencentARC/PhotoMaker" target="_blank">\U0001F4D4 Document</a>')
 
+    return enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor
