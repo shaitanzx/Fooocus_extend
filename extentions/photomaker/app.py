@@ -19,13 +19,15 @@ from .face_utils import FaceAnalysis2, analyze_faces
 
 from .style_template import styles
 from .aspect_ratio_template import aspect_ratios
+import ldm_patched.modules.model_management as model_management
+import gc
 
 # global variable
 
 
 def generate_image(
     upload_images, task,
-    output_w,output_h 
+    output_w,output_h, 
     num_steps,
     style_strength_ratio, 
     guidance_scale, 
@@ -34,7 +36,7 @@ def generate_image(
     adapter_conditioning_scale,
     adapter_conditioning_factor,
     base_model_path,
-    loras,loras_path
+    loras,loras_path,async_task
 ):
     model_management.interrupt_processing = False
     prompt=task['positive'][0]
@@ -228,6 +230,7 @@ def generate_image(
         image=sketch_image,
         adapter_conditioning_scale=adapter_conditioning_scale,
         adapter_conditioning_factor=adapter_conditioning_factor,
+        callback_on_step_end=progress_id
     ).images
     del pipe
     del face_detector

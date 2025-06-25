@@ -255,10 +255,10 @@ class AsyncTask:
         self.enable_pm = args.pop()
         self.files_pm = args.pop()
         self.style_strength_ratio = args.pop()
-        self.enable_doodle = args.pop()
+        self.use_doodle = args.pop()
         self.sketch_image = args.pop()
         self.adapter_conditioning_scale = args.pop()
-        self.adapter_conditioning_factor
+        self.adapter_conditioning_factor = args.pop()
  
 
     
@@ -480,7 +480,7 @@ def worker():
                     async_task.sketch_image,async_task.adapter_conditioning_scale,
                     async_task.adapter_conditioning_factor,
                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
-                    loras,modules.config.paths_loras[0])
+                    loras,modules.config.paths_loras[0],async_task)
         del positive_cond, negative_cond  # Save memory
         if inpaint_worker.current_task is not None:
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
