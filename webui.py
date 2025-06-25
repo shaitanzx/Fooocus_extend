@@ -851,8 +851,6 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='Photomaker') as photomaker_tab:
-                            enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                             langs_sup = list(langs_sup.values())
@@ -885,6 +883,8 @@ with shared.gradio_root:
                                 with gr.Row():            
                                     p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
                             gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
+                        with gr.TabItem(label='Photomaker') as photomaker_tab:
+                            enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
 

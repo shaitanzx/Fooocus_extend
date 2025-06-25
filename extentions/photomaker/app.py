@@ -214,14 +214,14 @@ def gui():
                         label="Drag (Select) 1 or more photos of your face",
                         file_types=["image"]
                     )
-                uploaded_files = gr.Gallery(label="Your images", visible=False, columns=5, rows=1, height=200)
+                uploaded_files = gr.Gallery(label="Your images", visible=False, columns=5, rows=1, height=300)
                 with gr.Column(visible=False) as clear_button:
                     remove_and_reupload = gr.ClearButton(value="Remove and upload new ones", components=files, size="sm")
 
                 enable_doodle = gr.Checkbox(
                     label="Enable Drawing Doodle for Control", value=False,
                     info="After enabling this option, PhotoMaker will generate content based on your doodle on the canvas, driven by the T2I-Adapter (Quality may be decreased)",
-                    viible=False)
+                    visible=False)
                 with gr.Accordion("T2I-Adapter-Doodle (Optional)", visible=False) as doodle_space:
                     with gr.Row():
                         sketch_image = gr.Sketchpad(
@@ -250,7 +250,7 @@ def gui():
                                 step=0.1,
                                 value=0.8,
                             )
-                with gr.Accordion(open=False, label="Advanced Options"):
+                with gr.Row():
                     style_strength_ratio = gr.Slider(
                         label="Style strength (%)",
                         minimum=15,
