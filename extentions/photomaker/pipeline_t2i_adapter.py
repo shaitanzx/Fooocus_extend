@@ -624,6 +624,8 @@ class PhotoMakerStableDiffusionXLAdapterPipeline(StableDiffusionXLAdapterPipelin
         )
         self._guidance_scale = guidance_scale
         self._clip_skip = clip_skip
+#!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self._interrupt = False
 
         #        
         if prompt_embeds is not None and class_tokens_mask is None:
@@ -826,6 +828,11 @@ class PhotoMakerStableDiffusionXLAdapterPipeline(StableDiffusionXLAdapterPipelin
 
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
+                #!!!!!!!!!!!!!!!!!!!!!!!
+                if self.interrupt:
+                    continue
+
+                #!!!!!!!!!!!!!!!!!!!
 
                 # expand the latents if we are doing classifier free guidance
                 latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents

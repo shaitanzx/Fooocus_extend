@@ -36,6 +36,7 @@ def generate_image(
     base_model_path,
     loras,loras_path
 ):
+    model_management.interrupt_processing = False
     prompt=task['positive'][0]
     negative_prompt=task['negative'][0]
     seed=task['task_seed']
@@ -89,10 +90,31 @@ def generate_image(
         trigger_word="img",
         pm_version="v2",
     )
+
     pipe.id_encoder.to(device)
 
     pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
 # pipe.set_adapters(["photomaker"], adapter_weights=[1.0])
+
+    loras = [lora for lora in loras if 'None' not in lora]
+    adapters = []
+    for index, lora in enumerate(loras):
+        path_separator = os.path.sep
+        lora_filename, lora_weight = lora
+        lora_fullpath = loras_path + path_separator + lora_filename
+        print(f"PhotoMaker: Loading {lora_fullpath} with weight {lora_weight}")
+        try:
+            pipe.load_lora_weights(loras_path, weight_name=lora_filename, adapter_name=str(index))
+            adapters.append({str(index): lora_weight})
+        except ValueError:
+            print(f"PhotoMaker: {lora_filename} already loaded, continuing on...")
+  
+
+
+    adapter_names = [list(adapter.keys())[0] for adapter in adapters]
+    adapter_weights = [list(adapter.values())[0] for adapter in adapters]
+    pipe.set_adapters(adapter_names, adapter_weights=adapter_weights)
+
     pipe.fuse_lora()
     pipe.to(device)
 
@@ -160,6 +182,37 @@ def generate_image(
     if start_merge_step > 30:
         start_merge_step = 30
     print(start_merge_step)
+    preview_image=None
+    def progress_id(pipe, step_index, timestep, callback_kwargs):
+
+      interrupt_processing = model_management.interrupt_processing
+      
+      if interrupt_processing:
+        
+        pipe._interrupt =  True
+              
+      
+      
+      if step_index % 5 == 0 or step_index == 0:
+        latents = callback_kwargs.get("latents")
+        global preview_image
+        with torch.no_grad():
+            needs_upcasting = pipe.vae.dtype == torch.float16 and pipe.vae.config.force_upcast
+            if needs_upcasting:
+                    pipe.upcast_vae()
+                    latents = latents.to(next(iter(pipe.vae.post_quant_conv.parameters())).dtype)
+            
+            image = pipe.vae.decode(latents / pipe.vae.config.scaling_factor, return_dict=False)[0]
+            image = image.cpu()
+            image_np = image.numpy()
+            image_np = image_np.transpose(0, 2, 3, 1)
+            image_np = (image_np * 127.5 + 127.5).clip(0, 255).astype(np.uint8)
+            preview_image = image_np[0]
+      async_task.yields.append(['preview', (
+            int(15.0 + 85.0 * float(0) / float(num_steps)),
+            f'InstatntID step {step_index}/{num_steps}',
+            np.array(preview_image))])
+      return callback_kwargs
     images = pipe(
         prompt=prompt,
         width=output_w,
@@ -176,7 +229,15 @@ def generate_image(
         adapter_conditioning_scale=adapter_conditioning_scale,
         adapter_conditioning_factor=adapter_conditioning_factor,
     ).images
-    return images
+    del pipe
+    del face_detector
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
+    if model_management.interrupt_processing:
+         return []
+
+    return [np.array(images[0])]
 
 def swap_to_gallery(files):
     file_paths = [file.name for file in files]  # Получаем пути из временных файлов
