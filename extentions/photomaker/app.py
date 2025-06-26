@@ -185,36 +185,31 @@ def generate_image(
         start_merge_step = 30
     print(start_merge_step)
     preview_image=None
-    def progress_id(pipe, step_index, timestep, callback_kwargs):
-
-      interrupt_processing = model_management.interrupt_processing
-      
-      if interrupt_processing:
-        
-        pipe._interrupt =  True
-              
-      
-      
-      if step_index % 5 == 0 or step_index == 0:
-        latents = callback_kwargs.get("latents")
+    def progress_pm(step, timestep, latents):
         global preview_image
-        with torch.no_grad():
-            needs_upcasting = pipe.vae.dtype == torch.float16 and pipe.vae.config.force_upcast
-            if needs_upcasting:
-                    pipe.upcast_vae()
-                    latents = latents.to(next(iter(pipe.vae.post_quant_conv.parameters())).dtype)
-            
-            image = pipe.vae.decode(latents / pipe.vae.config.scaling_factor, return_dict=False)[0]
-            image = image.cpu()
-            image_np = image.numpy()
-            image_np = image_np.transpose(0, 2, 3, 1)
-            image_np = (image_np * 127.5 + 127.5).clip(0, 255).astype(np.uint8)
-            preview_image = image_np[0]
-      async_task.yields.append(['preview', (
-            int(15.0 + 85.0 * float(0) / float(num_steps)),
-            f'InstatntID step {step_index}/{num_steps}',
-            np.array(preview_image))])
-      return callback_kwargs
+        interrupt_processing = model_management.interrupt_processing
+        if interrupt_processing:
+            pipe._interrupt =  True
+        if step % 5 == 0 or step == 0:
+            with torch.no_grad():
+
+                latents = 1 / 0.18215 * latents
+
+                image = pipe.vae.decode(latents).sample
+
+                image = (image / 2 + 0.5).clamp(0, 1)
+
+            # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
+                image = image.cpu().permute(0, 2, 3, 1).float().numpy()
+
+            # convert to PIL Images
+                image = pipe.numpy_to_pil(image)[0]
+                preview_image=image
+
+        async_task.yields.append(['preview', (
+                            int(15.0 + 85.0 * float(0) / float(num_steps)),
+                            f'PhotoMaker Step {step}/{num_steps}',
+                            preview_image)])
     images = pipe(
         prompt=prompt,
         width=output_w,
@@ -224,14 +219,19 @@ def generate_image(
         num_images_per_prompt=1,
         num_inference_steps=num_steps,
         start_merge_step=start_merge_step,
+        callback=progress_pm,
         generator=generator,
         guidance_scale=guidance_scale,
         id_embeds=id_embeds,
         image=sketch_image,
         adapter_conditioning_scale=adapter_conditioning_scale,
         adapter_conditioning_factor=adapter_conditioning_factor,
-        callback_on_step_end=progress_id
     ).images
+
+
+   
+      
+
     del pipe
     del face_detector
     gc.collect()
@@ -322,22 +322,7 @@ def gui():
             files.upload(fn=swap_to_gallery, inputs=files, outputs=[uploaded_files, clear_button, files])
             remove_and_reupload.click(fn=remove_back_to_files, outputs=[uploaded_files, clear_button, files])
 
-#            input_list = [
-#                files, 
-#                prompt, 
-#                negative_prompt, 
-#                aspect_ratio, 
-#                style, 
-#                num_steps, 
-#                style_strength_ratio, 
-#                num_outputs, 
-#                guidance_scale, 
-#                seed,
-#                enable_doodle,
-#                sketch_image,
-#                adapter_conditioning_scale,
-#                adapter_conditioning_factor
-#            ]
+
 
         with gr.Row():
           gr.HTML('* \"PhotoMaker\" is powered by TencentARC. <a href="https://github.com/TencentARC/PhotoMaker" target="_blank">\U0001F4D4 Document</a>')
