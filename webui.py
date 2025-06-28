@@ -1384,11 +1384,11 @@ with shared.gradio_root:
                     def set_to_ar(aspect_ratios_selection,width,height): 
                         g = math.gcd(width, height)
                         selector=f'{width}×{height}  \U00002223 {width // g}:{height // g}'
-                        if aspect_ratios_selection==modules.config.available_aspect_ratios_labels[-1]:
+                        if aspect_ratios_selection==modules.config.available_aspect_ratios_labels[-2]:
                           previos_aspect=selector
                         else:
                           previos_aspect=aspect_ratios_selection
-                        modules.config.available_aspect_ratios_labels[-1]=selector
+                        modules.config.available_aspect_ratios_labels[-2]=selector
                         return gr.update (choices=modules.config.available_aspect_ratios_labels, value=previos_aspect)
                 swap.click(swap_ar,inputs=[lock_ar,width_ar,height_ar],outputs=[lock_ar,width_ar,height_ar,swap],show_progress=False)
                 lock_ar.change(locker, inputs=[lock_ar,width_ar,height_ar],outputs=[width_ar, height_ar],show_progress=False)
