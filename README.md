@@ -251,9 +251,11 @@ This module allows you to create skeletons for subsequent image creation using O
 
 **Select the resolution and aspect ratio of the generated image**
 
-![image](https://github.com/user-attachments/assets/ba5ce3d4-8f36-4f64-af82-760713c44c6a)
+![image](https://github.com/user-attachments/assets/502cdf7e-ae4b-4bda-b2dc-b0076c962ae4)
 
-This setting is located in the generation resolution selection tab. Here you can select the number of horizontal and vertical points, aspect ratio. To apply the settings, click the Set button and select this resolution from the list of proposed resolutions. Your resolution will be the last one.
+
+This setting is located in the generation resolution selection tab. Here you can select the number of horizontal and vertical points, aspect ratio. To apply the settings, click the Set button and select this resolution from the list of proposed resolutions. Your resolution will be the second to last. 
+You can also select a random aspect ratio for each generation from the available list of aspect ratios
 
 **Wildcard**
 
