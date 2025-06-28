@@ -5,6 +5,7 @@ import modules.config
 from modules.patch import PatchSettings, patch_settings, patch_all
 import modules.config
 import sys
+import random
 
 patch_all()
 
@@ -38,6 +39,12 @@ class AsyncTask:
         self.original_steps = self.steps
 
         self.aspect_ratios_selection = args.pop()
+        if self.aspect_ratios_selection=='Random':
+            self.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
+            self.aspect_random=None
+        else:
+            self.aspect_random=False
+
         self.image_number = args.pop()
         self.output_format = args.pop()
         self.seed = int(args.pop())
@@ -1517,6 +1524,12 @@ def worker():
         persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only
 
         for current_task_id, task in enumerate(tasks):
+            if async_task.aspect_random==True:
+                async_task.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
+                width, height = async_task.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
+                width, height = int(width), int(height)
+            if async_task.aspect_random==None:
+                async_task.aspect_random=True
             progressbar(async_task, current_progress, f'Preparing task {current_task_id + 1}/{async_task.image_number} ...')
             execution_start_time = time.perf_counter()
 
