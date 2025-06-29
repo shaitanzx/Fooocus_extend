@@ -58,6 +58,7 @@ import chardet
 from extentions.inswapper import face_swap
 from extentions.CodeFormer import codeformer
 import extentions.instantid.main as instantid
+import extentions.photomaker.app as photomaker
 obp_prompt=[]
 
 
@@ -882,6 +883,8 @@ with shared.gradio_root:
                                 with gr.Row():            
                                     p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
                             gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
+                        with gr.TabItem(label='Photomaker') as photomaker_tab:
+                            enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
 
@@ -889,16 +892,18 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
-                def gen_acc_name(translate,instant,inswapper,codeformer):
-                    main_name = "in generation" + (f" — {', '.join(filter(None, ['PromptTranslate enabled' if translate else None, 'InstantID enabled' if instant else None, 'Inswapper enabled' if inswapper else None, 'Codeformer enabled' if codeformer else None]))}" if any([translate, instant, inswapper, codeformer]) else "")
+                def gen_acc_name(translate, photomaker, instant, inswapper, codeformer):
+                    main_name = "in generation" + (f" — {', '.join(filter(None, ['PromptTranslate enabled' if translate else None, 'PhotoMaker enabled' if photomaker else None, 'InstantID enabled' if instant else None, 'Inswapper enabled' if inswapper else None, 'Codeformer enabled' if codeformer else None]))}" if any([translate, photomaker, instant, inswapper, codeformer]) else "")
                     return gr.update(label=main_name)
-                translate_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                enable_pm.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                inswapper_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                translate_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                codeformer_gen_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                inswapper_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                enable_instant.change(gen_acc_name,inputs=[translate_enabled,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                codeformer_gen_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
+                enable_instant.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
 
                 
@@ -1379,11 +1384,11 @@ with shared.gradio_root:
                     def set_to_ar(aspect_ratios_selection,width,height): 
                         g = math.gcd(width, height)
                         selector=f'{width}×{height}  \U00002223 {width // g}:{height // g}'
-                        if aspect_ratios_selection==modules.config.available_aspect_ratios_labels[-1]:
+                        if aspect_ratios_selection==modules.config.available_aspect_ratios_labels[-2]:
                           previos_aspect=selector
                         else:
                           previos_aspect=aspect_ratios_selection
-                        modules.config.available_aspect_ratios_labels[-1]=selector
+                        modules.config.available_aspect_ratios_labels[-2]=selector
                         return gr.update (choices=modules.config.available_aspect_ratios_labels, value=previos_aspect)
                 swap.click(swap_ar,inputs=[lock_ar,width_ar,height_ar],outputs=[lock_ar,width_ar,height_ar,swap],show_progress=False)
                 lock_ar.change(locker, inputs=[lock_ar,width_ar,height_ar],outputs=[width_ar, height_ar],show_progress=False)
@@ -1944,6 +1949,7 @@ with shared.gradio_root:
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image]
         ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity]
         ctrls += [enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen]
+        ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

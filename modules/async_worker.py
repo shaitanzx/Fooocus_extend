@@ -5,6 +5,7 @@ import modules.config
 from modules.patch import PatchSettings, patch_settings, patch_all
 import modules.config
 import sys
+import random
 
 patch_all()
 
@@ -38,6 +39,12 @@ class AsyncTask:
         self.original_steps = self.steps
 
         self.aspect_ratios_selection = args.pop()
+        if self.aspect_ratios_selection=='Random':
+            self.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
+            self.aspect_random=None
+        else:
+            self.aspect_random=False
+
         self.image_number = args.pop()
         self.output_format = args.pop()
         self.seed = int(args.pop())
@@ -251,6 +258,14 @@ class AsyncTask:
         self.scheduler_id = args.pop()
         self.enhance_face_region_id = args.pop()
         self.pre_gen = args.pop()
+
+        self.enable_pm = args.pop()
+        self.files_pm = args.pop()
+        self.style_strength_ratio = args.pop()
+        self.use_doodle = args.pop()
+        self.sketch_image = args.pop()
+        self.adapter_conditioning_scale = args.pop()
+        self.adapter_conditioning_factor = args.pop()
  
 
     
@@ -298,6 +313,7 @@ def worker():
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
     import extentions.instantid.main as instantid
+    import extentions.photomaker.app as photomaker
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -441,24 +457,33 @@ def worker():
         imgs=None 
             
         if (async_task.enable_instant == True and async_task.pre_gen == True) or async_task.enable_instant == False:
-            imgs = pipeline.process_diffusion(
-                positive_cond=positive_cond,
-                negative_cond=negative_cond,
-                steps=steps,
-                switch=switch,
-                width=width,
-                height=height,
-                image_seed=task['task_seed'],
-                callback=callback,
-                sampler_name=async_task.sampler_name,
-                scheduler_name=final_scheduler_name,
-                latent=initial_latent,
-                denoise=denoising_strength,
-                tiled=tiled,
-                cfg_scale=async_task.cfg_scale,
-                refiner_swap_method=async_task.refiner_swap_method,
-                disable_preview=async_task.disable_preview
-            )
+            if async_task.enable_pm ==True:
+                imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
+                    async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
+                    async_task.sketch_image,async_task.adapter_conditioning_scale,
+                    async_task.adapter_conditioning_factor,
+                    modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
+                    loras,modules.config.paths_loras[0],async_task)
+            else:
+
+                imgs = pipeline.process_diffusion(
+                    positive_cond=positive_cond,
+                    negative_cond=negative_cond,
+                    steps=steps,
+                    switch=switch,
+                    width=width,
+                    height=height,
+                    image_seed=task['task_seed'],
+                    callback=callback,
+                    sampler_name=async_task.sampler_name,
+                    scheduler_name=final_scheduler_name,
+                    latent=initial_latent,
+                    denoise=denoising_strength,
+                    tiled=tiled,
+                    cfg_scale=async_task.cfg_scale,
+                    refiner_swap_method=async_task.refiner_swap_method,
+                    disable_preview=async_task.disable_preview
+                )
         if async_task.enable_instant == True:
             imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
                                    async_task.identitynet_strength_ratio,async_task.adapter_strength_ratio,
@@ -1499,6 +1524,12 @@ def worker():
         persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only
 
         for current_task_id, task in enumerate(tasks):
+            if async_task.aspect_random==True:
+                async_task.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
+                width, height = async_task.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
+                width, height = int(width), int(height)
+            if async_task.aspect_random==None:
+                async_task.aspect_random=True
             progressbar(async_task, current_progress, f'Preparing task {current_task_id + 1}/{async_task.image_number} ...')
             execution_start_time = time.perf_counter()
 
