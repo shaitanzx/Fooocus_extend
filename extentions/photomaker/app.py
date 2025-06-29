@@ -17,8 +17,6 @@ import modules.config
 from .pipeline_t2i_adapter import PhotoMakerStableDiffusionXLAdapterPipeline
 from .face_utils import FaceAnalysis2, analyze_faces
 
-from .style_template import styles
-from .aspect_ratio_template import aspect_ratios
 import ldm_patched.modules.model_management as model_management
 import gc
 
@@ -238,8 +236,6 @@ def swap_to_gallery(files):
     file_paths = [file.name for file in files]  # Получаем пути из временных файлов
     return gr.update(value=file_paths, visible=True), gr.update(visible=True), gr.update(visible=False)
 
-def upload_example_to_gallery(images, prompt, style, negative_prompt):
-    return gr.update(value=images, visible=True), gr.update(visible=True), gr.update(visible=False)
 
 def remove_back_to_files():
     return gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)
@@ -261,7 +257,7 @@ def gui():
         with gr.Row():
             enable_pm = gr.Checkbox(label="Enabled", value=False)
         with gr.Row():
-            gr.HTML('* You MUST USE the trigger word \"img\", eg: \"a photo of a man/woman img\"')
+            gr.HTML('* You MUST USE the trigger word \"img\" in the positive prompt, eg: \"a photo of a man/woman img\"')
         with gr.Row():
             with gr.Column():
                 files = gr.Files(
