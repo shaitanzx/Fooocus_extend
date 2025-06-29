@@ -42,10 +42,7 @@ def generate_image(
     prompt=task['positive'][0]
     negative_prompt=task['negative'][0]
     seed=task['task_seed']
-    #,
-    #progress=gr.Progress(track_tqdm=True)
-    
-    #base_model_path = modules.config.paths_checkpoints[0]+os.sep+'realisticStockPhoto_v20.safetensors'
+
     face_detector = FaceAnalysis2(providers=['CPUExecutionProvider'],root="",allowed_modules=['detection', 'recognition'])
     face_detector.prepare(ctx_id=0, det_size=(640, 640))
 
@@ -146,12 +143,7 @@ def generate_image(
     if input_ids.count(image_token_id) > 1:
         raise gr.Error(f"Cannot use multiple trigger words '{pipe.trigger_word}' in text prompt!")
 
-    # determine output dimensions by the aspect ratio
-    #output_w, output_h = aspect_ratios[aspect_ratio_name]
-    #print(f"[Debug] Generate image using aspect ratio [{aspect_ratio_name}] => {output_w} x {output_h}")
 
-    # apply the style template
-    #prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
 
     if upload_images is None:
         raise gr.Error(f"Cannot find any input face image! Please refer to step 1️⃣")
@@ -177,13 +169,13 @@ def generate_image(
 
     generator = torch.Generator(device=device).manual_seed(seed)
 
-    print("Start inference...")
-    print(f"[Debug] Seed: {seed}")
-    print(f"[Debug] Prompt: {prompt}, \n[Debug] Neg Prompt: {negative_prompt}")
+    #print("Start inference...")
+    #print(f"[Debug] Seed: {seed}")
+    #print(f"[Debug] Prompt: {prompt}, \n[Debug] Neg Prompt: {negative_prompt}")
     start_merge_step = int(float(style_strength_ratio) / 100 * num_steps)
     if start_merge_step > 30:
         start_merge_step = 30
-    print(start_merge_step)
+    print(f"Style strength on {start_merge_step} step")
     preview_image=None
     def progress_pm(step, timestep, latents):
         global preview_image
@@ -268,6 +260,8 @@ def gui():
     with gr.Blocks() as demo:
         with gr.Row():
             enable_pm = gr.Checkbox(label="Enabled", value=False)
+        with gr.Row():
+            gr.HTML('* You MUST USE the trigger word \"img\", eg: \"a photo of a man/woman img\"')
         with gr.Row():
             with gr.Column():
                 files = gr.Files(
