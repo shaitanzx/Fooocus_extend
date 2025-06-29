@@ -333,6 +333,10 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.1.0
+1. Add PhotoMaker module
+2. Add PhotoMaker styles
+
 v9.0.0
 1. Dividing extensions into groups
 2. Add InstantID module
