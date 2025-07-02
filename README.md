@@ -23,11 +23,19 @@ The **“Extensions”** panel is divided into three groups:
 **“in generation”** panel
 
 **Prompt Translate**
-
 ![image](https://github.com/user-attachments/assets/6ddff3b1-5e98-43d4-b102-b61176c40c84)
 
 
 Allows to translate both positive and negative prompts from any language into English, both before generation and directly during generation.
+
+**PhotoMaker** (works only in the local version)
+
+![image](https://github.com/user-attachments/assets/e15a668a-53aa-4607-a7ed-7d277a3726de)
+
+The module allows you to generate an image with a reference face
+Upload a photo of your face - your reference face should be uploaded here.
+**Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 4 minutes.**
+
 
 **InstantID** (works only in the local version) 
 ![image](https://github.com/user-attachments/assets/f12b7389-48b4-4659-a94d-5d01268ab179)
@@ -53,7 +61,7 @@ ContrloNet
 Schedulers - select the Schedulers that will be used when generating the image with our face.
 Enhance non-face region - enhance non-face parts of the image
 
-**Unlike conventional generation, this 30-step generation takes about 7 minutes. It requires a video card with 12GB minimum.**
+**Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 7 minutes.**
 
 **Inswapper**
 ![image](https://github.com/user-attachments/assets/3399327d-0fe4-46cc-8f34-430e94ab7910)
@@ -251,9 +259,11 @@ This module allows you to create skeletons for subsequent image creation using O
 
 **Select the resolution and aspect ratio of the generated image**
 
-![image](https://github.com/user-attachments/assets/ba5ce3d4-8f36-4f64-af82-760713c44c6a)
+![image](https://github.com/user-attachments/assets/502cdf7e-ae4b-4bda-b2dc-b0076c962ae4)
 
-This setting is located in the generation resolution selection tab. Here you can select the number of horizontal and vertical points, aspect ratio. To apply the settings, click the Set button and select this resolution from the list of proposed resolutions. Your resolution will be the last one.
+
+This setting is located in the generation resolution selection tab. Here you can select the number of horizontal and vertical points, aspect ratio. To apply the settings, click the Set button and select this resolution from the list of proposed resolutions. Your resolution will be the second to last. 
+You can also select a random aspect ratio for each generation from the available list of aspect ratios
 
 **Wildcard**
 
@@ -322,6 +332,11 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.1.0
+1. Add PhotoMaker module
+2. Add PhotoMaker styles
+3. Add Random Aspect Ratio
 
 v9.0.0
 1. Dividing extensions into groups
