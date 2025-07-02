@@ -336,6 +336,7 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 v9.1.0
 1. Add PhotoMaker module
 2. Add PhotoMaker styles
+3. Add Random Aspect Ratio
 
 v9.0.0
 1. Dividing extensions into groups
