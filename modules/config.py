@@ -328,7 +328,7 @@ default_loras = get_config_item_or_set_default(
 default_loras = [(y[0], y[1], y[2]) if len(y) == 3 else (True, y[0], y[1]) for y in default_loras]
 default_max_lora_number = get_config_item_or_set_default(
     key='default_max_lora_number',
-    default_value=len(default_loras) if isinstance(default_loras, list) and len(default_loras) > 0 else 5,
+    default_value=10,  # Changed from 5 to 10
     validator=lambda x: isinstance(x, int) and x >= 1,
     expected_type=int
 )
