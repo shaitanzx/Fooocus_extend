@@ -316,6 +316,12 @@ The preset saves the following parameters: base model, refiner, refiner_switch, 
 
 Allows you to upload a file (in *.json format) with custom styles
 
+**View trigger words of LoRA**
+
+![image](https://github.com/user-attachments/assets/0ea83134-b8ec-4960-a436-c8343d0762f7)
+
+If trigger words are not shown, then you need to scan LoRa, in the Civitai Helper module in the Scan Models for Civitai section
+
 
 <table>
   <tr>
@@ -332,6 +338,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.1.1
+1. Add view trigger words of LoRA
 
 v9.1.0
 1. Add PhotoMaker module
