@@ -1538,7 +1538,7 @@ with shared.gradio_root:
                     def lora_tag(filename_sft):
                         filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
                         if filename_value == 'None':
-                            return ''
+                            return gr.update(visible=False)
                         try:
                             filename = os.path.join(modules.config.paths_loras[0], filename_value[:filename_value.rfind('.')] + ".civitai.info")
                             with open(filename, "r", encoding="utf-8") as file:
@@ -1548,10 +1548,12 @@ with shared.gradio_root:
                             trained_words = data.get("trainedWords", [])
                             quoted_tags = [f'"{tag.strip()}"' for tag in trained_words]
                             trained_words = ", ".join(quoted_tags)
-                            return f'{trained_words}'
+                            line_count = max(1, len(trained_words) // 50 + 1)
+                            return gr.update(visible=True,value=trained_words,lines=line_count)
+                            #f'{trained_words}'
                         except Exception as e:
                             print(f"Error loading LORA tags: {e}")
-                            return ''
+                            return gr.update(visible=False)
 
 
                     lora_len = gr.Slider(label='Loraslen', minimum=0.0, maximum=100.0, step=1, value=modules.config.default_max_lora_number, visible=False)
@@ -1568,7 +1570,15 @@ with shared.gradio_root:
                                                     maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
                                                     elem_classes='lora_weight', scale=5)
                         with gr.Row():
-                            lora_tag_mark=gr.HTML(value=f'{lora_tag(lora_model)}')
+                            initial_tag = lora_tag(filename)
+                            lora_tag_mark = gr.Textbox(label='Trigger word(s)',
+                                  value=initial_tag.get("value", ""),
+                                  visible=initial_tag.get("visible", False),
+                                  lines=initial_tag.get("lines", 2),
+                                  max_lines=10,
+                                  interactive=False
+                                  )
+                        
                         lora_model.change(lora_tag, inputs=lora_model, outputs=lora_tag_mark,queue=False)
                         lora_ctrls += [lora_enabled, lora_model, lora_weight]
 
