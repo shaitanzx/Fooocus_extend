@@ -1,6 +1,7 @@
 v9.1.1
 
 1. Add view trigger words of LoRA
+2. Bug fix in wildcards
 
 v9.1.0
 
