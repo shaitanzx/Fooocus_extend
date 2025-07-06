@@ -18,6 +18,8 @@ def civitai_help():
  def apply_settings(api_key):
         md_config.ch_civiai_api_key=api_key
         new_setting="Civitai API key="+str(md_config.ch_civiai_api_key)
+        with open('civitai_api_key.txt', 'w') as f:
+            f.write(md_config.ch_civiai_api_key)
         return setting_log.update(value=new_setting)   
 ### with shared.gradio_root:
  with gr.Box(elem_classes="ch_box"):

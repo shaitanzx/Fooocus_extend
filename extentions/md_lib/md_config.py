@@ -4,6 +4,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 # Теперь можно использовать абсолютный импорт
 from modules import config
+
+def get_civitai_api_key():
+    file_path = 'civitai_api_key.txt'
+    
+    try:
+        with open(file_path, 'r') as file:
+            key = file.read()
+    except FileNotFoundError:
+        # Создаем пустой файл, если он не существует
+        with open(file_path, 'w') as file:
+            pass
+        key = ''
+    
+    return key
 BUTTONS = {
     "replace_preview_button": False,
     "open_url_button": False,
@@ -12,7 +26,7 @@ BUTTONS = {
     "rename_model_button": False,
     "remove_model_button": False,
 }
-ch_civiai_api_key=""
+ch_civiai_api_key=get_civitai_api_key()
 ch_dl_lyco_to_lora=False
 ch_open_url_with_js=True
 ch_hide_buttons=[x for x, y in BUTTONS.items() if y]
