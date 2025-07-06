@@ -1,3 +1,10 @@
+v9.1.1
+
+1. Add view trigger words of LoRA
+2. Bug fix in wildcards
+3. Add Civitai_API_key saving
+4. Add preview files for InstantId and Photomaker styles
+
 v9.1.0
 
 1. Add PhotoMaker module

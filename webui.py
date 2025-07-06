@@ -34,6 +34,7 @@ from modules.auth import auth_enabled, check_auth
 from extentions.module_translate import translate, GoogleTranslator
 from urllib.parse import urlparse, parse_qs, unquote
 from modules.model_loader import load_file_from_url
+import modules.config
 from rembg import remove
 from PIL import Image
 from gradio.components import label
@@ -1534,6 +1535,26 @@ with shared.gradio_root:
                                          inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
                 with gr.Group():
+                    def lora_tag(filename_sft):
+                        filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
+                        if filename_value == 'None':
+                            return gr.update(visible=False)
+                        try:
+                            filename = os.path.join(modules.config.paths_loras[0], filename_value[:filename_value.rfind('.')] + ".civitai.info")
+                            with open(filename, "r", encoding="utf-8") as file:
+                                content = file.read()
+                                json_data = re.search(r'\{.*\}', content, re.DOTALL).group()
+                            data = json.loads(json_data)
+                            trained_words = data.get("trainedWords", [])
+                            quoted_tags = [f'"{tag.strip()}"' for tag in trained_words]
+                            trained_words = ", ".join(quoted_tags)
+                            line_count = max(1, len(trained_words) // 50 + 1)
+                            return gr.update(visible=True,value=trained_words,lines=line_count)
+                            #f'{trained_words}'
+                        except Exception as e:
+                            print(f"Error loading LORA tags: {e}")
+                            return gr.update(visible=False)
+
 
                     lora_len = gr.Slider(label='Loraslen', minimum=0.0, maximum=100.0, step=1, value=modules.config.default_max_lora_number, visible=False)
                     lora_ctrls = []
@@ -1548,7 +1569,18 @@ with shared.gradio_root:
                             lora_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
                                                     maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
                                                     elem_classes='lora_weight', scale=5)
-                            lora_ctrls += [lora_enabled, lora_model, lora_weight]
+                        with gr.Row():
+                            initial_tag = lora_tag(filename)
+                            lora_tag_mark = gr.Textbox(label='Trigger word(s)',
+                                  value=initial_tag.get("value", ""),
+                                  visible=initial_tag.get("visible", False),
+                                  lines=initial_tag.get("lines", 2),
+                                  max_lines=10,
+                                  interactive=False
+                                  )
+                        
+                        lora_model.change(lora_tag, inputs=lora_model, outputs=lora_tag_mark,queue=False)
+                        lora_ctrls += [lora_enabled, lora_model, lora_weight]
 
                 with gr.Row():
                     refresh_files = gr.Button(label='Refresh', value='\U0001f504 Refresh All Files', variant='secondary', elem_classes='refresh_button')
