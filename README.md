@@ -342,6 +342,7 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 v9.1.1
 1. Add view trigger words of LoRA
 2. Bug fix in wildcards
+3. Add Civitai_API_key saving
 
 v9.1.0
 1. Add PhotoMaker module
