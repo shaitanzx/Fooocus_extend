@@ -94,9 +94,9 @@ Codeformer_Fidelity - signability coefficient, inversely proportional to quality
 
 **Image Batch** (batch image processing)
 
-![image](https://github.com/user-attachments/assets/c99f5a4a-b26f-42f6-9871-3a464f4bb73d)
+![image](https://github.com/user-attachments/assets/d3cc4d18-239f-4ea7-afcc-fd3164377b71)
 
- In a nutshell, this module allows you to perform group scaling of images, as well as create images based on a group of existing images using ImagePromt (ControlNet). To better understand this module, I suggest you do some experiments on your own. But I want to point out that using it allows you to use your images as references and change their style depending on the cue and the model you choose. First you need to create a zip archive with your images. The archive must not contain any subfolders, file names must not contain characters other than Latin. Upload the prepared archive to the "Upload zip file" window.
+In a nutshell, this module allows you to perform group scaling of images, as well as create images based on a group of existing images using ImagePromt (ControlNet). To better understand this module, I suggest you conduct some experiments yourself. But I want to note that using it allows you to use your images as references and change their style depending on the prompt and model you choose. First, depending on the "Uplode ZIP-file" selector, you need to upload several reference images or a zip archive with them. The archive should not contain subfolders, file names should not contain non-Latin characters and spaces.
 
  Next, select the mode of changing the image resolution
 - NOT scale - the source image resolution will not be taken into account during generation
