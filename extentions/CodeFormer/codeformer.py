@@ -100,14 +100,14 @@ def codeformer_process(image,face_align,background_enhance,face_upsample,upscale
         print('\timage size:', img.shape)
 
         upscale = int(upscale) # convert type to int
-        if upscale > 4: # avoid memory exceeded due to too large upscale
-            upscale = 4 
-        if upscale > 2 and max(img.shape[:2])>1000: # avoid memory exceeded due to too large img resolution
-            upscale = 2 
-        if max(img.shape[:2]) > 1500: # avoid memory exceeded due to too large img resolution
-            upscale = 1
-            background_enhance = False
-            face_upsample = False
+        #if upscale > 4: # avoid memory exceeded due to too large upscale
+        #    upscale = 4 
+        #if upscale > 2 and max(img.shape[:2])>1000: # avoid memory exceeded due to too large img resolution
+        #    upscale = 2 
+        #if max(img.shape[:2]) > 1500: # avoid memory exceeded due to too large img resolution
+        #    upscale = 1
+        #    background_enhance = False
+        #    face_upsample = False
 
         face_helper = FaceRestoreHelper(
             upscale,

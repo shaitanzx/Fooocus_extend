@@ -265,6 +265,7 @@ def im_batch_run(p):
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
     p.input_image_checkbox=check
+    finished_batch=False
     return
 def pr_batch_start(p):
   global finished_batch
@@ -907,18 +908,30 @@ with shared.gradio_root:
                 enable_instant.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
 
-                
-                
-                
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
-                        def unzip_file(zip_file_obj):
+                        def unzip_file(zip_file_obj,files_single,enable_zip):
                             extract_folder = "./batch_images"
                             if not os.path.exists(extract_folder):
                                 os.makedirs(extract_folder)
-                            zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
-                            zip_ref.extractall(extract_folder)
-                            zip_ref.close()
+                            if enable_zip:
+                                zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
+                                zip_ref.extractall(extract_folder)
+                                zip_ref.close()
+                            else:
+                                for file in files_single:
+                                    original_name = os.path.basename(getattr(file, 'orig_name', file.name))
+                                    save_path = os.path.join(extract_folder, original_name)
+                                    try:
+                                        with open(file.name, 'rb') as src:
+                                            with open(save_path, 'wb') as dst:
+                                                while True:
+                                                    chunk = src.read(8192)  # Читаем по 8KB за раз
+                                                    if not chunk:
+                                                        break
+                                                    dst.write(chunk)
+                                    except Exception as e:
+                                        print(f"copy error {original_name}: {str(e)}")
                             return
                         def delete_out(directory):
                             for filename in os.listdir(directory):
@@ -956,7 +969,12 @@ with shared.gradio_root:
                        
                         with gr.Row():
                           with gr.Column():
-                            file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'])                            
+                            with gr.Row():
+                                file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
+                                files_single = gr.Files(label="Drag (Select) 1 or more reference images",
+                                            file_types=["image"],visible=True,interactive=True,height=260)                            
+                            with gr.Row():
+                                enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
                             def update_radio(value):
                               return gr.update(value=value)
                             ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
@@ -967,7 +985,7 @@ with shared.gradio_root:
                             ip_weight_batch = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=flags.default_parameters[image_mode.value][1],interactive=True)
                             upscale_mode = gr.Dropdown(choices=flags.uov_list, value=flags.uov_list[0], label='Method',interactive=True,visible=False)
                           with gr.Column():
-                            file_out=gr.File(label="Download a ZIP file", file_count='single')
+                            file_out=gr.File(label="Download a ZIP file", file_count='single',height=260)
                             
                         with gr.Row():
                           batch_start = gr.Button(value='Start batch', visible=True)
@@ -984,7 +1002,8 @@ with shared.gradio_root:
                             ip_stop_batch=flags.default_parameters[image_mode][0]
                             ip_weight_batch=flags.default_parameters[image_mode][1]
                             return gr.update(value=ip_stop_batch), gr.update(value=ip_weight_batch)
-
+                        enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
+                                        outputs=[file_in,files_single], queue=False)
                         image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
                         image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
  
@@ -2118,7 +2137,7 @@ with shared.gradio_root:
         batch_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
               .then(fn=clearer) \
-              .then(fn=unzip_file,inputs=file_in) \
+              .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
               .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \

@@ -1,12 +1,13 @@
-v9.1.1
+v9.1.2
+1. Added selector for choosing to load individual files or zip archive in Image Batch module 
 
+v9.1.1
 1. Add view trigger words of LoRA
 2. Bug fix in wildcards
 3. Add Civitai_API_key saving
 4. Add preview files for InstantId and Photomaker styles
 
 v9.1.0
-
 1. Add PhotoMaker module
 2. Add PhotoMaker styles
 3. Add Random Aspect Ratio
