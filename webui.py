@@ -265,6 +265,7 @@ def im_batch_run(p):
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
     p.input_image_checkbox=check
+    finished_batch=False
     return
 def pr_batch_start(p):
   global finished_batch
@@ -907,9 +908,6 @@ with shared.gradio_root:
                 enable_instant.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
 
-                
-                
-                
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def unzip_file(zip_file_obj,files_single,enable_zip):
@@ -922,7 +920,7 @@ with shared.gradio_root:
                                 zip_ref.close()
                             else:
                                 for file in files_single:
-                                    original_name = getattr(file, 'orig_name', os.path.basename(file.name))
+                                    original_name = os.path.basename(getattr(file, 'orig_name', file.name))
                                     save_path = os.path.join(extract_folder, original_name)
                                     try:
                                         with open(file.name, 'rb') as src:
@@ -933,7 +931,7 @@ with shared.gradio_root:
                                                         break
                                                     dst.write(chunk)
                                     except Exception as e:
-                                        print(f"Ошибка при копировании {original_name}: {str(e)}")
+                                        print(f"copy error {original_name}: {str(e)}")
                             return
                         def delete_out(directory):
                             for filename in os.listdir(directory):
@@ -987,7 +985,7 @@ with shared.gradio_root:
                             ip_weight_batch = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=flags.default_parameters[image_mode.value][1],interactive=True)
                             upscale_mode = gr.Dropdown(choices=flags.uov_list, value=flags.uov_list[0], label='Method',interactive=True,visible=False)
                           with gr.Column():
-                            file_out=gr.File(label="Download a ZIP file", file_count='single')
+                            file_out=gr.File(label="Download a ZIP file", file_count='single',height=260)
                             
                         with gr.Row():
                           batch_start = gr.Button(value='Start batch', visible=True)
