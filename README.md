@@ -94,7 +94,7 @@ Codeformer_Fidelity - signability coefficient, inversely proportional to quality
 
 **Image Batch** (batch image processing)
 
-![image](https://github.com/user-attachments/assets/809acd98-e92e-4e53-97b4-ab1b2f6686c7)
+![image](https://github.com/user-attachments/assets/5279f1f1-ab59-4182-be78-b28e9b6c1043)
 
 In a nutshell, this module allows you to perform group scaling of images, as well as create images based on a group of existing images using ImagePromt (ControlNet). To better understand this module, I suggest you conduct some experiments yourself. But I want to note that using it allows you to use your images as references and change their style depending on the prompt and model you choose. First, depending on the "Uplode ZIP-file" selector, you need to upload several reference images or a zip archive with them. The archive should not contain subfolders, file names should not contain non-Latin characters and spaces.
 
