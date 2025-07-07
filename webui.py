@@ -971,7 +971,7 @@ with shared.gradio_root:
                           with gr.Column():
                             with gr.Row():
                                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
-                                files_single = gr.Files(label="Drag (Select) 1 or more photos of your face",
+                                files_single = gr.Files(label="Drag (Select) 1 or more reference images",
                                             file_types=["image"],visible=True,interactive=True,height=260)                            
                             with gr.Row():
                                 enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
