@@ -339,6 +339,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.1.2
+1. Added selector for choosing to load individual files or zip archive in Image Batch module 
+
 v9.1.1
 1. Add view trigger words of LoRA
 2. Bug fix in wildcards
