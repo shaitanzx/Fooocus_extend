@@ -1284,7 +1284,7 @@ def worker():
         return current_progress, imgs[0], prompt, negative_prompt
 
     def enhance_upscale(all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
-                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path
+                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
                         current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, enhance_steps,
                         prompt, negative_prompt, final_scheduler_name, height, img, preparation_steps, switch, tiled,
                         total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image=True):
