@@ -907,6 +907,14 @@ def downloading_controlnet_pose():
     )
     return os.path.join(path_controlnet, 'xinsir_cnnt_openpose_sdxl_1_0.safetensors')
 
+def downloading_controlnet_manga():
+    load_file_from_url(
+        url='https://huggingface.co/SubMaroon/ControlNet-manga-recolor/resolve/main/ControlNet-manga-recolor.safetensors',
+        model_dir=path_controlnet,
+        file_name='ControlNet-manga-recolor.safetensors'
+    )
+    return os.path.join(path_controlnet, 'ControlNet-manga-recolor.safetensors')
+
 def downloading_controlnet_recolor():
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/kataragi_cnnt_xl_recolor_testXL-fp16.safetensors',
