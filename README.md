@@ -290,6 +290,15 @@ Allows you to colorize an image based on a black and white image.
 
 Allows you to color an image based on a sketch.
 
+**Manga Recolor ControlNet**
+
+<img width="1254" height="538" alt="image" src="https://github.com/user-attachments/assets/d9b15b34-801b-462a-a982-63de1e990033" />
+
+This is a specially trained ControlNet model designed to automatically colorize grayscale images in anime style.
+
+The model takes grayscale anime images as input and generates a colorized version.
+
+An anime model is required for proper generation. Works with or without a clarifying prompt.
 
 **Save Image Grid for Each Batch**
 
@@ -338,6 +347,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.1.3
+1. Add Manga Recolor ControlNet
 
 v9.1.2
 1. Added selector for choosing to load individual files or zip archive in Image Batch module 
