@@ -219,13 +219,17 @@ class GeekyRemB:
 
             # Optimize final video encoding
             temp_output = output_path + "_temp.mp4"
+            silent_output= output_path + "_silent.mp4"
             os.rename(output_path, temp_output)
             if self.use_gpu:
-                os.system(f'ffmpeg -y -i "{temp_output}" -c:v h264_nvenc -preset p7 -tune hq -crf 23 "{output_path}"')
+                os.system(f'ffmpeg -y -i "{temp_output}" -c:v h264_nvenc -preset p7 -tune hq -crf 23 "{silent_path}"')
             else:
-                os.system(f'ffmpeg -y -i "{temp_output}" -c:v libx264 -preset faster -crf 23 "{output_path}"')
+                os.system(f'ffmpeg -y -i "{temp_output}" -c:v libx264 -preset faster -crf 23 "{silent_path}"')
+            os.system(f'ffmpeg -y -i "{temp_output}" -i "{silent_output}" -c copy -map 1:v:0 -map 0:a? -map 0:s? "{output_path}"')    
             if os.path.exists(temp_output):
                 os.remove(temp_output)
+            if os.path.exists(silent_output):
+                os.remove(silent_output)
 
         except Exception as e:
             print(f"Error processing video: {str(e)}")
