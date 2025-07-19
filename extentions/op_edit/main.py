@@ -62,6 +62,7 @@ def ui():
             preset_list = gr.Dropdown(label="Presets", choices=sorted(presets.keys()), interactive=True)
             preset_load = gr.Button(value="Load Preset")
             preset_save = gr.Button(value="Save Preset")
+            preset_delete = gr.Button(value="Delete Preset")
           with gr.Row():
             json_output_ope = gr.Button(value="Save JSON")
             png_output_ope = gr.Button(value="Save PNG")
@@ -104,9 +105,23 @@ def ui():
         if name:
           presets[name] = json.loads(data)
           with open(presets_file, "w") as file:
-            json.dump(presets, file)
+            json.dump(presets, file, indent=4)
           return gr.update(choices=sorted(presets.keys()), value=name), json.dumps(data)
         return gr.update(), gr.update()
+      def deletePreset(name):
+          if name and name in presets:
+              del presets[name]
+        
+              try:
+                  with open(presets_file, "w") as file:
+                      json.dump(presets, file, indent=4)
+                  return gr.update(value="", choices=sorted(presets.keys())), ""
+              except Exception as e:
+                  print(f"Error: {e}")
+                  return gr.update(), ""
+    
+          return gr.update(), ""
+
 
       dummy_component = gr.Label(visible=False)
 
@@ -123,4 +138,7 @@ def ui():
       json_output_ope.click(None, None, None, _js="saveJSON")
       preset_save.click(savePreset, [dummy_component, dummy_component], [preset_list, preset_ope], _js="savePreset")
       preset_load.click(None, preset_ope, [width_ope, height_ope], _js="loadPreset")
+      preset_delete.click(lambda: (gr.update(interactive=False)),outputs=preset_delete) \
+        .then(deletePreset, inputs=preset_list, outputs=[preset_list, preset_ope]) \
+        .then(lambda: (gr.update(interactive=True)),outputs=preset_delete)
       preset_list.change(lambda selected: json.dumps(presets[selected]), preset_list, preset_ope)
