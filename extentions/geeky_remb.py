@@ -14,6 +14,10 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 import queue
 from threading import Thread
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from modules.util import generate_temp_filename
+import modules.config
 
 class BlendMode:
     @staticmethod
@@ -223,7 +227,7 @@ class GeekyRemB:
             if self.use_gpu:
                 os.system(f'ffmpeg -y -i "{temp_output}" -c:v h264_nvenc -preset p7 -tune hq -crf 23 "{output_path}"')
             else:
-                os.system(f'ffmpeg -y -i "{temp_output}" -c:v libx264 -preset faster -crf 23 "{output_path}"')
+                os.system(f'ffmpeg -y -i "{temp_output}" -c:v libx264 -preset faster -crf 23 "{output_path_path}"')    
             if os.path.exists(temp_output):
                 os.remove(temp_output)
 
@@ -660,6 +664,7 @@ def on_ui_tabs():
 
             with gr.Row():
                 gr.Markdown("### Output Settings")
+            with gr.Row():
                 image_format = gr.Dropdown(label="Image Format", choices=["PNG", "JPEG", "WEBP"], value="PNG")
                 video_format = gr.Dropdown(label="Video Format", choices=["MP4", "AVI", "MOV"], value="MP4")
                 video_quality = gr.Slider(label="Video Quality", minimum=0, maximum=100, value=95, step=1)
@@ -748,20 +753,26 @@ def on_ui_tabs():
                 result = process_image(foreground_input, background_image, *args)
                 if image_format != "PNG":
                     result = result.convert("RGB")
-                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{image_format.lower()}") as temp_file:
-                    result.save(temp_file.name, format=image_format, quality=95 if image_format == "JPEG" else None)
-                    return temp_file.name, None
+                _, output_folder, _ = generate_temp_filename(folder=modules.config.path_outputs,extension=image_format.lower())
+                result.save(output_folder, format=image_format, quality=95 if image_format == "JPEG" else None)
+                return output_folder, None
             elif input_type == "Video" and result_type == "Video":
                 output_video = process_video(foreground_video, background_video if background_mode == "video" else None, *args)
+                _, output_folder, _ = generate_temp_filename(folder=modules.config.path_outputs,extension='mp4')
+                os.makedirs(os.path.dirname(output_folder), exist_ok=True)
+                os.system(f'ffmpeg -y -i "{foreground_video}" -i "{output_video}" -c copy -map 1:v:0 -map 0:a? -map 0:s? "{output_folder}"')
+                os.remove(output_video)
+                output_video=output_folder
                 if video_format != "MP4":
-                    temp_output = output_video + f"_temp.{video_format.lower()}"
-                    os.system(f'ffmpeg -i "{output_video}" -c:v libx264 -crf {int(20 - (video_quality / 5))} "{temp_output}"')
-                    os.remove(output_video)
-                    output_video = temp_output
+                    temp_output = output_video
+                    _, output_folder, _ = generate_temp_filename(folder=modules.config.path_outputs,extension=video_format.lower())
+                    os.system(f'ffmpeg -i "{temp_output}" -c:v libx264 -crf {int(20 - (video_quality / 5))} "{output_folder}"')
+                    os.remove(temp_output)
+                    output_video=output_folder
+
                 return None, output_video
             elif input_type == "Image" and result_type == "Video":
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
-                    output_path = temp_file.name
+                _, output_path, _ = generate_temp_filename(folder=modules.config.path_outputs,extension='mp4')
                 frame = cv2.cvtColor(np.array(foreground_input), cv2.COLOR_RGB2BGR)
                 height, width = frame.shape[:2]
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -779,9 +790,9 @@ def on_ui_tabs():
                     result = process_image(pil_frame, background_image, *args)
                     if image_format != "PNG":
                         result = result.convert("RGB")
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{image_format.lower()}") as temp_file:
-                        result.save(temp_file.name, format=image_format, quality=95 if image_format == "JPEG" else None)
-                        return temp_file.name, None
+                    _, output_folder, _ = generate_temp_filename(folder=modules.config.path_outputs,extension=image_format.lower())
+                    result.save(output_folder, format=image_format, quality=95 if image_format == "JPEG" else None)
+                    return output_folder, None
                 return None, None
 
         input_type.change(update_input_type, inputs=[input_type], outputs=[foreground_input, foreground_video])

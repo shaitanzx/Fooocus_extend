@@ -212,6 +212,8 @@ Video and image support: Easily process images and videos.
 
 Multi-threaded processing: Efficiently process large files with streaming and GPU support. Customizable output formats: Export to PNG, JPEG, MP4, AVI, and more.
 
+All processing results are automatically saved to the output folder without saving to History Log
+
 
 **“tools”** panel
 
@@ -245,7 +247,7 @@ How to use:
 
 **OpenPoseEditor**
 
-![015](https://github.com/user-attachments/assets/e0c7d4e6-e288-41da-ba57-622bfe601551)
+<img width="1089" height="571" alt="image" src="https://github.com/user-attachments/assets/564e6ebc-3b49-4e50-bd61-819fab2ba090" />
 
 
 This module allows you to create skeletons for subsequent image creation using OpenPose ControlNet. You can also create a skeleton from an existing image.
@@ -347,6 +349,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.1.4
+1. Some bug fix
 
 v9.1.3
 1. Add Manga Recolor ControlNet
