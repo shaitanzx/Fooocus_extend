@@ -1,5 +1,0 @@
-transformers
-einops
-accelerate
-sentencepiece
-safetensors
