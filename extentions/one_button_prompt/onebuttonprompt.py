@@ -417,7 +417,7 @@ def ui():
                     presetprefix = gr.Textbox(label="Preset prefix: ", value="")
                     presetsuffix = gr.Textbox(label="Preset suffix: ", value="")
                                 
-            with gr.Group(visible=True) as maingroup:
+            with gr.Group(visible=False) as maingroup:
                 md_save_preset = gr.Markdown("""
                             <font size="2">
                             Type a name and press "Save as Preset" to store the current generation settings.
