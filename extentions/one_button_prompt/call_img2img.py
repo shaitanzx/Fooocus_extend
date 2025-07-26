@@ -4,8 +4,8 @@ import io
 import base64
 import uuid
 from PIL import Image, PngImagePlugin
-from modules import shared
-from model_lists import *
+#from modules import shared
+from .model_lists import *
 import time
 
 

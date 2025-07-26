@@ -1,12 +1,14 @@
 import sys
 import os
-import folder_paths
+##import folder_paths
 from datetime import datetime
 import uuid
 import platform
  
-custom_nodes_path = os.path.join(folder_paths.base_path, "custom_nodes")
-onebuttonprompt_path = os.path.join(custom_nodes_path, "OneButtonPrompt")
+##custom_nodes_path = os.path.join(folder_paths.base_path, "custom_nodes")
+custom_nodes_path = os.path.join(os.path.abspath(__file__), "custom_nodes")
+##onebuttonprompt_path = os.path.join(custom_nodes_path, "OneButtonPrompt")
+onebuttonprompt_path = os.path.join(os.path.abspath(__file__), "onebuttonprompt")
 
 sys.path.append(onebuttonprompt_path)
 

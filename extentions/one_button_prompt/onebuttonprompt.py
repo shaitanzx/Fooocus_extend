@@ -10,12 +10,12 @@ import subprocess as sp
 #from modules.shared import opts, cmd_opts, state
 
 
-from build_dynamic_prompt import *
-from main import *
-from model_lists import *
-from csv_reader import *
+from .build_dynamic_prompt import *
+from .main import *
+from .model_lists import *
+from .csv_reader import *
 
-from one_button_presets import OneButtonPresets
+from .one_button_presets import OneButtonPresets
 OBPresets = OneButtonPresets()
 
 basemodelslist = ["SD1.5", "SDXL", "Stable Cascade", "Anime Model"]
@@ -74,7 +74,7 @@ sys.path.append(os.path.abspath(".."))
 # Load up stuff for personal artists list, if any
 # find all artist files starting with personal_artits in userfiles
 script_dir = os.path.dirname(os.path.abspath(__file__))  # Script directory
-userfilesfolder = os.path.join(script_dir, "../userfiles/" )
+userfilesfolder = os.path.join(script_dir, "userfiles/" )
 for filename in os.listdir(userfilesfolder):
     if(filename.endswith(".csv") and filename.startswith("personal_artists") and filename != "personal_artists_sample.csv"):
         name = os.path.splitext(filename)[0]
@@ -353,7 +353,7 @@ def show(self, is_img2img):
     return True
 
         
-def ui(self, is_img2img):
+def ui():
     def gen_prompt(insanitylevel, subject, artist, imagetype, antistring, prefixprompt, suffixprompt, promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
 
         promptlist = []

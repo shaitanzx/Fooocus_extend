@@ -5,7 +5,7 @@ import base64
 import uuid
 import sys, os
 from PIL import Image, PngImagePlugin
-from model_lists import *
+from .model_lists import *
 import time
 import random
 
