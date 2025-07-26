@@ -32,5 +32,5 @@ lpips
 peft==0.6.0
 diffusers==0.29.0
 #huggingface-hub==0.23.2
-huggingface-hub==0.30.0
+#huggingface-hub==0.30.0
 controlnet_aux
