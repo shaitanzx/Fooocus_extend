@@ -347,48 +347,48 @@ if(generateconceptmixer):
 
     
 def title(self):
-    return "One Button Prompt"
+        return "One Button Prompt"
 
 def show(self, is_img2img):
-    return True
+        return True
 
         
 def ui():
-    def gen_prompt(insanitylevel, subject, artist, imagetype, antistring, prefixprompt, suffixprompt, promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
+        def gen_prompt(insanitylevel, subject, artist, imagetype, antistring, prefixprompt, suffixprompt, promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
 
-        promptlist = []
+            promptlist = []
 
-        for i in range(5):
-            base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring,prefixprompt,suffixprompt,promptcompounderlevel,seperator,givensubject,smartsubject, giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit,False,base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
-            fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
-            promptlist.append(fluffed_prompt)
+            for i in range(5):
+                base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring,prefixprompt,suffixprompt,promptcompounderlevel,seperator,givensubject,smartsubject, giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit,False,base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
+                fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
+                promptlist.append(fluffed_prompt)
 
 
-        return promptlist
+            return promptlist
         
-    def prompttoworkflowprompt(text):
-        return text
+        def prompttoworkflowprompt(text):
+            return text
         
         # Copied code from WebUI
-    def openfolder():
-        script_dir = os.path.dirname(os.path.abspath(__file__))  # Script directory
-        automatedoutputsfolder = os.path.join(script_dir, "../automated_outputs/" )
+        def openfolder():
+            script_dir = os.path.dirname(os.path.abspath(__file__))  # Script directory
+            automatedoutputsfolder = os.path.join(script_dir, "../automated_outputs/" )
 
-        path = os.path.normpath(automatedoutputsfolder)
+            path = os.path.normpath(automatedoutputsfolder)
 
-        if platform.system() == "Windows":
-            os.startfile(path)
-        elif platform.system() == "Darwin":
-            sp.Popen(["open", path])
-        elif "microsoft-standard-WSL2" in platform.uname().release:
-            sp.Popen(["wsl-open", path])
-        else:
-            sp.Popen(["xdg-open", path])
+            if platform.system() == "Windows":
+                os.startfile(path)
+            elif platform.system() == "Darwin":
+                sp.Popen(["open", path])
+            elif "microsoft-standard-WSL2" in platform.uname().release:
+                sp.Popen(["wsl-open", path])
+            else:
+                sp.Popen(["xdg-open", path])
             
 
-    with gr.Tab("Main"):
-        with gr.Row(variant="compact"):
-            md_basic = gr.Markdown("""
+        with gr.Tab("Main"):
+            with gr.Row(variant="compact"):
+                md_basic = gr.Markdown("""
                             <font size="2">
                             One Button Prompt is now active. Just press the normal Generate button to start generating images.
 
@@ -400,41 +400,41 @@ def ui():
                             </font>
                             """)
                 # Part of presets
-        with gr.Row():
-                OBP_preset = gr.Dropdown(
-                    label="One Button Preset",
-                    choices=[OBPresets.RANDOM_PRESET_OBP] + [OBPresets.CUSTOM_OBP] + list(OBPresets.opb_presets.keys()),
-                    value="Standard",
-                )
-        with gr.Group(visible=True) as presetgroup:
             with gr.Row():
-                md_prefix_preset = gr.Markdown("""
+                    OBP_preset = gr.Dropdown(
+                        label="One Button Preset",
+                        choices=[OBPresets.RANDOM_PRESET_OBP] + [OBPresets.CUSTOM_OBP] + list(OBPresets.opb_presets.keys()),
+                        value="Standard",
+                    )
+            with gr.Group(visible=True) as presetgroup:
+                with gr.Row():
+                    md_prefix_preset = gr.Markdown("""
                             <font size="2">
                             These prefix and suffix are run on top the of preset. Can be used for LoRA's and other general stylings.
                             </font>
                             """)
-            with gr.Row():
-                presetprefix = gr.Textbox(label="Preset prefix: ", value="")
-                presetsuffix = gr.Textbox(label="Preset suffix: ", value="")
+                with gr.Row():
+                    presetprefix = gr.Textbox(label="Preset prefix: ", value="")
+                    presetsuffix = gr.Textbox(label="Preset suffix: ", value="")
                                 
-        with gr.Group(visible=True) as maingroup:
-            md_save_preset = gr.Markdown("""
+            with gr.Group(visible=True) as maingroup:
+                md_save_preset = gr.Markdown("""
                             <font size="2">
                             Type a name and press "Save as Preset" to store the current generation settings.
                             </font>
                             """)
-            with gr.Row():
-                    obp_preset_name = gr.Textbox(
+                with gr.Row():
+                        obp_preset_name = gr.Textbox(
                             show_label=False,
                             placeholder="Name of new preset",
                             interactive=True,
                             visible=False,
-                    )
-                    obp_preset_save = gr.Button(
+                        )
+                        obp_preset_save = gr.Button(
                             value="Save as preset",
                             visible=False,
-                    )
-            md_generation_settings = gr.Markdown("""
+                        )
+                md_generation_settings = gr.Markdown("""
                             <font size="4">
                             Generation settings:
                             </font>
@@ -442,43 +442,43 @@ def ui():
             
             # End of this part of presets
                 
-            with gr.Row(variant="compact"):
-                insanitylevel = gr.Slider(1, 10, value=5, step=1, label="🎲⬅️❔➡️🎲🎲🎲 Higher levels increases complexity and randomness of generated prompt", visible=False)
-            with gr.Row(variant="compact"):
-                with gr.Column(variant="compact"):
-                    subject = gr.Dropdown(
-                                    subjects, label="📸 Subject Types", value="all", visible=False)                   
-                with gr.Column(variant="compact"):
-                    artist = gr.Dropdown(
-                                    artists, label="🎨 Artists", value="all", visible=False)
-            with gr.Row(variant="compact"):
-                chosensubjectsubtypeobject = gr.Dropdown(
-                                    subjectsubtypesobject, label="🏺 Type of object", value="all", visible=False)
-                chosensubjectsubtypehumanoid = gr.Dropdown(
-                                    subjectsubtypeshumanoid, label="👨‍👩‍👧 Type of humanoids", value="all", visible=False)
-                chosensubjectsubtypeconcept = gr.Dropdown(
-                                    subjectsubtypesconcept, label="💡🧠💭 Type of concept", value="all", visible=False)
-                chosengender = gr.Dropdown(
-                                    genders, label="🚻 gender", value="all", visible=False)
-            with gr.Row(variant="compact"):
-                with gr.Column(variant="compact"):
-                    imagetype = gr.Dropdown(
-                                    imagetypes, label="🖼️ type of image", value="all", visible=False)
-                with gr.Column(variant="compact"):
-                    imagemodechance = gr.Slider(
-                                    1, 100, value="20", step=1, label="🎲🖼️ One in X chance to use special image type mode", visible=False)
-            with gr.Row(variant="compact"):
-                md_override_options = gr.Markdown("""
+                with gr.Row(variant="compact"):
+                    insanitylevel = gr.Slider(1, 10, value=5, step=1, label="🎲⬅️❔➡️🎲🎲🎲 Higher levels increases complexity and randomness of generated prompt", visible=False)
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        subject = gr.Dropdown(
+                                        subjects, label="📸 Subject Types", value="all", visible=False)                   
+                    with gr.Column(variant="compact"):
+                        artist = gr.Dropdown(
+                                        artists, label="🎨 Artists", value="all", visible=False)
+                with gr.Row(variant="compact"):
+                    chosensubjectsubtypeobject = gr.Dropdown(
+                                        subjectsubtypesobject, label="🏺 Type of object", value="all", visible=False)
+                    chosensubjectsubtypehumanoid = gr.Dropdown(
+                                        subjectsubtypeshumanoid, label="👨‍👩‍👧 Type of humanoids", value="all", visible=False)
+                    chosensubjectsubtypeconcept = gr.Dropdown(
+                                        subjectsubtypesconcept, label="💡🧠💭 Type of concept", value="all", visible=False)
+                    chosengender = gr.Dropdown(
+                                        genders, label="🚻 gender", value="all", visible=False)
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        imagetype = gr.Dropdown(
+                                        imagetypes, label="🖼️ type of image", value="all", visible=False)
+                    with gr.Column(variant="compact"):
+                        imagemodechance = gr.Slider(
+                                        1, 100, value="20", step=1, label="🎲🖼️ One in X chance to use special image type mode", visible=False)
+                with gr.Row(variant="compact"):
+                    md_override_options = gr.Markdown("""
                                 <font size="2">
                                 Override options (choose the related subject type first for better results)
                                 </font>
                                 """, visible=False
-                )
-            with gr.Row(variant="compact"):
-                givensubject = gr.Textbox(label="🔃📸 Overwrite subject: ", value="", visible=False)
-                smartsubject = gr.Checkbox(label="🧠📸 Smart subject", value = True, visible=False)
-            with gr.Row(variant="compact"):
-                givenoutfit = gr.Textbox(label="🔃👗 Overwrite outfit: ", value="", visible=False)
+                    )
+                with gr.Row(variant="compact"):
+                    givensubject = gr.Textbox(label="🔃📸 Overwrite subject: ", value="", visible=False)
+                    smartsubject = gr.Checkbox(label="🧠📸 Smart subject", value = True, visible=False)
+                with gr.Row(variant="compact"):
+                    givenoutfit = gr.Textbox(label="🔃👗 Overwrite outfit: ", value="", visible=False)
                 # with gr.Row(variant="compact"):
                 #     gr.Markdown("""
                 #                 <font size="2">
@@ -486,24 +486,24 @@ def ui():
                 #                 </font>
                 #                 """
                 #     )
-            with gr.Row(variant="compact"):
-                with gr.Column(variant="compact"):
-                    prefixprompt = gr.Textbox(label="⬅️💬 Place this in front of generated prompt (prefix)",value="", visible=False)
-                    suffixprompt = gr.Textbox(label="➡️💬 Place this at back of generated prompt (suffix)",value="", visible=False)
-            with gr.Row(variant="compact"):
-                md_additional_options = gr.Markdown("""
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        prefixprompt = gr.Textbox(label="⬅️💬 Place this in front of generated prompt (prefix)",value="", visible=False)
+                        suffixprompt = gr.Textbox(label="➡️💬 Place this at back of generated prompt (suffix)",value="", visible=False)
+                with gr.Row(variant="compact"):
+                    md_additional_options = gr.Markdown("""
                                 <font size="2">
                                 Additional options
                                 </font>
                                 """, visible=False
-                )
-            with gr.Row(variant="compact"):
-                giventypeofimage = gr.Textbox(label="🔃🖼️ Overwrite type of image: ", value="", visible=False)
-            with gr.Row(variant="compact"):
-                with gr.Column(variant="compact"):
-                    antistring = gr.Textbox(label="❌📝 Filter out following properties (comma seperated). Example ""film grain, purple, cat"" ", visible=False)
-            with gr.Accordion("Help", open=False):
-                    gr.Markdown(
+                    )
+                with gr.Row(variant="compact"):
+                    giventypeofimage = gr.Textbox(label="🔃🖼️ Overwrite type of image: ", value="", visible=False)
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        antistring = gr.Textbox(label="❌📝 Filter out following properties (comma seperated). Example ""film grain, purple, cat"" ", visible=False)
+                with gr.Accordion("Help", open=False):
+                        gr.Markdown(
                             """
                             ### Description
                             
@@ -670,16 +670,16 @@ def ui():
                             </font>
                             """
                             )
-    with gr.Tab("Workflow assist"):
-        with gr.Row(variant="compact"):
-                silentmode = gr.Checkbox(
-                    label="🛠️ Workflow mode, turns off prompt generation and uses below Workflow prompt instead.")
-        with gr.Row(variant="compact"):
-            workprompt = gr.Textbox(label="🛠️💬 Workflow prompt")
-        with gr.Row(variant="compact"):
-            promptvariantinsanitylevel = gr.Slider(0, 10, value=0, step=1, label="🎲🔃 🛠️💬 Prompt variant. Strength of variation of workflow prompt. 0 = no variance.")
-        with gr.Accordion("Help", open=False):
-            gr.Markdown(
+        with gr.Tab("Workflow assist"):
+            with gr.Row(variant="compact"):
+                    silentmode = gr.Checkbox(
+                        label="🛠️ Workflow mode, turns off prompt generation and uses below Workflow prompt instead.")
+            with gr.Row(variant="compact"):
+                workprompt = gr.Textbox(label="🛠️💬 Workflow prompt")
+            with gr.Row(variant="compact"):
+                promptvariantinsanitylevel = gr.Slider(0, 10, value=0, step=1, label="🎲🔃 🛠️💬 Prompt variant. Strength of variation of workflow prompt. 0 = no variance.")
+            with gr.Accordion("Help", open=False):
+                gr.Markdown(
                      """
                      <font size="2"> 
                      Workflow assist, suggestions by redditor Woisek.
@@ -693,36 +693,36 @@ def ui():
                      Below here, you can generate a set of random prompts, and send them to the Workflow prompt field. The generation of the prompt uses the settings in the Main tab.
                      </font>
                      """)
-        with gr.Row(variant="compact"):
-            genprom = gr.Button("🔄💬 Generate me some prompts!")
-        with gr.Row(variant="compact"):
-                with gr.Column(scale=4, variant="compact"):
-                    prompt1 = gr.Textbox(label="prompt 1")
-                with gr.Column(variant="compact"):
-                    prompt1toworkflow = gr.Button("⬆️🛠️💬")
-        with gr.Row(variant="compact"):
-                with gr.Column(scale=4, variant="compact"):
-                    prompt2 = gr.Textbox(label="prompt 2")
-                with gr.Column(variant="compact"):
-                    prompt2toworkflow = gr.Button("⬆️🛠️💬")
-        with gr.Row(variant="compact"):
-                with gr.Column(scale=4, variant="compact"):
-                    prompt3 = gr.Textbox(label="prompt 3")
-                with gr.Column(variant="compact"):
-                    prompt3toworkflow = gr.Button("⬆️🛠️💬")
-        with gr.Row(variant="compact"):
-                with gr.Column(scale=4, variant="compact"):
-                    prompt4 = gr.Textbox(label="prompt 4")
-                with gr.Column(variant="compact"):
-                    prompt4toworkflow = gr.Button("⬆️🛠️💬")
-        with gr.Row(variant="compact"):
-                with gr.Column(scale=4, variant="compact"):
-                    prompt5 = gr.Textbox(label="prompt 5")
-                with gr.Column(variant="compact"):
-                    prompt5toworkflow = gr.Button("⬆️🛠️💬")
-    with gr.Tab("Advanced"):
-        with gr.Row(variant="compact"):
-            gr.Markdown("""
+            with gr.Row(variant="compact"):
+                genprom = gr.Button("🔄💬 Generate me some prompts!")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt1 = gr.Textbox(label="prompt 1")
+                    with gr.Column(variant="compact"):
+                        prompt1toworkflow = gr.Button("⬆️🛠️💬")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt2 = gr.Textbox(label="prompt 2")
+                    with gr.Column(variant="compact"):
+                        prompt2toworkflow = gr.Button("⬆️🛠️💬")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt3 = gr.Textbox(label="prompt 3")
+                    with gr.Column(variant="compact"):
+                        prompt3toworkflow = gr.Button("⬆️🛠️💬")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt4 = gr.Textbox(label="prompt 4")
+                    with gr.Column(variant="compact"):
+                        prompt4toworkflow = gr.Button("⬆️🛠️💬")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt5 = gr.Textbox(label="prompt 5")
+                    with gr.Column(variant="compact"):
+                        prompt5toworkflow = gr.Button("⬆️🛠️💬")
+        with gr.Tab("Advanced"):
+            with gr.Row(variant="compact"):
+                gr.Markdown("""
                                 <font size="2">
                                 ✨Base model will try and generate prompts fitting the selected model.
                                 
@@ -747,17 +747,17 @@ def ui():
                                 </font>
                                 """
                     )
-        with gr.Row(variant="compact"):
-            base_model = gr.Dropdown(
-                 basemodelslist, label="✨ Base model", value="SDXL")
-        with gr.Row(variant="compact"):
-            amountoffluff = gr.Dropdown(
-                 amountofflufflist, label="⭐ Flufferizer", value="dynamic")
-        with gr.Row(variant="compact"):
-            promptenhancer = gr.Dropdown(
-                 prompt_enhancers, label="🤓 Prompt enhancer", value="none")
-        with gr.Row(variant="compact"):
-             gr.Markdown("""
+            with gr.Row(variant="compact"):
+                base_model = gr.Dropdown(
+                     basemodelslist, label="✨ Base model", value="SDXL")
+            with gr.Row(variant="compact"):
+                amountoffluff = gr.Dropdown(
+                     amountofflufflist, label="⭐ Flufferizer", value="dynamic")
+            with gr.Row(variant="compact"):
+                promptenhancer = gr.Dropdown(
+                     prompt_enhancers, label="🤓 Prompt enhancer", value="none")
+            with gr.Row(variant="compact"):
+                 gr.Markdown("""
                                 <font size="2">
                              
                                 Other options
@@ -766,19 +766,19 @@ def ui():
                                 </font>
                                 """
                     )
-        with gr.Row(variant="compact"):
-            with gr.Column(variant="compact"):
-                promptcompounderlevel = gr.Dropdown(
-                    promptcompounder, label="🔂💬 Prompt compounder", value="1")
-        with gr.Row(variant="compact"):
-            with gr.Column(variant="compact"):
-                seperator = gr.Dropdown(
-                    seperatorlist, label="🚧 Prompt seperator", value="comma")    
-            with gr.Column(variant="compact"):
-                ANDtoggle = gr.Dropdown(
-                    ANDtogglemode, label="🚧🔧 Prompt seperator mode", value="none")
-        with gr.Accordion("Help", open=False):
-            gr.Markdown(
+            with gr.Row(variant="compact"):
+                with gr.Column(variant="compact"):
+                    promptcompounderlevel = gr.Dropdown(
+                        promptcompounder, label="🔂💬 Prompt compounder", value="1")
+            with gr.Row(variant="compact"):
+                with gr.Column(variant="compact"):
+                    seperator = gr.Dropdown(
+                        seperatorlist, label="🚧 Prompt seperator", value="comma")    
+                with gr.Column(variant="compact"):
+                    ANDtoggle = gr.Dropdown(
+                        ANDtogglemode, label="🚧🔧 Prompt seperator mode", value="none")
+            with gr.Accordion("Help", open=False):
+                gr.Markdown(
                     """
                     ### 🔂💬 Prompt compounder
                     
@@ -830,31 +830,31 @@ def ui():
                     
                     """
                     )
-    with gr.Tab("Negative prompt"):
-        gr.Markdown(
+        with gr.Tab("Negative prompt"):
+            gr.Markdown(
                         """
                         ### Negative prompt settings
                         </font>
                         """
                         )
-        with gr.Column(variant="compact"):
+            with gr.Column(variant="compact"):
+                with gr.Row(variant="compact"): 
+                    autonegativeprompt = gr.Checkbox(label="🤖🚫💬 Auto generate negative prompt", value=True) 
+                    autonegativepromptenhance = gr.Checkbox(label="📈🚫💬 Enable base enhancement prompt", value=False)
             with gr.Row(variant="compact"): 
-                autonegativeprompt = gr.Checkbox(label="🤖🚫💬 Auto generate negative prompt", value=True) 
-                autonegativepromptenhance = gr.Checkbox(label="📈🚫💬 Enable base enhancement prompt", value=False)
-        with gr.Row(variant="compact"): 
-            autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="🎲🚫💬 Randomness of negative prompt (lower is more consistency)")
-        gr.Markdown(
+                autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="🎲🚫💬 Randomness of negative prompt (lower is more consistency)")
+            gr.Markdown(
                         """
                         ### Base negative prompt is added on
                         </font>
                         """
                         )
-        with gr.Row(): 
-            negativeprompt = gr.Textbox(label="🚫💬 Base negative prompt",value="")
+            with gr.Row(): 
+                negativeprompt = gr.Textbox(label="🚫💬 Base negative prompt",value="")
                  
-    with gr.Tab("One Button Run and Upscale"):
-        with gr.Row(variant="compact"):
-                gr.Markdown(
+        with gr.Tab("One Button Run and Upscale"):
+            with gr.Row(variant="compact"):
+                    gr.Markdown(
                             """
                             ### TXT2IMG
                             <font size="2">
@@ -866,18 +866,18 @@ def ui():
                             </font>
                             """
                             )                         
-        with gr.Row(variant="compact"):
-                with gr.Column(variant="compact"):
-                    startmain = gr.Button("Start generating and upscaling!")
-                    interrupt = gr.Button("Interrupt current")
-                    automatedoutputsfolderbutton = gr.Button(folder_symbol)
-                with gr.Column(variant="compact"):
-                    apiurl = gr.Textbox(label="URL", value="http://127.0.0.1:7860")
-                    onlyupscale = gr.Checkbox(label="Don't generate, only upscale", value=False)
-                    increasestability = gr.Checkbox(label="Increase stability", value=False)
-        with gr.Row(variant="compact"):
-                with gr.Accordion("help", open=False):
-                    gr.Markdown(
+            with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        startmain = gr.Button("Start generating and upscaling!")
+                        interrupt = gr.Button("Interrupt current")
+                        automatedoutputsfolderbutton = gr.Button(folder_symbol)
+                    with gr.Column(variant="compact"):
+                        apiurl = gr.Textbox(label="URL", value="http://127.0.0.1:7860")
+                        onlyupscale = gr.Checkbox(label="Don't generate, only upscale", value=False)
+                        increasestability = gr.Checkbox(label="Increase stability", value=False)
+            with gr.Row(variant="compact"):
+                    with gr.Accordion("help", open=False):
+                        gr.Markdown(
                             """
                             <font size="2">
                             Only upscale will not use txt2img to generate an image.
@@ -888,39 +888,39 @@ def ui():
                             </font>
                             """
                             ) 
-        with gr.Row(variant="compact"):
-            with gr.Column(variant="compact"):
-                    
-                amountofimages = gr.Slider(1, 50, value="20", step=1, label="Amount of images to generate")
-                size = gr.Dropdown(
-                                sizelist, label="Size to generate", value="all")
-                basesize = gr.Dropdown(
-                                basesizelist, label="base size", value="512")
-                with gr.Row(variant="compact"):
-                    samplingsteps = gr.Slider(1, 100, value="20", step=1, label="Sampling steps")
-                    cfg = gr.Slider(1,20, value="6.0", step=0.1, label="CFG")
-                with gr.Row(variant="compact"):                              
-                    hiresfix = gr.Checkbox(label="hires. fix", value=True)
-                    hiressteps = gr.Slider(0, 100, value = "0", step=1, label="Hires steps")
-                    hiresscale = gr.Slider(1, 4, value = "2", step=0.05, label="Scale")
-                    denoisestrength = gr.Slider(0, 1, value="0.60", step=0.01, label="Denoise strength")
-            with gr.Column(variant="compact"):
-                    
-                model = gr.Dropdown(
-                                modellist, label="model to use", value="currently selected model")
+            with gr.Row(variant="compact"):
                 with gr.Column(variant="compact"):
-                    samplingmethod = gr.Dropdown(
-                                    samplerlist, label= "Sampler", value="all")
-                    upscaler = gr.Dropdown(
-                                    upscalerlist, label="hires upscaler", value="all")
-        with gr.Row(variant="compact"):
-            gr.Markdown(
+                    
+                    amountofimages = gr.Slider(1, 50, value="20", step=1, label="Amount of images to generate")
+                    size = gr.Dropdown(
+                                    sizelist, label="Size to generate", value="all")
+                    basesize = gr.Dropdown(
+                                    basesizelist, label="base size", value="512")
+                    with gr.Row(variant="compact"):
+                        samplingsteps = gr.Slider(1, 100, value="20", step=1, label="Sampling steps")
+                        cfg = gr.Slider(1,20, value="6.0", step=0.1, label="CFG")
+                    with gr.Row(variant="compact"):                              
+                        hiresfix = gr.Checkbox(label="hires. fix", value=True)
+                        hiressteps = gr.Slider(0, 100, value = "0", step=1, label="Hires steps")
+                        hiresscale = gr.Slider(1, 4, value = "2", step=0.05, label="Scale")
+                        denoisestrength = gr.Slider(0, 1, value="0.60", step=0.01, label="Denoise strength")
+                with gr.Column(variant="compact"):
+                    
+                    model = gr.Dropdown(
+                                    modellist, label="model to use", value="currently selected model")
+                    with gr.Column(variant="compact"):
+                        samplingmethod = gr.Dropdown(
+                                        samplerlist, label= "Sampler", value="all")
+                        upscaler = gr.Dropdown(
+                                        upscalerlist, label="hires upscaler", value="all")
+            with gr.Row(variant="compact"):
+                gr.Markdown(
                         """
                         ### Quality Gate
                         """)
-        with gr.Row(variant="compact"):
-            with gr.Accordion("quality gate help", open=False):
-                gr.Markdown(
+            with gr.Row(variant="compact"):
+                with gr.Accordion("quality gate help", open=False):
+                    gr.Markdown(
                         """
                         <font size="2">
                         Uses aesthetic image scorer extension to check the quality of the image.
@@ -933,74 +933,74 @@ def ui():
                         </font>
                         """
                         )    
-        with gr.Row(variant="compact"):
-                qualitygate = gr.Checkbox(label="Quality Gate", value=False)
-                quality = gr.Slider(1, 10, value = "7.2", step=0.1, label="Quality", visible = False)
-                runs = gr.Slider(1, 50, value = "5", step=1, label="Amount of tries", visible = False)
-        with gr.Row(variant="compact"):
-                qualityhiresfix = gr.Checkbox(label="Move Hires fix afterwards", value=False, visible = False)
-                qualitymode = gr.Dropdown(
-                                    qualitymodelist, label= "Mode of operation", value="highest", visible = False)
-                qualitykeep = gr.Dropdown(
-                                    qualitykeeplist, label= "Images", value="keep used", visible = False)
-        with gr.Row(variant="compact"):
-                gr.Markdown(
+            with gr.Row(variant="compact"):
+                    qualitygate = gr.Checkbox(label="Quality Gate", value=False)
+                    quality = gr.Slider(1, 10, value = "7.2", step=0.1, label="Quality", visible = False)
+                    runs = gr.Slider(1, 50, value = "5", step=1, label="Amount of tries", visible = False)
+            with gr.Row(variant="compact"):
+                    qualityhiresfix = gr.Checkbox(label="Move Hires fix afterwards", value=False, visible = False)
+                    qualitymode = gr.Dropdown(
+                                        qualitymodelist, label= "Mode of operation", value="highest", visible = False)
+                    qualitykeep = gr.Dropdown(
+                                        qualitykeeplist, label= "Images", value="keep used", visible = False)
+            with gr.Row(variant="compact"):
+                    gr.Markdown(
                         """
                         ### IMG2IMG upscale
                         """
                         )
-        with gr.Row(variant="compact"):
-                img2imgactivate = gr.Checkbox(label="Upscale image with IMG2IMG", value=True)
-        with gr.Row(variant="compact"):
-                with gr.Column(variant="compact"):
-                    img2imgbatch = gr.Slider(1, 5, value="1", step=1, label="Amount times to repeat upscaling with IMG2IMG (loopback)")
-                    img2imgsamplingsteps = gr.Slider(1, 100, value="20", step=1, label="img2img Sampling steps")
-                    img2imgcfg = gr.Slider(1,20, value="6", step=0.1, label="img2img CFG")
-                    img2imgdenoisestrength = gr.Slider(0, 1, value="0.30", step=0.01, label="img2img denoise strength")
-                    img2imgdenoisestrengthmod = gr.Slider(-1,1, value = "-0.05", step=0.01, label="adjust denoise each img2img batch")
-                with gr.Column(variant="compact"):
-                    img2imgmodel = gr.Dropdown(
-                                modellist, label="img2img model to use", value="currently selected model")
-                    img2imgsamplingmethod = gr.Dropdown(
-                                    img2imgsamplerlist, label= "img2img sampler", value="all")   
-                    img2imgupscaler = gr.Dropdown(
-                                    img2imgupscalerlist, label="img2img upscaler", value="all")
-                with gr.Row(variant="compact"):
-                    img2imgscale = gr.Slider(1, 4, value="2", step=0.05, label="img2img scale")
-                    img2imgpadding = gr.Slider(32, 256, value="64", step=12, label="img2img padding")
-        with gr.Row(variant="compact"):
-                ultimatesdupscale = gr.Checkbox(label="Use Ultimate SD Upscale script instead", value=False)
-                gr.Markdown(
+            with gr.Row(variant="compact"):
+                    img2imgactivate = gr.Checkbox(label="Upscale image with IMG2IMG", value=True)
+            with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        img2imgbatch = gr.Slider(1, 5, value="1", step=1, label="Amount times to repeat upscaling with IMG2IMG (loopback)")
+                        img2imgsamplingsteps = gr.Slider(1, 100, value="20", step=1, label="img2img Sampling steps")
+                        img2imgcfg = gr.Slider(1,20, value="6", step=0.1, label="img2img CFG")
+                        img2imgdenoisestrength = gr.Slider(0, 1, value="0.30", step=0.01, label="img2img denoise strength")
+                        img2imgdenoisestrengthmod = gr.Slider(-1,1, value = "-0.05", step=0.01, label="adjust denoise each img2img batch")
+                    with gr.Column(variant="compact"):
+                        img2imgmodel = gr.Dropdown(
+                                    modellist, label="img2img model to use", value="currently selected model")
+                        img2imgsamplingmethod = gr.Dropdown(
+                                        img2imgsamplerlist, label= "img2img sampler", value="all")   
+                        img2imgupscaler = gr.Dropdown(
+                                        img2imgupscalerlist, label="img2img upscaler", value="all")
+                    with gr.Row(variant="compact"):
+                        img2imgscale = gr.Slider(1, 4, value="2", step=0.05, label="img2img scale")
+                        img2imgpadding = gr.Slider(32, 256, value="64", step=12, label="img2img padding")
+            with gr.Row(variant="compact"):
+                    ultimatesdupscale = gr.Checkbox(label="Use Ultimate SD Upscale script instead", value=False)
+                    gr.Markdown(
                         """
                         <font size="2">
                         This requires the Ultimate SD Upscale extension, install this if you haven't
                         </font>
                         """
                         )
-        with gr.Row(variant="compact"):
-                with gr.Column(scale = 1):
-                    #usdutilewidth, usdutileheight, usdumaskblur, usduredraw, usduSeamsfix, usdusdenoise, usduswidth, usduspadding, usdusmaskblur
-                    #usdutilewidth = "512", usdutileheight = "0", usdumaskblur = "8", usduredraw ="Linear", usduSeamsfix = "None", usdusdenoise = "0.35", usduswidth = "64", usduspadding ="32", usdusmaskblur = "8"
-                    usdutilewidth = gr.Slider(0, 2048, value="512", step=12, label="tile width", visible = False)
-                    usdutileheight = gr.Slider(0, 2048, value="0", step=12, label="tile height", visible = False)
-                    usdumaskblur = gr.Slider(0, 64, value="8", step=1, label="Mask blur", visible = False)
-                    usduredraw = gr.Dropdown(
-                                redraw_modes, label="Type", value="Linear", visible = False)
-                with gr.Column(scale = 1):
-                    usduSeamsfix = gr.Dropdown(
-                                seams_fix_types, label="Seams fix", value="None", visible = False)
-                    usdusdenoise = gr.Slider(0, 1, value="0.35", step=0.01, label="Seams  denoise strenght", visible = False)
-                    usduswidth = gr.Slider(0, 128, value="64", step=12, label="Seams Width", visible = False)
-                    usduspadding = gr.Slider(0, 128, value="32", step=12, label="Seams padding", visible = False)
-                    usdusmaskblur = gr.Slider(0, 64, value="8", step=1, label="Seams Mask blur (offset pass only)", visible = False)
-        with gr.Row(variant="compact"):
-                with gr.Column(scale = 1):
-                    controlnetenabled = gr.Checkbox(label="Enable controlnet tile resample", value=False)
-                    controlnetblockymode = gr.Checkbox(label="also enable wierd blocky upscale mode", value=False)
-                with gr.Column(scale = 1):
-                    controlnetmodel = gr.Textbox(label="Controlnet tile model name", value = "control_v11f1e_sd15_tile [a371b31b]")
-        with gr.Row(variant="compact"):
-             gr.Markdown(
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale = 1):
+                        #usdutilewidth, usdutileheight, usdumaskblur, usduredraw, usduSeamsfix, usdusdenoise, usduswidth, usduspadding, usdusmaskblur
+                        #usdutilewidth = "512", usdutileheight = "0", usdumaskblur = "8", usduredraw ="Linear", usduSeamsfix = "None", usdusdenoise = "0.35", usduswidth = "64", usduspadding ="32", usdusmaskblur = "8"
+                        usdutilewidth = gr.Slider(0, 2048, value="512", step=12, label="tile width", visible = False)
+                        usdutileheight = gr.Slider(0, 2048, value="0", step=12, label="tile height", visible = False)
+                        usdumaskblur = gr.Slider(0, 64, value="8", step=1, label="Mask blur", visible = False)
+                        usduredraw = gr.Dropdown(
+                                    redraw_modes, label="Type", value="Linear", visible = False)
+                    with gr.Column(scale = 1):
+                        usduSeamsfix = gr.Dropdown(
+                                    seams_fix_types, label="Seams fix", value="None", visible = False)
+                        usdusdenoise = gr.Slider(0, 1, value="0.35", step=0.01, label="Seams  denoise strenght", visible = False)
+                        usduswidth = gr.Slider(0, 128, value="64", step=12, label="Seams Width", visible = False)
+                        usduspadding = gr.Slider(0, 128, value="32", step=12, label="Seams padding", visible = False)
+                        usdusmaskblur = gr.Slider(0, 64, value="8", step=1, label="Seams Mask blur (offset pass only)", visible = False)
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale = 1):
+                        controlnetenabled = gr.Checkbox(label="Enable controlnet tile resample", value=False)
+                        controlnetblockymode = gr.Checkbox(label="also enable wierd blocky upscale mode", value=False)
+                    with gr.Column(scale = 1):
+                        controlnetmodel = gr.Textbox(label="Controlnet tile model name", value = "control_v11f1e_sd15_tile [a371b31b]")
+            with gr.Row(variant="compact"):
+                 gr.Markdown(
                                 """
                                 <font size="2">
                                 This requires Controlnet 1.1 extension and the tile resample model, install this if you haven't
@@ -1010,37 +1010,37 @@ def ui():
                                 </font>
                                 """
                                 )
-        with gr.Row(variant="compact"):
-             with gr.Column(scale = 1):
-                        enableextraupscale = gr.Checkbox(label="Enable upscale with extras", value=False)
-        with gr.Row(variant="compact"):
-             with gr.Column(scale = 1):
-                        extrasresize = gr.Slider(0, 8, value="2", step=0.05, label="Upscale resize", visible = False)
-                        extrasupscaler1 = gr.Dropdown(
-                                    img2imgupscalerlist, label="upscaler 1", value="all", visible = False)
-                        extrasupscaler2 = gr.Dropdown(
-                                    img2imgupscalerlist, label="upscaler 2", value="all", visible = False)
-                        extrasupscaler2visiblity = gr.Slider(0, 1, value="0.5", step=0.05, label="Upscaler 2 vis.", visible = False)
-             with gr.Column(scale = 1):
-                        extrasupscaler2gfpgan = gr.Slider(0, 1, value="0", step=0.05, label="GFPGAN vis.", visible = False)
-                        extrasupscaler2codeformer = gr.Slider(0, 1, value="0.15", step=0.05, label="CodeFormer vis.", visible = False)
-                        extrasupscaler2codeformerweight = gr.Slider(0, 1, value="0.1", step=0.05, label="CodeFormer weight", visible = False)
+            with gr.Row(variant="compact"):
+                 with gr.Column(scale = 1):
+                            enableextraupscale = gr.Checkbox(label="Enable upscale with extras", value=False)
+            with gr.Row(variant="compact"):
+                 with gr.Column(scale = 1):
+                            extrasresize = gr.Slider(0, 8, value="2", step=0.05, label="Upscale resize", visible = False)
+                            extrasupscaler1 = gr.Dropdown(
+                                        img2imgupscalerlist, label="upscaler 1", value="all", visible = False)
+                            extrasupscaler2 = gr.Dropdown(
+                                        img2imgupscalerlist, label="upscaler 2", value="all", visible = False)
+                            extrasupscaler2visiblity = gr.Slider(0, 1, value="0.5", step=0.05, label="Upscaler 2 vis.", visible = False)
+                 with gr.Column(scale = 1):
+                            extrasupscaler2gfpgan = gr.Slider(0, 1, value="0", step=0.05, label="GFPGAN vis.", visible = False)
+                            extrasupscaler2codeformer = gr.Slider(0, 1, value="0.15", step=0.05, label="CodeFormer vis.", visible = False)
+                            extrasupscaler2codeformerweight = gr.Slider(0, 1, value="0.1", step=0.05, label="CodeFormer weight", visible = False)
                     
 
-    genprom.click(gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix], outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
+        genprom.click(gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix], outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
 
-    prompt1toworkflow.click(prompttoworkflowprompt, inputs=prompt1, outputs=workprompt)
-    prompt2toworkflow.click(prompttoworkflowprompt, inputs=prompt2, outputs=workprompt)
-    prompt3toworkflow.click(prompttoworkflowprompt, inputs=prompt3, outputs=workprompt)
-    prompt4toworkflow.click(prompttoworkflowprompt, inputs=prompt4, outputs=workprompt)
-    prompt5toworkflow.click(prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
+        prompt1toworkflow.click(prompttoworkflowprompt, inputs=prompt1, outputs=workprompt)
+        prompt2toworkflow.click(prompttoworkflowprompt, inputs=prompt2, outputs=workprompt)
+        prompt3toworkflow.click(prompttoworkflowprompt, inputs=prompt3, outputs=workprompt)
+        prompt4toworkflow.click(prompttoworkflowprompt, inputs=prompt4, outputs=workprompt)
+        prompt5toworkflow.click(prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
 
-    startmain.click(generateimages, inputs=[amountofimages,size,model,samplingsteps,cfg,hiresfix,hiressteps,denoisestrength,samplingmethod, upscaler,hiresscale, apiurl, qualitygate, quality, runs,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,negativeprompt,promptcompounderlevel, seperator, img2imgbatch, img2imgsamplingsteps, img2imgcfg, img2imgsamplingmethod, img2imgupscaler, img2imgmodel,img2imgactivate, img2imgscale, img2imgpadding,img2imgdenoisestrength,ultimatesdupscale,usdutilewidth, usdutileheight, usdumaskblur, usduredraw, usduSeamsfix, usdusdenoise, usduswidth, usduspadding, usdusmaskblur, controlnetenabled, controlnetmodel,img2imgdenoisestrengthmod,enableextraupscale,controlnetblockymode,extrasupscaler1,extrasupscaler2,extrasupscaler2visiblity,extrasupscaler2gfpgan,extrasupscaler2codeformer,extrasupscaler2codeformerweight,extrasresize,onlyupscale,givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, increasestability, qualityhiresfix, qualitymode, qualitykeep, basesize, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix])
-    interrupt.click(tryinterrupt, inputs=[apiurl])
+        startmain.click(generateimages, inputs=[amountofimages,size,model,samplingsteps,cfg,hiresfix,hiressteps,denoisestrength,samplingmethod, upscaler,hiresscale, apiurl, qualitygate, quality, runs,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,negativeprompt,promptcompounderlevel, seperator, img2imgbatch, img2imgsamplingsteps, img2imgcfg, img2imgsamplingmethod, img2imgupscaler, img2imgmodel,img2imgactivate, img2imgscale, img2imgpadding,img2imgdenoisestrength,ultimatesdupscale,usdutilewidth, usdutileheight, usdumaskblur, usduredraw, usduSeamsfix, usdusdenoise, usduswidth, usduspadding, usdusmaskblur, controlnetenabled, controlnetmodel,img2imgdenoisestrengthmod,enableextraupscale,controlnetblockymode,extrasupscaler1,extrasupscaler2,extrasupscaler2visiblity,extrasupscaler2gfpgan,extrasupscaler2codeformer,extrasupscaler2codeformerweight,extrasresize,onlyupscale,givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, increasestability, qualityhiresfix, qualitymode, qualitykeep, basesize, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix])
+        interrupt.click(tryinterrupt, inputs=[apiurl])
         
-    automatedoutputsfolderbutton.click(openfolder)
+        automatedoutputsfolderbutton.click(openfolder)
 
-    obp_outputs = [
+        obp_outputs = [
                     obp_preset_name,
                     obp_preset_save,
                     insanitylevel,
@@ -1062,7 +1062,7 @@ def ui():
                 ]
 
                 
-    def act_obp_preset_save(
+        def act_obp_preset_save(
                     obp_preset_name,
                     obp_preset_save,
                     insanitylevel,
@@ -1082,9 +1082,9 @@ def ui():
                     giventypeofimage,
                     antistring,
                 ):
-                if obp_preset_name != "":
-                    obp_options = OBPresets.load_obp_presets()
-                    opts = {
+                    if obp_preset_name != "":
+                        obp_options = OBPresets.load_obp_presets()
+                        opts = {
                             "insanitylevel": insanitylevel,
                             "subject": subject,
                             "artist": artist,
@@ -1102,146 +1102,146 @@ def ui():
                             "giventypeofimage": giventypeofimage,
                             "antistring": antistring
                         }
-                    obp_options[obp_preset_name] = opts
-                    OBPresets.save_obp_preset(obp_options)
-                    choices = [OBPresets.RANDOM_PRESET_OBP] + list(obp_options.keys()) + [OBPresets.CUSTOM_OBP]
-                    return gr(choices=choices, value=obp_preset_name)
-                else:
-                    return gr()
+                        obp_options[obp_preset_name] = opts
+                        OBPresets.save_obp_preset(obp_options)
+                        choices = [OBPresets.RANDOM_PRESET_OBP] + list(obp_options.keys()) + [OBPresets.CUSTOM_OBP]
+                        return gr(choices=choices, value=obp_preset_name)
+                    else:
+                        return gr()
 
-    obp_preset_save.click(act_obp_preset_save,
+        obp_preset_save.click(act_obp_preset_save,
                     inputs=obp_outputs,
                     outputs=[OBP_preset],
                 )
         
         
-    def obppreset_changed(selection):
-        gradio_major_version = gr.__version__.split('.')[0]
+        def obppreset_changed(selection):
+            gradio_major_version = gr.__version__.split('.')[0]
 
             # if custom selected, then update visibility and return
-        if selection == OBPresets.CUSTOM_OBP:
-            if gradio_major_version == '3':
-                return [
-                    md_prefix_preset.update(visible=False),
-                    presetprefix.update(value="", visible=False),
-                    presetsuffix.update(value="", visible=False),
-                    md_save_preset.update(visible=True),
-                    obp_preset_name.update(visible=True),
-                    obp_preset_save.update(visible=True),
-                    md_generation_settings.update(visible=True),
-                    insanitylevel.update(visible=True),
-                    subject.update(visible=True),
-                    artist.update(visible=True),
-                    chosensubjectsubtypeobject.update(visible=True),
-                    chosensubjectsubtypehumanoid.update(visible=True),
-                    chosensubjectsubtypeconcept.update(visible=True),
-                    chosengender.update(visible=True),
-                    imagetype.update(visible=True),
-                    imagemodechance.update(visible=True),
-                    md_override_options.update(visible=True),
-                    givensubject.update(visible=True),
-                    smartsubject.update(visible=True),
-                    givenoutfit.update(visible=True),
-                    prefixprompt.update(visible=True),
-                    suffixprompt.update(visible=True),
-                    md_additional_options.update(visible=True),
-                    giventypeofimage.update(visible=True),
-                    antistring.update(visible=True),
+            if selection == OBPresets.CUSTOM_OBP:
+                if gradio_major_version == '3':
+                    return [
+                        md_prefix_preset.update(visible=False),
+                        presetprefix.update(value="", visible=False),
+                        presetsuffix.update(value="", visible=False),
+                        md_save_preset.update(visible=True),
+                        obp_preset_name.update(visible=True),
+                        obp_preset_save.update(visible=True),
+                        md_generation_settings.update(visible=True),
+                        insanitylevel.update(visible=True),
+                        subject.update(visible=True),
+                        artist.update(visible=True),
+                        chosensubjectsubtypeobject.update(visible=True),
+                        chosensubjectsubtypehumanoid.update(visible=True),
+                        chosensubjectsubtypeconcept.update(visible=True),
+                        chosengender.update(visible=True),
+                        imagetype.update(visible=True),
+                        imagemodechance.update(visible=True),
+                        md_override_options.update(visible=True),
+                        givensubject.update(visible=True),
+                        smartsubject.update(visible=True),
+                        givenoutfit.update(visible=True),
+                        prefixprompt.update(visible=True),
+                        suffixprompt.update(visible=True),
+                        md_additional_options.update(visible=True),
+                        giventypeofimage.update(visible=True),
+                        antistring.update(visible=True),
                     ]
-            else: # GR4
-                return [
-                    gr.Markdown(visible=False),         # md_prefix_preset
-                    gr.Textbox(visible=False),          # presetprefix
-                    gr.Textbox(visible=False),          # presetsuffix
-                    gr.Markdown(visible=True),          # md_save_preset
-                    gr.Textbox(value="", visible=True), # obp_preset_name
-                    gr.Button(visible=True),            # obp_preset_save
-                    gr.Markdown(visible=True),          # md_generation_settings
-                    gr.Slider(visible=True),            # insanitylevel
-                    gr.Dropdown(visible=True),          # subject
-                    gr.Dropdown(visible=True),          # artist
-                    gr.Dropdown(visible=True),          # chosensubjectsubtypeobject
-                    gr.Dropdown(visible=True),          # chosensubjectsubtypehumanoid
-                    gr.Dropdown(visible=True),          # chosensubjectsubtypeconcept
-                    gr.Dropdown(visible=True),          # chosengender
-                    gr.Dropdown(visible=True),          # imagetype
-                    gr.Slider(visible=True),            # imagemodechance
-                    gr.Markdown(visible=True),          # md_override_options
-                    gr.Textbox(visible=True),           # givensubject
-                    gr.Checkbox(visible=True),          # smartsubject
-                    gr.Textbox(visible=True),           # givenoutfit
-                    gr.Textbox(visible=True),           # prefixprompt
-                    gr.Textbox(visible=True),           # suffixprompt
-                    gr.Markdown(visible=True),          # md_additional_options
-                    gr.Textbox(visible=True),           # giventypeofimage
-                    gr.Textbox(visible=True),           # antistring
-                ]
+                else: # GR4
+                    return [
+                        gr.Markdown(visible=False),         # md_prefix_preset
+                        gr.Textbox(visible=False),          # presetprefix
+                        gr.Textbox(visible=False),          # presetsuffix
+                        gr.Markdown(visible=True),          # md_save_preset
+                        gr.Textbox(value="", visible=True), # obp_preset_name
+                        gr.Button(visible=True),            # obp_preset_save
+                        gr.Markdown(visible=True),          # md_generation_settings
+                        gr.Slider(visible=True),            # insanitylevel
+                        gr.Dropdown(visible=True),          # subject
+                        gr.Dropdown(visible=True),          # artist
+                        gr.Dropdown(visible=True),          # chosensubjectsubtypeobject
+                        gr.Dropdown(visible=True),          # chosensubjectsubtypehumanoid
+                        gr.Dropdown(visible=True),          # chosensubjectsubtypeconcept
+                        gr.Dropdown(visible=True),          # chosengender
+                        gr.Dropdown(visible=True),          # imagetype
+                        gr.Slider(visible=True),            # imagemodechance
+                        gr.Markdown(visible=True),          # md_override_options
+                        gr.Textbox(visible=True),           # givensubject
+                        gr.Checkbox(visible=True),          # smartsubject
+                        gr.Textbox(visible=True),           # givenoutfit
+                        gr.Textbox(visible=True),           # prefixprompt
+                        gr.Textbox(visible=True),           # suffixprompt
+                        gr.Markdown(visible=True),          # md_additional_options
+                        gr.Textbox(visible=True),           # giventypeofimage
+                        gr.Textbox(visible=True),           # antistring
+                    ]
 
             # Update Custom values based on selected One Button preset
-        if selection == OBPresets.RANDOM_PRESET_OBP:
-            selected_opb_preset = OBPresets.get_obp_preset("Standard")
-        else:     
-            selected_opb_preset = OBPresets.get_obp_preset(selection)
+            if selection == OBPresets.RANDOM_PRESET_OBP:
+                selected_opb_preset = OBPresets.get_obp_preset("Standard")
+            else:     
+                selected_opb_preset = OBPresets.get_obp_preset(selection)
 
-        if gradio_major_version == '3':
-            return [
-                md_prefix_preset.update(visible=True),
-                presetprefix.update(visible=True),
-                presetsuffix.update(visible=True),
-                md_save_preset.update(visible=False),
-                obp_preset_name.update(value="", visible=False),
-                obp_preset_save.update(visible=False),
-                md_generation_settings.update(visible=False),
-                insanitylevel.update(visible=False, value=selected_opb_preset["insanitylevel"]),
-                subject.update(visible=False, value=selected_opb_preset["subject"]),
-                artist.update(visible=False, value=selected_opb_preset["artist"]),
-                chosensubjectsubtypeobject.update(visible=False, value=selected_opb_preset["chosensubjectsubtypeobject"]),
-                chosensubjectsubtypehumanoid.update(visible=False, value=selected_opb_preset["chosensubjectsubtypehumanoid"]),
-                chosensubjectsubtypeconcept.update(visible=False, value=selected_opb_preset["chosensubjectsubtypeconcept"]),
-                chosengender.update(visible=False, value=selected_opb_preset["chosengender"]),
-                imagetype.update(visible=False, value=selected_opb_preset["imagetype"]),
-                imagemodechance.update(visible=False, value=selected_opb_preset["imagemodechance"]),
-                md_override_options.update(visible=False),
-                givensubject.update(visible=False, value=selected_opb_preset["givensubject"]),
-                smartsubject.update(visible=False, value=selected_opb_preset["smartsubject"]),
-                givenoutfit.update(visible=False, value=selected_opb_preset["givenoutfit"]),
-                prefixprompt.update(visible=False, value=selected_opb_preset["prefixprompt"]),
-                suffixprompt.update(visible=False, value=selected_opb_preset["suffixprompt"]),
-                md_additional_options.update(visible=False),
-                giventypeofimage.update(visible=False, value=selected_opb_preset["giventypeofimage"]),
-                antistring.update(visible=False, value=selected_opb_preset["antistring"]),
+            if gradio_major_version == '3':
+                return [
+                    md_prefix_preset.update(visible=True),
+                    presetprefix.update(visible=True),
+                    presetsuffix.update(visible=True),
+                    md_save_preset.update(visible=False),
+                    obp_preset_name.update(value="", visible=False),
+                    obp_preset_save.update(visible=False),
+                    md_generation_settings.update(visible=False),
+                    insanitylevel.update(visible=False, value=selected_opb_preset["insanitylevel"]),
+                    subject.update(visible=False, value=selected_opb_preset["subject"]),
+                    artist.update(visible=False, value=selected_opb_preset["artist"]),
+                    chosensubjectsubtypeobject.update(visible=False, value=selected_opb_preset["chosensubjectsubtypeobject"]),
+                    chosensubjectsubtypehumanoid.update(visible=False, value=selected_opb_preset["chosensubjectsubtypehumanoid"]),
+                    chosensubjectsubtypeconcept.update(visible=False, value=selected_opb_preset["chosensubjectsubtypeconcept"]),
+                    chosengender.update(visible=False, value=selected_opb_preset["chosengender"]),
+                    imagetype.update(visible=False, value=selected_opb_preset["imagetype"]),
+                    imagemodechance.update(visible=False, value=selected_opb_preset["imagemodechance"]),
+                    md_override_options.update(visible=False),
+                    givensubject.update(visible=False, value=selected_opb_preset["givensubject"]),
+                    smartsubject.update(visible=False, value=selected_opb_preset["smartsubject"]),
+                    givenoutfit.update(visible=False, value=selected_opb_preset["givenoutfit"]),
+                    prefixprompt.update(visible=False, value=selected_opb_preset["prefixprompt"]),
+                    suffixprompt.update(visible=False, value=selected_opb_preset["suffixprompt"]),
+                    md_additional_options.update(visible=False),
+                    giventypeofimage.update(visible=False, value=selected_opb_preset["giventypeofimage"]),
+                    antistring.update(visible=False, value=selected_opb_preset["antistring"]),
                 ]
-        else:
-            return [
-                gr.Markdown(visible=True),                      # md_prefix_preset
-                gr.Textbox(visible=True),                       # presetprefix
-                gr.Textbox(visible=True),                       # presetsuffix
-                gr.Markdown(visible=False),                     # md_save_preset
-                gr.Textbox(value="", visible=False),            # obp_preset_name
-                gr.Button(visible=False),                       # obp_preset_save
-                gr.Markdown(visible=False),                     # md_generation_settings
-                gr.Slider(visible=False, value=selected_opb_preset["insanitylevel"]),
-                gr.Dropdown(visible=False, value=selected_opb_preset["subject"]),
-                gr.Dropdown(visible=False, value=selected_opb_preset["artist"]),
-                gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypeobject"]),
-                gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypehumanoid"]),
-                gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypeconcept"]),
-                gr.Dropdown(visible=False, value=selected_opb_preset["chosengender"]),
-                gr.Dropdown(visible=False, value=selected_opb_preset["imagetype"]),
-                gr.Slider(visible=False, value=selected_opb_preset["imagemodechance"]),
-                gr.Markdown(visible=False),                     #  md_override_options
-                gr.Textbox(visible=False, value=selected_opb_preset["givensubject"]),
-                gr.Checkbox(visible=False, value=selected_opb_preset["smartsubject"]),
-                gr.Textbox(visible=False, value=selected_opb_preset["givenoutfit"]),
-                gr.Textbox(visible=False, value=selected_opb_preset["prefixprompt"]),
-                gr.Textbox(visible=False, value=selected_opb_preset["suffixprompt"]),
-                gr.Markdown(visible=False),                     # md_additional_options
-                gr.Textbox(visible=False, value=selected_opb_preset["giventypeofimage"]),
-                gr.Textbox(visible=False, value=selected_opb_preset["antistring"]),
-            ]
-    OBP_preset.change(obppreset_changed,
-        inputs=[OBP_preset],
-        outputs=[
+            else:
+                return [
+                    gr.Markdown(visible=True),                      # md_prefix_preset
+                    gr.Textbox(visible=True),                       # presetprefix
+                    gr.Textbox(visible=True),                       # presetsuffix
+                    gr.Markdown(visible=False),                     # md_save_preset
+                    gr.Textbox(value="", visible=False),            # obp_preset_name
+                    gr.Button(visible=False),                       # obp_preset_save
+                    gr.Markdown(visible=False),                     # md_generation_settings
+                    gr.Slider(visible=False, value=selected_opb_preset["insanitylevel"]),
+                    gr.Dropdown(visible=False, value=selected_opb_preset["subject"]),
+                    gr.Dropdown(visible=False, value=selected_opb_preset["artist"]),
+                    gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypeobject"]),
+                    gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypehumanoid"]),
+                    gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypeconcept"]),
+                    gr.Dropdown(visible=False, value=selected_opb_preset["chosengender"]),
+                    gr.Dropdown(visible=False, value=selected_opb_preset["imagetype"]),
+                    gr.Slider(visible=False, value=selected_opb_preset["imagemodechance"]),
+                    gr.Markdown(visible=False),                     #  md_override_options
+                    gr.Textbox(visible=False, value=selected_opb_preset["givensubject"]),
+                    gr.Checkbox(visible=False, value=selected_opb_preset["smartsubject"]),
+                    gr.Textbox(visible=False, value=selected_opb_preset["givenoutfit"]),
+                    gr.Textbox(visible=False, value=selected_opb_preset["prefixprompt"]),
+                    gr.Textbox(visible=False, value=selected_opb_preset["suffixprompt"]),
+                    gr.Markdown(visible=False),                     # md_additional_options
+                    gr.Textbox(visible=False, value=selected_opb_preset["giventypeofimage"]),
+                    gr.Textbox(visible=False, value=selected_opb_preset["antistring"]),
+                ]
+        OBP_preset.change(obppreset_changed,
+            inputs=[OBP_preset],
+            outputs=[
                 md_prefix_preset,
                 presetprefix,
                 presetsuffix,
@@ -1267,8 +1267,8 @@ def ui():
                 md_additional_options,
                 giventypeofimage,
                 antistring,
-        ]
-    )
+            ]
+        )
 
         ### not used anymore
         # turn things on and off for gender
@@ -1316,106 +1316,107 @@ def ui():
 
 
         # Turn things off and on for onlyupscale and txt2img
-    def onlyupscalevalues(onlyupscale):
-         onlyupscale = not onlyupscale
-         return {
-              amountofimages: gr(visible=onlyupscale),
-              size: gr(visible=onlyupscale),
-              samplingsteps: gr(visible=onlyupscale),
-              cfg: gr(visible=onlyupscale),
+        def onlyupscalevalues(onlyupscale):
+             onlyupscale = not onlyupscale
+             return {
+                  amountofimages: gr(visible=onlyupscale),
+                  size: gr(visible=onlyupscale),
+                  samplingsteps: gr(visible=onlyupscale),
+                  cfg: gr(visible=onlyupscale),
 
-              hiresfix: gr(visible=onlyupscale),
-              hiressteps: gr(visible=onlyupscale),
-              hiresscale: gr(visible=onlyupscale),
-              denoisestrength: gr(visible=onlyupscale),
-              upscaler: gr(visible=onlyupscale),
+                  hiresfix: gr(visible=onlyupscale),
+                  hiressteps: gr(visible=onlyupscale),
+                  hiresscale: gr(visible=onlyupscale),
+                  denoisestrength: gr(visible=onlyupscale),
+                  upscaler: gr(visible=onlyupscale),
 
-              model: gr(visible=onlyupscale),
-              samplingmethod: gr(visible=onlyupscale),
-              upscaler: gr(visible=onlyupscale),
+                  model: gr(visible=onlyupscale),
+                  samplingmethod: gr(visible=onlyupscale),
+                  upscaler: gr(visible=onlyupscale),
 
-              qualitygate: gr(visible=onlyupscale),
-              quality: gr(visible=onlyupscale),
-              runs: gr(visible=onlyupscale),
-              qualityhiresfix: gr(visible=onlyupscale),
-              qualitymode: gr(visible=onlyupscale),
-              qualitykeep: gr(visible=onlyupscale)
+                  qualitygate: gr(visible=onlyupscale),
+                  quality: gr(visible=onlyupscale),
+                  runs: gr(visible=onlyupscale),
+                  qualityhiresfix: gr(visible=onlyupscale),
+                  qualitymode: gr(visible=onlyupscale),
+                  qualitykeep: gr(visible=onlyupscale)
 
 
-         }
+             }
         
-    onlyupscale.change(
-        onlyupscalevalues,
-        [onlyupscale],
-        [amountofimages,size,samplingsteps,cfg,hiresfix,hiressteps,hiresscale,denoisestrength,upscaler,model,samplingmethod,upscaler,qualitygate,quality,runs,qualityhiresfix,qualitymode,qualitykeep]
-    )
+        onlyupscale.change(
+            onlyupscalevalues,
+            [onlyupscale],
+            [amountofimages,size,samplingsteps,cfg,hiresfix,hiressteps,hiresscale,denoisestrength,upscaler,model,samplingmethod,upscaler,qualitygate,quality,runs,qualityhiresfix,qualitymode,qualitykeep]
+        )
         
         
         # Turn things off and on for hiresfix
-    def hireschangevalues(hiresfix):
-         return {
-              hiressteps: gr(visible=hiresfix),
-              hiresscale: gr(visible=hiresfix),
-              denoisestrength: gr(visible=hiresfix),
-              upscaler: gr(visible=hiresfix)
-         }
+        def hireschangevalues(hiresfix):
+             return {
+                  hiressteps: gr(visible=hiresfix),
+                  hiresscale: gr(visible=hiresfix),
+                  denoisestrength: gr(visible=hiresfix),
+                  upscaler: gr(visible=hiresfix)
+             }
         
-    hiresfix.change(
-        hireschangevalues,
-        [hiresfix],
-        [hiressteps,hiresscale,denoisestrength,upscaler]
-    )
+        hiresfix.change(
+            hireschangevalues,
+            [hiresfix],
+            [hiressteps,hiresscale,denoisestrength,upscaler]
+        )
 
         # Turn things off and on for quality gate
-    def qgatechangevalues(qualitygate):
-         return {
-              quality: gr(visible=qualitygate),
-              runs: gr(visible=qualitygate),
-              qualityhiresfix: gr(visible=qualitygate),
-              qualitymode: gr(visible=qualitygate),
-              qualitykeep: gr(visible=qualitygate)
-         }
+        def qgatechangevalues(qualitygate):
+             return {
+                  quality: gr(visible=qualitygate),
+                  runs: gr(visible=qualitygate),
+                  qualityhiresfix: gr(visible=qualitygate),
+                  qualitymode: gr(visible=qualitygate),
+                  qualitykeep: gr(visible=qualitygate)
+             }
         
-    qualitygate.change(
-        qgatechangevalues,
-        [qualitygate],
-        [quality,runs,qualityhiresfix,qualitymode,qualitykeep]
-    )
+        qualitygate.change(
+            qgatechangevalues,
+            [qualitygate],
+            [quality,runs,qualityhiresfix,qualitymode,qualitykeep]
+        )
         
         # Turn things off and on for USDU
-    def ultimatesdupscalechangevalues(ultimatesdupscale):
-         return {
-              usdutilewidth: gr(visible=ultimatesdupscale),
-              usdutileheight: gr(visible=ultimatesdupscale),
-              usdumaskblur: gr(visible=ultimatesdupscale),
-              usduredraw: gr(visible=ultimatesdupscale),
+        def ultimatesdupscalechangevalues(ultimatesdupscale):
+             return {
+                  usdutilewidth: gr(visible=ultimatesdupscale),
+                  usdutileheight: gr(visible=ultimatesdupscale),
+                  usdumaskblur: gr(visible=ultimatesdupscale),
+                  usduredraw: gr(visible=ultimatesdupscale),
 
-              usduSeamsfix: gr(visible=ultimatesdupscale),
-              usdusdenoise: gr(visible=ultimatesdupscale),
-              usduswidth: gr(visible=ultimatesdupscale),
-              usduspadding: gr(visible=ultimatesdupscale),
-              usdusmaskblur: gr(visible=ultimatesdupscale)
-         }
+                  usduSeamsfix: gr(visible=ultimatesdupscale),
+                  usdusdenoise: gr(visible=ultimatesdupscale),
+                  usduswidth: gr(visible=ultimatesdupscale),
+                  usduspadding: gr(visible=ultimatesdupscale),
+                  usdusmaskblur: gr(visible=ultimatesdupscale)
+             }
         
-    ultimatesdupscale.change(
-        ultimatesdupscalechangevalues,
-        [ultimatesdupscale],
-        [usdutilewidth,usdutileheight,usdumaskblur,usduredraw,usduSeamsfix,usdusdenoise,usduswidth,usduspadding,usdusmaskblur]
-    )
+        ultimatesdupscale.change(
+            ultimatesdupscalechangevalues,
+            [ultimatesdupscale],
+            [usdutilewidth,usdutileheight,usdumaskblur,usduredraw,usduSeamsfix,usdusdenoise,usduswidth,usduspadding,usdusmaskblur]
+        )
 
         # Turn things off and on for EXTRAS
-    def enableextraupscalechangevalues(enableextraupscale):
-         return {
-              extrasupscaler1: gr(visible=enableextraupscale),
-              extrasupscaler2: gr(visible=enableextraupscale),
-              extrasupscaler2visiblity: gr(visible=enableextraupscale),
-              extrasresize: gr(visible=enableextraupscale),
-              extrasupscaler2gfpgan: gr(visible=enableextraupscale),
-              extrasupscaler2codeformer: gr(visible=enableextraupscale),
-              extrasupscaler2codeformerweight: gr(visible=enableextraupscale)
-         }
+        def enableextraupscalechangevalues(enableextraupscale):
+             return {
+                  extrasupscaler1: gr(visible=enableextraupscale),
+                  extrasupscaler2: gr(visible=enableextraupscale),
+                  extrasupscaler2visiblity: gr(visible=enableextraupscale),
+                  extrasresize: gr(visible=enableextraupscale),
+
+                  extrasupscaler2gfpgan: gr(visible=enableextraupscale),
+                  extrasupscaler2codeformer: gr(visible=enableextraupscale),
+                  extrasupscaler2codeformerweight: gr(visible=enableextraupscale)
+             }
         
-    enableextraupscale.change(
+        enableextraupscale.change(
             enableextraupscalechangevalues,
             [enableextraupscale],
             [extrasupscaler1,extrasupscaler2,extrasupscaler2visiblity,extrasresize, extrasupscaler2gfpgan,extrasupscaler2codeformer,extrasupscaler2codeformerweight]
@@ -1423,7 +1424,7 @@ def ui():
 
       
 
-    return [insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring, seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix]
+        return [insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring, seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix]
             
     
 
