@@ -45,7 +45,6 @@ from extentions.md_lib import md_config
 
 from extentions import wildcards
 
-from extentions.obp.scripts import onebuttonprompt as ob_prompt
 
 from extentions.op_edit import main as op_editor
 from pathlib import Path
@@ -60,7 +59,8 @@ from extentions.inswapper import face_swap
 from extentions.CodeFormer import codeformer
 import extentions.instantid.main as instantid
 import extentions.photomaker.app as photomaker
-obp_prompt=[]
+
+import extentions.one_button_prompt as obp
 
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
@@ -102,105 +102,6 @@ def xyz_plot_ext(currentTask):
     xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
     return
 
-def obp_start(p):
-    global finished_batch
-    finished_batch=False
-    presetsuffix=p.presetsuffix
-    presetprefix=p.presetprefix
-    promptenhancer=p.promptenhancer
-    amountoffluff=p.amountoffluff
-    OBP_preset=p.OBP_preset
-
-    base_model_obp=p.base_model_obp
-    autonegativepromptenhance=p.autonegativepromptenhance
-    autonegativepromptstrength=p.autonegativepromptstrength
-    autonegativeprompt=p.autonegativeprompt
-    givenoutfit=p.givenoutfit
-    promptvariantinsanitylevel=p.promptvariantinsanitylevel
-    chosensubjectsubtypeconcept=p.chosensubjectsubtypeconcept
-    chosensubjectsubtypehumanoid=p.chosensubjectsubtypehumanoid
-    chosensubjectsubtypeobject=p.chosensubjectsubtypeobject
-    gender=p.gender
-    imagemodechance=p.imagemodechance
-    giventypeofimage=p.giventypeofimage
-
-    smartsubject=p.smartsubject
-    givensubject=p.givensubject
-    seperator=p.seperator
-    promptcompounderlevel=p.promptcompounderlevel
-    suffixprompt=p.suffixprompt
-    prefixprompt=p.prefixprompt
-    antistring=p.antistring
-    workprompt=p.workprompt
-    silentmode=p.silentmode
-    imagetype=p.imagetype
-    artist=p.artist
-    subject=p.subject
-    insanitylevel=p.insanitylevel
-    amountofimages=p.amountofimages
-    size=p.size
-    
-    sect_models=ob_prompt.modellist
-    cur_sect_models=p.model
-    model_list=modules.config.model_filenames
-    cur_model=p.base_model
-
-    sect_ratios=ob_prompt.sizelist
-    cur_sect_ratios=p.size
-    ratio_list=['768×1344 ∣ 4:7','896×1152 ∣ 7:9','1024×1024 ∣ 1:1','1152×896 ∣ 9:7','1344×768 ∣ 7:4']
-    cur_ratio=p.aspect_ratios_selection
-
-    originalnegativeprompt = p.negative_prompt
-    prompts=p.amountofimages
-
-    for generation in range(int(prompts)):
-      if not finished_batch:
-        if(silentmode==True and workprompt != ""):
-            randomprompt = ob_prompt.createpromptvariant(workprompt, promptvariantinsanitylevel)
-            print("Using provided workflow prompt")
-            print(randomprompt)
-        else:    
-                randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
-                randomprompt = randompromptlist[0]
-                randomsubject = randompromptlist[1]
-        negativeprompt=p.negative_prompt
-        if(autonegativeprompt):
-                negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
-        randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
-
-        if cur_sect_models=='all':
-          model_list_gen=len(model_list)
-        else:
-          model_list_gen=1
-        for gen_models in range(model_list_gen):
-          if cur_sect_models=='random model':
-              randnum=random.randint(0, len(model_list)-1)
-              name_model=model_list[randnum]
-          elif cur_sect_models=='all':
-              name_model=model_list[gen_models]
-          else:
-              name_model=cur_model
-          if cur_sect_ratios=='all':
-              ratio_lis_gen=len(ratio_list)
-          else:
-              ratio_lis_gen=1
-          for gen_ratio in range(ratio_lis_gen):
-              if cur_sect_ratios=='random ratio':
-                  randnum=random.randint(0, len(ratio_list)-1)
-                  name_ratio=ratio_list[randnum]
-              elif cur_sect_ratios=='all':
-                  name_ratio=ratio_list[gen_ratio]
-              elif cur_sect_ratios=='current ratio':
-                  name_ratio=cur_ratio
-              else:
-                  name_ratio=ratio_list[(sect_ratios.index(cur_sect_ratios)-2)]
-              p.prompt=randomprompt
-              p.negative_prompt=negativeprompt
-              p.base_model_name=name_model
-              p.aspect_ratios_selection=name_ratio
-              yield from generate_clicked(p)
-              if p.seed_random:
-                  p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
@@ -853,6 +754,8 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+                        with gr.TabItem(label='OneButtonPromp') as obp_tab:
+                            obp.scripts.onebuttonprompt_path.ui()
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                             langs_sup = list(langs_sup.values())
@@ -1901,9 +1804,7 @@ with shared.gradio_root:
         path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
-        genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
-            .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
-                  outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
+
         xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[xyz_start, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
@@ -1914,15 +1815,6 @@ with shared.gradio_root:
                   outputs=[xyz_start,generate_button, stop_button, skip_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        start_obp.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[start_obp, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-              .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=obp_start,inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[start_obp,generate_button, stop_button, skip_button, state_is_generating]) \
-              .then(fn=update_history_link, outputs=history_link) \
-              .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
  
         generate_button.click(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating]) \
