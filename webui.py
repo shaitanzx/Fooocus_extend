@@ -755,7 +755,7 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='OneButtonPromp') as obp_tab:
-                            obp.ui()
+                            ob_prompt.ui()
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                             langs_sup = list(langs_sup.values())
