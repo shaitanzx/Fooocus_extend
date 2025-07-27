@@ -352,7 +352,8 @@ def title(self):
 
 def show(self, is_img2img):
         return True
-
+def prompt2prompt(text):
+            return text
         
 def ui():
         def gen_prompt(insanitylevel, subject, artist, imagetype, antistring, prefixprompt, suffixprompt, promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
@@ -689,27 +690,32 @@ def ui():
                     with gr.Column(scale=4, variant="compact"):
                         prompt1 = gr.Textbox(label="prompt 1",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt1toworkflow = gr.Button("prompt1-> Workflow prompt")
+                        prompt1toworkflow = gr.Button("prompt1->Workflow prompt")
+                        prompt1toprompt = gr.Button("prompt1->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt2 = gr.Textbox(label="prompt 2",interactive=False)
                     with gr.Column(variant="compact"):
                         prompt2toworkflow = gr.Button("prompt2->Workflow prompt")
+                        prompt2toprompt = gr.Button("prompt2->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt3 = gr.Textbox(label="prompt 3",interactive=False)
                     with gr.Column(variant="compact"):
                         prompt3toworkflow = gr.Button("prompt3->Workflow prompt")
+                        prompt3toprompt = gr.Button("prompt3->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt4 = gr.Textbox(label="prompt 4",interactive=False)
                     with gr.Column(variant="compact"):
                         prompt4toworkflow = gr.Button("prompt4->Workflow prompt")
+                        prompt4toprompt = gr.Button("prompt4->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt5 = gr.Textbox(label="prompt 5",interactive=False)
                     with gr.Column(variant="compact"):
                         prompt5toworkflow = gr.Button("prompt5->Workflow prompt")
+                        prompt5toprompt = gr.Button("prompt5->Prompt")
         with gr.Tab("Advanced"):
             with gr.Row(variant="compact"):
                 gr.Markdown("""
@@ -1344,7 +1350,15 @@ def ui():
 
       
 
-        return [insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring, seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix]
+        return (prompt1,prompt2,prompt3,prompt4,prompt5,
+                prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
+                insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, 
+                promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring, seperator, 
+                givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, 
+                chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
+                promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, 
+                autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, 
+                presetsuffix)
             
     
 

@@ -755,7 +755,24 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='OneButtonPromp') as obp_tab:
-                            ob_prompt.ui()
+                            (prompt1,prompt2,prompt3,prompt4,prompt5,
+                                prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
+                                insanitylevel,subject, artist, imagetype, prefixprompt,
+                                suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, 
+                                workprompt, antistring, seperator, givensubject, smartsubject, 
+                                giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, 
+                                chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
+                                promptvariantinsanitylevel, givenoutfit, autonegativeprompt, 
+                                autonegativepromptstrength, autonegativepromptenhance, base_model_obp, 
+                                OBP_preset, amountoffluff, promptenhancer, 
+                                presetprefix, presetsuffix)=ob_prompt.ui()
+                            prompt1toprompt.click(ob_prompt.prompt2prompt, inputs=prompt1, outputs=prompt)
+                            prompt2toprompt.click(ob_prompt.prompt2prompt, inputs=prompt2, outputs=prompt)
+                            prompt3toprompt.click(ob_prompt.prompt2prompt, inputs=prompt3, outputs=prompt)
+                            prompt4toprompt.click(ob_prompt.prompt2prompt, inputs=prompt4, outputs=prompt)
+                            prompt5toprompt.click(ob_prompt.prompt2prompt, inputs=prompt5, outputs=prompt)
+
+                            
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                             langs_sup = list(langs_sup.values())
