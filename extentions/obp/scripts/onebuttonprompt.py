@@ -10,12 +10,12 @@ import subprocess as sp
 #from modules.shared import opts, cmd_opts, state
 
 
-from .build_dynamic_prompt import *
-from .main import *
-from .model_lists import *
-from .csv_reader import *
+from ..build_dynamic_prompt import *
+from ..main import *
+from ..model_lists import *
+from ..csv_reader import *
 
-from .one_button_presets import OneButtonPresets
+from ..one_button_presets import OneButtonPresets
 OBPresets = OneButtonPresets()
 
 basemodelslist = ["SD1.5", "SDXL", "Stable Cascade", "Anime Model"]
@@ -74,7 +74,7 @@ sys.path.append(os.path.abspath(".."))
 # Load up stuff for personal artists list, if any
 # find all artist files starting with personal_artits in userfiles
 script_dir = os.path.dirname(os.path.abspath(__file__))  # Script directory
-userfilesfolder = os.path.join(script_dir, "userfiles/" )
+userfilesfolder = os.path.join(script_dir, "..userfiles/" )
 for filename in os.listdir(userfilesfolder):
     if(filename.endswith(".csv") and filename.startswith("personal_artists") and filename != "personal_artists_sample.csv"):
         name = os.path.splitext(filename)[0]
@@ -404,8 +404,7 @@ def ui():
                     OBP_preset = gr.Dropdown(
                         label="One Button Preset",
                         choices=[OBPresets.RANDOM_PRESET_OBP] + [OBPresets.CUSTOM_OBP] + list(OBPresets.opb_presets.keys()),
-                        value="Standard",
-                    )
+                        value="Standard")
             with gr.Group(visible=True) as presetgroup:
                 with gr.Row():
                     md_prefix_preset = gr.Markdown("""
@@ -428,12 +427,10 @@ def ui():
                             show_label=False,
                             placeholder="Name of new preset",
                             interactive=True,
-                            visible=False,
-                        )
+                            visible=False)
                         obp_preset_save = gr.Button(
                             value="Save as preset",
-                            visible=False,
-                        )
+                            visible=False)
                 md_generation_settings = gr.Markdown("""
                             <font size="4">
                             Generation settings:
@@ -443,30 +440,30 @@ def ui():
             # End of this part of presets
                 
                 with gr.Row(variant="compact"):
-                    insanitylevel = gr.Slider(1, 10, value=5, step=1, label="🎲⬅️❔➡️🎲🎲🎲 Higher levels increases complexity and randomness of generated prompt", visible=False)
+                    insanitylevel = gr.Slider(1, 10, value=5, step=1, label="Higher levels increases complexity and randomness of generated prompt", visible=False)
                 with gr.Row(variant="compact"):
                     with gr.Column(variant="compact"):
                         subject = gr.Dropdown(
-                                        subjects, label="📸 Subject Types", value="all", visible=False)                   
+                                        subjects, label="Subject Types", value="all", visible=False)                   
                     with gr.Column(variant="compact"):
                         artist = gr.Dropdown(
-                                        artists, label="🎨 Artists", value="all", visible=False)
+                                        artists, label="Artists", value="all", visible=False)
                 with gr.Row(variant="compact"):
                     chosensubjectsubtypeobject = gr.Dropdown(
-                                        subjectsubtypesobject, label="🏺 Type of object", value="all", visible=False)
+                                        subjectsubtypesobject, label="Type of object", value="all", visible=False)
                     chosensubjectsubtypehumanoid = gr.Dropdown(
-                                        subjectsubtypeshumanoid, label="👨‍👩‍👧 Type of humanoids", value="all", visible=False)
+                                        subjectsubtypeshumanoid, label="Type of humanoids", value="all", visible=False)
                     chosensubjectsubtypeconcept = gr.Dropdown(
-                                        subjectsubtypesconcept, label="💡🧠💭 Type of concept", value="all", visible=False)
+                                        subjectsubtypesconcept, label="Type of concept", value="all", visible=False)
                     chosengender = gr.Dropdown(
-                                        genders, label="🚻 gender", value="all", visible=False)
+                                        genders, label="gender", value="all", visible=False)
                 with gr.Row(variant="compact"):
                     with gr.Column(variant="compact"):
                         imagetype = gr.Dropdown(
-                                        imagetypes, label="🖼️ type of image", value="all", visible=False)
+                                        imagetypes, label="type of image", value="all", visible=False)
                     with gr.Column(variant="compact"):
                         imagemodechance = gr.Slider(
-                                        1, 100, value="20", step=1, label="🎲🖼️ One in X chance to use special image type mode", visible=False)
+                                        1, 100, value="20", step=1, label="One in X chance to use special image type mode", visible=False)
                 with gr.Row(variant="compact"):
                     md_override_options = gr.Markdown("""
                                 <font size="2">
@@ -475,21 +472,15 @@ def ui():
                                 """, visible=False
                     )
                 with gr.Row(variant="compact"):
-                    givensubject = gr.Textbox(label="🔃📸 Overwrite subject: ", value="", visible=False)
-                    smartsubject = gr.Checkbox(label="🧠📸 Smart subject", value = True, visible=False)
+                    givensubject = gr.Textbox(label="Overwrite subject: ", value="", visible=False)
+                    smartsubject = gr.Checkbox(label="Smart subject", value = True, visible=False)
                 with gr.Row(variant="compact"):
-                    givenoutfit = gr.Textbox(label="🔃👗 Overwrite outfit: ", value="", visible=False)
-                # with gr.Row(variant="compact"):
-                #     gr.Markdown("""
-                #                 <font size="2">
-                #                 Prompt fields
-                #                 </font>
-                #                 """
-                #     )
+                    givenoutfit = gr.Textbox(label="Overwrite outfit: ", value="", visible=False)
+
                 with gr.Row(variant="compact"):
                     with gr.Column(variant="compact"):
-                        prefixprompt = gr.Textbox(label="⬅️💬 Place this in front of generated prompt (prefix)",value="", visible=False)
-                        suffixprompt = gr.Textbox(label="➡️💬 Place this at back of generated prompt (suffix)",value="", visible=False)
+                        prefixprompt = gr.Textbox(label="Place this in front of generated prompt (prefix)",value="", visible=False)
+                        suffixprompt = gr.Textbox(label="Place this at back of generated prompt (suffix)",value="", visible=False)
                 with gr.Row(variant="compact"):
                     md_additional_options = gr.Markdown("""
                                 <font size="2">
@@ -498,10 +489,10 @@ def ui():
                                 """, visible=False
                     )
                 with gr.Row(variant="compact"):
-                    giventypeofimage = gr.Textbox(label="🔃🖼️ Overwrite type of image: ", value="", visible=False)
+                    giventypeofimage = gr.Textbox(label="Overwrite type of image: ", value="", visible=False)
                 with gr.Row(variant="compact"):
                     with gr.Column(variant="compact"):
-                        antistring = gr.Textbox(label="❌📝 Filter out following properties (comma seperated). Example ""film grain, purple, cat"" ", visible=False)
+                        antistring = gr.Textbox(label="Filter out following properties (comma seperated). Example ""film grain, purple, cat"" ", visible=False)
                 with gr.Accordion("Help", open=False):
                         gr.Markdown(
                             """
@@ -518,7 +509,7 @@ def ui():
                             Add additional prompting to the prefix, suffix in this screen. The actual prompt fields are ignored. Negative prompt is in the respective tab.
                             </font>
                             
-                            ### 📸 Subject Types
+                            ### Subject Types
                             
                             <font size="2">
                             You can choose a certain subject type. Choose the all version to randomly choose between the subtypes. Iff you want to generate something more specific, choose the subtype. It has the following types:  
@@ -536,7 +527,7 @@ def ui():
                             After choosing object, humanoid or concept a subselection menu will show. You can pick further details here. When choosing humanoid, you can also select the gender you wish to generate.
 
                            
-                            🚻 gender (only available for human generations):
+                            gender (only available for human generations):
 
                             1. all - selects randomly
 
@@ -546,7 +537,7 @@ def ui():
 
                             </font>
                             
-                            ### 🎨 Artists
+                            ### Artists
                             
                             <font size="2">
                             Artists have a major impact on the result.
@@ -562,7 +553,7 @@ def ui():
                             You can turn it off and maybe add your own in the prefix or suffix prompt fields
                             </font>
 
-                            ### 🖼️ type of image
+                            ### type of image
 
                             <font size="2">
                             There are an immense number of image types, not only paintings and photo's, but also isometric renders and funko pops.
@@ -619,7 +610,7 @@ def ui():
 
                             23. the tokinator --> Complete random word gibberish mode, use at own risk
 
-                            ### 🎲🖼️ One in X chance to use special image type mode
+                            ### One in X chance to use special image type mode
 
                             <font size="2">
                             This controls how often it will pick a special generation mode. It is a 1 in X chance. So lower means more often. This will only be applied of "type of image" is set to "all" and there is no Overwrite type of image set.
@@ -627,17 +618,17 @@ def ui():
                             When set to 1, it will always pick a random special generation mode. When set to 20, it is a 1 in 20 chance this will happen.
                             </font>
                             
-                            ### 🔃📸 Overwrite subject
+                            ### Overwrite subject
 
                             When you fill in the Overwrite subject field, that subject will be used to build the dynamic prompt around. It is best, if you set the subject type to match the subject. For example, set it to humanoid if you place a person in the override subject field.
                             
                             This way, you can create unlimited variants of a subject.
 
-                            🧠📸 Smart subject tries to determine what to and not to generate based on your subject. Example, if your Overwrite subject is formed like this: Obese man wearing a kimono
+                            Smart subject tries to determine what to and not to generate based on your subject. Example, if your Overwrite subject is formed like this: Obese man wearing a kimono
                             
                             It will then recognize the body type and not generate it. It also recognizes the keyword wearing, and will not generate an outfit.
 
-                            ### 🔃👗 Overwrite outfit
+                            ### Overwrite outfit
 
                             When you fill in the override outfit field, it will generate an outfit in the prompt based on the given value. It can be used in combination with override subject, but does not have to be. It works best with smaller descriptions of the outfit.
 
@@ -1116,11 +1107,8 @@ def ui():
         
         
         def obppreset_changed(selection):
-            gradio_major_version = gr.__version__.split('.')[0]
-
             # if custom selected, then update visibility and return
             if selection == OBPresets.CUSTOM_OBP:
-                if gradio_major_version == '3':
                     return [
                         md_prefix_preset.update(visible=False),
                         presetprefix.update(value="", visible=False),
@@ -1147,44 +1135,14 @@ def ui():
                         md_additional_options.update(visible=True),
                         giventypeofimage.update(visible=True),
                         antistring.update(visible=True),
-                    ]
-                else: # GR4
-                    return [
-                        gr.Markdown(visible=False),         # md_prefix_preset
-                        gr.Textbox(visible=False),          # presetprefix
-                        gr.Textbox(visible=False),          # presetsuffix
-                        gr.Markdown(visible=True),          # md_save_preset
-                        gr.Textbox(value="", visible=True), # obp_preset_name
-                        gr.Button(visible=True),            # obp_preset_save
-                        gr.Markdown(visible=True),          # md_generation_settings
-                        gr.Slider(visible=True),            # insanitylevel
-                        gr.Dropdown(visible=True),          # subject
-                        gr.Dropdown(visible=True),          # artist
-                        gr.Dropdown(visible=True),          # chosensubjectsubtypeobject
-                        gr.Dropdown(visible=True),          # chosensubjectsubtypehumanoid
-                        gr.Dropdown(visible=True),          # chosensubjectsubtypeconcept
-                        gr.Dropdown(visible=True),          # chosengender
-                        gr.Dropdown(visible=True),          # imagetype
-                        gr.Slider(visible=True),            # imagemodechance
-                        gr.Markdown(visible=True),          # md_override_options
-                        gr.Textbox(visible=True),           # givensubject
-                        gr.Checkbox(visible=True),          # smartsubject
-                        gr.Textbox(visible=True),           # givenoutfit
-                        gr.Textbox(visible=True),           # prefixprompt
-                        gr.Textbox(visible=True),           # suffixprompt
-                        gr.Markdown(visible=True),          # md_additional_options
-                        gr.Textbox(visible=True),           # giventypeofimage
-                        gr.Textbox(visible=True),           # antistring
-                    ]
+                    ] 
 
             # Update Custom values based on selected One Button preset
             if selection == OBPresets.RANDOM_PRESET_OBP:
                 selected_opb_preset = OBPresets.get_obp_preset("Standard")
             else:     
                 selected_opb_preset = OBPresets.get_obp_preset(selection)
-
-            if gradio_major_version == '3':
-                return [
+            return [
                     md_prefix_preset.update(visible=True),
                     presetprefix.update(visible=True),
                     presetsuffix.update(visible=True),
@@ -1210,34 +1168,6 @@ def ui():
                     md_additional_options.update(visible=False),
                     giventypeofimage.update(visible=False, value=selected_opb_preset["giventypeofimage"]),
                     antistring.update(visible=False, value=selected_opb_preset["antistring"]),
-                ]
-            else:
-                return [
-                    gr.Markdown(visible=True),                      # md_prefix_preset
-                    gr.Textbox(visible=True),                       # presetprefix
-                    gr.Textbox(visible=True),                       # presetsuffix
-                    gr.Markdown(visible=False),                     # md_save_preset
-                    gr.Textbox(value="", visible=False),            # obp_preset_name
-                    gr.Button(visible=False),                       # obp_preset_save
-                    gr.Markdown(visible=False),                     # md_generation_settings
-                    gr.Slider(visible=False, value=selected_opb_preset["insanitylevel"]),
-                    gr.Dropdown(visible=False, value=selected_opb_preset["subject"]),
-                    gr.Dropdown(visible=False, value=selected_opb_preset["artist"]),
-                    gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypeobject"]),
-                    gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypehumanoid"]),
-                    gr.Dropdown(visible=False, value=selected_opb_preset["chosensubjectsubtypeconcept"]),
-                    gr.Dropdown(visible=False, value=selected_opb_preset["chosengender"]),
-                    gr.Dropdown(visible=False, value=selected_opb_preset["imagetype"]),
-                    gr.Slider(visible=False, value=selected_opb_preset["imagemodechance"]),
-                    gr.Markdown(visible=False),                     #  md_override_options
-                    gr.Textbox(visible=False, value=selected_opb_preset["givensubject"]),
-                    gr.Checkbox(visible=False, value=selected_opb_preset["smartsubject"]),
-                    gr.Textbox(visible=False, value=selected_opb_preset["givenoutfit"]),
-                    gr.Textbox(visible=False, value=selected_opb_preset["prefixprompt"]),
-                    gr.Textbox(visible=False, value=selected_opb_preset["suffixprompt"]),
-                    gr.Markdown(visible=False),                     # md_additional_options
-                    gr.Textbox(visible=False, value=selected_opb_preset["giventypeofimage"]),
-                    gr.Textbox(visible=False, value=selected_opb_preset["antistring"]),
                 ]
         OBP_preset.change(obppreset_changed,
             inputs=[OBP_preset],

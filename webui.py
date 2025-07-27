@@ -60,7 +60,7 @@ from extentions.CodeFormer import codeformer
 import extentions.instantid.main as instantid
 import extentions.photomaker.app as photomaker
 
-import extentions.one_button_prompt.onebuttonprompt as obp
+from extentions.obp.scripts import onebuttonprompt as ob_prompt
 
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
