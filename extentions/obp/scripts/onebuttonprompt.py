@@ -663,18 +663,18 @@ def ui():
         with gr.Tab("Workflow assist"):
             with gr.Row(variant="compact"):
                     silentmode = gr.Checkbox(
-                        label="🛠️ Workflow mode, turns off prompt generation and uses below Workflow prompt instead.")
+                        label="Workflow mode, turns off prompt generation and uses below Workflow prompt instead.")
             with gr.Row(variant="compact"):
-                workprompt = gr.Textbox(label="🛠️💬 Workflow prompt")
+                workprompt = gr.Textbox(label="Workflow prompt")
             with gr.Row(variant="compact"):
-                promptvariantinsanitylevel = gr.Slider(0, 10, value=0, step=1, label="🎲🔃 🛠️💬 Prompt variant. Strength of variation of workflow prompt. 0 = no variance.")
+                promptvariantinsanitylevel = gr.Slider(0, 10, value=0, step=1, label="Prompt variant. Strength of variation of workflow prompt. 0 = no variance.")
             with gr.Accordion("Help", open=False):
                 gr.Markdown(
                      """
                      <font size="2"> 
                      Workflow assist, suggestions by redditor Woisek.
 
-                     With 🛠️ Workflow mode, you turn off the automatic generation of new prompts on 'generate', and it will use the Workflow prompt field instead. So you can work and finetune any fun prompts without turning of the script.
+                     With Workflow mode, you turn off the automatic generation of new prompts on 'generate', and it will use the Workflow prompt field instead. So you can work and finetune any fun prompts without turning of the script.
 
                      You can use One Button Prompt wildcards in the workflow prompt. For example -outfit- .
 
@@ -684,37 +684,37 @@ def ui():
                      </font>
                      """)
             with gr.Row(variant="compact"):
-                genprom = gr.Button("🔄💬 Generate me some prompts!")
+                genprom = gr.Button("Generate me some prompts!")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
-                        prompt1 = gr.Textbox(label="prompt 1")
+                        prompt1 = gr.Textbox(label="prompt 1",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt1toworkflow = gr.Button("⬆️🛠️💬")
+                        prompt1toworkflow = gr.Button("prompt1-> Workflow prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
-                        prompt2 = gr.Textbox(label="prompt 2")
+                        prompt2 = gr.Textbox(label="prompt 2",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt2toworkflow = gr.Button("⬆️🛠️💬")
+                        prompt2toworkflow = gr.Button("prompt2->Workflow prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
-                        prompt3 = gr.Textbox(label="prompt 3")
+                        prompt3 = gr.Textbox(label="prompt 3",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt3toworkflow = gr.Button("⬆️🛠️💬")
+                        prompt3toworkflow = gr.Button("prompt3->Workflow prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
-                        prompt4 = gr.Textbox(label="prompt 4")
+                        prompt4 = gr.Textbox(label="prompt 4",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt4toworkflow = gr.Button("⬆️🛠️💬")
+                        prompt4toworkflow = gr.Button("prompt4->Workflow prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
-                        prompt5 = gr.Textbox(label="prompt 5")
+                        prompt5 = gr.Textbox(label="prompt 5",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt5toworkflow = gr.Button("⬆️🛠️💬")
+                        prompt5toworkflow = gr.Button("prompt5->Workflow prompt")
         with gr.Tab("Advanced"):
             with gr.Row(variant="compact"):
                 gr.Markdown("""
                                 <font size="2">
-                                ✨Base model will try and generate prompts fitting the selected model.
+                                Base model will try and generate prompts fitting the selected model.
                                 
                                 SD1.5 --> Less natural language
                                 
@@ -724,53 +724,41 @@ def ui():
                             
                                 Anime Model --> Focussed on characters and tags, adds 1girl/1boy automatically.
                             
-                                ⭐ Flufferizer
+                                Flufferizer
 
                                 A simple and quick implementiation of Fooocus prompt magic
                             
-                                🦸‍♂️💬 Prompt enhancer
+                                Prompt enhancer
 
                                 Choose for "superprompt-v1" to super prompt the prompts with roborovski superprompt-v1 model.
-                            
-                                Please install requirements for superprompt before use.
 
                                 </font>
                                 """
                     )
             with gr.Row(variant="compact"):
                 base_model = gr.Dropdown(
-                     basemodelslist, label="✨ Base model", value="SDXL")
+                     basemodelslist, label="Base model", value="SDXL")
             with gr.Row(variant="compact"):
                 amountoffluff = gr.Dropdown(
-                     amountofflufflist, label="⭐ Flufferizer", value="dynamic")
+                     amountofflufflist, label="Flufferizer", value="dynamic")
             with gr.Row(variant="compact"):
                 promptenhancer = gr.Dropdown(
-                     prompt_enhancers, label="🤓 Prompt enhancer", value="none")
-            with gr.Row(variant="compact"):
-                 gr.Markdown("""
-                                <font size="2">
-                             
-                                Other options
-                             
-                                ---
-                                </font>
-                                """
-                    )
+                     prompt_enhancers, label="Prompt enhancer", value="none")
             with gr.Row(variant="compact"):
                 with gr.Column(variant="compact"):
                     promptcompounderlevel = gr.Dropdown(
-                        promptcompounder, label="🔂💬 Prompt compounder", value="1")
+                        promptcompounder, label="Prompt compounder", value="1")
             with gr.Row(variant="compact"):
                 with gr.Column(variant="compact"):
                     seperator = gr.Dropdown(
-                        seperatorlist, label="🚧 Prompt seperator", value="comma")    
+                        seperatorlist, label="Prompt seperator", value="comma")    
                 with gr.Column(variant="compact"):
                     ANDtoggle = gr.Dropdown(
-                        ANDtogglemode, label="🚧🔧 Prompt seperator mode", value="none")
+                        ANDtogglemode, label="Prompt seperator mode", value="none",interactive=True)
             with gr.Accordion("Help", open=False):
                 gr.Markdown(
                     """
-                    ### 🔂💬 Prompt compounder
+                    ### Prompt compounder
                     
                     <font size="2">
                     Normally, it creates a single random prompt. With prompt compounder, it will generate multiple prompts and compound them together. 
@@ -793,11 +781,11 @@ def ui():
                     
                     In the prefix prompt field then add for example: Art by artistname, 2 people
                     
-                    Set the 🔂💬 prompt compounder to: 2
+                    Set the prompt compounder to: 2
                     
-                    Set the 🚧 Prompt seperator to: AND
+                    Set the Prompt seperator to: AND
 
-                    Set the 🚧🔧 Prompt Seperator mode to: prefix AND prompt + suffix
+                    Set the Prompt Seperator mode to: prefix AND prompt + suffix
 
                     "automatic" is entirely build around Latent Couple. It will pass artists and the amount of people/animals/objects to generate in the prompt automatically. Set the prompt compounder equal to the amount of areas defined in Laten Couple.
                     
@@ -809,11 +797,11 @@ def ui():
                     
                     Leave the prompt field empty
                     
-                    Set the 🔂💬 prompt compounder to: 2
+                    Set the prompt compounder to: 2
 
-                    Set the 🚧 Prompt seperator to: AND
+                    Set the Prompt seperator to: AND
 
-                    Set the 🚧🔧 Prompt Seperator mode to: automatic
+                    Set the  Prompt Seperator mode to: automatic
 
 
                     </font>
@@ -829,10 +817,10 @@ def ui():
                         )
             with gr.Column(variant="compact"):
                 with gr.Row(variant="compact"): 
-                    autonegativeprompt = gr.Checkbox(label="🤖🚫💬 Auto generate negative prompt", value=True) 
-                    autonegativepromptenhance = gr.Checkbox(label="📈🚫💬 Enable base enhancement prompt", value=False)
+                    autonegativeprompt = gr.Checkbox(label="Auto generate negative prompt", value=True) 
+                    autonegativepromptenhance = gr.Checkbox(label="Enable base enhancement prompt", value=False)
             with gr.Row(variant="compact"): 
-                autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="🎲🚫💬 Randomness of negative prompt (lower is more consistency)")
+                autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="Randomness of negative prompt (lower is more consistency)")
             gr.Markdown(
                         """
                         ### Base negative prompt is added on
@@ -840,7 +828,7 @@ def ui():
                         """
                         )
             with gr.Row(): 
-                negativeprompt = gr.Textbox(label="🚫💬 Base negative prompt",value="")
+                negativeprompt = gr.Textbox(label="Base negative prompt",value="")
                  
         with gr.Tab("One Button Run and Upscale"):
             with gr.Row(variant="compact"):
