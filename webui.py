@@ -754,11 +754,11 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='OneButtonPromp') as obp_tab:
-                            (prompt1,prompt2,prompt3,prompt4,prompt5,
+                        with gr.TabItem(label='OneButtonPrompt') as obp_tab:
+                            (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
                                 insanitylevel,subject, artist, imagetype, prefixprompt,
-                                suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, 
+                                suffixprompt, promptcompounderlevel, ANDtoggle, silentmode, 
                                 workprompt, antistring, seperator, givensubject, smartsubject, 
                                 giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, 
                                 chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
@@ -814,18 +814,32 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
-                def gen_acc_name(translate, photomaker, instant, inswapper, codeformer):
-                    main_name = "in generation" + (f" — {', '.join(filter(None, ['PromptTranslate enabled' if translate else None, 'PhotoMaker enabled' if photomaker else None, 'InstantID enabled' if instant else None, 'Inswapper enabled' if inswapper else None, 'Codeformer enabled' if codeformer else None]))}" if any([translate, photomaker, instant, inswapper, codeformer]) else "")
+                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer):
+                    enabled_modules = [
+                        ('OneButtonPrompt', obp),
+                        ('PromptTranslate', translate),
+                        ('PhotoMaker', photomaker),
+                        ('InstantID', instant),
+                        ('Inswapper', inswapper),
+                        ('Codeformer', codeformer)
+                        ]
+                    active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
+                    main_name = "in generation"
+                    if active_modules:
+                        main_name += f" — {', '.join(active_modules)}"
+                    #main_name = "in generation" + (f" — {', '.join(filter(None, ['OneButtonPrompt enabled' if obp else None, 'PromptTranslate enabled' if translate else None,'PhotoMaker enabled' if photomaker else None,'InstantID enabled' if instant else None,'Inswapper enabled' if inswapper else None,'Codeformer enabled' if codeformer else None]))}" if any([obp,translate, photomaker, instant, inswapper, codeformer]) else "")
                     return gr.update(label=main_name)
-                enable_pm.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                enable_obp.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                translate_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                enable_pm.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                inswapper_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                translate_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                codeformer_gen_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                inswapper_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                enable_instant.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                codeformer_gen_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
+                enable_instant.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
@@ -1722,6 +1736,13 @@ with shared.gradio_root:
         ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity]
         ctrls += [enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
+        ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
+        ctrls += [promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring]
+        ctrls += [seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender]
+        ctrls += [chosensubjectsubtypeobject,chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept]
+        ctrls += [promptvariantinsanitylevel, givenoutfit, autonegativeprompt,autonegativepromptstrength]
+        ctrls += [autonegativepromptenhance, base_model_obp,OBP_preset, amountoffluff, promptenhancer]
+        ctrls += [presetprefix, presetsuffix]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

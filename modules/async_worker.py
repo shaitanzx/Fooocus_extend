@@ -231,6 +231,40 @@ class AsyncTask:
         self.sketch_image = args.pop()
         self.adapter_conditioning_scale = args.pop()
         self.adapter_conditioning_factor = args.pop()
+
+        self.enable_obp = args.pop()
+        self.insanitylevel = args.pop()
+        self.subject = args.pop()
+        self.artist = args.pop()
+        self.imagetype = args.pop()
+        self.prefixprompt = args.pop()
+        self.suffixprompt = args.pop()
+        self.promptcompounderlevel = args.pop()
+        self.ANDtoggle = args.pop()
+        self.silentmode = args.pop()
+        self.workprompt = args.pop()
+        self.antistring = args.pop()
+        self.seperator = args.pop()
+        self.givensubject = args.pop()
+        self.smartsubject = args.pop()
+        self.giventypeofimage = args.pop()
+        self.imagemodechance = args.pop()
+        self.chosengender = args.pop()
+        self.chosensubjectsubtypeobject = args.pop()
+        self.chosensubjectsubtypehumanoid = args.pop()
+        self.chosensubjectsubtypeconcept = args.pop()
+        self.promptvariantinsanitylevel = args.pop()
+        self.givenoutfit = args.pop()
+        self.autonegativeprompt = args.pop()
+        self.autonegativepromptstrength = args.pop()
+        self.autonegativepromptenhance = args.pop()
+        self.base_model_obp = args.pop()
+        self.OBP_preset = args.pop()
+        self.amountoffluff = args.pop()
+        self.promptenhancer = args.pop()
+        self.presetprefix = args.pop()
+        self.presetsuffix = args.pop()
+        self.interation_obp = 2
  
 
     
@@ -279,6 +313,7 @@ def worker():
     from modules.meta_parser import get_metadata_parser
     import extentions.instantid.main as instantid
     import extentions.photomaker.app as photomaker
+    from extentions.obp.scripts import onebuttonprompt as ob_prompt
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -1386,6 +1421,17 @@ def worker():
 
         loras = async_task.loras
         if not skip_prompt_processing:
+            if async_task.enable_obp:
+                async_task.prompt,async_task.negative_prompt = ob_prompt.run(async_task.insanitylevel, async_task.subject, async_task.artist, 
+                        async_task.imagetype, async_task.prefixprompt,async_task.suffixprompt,async_task.negative_prompt, 
+                        async_task.promptcompounderlevel, async_task.ANDtoggle, async_task.silentmode, async_task.workprompt, 
+                        async_task.antistring,async_task.seperator, async_task.givensubject, async_task.smartsubject, 
+                        async_task.giventypeofimage, async_task.imagemodechance, async_task.chosengender, 
+                        async_task.chosensubjectsubtypeobject, async_task.chosensubjectsubtypehumanoid, 
+                        async_task.chosensubjectsubtypeconcept, async_task.promptvariantinsanitylevel, async_task.givenoutfit, 
+                        async_task.autonegativeprompt, async_task.autonegativepromptstrength, async_task.autonegativepromptenhance, 
+                        async_task.base_model_obp, async_task.OBP_preset, async_task.amountoffluff, async_task.promptenhancer, 
+                        async_task.presetprefix, async_task.presetsuffix)
             tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,
                                                          base_model_additional_loras, async_task.image_number,
                                                          async_task.disable_seed_increment, use_expansion, use_style,
@@ -1711,6 +1757,13 @@ def worker():
 
             try:
                 handler(task)
+                if task.interation_obp>0:
+                    task.interation_obp-=1
+                if task.interation_obp>0:
+                    async_tasks.insert(0, task)
+                    time.sleep(0.01)
+                    continue
+
                 if task.generate_image_grid:
                     build_image_wall(task)
                 task.yields.append(['finish', task.results])

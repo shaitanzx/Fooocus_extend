@@ -387,7 +387,8 @@ def ui():
             else:
                 sp.Popen(["xdg-open", path])
             
-
+        with gr.Row():
+          enable_obp = gr.Checkbox(label="Enabled", value=False)
         with gr.Tab("Main"):
             with gr.Row(variant="compact"):
                 md_basic = gr.Markdown("""
@@ -827,188 +828,7 @@ def ui():
                     autonegativepromptenhance = gr.Checkbox(label="Enable base enhancement prompt", value=False)
             with gr.Row(variant="compact"): 
                 autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="Randomness of negative prompt (lower is more consistency)")
-            gr.Markdown(
-                        """
-                        ### Base negative prompt is added on
-                        </font>
-                        """
-                        )
-            with gr.Row(): 
-                negativeprompt = gr.Textbox(label="Base negative prompt",value="")
                  
-        with gr.Tab("One Button Run and Upscale"):
-            with gr.Row(variant="compact"):
-                    gr.Markdown(
-                            """
-                            ### TXT2IMG
-                            <font size="2">
-                            Start WebUi with option --api for this to work. This is not needed for Vlad SD Next.
-
-                            Note: This part is entirely optional and you can use the normal generate button.
-
-                            This part is only intended for running an upscaling at the same time.
-                            </font>
-                            """
-                            )                         
-            with gr.Row(variant="compact"):
-                    with gr.Column(variant="compact"):
-                        startmain = gr.Button("Start generating and upscaling!")
-                        interrupt = gr.Button("Interrupt current")
-                        automatedoutputsfolderbutton = gr.Button(folder_symbol)
-                    with gr.Column(variant="compact"):
-                        apiurl = gr.Textbox(label="URL", value="http://127.0.0.1:7860")
-                        onlyupscale = gr.Checkbox(label="Don't generate, only upscale", value=False)
-                        increasestability = gr.Checkbox(label="Increase stability", value=False)
-            with gr.Row(variant="compact"):
-                    with gr.Accordion("help", open=False):
-                        gr.Markdown(
-                            """
-                            <font size="2">
-                            Only upscale will not use txt2img to generate an image.
-
-                            Instead it will pick up all files in the \\upscale_me\\ folder and upscale them with below settings.
-
-                            Increase stability: If you get NaN's or memory issues, turn this on. It will unload and load the base checkpoint.
-                            </font>
-                            """
-                            ) 
-            with gr.Row(variant="compact"):
-                with gr.Column(variant="compact"):
-                    
-                    amountofimages = gr.Slider(1, 50, value="20", step=1, label="Amount of images to generate")
-                    size = gr.Dropdown(
-                                    sizelist, label="Size to generate", value="all")
-                    basesize = gr.Dropdown(
-                                    basesizelist, label="base size", value="512")
-                    with gr.Row(variant="compact"):
-                        samplingsteps = gr.Slider(1, 100, value="20", step=1, label="Sampling steps")
-                        cfg = gr.Slider(1,20, value="6.0", step=0.1, label="CFG")
-                    with gr.Row(variant="compact"):                              
-                        hiresfix = gr.Checkbox(label="hires. fix", value=True)
-                        hiressteps = gr.Slider(0, 100, value = "0", step=1, label="Hires steps")
-                        hiresscale = gr.Slider(1, 4, value = "2", step=0.05, label="Scale")
-                        denoisestrength = gr.Slider(0, 1, value="0.60", step=0.01, label="Denoise strength")
-                with gr.Column(variant="compact"):
-                    
-                    model = gr.Dropdown(
-                                    modellist, label="model to use", value="currently selected model")
-                    with gr.Column(variant="compact"):
-                        samplingmethod = gr.Dropdown(
-                                        samplerlist, label= "Sampler", value="all")
-                        upscaler = gr.Dropdown(
-                                        upscalerlist, label="hires upscaler", value="all")
-            with gr.Row(variant="compact"):
-                gr.Markdown(
-                        """
-                        ### Quality Gate
-                        """)
-            with gr.Row(variant="compact"):
-                with gr.Accordion("quality gate help", open=False):
-                    gr.Markdown(
-                        """
-                        <font size="2">
-                        Uses aesthetic image scorer extension to check the quality of the image.
-                        
-                        Once turned on, it will retry for n amount of times to get an image with the quality score. If not, it will take the best image so far and continue or set it to gated to only take matching or higher quality images.
-                        
-                        You can move Hiresfix to be applied afterwards. You can opt to keep all generated images.
-                        
-                        Idea and inspiration by xKean. Additional improvements suggested by pto2k.
-                        </font>
-                        """
-                        )    
-            with gr.Row(variant="compact"):
-                    qualitygate = gr.Checkbox(label="Quality Gate", value=False)
-                    quality = gr.Slider(1, 10, value = "7.2", step=0.1, label="Quality", visible = False)
-                    runs = gr.Slider(1, 50, value = "5", step=1, label="Amount of tries", visible = False)
-            with gr.Row(variant="compact"):
-                    qualityhiresfix = gr.Checkbox(label="Move Hires fix afterwards", value=False, visible = False)
-                    qualitymode = gr.Dropdown(
-                                        qualitymodelist, label= "Mode of operation", value="highest", visible = False)
-                    qualitykeep = gr.Dropdown(
-                                        qualitykeeplist, label= "Images", value="keep used", visible = False)
-            with gr.Row(variant="compact"):
-                    gr.Markdown(
-                        """
-                        ### IMG2IMG upscale
-                        """
-                        )
-            with gr.Row(variant="compact"):
-                    img2imgactivate = gr.Checkbox(label="Upscale image with IMG2IMG", value=True)
-            with gr.Row(variant="compact"):
-                    with gr.Column(variant="compact"):
-                        img2imgbatch = gr.Slider(1, 5, value="1", step=1, label="Amount times to repeat upscaling with IMG2IMG (loopback)")
-                        img2imgsamplingsteps = gr.Slider(1, 100, value="20", step=1, label="img2img Sampling steps")
-                        img2imgcfg = gr.Slider(1,20, value="6", step=0.1, label="img2img CFG")
-                        img2imgdenoisestrength = gr.Slider(0, 1, value="0.30", step=0.01, label="img2img denoise strength")
-                        img2imgdenoisestrengthmod = gr.Slider(-1,1, value = "-0.05", step=0.01, label="adjust denoise each img2img batch")
-                    with gr.Column(variant="compact"):
-                        img2imgmodel = gr.Dropdown(
-                                    modellist, label="img2img model to use", value="currently selected model")
-                        img2imgsamplingmethod = gr.Dropdown(
-                                        img2imgsamplerlist, label= "img2img sampler", value="all")   
-                        img2imgupscaler = gr.Dropdown(
-                                        img2imgupscalerlist, label="img2img upscaler", value="all")
-                    with gr.Row(variant="compact"):
-                        img2imgscale = gr.Slider(1, 4, value="2", step=0.05, label="img2img scale")
-                        img2imgpadding = gr.Slider(32, 256, value="64", step=12, label="img2img padding")
-            with gr.Row(variant="compact"):
-                    ultimatesdupscale = gr.Checkbox(label="Use Ultimate SD Upscale script instead", value=False)
-                    gr.Markdown(
-                        """
-                        <font size="2">
-                        This requires the Ultimate SD Upscale extension, install this if you haven't
-                        </font>
-                        """
-                        )
-            with gr.Row(variant="compact"):
-                    with gr.Column(scale = 1):
-                        #usdutilewidth, usdutileheight, usdumaskblur, usduredraw, usduSeamsfix, usdusdenoise, usduswidth, usduspadding, usdusmaskblur
-                        #usdutilewidth = "512", usdutileheight = "0", usdumaskblur = "8", usduredraw ="Linear", usduSeamsfix = "None", usdusdenoise = "0.35", usduswidth = "64", usduspadding ="32", usdusmaskblur = "8"
-                        usdutilewidth = gr.Slider(0, 2048, value="512", step=12, label="tile width", visible = False)
-                        usdutileheight = gr.Slider(0, 2048, value="0", step=12, label="tile height", visible = False)
-                        usdumaskblur = gr.Slider(0, 64, value="8", step=1, label="Mask blur", visible = False)
-                        usduredraw = gr.Dropdown(
-                                    redraw_modes, label="Type", value="Linear", visible = False)
-                    with gr.Column(scale = 1):
-                        usduSeamsfix = gr.Dropdown(
-                                    seams_fix_types, label="Seams fix", value="None", visible = False)
-                        usdusdenoise = gr.Slider(0, 1, value="0.35", step=0.01, label="Seams  denoise strenght", visible = False)
-                        usduswidth = gr.Slider(0, 128, value="64", step=12, label="Seams Width", visible = False)
-                        usduspadding = gr.Slider(0, 128, value="32", step=12, label="Seams padding", visible = False)
-                        usdusmaskblur = gr.Slider(0, 64, value="8", step=1, label="Seams Mask blur (offset pass only)", visible = False)
-            with gr.Row(variant="compact"):
-                    with gr.Column(scale = 1):
-                        controlnetenabled = gr.Checkbox(label="Enable controlnet tile resample", value=False)
-                        controlnetblockymode = gr.Checkbox(label="also enable wierd blocky upscale mode", value=False)
-                    with gr.Column(scale = 1):
-                        controlnetmodel = gr.Textbox(label="Controlnet tile model name", value = "control_v11f1e_sd15_tile [a371b31b]")
-            with gr.Row(variant="compact"):
-                 gr.Markdown(
-                                """
-                                <font size="2">
-                                This requires Controlnet 1.1 extension and the tile resample model, install this if you haven't
-                                In settings for Controlnet, enable "Allow other script to control this extension"
-                                
-                                Don't use wierd blocky upscale mode. Or maybe do?
-                                </font>
-                                """
-                                )
-            with gr.Row(variant="compact"):
-                 with gr.Column(scale = 1):
-                            enableextraupscale = gr.Checkbox(label="Enable upscale with extras", value=False)
-            with gr.Row(variant="compact"):
-                 with gr.Column(scale = 1):
-                            extrasresize = gr.Slider(0, 8, value="2", step=0.05, label="Upscale resize", visible = False)
-                            extrasupscaler1 = gr.Dropdown(
-                                        img2imgupscalerlist, label="upscaler 1", value="all", visible = False)
-                            extrasupscaler2 = gr.Dropdown(
-                                        img2imgupscalerlist, label="upscaler 2", value="all", visible = False)
-                            extrasupscaler2visiblity = gr.Slider(0, 1, value="0.5", step=0.05, label="Upscaler 2 vis.", visible = False)
-                 with gr.Column(scale = 1):
-                            extrasupscaler2gfpgan = gr.Slider(0, 1, value="0", step=0.05, label="GFPGAN vis.", visible = False)
-                            extrasupscaler2codeformer = gr.Slider(0, 1, value="0.15", step=0.05, label="CodeFormer vis.", visible = False)
-                            extrasupscaler2codeformerweight = gr.Slider(0, 1, value="0.1", step=0.05, label="CodeFormer weight", visible = False)
                     
 
         genprom.click(gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix], outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
@@ -1018,11 +838,6 @@ def ui():
         prompt3toworkflow.click(prompttoworkflowprompt, inputs=prompt3, outputs=workprompt)
         prompt4toworkflow.click(prompttoworkflowprompt, inputs=prompt4, outputs=workprompt)
         prompt5toworkflow.click(prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
-
-        startmain.click(generateimages, inputs=[amountofimages,size,model,samplingsteps,cfg,hiresfix,hiressteps,denoisestrength,samplingmethod, upscaler,hiresscale, apiurl, qualitygate, quality, runs,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,negativeprompt,promptcompounderlevel, seperator, img2imgbatch, img2imgsamplingsteps, img2imgcfg, img2imgsamplingmethod, img2imgupscaler, img2imgmodel,img2imgactivate, img2imgscale, img2imgpadding,img2imgdenoisestrength,ultimatesdupscale,usdutilewidth, usdutileheight, usdumaskblur, usduredraw, usduSeamsfix, usdusdenoise, usduswidth, usduspadding, usdusmaskblur, controlnetenabled, controlnetmodel,img2imgdenoisestrengthmod,enableextraupscale,controlnetblockymode,extrasupscaler1,extrasupscaler2,extrasupscaler2visiblity,extrasupscaler2gfpgan,extrasupscaler2codeformer,extrasupscaler2codeformerweight,extrasresize,onlyupscale,givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, increasestability, qualityhiresfix, qualitymode, qualitykeep, basesize, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix])
-        interrupt.click(tryinterrupt, inputs=[apiurl])
-        
-        automatedoutputsfolderbutton.click(openfolder)
 
         obp_outputs = [
                     obp_preset_name,
@@ -1196,163 +1011,15 @@ def ui():
             ]
         )
 
-        ### not used anymore
-        # turn things on and off for gender
-        #def subjectsvalue(subject):
-        #     enable=("human" in subject)
-        #     return chosengender.update(visible=enable)
-        #subject.change(
-        #    subjectsvalue,
-        #    [subject],
-        #    [chosengender]
-        #)
-        
-        ### not used anymore
-        # turn things on and off for subject subtype object
-        # def subjectsvalueforsubtypeobject(subject):
-        #      enable=(subject=="object")
-        #      return chosensubjectsubtypeobject.update(visible=enable)
-        # subject.change(
-        #     subjectsvalueforsubtypeobject,
-        #     [subject],
-        #     [chosensubjectsubtypeobject]
-        # )
-        
-        ### not used anymore
-        # turn things on and off for subject subtype humanoid
-        # def subjectsvalueforsubtypeobject(subject):
-        #      enable=(subject=="humanoid")
-        #      return chosensubjectsubtypehumanoid.update(visible=enable)
-        # subject.change(
-        #     subjectsvalueforsubtypeobject,
-        #     [subject],
-        #     [chosensubjectsubtypehumanoid]
-        # )
-        
-        ### not used anymore
-        # turn things on and off for subject subtype concept
-        # def subjectsvalueforsubtypeconcept(subject):
-        #      enable=(subject=="concept")
-        #      return chosensubjectsubtypeconcept.update(visible=enable)
-        # subject.change(
-        #     subjectsvalueforsubtypeconcept,
-        #     [subject],
-        #     [chosensubjectsubtypeconcept]
-        # )
 
 
-        # Turn things off and on for onlyupscale and txt2img
-        def onlyupscalevalues(onlyupscale):
-             onlyupscale = not onlyupscale
-             return {
-                  amountofimages: gr(visible=onlyupscale),
-                  size: gr(visible=onlyupscale),
-                  samplingsteps: gr(visible=onlyupscale),
-                  cfg: gr(visible=onlyupscale),
 
-                  hiresfix: gr(visible=onlyupscale),
-                  hiressteps: gr(visible=onlyupscale),
-                  hiresscale: gr(visible=onlyupscale),
-                  denoisestrength: gr(visible=onlyupscale),
-                  upscaler: gr(visible=onlyupscale),
-
-                  model: gr(visible=onlyupscale),
-                  samplingmethod: gr(visible=onlyupscale),
-                  upscaler: gr(visible=onlyupscale),
-
-                  qualitygate: gr(visible=onlyupscale),
-                  quality: gr(visible=onlyupscale),
-                  runs: gr(visible=onlyupscale),
-                  qualityhiresfix: gr(visible=onlyupscale),
-                  qualitymode: gr(visible=onlyupscale),
-                  qualitykeep: gr(visible=onlyupscale)
-
-
-             }
-        
-        onlyupscale.change(
-            onlyupscalevalues,
-            [onlyupscale],
-            [amountofimages,size,samplingsteps,cfg,hiresfix,hiressteps,hiresscale,denoisestrength,upscaler,model,samplingmethod,upscaler,qualitygate,quality,runs,qualityhiresfix,qualitymode,qualitykeep]
-        )
-        
-        
-        # Turn things off and on for hiresfix
-        def hireschangevalues(hiresfix):
-             return {
-                  hiressteps: gr(visible=hiresfix),
-                  hiresscale: gr(visible=hiresfix),
-                  denoisestrength: gr(visible=hiresfix),
-                  upscaler: gr(visible=hiresfix)
-             }
-        
-        hiresfix.change(
-            hireschangevalues,
-            [hiresfix],
-            [hiressteps,hiresscale,denoisestrength,upscaler]
-        )
-
-        # Turn things off and on for quality gate
-        def qgatechangevalues(qualitygate):
-             return {
-                  quality: gr(visible=qualitygate),
-                  runs: gr(visible=qualitygate),
-                  qualityhiresfix: gr(visible=qualitygate),
-                  qualitymode: gr(visible=qualitygate),
-                  qualitykeep: gr(visible=qualitygate)
-             }
-        
-        qualitygate.change(
-            qgatechangevalues,
-            [qualitygate],
-            [quality,runs,qualityhiresfix,qualitymode,qualitykeep]
-        )
-        
-        # Turn things off and on for USDU
-        def ultimatesdupscalechangevalues(ultimatesdupscale):
-             return {
-                  usdutilewidth: gr(visible=ultimatesdupscale),
-                  usdutileheight: gr(visible=ultimatesdupscale),
-                  usdumaskblur: gr(visible=ultimatesdupscale),
-                  usduredraw: gr(visible=ultimatesdupscale),
-
-                  usduSeamsfix: gr(visible=ultimatesdupscale),
-                  usdusdenoise: gr(visible=ultimatesdupscale),
-                  usduswidth: gr(visible=ultimatesdupscale),
-                  usduspadding: gr(visible=ultimatesdupscale),
-                  usdusmaskblur: gr(visible=ultimatesdupscale)
-             }
-        
-        ultimatesdupscale.change(
-            ultimatesdupscalechangevalues,
-            [ultimatesdupscale],
-            [usdutilewidth,usdutileheight,usdumaskblur,usduredraw,usduSeamsfix,usdusdenoise,usduswidth,usduspadding,usdusmaskblur]
-        )
-
-        # Turn things off and on for EXTRAS
-        def enableextraupscalechangevalues(enableextraupscale):
-             return {
-                  extrasupscaler1: gr(visible=enableextraupscale),
-                  extrasupscaler2: gr(visible=enableextraupscale),
-                  extrasupscaler2visiblity: gr(visible=enableextraupscale),
-                  extrasresize: gr(visible=enableextraupscale),
-
-                  extrasupscaler2gfpgan: gr(visible=enableextraupscale),
-                  extrasupscaler2codeformer: gr(visible=enableextraupscale),
-                  extrasupscaler2codeformerweight: gr(visible=enableextraupscale)
-             }
-        
-        enableextraupscale.change(
-            enableextraupscalechangevalues,
-            [enableextraupscale],
-            [extrasupscaler1,extrasupscaler2,extrasupscaler2visiblity,extrasresize, extrasupscaler2gfpgan,extrasupscaler2codeformer,extrasupscaler2codeformerweight]
-        )
 
       
 
-        return (prompt1,prompt2,prompt3,prompt4,prompt5,
+        return (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
-                insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, 
+                insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt, 
                 promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring, seperator, 
                 givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, 
                 chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
@@ -1363,29 +1030,13 @@ def ui():
     
 
     
-def run(self, p, insanitylevel, subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring,seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
+def run(insanitylevel, subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring,seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
         
-        images = []
-        infotexts = []
-        all_seeds = []
-        all_prompts = []
-
-        batches = p.n_iter
-        initialbatchsize = p.batch_size
-        batchsize = p.batch_size
-        p.n_iter = 1
-        p.batch_size = 1
-        
-        initialseed = p.seed
-        if p.seed == -1:
-            p.seed = int(random.randrange(4294967294))
-
         if(silentmode and workprompt != ""):
             print("Workflow mode turned on, not generating a prompt. Using workflow prompt.")
         elif(silentmode):
             print("Warning, workflow mode is turned on, but no workprompt has been given.")
-        elif p.prompt != "" or p.negative_prompt != "":
-            print("Please note that existing prompt and negative prompt fields are (no longer) used")
+        
         
         if(ANDtoggle == "automatic" and artist == "none"):
             print("Automatic and artist mode set to none, don't work together well. Ignoring this setting!")
@@ -1396,107 +1047,72 @@ def run(self, p, insanitylevel, subject, artist, imagetype, prefixprompt,suffixp
         #    prefixprompt = ""
 
         
-        state.job_count = batches
+        #state.job_count = batches
         
-        for i in range(batches):
+        #for i in range(batches):
             
-            if(silentmode == False):
-                # prompt compounding
-                print("Starting generating the prompt")
-                preppedprompt = ""
+        if(silentmode == False):
+            # prompt compounding
+            print("Starting generating the prompt")
+            preppedprompt = ""
                 
-                artistcopy = artist
-                prefixpromptcopy = prefixprompt
+            artistcopy = artist
+            prefixpromptcopy = prefixprompt
                 
-                if(ANDtoggle == "automatic"):
-                    if(artist != "none"):
-                        preppedprompt += build_dynamic_prompt(insanitylevel,subject,artist, imagetype, True, antistring, base_model=base_model) 
-                    if(subject == "humanoid"):
-                        preppedprompt += ", " + promptcompounderlevel + " people"
-                    if(subject == "landscape"):
-                        preppedprompt += ", landscape"
-                    if(subject == "animal"):
-                        preppedprompt += ", " + promptcompounderlevel  + " animals"
-                    if(subject == "object"):
-                        preppedprompt += ", " + promptcompounderlevel  + " objects"
-                    #sneaky! If we are running on automatic, we don't want "artists" to show up during the rest of the prompt, so set it to none, but only temporary!
+            if(ANDtoggle == "automatic"):
+                if(artist != "none"):
+                    preppedprompt += build_dynamic_prompt(insanitylevel,subject,artist, imagetype, True, antistring, base_model=base_model) 
+                if(subject == "humanoid"):
+                    preppedprompt += ", " + promptcompounderlevel + " people"
+                if(subject == "landscape"):
+                    preppedprompt += ", landscape"
+                if(subject == "animal"):
+                    preppedprompt += ", " + promptcompounderlevel  + " animals"
+                if(subject == "object"):
+                    preppedprompt += ", " + promptcompounderlevel  + " objects"
+                #sneaky! If we are running on automatic, we don't want "artists" to show up during the rest of the prompt, so set it to none, but only temporary!
 
-                    artist = "none"
+                artist = "none"
                 
 
-                if(ANDtoggle != "none" and ANDtoggle != "automatic"):
-                    preppedprompt += prefixprompt
+            if(ANDtoggle != "none" and ANDtoggle != "automatic"):
+                preppedprompt += prefixprompt
                 
-                if(ANDtoggle != "none"):
-                    if(ANDtoggle!="prefix + prefix + prompt + suffix"):
-                        prefixprompt = ""
-                    if(seperator == "comma"):
-                        preppedprompt += " \n , "
-                    else:
-                        preppedprompt += " \n " + seperator + " "
+            if(ANDtoggle != "none"):
+                if(ANDtoggle!="prefix + prefix + prompt + suffix"):
+                    prefixprompt = ""
+                if(seperator == "comma"):
+                    preppedprompt += " \n , "
+                else:
+                    preppedprompt += " \n " + seperator + " "
 
 
                 #Here is where we build a "normal" prompt
-                base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, False, base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
-                fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
-                preppedprompt += fluffed_prompt
+            base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, False, base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
+            fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
+            preppedprompt += fluffed_prompt
 
                 # set the artist mode back when done (for automatic mode)
-                artist = artistcopy
-                prefixprompt = prefixpromptcopy
+            artist = artistcopy
+            prefixprompt = prefixpromptcopy
                 
-                # set everything ready
-                p.prompt = preppedprompt  
-                p.negative_prompt = negativeprompt
+            # set everything ready
+            prompt = preppedprompt  
+            negative_prompt = negativeprompt
 
-            if(silentmode == True):
-                base_prompt = createpromptvariant(workprompt,promptvariantinsanitylevel)
-                p.prompt = base_prompt
+        if(silentmode == True):
+            base_prompt = createpromptvariant(workprompt,promptvariantinsanitylevel)
+            prompt = base_prompt
 
             #for j in range(batchsize):
        
-            print(" ")
-            print("Full prompt to be processed:")
-            print(" ")
-            print(p.prompt)
+        print(" ")
+        print("Full prompt to be processed:")
+        print(" ")
+        print(prompt)
 
-            if(autonegativeprompt):
-                 p.negative_prompt = build_dynamic_negative(positive_prompt=base_prompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=p.negative_prompt, base_model=base_model)
+        if(autonegativeprompt):
+            negativeprompt = build_dynamic_negative(positive_prompt=base_prompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=negativeprompt, base_model=base_model)
                  
 
-            promptlist = []
-            if(batchsize>1):
-            # finally figured out how to do multiple batch sizes
-            
-                for i in range(batchsize):
-                    promptlist.append(p.prompt)
-
-                p.prompt = promptlist
-                p.batch_size = batchsize
-                p.hr_prompt = promptlist
-            else:
-                p.batch_size = batchsize
-                p.hr_prompt = p.prompt
-                
-            processed = process_images(p)
-            images += processed.images
-            infotexts += processed.infotexts
-            
-            # prompt and seed info for batch grid
-            all_seeds.append(processed.seed)
-            all_prompts.append(processed.prompt)
-            
-            # prompt and seed info for individual images
-            all_seeds += processed.all_seeds
-            all_prompts += processed.all_prompts
-            
-            state.job = f"{state.job_no} out of {state.job_count}" 
-        
-            # Increase seed by batchsize for unique seeds for every picture if -1 was chosen
-            if initialseed == -1:
-                p.seed += batchsize
-               
-        # just return all the things
-        p.n_iter = 0
-        p.batch_size = 0
-        return Processed(p=p, images_list=images, info=infotexts[0], infotexts=infotexts, all_seeds=all_seeds, all_prompts=all_prompts)
+        return prompt, negativeprompt
