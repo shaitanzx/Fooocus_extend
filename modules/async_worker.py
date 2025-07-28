@@ -263,7 +263,7 @@ class AsyncTask:
         self.promptenhancer = args.pop()
         self.presetprefix = args.pop()
         self.presetsuffix = args.pop()
-        self.iteration_number = args.pop()
+        self.iteration_number = int(args.pop())
         self.rnd_iteration = args.pop()
         self.seed_random = args.pop()
  
