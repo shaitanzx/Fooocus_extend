@@ -368,8 +368,6 @@ def ui():
 
             return promptlist
         
-        def prompttoworkflowprompt(text):
-            return text
         
         # Copied code from WebUI
         def openfolder():
@@ -662,27 +660,24 @@ def ui():
                             </font>
                             """
                             )
-        with gr.Tab("Workflow assist"):
+        with gr.Tab("Prompt assist"):
             with gr.Row(variant="compact"):
                     silentmode = gr.Checkbox(
-                        label="Workflow mode, turns off prompt generation and uses below Workflow prompt instead.")
-            with gr.Row(variant="compact"):
-                workprompt = gr.Textbox(label="Workflow prompt")
+                        label="Prompt assist mode, turns off prompt generation and uses prompt variantion instead.")
             with gr.Row(variant="compact"):
                 promptvariantinsanitylevel = gr.Slider(0, 10, value=0, step=1, label="Prompt variant. Strength of variation of workflow prompt. 0 = no variance.")
             with gr.Accordion("Help", open=False):
                 gr.Markdown(
                      """
                      <font size="2"> 
-                     Workflow assist, suggestions by redditor Woisek.
 
-                     With Workflow mode, you turn off the automatic generation of new prompts on 'generate', and it will use the Workflow prompt field instead. So you can work and finetune any fun prompts without turning of the script.
+                     With Prompt assist mode, you turn off the automatic generation of new prompts on 'generate', and it will use the prompt field instead. So you can work and finetune any fun prompts without turning of the script.
 
                      You can use One Button Prompt wildcards in the workflow prompt. For example -outfit- .
 
                      With the Prompt Variant, you can let One Button Prompt dynamically create small variance in the workflow prompt. 0 means no effect.
 
-                     Below here, you can generate a set of random prompts, and send them to the Workflow prompt field. The generation of the prompt uses the settings in the Main tab.
+                     Below here, you can generate a set of random prompts, and send them to the prompt field. The generation of the prompt uses the settings in the Main tab.
                      </font>
                      """)
             with gr.Row(variant="compact"):
@@ -691,31 +686,26 @@ def ui():
                     with gr.Column(scale=4, variant="compact"):
                         prompt1 = gr.Textbox(label="prompt 1",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt1toworkflow = gr.Button("prompt1->Workflow prompt")
                         prompt1toprompt = gr.Button("prompt1->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt2 = gr.Textbox(label="prompt 2",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt2toworkflow = gr.Button("prompt2->Workflow prompt")
                         prompt2toprompt = gr.Button("prompt2->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt3 = gr.Textbox(label="prompt 3",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt3toworkflow = gr.Button("prompt3->Workflow prompt")
                         prompt3toprompt = gr.Button("prompt3->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt4 = gr.Textbox(label="prompt 4",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt4toworkflow = gr.Button("prompt4->Workflow prompt")
                         prompt4toprompt = gr.Button("prompt4->Prompt")
             with gr.Row(variant="compact"):
                     with gr.Column(scale=4, variant="compact"):
                         prompt5 = gr.Textbox(label="prompt 5",interactive=False)
                     with gr.Column(variant="compact"):
-                        prompt5toworkflow = gr.Button("prompt5->Workflow prompt")
                         prompt5toprompt = gr.Button("prompt5->Prompt")
         with gr.Tab("Advanced"):
             with gr.Row(variant="compact"):
@@ -762,6 +752,11 @@ def ui():
                 with gr.Column(variant="compact"):
                     ANDtoggle = gr.Dropdown(
                         ANDtogglemode, label="Prompt seperator mode", value="none",interactive=True)
+            with gr.Row(variant="compact"):
+                with gr.Column(variant="compact"):
+                    iteration_number = gr.Slider(1, 32, value="1", step=1, label="Iteration number")    
+                with gr.Column(variant="compact"):
+                    rnd_iteration = gr.Checkbox(label="Random seed for each iteration", value=True,interactive=True)
             with gr.Accordion("Help", open=False):
                 gr.Markdown(
                     """
@@ -828,16 +823,11 @@ def ui():
                     autonegativepromptenhance = gr.Checkbox(label="Enable base enhancement prompt", value=False)
             with gr.Row(variant="compact"): 
                 autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="Randomness of negative prompt (lower is more consistency)")
-                 
+        gr.HTML('* \"OneButtonPrompt\" is powered by AIrjen. <a href="https://github.com/AIrjen/OneButtonPrompt" target="_blank">\U0001F4D4 Document</a>')
+        gr.HTML('* Adaptation for Fooocus is powered by Shahmatist^RMDA')          
                     
 
         genprom.click(gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix], outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
-
-        prompt1toworkflow.click(prompttoworkflowprompt, inputs=prompt1, outputs=workprompt)
-        prompt2toworkflow.click(prompttoworkflowprompt, inputs=prompt2, outputs=workprompt)
-        prompt3toworkflow.click(prompttoworkflowprompt, inputs=prompt3, outputs=workprompt)
-        prompt4toworkflow.click(prompttoworkflowprompt, inputs=prompt4, outputs=workprompt)
-        prompt5toworkflow.click(prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
 
         obp_outputs = [
                     obp_preset_name,
@@ -1020,12 +1010,12 @@ def ui():
         return (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
                 insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt, 
-                promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring, seperator, 
+                promptcompounderlevel, ANDtoggle, silentmode, antistring, seperator, 
                 givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, 
                 chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
                 promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, 
                 autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, 
-                presetsuffix)
+                presetsuffix,iteration_number,rnd_iteration)
             
     
 

@@ -242,7 +242,6 @@ class AsyncTask:
         self.promptcompounderlevel = args.pop()
         self.ANDtoggle = args.pop()
         self.silentmode = args.pop()
-        self.workprompt = args.pop()
         self.antistring = args.pop()
         self.seperator = args.pop()
         self.givensubject = args.pop()
@@ -264,7 +263,9 @@ class AsyncTask:
         self.promptenhancer = args.pop()
         self.presetprefix = args.pop()
         self.presetsuffix = args.pop()
-        self.interation_obp = 2
+        self.iteration_number = args.pop()
+        self.rnd_iteration = args.pop()
+        self.seed_random = args.pop()
  
 
     
@@ -1424,7 +1425,7 @@ def worker():
             if async_task.enable_obp:
                 async_task.prompt,async_task.negative_prompt = ob_prompt.run(async_task.insanitylevel, async_task.subject, async_task.artist, 
                         async_task.imagetype, async_task.prefixprompt,async_task.suffixprompt,async_task.negative_prompt, 
-                        async_task.promptcompounderlevel, async_task.ANDtoggle, async_task.silentmode, async_task.workprompt, 
+                        async_task.promptcompounderlevel, async_task.ANDtoggle, async_task.silentmode, async_task.prompt, 
                         async_task.antistring,async_task.seperator, async_task.givensubject, async_task.smartsubject, 
                         async_task.giventypeofimage, async_task.imagemodechance, async_task.chosengender, 
                         async_task.chosensubjectsubtypeobject, async_task.chosensubjectsubtypehumanoid, 
@@ -1757,12 +1758,25 @@ def worker():
 
             try:
                 handler(task)
-                if task.interation_obp>0:
-                    task.interation_obp-=1
-                if task.interation_obp>0:
-                    async_tasks.insert(0, task)
-                    time.sleep(0.01)
-                    continue
+                if task.enable_obp:
+                    task.iteration_number-=1
+                    if task.iteration_number != 0:
+                        if task.rnd_iteration:
+                            task.seed=random.randint(constants.MIN_SEED, constants.MAX_SEED)
+                        async_tasks.insert(0, task)
+                        time.sleep(0.01)
+                        continue
+
+
+
+
+
+#                if task.iteration_number>0:
+#                    task.iteration_number-=1
+#                if task.iteration_number>0:
+#                    async_tasks.insert(0, task)
+#                    time.sleep(0.01)
+#                    continue
 
                 if task.generate_image_grid:
                     build_image_wall(task)

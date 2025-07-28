@@ -759,13 +759,13 @@ with shared.gradio_root:
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
                                 insanitylevel,subject, artist, imagetype, prefixprompt,
                                 suffixprompt, promptcompounderlevel, ANDtoggle, silentmode, 
-                                workprompt, antistring, seperator, givensubject, smartsubject, 
+                                antistring, seperator, givensubject, smartsubject, 
                                 giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, 
                                 chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
                                 promptvariantinsanitylevel, givenoutfit, autonegativeprompt, 
                                 autonegativepromptstrength, autonegativepromptenhance, base_model_obp, 
                                 OBP_preset, amountoffluff, promptenhancer, 
-                                presetprefix, presetsuffix)=ob_prompt.ui()
+                                presetprefix, presetsuffix,iteration_number,rnd_iteration)=ob_prompt.ui()
                             prompt1toprompt.click(ob_prompt.prompt2prompt, inputs=prompt1, outputs=prompt)
                             prompt2toprompt.click(ob_prompt.prompt2prompt, inputs=prompt2, outputs=prompt)
                             prompt3toprompt.click(ob_prompt.prompt2prompt, inputs=prompt3, outputs=prompt)
@@ -1737,12 +1737,13 @@ with shared.gradio_root:
         ctrls += [enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
-        ctrls += [promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring]
+        ctrls += [promptcompounderlevel, ANDtoggle, silentmode, antistring]
         ctrls += [seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender]
         ctrls += [chosensubjectsubtypeobject,chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept]
         ctrls += [promptvariantinsanitylevel, givenoutfit, autonegativeprompt,autonegativepromptstrength]
         ctrls += [autonegativepromptenhance, base_model_obp,OBP_preset, amountoffluff, promptenhancer]
-        ctrls += [presetprefix, presetsuffix]
+        ctrls += [presetprefix, presetsuffix,iteration_number,rnd_iteration]
+        ctrls += [seed_random]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
