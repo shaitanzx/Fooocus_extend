@@ -78,8 +78,7 @@ def apply_order(p, x, xs):
     # Rebuild the prompt with the tokens in the order we want
     prompt_tmp = ""
     for idx, part in enumerate(prompt_parts):
-        prompt_tmp += pa
-        rt
+        prompt_tmp += part
         prompt_tmp += x[idx]
     p.prompt = prompt_tmp + p.prompt
 
