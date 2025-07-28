@@ -10,7 +10,6 @@ custom_nodes_path = os.path.join(os.path.abspath(__file__), "custom_nodes")
 ##onebuttonprompt_path = os.path.join(custom_nodes_path, "OneButtonPrompt")
 onebuttonprompt_path = os.path.join(os.path.abspath(__file__), "onebuttonprompt")
 
-
 sys.path.append(onebuttonprompt_path)
 
 from .build_dynamic_prompt import *
@@ -364,7 +363,7 @@ class OneButtonPrompt:
                 }),
                 "humanoids_gender": (genders, {"default": "all"}),
                 "emojis":(emojis, {"default": False}),
-                "base_model_obp":(models, {"default": "SDXL"}),
+                "base_model":(models, {"default": "SDXL"}),
                 "prompt_enhancer":(prompt_enhancers, {"default": "none"}),
                 
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
@@ -380,8 +379,8 @@ class OneButtonPrompt:
 
     CATEGORY = "OneButtonPrompt"
     
-    def Comfy_OBP(self, insanitylevel, custom_subject, seed, artist, imagetype, subject, imagemodechance, humanoids_gender, emojis, custom_outfit, base_model_obp, prompt_enhancer, prompt_prefix, prompt_suffix):
-        generatedpromptlist = build_dynamic_prompt(insanitylevel,subject,artist,imagetype,False,"",prompt_prefix,prompt_suffix,1,"",custom_subject,True,"",imagemodechance, humanoids_gender,"all", "all", "all", False, emojis, seed, custom_outfit, True, base_model_obp, "", prompt_enhancer)
+    def Comfy_OBP(self, insanitylevel, custom_subject, seed, artist, imagetype, subject, imagemodechance, humanoids_gender, emojis, custom_outfit, base_model, prompt_enhancer, prompt_prefix, prompt_suffix):
+        generatedpromptlist = build_dynamic_prompt(insanitylevel,subject,artist,imagetype,False,"",prompt_prefix,prompt_suffix,1,"",custom_subject,True,"",imagemodechance, humanoids_gender,"all", "all", "all", False, emojis, seed, custom_outfit, True, base_model, "", prompt_enhancer)
         #print(generatedprompt)
         generatedprompt = generatedpromptlist[0]
         prompt_g = generatedpromptlist[1]
@@ -589,7 +588,7 @@ class OneButtonPreset:
                 "OneButtonPreset": (allpresets, {"default": "Standard"}),
             },
             "optional": {
-                "base_model_obp":(models, {"default": "SDXL"}),
+                "base_model":(models, {"default": "SDXL"}),
                 "prompt_enhancer":(prompt_enhancers, {"default": "none"}),
                 "preset_prefix": ("STRING", {
                     "multiline": False, # prefix the preset
@@ -613,7 +612,7 @@ class OneButtonPreset:
 
     CATEGORY = "OneButtonPrompt"
     
-    def Comfy_OBP_OneButtonPreset(self, OneButtonPreset, seed, base_model_obp, prompt_enhancer, preset_prefix, preset_suffix):
+    def Comfy_OBP_OneButtonPreset(self, OneButtonPreset, seed, base_model, prompt_enhancer, preset_prefix, preset_suffix):
         # load the stuff
         if(OneButtonPreset == OBPresets.RANDOM_PRESET_OBP):
             selected_opb_preset = OBPresets.get_obp_preset("Standard")
@@ -656,7 +655,7 @@ class OneButtonPreset:
                                                advancedprompting=False,
                                                hardturnoffemojis=True,
                                                seed=seed,
-                                               base_model_obp=base_model_obp,
+                                               base_model=base_model,
                                                OBP_preset=OneButtonPreset,
                                                prompt_enhancer=prompt_enhancer,
                                                preset_prefix=preset_prefix,
@@ -696,7 +695,7 @@ class AutoNegativePrompt:
                     "max": 10, #Maximum value
                     "step": 1 #Slider's step
                 }),
-                "base_model_obp":(models, {"default": "SDXL"}),
+                "base_model":(models, {"default": "SDXL"}),
                 
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             },
@@ -711,8 +710,8 @@ class AutoNegativePrompt:
 
     CATEGORY = "OneButtonPrompt"
     
-    def Comfy_OBP_AutoNegativePrompt(self, postive_prompt, insanitylevel, enhancenegative,base_negative, seed, base_model_obp):
-        generatedprompt = build_dynamic_negative(postive_prompt, insanitylevel, enhancenegative, base_negative, base_model_obp=base_model_obp)
+    def Comfy_OBP_AutoNegativePrompt(self, postive_prompt, insanitylevel, enhancenegative,base_negative, seed, base_model):
+        generatedprompt = build_dynamic_negative(postive_prompt, insanitylevel, enhancenegative, base_negative, base_model=base_model)
         
         print("Generated negative prompt: " + generatedprompt)
         

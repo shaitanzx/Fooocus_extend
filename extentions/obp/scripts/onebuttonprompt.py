@@ -1,14 +1,13 @@
-##import modules.scripts as scripts
+#import modules.scripts as scripts
 import gradio as gr
 import os
 import platform
 import subprocess as sp
 
-
-##from modules import images
-##from modules.processing import process_images, Processed
-##from modules.processing import Processed
-##from modules.shared import opts, cmd_opts, state
+#from modules import images
+#from modules.processing import process_images, Processed
+#from modules.processing import Processed
+#from modules.shared import opts, cmd_opts, state
 
 
 from ..build_dynamic_prompt import *
@@ -41,12 +40,12 @@ qualitykeeplist = ["keep used","keep all"]
 amountofflufflist = ["none", "dynamic", "short", "medium", "long"]
 
 #for autorun and upscale
-sizelist = ['all','current ratio','ultraheight','portrait','square','wide','ultrawide','random ratio']
+sizelist = ["all", "portrait", "wide", "square", "ultrawide", "ultraheight", "wild"]
 basesizelist = ["512", "768", "1024"]
 
-modellist = ['all','current model','random model']
-#modellist.insert(0,"all")
-#modellist.insert(0,"currently selected model") # First value us the currently selected model
+modellist = get_models()
+modellist.insert(0,"all")
+modellist.insert(0,"currently selected model") # First value us the currently selected model
 
 upscalerlist = get_upscalers()
 upscalerlist.insert(0,"automatic")
@@ -76,6 +75,7 @@ sys.path.append(os.path.abspath(".."))
 # find all artist files starting with personal_artits in userfiles
 script_dir = os.path.dirname(os.path.abspath(__file__))  # Script directory
 userfilesfolder = os.path.join(script_dir, "../userfiles/" )
+
 for filename in os.listdir(userfilesfolder):
     if(filename.endswith(".csv") and filename.startswith("personal_artists") and filename != "personal_artists_sample.csv"):
         name = os.path.splitext(filename)[0]
@@ -343,19 +343,162 @@ if(generateepisodetitle):
 if(generateconceptmixer):
      subjectsubtypesconcept.append("concept mixer")
 
-main_mark1="""
+
+
+
+    
+def title(self):
+        return "One Button Prompt"
+
+def show(self, is_img2img):
+        return True
+def prompt2prompt(text):
+            return text
+        
+def ui():
+        def gen_prompt(insanitylevel, subject, artist, imagetype, antistring, prefixprompt, suffixprompt, promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
+
+            promptlist = []
+
+            for i in range(5):
+                base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring,prefixprompt,suffixprompt,promptcompounderlevel,seperator,givensubject,smartsubject, giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit,False,base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
+                fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
+                promptlist.append(fluffed_prompt)
+
+
+            return promptlist
+        
+        
+        # Copied code from WebUI
+        def openfolder():
+            script_dir = os.path.dirname(os.path.abspath(__file__))  # Script directory
+            automatedoutputsfolder = os.path.join(script_dir, "../automated_outputs/" )
+
+            path = os.path.normpath(automatedoutputsfolder)
+
+            if platform.system() == "Windows":
+                os.startfile(path)
+            elif platform.system() == "Darwin":
+                sp.Popen(["open", path])
+            elif "microsoft-standard-WSL2" in platform.uname().release:
+                sp.Popen(["wsl-open", path])
+            else:
+                sp.Popen(["xdg-open", path])
+            
+        with gr.Row():
+          enable_obp = gr.Checkbox(label="Enabled", value=False)
+        with gr.Tab("Main"):
+            with gr.Row(variant="compact"):
+                md_basic = gr.Markdown("""
                             <font size="2">
-                            
+                            Presets can be used to store and load settings.
+
                             Set the One Button Preset to __"Custom..."__ to show all settings. The settings will give you more control over what you wish to generate.
 
                             Choose __"All (random)..."__ to get a random preset each prompt generation.
                             </font>
+                            """)
+                # Part of presets
+            with gr.Row():
+                    OBP_preset = gr.Dropdown(
+                        label="One Button Preset",
+                        choices=[OBPresets.RANDOM_PRESET_OBP] + [OBPresets.CUSTOM_OBP] + list(OBPresets.opb_presets.keys()),
+                        value="Standard")
+            with gr.Group(visible=True) as presetgroup:
+                with gr.Row():
+                    md_prefix_preset = gr.Markdown("""
+                            <font size="2">
+                            These prefix and suffix are run on top the of preset. Can be used for LoRA's and other general stylings.
+                            </font>
+                            """)
+                with gr.Row():
+                    presetprefix = gr.Textbox(label="Preset prefix: ", value="")
+                    presetsuffix = gr.Textbox(label="Preset suffix: ", value="")
+                                
+            with gr.Group(visible=False) as maingroup:
+                md_save_preset = gr.Markdown("""
+                            <font size="2">
+                            Type a name and press "Save as Preset" to store the current generation settings.
+                            </font>
+                            """)
+                with gr.Row():
+                        obp_preset_name = gr.Textbox(
+                            show_label=False,
+                            placeholder="Name of new preset",
+                            interactive=True,
+                            visible=False)
+                        obp_preset_save = gr.Button(
+                            value="Save as preset",
+                            visible=False)
+                md_generation_settings = gr.Markdown("""
+                            <font size="4">
+                            Generation settings:
+                            </font>
+                            """)
+            
+            # End of this part of presets
+                
+                with gr.Row(variant="compact"):
+                    insanitylevel = gr.Slider(1, 10, value=5, step=1, label="Higher levels increases complexity and randomness of generated prompt", visible=False)
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        subject = gr.Dropdown(
+                                        subjects, label="Subject Types", value="all", visible=False)                   
+                    with gr.Column(variant="compact"):
+                        artist = gr.Dropdown(
+                                        artists, label="Artists", value="all", visible=False)
+                with gr.Row(variant="compact"):
+                    chosensubjectsubtypeobject = gr.Dropdown(
+                                        subjectsubtypesobject, label="Type of object", value="all", visible=False)
+                    chosensubjectsubtypehumanoid = gr.Dropdown(
+                                        subjectsubtypeshumanoid, label="Type of humanoids", value="all", visible=False)
+                    chosensubjectsubtypeconcept = gr.Dropdown(
+                                        subjectsubtypesconcept, label="Type of concept", value="all", visible=False)
+                    chosengender = gr.Dropdown(
+                                        genders, label="gender", value="all", visible=False)
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        imagetype = gr.Dropdown(
+                                        imagetypes, label="type of image", value="all", visible=False)
+                    with gr.Column(variant="compact"):
+                        imagemodechance = gr.Slider(
+                                        1, 100, value="20", step=1, label="One in X chance to use special image type mode", visible=False)
+                with gr.Row(variant="compact"):
+                    md_override_options = gr.Markdown("""
+                                <font size="2">
+                                Override options (choose the related subject type first for better results)
+                                </font>
+                                """, visible=False
+                    )
+                with gr.Row(variant="compact"):
+                    givensubject = gr.Textbox(label="Overwrite subject: ", value="", visible=False)
+                    smartsubject = gr.Checkbox(label="Smart subject", value = True, visible=False)
+                with gr.Row(variant="compact"):
+                    givenoutfit = gr.Textbox(label="Overwrite outfit: ", value="", visible=False)
+
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        prefixprompt = gr.Textbox(label="Place this in front of generated prompt (prefix)",value="", visible=False)
+                        suffixprompt = gr.Textbox(label="Place this at back of generated prompt (suffix)",value="", visible=False)
+                with gr.Row(variant="compact"):
+                    md_additional_options = gr.Markdown("""
+                                <font size="2">
+                                Additional options
+                                </font>
+                                """, visible=False
+                    )
+                with gr.Row(variant="compact"):
+                    giventypeofimage = gr.Textbox(label="Overwrite type of image: ", value="", visible=False)
+                with gr.Row(variant="compact"):
+                    with gr.Column(variant="compact"):
+                        antistring = gr.Textbox(label="Filter out following properties (comma seperated). Example ""film grain, purple, cat"" ", visible=False)
+                with gr.Accordion("Help", open=False):
+                        gr.Markdown(
                             """
-main_mark2="""
                             ### Description
                             
                             <font size="2">
-                            For generate use copy prompt1-prompt5 from Workflow Tab to prompt box
+                            Just press the normal Generate button.
 
                             This generator will generate a complete full prompt for you and generate the image, based on randomness. You can increase the slider, to include more things to put into the prompt. 
                             Recommended is keeping it around 3-7. Use 10 at your own risk.
@@ -383,7 +526,7 @@ main_mark2="""
                             After choosing object, humanoid or concept a subselection menu will show. You can pick further details here. When choosing humanoid, you can also select the gender you wish to generate.
 
                            
-                            ### gender (only available for human generations):
+                            gender (only available for human generations):
 
                             1. all - selects randomly
 
@@ -480,7 +623,7 @@ main_mark2="""
                             
                             This way, you can create unlimited variants of a subject.
 
-                            ### Smart subject tries to determine what to and not to generate based on your subject. Example, if your Overwrite subject is formed like this: Obese man wearing a kimono
+                            Smart subject tries to determine what to and not to generate based on your subject. Example, if your Overwrite subject is formed like this: Obese man wearing a kimono
                             
                             It will then recognize the body type and not generate it. It also recognizes the keyword wearing, and will not generate an outfit.
 
@@ -516,22 +659,59 @@ main_mark2="""
 
                             </font>
                             """
-wf_mark1="""
+                            )
+        with gr.Tab("Prompt assist"):
+            with gr.Row(variant="compact"):
+                    silentmode = gr.Checkbox(
+                        label="Prompt assist mode, turns off prompt generation and uses prompt variantion instead.")
+            with gr.Row(variant="compact"):
+                promptvariantinsanitylevel = gr.Slider(0, 10, value=0, step=1, label="Prompt variant. Strength of variation of workflow prompt. 0 = no variance.")
+            with gr.Accordion("Help", open=False):
+                gr.Markdown(
+                     """
                      <font size="2"> 
-                     Workflow assist, suggestions by redditor Woisek.
 
-                     With Workflow mode, you turn off the automatic generation of new prompts on 'generate', and it will use the Workflow prompt field instead. So you can work and finetune any fun prompts without turning of the script.
+                     With Prompt assist mode, you turn off the automatic generation of new prompts on 'generate', and it will use the prompt field instead. So you can work and finetune any fun prompts without turning of the script.
 
                      You can use One Button Prompt wildcards in the workflow prompt. For example -outfit- .
 
                      With the Prompt Variant, you can let One Button Prompt dynamically create small variance in the workflow prompt. 0 means no effect.
 
-                     Below here, you can generate a set of random prompts, and send them to the Workflow prompt field. The generation of the prompt uses the settings in the Main tab.
+                     Below here, you can generate a set of random prompts, and send them to the prompt field. The generation of the prompt uses the settings in the Main tab.
                      </font>
-                     """
-adv_mark1="""
+                     """)
+            with gr.Row(variant="compact"):
+                genprom = gr.Button("Generate me some prompts!")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt1 = gr.Textbox(label="prompt 1",interactive=False)
+                    with gr.Column(variant="compact"):
+                        prompt1toprompt = gr.Button("prompt1->Prompt")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt2 = gr.Textbox(label="prompt 2",interactive=False)
+                    with gr.Column(variant="compact"):
+                        prompt2toprompt = gr.Button("prompt2->Prompt")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt3 = gr.Textbox(label="prompt 3",interactive=False)
+                    with gr.Column(variant="compact"):
+                        prompt3toprompt = gr.Button("prompt3->Prompt")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt4 = gr.Textbox(label="prompt 4",interactive=False)
+                    with gr.Column(variant="compact"):
+                        prompt4toprompt = gr.Button("prompt4->Prompt")
+            with gr.Row(variant="compact"):
+                    with gr.Column(scale=4, variant="compact"):
+                        prompt5 = gr.Textbox(label="prompt 5",interactive=False)
+                    with gr.Column(variant="compact"):
+                        prompt5toprompt = gr.Button("prompt5->Prompt")
+        with gr.Tab("Advanced"):
+            with gr.Row(variant="compact"):
+                gr.Markdown("""
                                 <font size="2">
-                                ### Base model will try and generate prompts fitting the selected model.
+                                Base model will try and generate prompts fitting the selected model.
                                 
                                 SD1.5 --> Less natural language
                                 
@@ -541,19 +721,45 @@ adv_mark1="""
                             
                                 Anime Model --> Focussed on characters and tags, adds 1girl/1boy automatically.
                             
-                                ### Flufferizer
+                                Flufferizer
 
                                 A simple and quick implementiation of Fooocus prompt magic
                             
-                                ### Prompt enhancer
+                                Prompt enhancer
 
                                 Choose for "superprompt-v1" to super prompt the prompts with roborovski superprompt-v1 model.
-                            
-                                Please install requirements for superprompt before use.
 
                                 </font>
                                 """
-adv_mark2="""
+                    )
+            with gr.Row(variant="compact"):
+                base_model = gr.Dropdown(
+                     basemodelslist, label="Base model", value="SDXL")
+            with gr.Row(variant="compact"):
+                amountoffluff = gr.Dropdown(
+                     amountofflufflist, label="Flufferizer", value="dynamic")
+            with gr.Row(variant="compact"):
+                promptenhancer = gr.Dropdown(
+                     prompt_enhancers, label="Prompt enhancer", value="none")
+            with gr.Row(variant="compact"):
+                with gr.Column(variant="compact"):
+                    promptcompounderlevel = gr.Dropdown(
+                        promptcompounder, label="Prompt compounder", value="1")
+            with gr.Row(variant="compact"):
+                with gr.Column(variant="compact"):
+                    seperator = gr.Dropdown(
+                        seperatorlist, label="Prompt seperator", value="comma")    
+                with gr.Column(variant="compact"):
+                    ANDtoggle = gr.Dropdown(
+                        ANDtogglemode, label="Prompt seperator mode", value="none",interactive=True)
+            with gr.Row(variant="compact"):
+                with gr.Column(variant="compact"):
+                    iteration_number = gr.Slider(1, 32, value="1", step=1, label="Iteration number")    
+                with gr.Column(variant="compact"):
+                    rnd_iteration = gr.Checkbox(label="Random seed for each iteration", value=True,interactive=True)
+            with gr.Accordion("Help", open=False):
+                gr.Markdown(
+                    """
                     ### Prompt compounder
                     
                     <font size="2">
@@ -597,22 +803,55 @@ adv_mark2="""
 
                     Set the Prompt seperator to: AND
 
-                    Set the Prompt Seperator mode to: automatic
+                    Set the  Prompt Seperator mode to: automatic
 
 
                     </font>
                     
                     """
+                    )
+        with gr.Tab("Negative prompt"):
+            gr.Markdown(
+                        """
+                        ### Negative prompt settings
+                        </font>
+                        """
+                        )
+            with gr.Column(variant="compact"):
+                with gr.Row(variant="compact"): 
+                    autonegativeprompt = gr.Checkbox(label="Auto generate negative prompt", value=True) 
+                    autonegativepromptenhance = gr.Checkbox(label="Enable base enhancement prompt", value=False)
+            with gr.Row(variant="compact"): 
+                autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="Randomness of negative prompt (lower is more consistency)")
+        gr.HTML('* \"OneButtonPrompt\" is powered by AIrjen. <a href="https://github.com/AIrjen/OneButtonPrompt" target="_blank">\U0001F4D4 Document</a>')
+        gr.HTML('* Adaptation for Fooocus is powered by Shahmatist^RMDA')          
+                    
 
-obp_preset_choices=[OBPresets.RANDOM_PRESET_OBP] + [OBPresets.CUSTOM_OBP] + list(OBPresets.opb_presets.keys())
+        genprom.click(gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix], outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
 
-def obppreset_changed(selection):
-    if selection == OBPresets.CUSTOM_OBP:
-      return gr.update(value="", visible=True), gr.update(visible=True), gr.update(visible=False), gr.update(value=""), gr.update(value="")
-    else:
-      return gr.update(visible=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)
+        obp_outputs = [
+                    obp_preset_name,
+                    obp_preset_save,
+                    insanitylevel,
+                    subject,
+                    artist,
+                    chosensubjectsubtypeobject,
+                    chosensubjectsubtypehumanoid,
+                    chosensubjectsubtypeconcept,
+                    chosengender,
+                    imagetype,
+                    imagemodechance,
+                    givensubject,
+                    smartsubject,
+                    givenoutfit,
+                    prefixprompt,
+                    suffixprompt,
+                    giventypeofimage,
+                    antistring,
+                ]
 
-def act_obp_preset_save(
+                
+        def act_obp_preset_save(
                     obp_preset_name,
                     obp_preset_save,
                     insanitylevel,
@@ -658,228 +897,136 @@ def act_obp_preset_save(
                         return gr.update(choices=choices, value=obp_preset_name)
                     else:
                         return gr.update()
-def gen_prompt(insanitylevel, subject, artist, imagetype, antistring, prefixprompt, suffixprompt, promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,givenoutfit, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel):
 
-            promptlist = []
-
-            if(silentmode==True and workprompt != ""):
-                for i in range(5):
-                    creative = createpromptvariant(workprompt, promptvariantinsanitylevel)
-                    promptlist.append(creative)
-            else:
-                for i in range(5):
-                    base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring,prefixprompt,suffixprompt,promptcompounderlevel,seperator,givensubject,smartsubject, giventypeofimage, imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit,False,base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
-                    fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
-                    promptlist.append(fluffed_prompt)
-            return promptlist     
-def prompttoworkflowprompt(text):
-            return text
-def OBPPreset_changed_update_custom(selection):
-      # Skip if Custom was selected
-      if selection == OBPresets.CUSTOM_OBP:
-          return [gr.update()] * 16
-  # Update Custom values based on selected One Button preset
-      if selection == OBPresets.RANDOM_PRESET_OBP:
-          selected_opb_preset = OBPresets.get_obp_preset("Standard")
-      else:     
-          selected_opb_preset = OBPresets.get_obp_preset(selection)
-      return [gr.update(value=selected_opb_preset["insanitylevel"]),
-      gr.update(value=selected_opb_preset["subject"]),
-      gr.update(value=selected_opb_preset["artist"]),
-      gr.update(value=selected_opb_preset["chosensubjectsubtypeobject"]),
-      gr.update(value=selected_opb_preset["chosensubjectsubtypehumanoid"]),
-      gr.update(value=selected_opb_preset["chosensubjectsubtypeconcept"]),
-      gr.update(value=selected_opb_preset["chosengender"]),
-      gr.update(value=selected_opb_preset["imagetype"]),
-      gr.update(value=selected_opb_preset["imagemodechance"]),
-      gr.update(value=selected_opb_preset["givensubject"]),
-      gr.update(value=selected_opb_preset["smartsubject"]),
-      gr.update(value=selected_opb_preset["givenoutfit"]),
-      gr.update(value=selected_opb_preset["prefixprompt"]),
-      gr.update(value=selected_opb_preset["suffixprompt"]),
-      gr.update(value=selected_opb_preset["giventypeofimage"]),
-      gr.update(value=selected_opb_preset["antistring"])]
-
-def subjectsvalue(subject):
-      enable=("human" in subject)
-      return gr.update(visible=enable)
-
-def subjectsvalueforsubtypeobject(subject):
-      enable=(subject=="object")
-      return gr.update(visible=enable)
-
-def subjectsvalueforsubtypeconcept(subject):
-      enable=(subject=="concept")
-      return gr.update(visible=enable)
-def subjectsvalueforsubtypeobject(subject):
-      enable=(subject=="humanoid")
-      return gr.update(visible=enable)
-
-def ui():
-
-            
-
-                   
-
-        
-
-
-
-        interrupt.click(tryinterrupt, inputs=[apiurl])
-        
-
-
-
-        # turn things on and off for subject subtype object
-        
-
-        
-        # turn things on and off for subject subtype humanoid
-        
-
-
-        # turn things on and off for subject subtype concept
-
-
-
-
-        # Turn things off and on for onlyupscale and txt2img
-        def onlyupscalevalues(onlyupscale):
-             onlyupscale = not onlyupscale
-             return {
-                  amountofimages: gr.update(visible=onlyupscale),
-                  size: gr.update(visible=onlyupscale),
-                  samplingsteps: gr.update(visible=onlyupscale),
-                  cfg: gr.update(visible=onlyupscale),
-
-                  hiresfix: gr.update(visible=onlyupscale),
-                  hiressteps: gr.update(visible=onlyupscale),
-                  hiresscale: gr.update(visible=onlyupscale),
-                  denoisestrength: gr.update(visible=onlyupscale),
-                  upscaler: gr.update(visible=onlyupscale),
-
-                  model: gr.update(visible=onlyupscale),
-                  samplingmethod: gr.update(visible=onlyupscale),
-                  upscaler: gr.update(visible=onlyupscale),
-
-                  qualitygate: gr.update(visible=onlyupscale),
-                  quality: gr.update(visible=onlyupscale),
-                  runs: gr.update(visible=onlyupscale),
-                  qualityhiresfix: gr.update(visible=onlyupscale),
-                  qualitymode: gr.update(visible=onlyupscale),
-                  qualitykeep: gr.update(visible=onlyupscale)
-
-
-             }
-        
-        onlyupscale.change(
-            onlyupscalevalues,
-            [onlyupscale],
-            [amountofimages,size,samplingsteps,cfg,hiresfix,hiressteps,hiresscale,denoisestrength,upscaler,model,samplingmethod,upscaler,qualitygate,quality,runs,qualityhiresfix,qualitymode,qualitykeep]
-        )
+        obp_preset_save.click(act_obp_preset_save,
+                    inputs=obp_outputs,
+                    outputs=[OBP_preset],
+                )
         
         
-        # Turn things off and on for hiresfix
-        def hireschangevalues(hiresfix):
-             return {
-                  hiressteps: gr.update(visible=hiresfix),
-                  hiresscale: gr.update(visible=hiresfix),
-                  denoisestrength: gr.update(visible=hiresfix),
-                  upscaler: gr.update(visible=hiresfix)
-             }
-        
-        hiresfix.change(
-            hireschangevalues,
-            [hiresfix],
-            [hiressteps,hiresscale,denoisestrength,upscaler]
+        def obppreset_changed(selection):
+            # if custom selected, then update visibility and return
+            if selection == OBPresets.CUSTOM_OBP:
+                return [
+                        gr.update(visible=False),
+                        gr.update(value="", visible=False),
+                        gr.update(value="", visible=False),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                        gr.update(visible=True),
+                    ] 
+
+            # Update Custom values based on selected One Button preset
+            if selection == OBPresets.RANDOM_PRESET_OBP:
+                selected_opb_preset = OBPresets.get_obp_preset("Standard")
+            else:     
+                selected_opb_preset = OBPresets.get_obp_preset(selection)
+            return [
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(value="", visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False, value=selected_opb_preset["insanitylevel"]),
+                    gr.update(visible=False, value=selected_opb_preset["subject"]),
+                    gr.update(visible=False, value=selected_opb_preset["artist"]),
+                    gr.update(visible=False, value=selected_opb_preset["chosensubjectsubtypeobject"]),
+                    gr.update(visible=False, value=selected_opb_preset["chosensubjectsubtypehumanoid"]),
+                    gr.update(visible=False, value=selected_opb_preset["chosensubjectsubtypeconcept"]),
+                    gr.update(visible=False, value=selected_opb_preset["chosengender"]),
+                    gr.update(visible=False, value=selected_opb_preset["imagetype"]),
+                    gr.update(visible=False, value=selected_opb_preset["imagemodechance"]),
+                    gr.update(visible=False),
+                    gr.update(visible=False, value=selected_opb_preset["givensubject"]),
+                    gr.update(visible=False, value=selected_opb_preset["smartsubject"]),
+                    gr.update(visible=False, value=selected_opb_preset["givenoutfit"]),
+                    gr.update(visible=False, value=selected_opb_preset["prefixprompt"]),
+                    gr.update(visible=False, value=selected_opb_preset["suffixprompt"]),
+                    gr.update(visible=False),
+                    gr.update(visible=False, value=selected_opb_preset["giventypeofimage"]),
+                    gr.update(visible=False, value=selected_opb_preset["antistring"]),
+                ]
+        OBP_preset.change(obppreset_changed,
+            inputs=[OBP_preset],
+            outputs=[
+                md_prefix_preset,
+                presetprefix,
+                presetsuffix,
+                maingroup,
+                md_save_preset,
+                obp_preset_name,
+                obp_preset_save,
+                md_generation_settings,
+                insanitylevel,
+                subject,
+                artist,
+                chosensubjectsubtypeobject,
+                chosensubjectsubtypehumanoid,
+                chosensubjectsubtypeconcept,
+                chosengender,
+                imagetype,
+                imagemodechance,
+                md_override_options,
+                givensubject,
+                smartsubject,
+                givenoutfit,
+                prefixprompt,
+                suffixprompt,
+                md_additional_options,
+                giventypeofimage,
+                antistring
+            ]
         )
 
-        # Turn things off and on for quality gate
-        def qgatechangevalues(qualitygate):
-             return {
-                  quality: gr.update(visible=qualitygate),
-                  runs: gr.update(visible=qualitygate),
-                  qualityhiresfix: gr.update(visible=qualitygate),
-                  qualitymode: gr.update(visible=qualitygate),
-                  qualitykeep: gr.update(visible=qualitygate)
-             }
-        
-        qualitygate.change(
-            qgatechangevalues,
-            [qualitygate],
-            [quality,runs,qualityhiresfix,qualitymode,qualitykeep]
-        )
-        
-        # Turn things off and on for USDU
-        def ultimatesdupscalechangevalues(ultimatesdupscale):
-             return {
-                  usdutilewidth: gr.update(visible=ultimatesdupscale),
-                  usdutileheight: gr.update(visible=ultimatesdupscale),
-                  usdumaskblur: gr.update(visible=ultimatesdupscale),
-                  usduredraw: gr.update(visible=ultimatesdupscale),
 
-                  usduSeamsfix: gr.update(visible=ultimatesdupscale),
-                  usdusdenoise: gr.update(visible=ultimatesdupscale),
-                  usduswidth: gr.update(visible=ultimatesdupscale),
-                  usduspadding: gr.update(visible=ultimatesdupscale),
-                  usdusmaskblur: gr.update(visible=ultimatesdupscale)
-             }
-        
-        ultimatesdupscale.change(
-            ultimatesdupscalechangevalues,
-            [ultimatesdupscale],
-            [usdutilewidth,usdutileheight,usdumaskblur,usduredraw,usduSeamsfix,usdusdenoise,usduswidth,usduspadding,usdusmaskblur]
-        )
 
-        # Turn things off and on for EXTRAS
-        def enableextraupscalechangevalues(enableextraupscale):
-             return {
-                  extrasupscaler1: gr.update(visible=enableextraupscale),
-                  extrasupscaler2: gr.update(visible=enableextraupscale),
-                  extrasupscaler2visiblity: gr.update(visible=enableextraupscale),
-                  extrasresize: gr.update(visible=enableextraupscale),
 
-                  extrasupscaler2gfpgan: gr.update(visible=enableextraupscale),
-                  extrasupscaler2codeformer: gr.update(visible=enableextraupscale),
-                  extrasupscaler2codeformerweight: gr.update(visible=enableextraupscale)
-             }
-        
-        enableextraupscale.change(
-            enableextraupscalechangevalues,
-            [enableextraupscale],
-            [extrasupscaler1,extrasupscaler2,extrasupscaler2visiblity,extrasresize, extrasupscaler2gfpgan,extrasupscaler2codeformer,extrasupscaler2codeformerweight]
-        )
 
       
 
-        return [insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring, seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix]
+        return (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
+                prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
+                insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt, 
+                promptcompounderlevel, ANDtoggle, silentmode, antistring, seperator, 
+                givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, 
+                chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
+                promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, 
+                autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, 
+                presetsuffix,iteration_number,rnd_iteration)
             
     
 
     
-def run(self, p, insanitylevel, subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring,seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
+def run(insanitylevel, subject, artist, imagetype, prefixprompt,suffixprompt,negativeprompt, promptcompounderlevel, ANDtoggle, silentmode, workprompt, antistring,seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix):
         
-        images = []
-        infotexts = []
-        all_seeds = []
-        all_prompts = []
-
-        batches = p.n_iter
-        initialbatchsize = p.batch_size
-        batchsize = p.batch_size
-        p.n_iter = 1
-        p.batch_size = 1
-        
-        initialseed = p.seed
-        if p.seed == -1:
-            p.seed = int(random.randrange(4294967294))
-
         if(silentmode and workprompt != ""):
             print("Workflow mode turned on, not generating a prompt. Using workflow prompt.")
         elif(silentmode):
             print("Warning, workflow mode is turned on, but no workprompt has been given.")
-        elif p.prompt != "" or p.negative_prompt != "":
-            print("Please note that existing prompt and negative prompt fields are (no longer) used")
+        
         
         if(ANDtoggle == "automatic" and artist == "none"):
             print("Automatic and artist mode set to none, don't work together well. Ignoring this setting!")
@@ -890,107 +1037,72 @@ def run(self, p, insanitylevel, subject, artist, imagetype, prefixprompt,suffixp
         #    prefixprompt = ""
 
         
-        state.job_count = batches
+        #state.job_count = batches
         
-        for i in range(batches):
+        #for i in range(batches):
             
-            if(silentmode == False):
-                # prompt compounding
-                print("Starting generating the prompt")
-                preppedprompt = ""
+        if(silentmode == False):
+            # prompt compounding
+            print("Starting generating the prompt")
+            preppedprompt = ""
                 
-                artistcopy = artist
-                prefixpromptcopy = prefixprompt
+            artistcopy = artist
+            prefixpromptcopy = prefixprompt
                 
-                if(ANDtoggle == "automatic"):
-                    if(artist != "none"):
-                        preppedprompt += build_dynamic_prompt(insanitylevel,subject,artist, imagetype, True, antistring, base_model=base_model) 
-                    if(subject == "humanoid"):
-                        preppedprompt += ", " + promptcompounderlevel + " people"
-                    if(subject == "landscape"):
-                        preppedprompt += ", landscape"
-                    if(subject == "animal"):
-                        preppedprompt += ", " + promptcompounderlevel  + " animals"
-                    if(subject == "object"):
-                        preppedprompt += ", " + promptcompounderlevel  + " objects"
-                    #sneaky! If we are running on automatic, we don't want "artists" to show up during the rest of the prompt, so set it to none, but only temporary!
+            if(ANDtoggle == "automatic"):
+                if(artist != "none"):
+                    preppedprompt += build_dynamic_prompt(insanitylevel,subject,artist, imagetype, True, antistring, base_model=base_model) 
+                if(subject == "humanoid"):
+                    preppedprompt += ", " + promptcompounderlevel + " people"
+                if(subject == "landscape"):
+                    preppedprompt += ", landscape"
+                if(subject == "animal"):
+                    preppedprompt += ", " + promptcompounderlevel  + " animals"
+                if(subject == "object"):
+                    preppedprompt += ", " + promptcompounderlevel  + " objects"
+                #sneaky! If we are running on automatic, we don't want "artists" to show up during the rest of the prompt, so set it to none, but only temporary!
 
-                    artist = "none"
+                artist = "none"
                 
 
-                if(ANDtoggle != "none" and ANDtoggle != "automatic"):
-                    preppedprompt += prefixprompt
+            if(ANDtoggle != "none" and ANDtoggle != "automatic"):
+                preppedprompt += prefixprompt
                 
-                if(ANDtoggle != "none"):
-                    if(ANDtoggle!="prefix + prefix + prompt + suffix"):
-                        prefixprompt = ""
-                    if(seperator == "comma"):
-                        preppedprompt += " \n , "
-                    else:
-                        preppedprompt += " \n " + seperator + " "
+            if(ANDtoggle != "none"):
+                if(ANDtoggle!="prefix + prefix + prompt + suffix"):
+                    prefixprompt = ""
+                if(seperator == "comma"):
+                    preppedprompt += " \n , "
+                else:
+                    preppedprompt += " \n " + seperator + " "
 
 
                 #Here is where we build a "normal" prompt
-                base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, False, base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
-                fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
-                preppedprompt += fluffed_prompt
+            base_prompt = build_dynamic_prompt(insanitylevel,subject,artist, imagetype, False, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance,chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, False, base_model, OBP_preset, promptenhancer, "", "", presetprefix, presetsuffix)
+            fluffed_prompt = flufferizer(prompt=base_prompt, amountoffluff=amountoffluff)
+            preppedprompt += fluffed_prompt
 
                 # set the artist mode back when done (for automatic mode)
-                artist = artistcopy
-                prefixprompt = prefixpromptcopy
+            artist = artistcopy
+            prefixprompt = prefixpromptcopy
                 
-                # set everything ready
-                p.prompt = preppedprompt  
-                p.negative_prompt = negativeprompt
+            # set everything ready
+            prompt = preppedprompt  
+            negative_prompt = negativeprompt
 
-            if(silentmode == True):
-                base_prompt = createpromptvariant(workprompt,promptvariantinsanitylevel)
-                p.prompt = base_prompt
+        if(silentmode == True):
+            base_prompt = createpromptvariant(workprompt,promptvariantinsanitylevel)
+            prompt = base_prompt
 
             #for j in range(batchsize):
        
-            print(" ")
-            print("Full prompt to be processed:")
-            print(" ")
-            print(p.prompt)
+        print(" ")
+        print("Full prompt to be processed:")
+        print(" ")
+        print(prompt)
 
-            if(autonegativeprompt):
-                 p.negative_prompt = build_dynamic_negative(positive_prompt=base_prompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=p.negative_prompt, base_model=base_model)
+        if(autonegativeprompt):
+            negativeprompt = build_dynamic_negative(positive_prompt=base_prompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=negativeprompt, base_model=base_model)
                  
 
-            promptlist = []
-            if(batchsize>1):
-            # finally figured out how to do multiple batch sizes
-            
-                for i in range(batchsize):
-                    promptlist.append(p.prompt)
-
-                p.prompt = promptlist
-                p.batch_size = batchsize
-                p.hr_prompt = promptlist
-            else:
-                p.batch_size = batchsize
-                p.hr_prompt = p.prompt
-                
-            processed = process_images(p)
-            images += processed.images
-            infotexts += processed.infotexts
-            
-            # prompt and seed info for batch grid
-            all_seeds.append(processed.seed)
-            all_prompts.append(processed.prompt)
-            
-            # prompt and seed info for individual images
-            all_seeds += processed.all_seeds
-            all_prompts += processed.all_prompts
-            
-            state.job = f"{state.job_no} out of {state.job_count}" 
-        
-            # Increase seed by batchsize for unique seeds for every picture if -1 was chosen
-            if initialseed == -1:
-                p.seed += batchsize
-               
-        # just return all the things
-        p.n_iter = 0
-        p.batch_size = 0
-        return Processed(p=p, images_list=images, info=infotexts[0], infotexts=infotexts, all_seeds=all_seeds, all_prompts=all_prompts)
+        return prompt, negativeprompt

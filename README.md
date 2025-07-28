@@ -22,6 +22,27 @@ The **“Extensions”** panel is divided into three groups:
 
 **“in generation”** panel
 
+**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
+
+<img width="1176" height="455" alt="image" src="https://github.com/user-attachments/assets/754584c0-a35b-4b67-a4e6-654d2fc3f47a" />
+
+On the "Main" tab, you can select a preset for the hint generation theme, as well as specify additional hint prefixes and suffixes.
+You can also create and save your own preset in this tab.
+
+<img width="718" height="567" alt="image" src="https://github.com/user-attachments/assets/c8f1b30b-6472-4c94-b7b7-00ae6376f669" />
+
+On the "Prompt assist" tab, you can generate 5 prompts and move each of them to the Fooocus prompt field.
+When you select the "Prompt assist" mode, during image generation, not a new prompt will be generated, but variations of the prompt specified in the prompt field.
+The strength of variation is selected by the slider located directly below it.
+
+<img width="714" height="614" alt="image" src="https://github.com/user-attachments/assets/18102090-988f-4aca-bce6-fa9b3792e984" />
+
+In this tab you can select the hint syntax for different generation models, the hint length, enable the hint generation enhancement tool, and specify the number of iterations of the prompt generation for one image.
+
+<img width="1175" height="363" alt="image" src="https://github.com/user-attachments/assets/2bb26223-616e-4e21-a78f-8eb6b5083a58" />
+
+This is where you can control the generation of negative prompts
+
 **Prompt Translate**
 ![image](https://github.com/user-attachments/assets/6ddff3b1-5e98-43d4-b102-b61176c40c84)
 
@@ -146,32 +167,6 @@ Otherwise
 This means that in the first case all prompts in the file are treated as positive, and empty lines are ignored.
 In the second case, the file first contains a line with a positive prompt, followed by a line with a negative prompt. If you don't need to specify a negative hint, leave this line blank, but the positive hint line must always be there.
 
-**OneButtonPrompt** - allows you to generate prompts, generate variations of your prompt and runs to generate images from them. I will not dwell on the detailed description of this module - I will only point out the main functions
-   
-![009](https://github.com/user-attachments/assets/0f0005e7-1c0f-48b6-9c89-7ad1842d974e)
-
-
-In the ‘Main’ tab, you can select the preset of the prompt generation theme, as well as specify unchanging prompt prefixes and suffixes.
-
-![010](https://github.com/user-attachments/assets/e3c65841-362e-424a-9534-9a4be605483a)
-
-
-In the ‘Workflow assist’ tab you can generate 5 prompts, transfer each of them to the Fooocus prompt field and also to the Workflow field. If you select Workflow mode, it will generate not a new prompt, but variations of the prompt specified in the Workflow text field. The level of variation is selected by the engine located just below it
-
-![011](https://github.com/user-attachments/assets/83f70c92-a441-4f0f-b56e-b1c236f2e407)
-
-
-In this tab you can select the prompt syntax for different generation models, the length of the prompt, and enable the prompt generation enhancer.
-
-![012](https://github.com/user-attachments/assets/a215a97c-155d-4e3e-a729-74cdc8393148)
-
-
-This is where you can control the generation of negative prompts
-
-![013](https://github.com/user-attachments/assets/f05e26cf-1c2f-4341-b3cd-5fbb9c552217)
-
-
-In this tab you can start the image generation queue by generated samples. Before starting you need to specify the aspect ratio of the generated image (Size to generate), the number of generated prompts (Generation of prompts), and the models to use (Model to use).
 
 **X/Y/Z Plot**
 

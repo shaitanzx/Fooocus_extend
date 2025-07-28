@@ -45,7 +45,6 @@ from extentions.md_lib import md_config
 
 from extentions import wildcards
 
-from extentions.obp.scripts import onebuttonprompt as ob_prompt
 
 from extentions.op_edit import main as op_editor
 from pathlib import Path
@@ -60,7 +59,8 @@ from extentions.inswapper import face_swap
 from extentions.CodeFormer import codeformer
 import extentions.instantid.main as instantid
 import extentions.photomaker.app as photomaker
-obp_prompt=[]
+
+from extentions.obp.scripts import onebuttonprompt as ob_prompt
 
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
@@ -102,105 +102,6 @@ def xyz_plot_ext(currentTask):
     xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
     return
 
-def obp_start(p):
-    global finished_batch
-    finished_batch=False
-    presetsuffix=p.presetsuffix
-    presetprefix=p.presetprefix
-    promptenhancer=p.promptenhancer
-    amountoffluff=p.amountoffluff
-    OBP_preset=p.OBP_preset
-
-    base_model_obp=p.base_model_obp
-    autonegativepromptenhance=p.autonegativepromptenhance
-    autonegativepromptstrength=p.autonegativepromptstrength
-    autonegativeprompt=p.autonegativeprompt
-    givenoutfit=p.givenoutfit
-    promptvariantinsanitylevel=p.promptvariantinsanitylevel
-    chosensubjectsubtypeconcept=p.chosensubjectsubtypeconcept
-    chosensubjectsubtypehumanoid=p.chosensubjectsubtypehumanoid
-    chosensubjectsubtypeobject=p.chosensubjectsubtypeobject
-    gender=p.gender
-    imagemodechance=p.imagemodechance
-    giventypeofimage=p.giventypeofimage
-
-    smartsubject=p.smartsubject
-    givensubject=p.givensubject
-    seperator=p.seperator
-    promptcompounderlevel=p.promptcompounderlevel
-    suffixprompt=p.suffixprompt
-    prefixprompt=p.prefixprompt
-    antistring=p.antistring
-    workprompt=p.workprompt
-    silentmode=p.silentmode
-    imagetype=p.imagetype
-    artist=p.artist
-    subject=p.subject
-    insanitylevel=p.insanitylevel
-    amountofimages=p.amountofimages
-    size=p.size
-    
-    sect_models=ob_prompt.modellist
-    cur_sect_models=p.model
-    model_list=modules.config.model_filenames
-    cur_model=p.base_model
-
-    sect_ratios=ob_prompt.sizelist
-    cur_sect_ratios=p.size
-    ratio_list=['768×1344 ∣ 4:7','896×1152 ∣ 7:9','1024×1024 ∣ 1:1','1152×896 ∣ 9:7','1344×768 ∣ 7:4']
-    cur_ratio=p.aspect_ratios_selection
-
-    originalnegativeprompt = p.negative_prompt
-    prompts=p.amountofimages
-
-    for generation in range(int(prompts)):
-      if not finished_batch:
-        if(silentmode==True and workprompt != ""):
-            randomprompt = ob_prompt.createpromptvariant(workprompt, promptvariantinsanitylevel)
-            print("Using provided workflow prompt")
-            print(randomprompt)
-        else:    
-                randompromptlist = ob_prompt.build_dynamic_prompt(insanitylevel,subject,artist,imagetype, False,antistring,prefixprompt,suffixprompt,promptcompounderlevel, seperator,givensubject,smartsubject,giventypeofimage,imagemodechance, gender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept,True,False,-1,givenoutfit, prompt_g_and_l=True, base_model_obp=base_model_obp, OBP_preset=OBP_preset, prompt_enhancer=promptenhancer, preset_prefix=presetprefix, preset_suffix=presetsuffix)
-                randomprompt = randompromptlist[0]
-                randomsubject = randompromptlist[1]
-        negativeprompt=p.negative_prompt
-        if(autonegativeprompt):
-                negativeprompt = ob_prompt.build_dynamic_negative(positive_prompt=randomprompt, insanitylevel=autonegativepromptstrength,enhance=autonegativepromptenhance, existing_negative_prompt=originalnegativeprompt, base_model_obp=base_model_obp)
-        randomprompt = ob_prompt.flufferizer(prompt=randomprompt, amountoffluff=amountoffluff)
-
-        if cur_sect_models=='all':
-          model_list_gen=len(model_list)
-        else:
-          model_list_gen=1
-        for gen_models in range(model_list_gen):
-          if cur_sect_models=='random model':
-              randnum=random.randint(0, len(model_list)-1)
-              name_model=model_list[randnum]
-          elif cur_sect_models=='all':
-              name_model=model_list[gen_models]
-          else:
-              name_model=cur_model
-          if cur_sect_ratios=='all':
-              ratio_lis_gen=len(ratio_list)
-          else:
-              ratio_lis_gen=1
-          for gen_ratio in range(ratio_lis_gen):
-              if cur_sect_ratios=='random ratio':
-                  randnum=random.randint(0, len(ratio_list)-1)
-                  name_ratio=ratio_list[randnum]
-              elif cur_sect_ratios=='all':
-                  name_ratio=ratio_list[gen_ratio]
-              elif cur_sect_ratios=='current ratio':
-                  name_ratio=cur_ratio
-              else:
-                  name_ratio=ratio_list[(sect_ratios.index(cur_sect_ratios)-2)]
-              p.prompt=randomprompt
-              p.negative_prompt=negativeprompt
-              p.base_model_name=name_model
-              p.aspect_ratios_selection=name_ratio
-              yield from generate_clicked(p)
-              if p.seed_random:
-                  p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
@@ -853,6 +754,25 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+                        with gr.TabItem(label='OneButtonPrompt') as obp_tab:
+                            (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
+                                prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
+                                insanitylevel,subject, artist, imagetype, prefixprompt,
+                                suffixprompt, promptcompounderlevel, ANDtoggle, silentmode, 
+                                antistring, seperator, givensubject, smartsubject, 
+                                giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, 
+                                chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
+                                promptvariantinsanitylevel, givenoutfit, autonegativeprompt, 
+                                autonegativepromptstrength, autonegativepromptenhance, base_model_obp, 
+                                OBP_preset, amountoffluff, promptenhancer, 
+                                presetprefix, presetsuffix,iteration_number,rnd_iteration)=ob_prompt.ui()
+                            prompt1toprompt.click(ob_prompt.prompt2prompt, inputs=prompt1, outputs=prompt)
+                            prompt2toprompt.click(ob_prompt.prompt2prompt, inputs=prompt2, outputs=prompt)
+                            prompt3toprompt.click(ob_prompt.prompt2prompt, inputs=prompt3, outputs=prompt)
+                            prompt4toprompt.click(ob_prompt.prompt2prompt, inputs=prompt4, outputs=prompt)
+                            prompt5toprompt.click(ob_prompt.prompt2prompt, inputs=prompt5, outputs=prompt)
+
+                            
                         with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
                             langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
                             langs_sup = list(langs_sup.values())
@@ -894,18 +814,32 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
-                def gen_acc_name(translate, photomaker, instant, inswapper, codeformer):
-                    main_name = "in generation" + (f" — {', '.join(filter(None, ['PromptTranslate enabled' if translate else None, 'PhotoMaker enabled' if photomaker else None, 'InstantID enabled' if instant else None, 'Inswapper enabled' if inswapper else None, 'Codeformer enabled' if codeformer else None]))}" if any([translate, photomaker, instant, inswapper, codeformer]) else "")
+                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer):
+                    enabled_modules = [
+                        ('OneButtonPrompt', obp),
+                        ('PromptTranslate', translate),
+                        ('PhotoMaker', photomaker),
+                        ('InstantID', instant),
+                        ('Inswapper', inswapper),
+                        ('Codeformer', codeformer)
+                        ]
+                    active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
+                    main_name = "in generation"
+                    if active_modules:
+                        main_name += f" — {', '.join(active_modules)}"
+                    #main_name = "in generation" + (f" — {', '.join(filter(None, ['OneButtonPrompt enabled' if obp else None, 'PromptTranslate enabled' if translate else None,'PhotoMaker enabled' if photomaker else None,'InstantID enabled' if instant else None,'Inswapper enabled' if inswapper else None,'Codeformer enabled' if codeformer else None]))}" if any([obp,translate, photomaker, instant, inswapper, codeformer]) else "")
                     return gr.update(label=main_name)
-                enable_pm.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                enable_obp.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                translate_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                enable_pm.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                inswapper_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                translate_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                codeformer_gen_enabled.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                inswapper_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
-                enable_instant.change(gen_acc_name,inputs=[translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                codeformer_gen_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
+                enable_instant.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
@@ -1078,206 +1012,8 @@ with shared.gradio_root:
                         prompt_load.upload(lambda: gr.update(interactive=False), outputs=prompt_load) \
                                 .then (fn=loader_prompt,inputs=[upload_button,pos_only],outputs=batch_prompt) \
                                 .then (lambda: gr.update(interactive=True), outputs=prompt_load)
-                  with gr.TabItem(label='OBP') as obp_tab:
-                        with gr.Tab("Main"):
-                            with gr.Row(variant="compact"):
-                                gr.Markdown(ob_prompt.main_mark1)
-                # Part of presets
-                            with gr.Row():
-                                    OBP_preset = gr.Dropdown(
-                                        label="One Button Preset",
-                                        choices=ob_prompt.obp_preset_choices,
-                                        value="Standard",interactive=True)
-                            with gr.Group(visible=True) as presetgroup:
-                                with gr.Row():
-                                    gr.Markdown('<font size="2">These prefix and suffix are run on top the of preset. Can be used for LoRAs and other general stylings.</font>')
-                                with gr.Row():
-                                    presetprefix = gr.Textbox(label="Preset prefix: ", value="")
-                                    presetsuffix = gr.Textbox(label="Preset suffix: ", value="")
-                                
-                            with gr.Group(visible=False) as maingroup:
-                                gr.Markdown('<font size="2">Type a name and press "Save as Preset" to store the current generation settings.</font>')
-                                with gr.Row():
-                                        obp_preset_name = gr.Textbox(
-                                            show_label=False,
-                                            placeholder="Name of new preset",
-                                            interactive=True,
-                                            visible=True)
-                                        obp_preset_save = gr.Button(
-                                            value="Save as preset",
-                                            visible=True)
-                                gr.Markdown('<font size="4">Generation settings:</font>')
-            
-            # End of this part of presets
-                
-                                with gr.Row(variant="compact"):
-                                    insanitylevel = gr.Slider(1, 10, value=5, step=1, label="Higher levels increases complexity and randomness of generated prompt",interactive=True)
-                                with gr.Row(variant="compact"):
-                                    with gr.Column(variant="compact"):
-                                        subject = gr.Dropdown(
-                                            ob_prompt.subjects, label="Subject Types", value="all",interactive=True)                   
-                                    with gr.Column(variant="compact"):
-                                        artist = gr.Dropdown(
-                                            ob_prompt.artists, label="Artists", value="all",interactive=True)
-                                with gr.Row(variant="compact"):
-                                    chosensubjectsubtypeobject = gr.Dropdown(
-                                        ob_prompt.subjectsubtypesobject, label="Type of object", value="all", visible=False)
-                                    chosensubjectsubtypehumanoid = gr.Dropdown(
-                                        ob_prompt.subjectsubtypeshumanoid, label="Type of humanoids", value="all", visible=False)
-                                    chosensubjectsubtypeconcept = gr.Dropdown(
-                                        ob_prompt.subjectsubtypesconcept, label="Type of concept", value="all", visible=False)
-                                    chosengender = gr.Dropdown(
-                                        ob_prompt.genders, label="gender", value="all", visible=False)
-                                with gr.Row(variant="compact"):
-                                    with gr.Column(variant="compact"):
-                                        imagetype = gr.Dropdown(
-                                            ob_prompt.imagetypes, label="type of image", value="all",interactive=True)
-                                    with gr.Column(variant="compact"):
-                                        imagemodechance = gr.Slider(
-                                            1, 100, value="20", step=1, label="One in X chance to use special image type mode",interactive=True)
-                                with gr.Row(variant="compact"):
-                                    gr.Markdown('<font size="2">Override options (choose the related subject type first for better results)</font>')
-                                with gr.Row(variant="compact"):
-                                    givensubject = gr.Textbox(label="Overwrite subject: ", value="")
-                                    smartsubject = gr.Checkbox(label="Smart subject", value = True)
-                                with gr.Row(variant="compact"):
-                                    givenoutfit = gr.Textbox(label="Overwrite outfit: ", value="")
-                                with gr.Row(variant="compact"):
-                                    gr.Markdown('<font size="2">Prompt fields</font>')
-                                with gr.Row(variant="compact"):
-                                    with gr.Column(variant="compact"):
-                                        prefixprompt = gr.Textbox(label="Place this in front of generated prompt (prefix)",value="")
-                                        suffixprompt = gr.Textbox(label="Place this at back of generated prompt (suffix)",value="")
-                                with gr.Row(variant="compact"):
-                                    gr.Markdown('<font size="2">Additional options</font>')
-                                with gr.Row(variant="compact"):
-                                    giventypeofimage = gr.Textbox(label="Overwrite type of image: ", value="")
-                                with gr.Row(variant="compact"):
-                                    with gr.Column(variant="compact"):
-                                        antistring = gr.Textbox(label="Filter out following properties (comma seperated). Example ""film grain, purple, cat"" ")
-                                with gr.Accordion("Help", open=False):
-                                        gr.Markdown(ob_prompt.main_mark2)
 
-                        with gr.Tab("Workflow assist"):
-                            with gr.Row(variant="compact"):
-                                    silentmode = gr.Checkbox(
-                                        label="Workflow mode, turns off prompt generation and uses below Workflow prompt instead.")
-                            with gr.Row(variant="compact"):
-                                workprompt = gr.Textbox(label="Workflow prompt")
-                            with gr.Row(variant="compact"):
-                                promptvariantinsanitylevel = gr.Slider(0, 10, value=0, step=1, label="Prompt variant. Strength of variation of workflow prompt. 0 = no variance.")
-                            with gr.Accordion("Help", open=False):
-                                gr.Markdown(ob_prompt.wf_mark1)
-                            with gr.Row(variant="compact"):
-                                genprom = gr.Button("Generate me some prompts!")
-                            with gr.Row(variant="compact"):
-                                    with gr.Column(scale=4, variant="compact"):
-                                        prompt1 = gr.Textbox(label="prompt 1")
-                                    with gr.Column(variant="compact"):
-                                        prompt1toworkflow = gr.Button("prompt1->Workflow Prompt")
-                                        prompt1toprompt = gr.Button("prompt1->Prompt")
-                            with gr.Row(variant="compact"):
-                                    with gr.Column(scale=4, variant="compact"):
-                                        prompt2 = gr.Textbox(label="prompt 2")
-                                    with gr.Column(variant="compact"):
-                                        prompt2toworkflow = gr.Button("prompt2->Workflow Prompt")
-                                        prompt2toprompt = gr.Button("prompt2->Prompt")
-                            with gr.Row(variant="compact"):
-                                    with gr.Column(scale=4, variant="compact"):
-                                        prompt3 = gr.Textbox(label="prompt 3")
-                                    with gr.Column(variant="compact"):
-                                        prompt3toworkflow = gr.Button("prompt3->Workflow Prompt")
-                                        prompt3toprompt = gr.Button("prompt3->Prompt")
-                            with gr.Row(variant="compact"):
-                                    with gr.Column(scale=4, variant="compact"):
-                                        prompt4 = gr.Textbox(label="prompt 4")
-                                    with gr.Column(variant="compact"):
-                                        prompt4toworkflow = gr.Button("prompt4->Workflow Prompt")
-                                        prompt4toprompt = gr.Button("prompt4->Prompt")
-                            with gr.Row(variant="compact"):
-                                    with gr.Column(scale=4, variant="compact"):
-                                        prompt5 = gr.Textbox(label="prompt 5")
-                                    with gr.Column(variant="compact"):
-                                        prompt5toworkflow = gr.Button("prompt5->Workflow Prompt")
-                                        prompt5toprompt = gr.Button("prompt5->Prompt")
-                            
-                        with gr.Tab("Advanced"):
-                            with gr.Row(variant="compact"):
-                                gr.Markdown(ob_prompt.adv_mark1)
-                            with gr.Row(variant="compact"):
-                                base_model_obp = gr.Dropdown(
-                                    ob_prompt.basemodelslist, label="Base model", value="SDXL")
-                            with gr.Row(variant="compact"):
-                                amountoffluff = gr.Dropdown(
-                                    ob_prompt.amountofflufflist, label="Flufferizer", value="dynamic")
-                            with gr.Row(variant="compact"):
-                                promptenhancer = gr.Dropdown(
-                                    ob_prompt.prompt_enhancers, label="Prompt enhancer", value="none")
-                            with gr.Row(variant="compact"):
-                                gr.Markdown('<font size="2">Other options</font>')
-                            with gr.Row(variant="compact"):
-                                with gr.Column(variant="compact"):
-                                    promptcompounderlevel = gr.Dropdown(
-                                        ob_prompt.promptcompounder, label="Prompt compounder", value="1")
-                            with gr.Row(variant="compact"):
-                                with gr.Column(variant="compact"):
-                                    seperator = gr.Dropdown(
-                                        ob_prompt.seperatorlist, label="Prompt seperator", value="comma")    
-                                with gr.Column(variant="compact"):
-                                    ANDtoggle = gr.Dropdown(
-                                        ob_prompt.ANDtogglemode, label="Prompt seperator mode", value="none",interactive=True)
-                            with gr.Accordion("Help", open=False):
-                                gr.Markdown(ob_prompt.adv_mark2)
-                        with gr.Tab("Negative prompt"):
-                            gr.Markdown("### Negative prompt settings")
-                            with gr.Column(variant="compact"):
-                                with gr.Row(variant="compact"): 
-                                    autonegativeprompt = gr.Checkbox(label="Auto generate negative prompt", value=True,interactive=True) 
-                                    autonegativepromptenhance = gr.Checkbox(label="Enable base enhancement prompt", value=False)
-                            with gr.Row(variant="compact"): 
-                                autonegativepromptstrength = gr.Slider(0, 10, value="0", step=1, label="Randomness of negative prompt (lower is more consistency)",interactive=True)
-                            
-                 
-                        with gr.Tab("One Button Run"):
-                            with gr.Row(variant="compact"):
-                                with gr.Column(variant="compact"):
-                                    size = gr.Dropdown(ob_prompt.sizelist, label="Size to generate", value="all",interactive=True)
-                                with gr.Column(variant="compact"):
-                                    amountofimages = gr.Slider(1, 50, value="20", step=1, label="Generations of prompts",interactive=True)
-                                with gr.Column(variant="compact"):
-                                    model = gr.Dropdown(
-                                        choices=ob_prompt.modellist, label="model to use", value="current model",interactive=True)
-                            with gr.Row(variant="compact"):
-                                    with gr.Column(variant="compact"):
-                                        start_obp = gr.Button("Start generating")
-                                        
-                        gr.HTML('* \"OneButtonPrompt\" is powered by AIrjen. <a href="https://github.com/AIrjen/OneButtonPrompt" target="_blank">\U0001F4D4 Document</a>')
-                        gr.HTML('* Adaptation for Fooocus is powered by Shahmatist^RMDA')   
-                        OBP_preset.change(ob_prompt.obppreset_changed,inputs=[OBP_preset],
-                              outputs=[obp_preset_name,maingroup,presetgroup,presetprefix,presetsuffix])
-                        OBP_preset.change(ob_prompt.OBPPreset_changed_update_custom,inputs=[OBP_preset],
-                              outputs=[insanitylevel,subject,artist,chosensubjectsubtypeobject,chosensubjectsubtypehumanoid,
-                                      chosensubjectsubtypeconcept,chosengender,imagetype,imagemodechance,givensubject,
-                                      smartsubject,givenoutfit,prefixprompt,suffixprompt,giventypeofimage,antistring])
-                        obp_outputs = [obp_preset_name,obp_preset_save,insanitylevel,subject,artist,chosensubjectsubtypeobject,
-                              chosensubjectsubtypehumanoid,chosensubjectsubtypeconcept,chosengender,imagetype,imagemodechance,givensubject,
-                              smartsubject,givenoutfit,prefixprompt,suffixprompt,giventypeofimage,antistring]
-                        obp_preset_save.click(ob_prompt.act_obp_preset_save,inputs=obp_outputs,outputs=[OBP_preset])
-                        subject.change(ob_prompt.subjectsvalue,[subject],[chosengender])
-                        subject.change(ob_prompt.subjectsvalueforsubtypeobject,[subject],[chosensubjectsubtypeobject])
-                        subject.change(ob_prompt.subjectsvalueforsubtypeconcept,[subject],[chosensubjectsubtypeconcept])
-                        subject.change(ob_prompt.subjectsvalueforsubtypeobject,[subject],[chosensubjectsubtypehumanoid])
                         
-                        prompt1toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt1, outputs=workprompt)
-                        prompt1toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt1, outputs=prompt)
-                        prompt2toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt2, outputs=workprompt)
-                        prompt2toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt2, outputs=prompt)
-                        prompt3toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt3, outputs=workprompt)
-                        prompt3toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt3, outputs=prompt)
-                        prompt4toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt4, outputs=workprompt)
-                        prompt4toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt4, outputs=prompt)
-                        prompt5toworkflow.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=workprompt)
-                        prompt5toprompt.click(ob_prompt.prompttoworkflowprompt, inputs=prompt5, outputs=prompt)
                   with gr.TabItem(label=xyz.title()) as xyz_plot:
                     x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random = xyz.ui()
                     xyz_start=gr.Button(value="Start xyz",visible=True)
@@ -1993,7 +1729,6 @@ with shared.gradio_root:
         
         ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
-        ctrls += [model,base_model,size,amountofimages,insanitylevel,subject, artist, imagetype, silentmode, workprompt, antistring, prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, promptvariantinsanitylevel, givenoutfit, autonegativeprompt, autonegativepromptstrength, autonegativepromptenhance, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,seed_random]
         ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [batch_prompt,positive_batch,negative_batch]
         ctrls += [name_prefix]
@@ -2001,6 +1736,14 @@ with shared.gradio_root:
         ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity]
         ctrls += [enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
+        ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
+        ctrls += [promptcompounderlevel, ANDtoggle, silentmode, antistring]
+        ctrls += [seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender]
+        ctrls += [chosensubjectsubtypeobject,chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept]
+        ctrls += [promptvariantinsanitylevel, givenoutfit, autonegativeprompt,autonegativepromptstrength]
+        ctrls += [autonegativepromptenhance, base_model_obp,OBP_preset, amountoffluff, promptenhancer]
+        ctrls += [presetprefix, presetsuffix,iteration_number,rnd_iteration]
+        ctrls += [seed_random]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
@@ -2100,9 +1843,7 @@ with shared.gradio_root:
         path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
-        genprom.click(ob_translate,inputs=[workprompt,translate_enabled, srcTrans, toTrans],outputs=workprompt) \
-            .then (ob_prompt.gen_prompt, inputs=[insanitylevel,subject, artist, imagetype, antistring,prefixprompt, suffixprompt,promptcompounderlevel, seperator, givensubject,smartsubject,giventypeofimage,imagemodechance, chosengender, chosensubjectsubtypeobject, chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, givenoutfit, base_model_obp, OBP_preset, amountoffluff, promptenhancer, presetprefix, presetsuffix,silentmode,workprompt,promptvariantinsanitylevel], 
-                  outputs=[prompt1, prompt2, prompt3,prompt4,prompt5])
+
         xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[xyz_start, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
@@ -2113,15 +1854,6 @@ with shared.gradio_root:
                   outputs=[xyz_start,generate_button, stop_button, skip_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        start_obp.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[start_obp, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-              .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=obp_start,inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[start_obp,generate_button, stop_button, skip_button, state_is_generating]) \
-              .then(fn=update_history_link, outputs=history_link) \
-              .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
  
         generate_button.click(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating]) \

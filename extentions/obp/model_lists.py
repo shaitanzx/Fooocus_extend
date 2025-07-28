@@ -1,12 +1,11 @@
 #import modules.scripts as scripts
 import os
-##from modules import modelloader, paths, shared, sd_models, sd_samplers
-##from modules.paths import models_path, script_path
+#from modules import modelloader, paths, shared, sd_models, sd_samplers
+#from modules.paths import models_path, script_path
 import importlib
 
 def get_models():
-##    modellist = sd_models.checkpoint_tiles()
-    modellist = ['modellist']
+    modellist = ['sd_models.checkpoint_tiles()']
     return modellist
 
 def get_upscalers():
@@ -17,7 +16,6 @@ def get_upscalers():
     # From 1.4 onwards, the shared.sd_upscalers isn't available on startup. Run load_upscalers first
     # It doesn't work perfectly, I have to call this each time to make sure it stays working.
     upscalerlistfromwWebUI = upscalers_on_startup()
-    
     
     # deduplicate the list
     upscalerlistfromwWebUI = list(dict.fromkeys(upscalerlistfromwWebUI))
@@ -34,7 +32,7 @@ def get_upscalers():
     return upscalerlist
 
 def get_samplers():
-##    samplerlist = list(sd_samplers.all_samplers_map.keys())
+    #samplerlist = list(sd_samplers.all_samplers_map.keys())
     samplerlist=[]
     # fallback method
     if(samplerlist==[]):
@@ -88,13 +86,13 @@ def get_samplers_for_img2img():
     return samplerlist
 
 def upscalers_on_startup():
-##    try:
-##        modelloader.cleanup_models()
-##    except:
-##        pass
-##    modelloader.load_upscalers()
-##    upscalerlistfromwWebUI = [x.name for x in shared.sd_upscalers]
-    upscalerlistfromwWebUI=['']
+    #try:
+    #    modelloader.cleanup_models()
+    #except:
+    #    pass
+    #modelloader.load_upscalers()
+    upscalerlistfromwWebUI = ['x.name for x in shared.sd_upscalers']
+
     # In vlad this seems to work, but in WebUI some of these aren't loaded yet
     # lets just hardcode it, and get it over with
     if('LDSR' not in upscalerlistfromwWebUI):

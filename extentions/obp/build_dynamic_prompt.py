@@ -25,7 +25,7 @@ OBPresets = OneButtonPresets()
 # insanity level controls randomness of propmt 0-10
 # forcesubject van be used to force a certain type of subject
 # Set artistmode to none, to exclude artists 
-def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all", imagetype = "all", onlyartists = False, antivalues = "", prefixprompt = "", suffixprompt ="",promptcompounderlevel ="1", seperator = "comma", givensubject="",smartsubject = True,giventypeofimage="", imagemodechance = 20, gender = "all", subtypeobject="all", subtypehumanoid="all", subtypeconcept="all", advancedprompting=True, hardturnoffemojis=False, seed=-1, overrideoutfit="", prompt_g_and_l = False, base_model_obp = "SD1.5", OBP_preset = "", prompt_enhancer = "none", subtypeanimal="all", subtypelocation="all", preset_prefix = "", preset_suffix = ""):
+def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all", imagetype = "all", onlyartists = False, antivalues = "", prefixprompt = "", suffixprompt ="",promptcompounderlevel ="1", seperator = "comma", givensubject="",smartsubject = True,giventypeofimage="", imagemodechance = 20, gender = "all", subtypeobject="all", subtypehumanoid="all", subtypeconcept="all", advancedprompting=True, hardturnoffemojis=False, seed=-1, overrideoutfit="", prompt_g_and_l = False, base_model = "SD1.5", OBP_preset = "", prompt_enhancer = "none", subtypeanimal="all", subtypelocation="all", preset_prefix = "", preset_suffix = ""):
 
     remove_weights = False
     less_verbose = False
@@ -41,7 +41,7 @@ def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all
     if(prompt_enhancer == "superprompter" or prompt_enhancer == "superprompt" or prompt_enhancer == "superprompt-v1" or prompt_enhancer == "hyperprompt"):
         superprompter = True
     if(superprompter==True):
-        base_model_obp = "Stable Cascade"
+        base_model = "Stable Cascade"
 
     # new method of subject choosing from the interface, lets translate this:
     subjectlist = translate_main_subject(forcesubject)
@@ -153,19 +153,19 @@ def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all
         basemodel = "Anime Model"
     # Base model options, used to change things in prompt generation. Might be able to extend to different forms like animatediff as well?
     base_model_options = ["SD1.5", "SDXL", "Stable Cascade", "Anime Model"]
-    if base_model_obp not in base_model_options:
-        base_model_obp = "SD1.5" # Just in case there is no option here.
+    if base_model not in base_model_options:
+        base_model = "SD1.5" # Just in case there is no option here.
     # "SD1.5" -- Standard, future: More original style prompting
     # "SDXL" -- Standard (for now), future: More natural language
     # "Stable Cascade" -- Remove weights
-    if(base_model_obp == "Stable Cascade"):
+    if(base_model == "Stable Cascade"):
         remove_weights = True
         add_vomit = False
         add_quality = False
-    if(base_model_obp == "SD1.5"):
+    if(base_model == "SD1.5"):
         less_verbose = True
-    if(base_model_obp == "Anime Model"):
-        less_verbose =  True
+    if(base_model == "Anime Model"):
+        less_verbose = True
         advancedprompting = False
         anime_mode = True
         configfilesuffix = "anime"
@@ -3333,7 +3333,11 @@ def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all
         for i in range(len(completeprompt_list) - len("-heshe-") + 1):
             if "".join(completeprompt_list[i:i+len("-heshe-")]) == "-heshe-":
                 # Replace -heshe- with a value from the shuffled list
-                replacement = samehumanreplacementlist.pop()
+                if(samehumanreplacementlist):
+                    replacement = samehumanreplacementlist.pop()
+                else:
+                    replacement = "-heshe-"    
+                    
                 completeprompt_list[i:i+len("-heshe-")] = replacement
 
         # Convert the list back to a string
@@ -3350,7 +3354,11 @@ def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all
         for i in range(len(completeprompt_list) - len("-heshe-") + 1):
             if "".join(completeprompt_list[i:i+len("-heshe-")]) == "-heshe-":
                 # Replace -heshe- with a value from the shuffled list
-                replacement = sameobjectreplacementlist.pop()
+                if(sameobjectreplacementlist):
+                    replacement = sameobjectreplacementlist.pop()
+                else:
+                    replacement = "-heshe-"    
+                    
                 completeprompt_list[i:i+len("-heshe-")] = replacement
         # Convert the list back to a string
         completeprompt = "".join(completeprompt_list)
@@ -3431,7 +3439,11 @@ def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all
         for i in range(len(completeprompt_list) - len("-color-") + 1):
             if "".join(completeprompt_list[i:i+len("-color-")]) == "-color-":
                 # Replace -heshe- with a value from the shuffled list
-                replacement = colorreplacementlist.pop()
+                if(colorreplacementlist):
+                    replacement = colorreplacementlist.pop()
+                else:
+                    replacement = "-color-"
+
                 completeprompt_list[i:i+len("-color-")] = replacement
 
         # Convert the list back to a string
@@ -3451,7 +3463,11 @@ def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all
         for i in range(len(completeprompt_list) - len("-material-") + 1):
             if "".join(completeprompt_list[i:i+len("-material-")]) == "-material-":
                 # Replace -heshe- with a value from the shuffled list
-                replacement = materialreplacementlist.pop()
+                if(materialreplacementlist):
+                    replacement = materialreplacementlist.pop()
+                else:
+                    replacement = "-material-"
+                
                 completeprompt_list[i:i+len("-material-")] = replacement
 
         # Convert the list back to a string
@@ -3665,7 +3681,7 @@ def build_dynamic_prompt(insanitylevel = 5, forcesubject = "all", artists = "all
     completeprompt = parse_custom_functions(completeprompt, insanitylevel)
 
     # prompt enhancer!
-    if(templatemode == False and specialmode == False and base_model_obp != "Stable Cascade"):
+    if(templatemode == False and specialmode == False and base_model != "Stable Cascade"):
         # how insane do we want it?
 
         maxamountofwords = max(0, -1 + random.randint(0,4),6 - insanitylevel)
@@ -4624,7 +4640,7 @@ def replacewildcard(completeprompt, insanitylevel, wildcard,listname, activatehy
 
     return completeprompt
 
-def build_dynamic_negative(positive_prompt = "", insanitylevel = 0, enhance = False, existing_negative_prompt = "", base_model_obp="SD1.5"):
+def build_dynamic_negative(positive_prompt = "", insanitylevel = 0, enhance = False, existing_negative_prompt = "", base_model="SD1.5"):
 
 
     negative_primer = []
@@ -4634,12 +4650,12 @@ def build_dynamic_negative(positive_prompt = "", insanitylevel = 0, enhance = Fa
 
     # Base model options, used to change things in prompt generation. Might be able to extend to different forms like animatediff as well?
     base_model_options = ["SD1.5", "SDXL", "Stable Cascade"]
-    if base_model_obp not in base_model_options:
-        base_model_obp = "SD1.5" # Just in case there is no option here.
+    if base_model not in base_model_options:
+        base_model = "SD1.5" # Just in case there is no option here.
     # "SD1.5" -- Standard, future: More original style prompting
     # "SDXL" -- Standard (for now), future: More natural language
     # "Stable Cascade" -- Remove weights
-    if base_model_obp == "Stable Cascade":
+    if base_model == "Stable Cascade":
         remove_weights = True
     
     # negavite_primer, all words that should trigger a negative result
@@ -4721,7 +4737,7 @@ def build_dynamic_negative(positive_prompt = "", insanitylevel = 0, enhance = Fa
     negative_result = ", ".join(unique_words)
 
     negative_result += ", " + existing_negative_prompt
-   
+
     return negative_result
 
 def enhance_positive(positive_prompt = "", amountofwords = 3):
