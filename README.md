@@ -345,6 +345,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.1.5
+1.A deeper integration of the OneButtonPrompt module has been carried out and it has been moved to the 'in generation' group
+
 v9.1.4
 1. Some bug fix
 
