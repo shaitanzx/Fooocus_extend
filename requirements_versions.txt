@@ -27,7 +27,7 @@ sentencepiece==0.2.0
 opencv-python==4.8.1.78
 chardet==5.2.0
 insightface==0.7.3
-lpips==0.14
+lpips==0.1.4
 peft==0.6.0
 diffusers==0.29.0
 #huggingface-hub==0.23.2
