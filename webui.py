@@ -543,7 +543,7 @@ with shared.gradio_root:
                                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/1363" target="_blank">\U0001F4D4 Documentation</a>')
 
                                 def trigger_show_image_properties(image):
-                                    value = modules.util.get_image_size_info(image, modules.flags.sdxl_aspect_ratios)
+                                    value = modules.util.get_image_size_info(image, modules.flags.sdxl_aspect_ratios[:-2])
                                     return gr.update(value=value, visible=True)
 
                                 describe_input_image.upload(trigger_show_image_properties, inputs=describe_input_image,
