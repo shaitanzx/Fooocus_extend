@@ -401,7 +401,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                                 layer._reversed_padding_repeated_twice[3])
                 
                     def _conv_forward(input: Tensor, weight: Tensor, bias: Optional[Tensor], *args, **kwargs):
-                        step = modules.shared.state.sampling_step
+                        step = async_task.tail.step
                         if ((tile_start_step <= step) and 
                             (tile_stop_step < 0 or step <= tile_stop_step)):
                             if tile_x:
