@@ -384,36 +384,43 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
     original_forwards = []
+    visited_modules = set()  # Для избежания циклов
+
     if tile_x or tile_y:
-        def modify_conv_layers(model):
-            for name, layer in model.named_children():
+        def modify_conv_layers(module):
+            nonlocal original_forwards
+            if id(module) in visited_modules:
+                return
+            visited_modules.add(id(module))
+
+            for name, layer in module.named_children():
                 if isinstance(layer, Conv2d):
                     # Сохраняем оригинальный forward
                     original_forward = layer.forward
                     
-                    # Создаем новый forward с учетом тайлинга
-                    def new_forward(self, input, *args, **kwargs):
-                        #step = modules.shared.state.sampling_step
-                        #if ((tile_start_step <= step) and 
-                        #    (tile_stop_step < 0 or step <= tile_stop_step)):
+                    # Создаем замыкание для сохранения контекста
+                    def make_wrapper(original, layer):
+                        def wrapper(input, *args, **kwargs):
+                            #step = modules.shared.state.sampling_step
+                            #if ((tile_start_step <= step) and 
+                            #    (tile_stop_step < 0 or step <= tile_stop_step)):
+                                
+                                padding = _pair(layer.padding)
+                                if tile_x:
+                                    input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
+                                if tile_y:
+                                    input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
                             
-                            # Получаем параметры padding
-                            padding = _pair(self.padding)
-                            if tile_x:
-                                input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
-                            if tile_y:
-                                input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
-                        
-                        return original_forward(input, *args, **kwargs)
+                            return original(input, *args, **kwargs)
+                        return wrapper
                     
-                    # Привязываем новый метод к слою
-                    layer.forward = new_forward.__get__(layer, Conv2d)
+                    # Создаем и привязываем новый forward
+                    layer.forward = make_wrapper(original_forward, layer).__get__(layer, Conv2d)
                     original_forwards.append((layer, original_forward))
                 else:
                     # Рекурсивно обрабатываем вложенные модули
                     modify_conv_layers(layer)
-        
-        # Применяем ко всей модели
+
         modify_conv_layers(target_unet.model)
 
 
