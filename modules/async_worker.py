@@ -287,6 +287,7 @@ def worker():
     import torch
 
     from torch import Tensor
+    from torch.nn import functional as F
     import time
     import shared
     import random
