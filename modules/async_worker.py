@@ -1547,9 +1547,16 @@ def worker():
         total_count = async_task.image_number
 
         def callback(step, x0, x, total_steps, y):
+            print("\n=== Debug: Input Types ===")
+            print(f"step: {type(step)} = {step}")          # Ожидается int
+            print(f"x0: {type(x0)} = {x0}")                # Зависит от реализации
+            print(f"x: {type(x)} = {x if not isinstance(x, (torch.Tensor, np.ndarray)) else f'Array shape: {x.shape}'}")
+            print(f"total_steps: {type(total_steps)} = {total_steps}")  # Ожидается int
+            print(f"y: {type(y)} = {y}")
             if step == 0:
                 async_task.callback_steps = 0
             if isinstance(x, Tensor):
+                    print('-----------------------------------')
                  # Фиксированный небольшой padding (например, 1 или 2 пикселя)
                     pad_size = 1  # Можно увеличить до 2, если нужно больше "перетекания"
                     padding = (pad_size, pad_size, 0, 0)  # (left, right, top, bottom)
