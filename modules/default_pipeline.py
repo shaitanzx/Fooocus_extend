@@ -384,44 +384,33 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
     original_forwards = []
-    visited_modules = set()  # Для избежания циклов
-
+    
     if tile_x or tile_y:
-        def modify_conv_layers(module):
-            nonlocal original_forwards
-            if id(module) in visited_modules:
-                return
-            visited_modules.add(id(module))
-
-            for name, layer in module.named_children():
-                if isinstance(layer, Conv2d):
-                    # Сохраняем оригинальный forward
-                    original_forward = layer.forward
+        def patch_conv_layer(layer):
+            original_forward = layer.forward
+            
+            def patched_forward(input_tensor, *args, **kwargs):
+                #step = modules.shared.state.sampling_step
+                #if ((tile_start_step <= step) and 
+                #    (tile_stop_step < 0 or step <= tile_stop_step)):
                     
-                    # Создаем замыкание для сохранения контекста
-                    def make_wrapper(original, layer):
-                        def wrapper(input, *args, **kwargs):
-                            #step = modules.shared.state.sampling_step
-                            #if ((tile_start_step <= step) and 
-                            #    (tile_stop_step < 0 or step <= tile_stop_step)):
-                                
-                                padding = _pair(layer.padding)
-                                if tile_x:
-                                    input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
-                                if tile_y:
-                                    input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
-                            
-                                return original(input, *args, **kwargs)
-                        return wrapper
-                    
-                    # Создаем и привязываем новый forward
-                    layer.forward = make_wrapper(original_forward, layer).__get__(layer, Conv2d)
-                    original_forwards.append((layer, original_forward))
-                else:
-                    # Рекурсивно обрабатываем вложенные модули
-                    modify_conv_layers(layer)
+                    padding = _pair(layer.padding)
+                    if tile_x:
+                        input_tensor = F.pad(input_tensor, (padding[1], padding[1], 0, 0), mode='circular')
+                    if tile_y:
+                        input_tensor = F.pad(input_tensor, (0, 0, padding[0], padding[0]), mode='circular')
+                
+                    return original_forward(input_tensor, *args, **kwargs)
+            
+            return patched_forward
 
-        modify_conv_layers(target_unet.model)
+        # Применяем только к Conv2d слоям
+        for module in target_unet.model.modules():
+            if isinstance(module, Conv2d):
+                # Создаем и привязываем патченный метод
+                patched = patch_conv_layer(module).__get__(module, Conv2d)
+                original_forwards.append((module, module.forward))
+                module.forward = patched
 
 
 
