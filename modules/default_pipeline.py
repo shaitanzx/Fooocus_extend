@@ -386,21 +386,21 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     original_convs = []
     if tile_x or tile_y:
         unet_model = target_unet.model
-        
+    
         for layer in unet_model.modules():
             if isinstance(layer, Conv2d):
-                # Сохраняем оригинальный метод
-                original_convs.append((layer, layer._conv_forward))
-                
-                # Создаем модифицированный метод
-                def make_conv_forward(layer, tile_x, tile_y, tile_start_step, tile_stop_step):
+            # Сохраняем оригинальный метод
+                original_forward = layer._conv_forward
+            
+            # Создаём модифицированный метод
+                def make_conv_forward(layer, original_forward, tile_x, tile_y, tile_start_step, tile_stop_step):
                     padding_x = (layer._reversed_padding_repeated_twice[0], 
                                 layer._reversed_padding_repeated_twice[1], 0, 0)
                     padding_y = (0, 0, 
                                 layer._reversed_padding_repeated_twice[2], 
                                 layer._reversed_padding_repeated_twice[3])
-                    
-                    def _conv_forward(input: Tensor, weight: Tensor, bias: Optional[Tensor]):
+                
+                    def _conv_forward(input: Tensor, weight: Tensor, bias: Optional[Tensor], *args, **kwargs):
                         step = modules.shared.state.sampling_step
                         if ((tile_start_step <= step) and 
                             (tile_stop_step < 0 or step <= tile_stop_step)):
@@ -412,12 +412,16 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                                 input = F.pad(input, padding_y, mode='circular')
                             else:
                                 input = F.pad(input, padding_y, mode='constant')
-                        return original_convs[-1][1](input, weight, bias)  # Вызываем оригинальный метод
-                    
-                    return _conv_forward
+                        # Вызываем оригинальный метод со всеми аргументами
+                        return original_forward(input, weight, bias, *args, **kwargs)
                 
-                layer._conv_forward = make_conv_forward(layer, tile_x, tile_y, tile_start_step, tile_stop_step).__get__(layer, Conv2d)
-
+                    return _conv_forward
+            
+                # Сохраняем для восстановления
+                original_convs.append((layer, original_forward))
+            
+                # Заменяем на модифицированную версию
+                layer._conv_forward = make_conv_forward(layer, original_forward, tile_x, tile_y, tile_start_step, tile_stop_step).__get__(layer, Conv2d)
     if refiner_swap_method == 'joint':
         sampled_latent = core.ksampler(
             model=target_unet,
