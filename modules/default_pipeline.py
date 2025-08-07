@@ -14,6 +14,12 @@ from ldm_patched.modules.model_base import SDXL, SDXLRefiner
 from modules.sample_hijack import clip_separate
 from modules.util import get_file_from_folder_list, get_enabled_loras
 
+from torch import Tensor
+from torch.nn import Conv2d
+from torch.nn import functional as F
+from torch.nn.modules.utils import _pair
+from typing import Optional
+
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -380,6 +386,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     def replacementConv2DConvForward(input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         step = async_task.tail_step
         if ((tile_start_step < 0 or step >= tile_start_step) and (tile_stop_step < 0 or step <= tile_stop_step)):
+            print('---------------replace')
             working = F.pad(input, self.paddingX, mode=self.padding_modeX)
             working = F.pad(working, self.paddingY, mode=self.padding_modeY)
         else:
@@ -389,6 +396,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     if tile_x or tile_y:
         for layer in target_unet.modules():
+            print('-------------------------,apply')
             if type(layer) == Conv2d:
                 layer.padding_modeX = 'circular' if tileX else 'constant'
                 layer.padding_modeY = 'circular' if tileY else 'constant'
@@ -533,6 +541,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             target_model = target_vae
         decoded_latent = core.decode_vae(vae=target_model, latent_image=sampled_latent, tiled=tiled)
     if tile_x or tile_y:
+        print('----------------restore')
         for layer in target_unet.modules():
             if isinstance(layer, Conv2d) and hasattr(layer, '_original_forward'):
                 layer._conv_forward = layer._original_forward
