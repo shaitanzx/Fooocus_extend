@@ -383,26 +383,43 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-    original_forwards = []
-    
+    class TiledConv2d(torch.nn.Conv2d):
+        def __init__(self, conv_layer):
+            super().__init__(
+                in_channels=conv_layer.in_channels,
+                out_channels=conv_layer.out_channels,
+                kernel_size=conv_layer.kernel_size,
+                stride=conv_layer.stride,
+                padding=conv_layer.padding,
+                dilation=conv_layer.dilation,
+                groups=conv_layer.groups,
+                bias=conv_layer.bias is not None,
+                padding_mode='zeros'  # Реальный padding делаем в forward
+            )
+            # Копируем веса
+            self.weight = conv_layer.weight
+            if conv_layer.bias is not None:
+                self.bias = conv_layer.bias
+            
+        def forward(self, input):
+            # Всегда применяем тайлинг
+            padding = _pair(self.padding)
+            input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')  # tile_x
+            input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')  # tile_y
+            return F.conv2d(
+                input, self.weight, self.bias, self.stride,
+                (0, 0),  # padding уже применён
+                self.dilation, self.groups
+            )
+
+    original_convs = []
     if tile_x or tile_y:
-        def patch_conv_layer(layer):
-            original_forward = layer.forward
-            
-            def patched_forward(input_tensor, *args, **kwargs):
-                #step = modules.shared.state.sampling_step
-                #if ((tile_start_step <= step) and 
-                #    (tile_stop_step < 0 or step <= tile_stop_step)):
-                    
-                    padding = _pair(layer.padding)
-                    if tile_x:
-                        input_tensor = F.pad(input_tensor, (padding[1], padding[1], 0, 0), mode='circular')
-                    if tile_y:
-                        input_tensor = F.pad(input_tensor, (0, 0, padding[0], padding[0]), mode='circular')
-                
-                    return original_forward(input_tensor, *args, **kwargs)
-            
-            return patched_forward
+        # Заменяем все Conv2d на наши версии
+        for name, module in list(target_unet.model.named_children()):
+            if isinstance(module, torch.nn.Conv2d):
+                wrapped = TiledConv2d(module)
+                setattr(target_unet.model, name, wrapped)
+                original_convs.append((name, module))
 
         # Применяем только к Conv2d слоям
         for module in target_unet.model.modules():
