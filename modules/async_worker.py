@@ -285,6 +285,8 @@ def worker():
     import math
     import numpy as np
     import torch
+
+    from torch import Tensor
     import time
     import shared
     import random
