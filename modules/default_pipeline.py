@@ -435,6 +435,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 # Применяем тайлинг к модели
     original_convs = []
     if tile_x or tile_y:
+        print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++===')
     # Не рекурсивно, только direct children
         for name, module in list(target_unet.model.named_children()):
             if isinstance(module, torch.nn.Conv2d):
