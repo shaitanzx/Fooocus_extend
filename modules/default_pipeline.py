@@ -55,11 +55,34 @@ def _patch_conv_for_tiling(conv_layer, tile_x, tile_y, start_step, stop_step):
     
     conv_layer._conv_forward = _tiled_conv_forward.__get__(conv_layer, Conv2d)
 
-def _apply_tiling_to_unet(unet, tile_x, tile_y, start_step, stop_step):
-    """Применяет тайлинг ко всем Conv2d слоям в UNet"""
-    for layer in target_unet.modules():
-        if isinstance(layer, Conv2d):
-            _patch_conv_for_tiling(layer, tile_x, tile_y, start_step, stop_step)
+def _apply_tiling_to_unet(unet_patcher, tile_x, tile_y, start_step, stop_step):
+    # Получаем доступ к оригинальной модели внутри ModelPatcher
+    model = unet_patcher.model
+    
+    # Модифицируем все Conv2d слои
+    for module in model.modules():
+        if isinstance(module, torch.nn.Conv2d):
+            # Сохраняем оригинальный forward, если ещё не сохраняли
+            if not hasattr(module, '_original_forward'):
+                module._original_forward = module.forward
+            print('------------------apply')
+            # Создаём модифицированную версию
+            def patched_forward(self, x):
+                # Применяем асимметричный padding
+                if tile_x:
+                    x = F.pad(x, (self.padding[1], self.padding[1], 0, 0), mode='circular')
+                else:
+                    x = F.pad(x, (self.padding[1], self.padding[1], 0, 0), mode='constant')
+                
+                if tile_y:
+                    x = F.pad(x, (0, 0, self.padding[0], self.padding[0]), mode='circular')
+                else:
+                    x = F.pad(x, (0, 0, self.padding[0], self.padding[0]), mode='constant')
+                
+                return self._original_forward(x)
+            
+            # Применяем патч
+            module.forward = patched_forward.__get__(module)
 
 def _restore_unet_conv(unet):
     """Восстанавливает оригинальные Conv2d слои"""
