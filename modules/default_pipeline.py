@@ -386,17 +386,29 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     def make_tiled_conv(original_conv, tile_x, tile_y):
         class TiledConv2d(torch.nn.Conv2d):
             def forward(self, input):
+                # Сохраняем оригинальные размеры
+                original_size = input.size()
+            
                 padding = _pair(self.padding)
                 if tile_x:
                     input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
                 if tile_y:
                     input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
-                return F.conv2d(
+            
+                # Применяем свёртку с нулевым padding (уже учли в pad)
+                output = F.conv2d(
                     input, self.weight, self.bias, self.stride,
                     (0, 0),  # padding уже применен
                     self.dilation, self.groups
                 )
-        
+            
+                # Обрезаем до оригинального размера если нужно
+                if output.size() != original_size:
+                    h, w = original_size[-2], original_size[-1]
+                    output = output[..., :h, :w]
+            
+                return output
+    
         # Создаем новый слой с теми же параметрами
         tiled_conv = TiledConv2d(
             original_conv.in_channels,
@@ -406,31 +418,27 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             padding=0,  # padding применяем вручную
             dilation=original_conv.dilation,
             groups=original_conv.groups,
-            bias=original_conv.bias is not None
+            bias=original_conv.bias is not None,
+            padding_mode='zeros'  # важно для совместимости
         )
-        
+    
         # Копируем веса
-        tiled_conv.weight.data = original_conv.weight.data
-        if original_conv.bias is not None:
-            tiled_conv.bias.data = original_conv.bias.data
-            
+        with torch.no_grad():
+            tiled_conv.weight.data = original_conv.weight.data.clone()
+            if original_conv.bias is not None:
+                tiled_conv.bias.data = original_conv.bias.data.clone()
+    
         return tiled_conv
 
-    # Применяем тайлинг к модели
+# Применяем тайлинг к модели
     original_convs = []
     if tile_x or tile_y:
-        # Рекурсивно заменяем все Conv2d слои
-        def replace_convs(module):
-            for name, child in module.named_children():
-                if isinstance(child, Conv2d):
-                    # Заменяем слой на версию с тайлингом
-                    setattr(module, name, make_tiled_conv(child, tile_x, tile_y))
-                    original_convs.append((module, name, child))
-                else:
-                    # Рекурсивно обрабатываем вложенные модули
-                    replace_convs(child)
-        
-        replace_convs(target_unet.model)
+    # Не рекурсивно, только direct children
+        for name, module in list(target_unet.model.named_children()):
+            if isinstance(module, torch.nn.Conv2d):
+                # Заменяем слой на версию с тайлингом
+                setattr(target_unet.model, name, make_tiled_conv(module, tile_x, tile_y))
+                original_convs.append((target_unet.model, name, module))
 
 
 
