@@ -395,7 +395,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         return F.conv2d(working, weight, bias, self.stride, _pair(0), self.dilation, self.groups)
 
     if tile_x or tile_y:
-        for layer in target_unet.modules():
+        unet_model = target_unet.model
+        
+        for layer in unet_model.modules():
             print('-------------------------,apply')
             if type(layer) == Conv2d:
                 layer.padding_modeX = 'circular' if tileX else 'constant'
