@@ -57,10 +57,9 @@ def _patch_conv_for_tiling(conv_layer, tile_x, tile_y, start_step, stop_step):
 
 def _apply_tiling_to_unet(unet, tile_x, tile_y, start_step, stop_step):
     """Применяет тайлинг ко всем Conv2d слоям в UNet"""
-    for layer in model.named_modules():
+    for layer in unet.modules():
         if isinstance(layer, Conv2d):
             _patch_conv_for_tiling(layer, tile_x, tile_y, start_step, stop_step)
-    print('------------------_apply_tiling_to_unet')
 
 def _restore_unet_conv(unet):
     """Восстанавливает оригинальные Conv2d слои"""
