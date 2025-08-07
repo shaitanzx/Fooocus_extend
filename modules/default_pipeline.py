@@ -385,6 +385,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     def replacementConv2DConvForward(input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         step = async_task.tail_step
+        print('-------------step',step)
         if ((tile_start_step < 0 or step >= tile_start_step) and (tile_stop_step < 0 or step <= tile_stop_step)):
             print('---------------replace')
             working = F.pad(input, self.paddingX, mode=self.padding_modeX)
@@ -544,7 +545,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         decoded_latent = core.decode_vae(vae=target_model, latent_image=sampled_latent, tiled=tiled)
     if tile_x or tile_y:
         print('----------------restore')
-        for layer in target_unet.modules():
+        unet_model = target_unet.model
+        
+        for layer in unet_model.modules():
             if isinstance(layer, Conv2d) and hasattr(layer, '_original_forward'):
                 layer._conv_forward = layer._original_forward
     images = core.pytorch_to_numpy(decoded_latent)
