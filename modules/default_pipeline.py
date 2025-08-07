@@ -385,9 +385,19 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     def make_tiled_conv(original_conv, tile_x, tile_y):
         class TiledConv2d(torch.nn.Conv2d):
-            print(f"\n--- Input shape before padding: {input.shape}")
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.debug_counter = 0  # Счётчик вызовов для избежания спама
             def forward(self, input):
-                # Сохраняем оригинальные размеры
+                self.debug_counter += 1
+                if self.debug_counter <= 3:  # Выводим только первые 3 вызова
+                    logger.info(f"\n=== TiledConv2d Debug ===\n"
+                               f"Input shape: {input.shape}\n"
+                               f"Kernel size: {self.kernel_size}\n"
+                               f"Padding: {self.padding}\n"
+                               f"Tiling X: {'ENABLED' if tile_x else 'disabled'}\n"
+                               f"Tiling Y: {'ENABLED' if tile_y else 'disabled'}")
+               # Сохраняем оригинальные размеры
                 original_size = input.size()
             
                 padding = _pair(self.padding)
