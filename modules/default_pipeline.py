@@ -35,7 +35,7 @@ def _patch_conv_for_tiling(conv_layer, tile_x, tile_y, start_step, stop_step):
     
     def _tiled_conv_forward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         step = getattr(async_task, 'tile_step', 0)
-        
+        print(f"Step {step}: Tiling X={self.tile_x}, Y={self.tile_y}")
         # Проверяем нужно ли применять тайлинг на этом шаге
         if (self.tile_start_step <= step and 
             (self.tile_stop_step < 0 or step <= self.tile_stop_step)):
