@@ -383,49 +383,42 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-    original_convs = []
+    original_forwards = []
     if tile_x or tile_y:
         unet_model = target_unet.model
     
         for layer in unet_model.modules():
             if isinstance(layer, Conv2d):
-                # Сохраняем оригинальный метод
-                original_forward = layer._conv_forward
+                # Сохраняем оригинальный forward
+                original_forward = layer.forward
             
-                # Создаем модифицированный метод с правильным binding
-                def make_patched_conv(layer, original_forward, tile_x, tile_y, tile_start_step, tile_stop_step):
-                    padding_x = (layer._reversed_padding_repeated_twice[0], 
-                                layer._reversed_padding_repeated_twice[1], 0, 0)
-                    padding_y = (0, 0,
-                                layer._reversed_padding_repeated_twice[2],
-                                layer._reversed_padding_repeated_twice[3])
-                
-                    def patched_forward(input, *args, **kwargs):
+            # Создаем модифицированный forward
+                def make_patched_forward(original_forward, tile_x, tile_y, tile_start_step, tile_stop_step):
+                    def patched_forward(self, input, *args, **kwargs):
                         #step = modules.shared.state.sampling_step
-                        #if ((tile_start_step <= step) and
+                        #if ((tile_start_step <= step) and 
                         #    (tile_stop_step < 0 or step <= tile_stop_step)):
+                        
+                            # Получаем параметры padding из слоя
+                            padding = _pair(layer.padding)
+                            padding_x = (padding[1], padding[1], 0, 0)
+                            padding_y = (0, 0, padding[0], padding[0])
+                        
                             if tile_x:
                                 input = F.pad(input, padding_x, mode='circular')
-                            else:
-                                input = F.pad(input, padding_x, mode='constant')
                             if tile_y:
                                 input = F.pad(input, padding_y, mode='circular')
-                            else:
-                                input = F.pad(input, padding_y, mode='constant')
+                    
                             return original_forward(input, *args, **kwargs)
-                
                     return patched_forward
             
-                # Создаем и привязываем патченный метод
-                patched_forward = make_patched_conv(
-                    layer, original_forward, tile_x, tile_y, tile_start_step, tile_stop_step
-                )
-            
-                # Сохраняем оригинал для восстановления
-                original_convs.append((layer, original_forward))
-            
-                # Заменяем метод
-                layer._conv_forward = patched_forward.__get__(layer, Conv2d)    
+            # Заменяем forward
+                layer.forward = make_patched_forward(original_forward, tile_x, tile_y, tile_start_step, tile_stop_step).__get__(layer, Conv2d)
+                original_forwards.append((layer, original_forward))
+
+
+
+
     if refiner_swap_method == 'joint':
         sampled_latent = core.ksampler(
             model=target_unet,
