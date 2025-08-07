@@ -440,7 +440,7 @@ def worker():
                      denoising_strength, final_scheduler_name, goals, initial_latent, steps, switch, positive_cond,
                      negative_cond, task, loras, tiled, use_expansion, width, height, base_progress, preparation_steps,
                      total_count, show_intermediate_results, persist_image=True):
-        async_task.tile_x=True
+        async_task.tile_x=False
         async_task.tile_y=False
         async_task.tile_start_step=0
         async_task.tile_stop_step=-1

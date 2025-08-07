@@ -15,48 +15,6 @@ from modules.sample_hijack import clip_separate
 from modules.util import get_file_from_folder_list, get_enabled_loras
 
 
-# Добавляем в начало файла
-from torch.nn import Conv2d, functional as F
-from torch.nn.modules.utils import _pair
-from typing import Optional
-
-def _patch_conv_for_tiling(conv_layer, tile_x, tile_y, start_step, stop_step):
-    """Патчим один слой Conv2d с проверкой шагов"""
-    original_forward = conv_layer._conv_forward
-    
-    def _tiled_conv_forward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
-        step = getattr(async.task, 'tile_step', 0)
-        
-        if (start_step <= step) and (stop_step < 0 or step <= stop_step):
-            # Применяем асимметричный тайлинг
-            if tile_x:
-                input = F.pad(input, (self._reversed_padding_repeated_twice[0], 
-                                     self._reversed_padding_repeated_twice[1], 0, 0), 
-                            mode='circular')
-            if tile_y:
-                input = F.pad(input, (0, 0, 
-                                     self._reversed_padding_repeated_twice[2], 
-                                     self._reversed_padding_repeated_twice[3]), 
-                            mode='circular')
-        
-        return original_forward(input, weight, bias)
-    
-    conv_layer._conv_forward = _tiled_conv_forward.__get__(conv_layer, Conv2d)
-
-def _apply_tiling_to_model(model_patcher, tile_x, tile_y, start_step, stop_step):
-    """Патчим все Conv2d в ModelPatcher"""
-    model = model_patcher.model  # Получаем оригинальную модель
-    for layer in model.modules():
-        if isinstance(layer, Conv2d):
-            _patch_conv_for_tiling(layer, tile_x, tile_y, start_step, stop_step)
-
-def _restore_model_conv(model_patcher):
-    """Восстанавливаем оригинальные Conv2d"""
-    model = model_patcher.model
-    for layer in model.modules():
-        if isinstance(layer, Conv2d) and hasattr(layer, '_original_forward'):
-            layer._conv_forward = layer._original_forward
-
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -377,7 +335,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
                         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
-                        disable_preview=False,tile_x=False, tile_y=False, tile_start_step=0, tile_stop_step=-1):
+                        disable_preview=False,tile_x=False,tile_y=False,paddingStartStep=0,paddingStopStep=-1):
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
 
@@ -419,11 +377,28 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
+    def replacementConv2DConvForward(input: Tensor, weight: Tensor, bias: Optional[Tensor]):
+        step = async_task.tail_step
+        if ((self.paddingStartStep < 0 or step >= self.paddingStartStep) and (self.paddingStopStep < 0 or step <= self.paddingStopStep)):
+            working = F.pad(input, self.paddingX, mode=self.padding_modeX)
+            working = F.pad(working, self.paddingY, mode=self.padding_modeY)
+        else:
+            working = F.pad(input, self.paddingX, mode='constant')
+            working = F.pad(working, self.paddingY, mode='constant')
+        return F.conv2d(working, weight, bias, self.stride, _pair(0), self.dilation, self.groups)
+
+    if tile_x or tile_y:
+        for layer in target_unet.modules():
+            if type(layer) == Conv2d:
+                layer.padding_modeX = 'circular' if tileX else 'constant'
+                layer.padding_modeY = 'circular' if tileY else 'constant'
+                layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
+                layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
+                layer.paddingStartStep = startStep
+                layer.paddingStopStep = stopStep
+                layer._conv_forward = replacementConv2DConvForward.__get__(layer, Conv2d)
+
     if refiner_swap_method == 'joint':
-        if tile_x or tile_y:
-            _apply_tiling_to_model(final_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
-            if final_refiner_unet is not None:
-                _apply_tiling_to_model(final_refiner_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
         sampled_latent = core.ksampler(
             model=target_unet,
             refiner=target_refiner_unet,
@@ -445,11 +420,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         decoded_latent = core.decode_vae(vae=target_vae, latent_image=sampled_latent, tiled=tiled)
 
     if refiner_swap_method == 'separate':
-        if tile_x or tile_y:
-            _apply_tiling_to_model(final_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
-            if final_refiner_unet is not None:
-                _apply_tiling_to_model(final_refiner_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
-
         sampled_latent = core.ksampler(
             model=target_unet,
             positive=positive_cond,
@@ -472,10 +442,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         if target_model is None:
             target_model = target_unet
             print('Use base model to refine itself - this may because of developer mode.')
-        if tile_x or tile_y:
-            _apply_tiling_to_model(final_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
-            if final_refiner_unet is not None:
-                _apply_tiling_to_model(final_refiner_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
 
         sampled_latent = core.ksampler(
             model=target_model,
@@ -504,10 +470,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         if modules.inpaint_worker.current_task is not None:
             modules.inpaint_worker.current_task.unswap()
-        if tile_x or tile_y:
-            _apply_tiling_to_model(final_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
-            if final_refiner_unet is not None:
-                _apply_tiling_to_model(final_refiner_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
 
         sampled_latent = core.ksampler(
             model=target_unet,
@@ -546,11 +508,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         if modules.inpaint_worker.current_task is not None:
             modules.inpaint_worker.current_task.swap()
-        if tile_x or tile_y:
-            _apply_tiling_to_model(final_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
-            if final_refiner_unet is not None:
-                _apply_tiling_to_model(final_refiner_unet, tile_x, tile_y, tile_start_step, tile_stop_step)
-        
+
         sampled_latent = core.ksampler(
             model=target_model,
             positive=clip_separate(positive_cond, target_model=target_model.model, target_clip=target_clip),
@@ -575,9 +533,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             target_model = target_vae
         decoded_latent = core.decode_vae(vae=target_model, latent_image=sampled_latent, tiled=tiled)
     if tile_x or tile_y:
-            _restore_model_conv(final_unet)
-            if final_refiner_unet is not None:
-                _restore_model_conv(final_refiner_unet)
+        for layer in target_unet.modules():
+            if isinstance(layer, Conv2d) and hasattr(layer, '_original_forward'):
+                layer._conv_forward = layer._original_forward
     images = core.pytorch_to_numpy(decoded_latent)
     modules.patch.patch_settings[os.getpid()].eps_record = None
     return images
