@@ -385,25 +385,15 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     def make_tiled_conv(original_conv, tile_x, tile_y):
         class TiledConv2d(torch.nn.Conv2d):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.debug_counter = 0  # Счётчик вызовов для избежания спама
+            
             def forward(self, input):
-                self.debug_counter += 1
-                if self.debug_counter <= 3:  # Выводим только первые 3 вызова
-                    logger.info(f"\n=== TiledConv2d Debug ===\n"
-                               f"Input shape: {input.shape}\n"
-                               f"Kernel size: {self.kernel_size}\n"
-                               f"Padding: {self.padding}\n"
-                               f"Tiling X: {'ENABLED' if tile_x else 'disabled'}\n"
-                               f"Tiling Y: {'ENABLED' if tile_y else 'disabled'}")
-               # Сохраняем оригинальные размеры
+                print(f"Вызов forward в слое {type(self).__name__}")
+                # Сохраняем оригинальные размеры
                 original_size = input.size()
             
                 padding = _pair(self.padding)
                 if tile_x:
                     input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
-                    print(f"After X tiling (circular): {input.shape}")
                 if tile_y:
                     input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
             
@@ -413,7 +403,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     (0, 0),  # padding уже применен
                     self.dilation, self.groups
                 )
-                print(f"Output shape: {output.shape}")
             
                 # Обрезаем до оригинального размера если нужно
                 if output.size() != original_size:
