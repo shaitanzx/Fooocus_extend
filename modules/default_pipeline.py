@@ -411,7 +411,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                                 if tile_y:
                                     input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
                             
-                            return original(input, *args, **kwargs)
+                                return original(input, *args, **kwargs)
                         return wrapper
                     
                     # Создаем и привязываем новый forward
