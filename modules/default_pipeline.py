@@ -383,51 +383,54 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-    class TiledConv2d(torch.nn.Conv2d):
-        def __init__(self, conv_layer):
-            super().__init__(
-                in_channels=conv_layer.in_channels,
-                out_channels=conv_layer.out_channels,
-                kernel_size=conv_layer.kernel_size,
-                stride=conv_layer.stride,
-                padding=conv_layer.padding,
-                dilation=conv_layer.dilation,
-                groups=conv_layer.groups,
-                bias=conv_layer.bias is not None,
-                padding_mode='zeros'  # Реальный padding делаем в forward
-            )
-            # Копируем веса
-            self.weight = conv_layer.weight
-            if conv_layer.bias is not None:
-                self.bias = conv_layer.bias
+    def make_tiled_conv(original_conv, tile_x, tile_y):
+        class TiledConv2d(torch.nn.Conv2d):
+            def forward(self, input):
+                padding = _pair(self.padding)
+                if tile_x:
+                    input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
+                if tile_y:
+                    input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
+                return F.conv2d(
+                    input, self.weight, self.bias, self.stride,
+                    (0, 0),  # padding уже применен
+                    self.dilation, self.groups
+                )
+        
+        # Создаем новый слой с теми же параметрами
+        tiled_conv = TiledConv2d(
+            original_conv.in_channels,
+            original_conv.out_channels,
+            original_conv.kernel_size,
+            stride=original_conv.stride,
+            padding=0,  # padding применяем вручную
+            dilation=original_conv.dilation,
+            groups=original_conv.groups,
+            bias=original_conv.bias is not None
+        )
+        
+        # Копируем веса
+        tiled_conv.weight.data = original_conv.weight.data
+        if original_conv.bias is not None:
+            tiled_conv.bias.data = original_conv.bias.data
             
-        def forward(self, input):
-            # Всегда применяем тайлинг
-            padding = _pair(self.padding)
-            input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')  # tile_x
-            input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')  # tile_y
-            return F.conv2d(
-                input, self.weight, self.bias, self.stride,
-                (0, 0),  # padding уже применён
-                self.dilation, self.groups
-            )
+        return tiled_conv
 
+    # Применяем тайлинг к модели
     original_convs = []
     if tile_x or tile_y:
-        # Заменяем все Conv2d на наши версии
-        for name, module in list(target_unet.model.named_children()):
-            if isinstance(module, torch.nn.Conv2d):
-                wrapped = TiledConv2d(module)
-                setattr(target_unet.model, name, wrapped)
-                original_convs.append((name, module))
-
-        # Применяем только к Conv2d слоям
-        for module in target_unet.model.modules():
-            if isinstance(module, Conv2d):
-                # Создаем и привязываем патченный метод
-                patched = patch_conv_layer(module).__get__(module, Conv2d)
-                original_forwards.append((module, module.forward))
-                module.forward = patched
+        # Рекурсивно заменяем все Conv2d слои
+        def replace_convs(module):
+            for name, child in module.named_children():
+                if isinstance(child, Conv2d):
+                    # Заменяем слой на версию с тайлингом
+                    setattr(module, name, make_tiled_conv(child, tile_x, tile_y))
+                    original_convs.append((module, name, child))
+                else:
+                    # Рекурсивно обрабатываем вложенные модули
+                    replace_convs(child)
+        
+        replace_convs(target_unet.model)
 
 
 
