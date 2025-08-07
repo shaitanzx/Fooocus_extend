@@ -413,7 +413,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                             else:
                                 input = F.pad(input, padding_y, mode='constant')
                         # Вызываем оригинальный метод со всеми аргументами
-                        return original_forward(input, weight, bias, *args, **kwargs)
+                            return original_forward(input, weight, bias, *args, **kwargs)
                 
                     return _conv_forward
             
