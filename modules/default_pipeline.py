@@ -14,12 +14,6 @@ from ldm_patched.modules.model_base import SDXL, SDXLRefiner
 from modules.sample_hijack import clip_separate
 from modules.util import get_file_from_folder_list, get_enabled_loras
 
-from torch import Tensor
-from torch.nn import Conv2d
-from torch.nn import functional as F
-from torch.nn.modules.utils import _pair
-from typing import Optional
-
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -339,9 +333,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
 @torch.no_grad()
 @torch.inference_mode()
-def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
-                        scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
-                        disable_preview=False,tile_x=False,tile_y=False,tile_start_step=0,tile_stop_step=-1):
+def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', disable_preview=False):
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
 
@@ -382,69 +374,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
-
-    def make_tiled_conv(original_conv, tile_x, tile_y):
-        class TiledConv2d(torch.nn.Conv2d):
-            
-            def forward(self, input):
-                print(f"Вызов forward в слое {type(self).__name__}", flush=True)
-                # Сохраняем оригинальные размеры
-                original_size = input.size()
-            
-                padding = _pair(self.padding)
-                if tile_x:
-                    input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
-                if tile_y:
-                    input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
-            
-                # Применяем свёртку с нулевым padding (уже учли в pad)
-                output = F.conv2d(
-                    input, self.weight, self.bias, self.stride,
-                    (0, 0),  # padding уже применен
-                    self.dilation, self.groups
-                )
-            
-                # Обрезаем до оригинального размера если нужно
-                if output.size() != original_size:
-                    h, w = original_size[-2], original_size[-1]
-                    output = output[..., :h, :w]
-            
-                return output
-    
-        # Создаем новый слой с теми же параметрами
-        tiled_conv = TiledConv2d(
-            original_conv.in_channels,
-            original_conv.out_channels,
-            original_conv.kernel_size,
-            stride=original_conv.stride,
-            padding=0,  # padding применяем вручную
-            dilation=original_conv.dilation,
-            groups=original_conv.groups,
-            bias=original_conv.bias is not None,
-            padding_mode='zeros'  # важно для совместимости
-        )
-    
-        # Копируем веса
-        with torch.no_grad():
-            tiled_conv.weight.data = original_conv.weight.data.clone()
-            if original_conv.bias is not None:
-                tiled_conv.bias.data = original_conv.bias.data.clone()
-    
-        return tiled_conv
-
-# Применяем тайлинг к модели
-    original_convs = []
-    if tile_x or tile_y:
-        print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++===')
-    # Не рекурсивно, только direct children
-        for name, module in list(target_unet.model.named_children()):
-            if isinstance(module, torch.nn.Conv2d):
-                # Заменяем слой на версию с тайлингом
-                setattr(target_unet.model, name, make_tiled_conv(module, tile_x, tile_y))
-                original_convs.append((target_unet.model, name, module))
-
-
-
 
     if refiner_swap_method == 'joint':
         sampled_latent = core.ksampler(
@@ -580,13 +509,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         if target_model is None:
             target_model = target_vae
         decoded_latent = core.decode_vae(vae=target_model, latent_image=sampled_latent, tiled=tiled)
-    if tile_x or tile_y:
-        print('----------------restore')
-        unet_model = target_unet.model
-        
-        for layer in unet_model.modules():
-            if isinstance(layer, Conv2d) and hasattr(layer, '_original_forward'):
-                layer._conv_forward = layer._original_forward
+
     images = core.pytorch_to_numpy(decoded_latent)
     modules.patch.patch_settings[os.getpid()].eps_record = None
     return images

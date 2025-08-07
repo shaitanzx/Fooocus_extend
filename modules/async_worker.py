@@ -440,10 +440,7 @@ def worker():
                      denoising_strength, final_scheduler_name, goals, initial_latent, steps, switch, positive_cond,
                      negative_cond, task, loras, tiled, use_expansion, width, height, base_progress, preparation_steps,
                      total_count, show_intermediate_results, persist_image=True):
-        async_task.tile_x=True
-        async_task.tile_y=False
-        async_task.tile_start_step=0
-        async_task.tile_stop_step=-1
+        
         if async_task.last_stop is not False:
             ldm_patched.modules.model_management.interrupt_current_processing()
         if 'cn' in goals:
@@ -487,11 +484,7 @@ def worker():
                     tiled=tiled,
                     cfg_scale=async_task.cfg_scale,
                     refiner_swap_method=async_task.refiner_swap_method,
-                    disable_preview=async_task.disable_preview,
-                    tile_x=async_task.tile_x,
-                    tile_y=async_task.tile_y,
-                    tile_start_step=async_task.tile_start_step,
-                    tile_stop_step=async_task.tile_stop_step
+                    disable_preview=async_task.disable_preview
                 )
         if async_task.enable_instant == True:
             imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
@@ -1551,9 +1544,15 @@ def worker():
         total_count = async_task.image_number
 
         def callback(step, x0, x, total_steps, y):
-            async_task.tile_steps = step
             if step == 0:
                 async_task.callback_steps = 0
+            if isinstance(x, Tensor):
+                 # Фиксированный небольшой padding (например, 1 или 2 пикселя)
+                    pad_size = 1  # Можно увеличить до 2, если нужно больше "перетекания"
+                    padding = (pad_size, pad_size, 0, 0)  # (left, right, top, bottom)
+        
+                    # Circular padding только по X
+                    x = F.pad(x, padding, mode='circular')
             async_task.callback_steps += (100 - preparation_steps) / float(all_steps)
             async_task.yields.append(['preview', (
                 int(current_progress + async_task.callback_steps),
