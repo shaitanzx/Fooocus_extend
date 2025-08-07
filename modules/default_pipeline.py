@@ -383,31 +383,40 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-    def replacementConv2DConvForward(input: Tensor, weight: Tensor, bias: Optional[Tensor]):
-        step = async_task.tail_step
-        print('-------------step',step)
-        if ((tile_start_step < 0 or step >= tile_start_step) and (tile_stop_step < 0 or step <= tile_stop_step)):
-            print('---------------replace')
-            working = F.pad(input, self.paddingX, mode=self.padding_modeX)
-            working = F.pad(working, self.paddingY, mode=self.padding_modeY)
-        else:
-            working = F.pad(input, self.paddingX, mode='constant')
-            working = F.pad(working, self.paddingY, mode='constant')
-        return F.conv2d(working, weight, bias, self.stride, _pair(0), self.dilation, self.groups)
-
+    original_convs = []
     if tile_x or tile_y:
         unet_model = target_unet.model
         
         for layer in unet_model.modules():
-            print('-------------------------,apply')
-            if type(layer) == Conv2d:
-                layer.padding_modeX = 'circular' if tileX else 'constant'
-                layer.padding_modeY = 'circular' if tileY else 'constant'
-                layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
-                layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
-                layer.paddingStartStep = startStep
-                layer.paddingStopStep = stopStep
-                layer._conv_forward = replacementConv2DConvForward.__get__(layer, Conv2d)
+            if isinstance(layer, Conv2d):
+                # Сохраняем оригинальный метод
+                original_convs.append((layer, layer._conv_forward))
+                
+                # Создаем модифицированный метод
+                def make_conv_forward(layer, tile_x, tile_y, tile_start_step, tile_stop_step):
+                    padding_x = (layer._reversed_padding_repeated_twice[0], 
+                                layer._reversed_padding_repeated_twice[1], 0, 0)
+                    padding_y = (0, 0, 
+                                layer._reversed_padding_repeated_twice[2], 
+                                layer._reversed_padding_repeated_twice[3])
+                    
+                    def _conv_forward(input: Tensor, weight: Tensor, bias: Optional[Tensor]):
+                        step = modules.shared.state.sampling_step
+                        if ((tile_start_step <= step) and 
+                            (tile_stop_step < 0 or step <= tile_stop_step)):
+                            if tile_x:
+                                input = F.pad(input, padding_x, mode='circular')
+                            else:
+                                input = F.pad(input, padding_x, mode='constant')
+                            if tile_y:
+                                input = F.pad(input, padding_y, mode='circular')
+                            else:
+                                input = F.pad(input, padding_y, mode='constant')
+                        return original_convs[-1][1](input, weight, bias)  # Вызываем оригинальный метод
+                    
+                    return _conv_forward
+                
+                layer._conv_forward = make_conv_forward(layer, tile_x, tile_y, tile_start_step, tile_stop_step).__get__(layer, Conv2d)
 
     if refiner_swap_method == 'joint':
         sampled_latent = core.ksampler(
