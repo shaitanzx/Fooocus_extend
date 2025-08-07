@@ -335,7 +335,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
                         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
-                        disable_preview=False,tile_x=False,tile_y=False,paddingStartStep=0,paddingStopStep=-1):
+                        disable_preview=False,tile_x=False,tile_y=False,tile_start_step=0,tile_stop_step=-1):
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
 
@@ -379,7 +379,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     def replacementConv2DConvForward(input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         step = async_task.tail_step
-        if ((self.paddingStartStep < 0 or step >= self.paddingStartStep) and (self.paddingStopStep < 0 or step <= self.paddingStopStep)):
+        if ((tile_start_step < 0 or step >= tile_start_step) and (tile_stop_step < 0 or step <= tile_stop_step)):
             working = F.pad(input, self.paddingX, mode=self.padding_modeX)
             working = F.pad(working, self.paddingY, mode=self.padding_modeY)
         else:
