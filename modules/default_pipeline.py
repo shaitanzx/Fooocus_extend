@@ -385,6 +385,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     def make_tiled_conv(original_conv, tile_x, tile_y):
         class TiledConv2d(torch.nn.Conv2d):
+            print(f"\n--- Input shape before padding: {input.shape}")
             def forward(self, input):
                 # Сохраняем оригинальные размеры
                 original_size = input.size()
@@ -392,6 +393,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 padding = _pair(self.padding)
                 if tile_x:
                     input = F.pad(input, (padding[1], padding[1], 0, 0), mode='circular')
+                    print(f"After X tiling (circular): {input.shape}")
                 if tile_y:
                     input = F.pad(input, (0, 0, padding[0], padding[0]), mode='circular')
             
@@ -401,6 +403,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     (0, 0),  # padding уже применен
                     self.dilation, self.groups
                 )
+                print(f"Output shape: {output.shape}")
             
                 # Обрезаем до оригинального размера если нужно
                 if output.size() != original_size:
