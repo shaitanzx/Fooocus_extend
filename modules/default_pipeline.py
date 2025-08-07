@@ -387,7 +387,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         class TiledConv2d(torch.nn.Conv2d):
             
             def forward(self, input):
-                print(f"Вызов forward в слое {type(self).__name__}")
+                print(f"Вызов forward в слое {type(self).__name__}", flush=True))
                 # Сохраняем оригинальные размеры
                 original_size = input.size()
             
