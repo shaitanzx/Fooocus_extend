@@ -342,7 +342,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
-        disable_preview=False,tile_x,tile_y):
+        disable_preview=False,tile_x=False,tile_y=False):
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
@@ -558,6 +558,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     images = core.pytorch_to_numpy(decoded_latent)
     modules.patch.patch_settings[os.getpid()].eps_record = None
-    for layer in [l for l in target_unet.model.modules() if isinstance(l, torch.nn.Conv2d)]:
+    if tile_x ot tile_y:
+        for layer in [l for l in target_unet.model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
     return images
