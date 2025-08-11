@@ -401,7 +401,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
     if tile_x or tile_y:
         make_circular_asymm(target_unet.model, tile_x, tile_y)
-        make_circular_asymm(target_refiner_unet.model, tile_x, tile_y)
 
     if refiner_swap_method == 'joint':
         sampled_latent = core.ksampler(
@@ -422,7 +421,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             previewer_end=steps,
             disable_preview=disable_preview
         )
-        decoded_latent = core.decode_vae(vae=target_vae, latent_image=sampled_latent, tiled=tiled)
+        decoded_latent = core.decode_vae(vae=target_vae, latent_image=sampled_latent, tiled=True if tile_x or tile_y else tiled)
 
     if refiner_swap_method == 'separate':
         sampled_latent = core.ksampler(
@@ -543,6 +542,5 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     if tile_x or tile_y:
         for layer in [l for l in target_unet.model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
-        for layer in [l for l in target_refiner_unet.model.modules() if isinstance(l, torch.nn.Conv2d)]:
-            layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
+
     return images
