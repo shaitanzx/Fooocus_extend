@@ -285,9 +285,6 @@ def worker():
     import math
     import numpy as np
     import torch
-
-    from torch import Tensor
-    from torch.nn import functional as F
     import time
     import shared
     import random
@@ -1547,23 +1544,8 @@ def worker():
         total_count = async_task.image_number
 
         def callback(step, x0, x, total_steps, y):
-
             if step == 0:
                 async_task.callback_steps = 0
-            if isinstance(x, torch.Tensor) and x.is_cuda:
-                # Явный тайлинг: копируем левую часть и добавляем справа, и наоборот
-                tile_size = x.size(-1) // 4  # Берём 1/4 ширины для тайлинга
-                left_part = x[..., :, :tile_size]  # Левая часть изображения
-                right_part = x[..., :, -tile_size:]  # Правая часть
-        
-                # Склеиваем: [левая -> исходное -> правая]
-                x = torch.cat([right_part, x, left_part], dim=-1)
-        
-                # Обрезаем до исходного размера (центрируем)
-                start_idx = (x.size(-1) - 112) // 2
-                x = x[..., :, start_idx:start_idx+112]
-                print('-----------------------------------')
-
             async_task.callback_steps += (100 - preparation_steps) / float(all_steps)
             async_task.yields.append(['preview', (
                 int(current_progress + async_task.callback_steps),
@@ -1810,3 +1792,4 @@ def worker():
 
 
 threading.Thread(target=worker, daemon=True).start()
+
