@@ -1463,8 +1463,8 @@ with shared.gradio_root:
                                                              step=1, value=128)
                         
                         with gr.Tab(label='Tiled'):
-                            tile_x = gr.Checkbox(label='Tiled X', False)
-                            tile_y = gr.Checkbox(label='Tiled Y', False)
+                            tile_x = gr.Checkbox(label='Tiled X', value=False)
+                            tile_y = gr.Checkbox(label='Tiled Y', value=False)
                         
 
                     with gr.Tab(label='Inpaint'):
