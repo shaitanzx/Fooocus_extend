@@ -559,6 +559,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     images = core.pytorch_to_numpy(decoded_latent)
     modules.patch.patch_settings[os.getpid()].eps_record = None
     if tile_x ot tile_y:
+        print('-----------------restore')
         for layer in [l for l in target_unet.model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
     return images
