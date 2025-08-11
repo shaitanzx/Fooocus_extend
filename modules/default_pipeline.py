@@ -340,7 +340,10 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
 @torch.no_grad()
 @torch.inference_mode()
-def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', disable_preview=False):
+def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
+        scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
+        disable_preview=False,tile_x,tile_y):
+
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
 
@@ -383,7 +386,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
     print('=====================================')
-    tiling="x_only"
+#    tiling="x_only"
 #    copy_unet=target_unet
 #    target_unet=copy.deepcopy(copy_unet)
 #    print(copy_unet)
@@ -404,15 +407,15 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         working = F.pad(working, self.paddingY, mode=self.padding_modeY)
         return F.conv2d(working, weight, bias, self.stride, _pair(0), self.dilation, self.groups)
     
-
-    if tiling == "enable":
-        make_circular_asymm(target_unet.model, True, True)
-    elif tiling == "x_only":
-        make_circular_asymm(target_unet.model, True, False)
-    elif tiling == "y_only":
-        make_circular_asymm(target_unet.model, False, True)
-    else:
-        make_circular_asymm(target_unet.model, False, False)    
+    make_circular_asymm(target_unet.model, tile_x, tile_y)
+    #if tiling == "enable":
+    #    make_circular_asymm(target_unet.model, True, True)
+    #elif tiling == "x_only":
+    #    make_circular_asymm(target_unet.model, True, False)
+    #elif tiling == "y_only":
+    #    make_circular_asymm(target_unet.model, False, True)
+    #else:
+    #    make_circular_asymm(target_unet.model, False, False)    
 
     print('------------process')
     print('------------refiner_method',refiner_swap_method)

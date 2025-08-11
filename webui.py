@@ -1462,6 +1462,10 @@ with shared.gradio_root:
                             canny_high_threshold = gr.Slider(label='Canny High Threshold', minimum=1, maximum=255,
                                                              step=1, value=128)
                         
+                        with gr.Tab(label='Tiled'):
+                            tile_x = gr.Checkbox(label='Tiled X', False)
+                            tile_y = gr.Checkbox(label='Tiled Y', False)
+                        
 
                     with gr.Tab(label='Inpaint'):
                         debugging_inpaint_preprocessor = gr.Checkbox(label='Debug Inpaint Preprocessing', value=False)
@@ -1744,6 +1748,7 @@ with shared.gradio_root:
         ctrls += [autonegativepromptenhance, base_model_obp,OBP_preset, amountoffluff, promptenhancer]
         ctrls += [presetprefix, presetsuffix,iteration_number,rnd_iteration]
         ctrls += [seed_random]
+        ctrls += [tile_x,tile_y]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
