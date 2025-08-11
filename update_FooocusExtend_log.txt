@@ -1,5 +1,8 @@
+v9.1.6
+1. Settings for Seamless tiling
+
 v9.1.5
-1.A deeper integration of the OneButtonPrompt module has been carried out and it has been moved to the 'in generation' group
+1. A deeper integration of the OneButtonPrompt module has been carried out and it has been moved to the 'in generation' group
 
 v9.1.4
 1. Some bug fix

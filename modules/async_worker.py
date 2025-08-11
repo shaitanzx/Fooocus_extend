@@ -266,6 +266,8 @@ class AsyncTask:
         self.iteration_number = int(args.pop())
         self.rnd_iteration = args.pop()
         self.seed_random = args.pop()
+        self.tile_x = args.pop()
+        self.tile_y = args.pop()
  
 
     
@@ -484,7 +486,9 @@ def worker():
                     tiled=tiled,
                     cfg_scale=async_task.cfg_scale,
                     refiner_swap_method=async_task.refiner_swap_method,
-                    disable_preview=async_task.disable_preview
+                    disable_preview=async_task.disable_preview,
+                    tile_x=async_task.tile_x,
+                    tile_y=async_task.tile_y
                 )
         if async_task.enable_instant == True:
             imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
@@ -1792,3 +1796,4 @@ def worker():
 
 
 threading.Thread(target=worker, daemon=True).start()
+

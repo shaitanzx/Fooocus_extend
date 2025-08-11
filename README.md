@@ -328,6 +328,11 @@ Allows you to upload a file (in *.json format) with custom styles
 
 If trigger words are not shown, then you need to scan LoRa, in the Civitai Helper module in the Scan Models for Civitai section
 
+**Seamless tiling**
+
+<img width="368" height="138" alt="image" src="https://github.com/user-attachments/assets/71564718-7048-4ce9-96df-24a145ede961" />
+
+Settings for creating seamless tiles. Located in Advanced - Developer Debug Mode - Control - Tiled. Sometimes a little edge refinement is required in any Photo Editor.
 
 <table>
   <tr>
@@ -344,6 +349,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.1.6
+1. Settings for Seamless tiling
 
 v9.1.5
 1. A deeper integration of the OneButtonPrompt module has been carried out and it has been moved to the 'in generation' group
