@@ -15,6 +15,13 @@ from modules.sample_hijack import clip_separate
 from modules.util import get_file_from_folder_list, get_enabled_loras
 
 
+import copy
+from typing import Optional
+from torch import Tensor
+from torch.nn import Conv2d
+from torch.nn import functional as F
+from torch.nn.modules.utils import _pair
+
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -375,36 +382,40 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-
+    print('=====================================')
     tiling="x_only"
-    copy_unet=target_unet
-    target_unet=copy.deepcopy(copy_unet)
-            
-    if tiling == "enable":
-        make_circular_asymm(model_copy.model, True, True)
-    elif tiling == "x_only":
-        make_circular_asymm(model_copy.model, True, False)
-    elif tiling == "y_only":
-        make_circular_asymm(model_copy.model, False, True)
-    else:
-        make_circular_asymm(model_copy.model, False, False)    
+#    copy_unet=target_unet
+#    target_unet=copy.deepcopy(copy_unet)
+#    print(copy_unet)
 
-    print('------------process')
-    print('------------refiner_method',refiner_swap_method)
     def make_circular_asymm(model, tileX: bool, tileY: bool):
+        
         for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
             layer.padding_modeX = 'circular' if tileX else 'constant'
             layer.padding_modeY = 'circular' if tileY else 'constant'
             layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
             layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
             layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
+            print('-----------------------prepere',)
         return model
     def __replacementConv2DConvForward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         print('------------replace')
         working = F.pad(input, self.paddingX, mode=self.padding_modeX)
         working = F.pad(working, self.paddingY, mode=self.padding_modeY)
         return F.conv2d(working, weight, bias, self.stride, _pair(0), self.dilation, self.groups)
+    
 
+    if tiling == "enable":
+        make_circular_asymm(target_unet.model, True, True)
+    elif tiling == "x_only":
+        make_circular_asymm(target_unet.model, True, False)
+    elif tiling == "y_only":
+        make_circular_asymm(target_unet.model, False, True)
+    else:
+        make_circular_asymm(target_unet.model, False, False)    
+
+    print('------------process')
+    print('------------refiner_method',refiner_swap_method)
 
 
     if refiner_swap_method == 'joint':
@@ -544,6 +555,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     images = core.pytorch_to_numpy(decoded_latent)
     modules.patch.patch_settings[os.getpid()].eps_record = None
-    target_unet=copy.deepcopy(copy_unet)
-    del copy_unet
+    for layer in [l for l in target_unet.model.modules() if isinstance(l, torch.nn.Conv2d)]:
+            layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
     return images
