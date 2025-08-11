@@ -421,7 +421,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             previewer_end=steps,
             disable_preview=disable_preview
         )
-        decoded_latent = core.decode_vae(vae=target_vae, latent_image=sampled_latent, tiled=True if tile_x or tile_y else tiled)
+        decoded_latent = core.decode_vae(vae=target_vae, latent_image=sampled_latent, tiled=tiled)
 
     if refiner_swap_method == 'separate':
         sampled_latent = core.ksampler(
