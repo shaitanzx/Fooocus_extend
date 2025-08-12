@@ -387,22 +387,27 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
-        for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
-            layer.padding_modeX = 'circular' if tileX else 'constant'
-            layer.padding_modeY = 'circular' if tileY else 'constant'
-            layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
-            layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
-            layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
+        #for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
+        #    layer.padding_modeX = 'circular' if tileX else 'constant'
+        #    layer.padding_modeY = 'circular' if tileY else 'constant'
+        #    layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
+        #    layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
+        #    layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
+
+        for layer in model.modules():
+            if type(layer) == Conv2d:
+                layer.padding_modeX = 'circular' if tileX else 'constant'
+                layer.padding_modeY = 'circular' if tileY else 'constant'
+                layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
+                layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
+                layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
+
+
+
         return model
     def __replacementConv2DConvForward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
-        if tile_x:
-            working = F.pad(input, self.paddingX, mode='circular')
-        else:
-            working = F.pad(input, self.paddingX, mode='constant')
-        if tile_y:
-            working = F.pad(input, self.paddingX, mode='circular')
-        else:
-            working = F.pad(input, self.paddingX, mode='constant')
+        working = F.pad(input, self.paddingX, mode=self.padding_modeX)
+        working = F.pad(working, self.paddingY, mode=self.padding_modeY)
         return F.conv2d(working, weight, bias, self.stride, _pair(0), self.dilation, self.groups)
     
     if tile_x or tile_y:
