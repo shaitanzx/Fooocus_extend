@@ -402,7 +402,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     def __replacementConv2DConvForward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         #working = F.pad(input, self.paddingX, mode=self.padding_modeX)
         #working = F.pad(working, self.paddingY, mode=self.padding_modeY)
-        working = F.pad(input, self.paddinX, mode='circular')
+        working = F.pad(input, self.paddin, mode='circular')
         return F.conv2d(working, weight, bias, self.stride, _pair(0), self.dilation, self.groups)
     
     if tile_x or tile_y:
