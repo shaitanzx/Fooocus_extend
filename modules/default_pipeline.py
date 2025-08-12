@@ -545,5 +545,4 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
-make_circular_asymm(target_vae.first_stage_model, tile_x, tile_y)
     return images
