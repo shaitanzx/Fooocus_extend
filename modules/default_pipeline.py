@@ -395,6 +395,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             print('------------------',layer._reversed_padding_repeated_twice[1])
             print('------------------',layer._reversed_padding_repeated_twice[2])
             print('------------------',layer._reversed_padding_repeated_twice[3])
+            print('++++++++++++++++++')
             #layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
             #layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
             layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
