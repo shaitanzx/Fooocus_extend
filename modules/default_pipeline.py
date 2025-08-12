@@ -387,23 +387,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
-        #for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
-        #    layer.padding_modeX = 'circular' if tileX else 'constant'
-        #    layer.padding_modeY = 'circular' if tileY else 'constant'
-        #    layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
-        #    layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
-        #    layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
-
-        for layer in model.modules():
-            if type(layer) == Conv2d:
-                layer.padding_modeX = 'circular' if tileX else 'constant'
-                layer.padding_modeY = 'circular' if tileY else 'constant'
-                layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
-                layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
-                layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
-
-
-
+        for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
+            layer.padding_modeX = 'circular' if tileX else 'constant'
+            layer.padding_modeY = 'circular' if tileY else 'constant'
+            layer.paddingX = (layer._reversed_padding_repeated_twice[0], layer._reversed_padding_repeated_twice[1], 0, 0)
+            layer.paddingY = (0, 0, layer._reversed_padding_repeated_twice[2], layer._reversed_padding_repeated_twice[3])
+            layer._conv_forward = __replacementConv2DConvForward.__get__(layer, Conv2d)
         return model
     def __replacementConv2DConvForward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
         working = F.pad(input, self.paddingX, mode=self.padding_modeX)
@@ -412,6 +401,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
     if tile_x or tile_y:
         make_circular_asymm(target_unet.model, tile_x, tile_y)
+        make_circular_asymm(target_vae.first_stage_model, tile_x, tile_y)
 
     if refiner_swap_method == 'joint':
         sampled_latent = core.ksampler(
