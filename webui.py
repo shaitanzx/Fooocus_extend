@@ -61,7 +61,7 @@ import extentions.instantid.main as instantid
 import extentions.photomaker.app as photomaker
 
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
-
+from extentions import tile_roll
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
@@ -1031,7 +1031,10 @@ with shared.gradio_root:
                         civitai_helper.civitai_help()
 
                   with gr.TabItem(label='TextMask') as text_mask:
-                    mask=gr.HTML()                  
+                    mask=gr.HTML() 
+
+                  with gr.TabItem(label='Tile_Roll'):
+                        tile_roll.start()                 
 
 
 
