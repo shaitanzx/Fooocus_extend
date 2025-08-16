@@ -36,7 +36,7 @@ def start():
 
         _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs,
                                                                 extension='png',name_prefix='roll')
-        os.makedirs(os.path.dirname(local_temp_filename), exist_ok=True)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         img = Image.fromarray(image)
         print('---------------------------',filename)
         img.save(filename)
