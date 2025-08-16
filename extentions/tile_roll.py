@@ -6,7 +6,7 @@ import numpy as np
 def start():
     with gr.Column():
         with gr.Row():
-            tile_load = gr.Image(label="Upload file of tile", type="numpy")
+            tile_load = gr.Image(label="Upload file of tile", type="numpy",interactive=False)
             tile_copy = gr.Image(label="Upload file of tile", type="numpy",visible=False)
     with gr.Column():
         with gr.Row():
@@ -24,7 +24,7 @@ def start():
         image = np.roll(image, shift, axis=1)
         return image
     def shifting_y(shift,image):
-        image = np.roll(image, shift, axis=0)
+        image = np.roll(image, -shift, axis=0)
         return image
 
 
