@@ -28,6 +28,6 @@ def start():
 
 
 
-    tile_load.upload(fcopy_tile, inputs=tile_load, outputs=[tile_copy,x_shift,y_shift,save_tile])
+    tile_load.upload(copy_tile, inputs=tile_load, outputs=[tile_copy,x_shift,y_shift,save_tile])
     x_shift.release(shifting_x, inputs=[x_shift,tile_copy],outputs=tile_load,show_progress=False)
     y_shift.release(shifting_y, inputs=[y_shift,tile_copy],outputs=tile_load,show_progress=False)
