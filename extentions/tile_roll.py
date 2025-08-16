@@ -26,7 +26,7 @@ def start():
     def shifting_y(shift,image):
         image = np.roll(image, -shift, axis=0)
         return image
-    def clear(image):
+    def clear_tile(image):
         if image == None:
             return gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)
         else:
