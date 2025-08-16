@@ -5,8 +5,8 @@ import cv2
 def start():
     with gr.Column():
         with gr.Row():
-            tile_load = gr.Image(label="Upload file of tile", type="filepath")
-            tile_copy = gr.Image(label="Upload file of tile", type="filepath",visible=False)
+            tile_load = gr.Image(label="Upload file of tile", type="numpy")
+            tile_copy = gr.Image(label="Upload file of tile", type="numpy",visible=False)
     with gr.Column():
         with gr.Row():
             y_shift = gr.Slider(label="Y Shift",minimum=0,maximum=1.5,step=1,value=0,interactive=True,visible=False)
