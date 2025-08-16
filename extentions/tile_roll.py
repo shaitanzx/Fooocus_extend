@@ -7,7 +7,7 @@ def start():
     with gr.Column():
         with gr.Row():
             tile_load = gr.Image(label="Upload file of tile", type="numpy")
-            #tile_copy = gr.Image(label="Upload file of tile", type="numpy",visible=False)
+            tile_copy = gr.Image(label="Upload file of tile", type="numpy",visible=False)
     with gr.Column():
         with gr.Row():
             y_shift = gr.Slider(label="Y Shift",minimum=0,maximum=1.5,step=1,value=0,interactive=True,visible=False)
@@ -19,12 +19,9 @@ def start():
         height, width = image.shape[:2]
         x_shift = gr.update(minimum=-(width/2),maximum=width/2,value=0,visible=True)
         y_shift = gr.update(minimum=-(height/2),maximum=height/2,value=0,visible=True)
-        return x_shift,y_shift,gr.update(visible=True)
-    def shifting_x(shift,image):
-        image = np.roll(image, shift, axis=1)
-        return image
-    def shifting_y(shift,image):
-        image = np.roll(image, -shift, axis=0)
+        return image,x_shift,y_shift,gr.update(visible=True)
+    def shifting(y_shift,x_shift,image):
+        image = np.roll(image, (-y_shift,x_shift), axis=(0,1))
         return image
     def clear_tile(image):
         if image is None:
@@ -35,7 +32,7 @@ def start():
 
 
 
-    tile_load.upload(copy_tile, inputs=tile_load, outputs=[x_shift,y_shift,save_tile],show_progress=False)
+    tile_load.upload(copy_tile, inputs=tile_load, outputs=[tile_copy,x_shift,y_shift,save_tile],show_progress=False)
     tile_load.change(clear_tile, inputs=tile_load, outputs=[x_shift,y_shift,save_tile],show_progress=False)
-    x_shift.release(shifting_x, inputs=[x_shift,tile_load],outputs=tile_load,show_progress=False)
-    y_shift.release(shifting_y, inputs=[y_shift,tile_load],outputs=tile_load,show_progress=False)
+    x_shift.release(shifting, inputs=[y_shift,x_shift,tile_copy],outputs=tile_load,show_progress=False)
+    y_shift.release(shifting, inputs=[y_shift,tile_copy],outputs=tile_load,show_progress=False)
