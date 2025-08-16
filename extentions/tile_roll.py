@@ -27,7 +27,7 @@ def start():
         image = np.roll(image, -shift, axis=0)
         return image
     def clear(image):
-        if image = None:
+        if image == None:
             return gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)
 
 
