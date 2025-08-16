@@ -27,7 +27,7 @@ def start():
         image = np.roll(image, -shift, axis=0)
         return image
     def clear_tile(image):
-        if image == None:
+        if image is None:
             return gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)
         else:
             return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)
