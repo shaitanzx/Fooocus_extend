@@ -18,7 +18,7 @@ def start():
         height, width = image.shape[:2]
         x_shift = gr.update(minimum=-(width/2),maximum=width/2,value=0,visible=True)
         y_shift = gr.update(minimum=-(height/2),maximum=height/2,value=0,visible=True)
-        return image,x_shift,ysift
+        return image,x_shift,y_shift
 
 
     tile_load.upload(fn=copy_tile, inputs=tile_load, outputs=[tile_copy,x_shift,y_shift])
