@@ -41,7 +41,9 @@ def start():
         img.save(filename)
 
 
-    save_tile.click(save_image,inputs=tile_load)
+    save_tile.click(lambda: (gr.update(interactive=False)),outputs=save_tile) \
+        .then(save_image,inputs=tile_load) \
+        .then(lambda: (gr.update(interactive=True)),outputs=save_tile)
     tile_load.upload(copy_tile, inputs=tile_load, outputs=[tile_copy,x_shift,y_shift,save_tile],show_progress=False)
     tile_load.change(clear_tile, inputs=tile_load, outputs=[x_shift,y_shift,save_tile],show_progress=False)
     x_shift.release(shifting, inputs=[y_shift,x_shift,tile_copy],outputs=tile_load,show_progress=False)
