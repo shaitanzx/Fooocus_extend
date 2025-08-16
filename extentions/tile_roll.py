@@ -29,6 +29,8 @@ def start():
     def clear(image):
         if image == None:
             return gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)
+        else:
+            return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)
 
 
 
