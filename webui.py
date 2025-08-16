@@ -1034,7 +1034,7 @@ with shared.gradio_root:
                     mask=gr.HTML() 
 
                   with gr.TabItem(label='Tile_Roll'):
-                        tile_roll.start()                 
+                        tile_roll.start(output_format,name_prefix)                 
 
 
 
