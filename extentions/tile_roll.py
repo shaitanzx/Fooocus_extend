@@ -6,7 +6,7 @@ import modules.config
 from PIL import Image
 
 
-def start(output_format,name_prefix):
+def start():
     with gr.Column():
         with gr.Row():
             tile_load = gr.Image(label="Upload file of tile", type="numpy")
@@ -34,9 +34,10 @@ def start(output_format,name_prefix):
     def save_image(image):
 
         _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs,
-                                                                extension=output_format,name_prefix=name_prefix)
+                                                                extension='png',name_prefix='roll')
         os.makedirs(os.path.dirname(local_temp_filename), exist_ok=True)
         img = Image.fromarray(image)
+        print('---------------------------',filename)
         img.save(filename)
 
 
