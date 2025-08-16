@@ -6,7 +6,7 @@ import numpy as np
 def start():
     with gr.Column():
         with gr.Row():
-            tile_load = gr.Image(label="Upload file of tile", type="numpy",interactive=False)
+            tile_load = gr.Image(label="Upload file of tile", type="numpy",tool=None)
             tile_copy = gr.Image(label="Upload file of tile", type="numpy",visible=False)
     with gr.Column():
         with gr.Row():
