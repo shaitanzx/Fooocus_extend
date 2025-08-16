@@ -25,6 +25,7 @@ def start():
         return image
     def clear_tile(image):
         if image is None:
+            print ('-------------------',image)
             return gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)
         else:
             return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)
