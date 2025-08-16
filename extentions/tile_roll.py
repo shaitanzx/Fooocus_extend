@@ -38,10 +38,7 @@ def start():
                                                                 extension='png',name_prefix='roll')
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         img = Image.fromarray(image)
-        print('---------------------------',filename)
         img.save(filename)
-
-
     save_tile.click(lambda: (gr.update(interactive=False)),outputs=save_tile) \
         .then(save_image,inputs=tile_load) \
         .then(lambda: (gr.update(interactive=True)),outputs=save_tile)
