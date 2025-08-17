@@ -240,6 +240,18 @@ How to use:
 3. Generate a mask in two clicks
 4. Download and use in ControlNet (CPDS or PyraCanny) or as a mask for Inpaint to stylise text and blend into an image.
 
+**Roller**
+
+<img width="749" height="482" alt="image" src="https://github.com/user-attachments/assets/d9c0d272-381e-4da8-9baa-21de1589d25c" />
+
+This module is designed for rolling tiles to give it a more aesthetic appearance without losing the seamless effect.
+
+Y_shift - vertical image shift.
+
+Х_shift - horizontal image shift.
+
+Save to OUTPUT FOLDER - saving the image to the output folder
+
 **OpenPoseEditor**
 
 <img width="1089" height="571" alt="image" src="https://github.com/user-attachments/assets/564e6ebc-3b49-4e50-bd61-819fab2ba090" />
@@ -349,6 +361,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.1.7
+1. Add Roller in tools
 
 v9.1.6
 1. Settings for Seamless tiling
