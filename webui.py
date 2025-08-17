@@ -1033,7 +1033,7 @@ with shared.gradio_root:
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML() 
 
-                  with gr.TabItem(label='Tile_Roll'):
+                  with gr.TabItem(label='Roller'):
                         tile_roll.start()                 
 
 
@@ -1982,3 +1982,4 @@ shared.gradio_root.launch(
     allowed_paths=[modules.config.path_outputs],
     blocked_paths=[constants.AUTH_FILENAME]
 )
+
