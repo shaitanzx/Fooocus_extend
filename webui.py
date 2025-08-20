@@ -758,7 +758,7 @@ with shared.gradio_root:
                         with gr.TabItem(label='Vector'):
                             (poUseColor, poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, 
                                 poTransPNGEps,poDoVector,poTransPNGQuant) = vector.ui()
-                            vector_prompt=vector.StyleDict[poUseColor.value]
+                            print('--------',poUseColor)
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
