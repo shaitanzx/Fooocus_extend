@@ -532,41 +532,78 @@ def worker():
             imgs = default_censor(imgs)
         progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
         img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
+        if async_task.poDoVector:
+            image = Image.fromarray(imgs[0])
+            if async_task.poTransPNG:
+                imgQ = image.quantize(colors=async_task.poTransPNGQuant, kmeans=0, palette=None)
+                histo = image.histogram()
 
-        image = Image.fromarray(imgs[0])
-        bm = Bitmap(image, blacklevel=0.5)
-    # bm.invert()
-        plist = bm.trace(
-            turdsize=2,
-            turnpolicy=POTRACE_TURNPOLICY_MINORITY,
-            alphamax=1,
-            opticurve=False,
-            opttolerance=0.2,
-        )
+                # get first pixel and assume it is background, best with Sticker style
+                if (imgQ):
+                    bgI = imgQ.getpixel((0,0)) # return pal index
+                    bg = list(imgQ.palette.colors.keys())[bgI]
 
-        _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+                    E = async_task.poTransPNGEps # tolerance range if noisy
 
-        with open(f"{filename}.svg", "w") as fp:
-            fp.write(
-                f'''<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{image.width}" height="{image.height}" viewBox="0 0 {image.width} {image.height}">''')
-            parts = []
-            for curve in plist:
-                fs = curve.start_point
-                parts.append(f"M{fs.x},{fs.y}")
-                for segment in curve.segments:
-                    if segment.is_corner:
-                        a = segment.c
-                        b = segment.end_point
-                        parts.append(f"L{a.x},{a.y}L{b.x},{b.y}")
+                imgT=imgQ.convert('RGBA')
+                datas = imgT.getdata()
+                newData = []
+                for item in datas:
+                    if (item[0] > bg[0]-E and item[0] < bg[0]+E) and (item[1] > bg[1]-E and item[1] < bg[1]+E) and (item[2] > bg[2]-E and item[1] < bg[2]+E):
+                        newData.append((255, 255, 255, 0))
                     else:
-                        a = segment.c1
-                        b = segment.c2
-                        c = segment.end_point
-                        parts.append(f"C{a.x},{a.y} {b.x},{b.y} {c.x},{c.y}")
-                parts.append("z")
-            fp.write(f'<path stroke="none" fill="black" fill-rule="evenodd" d="{"".join(parts)}"/>')
-            fp.write("</svg>")
+                        newData.append(item)
+
+                imgT.putdata(newData)
+                image=imgT
+                _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+                img_paths = save_and_log(async_task, height, np.array(image), task, use_expansion, width, loras, persist_image)
+#                imgT.save(fullofTPNG)
+#                mixedImages.append([imgQ,"PNG-quantized"])
+#                mixedImages.append([imgT,"PNG-transparent"])
+
+
+
+
+
+
+
+
+
+            bm = Bitmap(image, blacklevel=0.5)
+        # bm.invert()
+            plist = bm.trace(
+                turdsize=2,
+                turnpolicy=POTRACE_TURNPOLICY_MINORITY,
+                alphamax=1,
+                opticurve=False,
+                opttolerance=0.2,
+            )
+
+            _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+            with open(f"{filename}.svg", "w") as fp:
+                fp.write(
+                    f'''<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{image.width}" height="{image.height}" viewBox="0 0 {image.width} {image.height}">''')
+                parts = []
+                for curve in plist:
+                    fs = curve.start_point
+                    parts.append(f"M{fs.x},{fs.y}")
+                    for segment in curve.segments:
+                        if segment.is_corner:
+                            a = segment.c
+                            b = segment.end_point
+                            parts.append(f"L{a.x},{a.y}L{b.x},{b.y}")
+                        else:
+                            a = segment.c1
+                            b = segment.c2
+                            c = segment.end_point
+                            parts.append(f"C{a.x},{a.y} {b.x},{b.y} {c.x},{c.y}")
+                    parts.append("z")
+                fp.write(f'<path stroke="none" fill="black" fill-rule="evenodd" d="{"".join(parts)}"/>')
+                fp.write("</svg>")
 
         yield_result(async_task, img_paths, current_progress, async_task.black_out_nsfw, False,
                      do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
