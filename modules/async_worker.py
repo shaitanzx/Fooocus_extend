@@ -530,11 +530,12 @@ def worker():
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
-        progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
+#        progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
 #        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
         if async_task.poDoVector:
             image = Image.fromarray(imgs[0])
             if async_task.poTransPNG:
+                progressbar(async_task, current_progress, f'Transparenting image ...')
                 imgQ = image.quantize(colors=async_task.poTransPNGQuant, kmeans=0, palette=None)
                 histo = image.histogram()
 
@@ -558,12 +559,9 @@ def worker():
                 image=imgT
                 _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
-                image_png = np.array(image)
-                imgs.append(image_png)
-                #img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
-#                imgT.save(fullofTPNG)
-#                mixedImages.append([imgQ,"PNG-quantized"])
-#                mixedImages.append([imgT,"PNG-transparent"])
+                if not async_task.poKeepPnm:
+                    image_png = np.array(image)
+                    imgs.append(image_png)
 
 
 
@@ -573,6 +571,7 @@ def worker():
 
 
 
+            progressbar(async_task, current_progress, f'Vectorization image ...')
             bm = Bitmap(image, blacklevel=0.5)
         # bm.invert()
             plist = bm.trace(
@@ -606,6 +605,7 @@ def worker():
                     parts.append("z")
                 fp.write(f'<path stroke="none" fill="black" fill-rule="evenodd" d="{"".join(parts)}"/>')
                 fp.write("</svg>")
+        progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
         img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
         yield_result(async_task, img_paths, current_progress, async_task.black_out_nsfw, False,
                      do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
