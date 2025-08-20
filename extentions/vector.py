@@ -29,8 +29,8 @@ def ui():
                     with gr.Group():
                         with gr.Row():
                             poDoVector = gr.Checkbox(label="Enable Vectorizing", value=True,interactive=True)
-                            poOpaque = gr.Checkbox(label="White is Opaque", value=True,interactive=True)
-                            poTight = gr.Checkbox(label="Cut white margin from input", value=True,interactive=True)
+                            poOpaque = gr.Checkbox(label="White is Opaque", value=True,interactive=True,visible=False)
+                            poTight = gr.Checkbox(label="Cut white margin from input", value=True,interactive=True,visible=False)
                         with gr.Row():
                             poKeepPnm = gr.Checkbox(label="Keep temp images", value=False)
                             poThreshold = gr.Slider(label="Threshold", minimum=0.0, maximum=1.0, step=0.05, value=0.5,interactive=True)
@@ -41,7 +41,8 @@ def ui():
                         poTransPNG = gr.Checkbox(label="Transparent PNG",value=False)
                         poTransPNGEps = gr.Slider(label="Noise Tolerance",minimum=0,maximum=128,value=16,interactive=True)
                         poTransPNGQuant = gr.Slider(label="Quantize",minimum=2,maximum=255,value=16,interactive=True)
-        poUseColor = gr.Radio(list(StyleDict.keys()), label="Visual style", value="Illustration",interactive=True)
-        prompt_box=gr.Textbox(value=vector_prompt,visible=False)
+            poUseColor = gr.Radio(list(StyleDict.keys()), label="Visual style", value="Illustration",interactive=True)
+        with gr.Row():
+            prompt_box=gr.Textbox(value=vector_prompt,visible=False)
     poUseColor.change(prompt,inputs=poUseColor,outputs=prompt_box)    
     return prompt_box, poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant

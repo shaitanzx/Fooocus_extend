@@ -563,14 +563,6 @@ def worker():
                     image_png = np.array(image)
                     imgs.append(image_png)
 
-
-
-
-
-
-
-
-
             progressbar(async_task, current_progress, f'Vectorization image ...')
             bm = Bitmap(image, blacklevel=0.5)
         # bm.invert()
@@ -579,7 +571,7 @@ def worker():
                 turnpolicy=POTRACE_TURNPOLICY_MINORITY,
                 alphamax=1,
                 opticurve=False,
-                opttolerance=0.2,
+                opttolerance=async_task.poThreshold,
             )
 
             _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
