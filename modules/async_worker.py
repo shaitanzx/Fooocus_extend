@@ -531,7 +531,7 @@ def worker():
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
         progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
-        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
+#        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
         if async_task.poDoVector:
             image = Image.fromarray(imgs[0])
             if async_task.poTransPNG:
@@ -558,7 +558,9 @@ def worker():
                 image=imgT
                 _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
-                img_paths = save_and_log(async_task, height, np.array(image), task, use_expansion, width, loras, persist_image)
+                image_png = np.array(image)
+                imgs.append(image_png)
+                #img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
 #                imgT.save(fullofTPNG)
 #                mixedImages.append([imgQ,"PNG-quantized"])
 #                mixedImages.append([imgT,"PNG-transparent"])
@@ -604,7 +606,7 @@ def worker():
                     parts.append("z")
                 fp.write(f'<path stroke="none" fill="black" fill-rule="evenodd" d="{"".join(parts)}"/>')
                 fp.write("</svg>")
-
+        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
         yield_result(async_task, img_paths, current_progress, async_task.black_out_nsfw, False,
                      do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
 
