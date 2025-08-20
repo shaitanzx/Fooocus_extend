@@ -268,6 +268,15 @@ class AsyncTask:
         self.seed_random = args.pop()
         self.tile_x = args.pop()
         self.tile_y = args.pop()
+        self.poUseColor = args.pop()
+        self.poOpaque = args.pop()
+        self.poTight = args.pop()
+        self.poKeepPnm = args.pop()
+        self.poThreshold = args.pop()
+        self.poTransPNG = args.pop()
+        self.poTransPNGEps = args.pop()
+        self.poDoVector = args.pop()
+        self.poTransPNGQuant = args.pop()
  
 
     
@@ -317,6 +326,9 @@ def worker():
     import extentions.instantid.main as instantid
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
+    import sys
+    from PIL import Image
+    from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -520,6 +532,42 @@ def worker():
             imgs = default_censor(imgs)
         progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
         img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
+
+        image = Image.fromarray(imgs[0])
+        bm = Bitmap(image, blacklevel=0.5)
+    # bm.invert()
+        plist = bm.trace(
+            turdsize=2,
+            turnpolicy=POTRACE_TURNPOLICY_MINORITY,
+            alphamax=1,
+            opticurve=False,
+            opttolerance=0.2,
+        )
+
+        _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        with open(f"{filename}.svg", "w") as fp:
+            fp.write(
+                f'''<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{image.width}" height="{image.height}" viewBox="0 0 {image.width} {image.height}">''')
+            parts = []
+            for curve in plist:
+                fs = curve.start_point
+                parts.append(f"M{fs.x},{fs.y}")
+                for segment in curve.segments:
+                    if segment.is_corner:
+                        a = segment.c
+                        b = segment.end_point
+                        parts.append(f"L{a.x},{a.y}L{b.x},{b.y}")
+                    else:
+                        a = segment.c1
+                        b = segment.c2
+                        c = segment.end_point
+                        parts.append(f"C{a.x},{a.y} {b.x},{b.y} {c.x},{c.y}")
+                parts.append("z")
+            fp.write(f'<path stroke="none" fill="black" fill-rule="evenodd" d="{"".join(parts)}"/>')
+            fp.write("</svg>")
+
         yield_result(async_task, img_paths, current_progress, async_task.black_out_nsfw, False,
                      do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
 
@@ -1437,6 +1485,8 @@ def worker():
                         async_task.autonegativeprompt, async_task.autonegativepromptstrength, async_task.autonegativepromptenhance, 
                         async_task.base_model_obp, async_task.OBP_preset, async_task.amountoffluff, async_task.promptenhancer, 
                         async_task.presetprefix, async_task.presetsuffix)
+            if async_task.poDoVector:
+                async_task.prompt += async_task.poUseColor 
             tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,
                                                          base_model_additional_loras, async_task.image_number,
                                                          async_task.disable_seed_increment, use_expansion, use_style,
