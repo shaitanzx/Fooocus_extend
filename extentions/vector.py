@@ -39,4 +39,4 @@ def ui():
                         poTransPNGEps = gr.Slider(label="Noise Tolerance",minimum=0,maximum=128,value=16,interactive=True)
                         poTransPNGQuant = gr.Slider(label="Quantize",minimum=2,maximum=255,value=16,interactive=True)
         poUseColor = gr.Radio(list(StyleDict.keys()), label="Visual style", value="Illustration",interactive=True)
-    return (StyleDict[poUseColor], poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant)
+    return (poUseColor, poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant)
