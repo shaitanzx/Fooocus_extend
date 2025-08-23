@@ -155,7 +155,6 @@ def output_zip():
     name, ext = os.path.splitext(filename)
     new_filename = f"output_{name[:-5]}{ext}"
     zip_file = os.path.join(directory, new_filename)
-    print('------------------',base_name)
     #zip_file='outputs.zip'
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(directory):
