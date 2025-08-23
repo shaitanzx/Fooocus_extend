@@ -4,10 +4,10 @@ import gradio as gr
 def ui():
 
     with gr.Row():
-        with gr.Row():
-            poDoVector = gr.Checkbox(label="Enabled", value=False)
 
-        with gr.Row():
+        poDoVector = gr.Checkbox(label="Enabled", value=False)
+
+    with gr.Row():
             with gr.Column():
                 with gr.Box():
                     with gr.Group():
