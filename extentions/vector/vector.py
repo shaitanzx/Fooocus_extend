@@ -132,9 +132,11 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
             img = trans(image,poTransPNGQuant,poTransPNGEps)
             name, ext = os.path.splitext(f_name)
             filename =  batch_path + os.path.sep + name +'_trans.'+ext
+            print('----------',filename)
             img.save(filename)
         name, ext = os.path.splitext(f_name)
         filename =  batch_path + os.path.sep + name
+        print('+++++++++++++',filename)
         save_svg(image,poThreshold,filename)
 
 
