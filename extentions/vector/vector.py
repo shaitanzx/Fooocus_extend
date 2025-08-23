@@ -145,7 +145,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name
         print('+++++++++++++',filename)
-        save_svg(image,poThreshold,filename)
+        save_svg(img,poThreshold,filename)
         passed+=1
 def output_zip():
     directory=os.path.join(os.getcwd(), 'batch_temp')
