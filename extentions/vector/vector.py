@@ -2,6 +2,7 @@ import gradio as gr
 from PIL import Image
 import sys
 import os
+import zipfile
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
 
 def ui():
@@ -131,6 +132,8 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     batch_all=len(batch_files)
     passed=1
     for f_name in batch_files:
+        print (f"\033[91m[Vector QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"Vector Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
         if poTransPNG:
             img = trans(image,poTransPNGQuant,poTransPNGEps)
@@ -142,6 +145,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         filename =  batch_temp + os.path.sep + name
         print('+++++++++++++',filename)
         save_svg(image,poThreshold,filename)
+        passed+=1
 def output_zip():
     directory=os.path.join(os.getcwd(), 'batch_temp')
     zip_file='outputs.zip'
