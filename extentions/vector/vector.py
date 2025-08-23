@@ -144,7 +144,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
 
 
 def ui_module():
-    with gr.Row()
+    with gr.Row():
         with gr.Column():
             with gr.Row():
                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
