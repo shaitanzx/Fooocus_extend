@@ -164,7 +164,7 @@ def output_zip():
                 zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
     zipf.close()
     current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, "outputs.zip")
+    file_path = os.path.join(current_dir, zip_file)
     return file_path
 
 
