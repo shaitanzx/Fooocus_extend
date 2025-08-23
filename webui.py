@@ -336,16 +336,16 @@ with shared.gradio_root:
     text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
     svgcode_file=gr.File(value='extentions/vector/svgcode/index.html',visible=False)
     def load_all_files():
-    folder_path = "extentions/vector"  # укажите путь к вашей папке
-    file_paths = []
+        folder_path = "extentions/vector"  # укажите путь к вашей папке
+        file_paths = []
     
-    for root, dirs, files in os.walk(folder_path):
-        for file in files:
-            full_path = os.path.join(root, file)
-            file_paths.append(full_path)
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                full_path = os.path.join(root, file)
+                file_paths.append(full_path)
     
-    return file_paths
-    
+        return file_paths
+
     svgcode_files = gr.File(
         value=load_all_files(),
         interactive=False,visible=True
