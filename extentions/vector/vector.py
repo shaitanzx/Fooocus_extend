@@ -2,7 +2,7 @@ import gradio as gr
 
 
 def ui():
-    vector_prompt=prompt("Illustration")
+
     with gr.Row():
         with gr.Row():
             poDoVector = gr.Checkbox(label="Enabled", value=False)
@@ -22,7 +22,6 @@ def ui():
                         poTransPNG = gr.Checkbox(label="Transparent PNG",value=False)
                         poTransPNGEps = gr.Slider(label="Noise Tolerance",minimum=0,maximum=128,value=16,interactive=True)
                         poTransPNGQuant = gr.Slider(label="Quantize",minimum=2,maximum=255,value=16,interactive=True)
-        with gr.Row():
-            prompt_box=gr.Textbox(value=vector_prompt,visible=False)
+
     poUseColor.change(prompt,inputs=poUseColor,outputs=prompt_box)    
     return poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant
