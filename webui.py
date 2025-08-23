@@ -62,7 +62,7 @@ import extentions.photomaker.app as photomaker
 
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 from extentions import tile_roll
-from extentions import vector
+from extentions.vector import vector
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
