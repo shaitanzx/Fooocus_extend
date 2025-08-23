@@ -5,7 +5,7 @@ def ui():
     vector_prompt=prompt("Illustration")
     with gr.Row():
         with gr.Row():
-        poDoVector = gr.Checkbox(label="Enabled", value=False)
+            poDoVector = gr.Checkbox(label="Enabled", value=False)
 
         with gr.Row():
             with gr.Column():
