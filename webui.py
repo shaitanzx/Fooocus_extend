@@ -819,7 +819,7 @@ with shared.gradio_root:
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
-                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer):
+                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
