@@ -140,12 +140,10 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
             img = trans(img,poTransPNGQuant,poTransPNGEps)
             name, ext = os.path.splitext(f_name)
             filename =  batch_temp + os.path.sep + name +'_trans'+ext
-            print('----------',filename)
             if not poKeepPnm:
                 img.save(filename)
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name
-        print('+++++++++++++',filename)
         save_svg(img,poThreshold,filename)
         passed+=1
 def output_zip():
@@ -198,9 +196,10 @@ def ui_module():
     enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
                                         outputs=[file_in,files_single], queue=False)
     
-    start.click(lambda: (gr.update(visible=True, interactive=False)),outputs=start) \
+    start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=start,file_out) \
               .then(fn=clear_make_dir) \
               .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
               .then(fn=process, inputs=[poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant]) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=file_out)
               .then(fn=output_zip, outputs=file_out) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
