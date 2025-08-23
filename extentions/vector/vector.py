@@ -3,6 +3,7 @@ from PIL import Image
 import sys
 import os
 import zipfile
+import modules.util 
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
 
 def ui():
@@ -119,7 +120,7 @@ def unzip_file(zip_file_obj,files_single,enable_zip):
                 print(f"copy error {original_name}: {str(e)}")
     return
 def clear_make_dir():
-    #directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_vector')
+    
     directory = os.path.join(os.getcwd(), 'batch_vector')
     delete_out(directory)
     directory = os.path.join(os.getcwd(), 'batch_temp')
@@ -150,6 +151,8 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     return gr.update(value=None,visible=False),gr.update(visible=True)
 def output_zip():
     directory=os.path.join(os.getcwd(), 'batch_temp')
+    base_name = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+    print('------------------',base_name)
     zip_file='outputs.zip'
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(directory):
