@@ -334,7 +334,8 @@ with shared.gradio_root:
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
     text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
-    url_display = gr.Textbox(visible=False)
+    svgcode_file=gr.File(value='extentions/text_mask.html',visible=False)
+    url_display = gr.Textbox(visible=True)
 
     shared.gradio_root.load(
        None,[],url_display,
