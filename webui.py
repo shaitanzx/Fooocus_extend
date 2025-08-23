@@ -341,7 +341,7 @@ with shared.gradio_root:
     inpaint_engine_state = gr.State('empty')
     text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
     #svgcode_file=gr.File(value='extentions/vector/svgcode/index.html',visible=False)
-    svgcode_file="extentions/vector/svgcode/index.html"
+    svgcode_file=gr.Textbox(value="extentions/vector/svgcode/index.html",visible=True)
     url_display = gr.Textbox(visible=False)
 
     shared.gradio_root.load(
