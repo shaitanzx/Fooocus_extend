@@ -1,0 +1,52 @@
+[
+    {
+        "name": "Vector Illustration",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((vector graphic))),medium detail",
+        "negative_prompt": "noisy, blurry, amateurish, sloppy, unattractive"
+    },
+    {
+        "name": "Vector Logo",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((centered vector graphic logo))),negative space,stencil,trending on dribbble",
+        "negative_prompt": "noisy, blurry, unattractive, sloppy, unprofessional"
+    },
+    {
+        "name": "Vector Drawing",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((cartoon graphic))),childrens book,lineart,negative space",
+        "negative_prompt": "noisy, blurry, grungy, sloppy, cluttered, disorganized"
+    },
+    {
+        "name": "Vector Artistic",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((artistic monochrome painting))),precise lineart,negative space",
+        "negative_prompt": "outdated, blurry, noisy, unattractive, sloppy"
+    },
+    {
+        "name": "Vector Tattoo",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((tattoo template, ink on paper))),uniform lighting,lineart,negative space",
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
+    },
+    {
+        "name": "Vector Gothic",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((gothic ink on paper))),H.P. Lovecraft,Arthur Rackham",
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
+    },
+    {
+        "name": "Vector Anime",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((clean ink anime illustration))),Studio Ghibli,Makoto Shinkai,Hayao Miyazaki,Audrey Kawasaki",
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
+    },
+    {
+        "name": "Vector Cartoon",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((clean ink funny comic cartoon illustration)))",
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
+    },
+    {
+        "name": "Vector Sticker",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(Die-cut sticker, kawaii sticker,contrasting background, illustration minimalism, vector, pastel colors)",
+		"negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
+    },
+    {
+        "name": "Vector Gold Pendant",
+        "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,gold dia de los muertos pendant, intricate 2d vector geometric, cutout shape pendant, blueprint frame lines sharp edges, svg vector style, product studio shoot",
+		"negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
+    }
+]
