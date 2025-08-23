@@ -77,6 +77,12 @@ def html_load(url,file):
                                 src = '{url}/file={file.name}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
+def html_load2(url,file):
+        return gr.update(value=f'''
+                                <iframe id='text_mask'
+                                src = '{url}/file={file}'
+                                width = '100%'
+                                height = '1080px'></iframe>''')
 def xyz_plot_ext(currentTask):
     global finished_batch
     finished_batch=False    
@@ -334,30 +340,8 @@ with shared.gradio_root:
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
     text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
-    svgcode_file=gr.File(value='extentions/vector/svgcode/index.html',visible=False)
-    def load_all_files():
-        folder_path = "extentions/vector"  # укажите путь к вашей папке
-        file_paths = []
-    
-        for root, dirs, files in os.walk(folder_path):
-            for file in files:
-                full_path = os.path.join(root, file)
-                file_paths.append(full_path)
-    
-        return file_paths
-
-    svgcode_files = gr.File(
-        value=load_all_files(),
-        interactive=False,visible=True
-    )
-
-
-
-
-
-
-
-
+    #svgcode_file=gr.File(value='extentions/vector/svgcode/index.html',visible=False)
+    svgcode_file="extentions/vector/svgcode/index.html"
     url_display = gr.Textbox(visible=False)
 
     shared.gradio_root.load(
