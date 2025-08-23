@@ -136,6 +136,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         print (f"\033[91m[Vector QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         gr.Info(f"Vector Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
+        yield gr.update(value=img,visible=True),gr.update(visible=False)
         if poTransPNG:
             img = trans(img,poTransPNGQuant,poTransPNGEps)
             name, ext = os.path.splitext(f_name)
@@ -146,6 +147,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         filename =  batch_temp + os.path.sep + name
         save_svg(img,poThreshold,filename)
         passed+=1
+    return gr.update(value=None,visible=False),gr.update(visible=True)
 def output_zip():
     directory=os.path.join(os.getcwd(), 'batch_temp')
     zip_file='outputs.zip'
@@ -173,7 +175,8 @@ def ui_module():
                 enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
             with gr.Row():
-                file_out=gr.File(label="Download a ZIP file", file_count='single',height=260)
+                file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
+                preview=gr.Image(label="Process preview",visible=False)
 
     with gr.Row():
             with gr.Column():
@@ -199,7 +202,8 @@ def ui_module():
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
               .then(fn=clear_make_dir) \
               .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
-              .then(fn=process, inputs=[poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant]) \
+              .then(fn=process, inputs=[poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant],
+                        outputs[preview,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=file_out) \
               .then(fn=output_zip, outputs=file_out) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
