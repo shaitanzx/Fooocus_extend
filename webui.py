@@ -1038,8 +1038,11 @@ with shared.gradio_root:
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML() 
 
-                  with gr.TabItem(label='SVGCode') as svg_code:
-                    svg=gr.HTML() 
+                  with gr.TabItem(label='SVGcode') as svg_code:
+                    with gr.Row():
+                        svg=gr.HTML()
+                    with gr.Row():
+                        gr.HTML('* \"SVGcode\" is powered by Thomas Steiner. <a href="https://web.dev/case-studies/svgcode" target="_blank">\U0001F4D4 Document</a>') 
 
 
                   with gr.TabItem(label='Roller'):
