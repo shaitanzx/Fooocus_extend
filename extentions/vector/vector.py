@@ -4,6 +4,7 @@ import sys
 import os
 import zipfile
 import modules.util 
+import tempfile
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
 
 def ui():
@@ -151,9 +152,12 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     return gr.update(value=None,visible=False),gr.update(visible=True)
 def output_zip():
     directory=os.path.join(os.getcwd(), 'batch_temp')
+    temp_dir=tempfile.gettempdir()
     _, _, filename = modules.util.generate_temp_filename(folder=os.path.join(os.getcwd(), 'batch_temp'))
     name, ext = os.path.splitext(filename)
-    zip_file = f"output_{name[:-5]}.zip"
+    #zip_file = f"output_{name[:-5]}.zip"
+    zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
+    print ('-------------',zip_file)
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(directory):
             for file in files:
