@@ -835,20 +835,14 @@ with shared.gradio_root:
                         main_name += f" — {', '.join(active_modules)}"
                     #main_name = "in generation" + (f" — {', '.join(filter(None, ['OneButtonPrompt enabled' if obp else None, 'PromptTranslate enabled' if translate else None,'PhotoMaker enabled' if photomaker else None,'InstantID enabled' if instant else None,'Inswapper enabled' if inswapper else None,'Codeformer enabled' if codeformer else None]))}" if any([obp,translate, photomaker, instant, inswapper, codeformer]) else "")
                     return gr.update(label=main_name)
-                poDoVector.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                enable_obp.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                enable_pm.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                translate_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                inswapper_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                codeformer_gen_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                enable_instant.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
+                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabledpo,poDoVector]
+                poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
