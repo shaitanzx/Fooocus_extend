@@ -137,7 +137,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         gr.Info(f"Vector Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
         if poTransPNG:
-            img = trans(image,poTransPNGQuant,poTransPNGEps)
+            img = trans(img,poTransPNGQuant,poTransPNGEps)
             name, ext = os.path.splitext(f_name)
             filename =  batch_temp + os.path.sep + name +'_trans.'+ext
             print('----------',filename)
