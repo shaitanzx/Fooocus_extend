@@ -165,7 +165,7 @@ def output_zip():
     return file_path
 def del_temp(file):
     current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, zip_file)
+    file_path = os.path.join(current_dir, file)
     os.remove(file_path)
     os.remove(file_path, exist_ok=True)
 
