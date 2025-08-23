@@ -2,22 +2,22 @@
     {
         "name": "Vector Illustration",
         "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((vector graphic))),medium detail",
-        "negative_prompt": "noisy, blurry, amateurish, sloppy, unattractive"
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
     },
     {
         "name": "Vector Logo",
         "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((centered vector graphic logo))),negative space,stencil,trending on dribbble",
-        "negative_prompt": "noisy, blurry, unattractive, sloppy, unprofessional"
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
     },
     {
         "name": "Vector Drawing",
         "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((cartoon graphic))),childrens book,lineart,negative space",
-        "negative_prompt": "noisy, blurry, grungy, sloppy, cluttered, disorganized"
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermarkd"
     },
     {
         "name": "Vector Artistic",
         "prompt": "{prompt},(((lineart))),((low detail)),(simple),high contrast,sharp,2 bit,(((artistic monochrome painting))),precise lineart,negative space",
-        "negative_prompt": "outdated, blurry, noisy, unattractive, sloppy"
+        "negative_prompt": "{prompt}, (((text))),((color)),(shading),background,noise,dithering,gradient,detailed,out of frame,ugly,error,Illustration, watermark"
     },
     {
         "name": "Vector Tattoo",
