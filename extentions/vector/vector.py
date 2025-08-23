@@ -176,7 +176,7 @@ def ui_module():
         with gr.Column():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
-                preview=gr.Image(label="Process preview",visible=False)
+                preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
 
     with gr.Row():
             with gr.Column():
