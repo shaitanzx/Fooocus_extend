@@ -121,9 +121,13 @@ def clear_make_dir():
     #directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_vector')
     directory = os.path.join(os.getcwd(), 'batch_vector')
     delete_out(directory)
+    directory = os.path.join(os.getcwd(), 'batch_temp')
+    delete_out(directory)
+    os.makedirs(directory, exist_ok=True)
     return
 def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     batch_path=os.path.join(os.getcwd(), 'batch_vector')
+    batch_temp=os.path.join(os.getcwd(), 'batch_temp')
     batch_all=len(batch_files)
     passed=1
     for f_name in batch_files:
@@ -131,14 +135,25 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         if poTransPNG:
             img = trans(image,poTransPNGQuant,poTransPNGEps)
             name, ext = os.path.splitext(f_name)
-            filename =  batch_path + os.path.sep + name +'_trans.'+ext
+            filename =  batch_temp + os.path.sep + name +'_trans.'+ext
             print('----------',filename)
             img.save(filename)
         name, ext = os.path.splitext(f_name)
-        filename =  batch_path + os.path.sep + name
+        filename =  batch_temp + os.path.sep + name
         print('+++++++++++++',filename)
         save_svg(image,poThreshold,filename)
-
+def output_zip():
+    directory=os.path.join(os.getcwd(), 'batch_temp')
+    zip_file='outputs.zip'
+    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
+    zipf.close()
+    current_dir = os.getcwd()
+    file_path = os.path.join(current_dir, "outputs.zip")
+    return file_path
 
 
 
@@ -180,9 +195,6 @@ def ui_module():
     start.click(lambda: (gr.update(visible=True, interactive=False)),outputs=start) \
               .then(fn=clear_make_dir) \
               .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
-              .then(fn=process, inputs=poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant, outputs=currentTask) \
-              .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
-              .then(fn=clearer) \
-              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
+              .then(fn=process, inputs=poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant) \
+              .then(fn=output_zip, outputs=file_out) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
