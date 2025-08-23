@@ -1077,7 +1077,7 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-            svg_code.select(html_load,inputs=[url_display,svgcode_file],outputs=svg,queue=False, show_progress=False)
+            svg_code.select(html_load2,inputs=[url_display,svgcode_file],outputs=svg,queue=False, show_progress=False)
             text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
