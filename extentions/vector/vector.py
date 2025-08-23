@@ -204,6 +204,6 @@ def ui_module():
               .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
               .then(fn=process, inputs=[poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant],
                         outputs=[preview,file_out],show_progress=False) \
-              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview]) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=output_zip, outputs=file_out) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
