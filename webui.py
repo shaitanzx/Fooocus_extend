@@ -757,7 +757,7 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='Vector'):
-                            (vector_prompt, poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, 
+                            (poKeepPnm, poThreshold, poTransPNG, 
                                 poTransPNGEps,poDoVector,poTransPNGQuant) = vector.ui()
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
@@ -1766,7 +1766,7 @@ with shared.gradio_root:
         ctrls += [presetprefix, presetsuffix,iteration_number,rnd_iteration]
         ctrls += [seed_random]
         ctrls += [tile_x,tile_y]
-        ctrls += [vector_prompt, poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
+        ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

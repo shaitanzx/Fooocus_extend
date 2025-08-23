@@ -268,9 +268,6 @@ class AsyncTask:
         self.seed_random = args.pop()
         self.tile_x = args.pop()
         self.tile_y = args.pop()
-        self.vector_prompt = args.pop()
-        self.poOpaque = args.pop()
-        self.poTight = args.pop()
         self.poKeepPnm = args.pop()
         self.poThreshold = args.pop()
         self.poTransPNG = args.pop()
@@ -1516,8 +1513,6 @@ def worker():
                         async_task.autonegativeprompt, async_task.autonegativepromptstrength, async_task.autonegativepromptenhance, 
                         async_task.base_model_obp, async_task.OBP_preset, async_task.amountoffluff, async_task.promptenhancer, 
                         async_task.presetprefix, async_task.presetsuffix)
-            if async_task.poDoVector:
-                async_task.prompt += async_task.vector_prompt 
             tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,
                                                          base_model_additional_loras, async_task.image_number,
                                                          async_task.disable_seed_increment, use_expansion, use_style,
