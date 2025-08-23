@@ -22,7 +22,7 @@ def ui():
     def prompt(style):
         return StyleDict[style]
     vector_prompt=prompt("Illustration")
-    with gr.Tab(label='Main'):
+    with gr.Row():
         with gr.Row():
             with gr.Column():
                 with gr.Box():
@@ -44,7 +44,5 @@ def ui():
             poUseColor = gr.Radio(list(StyleDict.keys()), label="Visual style", value="Illustration",interactive=True)
         with gr.Row():
             prompt_box=gr.Textbox(value=vector_prompt,visible=False)
-    with gr.Tab(label='Finetune PNG'):
-        temp = gr.Checkbox(label="temp", value=True,interactive=True)
     poUseColor.change(prompt,inputs=poUseColor,outputs=prompt_box)    
     return prompt_box, poOpaque, poTight, poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant

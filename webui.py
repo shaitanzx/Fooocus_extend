@@ -333,9 +333,9 @@ with shared.gradio_root:
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
-    text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
-    svgcode_file=gr.File(value='extentions/text_mask.html',visible=False)
-    url_display = gr.Textbox(visible=True)
+    text_mask_file=gr.File(value='extentions/text_mask.html',visible=True)
+    svgcode_file=gr.File(value='extentions/vector/index.html',visible=False)
+    url_display = gr.Textbox(visible=False)
 
     shared.gradio_root.load(
        None,[],url_display,
@@ -1038,6 +1038,10 @@ with shared.gradio_root:
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML() 
 
+                  with gr.TabItem(label='SVGCode') as svg_code:
+                    svg=gr.HTML() 
+
+
                   with gr.TabItem(label='Roller'):
                         tile_roll.start()                 
 
@@ -1066,6 +1070,7 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
+            svg.select(html_load,inputs=[url_display,svgcode_file],outputs=svg,queue=False, show_progress=False)
             text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
