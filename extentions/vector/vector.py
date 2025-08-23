@@ -151,11 +151,10 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     return gr.update(value=None,visible=False),gr.update(visible=True)
 def output_zip():
     directory=os.path.join(os.getcwd(), 'batch_temp')
-    _, base_name, _ = modules.util.generate_temp_filename(folder=os.path.join(os.getcwd(), 'batch_temp'))
-    dir_path, filename = os.path.split(base_name)
+    _, _, filename = modules.util.generate_temp_filename(folder=os.path.join(os.getcwd(), 'batch_temp'))
     name, ext = os.path.splitext(filename)
-    new_filename = f"output.{name[:-5]}{ext}"
-    zip_file = os.path.join(dir_path, new_filename)
+    new_filename = f"output_{name[:-5]}{ext}"
+    zip_file = os.path.join(directory, new_filename)
     print('------------------',base_name)
     #zip_file='outputs.zip'
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
