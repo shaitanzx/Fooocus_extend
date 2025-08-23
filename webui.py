@@ -1027,6 +1027,8 @@ with shared.gradio_root:
                     codeformer.codeformer_gen_gui2()
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
+                  with gr.TabItem(label='Vector'):
+                            vector.ui_module()
 
                 with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
