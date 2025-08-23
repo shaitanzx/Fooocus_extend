@@ -153,7 +153,7 @@ def output_zip():
     directory=os.path.join(os.getcwd(), 'batch_temp')
     _, _, filename = modules.util.generate_temp_filename(folder=os.path.join(os.getcwd(), 'batch_temp'))
     name, ext = os.path.splitext(filename)
-    zip_file = f"output_{name[:-5]}{ext}"
+    zip_file = f"output_{name[:-5]}.zip"
     #zip_file = os.path.join(directory, new_filename)
     print('--------------',zip_file)
     #zip_file='outputs.zip'
