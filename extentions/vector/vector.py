@@ -139,7 +139,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         if poTransPNG:
             img = trans(img,poTransPNGQuant,poTransPNGEps)
             name, ext = os.path.splitext(f_name)
-            filename =  batch_temp + os.path.sep + name +'_trans.'+ext
+            filename =  batch_temp + os.path.sep + name +'_trans'+ext
             print('----------',filename)
             img.save(filename)
         name, ext = os.path.splitext(f_name)
