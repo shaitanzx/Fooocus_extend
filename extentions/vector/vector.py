@@ -1,14 +1,12 @@
 import gradio as gr
 from PIL import Image
 import sys
+import os
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
 
 def ui():
-
     with gr.Row():
-
         poDoVector = gr.Checkbox(label="Enabled", value=False)
-
     with gr.Row():
             with gr.Column():
                 with gr.Box():
@@ -25,10 +23,7 @@ def ui():
     with gr.Row():
         gr.Markdown(value="Recommended to use vector styles")
     with gr.Row():
-        gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>')
-                            
-
- 
+        gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>') 
     return poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant
 
 def trans(image,poTransPNGQuant,poTransPNGEps):
@@ -86,3 +81,106 @@ def save_svg(image,poThreshold,filename):
                     parts.append("z")
                 fp.write(f'<path stroke="none" fill="black" fill-rule="evenodd" d="{"".join(parts)}"/>')
                 fp.write("</svg>")
+
+def delete_out(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                delete_out(file_path)
+                os.rmdir(file_path)
+        except Exception as e:
+            print(f'Failed to delete {file_path}. Reason: {e}')
+    return
+def unzip_file(zip_file_obj,files_single,enable_zip):
+    extract_folder = "./batch_vector"
+    if not os.path.exists(extract_folder):
+        os.makedirs(extract_folder)
+    if enable_zip:
+        zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
+        zip_ref.extractall(extract_folder)
+        zip_ref.close()
+    else:
+        for file in files_single:
+            original_name = os.path.basename(getattr(file, 'orig_name', file.name))
+            save_path = os.path.join(extract_folder, original_name)
+            try:
+                with open(file.name, 'rb') as src:
+                    with open(save_path, 'wb') as dst:
+                        while True:
+                            chunk = src.read(8192)  # Читаем по 8KB за раз
+                            if not chunk:
+                                break
+                            dst.write(chunk)
+            except Exception as e:
+                print(f"copy error {original_name}: {str(e)}")
+    return
+def clear_make_dir():
+    #directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_vector')
+    directory = os.path.join(os.getcwd(), 'batch_vector')
+    delete_out(directory)
+    return
+def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
+    batch_path=os.path.join(os.getcwd(), 'batch_vector')
+    batch_all=len(batch_files)
+    passed=1
+    for f_name in batch_files:
+        img = Image.open(batch_path+os.path.sep+f_name)
+        if poTransPNG:
+            img = trans(image,poTransPNGQuant,poTransPNGEps)
+            name, ext = os.path.splitext(f_name)
+            filename =  batch_path + os.path.sep + name +'_trans.'+ext
+            img.save(filename)
+        name, ext = os.path.splitext(f_name)
+        filename =  batch_path + os.path.sep + name
+        save_svg(image,poThreshold,filename)
+
+
+
+
+
+def ui_module():
+    with gr.Row()
+        with gr.Column():
+            with gr.Row():
+                file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
+                files_single = gr.Files(label="Drag (Select) 1 or more reference images",
+                                            file_types=["image"],visible=True,interactive=True,height=260) 
+            with gr.Row():
+                enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
+        with gr.Column():
+            with gr.Row():
+                file_out=gr.File(label="Download a ZIP file", file_count='single',height=260)
+
+    with gr.Row():
+            with gr.Column():
+                with gr.Box():
+                    with gr.Group():
+                        poTransPNG = gr.Checkbox(label="Transparent PNG",value=False)
+                        poTransPNGEps = gr.Slider(label="Noise Tolerance",minimum=0,maximum=128,value=16,interactive=True)
+                        poTransPNGQuant = gr.Slider(label="Quantize",minimum=2,maximum=255,value=16,interactive=True)  
+            with gr.Column():
+                with gr.Box():
+                    with gr.Group():
+                        with gr.Row():
+                            poKeepPnm = gr.Checkbox(label="Keep temp images", value=False)
+                            poThreshold = gr.Slider(label="Threshold", minimum=0.0, maximum=1.0, step=0.05, value=0.5,interactive=True)
+    with gr.Row():
+        start = gr.Button(value='Start vectorization')
+
+    with gr.Row():
+        gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>') 
+    enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
+                                        outputs=[file_in,files_single], queue=False)
+    
+    start.click(lambda: (gr.update(visible=True, interactive=False)),outputs=start) \
+              .then(fn=clear_make_dir) \
+              .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
+              .then(fn=process, inputs=poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant, outputs=currentTask) \
+              .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
+              .then(fn=clearer) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
+                  outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])

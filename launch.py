@@ -161,5 +161,6 @@ init_cache(config.model_filenames, config.paths_checkpoints, config.lora_filenam
 
 
 os.makedirs("batch_images", exist_ok=True)
+os.makedirs("batch_vector", exist_ok=True)
 
 from webui import *
