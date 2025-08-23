@@ -163,6 +163,12 @@ def output_zip():
     current_dir = os.getcwd()
     file_path = os.path.join(current_dir, zip_file)
     return file_path
+def del_temp(file):
+    current_dir = os.getcwd()
+    file_path = os.path.join(current_dir, zip_file)
+    os.remove(file_path)
+    os.remove(file_path, exist_ok=True)
+
 
 
 
@@ -209,4 +215,5 @@ def ui_module():
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=output_zip, outputs=file_out) \
+              .then(fn=del_temp, outputs=file_out) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
