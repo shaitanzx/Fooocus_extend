@@ -756,9 +756,6 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='Vector'):
-                            (poKeepPnm, poThreshold, poTransPNG, 
-                                poTransPNGEps,poDoVector,poTransPNGQuant) = vector.ui()
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
@@ -819,6 +816,9 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
+                        with gr.TabItem(label='Vector'):
+                            poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
+
                 def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
@@ -826,7 +826,8 @@ with shared.gradio_root:
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
                         ('Inswapper', inswapper),
-                        ('Codeformer', codeformer)
+                        ('Codeformer', codeformer),
+                        ('Vector', vector)
                         ]
                     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
                     main_name = "in generation"
@@ -834,6 +835,8 @@ with shared.gradio_root:
                         main_name += f" — {', '.join(active_modules)}"
                     #main_name = "in generation" + (f" — {', '.join(filter(None, ['OneButtonPrompt enabled' if obp else None, 'PromptTranslate enabled' if translate else None,'PhotoMaker enabled' if photomaker else None,'InstantID enabled' if instant else None,'Inswapper enabled' if inswapper else None,'Codeformer enabled' if codeformer else None]))}" if any([obp,translate, photomaker, instant, inswapper, codeformer]) else "")
                     return gr.update(label=main_name)
+                poDoVector.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
+                        outputs=[gen_acc],queue=False)
                 enable_obp.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
                         outputs=[gen_acc],queue=False)
                 enable_pm.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
