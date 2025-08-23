@@ -200,6 +200,6 @@ def ui_module():
               .then(fn=clear_make_dir) \
               .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
               .then(fn=process, inputs=[poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=file_out)
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=file_out) \
               .then(fn=output_zip, outputs=file_out) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
