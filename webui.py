@@ -74,12 +74,6 @@ batch_path='./batch_images'
 def html_load(url,file):
         return gr.update(value=f'''
                                 <iframe id='text_mask'
-                                src = '{url}/file={file.name}'
-                                width = '100%'
-                                height = '1080px'></iframe>''')
-def html_load2(url,file):
-        return gr.update(value=f'''
-                                <iframe id='text_mask'
                                 src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
@@ -339,9 +333,8 @@ with shared.gradio_root:
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
-    text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
-    #svgcode_file=gr.File(value='extentions/vector/svgcode/index.html',visible=False)
-    svgcode_file=gr.Textbox(value="extentions/vector/svgcode/index.html",visible=True)
+    text_mask_file=gr.Textbox(value='extentions/text_mask.html',visible=False)
+    svgcode_file=gr.Textbox(value="extentions/vector/svgcode/index.html",visible=False)
     url_display = gr.Textbox(visible=False)
 
     shared.gradio_root.load(
@@ -1077,7 +1070,7 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-            svg_code.select(html_load2,inputs=[url_display,svgcode_file],outputs=svg,queue=False, show_progress=False)
+            svg_code.select(html_load,inputs=[url_display,svgcode_file],outputs=svg,queue=False, show_progress=False)
             text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
