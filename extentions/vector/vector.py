@@ -129,6 +129,7 @@ def clear_make_dir():
 def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     batch_path=os.path.join(os.getcwd(), 'batch_vector')
     batch_temp=os.path.join(os.getcwd(), 'batch_temp')
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
     passed=1
     for f_name in batch_files:
