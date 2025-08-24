@@ -235,7 +235,7 @@ def codeformer_gen_gui():
 def codeformer_gen_gui2():
 
     with gr.Row():
-        file_in,files_single,image_single,enable_zip,file_out,preview = batch.ui_batch()
+        file_in,files_single,image_single,enable_zip,file_out,preview, image_out = batch.ui_batch()
     with gr.Row():
         with gr.Column():
             codeformer_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
@@ -254,12 +254,12 @@ def codeformer_gen_gui2():
         gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_codeformer',visible=False) 
-    codeformer_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[codeformer_start,file_out]) \
+    codeformer_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[codeformer_start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=process, inputs=[codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
-              .then(fn=batch.output_zip, outputs=file_out) \
+              .then(fn=batch.output_zip_image, outputs=[image_out,file_out) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)               
     #codeformer_start.click(codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
