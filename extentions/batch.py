@@ -36,7 +36,7 @@ def ui_batch():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
-                image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False,show_fullscreen_button=True)
+                image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False)
     enable_zip.change(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single],show_progress=False)
     image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
     files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
@@ -81,6 +81,17 @@ def output_zip():
                 zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
     zipf.close()
     return zip_file
+
+def output_zip_one():
+    batch_path=f"{temp_dir}batch_temp"
+    batch_files=[name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))]
+    if len(batch_files) == 1:
+        return gr.update(value=os.path.join(batch_path, batch_files[0]))
+    else:
+        zip_file=output_zip()
+        return gr.update(value=zip_file,visible=True)
+
+
 def output_zip_image():
     batch_path=f"{temp_dir}batch_temp"
     batch_files=[name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))]
