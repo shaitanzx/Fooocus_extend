@@ -121,7 +121,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
 
 def ui_module():
     ext_dir='batch vector'
-    batch.ui_batch()
+    file_in,files_single,image_single,enable_zip,file_out,preview = batch.ui_batch()
     with gr.Row():
             with gr.Column():
                 with gr.Box():
