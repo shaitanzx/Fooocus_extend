@@ -4,7 +4,7 @@ import sys
 import os
 import zipfile
 import modules.util 
-import moduled.config
+import modules.config
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
 temp_dir=modules.config.temp_path+os.path.sep
 def ui():
