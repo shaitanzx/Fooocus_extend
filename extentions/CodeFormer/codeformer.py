@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy as np
-
 import cv2
 import torch
 import torch.nn.functional as F
@@ -9,6 +8,7 @@ import gradio as gr
 from PIL import Image
 from torchvision.transforms.functional import normalize
 from typing import List, Union, Dict, Set, Tuple
+import extentions.batch as batch
 sys.path.append(os.path.abspath('extentions/CodeFormer'))
 from basicsr.utils import imwrite, img2tensor, tensor2img
 from basicsr.utils.download_util import load_file_from_url
@@ -16,7 +16,6 @@ from facelib.utils.face_restoration_helper import FaceRestoreHelper
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from basicsr.utils.realesrgan_utils import RealESRGANer
 from facelib.utils.misc import is_gray
-
 from basicsr.utils.registry import ARCH_REGISTRY
 
 
@@ -228,5 +227,6 @@ def codeformer_gen_gui2():
         codeformer_output=gr.Image(type="numpy", label="Output")
     with gr.Row():
         gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
-                    
+    with gr.Row(visible=False):
+        ext_dir=gr.Textbox(value='batch_codeformer',visible=False)                
     #codeformer_start.click(codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
