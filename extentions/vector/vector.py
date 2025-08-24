@@ -6,7 +6,7 @@ import zipfile
 import modules.util 
 import moduled.config
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
-
+temp_dir=modules.config.temp_path
 def ui():
     with gr.Row():
         poDoVector = gr.Checkbox(label="Enabled", value=False)
@@ -98,7 +98,7 @@ def delete_out(directory):
             print(f'Failed to delete {file_path}. Reason: {e}')
     return
 def unzip_file(zip_file_obj,files_single,enable_zip):
-    extract_folder = os.path.join(os.getcwd(), 'batch_vector')
+    extract_folder = f"{temp_dir}batch_vector")
     if not os.path.exists(extract_folder):
         os.makedirs(extract_folder)
     if enable_zip:
@@ -122,15 +122,15 @@ def unzip_file(zip_file_obj,files_single,enable_zip):
     return
 def clear_make_dir():
     
-    directory = os.path.join(os.getcwd(), 'batch_vector')
+    directory =f"{temp_dir}batch_vector")
     delete_out(directory)
-    directory = os.path.join(os.getcwd(), 'batch_temp')
+    directory =f"{temp_dir}batch_temp")
     delete_out(directory)
     os.makedirs(directory, exist_ok=True)
     return
 def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
-    batch_path=os.path.join(os.getcwd(), 'batch_vector')
-    batch_temp=os.path.join(os.getcwd(), 'batch_temp')
+    batch_path=f"{temp_dir}batch_vector")
+    batch_temp=f"{temp_dir}batch_temp")
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
     passed=1
@@ -151,8 +151,8 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
 def output_zip():
-    directory=os.path.join(os.getcwd(), 'batch_temp')
-    temp_dir=modules.config.temp_path
+    directory=f"{temp_dir}batch_temp")
+    #temp_dir=modules.config.temp_path
     _, _, filename = modules.util.generate_temp_filename(folder=temp_dir)
     name, ext = os.path.splitext(filename)
     #zip_file = f"output_{name[:-5]}.zip"
@@ -164,13 +164,11 @@ def output_zip():
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
     zipf.close()
-    current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, zip_file)
-    return file_path
-def del_temp(file):
-    current_dir = os.getcwd()
-    file_path = os.path.join(current_dir, file.name)
-    os.remove(file_path)
+    #current_dir = os.getcwd()
+    #file_path = os.path.join(current_dir, zip_file)
+    #return file_path
+    return zip_file
+
 
 
 
