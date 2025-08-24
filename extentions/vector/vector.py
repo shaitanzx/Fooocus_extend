@@ -221,10 +221,7 @@ def ui_module():
 
 
 
-    enable_zip.change(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single])
-    
-    #enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
-    #                                    outputs=[file_in,files_single], queue=False)
+    enable_zip.change(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single],show_progress=False)
     image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
     files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
