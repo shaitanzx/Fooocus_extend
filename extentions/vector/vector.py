@@ -124,12 +124,6 @@ def unzip_file(zip_file_obj,files_single,enable_zip):
 def clear_make_dir():
     result=delete_folder_content(f"{temp_dir}batch_vector", '')
     result=delete_folder_content(f"{temp_dir}batch_temp", '')
-    #directory =f"{temp_dir}batch_vector"
-    #delete_out(directory)
-    #os.makedirs(directory, exist_ok=True)
-    #directory =f"{temp_dir}batch_temp"
-    #delete_out(directory)
-    #os.makedirs(directory, exist_ok=True)
     return
 def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     batch_path=f"{temp_dir}batch_vector"
@@ -171,7 +165,11 @@ def output_zip():
     #file_path = os.path.join(current_dir, zip_file)
     #return file_path
     return zip_file
-
+def single_image(single_upload):
+    if len(files_single) == 1:
+        return gr.update (value=files_single[0],visible=True),gr.update(visible=False)
+    else:
+        return gr.update (visible=False),gr.update(visible=True)
 
 
 
@@ -183,7 +181,8 @@ def ui_module():
             with gr.Row():
                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
                 files_single = gr.Files(label="Drag (Select) 1 or more reference images",
-                                            file_types=["image"],visible=True,interactive=True,height=260) 
+                                            file_types=["image"],visible=True,interactive=True,height=260)
+                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=False)
             with gr.Row():
                 enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
@@ -211,7 +210,7 @@ def ui_module():
         gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>') 
     enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
                                         outputs=[file_in,files_single], queue=False)
-    
+    files_single.upload(fn=single_image,outputs=[single_image,files_single],show_progress=False)
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
               .then(fn=clear_make_dir) \
               .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
