@@ -36,7 +36,7 @@ def ui_batch():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
-                image_out=gr.Image(label="Output image",visible=False,height=260,interactive=True)
+                image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False)
     enable_zip.change(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single],show_progress=False)
     image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
     files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
