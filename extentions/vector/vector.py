@@ -6,7 +6,7 @@ import zipfile
 import modules.util 
 import moduled.config
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
-temp_dir=modules.config.temp_path
+temp_dir=modules.config.temp_path+os.path.sep
 def ui():
     with gr.Row():
         poDoVector = gr.Checkbox(label="Enabled", value=False)
@@ -124,6 +124,7 @@ def clear_make_dir():
     
     directory =f"{temp_dir}batch_vector")
     delete_out(directory)
+    os.makedirs(directory, exist_ok=True)
     directory =f"{temp_dir}batch_temp")
     delete_out(directory)
     os.makedirs(directory, exist_ok=True)
