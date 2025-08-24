@@ -2,3 +2,4 @@
 2. Add SVGcode
 3. Add Vector in generate
 4. Add Vector in module
+5. Add batch in Codeformer in module
