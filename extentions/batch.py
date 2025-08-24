@@ -42,12 +42,10 @@ def ui_batch():
     return file_in,files_single,image_single,enable_zip,file_out,preview
 
 def clear_dirs(ext_dir):
-    print('---------',ext_dir)
     result=delete_folder_content(f"{temp_dir}{ext_dir}", '')
     result=delete_folder_content(f"{temp_dir}batch_temp", '')
     return
 def unzip_file(zip_file_obj,files_single,enable_zip,ext_dir):
-    print('---------',ext_dir)
     extract_folder = f"{temp_dir}{ext_dir}"
     if not os.path.exists(extract_folder):
         os.makedirs(extract_folder)
