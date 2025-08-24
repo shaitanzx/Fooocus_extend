@@ -5,6 +5,7 @@ import os
 import zipfile
 import modules.util 
 import modules.config
+from modules.launch_util import delete_folder_content
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
 temp_dir=modules.config.temp_path+os.path.sep
 def ui():
@@ -121,13 +122,14 @@ def unzip_file(zip_file_obj,files_single,enable_zip):
                 print(f"copy error {original_name}: {str(e)}")
     return
 def clear_make_dir():
-    
-    directory =f"{temp_dir}batch_vector"
-    delete_out(directory)
-    os.makedirs(directory, exist_ok=True)
-    directory =f"{temp_dir}batch_temp"
-    delete_out(directory)
-    os.makedirs(directory, exist_ok=True)
+    result=delete_folder_content(f"{temp_dir}batch_vector", '')
+    result=delete_folder_content(f"{temp_dir}batch_temp", '')
+    #directory =f"{temp_dir}batch_vector"
+    #delete_out(directory)
+    #os.makedirs(directory, exist_ok=True)
+    #directory =f"{temp_dir}batch_temp"
+    #delete_out(directory)
+    #os.makedirs(directory, exist_ok=True)
     return
 def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     batch_path=f"{temp_dir}batch_vector"
@@ -158,8 +160,7 @@ def output_zip():
     name, ext = os.path.splitext(filename)
     #zip_file = f"output_{name[:-5]}.zip"
     zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
-    print ('-------------',zip_file)
-    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    print ('-------------',zip_file)    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(directory):
             for file in files:
                 file_path = os.path.join(root, file)
