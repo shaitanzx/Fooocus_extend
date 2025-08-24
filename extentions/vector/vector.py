@@ -160,7 +160,8 @@ def output_zip():
     name, ext = os.path.splitext(filename)
     #zip_file = f"output_{name[:-5]}.zip"
     zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
-    print ('-------------',zip_file)    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    #print ('-------------',zip_file)
+    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(directory):
             for file in files:
                 file_path = os.path.join(root, file)
