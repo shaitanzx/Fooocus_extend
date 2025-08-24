@@ -85,7 +85,7 @@ def output_zip_image():
     batch_path=f"{temp_dir}batch_temp"
     batch_files=[name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))]
     if len(batch_files) == 1:
-        return gr.update(value=os.path.join(temp_dir, batch_files[0]),visible=True),gr.update(visible=False)
+        return gr.update(value=os.path.join(batch_path, batch_files[0]),visible=True),gr.update(visible=False)
     else:
         zip_file=output_zip()
         return gr.update(visible=False),gr.update(value=zip_file,visible=True)

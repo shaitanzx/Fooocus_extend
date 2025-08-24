@@ -203,7 +203,7 @@ def process(codeformer_preface,codeformer_background_enhance,codeformer_face_ups
     passed=1
     for f_name in batch_files:
         print (f"\033[91m[Vector QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
-        gr.Info(f"Vector Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        gr.Info(f"Codeformer Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         image=np.array(img)
