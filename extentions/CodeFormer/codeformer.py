@@ -9,6 +9,7 @@ from PIL import Image
 from torchvision.transforms.functional import normalize
 from typing import List, Union, Dict, Set, Tuple
 import extentions.batch as batch
+import modules.config
 sys.path.append(os.path.abspath('extentions/CodeFormer'))
 from basicsr.utils import imwrite, img2tensor, tensor2img
 from basicsr.utils.download_util import load_file_from_url
@@ -17,7 +18,7 @@ from basicsr.archs.rrdbnet_arch import RRDBNet
 from basicsr.utils.realesrgan_utils import RealESRGANer
 from facelib.utils.misc import is_gray
 from basicsr.utils.registry import ARCH_REGISTRY
-
+temp_dir=modules.config.temp_path+os.path.sep
 
 
 def check_ckpts():
@@ -65,22 +66,22 @@ def get_image(input_data: Union[list, np.ndarray]) -> np.ndarray:
         return input_data,False
 
 def codeformer_process(image,face_align,background_enhance,face_upsample,upscale,codeformer_fidelity):
-  codeform_array=[]
-  check_ckpts()
-  upsampler = set_realesrgan()
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  codeformer_net = ARCH_REGISTRY.get("CodeFormer")(
-    dim_embd=512,
-    codebook_size=1024,
-    n_head=8,
-    n_layers=9,
-    connect_list=["32", "64", "128", "256"],
-    ).to(device)
-  ckpt_path = "extentions/CodeFormer/weights/CodeFormer/codeformer.pth"
-  checkpoint = torch.load(ckpt_path)["params_ema"]
-  codeformer_net.load_state_dict(checkpoint)
-  codeformer_net.eval()
-  try: # global try
+    codeform_array=[]
+    check_ckpts()
+    upsampler = set_realesrgan()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    codeformer_net = ARCH_REGISTRY.get("CodeFormer")(
+        dim_embd=512,
+        codebook_size=1024,
+        n_head=8,
+        n_layers=9,
+        connect_list=["32", "64", "128", "256"],
+        ).to(device)
+    ckpt_path = "extentions/CodeFormer/weights/CodeFormer/codeformer.pth"
+    checkpoint = torch.load(ckpt_path)["params_ema"]
+    codeformer_net.load_state_dict(checkpoint)
+    codeformer_net.eval()
+    try: # global try
         # take the default setting for the demo
         only_center_face = False
         draw_box = False
@@ -190,9 +191,41 @@ def codeformer_process(image,face_align,background_enhance,face_upsample,upscale
         else:
             return np.array(restored_img)
 
-  except Exception as error:
+    except Exception as error:
         print('Global exception', error)
         return None, None
+
+def process(codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity):
+    batch_path=f"{temp_dir}batch_codeformer"
+    batch_temp=f"{temp_dir}batch_temp"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    passed=1
+    for f_name in batch_files:
+        print (f"\033[91m[Vector QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"Vector Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        img = Image.open(batch_path+os.path.sep+f_name)
+        yield gr.update(value=img,visible=True),gr.update(visible=False)
+        #if poTransPNG:
+        #    img = trans(img,poTransPNGQuant,poTransPNGEps)
+        #    name, ext = os.path.splitext(f_name)
+        #    filename =  batch_temp + os.path.sep + name +'_trans'+ext
+        #    if not poKeepPnm:
+        #        img.save(filename)
+        #name, ext = os.path.splitext(f_name)
+        #filename =  batch_temp + os.path.sep + name
+        #save_svg(img,poThreshold,filename)
+        image=np.array(img)
+        img_cf=Image.fromarray(codeformer_process(image,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity))
+        name, ext = os.path.splitext(f_name)
+        filename =  batch_temp + os.path.sep + name +'_cf'+ext
+        img.save(filename)
+        passed+=1
+    return gr.update(value=None,visible=False),gr.update(visible=True)
+
+
+
+
 
 def codeformer_gen_gui():
     with gr.Row():
@@ -224,10 +257,18 @@ def codeformer_gen_gui2():
         #    codeformer_input=gr.Image(type="numpy", label="Input")
     with gr.Row():
         codeformer_start=gr.Button(value='Start CodeFormer')
-    with gr.Row():
-        codeformer_output=gr.Image(type="numpy", label="Output")
+    #with gr.Row():
+    #    codeformer_output=gr.Image(type="numpy", label="Output")
     with gr.Row():
         gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
-        ext_dir=gr.Textbox(value='batch_codeformer',visible=False)                
+        ext_dir=gr.Textbox(value='batch_codeformer',visible=False) 
+    codeformer_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
+              .then(fn=process, inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],
+                        outputs=[preview,file_out],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
+              .then(fn=batch.output_zip, outputs=file_out) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)               
     #codeformer_start.click(codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
