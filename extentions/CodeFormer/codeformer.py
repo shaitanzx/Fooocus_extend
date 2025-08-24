@@ -260,6 +260,6 @@ def codeformer_gen_gui2():
               .then(fn=process, inputs=[codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
-              .then(fn=batch.output_zip_image, outputs=[image_out,file_out) \
+              .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)               
     #codeformer_start.click(codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
