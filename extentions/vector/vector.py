@@ -210,7 +210,7 @@ def ui_module():
         gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>') 
     enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
                                         outputs=[file_in,files_single], queue=False)
-    files_single.upload(fn=single_image,outputs=[single_image,files_single],show_progress=False)
+    files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
               .then(fn=clear_make_dir) \
               .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
