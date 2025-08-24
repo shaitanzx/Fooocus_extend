@@ -216,9 +216,7 @@ def zip_enable(enable,single_file):
     if enable:
         return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
     else:
-        return gr.update(visible=False),
-                gr.update(visible=False) if len(single_file==1) else gr.update(visivle=True),
-                gr.update(visible=True)  if len(single_file==1) else gr.update(visivle=False)
+        return gr.update(visible=False),gr.update(visible=False) if len(single_file==1) else gr.update(visivle=True),gr.update(visible=True)  if len(single_file==1) else gr.update(visivle=False)
 
 
     enable_zip(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single])
