@@ -122,16 +122,16 @@ def unzip_file(zip_file_obj,files_single,enable_zip):
     return
 def clear_make_dir():
     
-    directory =f"{temp_dir}batch_vector")
+    directory =f"{temp_dir}batch_vector"
     delete_out(directory)
     os.makedirs(directory, exist_ok=True)
-    directory =f"{temp_dir}batch_temp")
+    directory =f"{temp_dir}batch_temp"
     delete_out(directory)
     os.makedirs(directory, exist_ok=True)
     return
 def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
-    batch_path=f"{temp_dir}batch_vector")
-    batch_temp=f"{temp_dir}batch_temp")
+    batch_path=f"{temp_dir}batch_vector"
+    batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
     passed=1
@@ -152,7 +152,7 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
 def output_zip():
-    directory=f"{temp_dir}batch_temp")
+    directory=f"{temp_dir}batch_temp"
     #temp_dir=modules.config.temp_path
     _, _, filename = modules.util.generate_temp_filename(folder=temp_dir)
     name, ext = os.path.splitext(filename)
