@@ -98,7 +98,7 @@ def delete_out(directory):
             print(f'Failed to delete {file_path}. Reason: {e}')
     return
 def unzip_file(zip_file_obj,files_single,enable_zip):
-    extract_folder = f"{temp_dir}batch_vector")
+    extract_folder = f"{temp_dir}batch_vector"
     if not os.path.exists(extract_folder):
         os.makedirs(extract_folder)
     if enable_zip:
