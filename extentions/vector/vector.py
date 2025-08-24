@@ -3,10 +3,13 @@ from PIL import Image
 import modules.gradio_hijack as grh
 import sys
 import os
+import modules.config
+
 
 
 import extentions.batch as batch
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
+temp_dir=modules.config.temp_path+os.path.sep
 
 def ui():
     with gr.Row():
