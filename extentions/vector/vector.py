@@ -168,7 +168,6 @@ def output_zip():
     return zip_file
 def single_image(single_upload):
     if len(single_upload) == 1:
-        print('----------',single_upload[0])
         return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
     else:
         return gr.update (visible=False),gr.update(visible=True)
@@ -178,7 +177,7 @@ def zip_enable(enable,single_file):
     if enable:
         return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
     else:
-        if len(single_file)==1:
+        if single_file and len(single_file)==1:
             return gr.update(visible=False),gr.update(visible=False),gr.update(visible=True)
         else:
             return gr.update(visible=False),gr.update(visible=True),gr.update(visible=False)
