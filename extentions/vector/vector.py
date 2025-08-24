@@ -184,7 +184,7 @@ def ui_module():
                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
                 files_single = gr.Files(label="Drag (Select) 1 or more reference images",
                                             file_types=["image"],visible=True,interactive=True,height=260)
-                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=False,type="filepath",interactive=True)
+                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True,type="filepath")
             with gr.Row():
                 enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
