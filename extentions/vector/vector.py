@@ -222,7 +222,7 @@ def ui_module():
 
 
 
-    enable_zip(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single])
+    enable_zip.change(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single])
     
     #enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
     #                                    outputs=[file_in,files_single], queue=False)
