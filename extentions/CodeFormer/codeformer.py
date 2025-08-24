@@ -195,7 +195,7 @@ def codeformer_process(image,face_align,background_enhance,face_upsample,upscale
         print('Global exception', error)
         return None, None
 
-def process(codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity):
+def process(codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity):
     batch_path=f"{temp_dir}batch_codeformer"
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
@@ -257,7 +257,7 @@ def codeformer_gen_gui2():
     codeformer_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[codeformer_start,file_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
-              .then(fn=process, inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],
+              .then(fn=process, inputs=[codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip, outputs=file_out) \
