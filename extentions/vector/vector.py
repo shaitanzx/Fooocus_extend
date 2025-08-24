@@ -174,7 +174,14 @@ def single_image(single_upload):
         return gr.update (visible=False),gr.update(visible=True)
 def clear_single(image):
     return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
-
+def zip_enable(enable,single_file):
+    if enable:
+        return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
+    else:
+        if len(single_file)==1:
+            return gr.update(visible=False),gr.update(visible=False),gr.update(visible=True)
+        else:
+            return gr.update(visible=False),gr.update(visible=True),gr.update(visible=False)
 
 
 
@@ -212,11 +219,7 @@ def ui_module():
     with gr.Row():
         gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>') 
 
-def zip_enable(enable,single_file):
-    if enable:
-        return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
-    else:
-        return gr.update(visible=False),gr.update(visible=False) if len(single_file==1) else gr.update(visivle=True),gr.update(visible=True)  if len(single_file==1) else gr.update(visivle=False)
+
 
 
     enable_zip(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single])
