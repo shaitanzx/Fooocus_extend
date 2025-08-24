@@ -120,7 +120,6 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
 
 
 def ui_module():
-    ext_dir='batch vector'
     file_in,files_single,image_single,enable_zip,file_out,preview = batch.ui_batch()
     with gr.Row():
             with gr.Column():
@@ -140,7 +139,8 @@ def ui_module():
 
     with gr.Row():
         gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>') 
-
+    with gr.Row(visible=False):
+        ext_dir=gr.Textbox(value='batch_vector',visible=False)
 
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
