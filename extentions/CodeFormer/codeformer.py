@@ -206,15 +206,6 @@ def process(codeformer_input,codeformer_preface,codeformer_background_enhance,co
         gr.Info(f"Vector Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
-        #if poTransPNG:
-        #    img = trans(img,poTransPNGQuant,poTransPNGEps)
-        #    name, ext = os.path.splitext(f_name)
-        #    filename =  batch_temp + os.path.sep + name +'_trans'+ext
-        #    if not poKeepPnm:
-        #        img.save(filename)
-        #name, ext = os.path.splitext(f_name)
-        #filename =  batch_temp + os.path.sep + name
-        #save_svg(img,poThreshold,filename)
         image=np.array(img)
         img_cf=Image.fromarray(codeformer_process(image,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity))
         name, ext = os.path.splitext(f_name)
@@ -263,12 +254,12 @@ def codeformer_gen_gui2():
         gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_codeformer',visible=False) 
-    codeformer_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
+    codeformer_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[codeformer_start,file_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=process, inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip, outputs=file_out) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)               
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)               
     #codeformer_start.click(codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
