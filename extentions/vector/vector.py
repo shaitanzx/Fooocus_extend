@@ -3,12 +3,11 @@ from PIL import Image
 import modules.gradio_hijack as grh
 import sys
 import os
-import zipfile
-import modules.util 
-import modules.config
-from modules.launch_util import delete_folder_content
+
+
+import extentions.batch as batch
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
-temp_dir=modules.config.temp_path+os.path.sep
+
 def ui():
     with gr.Row():
         poDoVector = gr.Checkbox(label="Enabled", value=False)
@@ -87,45 +86,7 @@ def save_svg(image,poThreshold,filename):
                 fp.write(f'<path stroke="none" fill="black" fill-rule="evenodd" d="{"".join(parts)}"/>')
                 fp.write("</svg>")
 
-def delete_out(directory):
-    for filename in os.listdir(directory):
-        file_path = os.path.join(directory, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.remove(file_path)
-            elif os.path.isdir(file_path):
-                delete_out(file_path)
-                os.rmdir(file_path)
-        except Exception as e:
-            print(f'Failed to delete {file_path}. Reason: {e}')
-    return
-def unzip_file(zip_file_obj,files_single,enable_zip):
-    extract_folder = f"{temp_dir}batch_vector"
-    if not os.path.exists(extract_folder):
-        os.makedirs(extract_folder)
-    if enable_zip:
-        zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
-        zip_ref.extractall(extract_folder)
-        zip_ref.close()
-    else:
-        for file in files_single:
-            original_name = os.path.basename(getattr(file, 'orig_name', file.name))
-            save_path = os.path.join(extract_folder, original_name)
-            try:
-                with open(file.name, 'rb') as src:
-                    with open(save_path, 'wb') as dst:
-                        while True:
-                            chunk = src.read(8192)  # Читаем по 8KB за раз
-                            if not chunk:
-                                break
-                            dst.write(chunk)
-            except Exception as e:
-                print(f"copy error {original_name}: {str(e)}")
-    return
-def clear_make_dir():
-    result=delete_folder_content(f"{temp_dir}batch_vector", '')
-    result=delete_folder_content(f"{temp_dir}batch_temp", '')
-    return
+
 def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
     batch_path=f"{temp_dir}batch_vector"
     batch_temp=f"{temp_dir}batch_temp"
@@ -148,57 +109,16 @@ def process(poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant):
         save_svg(img,poThreshold,filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
-def output_zip():
-    directory=f"{temp_dir}batch_temp"
-    #temp_dir=modules.config.temp_path
-    _, _, filename = modules.util.generate_temp_filename(folder=temp_dir)
-    name, ext = os.path.splitext(filename)
-    #zip_file = f"output_{name[:-5]}.zip"
-    zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
-    #print ('-------------',zip_file)
-    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(directory):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
-    zipf.close()
-    #current_dir = os.getcwd()
-    #file_path = os.path.join(current_dir, zip_file)
-    #return file_path
-    return zip_file
-def single_image(single_upload):
-    if len(single_upload) == 1:
-        return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
-    else:
-        return gr.update (visible=False),gr.update(visible=True)
-def clear_single(image):
-    return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
-def zip_enable(enable,single_file):
-    if enable:
-        return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
-    else:
-        if single_file and len(single_file)==1:
-            return gr.update(visible=False),gr.update(visible=False),gr.update(visible=True)
-        else:
-            return gr.update(visible=False),gr.update(visible=True),gr.update(visible=False)
+
+
+
+
 
 
 
 def ui_module():
-    with gr.Row():
-        with gr.Column():
-            with gr.Row():
-                file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
-                files_single = gr.Files(label="Drag (Select) 1 or more reference images",
-                                            file_types=["image"],visible=True,interactive=True,height=260)
-                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True,type="filepath")
-            with gr.Row():
-                enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
-        with gr.Column():
-            with gr.Row():
-                file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
-                preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
-
+    ext_dir='batch vector'
+    batch.ui_batch()
     with gr.Row():
             with gr.Column():
                 with gr.Box():
@@ -219,17 +139,12 @@ def ui_module():
         gr.HTML('* \"Vector\" is powered by GeorgLegato. <a href="https://github.com/GeorgLegato/stable-diffusion-webui-vectorstudio" target="_blank">\U0001F4D4 Document</a>') 
 
 
-
-
-    enable_zip.change(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single],show_progress=False)
-    image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
-    files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
-              .then(fn=clear_make_dir) \
-              .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=process, inputs=[poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poTransPNGQuant],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
-              .then(fn=output_zip, outputs=file_out) \
+              .then(fn=batch.output_zip, outputs=file_out) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
 
