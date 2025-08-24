@@ -212,6 +212,7 @@ def codeformer_gen_gui2():
 
     with gr.Row():
         file_in,files_single,image_single,enable_zip,file_out,preview = batch.ui_batch()
+    with gr.Row():
         with gr.Column():
             codeformer_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
             codeformer_background_enhance=gr.Checkbox(label="Background Enchanced", value=True)
