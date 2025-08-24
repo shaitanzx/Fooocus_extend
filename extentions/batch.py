@@ -27,7 +27,7 @@ def ui_batch():
         with gr.Column():
             with gr.Row():
                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
-                files_single = gr.Files(label="Drag (Select) 1 or more reference images",
+                files_single = gr.Files(label="Drag (Select) 1 or more reference images",file_count="multiple",
                                             file_types=["image"],visible=True,interactive=True,height=260)
                 image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True,type="filepath")
             with gr.Row():
