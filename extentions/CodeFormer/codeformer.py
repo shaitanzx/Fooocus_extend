@@ -210,7 +210,7 @@ def process(codeformer_preface,codeformer_background_enhance,codeformer_face_ups
         img_cf=Image.fromarray(codeformer_process(image,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity))
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_cf'+ext
-        img.save(filename)
+        img_cf.save(filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
 
