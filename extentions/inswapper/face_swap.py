@@ -66,7 +66,7 @@ def process_insw(inswap_source_image_indicies, inswap_target_image_indicies):
           img_insw=Image.fromarray(perform_face_swap(image_image, image_face, inswap_source_image_indicies, inswap_target_image_indicies))
           #name, ext = os.path.splitext(f_name)
           #filename =  batch_temp + os.path.sep + name +'_cf'+ext
-          _, _, filename = modules.util.generate_temp_filename(folder=temp_dir)
+          _, _, filename = modules.util.generate_temp_filename(folder=batch_temp)
           img_insw.save(filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(value=None,visible=False),gr.update(visible=True)
