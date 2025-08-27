@@ -3,3 +3,4 @@
 3. Add Vector in generate
 4. Add Vector in module
 5. Add batch in Codeformer in module
+6. Add batch in Inswapper in module
