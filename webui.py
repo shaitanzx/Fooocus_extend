@@ -896,6 +896,7 @@ with shared.gradio_root:
                         #    return 
                         def output_zip():
                             directory=modules.config.path_outputs
+                            temp_dir=modules.config.temp_path+os.path.sep+"batch_images"
                             _, _, filename = modules.util.generate_temp_filename(folder=directory)
                             name, ext = os.path.splitext(filename)
                             zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
