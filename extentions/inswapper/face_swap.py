@@ -149,8 +149,3 @@ def inswapper_gui2():
               .then(fn=single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False) \
               .then(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=inswap_start)
-    
-    
-    
-    
-    #inswap_start.click(perform_face_swap,inputs=[inswap_original_image, inswap_source_image, inswap_source_image_indicies, inswap_target_image_indicies],outputs=inswap_output)

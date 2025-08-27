@@ -63,6 +63,7 @@ import extentions.photomaker.app as photomaker
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 from extentions import tile_roll
 from extentions.vector import vector
+import extentions.batch as batch
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
@@ -70,7 +71,7 @@ choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 ar_def=[1,1]
 swap_def=False
 finished_batch=False
-batch_path='./batch_images'
+temp_batch_dir=modules.config.temp_path+os.path.sep
 def html_load(url,file):
         return gr.update(value=f'''
                                 <iframe id='text_mask'
@@ -846,48 +847,57 @@ with shared.gradio_root:
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
-                        def unzip_file(zip_file_obj,files_single,enable_zip):
-                            extract_folder = "./batch_images"
-                            if not os.path.exists(extract_folder):
-                                os.makedirs(extract_folder)
-                            if enable_zip:
-                                zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
-                                zip_ref.extractall(extract_folder)
-                                zip_ref.close()
-                            else:
-                                for file in files_single:
-                                    original_name = os.path.basename(getattr(file, 'orig_name', file.name))
-                                    save_path = os.path.join(extract_folder, original_name)
-                                    try:
-                                        with open(file.name, 'rb') as src:
-                                            with open(save_path, 'wb') as dst:
-                                                while True:
-                                                    chunk = src.read(8192)  # Читаем по 8KB за раз
-                                                    if not chunk:
-                                                        break
-                                                    dst.write(chunk)
-                                    except Exception as e:
-                                        print(f"copy error {original_name}: {str(e)}")
-                            return
-                        def delete_out(directory):
-                            for filename in os.listdir(directory):
-                                file_path = os.path.join(directory, filename)
-                                try:
-                                    if os.path.isfile(file_path) or os.path.islink(file_path):
-                                        os.remove(file_path)
-                                    elif os.path.isdir(file_path):
-                                            delete_out(file_path)
-                                            os.rmdir(file_path)
-                                except Exception as e:
-                                    print(f'Failed to delete {file_path}. Reason: {e}')
-                            return
-                        def clear_outputs():
-                            directory=modules.config.path_outputs
-                            delete_out(directory)
-                            return 
+                        def clear_single(image):
+                            return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
+                            def single_image(single_upload):
+                                if len(single_upload) == 1:
+                                    return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
+                                else:
+                            return gr.update (visible=False),gr.update(visible=True)
+                        #def unzip_file(zip_file_obj,files_single,enable_zip):
+                        #    extract_folder = "./batch_images"
+                        #    if not os.path.exists(extract_folder):
+                        #        os.makedirs(extract_folder)
+                        #    if enable_zip:
+                        #        zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
+                        #        zip_ref.extractall(extract_folder)
+                        #        zip_ref.close()
+                        #    else:
+                        #        for file in files_single:
+                        #            original_name = os.path.basename(getattr(file, 'orig_name', file.name))
+                        #            save_path = os.path.join(extract_folder, original_name)
+                        #            try:
+                        #                with open(file.name, 'rb') as src:
+                        #                    with open(save_path, 'wb') as dst:
+                        #                        while True:
+                        #                            chunk = src.read(8192)  # Читаем по 8KB за раз
+                        #                            if not chunk:
+                        #                                break
+                        #                            dst.write(chunk)
+                        #            except Exception as e:
+                        #                print(f"copy error {original_name}: {str(e)}")
+                        #    return
+                        #def delete_out(directory):
+                        #    for filename in os.listdir(directory):
+                        #        file_path = os.path.join(directory, filename)
+                        #        try:
+                        #            if os.path.isfile(file_path) or os.path.islink(file_path):
+                        #                os.remove(file_path)
+                        #            elif os.path.isdir(file_path):
+                        #                    delete_out(file_path)
+                        #                    os.rmdir(file_path)
+                        #        except Exception as e:
+                        #            print(f'Failed to delete {file_path}. Reason: {e}')
+                        #    return
+                        #def clear_outputs():
+                        #    directory=modules.config.path_outputs
+                        #    delete_out(directory)
+                        #    return 
                         def output_zip():
                             directory=modules.config.path_outputs
-                            zip_file='outputs.zip'
+                            _, _, filename = modules.util.generate_temp_filename(folder=directory)
+                            name, ext = os.path.splitext(filename)
+                            zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
                             with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
                                 for root, dirs, files in os.walk(directory):
                                     for file in files:
@@ -897,18 +907,19 @@ with shared.gradio_root:
                             current_dir = os.getcwd()
                             file_path = os.path.join(current_dir, "outputs.zip")
                             return file_path
-                        def clearer():
-                            if not finished_batch:
-                              directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
-                              delete_out(directory)
-                            return 
+                        #def clearer():
+                        #    if not finished_batch:
+                        #      directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
+                        #      delete_out(directory)
+                        #    return 
                        
                         with gr.Row():
                           with gr.Column():
                             with gr.Row():
                                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
                                 files_single = gr.Files(label="Drag (Select) 1 or more reference images",
-                                            file_types=["image"],visible=True,interactive=True,height=260)                            
+                                            file_types=["image"],visible=True,interactive=True,height=260)  
+                                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True,type="filepath")                          
                             with gr.Row():
                                 enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
                             def update_radio(value):
@@ -922,13 +933,14 @@ with shared.gradio_root:
                             upscale_mode = gr.Dropdown(choices=flags.uov_list, value=flags.uov_list[0], label='Method',interactive=True,visible=False)
                           with gr.Column():
                             file_out=gr.File(label="Download a ZIP file", file_count='single',height=260)
-                            
                         with gr.Row():
                           batch_start = gr.Button(value='Start batch', visible=True)
                           save_output = gr.Button(value='Output --> ZIP')
                           clear_output = gr.Button(value='Clear Output')
                         with gr.Row():
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
+                        with gr.Row(visible=False):
+                            ext_dir=gr.Textbox(value='batch_images',visible=False) 
                         def image_action_change(image_action):
                             if image_action=='Image Prompt':
                               return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
@@ -940,14 +952,17 @@ with shared.gradio_root:
                             return gr.update(value=ip_stop_batch), gr.update(value=ip_weight_batch)
                         enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
                                         outputs=[file_in,files_single], queue=False)
+                        image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
+                        files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
+ 
                         image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
                         image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
  
                         clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
-                                    .then(clear_outputs) \
+                                    .then(fn=batch.clear_dirs,inputs=modules.config.path_outputs)
                                     .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
                         save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
-                                    .then(fn=output_zip, outputs=file_out) \
+                                    .then(fn=output_zip_image, outputs=[file_out]) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
 
                   with gr.TabItem(label='Prompt Batch') as pr_batch:
@@ -1890,13 +1905,12 @@ with shared.gradio_root:
 
         batch_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-              .then(fn=clearer) \
-              .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir_) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
               .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
-              .then(fn=clearer) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
 
