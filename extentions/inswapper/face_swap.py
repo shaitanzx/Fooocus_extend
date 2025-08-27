@@ -131,7 +131,7 @@ def inswapper_gui2():
     files_single_image.upload(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False)
     
 
-    inswap_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[start,file_out]) \
+    inswap_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[inswap_start,file_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_image) \
               .then(fn=batch.unzip_file,inputs=[file_in_face,files_single_face,enable_zip_face,ext_dir_face]) \
