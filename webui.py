@@ -849,11 +849,11 @@ with shared.gradio_root:
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def clear_single(image):
                             return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
-                            def single_image(single_upload):
-                                if len(single_upload) == 1:
-                                    return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
-                                else:
-                                    return gr.update (visible=False),gr.update(visible=True)
+                        def single_image(single_upload):
+                            if len(single_upload) == 1:
+                                return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
+                            else:
+                                return gr.update (visible=False),gr.update(visible=True)
                         #def unzip_file(zip_file_obj,files_single,enable_zip):
                         #    extract_folder = "./batch_images"
                         #    if not os.path.exists(extract_folder):
