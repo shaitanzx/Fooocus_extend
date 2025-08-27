@@ -134,7 +134,7 @@ def im_batch_run(p):
     for f_name in batch_files:
       if not finished_batch:  
         pc = copy.deepcopy(p)
-        img = Image.open('./batch_images/'+f_name)
+        img = Image.open(batch_path+os.path.sep+f_name)
         if not p.input_image_checkbox:
             p.cn_tasks = {x: [] for x in flags.ip_list}
         if p.image_action == 'Upscale': 
