@@ -1,4 +1,5 @@
 import sys
+import os
 import gradio as gr
 import modules.gradio_hijack as grh
 from PIL import Image
