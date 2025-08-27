@@ -908,7 +908,7 @@ with shared.gradio_root:
                             zipf.close()
                             current_dir = os.getcwd()
                             file_path = os.path.join(current_dir, "outputs.zip")
-                            return file_path
+                            return zip_file
                         #def clearer():
                         #    if not finished_batch:
                         #      directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
