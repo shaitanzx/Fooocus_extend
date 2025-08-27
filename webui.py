@@ -906,8 +906,6 @@ with shared.gradio_root:
                                         file_path = os.path.join(root, file)
                                         zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
                             zipf.close()
-                            current_dir = os.getcwd()
-                            file_path = os.path.join(current_dir, "outputs.zip")
                             return zip_file
                         #def clearer():
                         #    if not finished_batch:
@@ -943,7 +941,7 @@ with shared.gradio_root:
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
                         with gr.Row(visible=False):
                             ext_dir=gr.Textbox(value='batch_images',visible=False)
-                            out_dir=gr.Textbox(value='batch_images',visible=False) 
+                            out_dir=gr.Textbox(value=modules.config.path_outputs,visible=False) 
                         def image_action_change(image_action):
                             if image_action=='Image Prompt':
                               return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
