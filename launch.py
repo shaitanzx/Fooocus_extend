@@ -164,4 +164,7 @@ os.makedirs("batch_images", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_vector", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_temp", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_codeformer", exist_ok=True)
+os.makedirs(f"{config.temp_path}{os.path.sep}batch_insw_face", exist_ok=True)
+os.makedirs(f"{config.temp_path}{os.path.sep}batch_insw_image", exist_ok=True)
+
 from webui import *
