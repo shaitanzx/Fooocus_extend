@@ -853,7 +853,7 @@ with shared.gradio_root:
                                 if len(single_upload) == 1:
                                     return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
                                 else:
-                            return gr.update (visible=False),gr.update(visible=True)
+                                    return gr.update (visible=False),gr.update(visible=True)
                         #def unzip_file(zip_file_obj,files_single,enable_zip):
                         #    extract_folder = "./batch_images"
                         #    if not os.path.exists(extract_folder):
