@@ -68,7 +68,7 @@ def process_insw(inswap_source_image_indicies, inswap_target_image_indicies):
           _, _, filename = modules.util.generate_temp_filename(folder=temp_dir)
           img_insw.save(filename)
         passed+=1
-    return gr.update(value=None,visible=False),(value=None,visible=False),gr.update(visible=True)
+    return gr.update(value=None,visible=False),gr.update(value=None,visible=False),gr.update(visible=True)
 
 def inswapper_gui2():
     def zip_enable(enable,single_file):
