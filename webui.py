@@ -124,6 +124,7 @@ def get_task(*args):
     return worker.AsyncTask(args=args)
      
 def im_batch_run(p):
+    batch_path=odules.config.temp_path+os.path.sep+"batch_images"
     global finished_batch
     finished_batch=False
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
