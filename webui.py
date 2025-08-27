@@ -39,6 +39,7 @@ from rembg import remove
 from PIL import Image
 from gradio.components import label
 from modules.util import is_json
+from modules.launch_util import delete_folder_content
 
 from extentions.md_lib import civitai_helper
 from extentions.md_lib import md_config
@@ -855,6 +856,8 @@ with shared.gradio_root:
                                 return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
                             else:
                                 return gr.update (visible=False),gr.update(visible=True)
+                        def clear_dirs():
+                            result=delete_folder_content(modules.config.path_outputs, '')
                         #def unzip_file(zip_file_obj,files_single,enable_zip):
                         #    extract_folder = "./batch_images"
                         #    if not os.path.exists(extract_folder):
@@ -941,7 +944,7 @@ with shared.gradio_root:
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
                         with gr.Row(visible=False):
                             ext_dir=gr.Textbox(value='batch_images',visible=False)
-                            out_dir=gr.Textbox(value=modules.config.path_outputs,visible=False) 
+                            #out_dir=gr.Textbox(value=modules.config.path_outputs,visible=False) 
                         def image_action_change(image_action):
                             if image_action=='Image Prompt':
                               return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
@@ -960,7 +963,7 @@ with shared.gradio_root:
                         image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
  
                         clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
-                                    .then(fn=batch.clear_dirs,inputs=out_dir) \
+                                    .then(fn=clear_dirs) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
                         save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
                                     .then(fn=output_zip, outputs=[file_out]) \
