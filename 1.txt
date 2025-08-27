@@ -4,3 +4,4 @@
 4. Add Vector in module
 5. Add batch in Codeformer in module
 6. Add batch in Inswapper in module
+7/ Optimized ImageBatch

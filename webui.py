@@ -835,8 +835,7 @@ with shared.gradio_root:
                     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
                     main_name = "in generation"
                     if active_modules:
-                        main_name += f" — {', '.join(active_modules)}"
-                    #main_name = "in generation" + (f" — {', '.join(filter(None, ['OneButtonPrompt enabled' if obp else None, 'PromptTranslate enabled' if translate else None,'PhotoMaker enabled' if photomaker else None,'InstantID enabled' if instant else None,'Inswapper enabled' if inswapper else None,'Codeformer enabled' if codeformer else None]))}" if any([obp,translate, photomaker, instant, inswapper, codeformer]) else "")
+                        main_name += f" — {', '.join(active_modules)}"   
                     return gr.update(label=main_name)
                 enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled,poDoVector]
                 poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
@@ -858,45 +857,6 @@ with shared.gradio_root:
                                 return gr.update (visible=False),gr.update(visible=True)
                         def clear_dirs():
                             result=delete_folder_content(modules.config.path_outputs, '')
-                        #def unzip_file(zip_file_obj,files_single,enable_zip):
-                        #    extract_folder = "./batch_images"
-                        #    if not os.path.exists(extract_folder):
-                        #        os.makedirs(extract_folder)
-                        #    if enable_zip:
-                        #        zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
-                        #        zip_ref.extractall(extract_folder)
-                        #        zip_ref.close()
-                        #    else:
-                        #        for file in files_single:
-                        #            original_name = os.path.basename(getattr(file, 'orig_name', file.name))
-                        #            save_path = os.path.join(extract_folder, original_name)
-                        #            try:
-                        #                with open(file.name, 'rb') as src:
-                        #                    with open(save_path, 'wb') as dst:
-                        #                        while True:
-                        #                            chunk = src.read(8192)  # Читаем по 8KB за раз
-                        #                            if not chunk:
-                        #                                break
-                        #                            dst.write(chunk)
-                        #            except Exception as e:
-                        #                print(f"copy error {original_name}: {str(e)}")
-                        #    return
-                        #def delete_out(directory):
-                        #    for filename in os.listdir(directory):
-                        #        file_path = os.path.join(directory, filename)
-                        #        try:
-                        #            if os.path.isfile(file_path) or os.path.islink(file_path):
-                        #                os.remove(file_path)
-                        #            elif os.path.isdir(file_path):
-                        #                    delete_out(file_path)
-                        #                    os.rmdir(file_path)
-                        #        except Exception as e:
-                        #            print(f'Failed to delete {file_path}. Reason: {e}')
-                        #    return
-                        #def clear_outputs():
-                        #    directory=modules.config.path_outputs
-                        #    delete_out(directory)
-                        #    return 
                         def output_zip():
                             directory=modules.config.path_outputs
                             temp_dir=modules.config.temp_path+os.path.sep+"batch_images"
@@ -909,13 +869,7 @@ with shared.gradio_root:
                                         file_path = os.path.join(root, file)
                                         zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
                             zipf.close()
-                            return zip_file
-                        #def clearer():
-                        #    if not finished_batch:
-                        #      directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
-                        #      delete_out(directory)
-                        #    return 
-                       
+                            return zip_file                       
                         with gr.Row():
                           with gr.Column():
                             with gr.Row():
@@ -1061,14 +1015,8 @@ with shared.gradio_root:
                         svg=gr.HTML()
                     with gr.Row():
                         gr.HTML('* \"SVGcode\" is powered by Thomas Steiner. <a href="https://web.dev/case-studies/svgcode" target="_blank">\U0001F4D4 Document</a>') 
-
-
-
                   with gr.TabItem(label='Roller'):
-                        tile_roll.start()                 
-
-
-
+                        tile_roll.start()
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
                   with gr.TabItem(label='Photopea') as photopea_tab:
