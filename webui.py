@@ -940,7 +940,8 @@ with shared.gradio_root:
                         with gr.Row():
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
                         with gr.Row(visible=False):
-                            ext_dir=gr.Textbox(value='batch_images',visible=False) 
+                            ext_dir=gr.Textbox(value='batch_images',visible=False)
+                            out_dir=gr.Textbox(value='batch_images',visible=False) 
                         def image_action_change(image_action):
                             if image_action=='Image Prompt':
                               return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
@@ -959,7 +960,7 @@ with shared.gradio_root:
                         image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
  
                         clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
-                                    .then(fn=batch.clear_dirs,inputs=modules.config.path_outputs) \
+                                    .then(fn=batch.clear_dirs,inputs=out_dir) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
                         save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
                                     .then(fn=output_zip_image, outputs=[file_out]) \
