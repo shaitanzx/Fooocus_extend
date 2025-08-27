@@ -963,7 +963,7 @@ with shared.gradio_root:
                                     .then(fn=batch.clear_dirs,inputs=out_dir) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
                         save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
-                                    .then(fn=output_zip_image, outputs=[file_out]) \
+                                    .then(fn=output_zip, outputs=[file_out]) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
 
                   with gr.TabItem(label='Prompt Batch') as pr_batch:
