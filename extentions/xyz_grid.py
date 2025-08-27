@@ -289,7 +289,7 @@ axis_options = [
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
 	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold)),
 	AxisOption("LoRA 1 weight", float, apply_lora(0), cost=0.6),
-    AxisOption("LoRA 1 name", str, apply_lora(0), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
+    AxisOption("LoRA 1 name", str, apply_lora(0), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
     AxisOption("LoRA 3 weight", float, apply_lora(2), cost=0.6),
     AxisOption("LoRA 4 weight", float, apply_lora(3), cost=0.6),
