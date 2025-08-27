@@ -136,7 +136,7 @@ def inswapper_gui2():
               .then(fn=batch.unzip_file,inputs=[file_in_face,files_single_face,enable_zip_face,ext_dir_face]) \
               .then(fn=batch.unzip_file,inputs=[file_in_image,files_single_image,enable_zip_image,ext_dir_image]) \
               .then(lambda: (gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)),
-                        outputs=[file_in_face,files_single_face,image_single_face,file_in_image,files_single_image,image_single_image])
+                        outputs=[file_in_face,files_single_face,image_single_face,file_in_image,files_single_image,image_single_image]) \
               .then(fn=process_insw, inputs=[inswap_source_image_indicies, inswap_target_image_indicies],
                         outputs=[preview_face,preview_image,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
