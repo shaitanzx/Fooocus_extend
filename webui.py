@@ -1906,7 +1906,7 @@ with shared.gradio_root:
 
         batch_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-              .then(fn=batch.clear_dirs,inputs=ext_dir_) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
