@@ -52,7 +52,7 @@ def process_insw(inswap_source_image_indicies, inswap_target_image_indicies):
     batch_temp=f"{temp_dir}batch_temp"
     batch_files_face=sorted([name for name in os.listdir(batch_path_face) if os.path.isfile(os.path.join(batch_path_face, name))])
     batch_files_image=sorted([name for name in os.listdir(batch_path_image) if os.path.isfile(os.path.join(batch_path_image, name))])
-    batch_all=len(batch_files_face) * (batch_files_image) 
+    batch_all=len(batch_files_face) * len(batch_files_image) 
     passed=1
     for f_name_face in batch_files_face:
         for f_name_image in batch_files_image:
@@ -67,6 +67,8 @@ def process_insw(inswap_source_image_indicies, inswap_target_image_indicies):
           #name, ext = os.path.splitext(f_name)
           #filename =  batch_temp + os.path.sep + name +'_cf'+ext
           _, _, filename = modules.util.generate_temp_filename(folder=batch_temp)
+          print('---------------------------',filename)
+
           img_insw.save(filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(value=None,visible=False),gr.update(visible=True)
