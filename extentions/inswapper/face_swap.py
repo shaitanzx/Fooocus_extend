@@ -110,7 +110,7 @@ def inswapper_gui2():
         with gr.Column():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
-                preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
+                #preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
                 image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False)
     with gr.Row():
         with gr.Column():
@@ -132,7 +132,8 @@ def inswapper_gui2():
     files_single_image.upload(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False)
     
 
-    inswap_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False)),outputs=[inswap_start,file_out]) \
+    inswap_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),
+                        outputs=[inswap_start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_image) \
               .then(fn=batch.unzip_file,inputs=[file_in_face,files_single_face,enable_zip_face,ext_dir_face]) \
