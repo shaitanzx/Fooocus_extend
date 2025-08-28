@@ -444,7 +444,11 @@ def worker():
         for li, (n, w) in enumerate(async_task.loras):
                 if n != 'None':
                     d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
-
+        if codeformer_gen_enabled:
+            d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
+            d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
+            d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
+            d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
         
         log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True, name_prefix=async_task.name_prefix)
         return
