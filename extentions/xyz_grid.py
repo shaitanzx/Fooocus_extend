@@ -344,7 +344,7 @@ axis_options = [
     AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2)),
     AxisOption("Manga stop at", float, apply_ctrlnet("Manga",1)),
     AxisOption("Manga weight", float, apply_ctrlnet("Manga",2)),
-    AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable']))
+    AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable'])
 ]
 
 def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results):
