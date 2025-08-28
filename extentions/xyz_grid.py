@@ -45,15 +45,18 @@ def apply_field(field):
     return fun
 def apply_lora(field):
     def set_lora(p,x,xs):
-        print ('-------------x',x)
-        print ('-------------xs',xs)
-        #p.loras[field] = (p.loras[field][0], x)
-
-
         p.lora_list[field] = (p.lora_list[field][0], p.lora_list[field][1], x)
         p.loras = get_enabled_loras(p.lora_list)
-
     return set_lora
+
+
+def apply_lora_name(field):
+    def set_lora(p,x,xs):
+        p.lora_list[field] = (p.lora_list[field][0], x,p.lora_list[field][2])
+        p.loras = get_enabled_loras(p.lora_list)
+    return set_lora
+
+
 
 def apply_ctrlnet(field1,field2):
     def set_ctrl(p,x,sx):
@@ -297,7 +300,7 @@ axis_options = [
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
 	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold)),
 	AxisOption("LoRA 1 weight", float, apply_lora(0), cost=0.6),
-    AxisOption("LoRA 1 name", str, apply_lora(0), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
+    AxisOption("LoRA 1 name", str, apply_lora_name(0), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
     AxisOption("LoRA 3 weight", float, apply_lora(2), cost=0.6),
     AxisOption("LoRA 4 weight", float, apply_lora(3), cost=0.6),
