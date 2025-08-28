@@ -60,7 +60,7 @@ class AsyncTask:
             lora_tuple = (bool(args.pop()),str(args.pop()),float(args.pop()))
             self.lora_list.append(lora_tuple)
 
-        self.loras = get_enabled_loras(lora_list)
+        self.loras = get_enabled_loras(self.lora_list)
 
 
 
