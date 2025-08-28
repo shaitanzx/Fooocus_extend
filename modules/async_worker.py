@@ -54,8 +54,19 @@ class AsyncTask:
         self.base_model_name = args.pop()
         self.refiner_model_name = args.pop()
         self.refiner_switch = args.pop()
-        self.loras = get_enabled_loras([(bool(args.pop()), str(args.pop()), float(args.pop())) for _ in
-                                        range(default_max_lora_number)])
+
+        self.lora_list = []
+        for _ in range(default_max_lora_number):
+            lora_tuple = (bool(args.pop()),str(args.pop()),float(args.pop()))
+            self.lora_list.append(lora_tuple)
+
+        self.loras = get_enabled_loras(lora_list)
+
+
+
+
+        #self.loras = get_enabled_loras([(bool(args.pop()), str(args.pop()), float(args.pop())) for _ in
+        #                                range(default_max_lora_number)])
         self.input_image_checkbox = args.pop()
         self.current_tab = args.pop()
         self.uov_method = args.pop()

@@ -44,7 +44,10 @@ def apply_field(field):
     return fun
 def apply_lora(field):
     def set_lora(p,x,xs):
-      p.loras[field] = (p.loras[field][0], x)
+        print ('-------------x',x)
+        print ('-------------xs',xs)
+        p.loras[field] = (p.loras[field][0], x)
+    print('------------set_lora',set_lora)
     return set_lora
 
 def apply_ctrlnet(field1,field2):
