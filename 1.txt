@@ -6,15 +6,16 @@
 6. Add batch in Inswapper in module
 7. Optimized ImageBatch
 8. Add Manga in xyz
-9. Lora Name
-10.Lora weights
+9. Lora Name in xyz
+10.Lora weights in xyz
+11. codeformer in history in xyz
+12. Codeformer in xyz
 
 
 
 
 
-
-
-
-Lora Codeformer
 refiner
+aspect ratio
+full history preview in ImageBatch
+full history preview in PromptBatch
