@@ -47,10 +47,10 @@ def apply_lora(field):
     def set_lora(p,x,xs):
         print ('-------------x',x)
         print ('-------------xs',xs)
-        p.loras[field] = (p.loras[field][0], x)
+        #p.loras[field] = (p.loras[field][0], x)
 
 
-        p.lora_list[field] = (p.lora_list[0][0], p.lora_list[0][1], x)
+        p.lora_list[field] = (p.lora_list[field][0], p.lora_list[field][1], x)
         p.loras = get_enabled_loras(p.lora_list)
 
     return set_lora
