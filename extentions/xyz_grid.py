@@ -28,6 +28,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import modules.config
 import modules.flags
+from modules.util import get_enabled_lora
 from modules.sdxl_styles import legal_style_names
 from modules.private_logger import log
 import html
@@ -47,7 +48,11 @@ def apply_lora(field):
         print ('-------------x',x)
         print ('-------------xs',xs)
         p.loras[field] = (p.loras[field][0], x)
-    print('------------set_lora',set_lora)
+
+
+        p.lora_list[field] = (p.lora_list[0][0], p.lora_list[0][1], x)
+        p.loras = get_enabled_loras(p.lora_list)
+
     return set_lora
 
 def apply_ctrlnet(field1,field2):
