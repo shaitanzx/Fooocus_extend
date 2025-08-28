@@ -9,7 +9,7 @@ from io import StringIO
 from PIL import Image
 import numpy as np
 import cv2
-
+from modules.util import get_enabled_lora
 ###import modules.scripts as scripts
 import gradio as gr
 ###from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_schedulers, errors
@@ -28,7 +28,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import modules.config
 import modules.flags
-from modules.util import get_enabled_lora
+
 from modules.sdxl_styles import legal_style_names
 from modules.private_logger import log
 import html
