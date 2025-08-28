@@ -46,7 +46,7 @@ def apply_field(field):
 
 def apply_bool(field):
     def fun(p, x, xs):
-        if x.lower=="enable":
+        if x.lower()=="enable":
             setattr(p, field, True)
         else:
             setattr(p, field, False)
