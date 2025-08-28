@@ -344,7 +344,11 @@ axis_options = [
     AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2)),
     AxisOption("Manga stop at", float, apply_ctrlnet("Manga",1)),
     AxisOption("Manga weight", float, apply_ctrlnet("Manga",2)),
-    AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable'])
+    AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Pre_Face_Align", str, apply_bool('codeformer_gen_preface'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Background Enchanced", str, apply_bool('codeformer_gen_background_enhance'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Face Upsample", str, apply_bool('codeformer_gen_face_upsample'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Fidelity", float, apply_field("codeformer_gen_fidelity"))
 ]
 
 def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results):
