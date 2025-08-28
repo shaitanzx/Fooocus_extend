@@ -6,6 +6,8 @@
 6. Add batch in Inswapper in module
 7. Optimized ImageBatch
 8. Add Manga in xyz
+9. Lora Name
+10.Lora weights
 
 
 
@@ -14,7 +16,5 @@
 
 
 
-Lora Name
-Lora weights
 Lora Codeformer
 refiner

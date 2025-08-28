@@ -43,6 +43,16 @@ def apply_field(field):
         setattr(p, field, x)
 
     return fun
+
+def apply_bool(field):
+    def fun(p, x, xs):
+        if x.lower="enable":
+            setattr(p, field, True)
+        else:
+            setattr(p, field, False)
+
+    return fun
+
 def apply_lora(field):
     def set_lora(p,x,xs):
         p.lora_list[field] = (p.lora_list[field][0], p.lora_list[field][1], x)
@@ -299,11 +309,15 @@ axis_options = [
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
 	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold)),
-	AxisOption("LoRA 1 weight", float, apply_lora(0), cost=0.6),
     AxisOption("LoRA 1 name", str, apply_lora_name(0), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
+	AxisOption("LoRA 1 weight", float, apply_lora(0), cost=0.6),
+    AxisOption("LoRA 2 name", str, apply_lora_name(1), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
+    AxisOption("LoRA 3 name", str, apply_lora_name(2), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     AxisOption("LoRA 3 weight", float, apply_lora(2), cost=0.6),
+    AxisOption("LoRA 4 name", str, apply_lora_name(3), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     AxisOption("LoRA 4 weight", float, apply_lora(3), cost=0.6),
+    AxisOption("LoRA 5 name", str, apply_lora_name(4), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     AxisOption("LoRA 5 weight", float, apply_lora(4), cost=0.6),
 
 #	  AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
@@ -329,7 +343,8 @@ axis_options = [
     AxisOption("Scribble stop at", float, apply_ctrlnet("Scribble",1)),
     AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2)),
     AxisOption("Manga stop at", float, apply_ctrlnet("Manga",1)),
-    AxisOption("Manga weight", float, apply_ctrlnet("Manga",2))
+    AxisOption("Manga weight", float, apply_ctrlnet("Manga",2)),
+    AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable']))
 ]
 
 def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results):

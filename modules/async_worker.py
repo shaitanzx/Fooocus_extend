@@ -59,14 +59,7 @@ class AsyncTask:
         for _ in range(default_max_lora_number):
             lora_tuple = (bool(args.pop()),str(args.pop()),float(args.pop()))
             self.lora_list.append(lora_tuple)
-
         self.loras = get_enabled_loras(self.lora_list)
-
-
-
-
-        #self.loras = get_enabled_loras([(bool(args.pop()), str(args.pop()), float(args.pop())) for _ in
-        #                                range(default_max_lora_number)])
         self.input_image_checkbox = args.pop()
         self.current_tab = args.pop()
         self.uov_method = args.pop()
