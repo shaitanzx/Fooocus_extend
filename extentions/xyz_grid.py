@@ -169,16 +169,18 @@ def confirm_range(min_val, max_val, axis_label):
     return confirm_range_fun
 
 
-def apply_size(p, x: str, xs) -> None:
-    try:
-        width, _, height = x.partition('x')
-        width = int(width.strip())
-        height = int(height.strip())
-        p.aspect_ratios_selection=f"{width} {height}"
-        #p.width = width
-        #p.height = height
-    except ValueError:
-        print(f"Invalid size in XYZ plot: {x}")
+#def apply_size(p, x: str, xs) -> None:
+#    try:
+#        width, _, height = x.partition('x')
+#        width = int(width.strip())
+#        height = int(height.strip())
+#        p.aspect_ratios_selection=f"{width} {height}"
+#        #p.width = width
+#        #p.height = height
+#    except ValueError:
+#        print(f"Invalid size in XYZ plot: {x}")
+def apply_size(p, x: str, _):
+    p.aspect_ratios_selection=x
 
 
 def find_vae(name: str):
@@ -305,7 +307,8 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),	
 	AxisOption("Styles", str, apply_styles, choices=lambda: list(legal_style_names)),
 	AxisOption("Steps", int, apply_field("steps")),
-	AxisOption("Aspect Ratio", str, apply_size),
+	#AxisOption("Aspect Ratio", str, apply_size),
+    AxisOption("Aspect Ratio", str, apply_size,choices=lambda: list(modules.config.available_aspect_ratios_labels[-2])),
 	AxisOption("Seed", int, apply_field("seed")),
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
