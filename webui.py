@@ -88,10 +88,11 @@ def xyz_plot_ext(currentTask):
     currentTask.negative_prompt=currentTask.original_negative
     xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
     temp_var=[]
+    xyz_len = len(xyz_task)
     for i, currentTask in enumerate(xyz_task):
         currentTask.results+=temp_var
-        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}:\033[0m")
-        gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}") 
+        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
+        gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if not finished_batch:
             if currentTask.translate_enabled:
                   positive, negative = translate(currentTask.prompt, currentTask.negative_prompt, currentTask.srcTrans, currentTask.toTrans)            
