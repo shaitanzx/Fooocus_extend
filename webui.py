@@ -101,8 +101,9 @@ def xyz_plot_ext(currentTask):
             if currentTask.always_random:
                   currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
             yield from generate_clicked(currentTask)
-            temp_var=currentTask.results
+            temp_var=currentTask.results    
     gr.Info(f"[X/Y/Z Plot] Grid generation") 
+    del temp_var
     xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
     return
 
@@ -133,8 +134,9 @@ def im_batch_run(p):
     batch_all=len(batch_files)
     check=p.input_image_checkbox
     passed=1
+    temp_var=[]
     for f_name in batch_files:
-      if not finished_batch:  
+      if not finished_batch:
         pc = copy.deepcopy(p)
         img = Image.open(batch_path+os.path.sep+f_name)
         if not p.input_image_checkbox:
@@ -167,9 +169,11 @@ def im_batch_run(p):
                   p.prompt = positive
                   p.negative_prompt = negative        
         yield from generate_clicked(p)
+        temp_var+=p.results    
         p = copy.deepcopy(pc)
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+    p.result=temp_var
     p.input_image_checkbox=check
     finished_batch=False
     return
