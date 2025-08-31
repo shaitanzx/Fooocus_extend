@@ -397,6 +397,18 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.2.0
+ 1. Add Vector Style
+ 2. Add SVGcode
+ 3. Add Vector in generate mode
+ 4. Add Vector in module
+ 5. Add batch in Codeformer in module
+ 6. Add batch in Inswapper in module
+ 7. Optimized ImageBatch
+ 8. The x/y/z-plot module has been updated with the following parameters: Lora Name, Lora weight, Codeforeme, refiner settings, ratio selection
+ 9. Final preview of ImageBatch
+10.Final preview of PromptBatch
+
 v9.1.7
 1. Add Roller in tools
 
