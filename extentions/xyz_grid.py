@@ -180,7 +180,7 @@ def confirm_range(min_val, max_val, axis_label):
 #    except ValueError:
 #        print(f"Invalid size in XYZ plot: {x}")
 def apply_size(p, x: str, _):
-    width, _, height = x.partition('x')
+    width, height = x.replace('×', ' ').split(' ')[:2]
     width = int(width.strip())
     height = int(height.strip())
     p.aspect_ratios_selection=f"{width} {height}"
