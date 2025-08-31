@@ -34,4 +34,5 @@ diffusers==0.29.0
 #huggingface-hub==0.30.0
 controlnet_aux==0.0.10
 potracer
+deep-translator
 transformers==4.42.4
