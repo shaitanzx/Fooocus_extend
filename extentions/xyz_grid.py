@@ -308,10 +308,14 @@ axis_options = [
 	AxisOption("Seed", int, apply_field("seed")),
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
-	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold)),
+	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold))
+]
+    
     for q in range(default_max_lora_number):
-        AxisOption(f"LoRA {q+1} name", str, apply_lora_name(q), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
-	    AxisOption(f"LoRA {q+1} weight", float, apply_lora(0), cost=0.6),
+        axis_options.extend([
+            AxisOption(f"LoRA {q+1} name", str, apply_lora_name(q), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
+	        AxisOption(f"LoRA {q+1} weight", float, apply_lora(q), cost=0.6)]
+    
     #AxisOption("LoRA 2 name", str, apply_lora_name(1), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     #AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
     #AxisOption("LoRA 3 name", str, apply_lora_name(2), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
@@ -323,33 +327,34 @@ axis_options = [
 
 #	  AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
 #	  AxisOption("Refiner switch at", float, apply_field('refiner_switch_at')),
-	AxisOption("Clip skip", int, apply_field('clip_skip')),
-	AxisOption("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: sorted(modules.flags.sampler_list, key=str.casefold)),
-	AxisOption("Scheduler", str, apply_field("scheduler_name"), choices=lambda: sorted(modules.flags.scheduler_list, key=str.casefold)),
-	AxisOption("VAE", str, apply_field("vae_name"), cost=0.7, choices=lambda: ['Default (model)'] + list(modules.config.vae_filenames)),
+	axis_options.extend([
+        AxisOption("Clip skip", int, apply_field('clip_skip')),
+	    AxisOption("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: sorted(modules.flags.sampler_list, key=str.casefold)),
+	    AxisOption("Scheduler", str, apply_field("scheduler_name"), choices=lambda: sorted(modules.flags.scheduler_list, key=str.casefold)),
+	    AxisOption("VAE", str, apply_field("vae_name"), cost=0.7, choices=lambda: ['Default (model)'] + list(modules.config.vae_filenames)),
 #	  AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold))
-	AxisOption("Softness of ControlNet", float, apply_field("controlnet_softness")),
-    AxisOption("ImagePrompt stop at", float, apply_ctrlnet("ImagePrompt",1)),
-    AxisOption("ImagePrompt weight", float, apply_ctrlnet("ImagePrompt",2)),
-    AxisOption("PyraCanny stop at", float, apply_ctrlnet("PyraCanny",1)),
-    AxisOption("PyraCanny weight", float, apply_ctrlnet("PyraCanny",2)),
-    AxisOption("CPDS stop at", float, apply_ctrlnet("CPDS",1)),
-    AxisOption("CPDS weight", float, apply_ctrlnet("CPDS",2)),
-    AxisOption("FaceSwap stop at", float, apply_ctrlnet("FaceSwap",1)),
-    AxisOption("FaceSwap weight", float, apply_ctrlnet("FaceSwap",2)),
-    AxisOption("OpenPose stop at", float, apply_ctrlnet("OpenPose",1)),
-    AxisOption("OpenPose weight", float, apply_ctrlnet("OpenPose",2)),
-    AxisOption("Recolor stop at", float, apply_ctrlnet("Recolor",1)),
-    AxisOption("Recolor weight", float, apply_ctrlnet("Recolor",2)),
-    AxisOption("Scribble stop at", float, apply_ctrlnet("Scribble",1)),
-    AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2)),
-    AxisOption("Manga stop at", float, apply_ctrlnet("Manga",1)),
-    AxisOption("Manga weight", float, apply_ctrlnet("Manga",2)),
-    AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable']),
-    AxisOption("Codeformer Pre_Face_Align", str, apply_bool('codeformer_gen_preface'), choices=lambda: ['Enable','Disable']),
-    AxisOption("Codeformer Background Enchanced", str, apply_bool('codeformer_gen_background_enhance'), choices=lambda: ['Enable','Disable']),
-    AxisOption("Codeformer Face Upsample", str, apply_bool('codeformer_gen_face_upsample'), choices=lambda: ['Enable','Disable']),
-    AxisOption("Codeformer Fidelity", float, apply_field("codeformer_gen_fidelity"))
+	    AxisOption("Softness of ControlNet", float, apply_field("controlnet_softness")),
+        AxisOption("ImagePrompt stop at", float, apply_ctrlnet("ImagePrompt",1)),
+        AxisOption("ImagePrompt weight", float, apply_ctrlnet("ImagePrompt",2)),
+        AxisOption("PyraCanny stop at", float, apply_ctrlnet("PyraCanny",1)),
+        AxisOption("PyraCanny weight", float, apply_ctrlnet("PyraCanny",2)),
+        AxisOption("CPDS stop at", float, apply_ctrlnet("CPDS",1)),
+        AxisOption("CPDS weight", float, apply_ctrlnet("CPDS",2)),
+        AxisOption("FaceSwap stop at", float, apply_ctrlnet("FaceSwap",1)),
+        AxisOption("FaceSwap weight", float, apply_ctrlnet("FaceSwap",2)),
+        AxisOption("OpenPose stop at", float, apply_ctrlnet("OpenPose",1)),
+        AxisOption("OpenPose weight", float, apply_ctrlnet("OpenPose",2)),
+        AxisOption("Recolor stop at", float, apply_ctrlnet("Recolor",1)),
+        AxisOption("Recolor weight", float, apply_ctrlnet("Recolor",2)),
+        AxisOption("Scribble stop at", float, apply_ctrlnet("Scribble",1)),
+        AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2)),
+        AxisOption("Manga stop at", float, apply_ctrlnet("Manga",1)),
+        AxisOption("Manga weight", float, apply_ctrlnet("Manga",2)),
+        AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable']),
+        AxisOption("Codeformer Pre_Face_Align", str, apply_bool('codeformer_gen_preface'), choices=lambda: ['Enable','Disable']),
+        AxisOption("Codeformer Background Enchanced", str, apply_bool('codeformer_gen_background_enhance'), choices=lambda: ['Enable','Disable']),
+        AxisOption("Codeformer Face Upsample", str, apply_bool('codeformer_gen_face_upsample'), choices=lambda: ['Enable','Disable']),
+        AxisOption("Codeformer Fidelity", float, apply_field("codeformer_gen_fidelity"))
 ]
 
 def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results):
