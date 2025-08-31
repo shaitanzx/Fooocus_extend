@@ -174,8 +174,9 @@ def apply_size(p, x: str, xs) -> None:
         width, _, height = x.partition('x')
         width = int(width.strip())
         height = int(height.strip())
-        p.width = width
-        p.height = height
+        p.aspect_ratios_selection=f"{width} {height}"
+        #p.width = width
+        #p.height = height
     except ValueError:
         print(f"Invalid size in XYZ plot: {x}")
 
