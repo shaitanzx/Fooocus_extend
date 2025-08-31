@@ -308,7 +308,7 @@ axis_options = [
 	AxisOption("Styles", str, apply_styles, choices=lambda: list(legal_style_names)),
 	AxisOption("Steps", int, apply_field("steps")),
 	#AxisOption("Aspect Ratio", str, apply_size),
-    AxisOption("Aspect Ratio", str, apply_size,choices=lambda: list(modules.config.available_aspect_ratios_labels[-2])),
+    AxisOption("Aspect Ratio", str, apply_size,choices=lambda: list(modules.config.available_aspect_ratios)),
 	AxisOption("Seed", int, apply_field("seed")),
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
