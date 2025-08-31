@@ -194,13 +194,15 @@ In the second case, the file first contains a line with a positive prompt, follo
 This extension allows you to make image grids to make it easier to see the difference between different generation settings and choose the best option. You can change the following parameters - Styles, Steps, Aspect Ratio, Seed, Sharpness, CFG (Guidance) Scale, Checkpoint, Refiner, Clip skip, Sampler, Scheduler, VAE, Refiner swap method, Softness of ControlNet, and also replace words in the prompt and change their order
 
 **Inswapper**
-![image](https://github.com/user-attachments/assets/2df95460-eab8-420c-9388-246034ec27f4)
+
+<img width="1070" height="506" alt="image" src="https://github.com/user-attachments/assets/3e8e4005-e3be-481e-b04d-90fd4a5d3e28" />
 
 The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
 
 **CodeFormer**
 
-![image](https://github.com/user-attachments/assets/9c31d2a3-e8e1-409d-97e0-5a7bd425b434)
+<img width="1057" height="537" alt="image" src="https://github.com/user-attachments/assets/b0d1780f-0438-4e73-ba3f-281fb4b68a90" />
+
 
 The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
 
@@ -226,6 +228,15 @@ Video and image support: Easily process images and videos.
 Multi-threaded processing: Efficiently process large files with streaming and GPU support. Customizable output formats: Export to PNG, JPEG, MP4, AVI, and more.
 
 All processing results are automatically saved to the output folder without saving to History Log
+
+
+**Vector**
+
+<img width="1073" height="587" alt="image" src="https://github.com/user-attachments/assets/3d9f7fc0-c7b9-49aa-bcc1-16f03e7f3965" />
+
+
+The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
+
 
 
 **“tools”** panel
@@ -257,6 +268,12 @@ How to use:
 2. Add and edit the text as you like
 3. Generate a mask in two clicks
 4. Download and use in ControlNet (CPDS or PyraCanny) or as a mask for Inpaint to stylise text and blend into an image.
+
+**SVGcode**
+
+<img width="720" height="570" alt="image" src="https://github.com/user-attachments/assets/7203799b-ed3d-4b5d-89ef-58c9e5d170c0" />
+
+Module for processing raster images for saving from to svg
 
 **Roller**
 
