@@ -138,7 +138,6 @@ def im_batch_run(p):
     for f_name in batch_files:
       if not finished_batch:
         p.results=temp_var
-        print ('----------------',len(p.results),len(temp_var)) 
         pc = copy.deepcopy(p)
         img = Image.open(batch_path+os.path.sep+f_name)
         if not p.input_image_checkbox:
@@ -172,13 +171,12 @@ def im_batch_run(p):
                   p.negative_prompt = negative        
         yield from generate_clicked(p)
         temp_var=p.results
-        print ('++++++++++++++++++++++',len(p.results),len(temp_var)) 
         p = copy.deepcopy(pc)        
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-    print ('********************************',len(p.results),len(temp_var)) 
     p.input_image_checkbox=check
     finished_batch=False
+    del temp_var
     return
 def pr_batch_start(p):
   global finished_batch
@@ -188,7 +186,9 @@ def pr_batch_start(p):
   batch_len=len(batch_prompt)
   pc = copy.deepcopy(p)
   passed=1
+  temp_var=[]
   while batch_prompt and not finished_batch:
+      p.results=temp_var
       print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
       gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
       one_batch_args=batch_prompt.pop()
@@ -210,6 +210,7 @@ def pr_batch_start(p):
                   p.prompt = positive
                   p.negative_prompt = negative
         yield from generate_clicked(p)
+        temp_var=p.results
       p = copy.deepcopy(pc)
       if p.seed_random:
         p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
