@@ -137,6 +137,7 @@ def im_batch_run(p):
     temp_var=[]
     for f_name in batch_files:
       if not finished_batch:
+        p.results+=temp_var 
         pc = copy.deepcopy(p)
         img = Image.open(batch_path+os.path.sep+f_name)
         if not p.input_image_checkbox:
@@ -169,11 +170,10 @@ def im_batch_run(p):
                   p.prompt = positive
                   p.negative_prompt = negative        
         yield from generate_clicked(p)
-        temp_var+=p.results    
-        p = copy.deepcopy(pc)
+        temp_var=p.result  
+        p = copy.deepcopy(pc)        
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-    p.result=temp_var
     p.input_image_checkbox=check
     finished_batch=False
     return
