@@ -311,7 +311,7 @@ axis_options = [
 	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold))
 ]
 
-for q in range(default_max_lora_number):
+for q in range(modules.config.default_max_lora_number):
     axis_options.append(AxisOption(f"LoRA {q+1} name", str, apply_lora_name(q), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)))
     axis_options.append(AxisOption(f"LoRA {q+1} weight", float, apply_lora(q), cost=0.6))
     
