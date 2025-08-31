@@ -35,4 +35,4 @@ def translate(prompt, prompt_neg='', srcTrans="auto", toTrans="en"):
 
 GREEN = '\033[92m'
 CLEAR = '\033[0m'
-print(f"{GREEN}Prompt translate module AlekPet -> Loaded{CLEAR}")
+#print(f"{GREEN}Prompt translate module AlekPet -> Loaded{CLEAR}")
