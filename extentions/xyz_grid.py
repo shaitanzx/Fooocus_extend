@@ -309,29 +309,22 @@ axis_options = [
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
 	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold))
+    
+
 ]
 
 for q in range(modules.config.default_max_lora_number):
     axis_options.append(AxisOption(f"LoRA {q+1} name", str, apply_lora_name(q), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)))
     axis_options.append(AxisOption(f"LoRA {q+1} weight", float, apply_lora(q), cost=0.6))
     
-    #AxisOption("LoRA 2 name", str, apply_lora_name(1), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
-    #AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
-    #AxisOption("LoRA 3 name", str, apply_lora_name(2), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
-    ##AxisOption("LoRA 3 weight", float, apply_lora(2), cost=0.6),
-    #AxisOption("LoRA 4 name", str, apply_lora_name(3), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
-    #AxisOption("LoRA 4 weight", float, apply_lora(3), cost=0.6),
-    #AxisOption("LoRA 5 name", str, apply_lora_name(4), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
-    #AxisOption("LoRA 5 weight", float, apply_lora(4), cost=0.6),
-
-#	  AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
-#	  AxisOption("Refiner switch at", float, apply_field('refiner_switch_at')),
 axis_options.extend([
+    AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
+    AxisOption("Refiner switch at", float, apply_field('refiner_switch')),
+    AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold))
     AxisOption("Clip skip", int, apply_field('clip_skip')),
     AxisOption("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: sorted(modules.flags.sampler_list, key=str.casefold)),
     AxisOption("Scheduler", str, apply_field("scheduler_name"), choices=lambda: sorted(modules.flags.scheduler_list, key=str.casefold)),
     AxisOption("VAE", str, apply_field("vae_name"), cost=0.7, choices=lambda: ['Default (model)'] + list(modules.config.vae_filenames)),
-#	  AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold))
     AxisOption("Softness of ControlNet", float, apply_field("controlnet_softness")),
     AxisOption("ImagePrompt stop at", float, apply_ctrlnet("ImagePrompt",1)),
     AxisOption("ImagePrompt weight", float, apply_ctrlnet("ImagePrompt",2)),
