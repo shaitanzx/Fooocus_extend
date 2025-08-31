@@ -405,7 +405,7 @@ v9.2.0
  5. Add batch in Codeformer in module
  6. Add batch in Inswapper in module
  7. Optimized ImageBatch
- 8. The x/y/z-plot module has been updated with the following parameters: Lora Name, Lora weight, Codeforeme, refiner settings, ratio selection
+ 8. The x/y/z-plot module has been updated with the following parameters: Lora Name, Lora weight, Codeforeme, refiner settings, aspect ratio selection
  9. Final preview of ImageBatch
 10.Final preview of PromptBatch
 
