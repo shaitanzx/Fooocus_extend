@@ -313,7 +313,7 @@ axis_options = [
 
 for q in range(default_max_lora_number):
     axis_options.append(AxisOption(f"LoRA {q+1} name", str, apply_lora_name(q), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)))
-	axis_options.append(AxisOption(f"LoRA {q+1} weight", float, apply_lora(q), cost=0.6))
+    axis_options.append(AxisOption(f"LoRA {q+1} weight", float, apply_lora(q), cost=0.6))
     
     #AxisOption("LoRA 2 name", str, apply_lora_name(1), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)),
     #AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
