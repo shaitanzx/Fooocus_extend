@@ -127,6 +127,8 @@ Keep temp images - do not save the intermediate transparency file
 
 Threshold - line curvature threshold
 
+
+
 **“modules”** panel
 
 **Image Batch** (batch image processing)
