@@ -54,8 +54,12 @@ class AsyncTask:
         self.base_model_name = args.pop()
         self.refiner_model_name = args.pop()
         self.refiner_switch = args.pop()
-        self.loras = get_enabled_loras([(bool(args.pop()), str(args.pop()), float(args.pop())) for _ in
-                                        range(default_max_lora_number)])
+
+        self.lora_list = []
+        for _ in range(default_max_lora_number):
+            lora_tuple = (bool(args.pop()),str(args.pop()),float(args.pop()))
+            self.lora_list.append(lora_tuple)
+        self.loras = get_enabled_loras(self.lora_list)
         self.input_image_checkbox = args.pop()
         self.current_tab = args.pop()
         self.uov_method = args.pop()
@@ -268,6 +272,12 @@ class AsyncTask:
         self.seed_random = args.pop()
         self.tile_x = args.pop()
         self.tile_y = args.pop()
+        self.poKeepPnm = args.pop()
+        self.poThreshold = args.pop()
+        self.poTransPNG = args.pop()
+        self.poTransPNGEps = args.pop()
+        self.poDoVector = args.pop()
+        self.poTransPNGQuant = args.pop()
  
 
     
@@ -314,9 +324,11 @@ def worker():
     from modules.upscaler import perform_upscale
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
+    from PIL import Image
     import extentions.instantid.main as instantid
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
+    from extentions.vector import vector as vector
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -432,7 +444,11 @@ def worker():
         for li, (n, w) in enumerate(async_task.loras):
                 if n != 'None':
                     d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
-
+        if async_task.codeformer_gen_enabled:
+            d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
+            d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
+            d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
+            d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
         
         log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True, name_prefix=async_task.name_prefix)
         return
@@ -518,6 +534,25 @@ def worker():
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
+#        progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
+#        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
+        if async_task.poDoVector:
+            image = Image.fromarray(imgs[0])
+            if async_task.poTransPNG:
+                progressbar(async_task, current_progress, f'Transparenting image ...')
+                image = vector.trans(image,async_task.poTransPNGQuant,async_task.poTransPNGEps)
+
+                _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+                if not async_task.poKeepPnm:
+                    image_png = np.array(image)
+                    imgs.append(image_png)
+
+            progressbar(async_task, current_progress, f'Vectorization image ...')
+            _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            vector.save_svg(image,async_task.poThreshold,filename)
+
         progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
         img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
         yield_result(async_task, img_paths, current_progress, async_task.black_out_nsfw, False,
@@ -579,7 +614,11 @@ def worker():
             for li, (n, w) in enumerate(loras):
                 if n != 'None':
                     d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
-
+            if async_task.codeformer_gen_enabled:
+                d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
+                d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
+                d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
+                d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
             metadata_parser = None
             if async_task.save_metadata_to_images:
                 metadata_parser = modules.meta_parser.get_metadata_parser(async_task.metadata_scheme)

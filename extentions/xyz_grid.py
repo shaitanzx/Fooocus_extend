@@ -28,6 +28,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import modules.config
 import modules.flags
+from modules.util import get_enabled_loras
 from modules.sdxl_styles import legal_style_names
 from modules.private_logger import log
 import html
@@ -42,10 +43,30 @@ def apply_field(field):
         setattr(p, field, x)
 
     return fun
+
+def apply_bool(field):
+    def fun(p, x, xs):
+        if x.lower()=="enable":
+            setattr(p, field, True)
+        else:
+            setattr(p, field, False)
+
+    return fun
+
 def apply_lora(field):
     def set_lora(p,x,xs):
-      p.loras[field] = (p.loras[field][0], x)
+        p.lora_list[field] = (p.lora_list[field][0], p.lora_list[field][1], x)
+        p.loras = get_enabled_loras(p.lora_list)
     return set_lora
+
+
+def apply_lora_name(field):
+    def set_lora(p,x,xs):
+        p.lora_list[field] = (p.lora_list[field][0], x,p.lora_list[field][2])
+        p.loras = get_enabled_loras(p.lora_list)
+    return set_lora
+
+
 
 def apply_ctrlnet(field1,field2):
     def set_ctrl(p,x,sx):
@@ -148,15 +169,21 @@ def confirm_range(min_val, max_val, axis_label):
     return confirm_range_fun
 
 
-def apply_size(p, x: str, xs) -> None:
-    try:
-        width, _, height = x.partition('x')
-        width = int(width.strip())
-        height = int(height.strip())
-        p.width = width
-        p.height = height
-    except ValueError:
-        print(f"Invalid size in XYZ plot: {x}")
+#def apply_size(p, x: str, xs) -> None:
+#    try:
+#        width, _, height = x.partition('x')
+#        width = int(width.strip())
+#        height = int(height.strip())
+#        p.aspect_ratios_selection=f"{width} {height}"
+#        #p.width = width
+#        #p.height = height
+#    except ValueError:
+#        print(f"Invalid size in XYZ plot: {x}")
+def apply_size(p, x: str, _):
+    width, height = x.replace('×', ' ').split(' ')[:2]
+    width = int(width.strip())
+    height = int(height.strip())
+    p.aspect_ratios_selection=f"{width} {height}"
 
 
 def find_vae(name: str):
@@ -283,40 +310,51 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),	
 	AxisOption("Styles", str, apply_styles, choices=lambda: list(legal_style_names)),
 	AxisOption("Steps", int, apply_field("steps")),
-#	AxisOption("Aspect Ratio", str, apply_size),
+	#AxisOption("Aspect Ratio", str, apply_size),
+    AxisOption("Aspect Ratio", str, apply_size,choices=lambda: list(modules.config.available_aspect_ratios_labels[:-2])),
 	AxisOption("Seed", int, apply_field("seed")),
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
-	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold)),
-	AxisOption("LoRA 1 weight", float, apply_lora(0), cost=0.6),
-  AxisOption("LoRA 2 weight", float, apply_lora(1), cost=0.6),
-  AxisOption("LoRA 3 weight", float, apply_lora(2), cost=0.6),
-  AxisOption("LoRA 4 weight", float, apply_lora(3), cost=0.6),
-  AxisOption("LoRA 5 weight", float, apply_lora(4), cost=0.6),
+	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold))
+    
 
-#	  AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
-#	  AxisOption("Refiner switch at", float, apply_field('refiner_switch_at')),
-	AxisOption("Clip skip", int, apply_field('clip_skip')),
-	AxisOption("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: sorted(modules.flags.sampler_list, key=str.casefold)),
-	AxisOption("Scheduler", str, apply_field("scheduler_name"), choices=lambda: sorted(modules.flags.scheduler_list, key=str.casefold)),
-	AxisOption("VAE", str, apply_field("vae_name"), cost=0.7, choices=lambda: ['Default (model)'] + list(modules.config.vae_filenames)),
-#	  AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold))
-	AxisOption("Softness of ControlNet", float, apply_field("controlnet_softness")),
-  AxisOption("ImagePrompt stop at", float, apply_ctrlnet("ImagePrompt",1)),
-  AxisOption("ImagePrompt weight", float, apply_ctrlnet("ImagePrompt",2)),
-  AxisOption("PyraCanny stop at", float, apply_ctrlnet("PyraCanny",1)),
-  AxisOption("PyraCanny weight", float, apply_ctrlnet("PyraCanny",2)),
-  AxisOption("CPDS stop at", float, apply_ctrlnet("CPDS",1)),
-  AxisOption("CPDS weight", float, apply_ctrlnet("CPDS",2)),
-  AxisOption("FaceSwap stop at", float, apply_ctrlnet("FaceSwap",1)),
-  AxisOption("FaceSwap weight", float, apply_ctrlnet("FaceSwap",2)),
-  AxisOption("OpenPose stop at", float, apply_ctrlnet("OpenPose",1)),
-  AxisOption("OpenPose weight", float, apply_ctrlnet("OpenPose",2)),
-  AxisOption("Recolor stop at", float, apply_ctrlnet("Recolor",1)),
-  AxisOption("Recolor weight", float, apply_ctrlnet("Recolor",2)),
-  AxisOption("Scribble stop at", float, apply_ctrlnet("Scribble",1)),
-  AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2))
 ]
+
+for q in range(modules.config.default_max_lora_number):
+    axis_options.append(AxisOption(f"LoRA {q+1} name", str, apply_lora_name(q), format_value=format_remove_path, confirm=None, cost=0.6, choices=lambda: ['None'] + sorted(modules.config.lora_filenames, key=str.casefold)))
+    axis_options.append(AxisOption(f"LoRA {q+1} weight", float, apply_lora(q), cost=0.6))
+    
+axis_options.extend([
+    AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
+    AxisOption("Refiner switch at", float, apply_field('refiner_switch')),
+    AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold)),
+    AxisOption("Clip skip", int, apply_field('clip_skip')),
+    AxisOption("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: sorted(modules.flags.sampler_list, key=str.casefold)),
+    AxisOption("Scheduler", str, apply_field("scheduler_name"), choices=lambda: sorted(modules.flags.scheduler_list, key=str.casefold)),
+    AxisOption("VAE", str, apply_field("vae_name"), cost=0.7, choices=lambda: ['Default (model)'] + list(modules.config.vae_filenames)),
+    AxisOption("Softness of ControlNet", float, apply_field("controlnet_softness")),
+    AxisOption("ImagePrompt stop at", float, apply_ctrlnet("ImagePrompt",1)),
+    AxisOption("ImagePrompt weight", float, apply_ctrlnet("ImagePrompt",2)),
+    AxisOption("PyraCanny stop at", float, apply_ctrlnet("PyraCanny",1)),
+    AxisOption("PyraCanny weight", float, apply_ctrlnet("PyraCanny",2)),
+    AxisOption("CPDS stop at", float, apply_ctrlnet("CPDS",1)),
+    AxisOption("CPDS weight", float, apply_ctrlnet("CPDS",2)),
+    AxisOption("FaceSwap stop at", float, apply_ctrlnet("FaceSwap",1)),
+    AxisOption("FaceSwap weight", float, apply_ctrlnet("FaceSwap",2)),
+    AxisOption("OpenPose stop at", float, apply_ctrlnet("OpenPose",1)),
+    AxisOption("OpenPose weight", float, apply_ctrlnet("OpenPose",2)),
+    AxisOption("Recolor stop at", float, apply_ctrlnet("Recolor",1)),
+    AxisOption("Recolor weight", float, apply_ctrlnet("Recolor",2)),
+    AxisOption("Scribble stop at", float, apply_ctrlnet("Scribble",1)),
+    AxisOption("Scribble weight", float, apply_ctrlnet("Scribble",2)),
+    AxisOption("Manga stop at", float, apply_ctrlnet("Manga",1)),
+    AxisOption("Manga weight", float, apply_ctrlnet("Manga",2)),
+    AxisOption("Codeformer", str, apply_bool('codeformer_gen_enabled'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Pre_Face_Align", str, apply_bool('codeformer_gen_preface'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Background Enchanced", str, apply_bool('codeformer_gen_background_enhance'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Face Upsample", str, apply_bool('codeformer_gen_face_upsample'), choices=lambda: ['Enable','Disable']),
+    AxisOption("Codeformer Fidelity", float, apply_field("codeformer_gen_fidelity"))
+])
 
 def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results):
     

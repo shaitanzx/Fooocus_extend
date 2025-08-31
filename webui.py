@@ -39,6 +39,7 @@ from rembg import remove
 from PIL import Image
 from gradio.components import label
 from modules.util import is_json
+from modules.launch_util import delete_folder_content
 
 from extentions.md_lib import civitai_helper
 from extentions.md_lib import md_config
@@ -62,6 +63,8 @@ import extentions.photomaker.app as photomaker
 
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 from extentions import tile_roll
+from extentions.vector import vector
+import extentions.batch as batch
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
@@ -69,11 +72,11 @@ choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 ar_def=[1,1]
 swap_def=False
 finished_batch=False
-batch_path='./batch_images'
+temp_batch_dir=modules.config.temp_path+os.path.sep
 def html_load(url,file):
         return gr.update(value=f'''
                                 <iframe id='text_mask'
-                                src = '{url}/file={file.name}'
+                                src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
 def xyz_plot_ext(currentTask):
@@ -85,10 +88,11 @@ def xyz_plot_ext(currentTask):
     currentTask.negative_prompt=currentTask.original_negative
     xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
     temp_var=[]
+    xyz_len = len(xyz_task)
     for i, currentTask in enumerate(xyz_task):
         currentTask.results+=temp_var
-        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}:\033[0m")
-        gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}") 
+        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
+        gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if not finished_batch:
             if currentTask.translate_enabled:
                   positive, negative = translate(currentTask.prompt, currentTask.negative_prompt, currentTask.srcTrans, currentTask.toTrans)            
@@ -97,8 +101,9 @@ def xyz_plot_ext(currentTask):
             if currentTask.always_random:
                   currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
             yield from generate_clicked(currentTask)
-            temp_var=currentTask.results
+            temp_var=currentTask.results    
     gr.Info(f"[X/Y/Z Plot] Grid generation") 
+    del temp_var
     xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
     return
 
@@ -122,16 +127,19 @@ def get_task(*args):
     return worker.AsyncTask(args=args)
      
 def im_batch_run(p):
+    batch_path=modules.config.temp_path+os.path.sep+"batch_images"
     global finished_batch
     finished_batch=False
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
     check=p.input_image_checkbox
     passed=1
+    temp_var=[]
     for f_name in batch_files:
-      if not finished_batch:  
+      if not finished_batch:
+        p.results=temp_var
         pc = copy.deepcopy(p)
-        img = Image.open('./batch_images/'+f_name)
+        img = Image.open(batch_path+os.path.sep+f_name)
         if not p.input_image_checkbox:
             p.cn_tasks = {x: [] for x in flags.ip_list}
         if p.image_action == 'Upscale': 
@@ -162,11 +170,13 @@ def im_batch_run(p):
                   p.prompt = positive
                   p.negative_prompt = negative        
         yield from generate_clicked(p)
-        p = copy.deepcopy(pc)
+        temp_var=p.results
+        p = copy.deepcopy(pc)        
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
     p.input_image_checkbox=check
     finished_batch=False
+    del temp_var
     return
 def pr_batch_start(p):
   global finished_batch
@@ -176,7 +186,9 @@ def pr_batch_start(p):
   batch_len=len(batch_prompt)
   pc = copy.deepcopy(p)
   passed=1
+  temp_var=[]
   while batch_prompt and not finished_batch:
+      p.results=temp_var
       print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
       gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
       one_batch_args=batch_prompt.pop()
@@ -198,6 +210,7 @@ def pr_batch_start(p):
                   p.prompt = positive
                   p.negative_prompt = negative
         yield from generate_clicked(p)
+        temp_var=p.results
       p = copy.deepcopy(pc)
       if p.seed_random:
         p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
@@ -332,7 +345,8 @@ with shared.gradio_root:
     state_topbar = gr.State({})
     currentTask = gr.State(worker.AsyncTask(args=[]))
     inpaint_engine_state = gr.State('empty')
-    text_mask_file=gr.File(value='extentions/text_mask.html',visible=False)
+    text_mask_file=gr.Textbox(value='extentions/text_mask.html',visible=False)
+    svgcode_file=gr.Textbox(value="extentions/vector/svgcode/index.html",visible=False)
     url_display = gr.Textbox(visible=False)
 
     shared.gradio_root.load(
@@ -814,99 +828,64 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
-                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer):
+                        with gr.TabItem(label='Vector'):
+                            poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
+
+                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
                         ('Inswapper', inswapper),
-                        ('Codeformer', codeformer)
+                        ('Codeformer', codeformer),
+                        ('Vector', vector)
                         ]
                     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
                     main_name = "in generation"
                     if active_modules:
-                        main_name += f" — {', '.join(active_modules)}"
-                    #main_name = "in generation" + (f" — {', '.join(filter(None, ['OneButtonPrompt enabled' if obp else None, 'PromptTranslate enabled' if translate else None,'PhotoMaker enabled' if photomaker else None,'InstantID enabled' if instant else None,'Inswapper enabled' if inswapper else None,'Codeformer enabled' if codeformer else None]))}" if any([obp,translate, photomaker, instant, inswapper, codeformer]) else "")
+                        main_name += f" — {', '.join(active_modules)}"   
                     return gr.update(label=main_name)
-                enable_obp.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                enable_pm.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                translate_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                inswapper_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                codeformer_gen_enabled.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
-                enable_instant.change(gen_acc_name,inputs=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled],
-                        outputs=[gen_acc],queue=False)
+                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled,poDoVector]
+                poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
-                        def unzip_file(zip_file_obj,files_single,enable_zip):
-                            extract_folder = "./batch_images"
-                            if not os.path.exists(extract_folder):
-                                os.makedirs(extract_folder)
-                            if enable_zip:
-                                zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
-                                zip_ref.extractall(extract_folder)
-                                zip_ref.close()
+                        def clear_single(image):
+                            return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
+                        def single_image(single_upload):
+                            if len(single_upload) == 1:
+                                return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
                             else:
-                                for file in files_single:
-                                    original_name = os.path.basename(getattr(file, 'orig_name', file.name))
-                                    save_path = os.path.join(extract_folder, original_name)
-                                    try:
-                                        with open(file.name, 'rb') as src:
-                                            with open(save_path, 'wb') as dst:
-                                                while True:
-                                                    chunk = src.read(8192)  # Читаем по 8KB за раз
-                                                    if not chunk:
-                                                        break
-                                                    dst.write(chunk)
-                                    except Exception as e:
-                                        print(f"copy error {original_name}: {str(e)}")
-                            return
-                        def delete_out(directory):
-                            for filename in os.listdir(directory):
-                                file_path = os.path.join(directory, filename)
-                                try:
-                                    if os.path.isfile(file_path) or os.path.islink(file_path):
-                                        os.remove(file_path)
-                                    elif os.path.isdir(file_path):
-                                            delete_out(file_path)
-                                            os.rmdir(file_path)
-                                except Exception as e:
-                                    print(f'Failed to delete {file_path}. Reason: {e}')
-                            return
-                        def clear_outputs():
-                            directory=modules.config.path_outputs
-                            delete_out(directory)
-                            return 
+                                return gr.update (visible=False),gr.update(visible=True)
+                        def clear_dirs():
+                            result=delete_folder_content(modules.config.path_outputs, '')
                         def output_zip():
                             directory=modules.config.path_outputs
-                            zip_file='outputs.zip'
+                            temp_dir=modules.config.temp_path+os.path.sep+"batch_images"
+                            _, _, filename = modules.util.generate_temp_filename(folder=directory)
+                            name, ext = os.path.splitext(filename)
+                            zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
                             with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
                                 for root, dirs, files in os.walk(directory):
                                     for file in files:
                                         file_path = os.path.join(root, file)
                                         zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
                             zipf.close()
-                            current_dir = os.getcwd()
-                            file_path = os.path.join(current_dir, "outputs.zip")
-                            return file_path
-                        def clearer():
-                            if not finished_batch:
-                              directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'batch_images')
-                              delete_out(directory)
-                            return 
-                       
+                            return zip_file                       
                         with gr.Row():
                           with gr.Column():
                             with gr.Row():
                                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
                                 files_single = gr.Files(label="Drag (Select) 1 or more reference images",
-                                            file_types=["image"],visible=True,interactive=True,height=260)                            
+                                            file_types=["image"],visible=True,interactive=True,height=260)  
+                                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True,type="filepath")                          
                             with gr.Row():
                                 enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
                             def update_radio(value):
@@ -920,13 +899,15 @@ with shared.gradio_root:
                             upscale_mode = gr.Dropdown(choices=flags.uov_list, value=flags.uov_list[0], label='Method',interactive=True,visible=False)
                           with gr.Column():
                             file_out=gr.File(label="Download a ZIP file", file_count='single',height=260)
-                            
                         with gr.Row():
                           batch_start = gr.Button(value='Start batch', visible=True)
                           save_output = gr.Button(value='Output --> ZIP')
                           clear_output = gr.Button(value='Clear Output')
                         with gr.Row():
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
+                        with gr.Row(visible=False):
+                            ext_dir=gr.Textbox(value='batch_images',visible=False)
+                            #out_dir=gr.Textbox(value=modules.config.path_outputs,visible=False) 
                         def image_action_change(image_action):
                             if image_action=='Image Prompt':
                               return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
@@ -938,14 +919,17 @@ with shared.gradio_root:
                             return gr.update(value=ip_stop_batch), gr.update(value=ip_weight_batch)
                         enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
                                         outputs=[file_in,files_single], queue=False)
+                        image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
+                        files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
+ 
                         image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
                         image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
  
                         clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
-                                    .then(clear_outputs) \
+                                    .then(fn=clear_dirs) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
                         save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
-                                    .then(fn=output_zip, outputs=file_out) \
+                                    .then(fn=output_zip, outputs=[file_out]) \
                                     .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
 
                   with gr.TabItem(label='Prompt Batch') as pr_batch:
@@ -1025,6 +1009,8 @@ with shared.gradio_root:
                     codeformer.codeformer_gen_gui2()
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
+                  with gr.TabItem(label='Vector'):
+                            vector.ui_module()
 
                 with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
@@ -1033,11 +1019,13 @@ with shared.gradio_root:
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML() 
 
+                  with gr.TabItem(label='SVGcode') as svg_code:
+                    with gr.Row():
+                        svg=gr.HTML()
+                    with gr.Row():
+                        gr.HTML('* \"SVGcode\" is powered by Thomas Steiner. <a href="https://web.dev/case-studies/svgcode" target="_blank">\U0001F4D4 Document</a>') 
                   with gr.TabItem(label='Roller'):
-                        tile_roll.start()                 
-
-
-
+                        tile_roll.start()
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
                   with gr.TabItem(label='Photopea') as photopea_tab:
@@ -1061,6 +1049,7 @@ with shared.gradio_root:
                           )
                     with gr.Row():
                           gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
+            svg_code.select(html_load,inputs=[url_display,svgcode_file],outputs=svg,queue=False, show_progress=False)
             text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
@@ -1752,6 +1741,7 @@ with shared.gradio_root:
         ctrls += [presetprefix, presetsuffix,iteration_number,rnd_iteration]
         ctrls += [seed_random]
         ctrls += [tile_x,tile_y]
+        ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
@@ -1876,13 +1866,12 @@ with shared.gradio_root:
 
         batch_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-              .then(fn=clearer) \
-              .then(fn=unzip_file,inputs=[file_in,files_single,enable_zip]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
               .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
-              .then(fn=clearer) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
 
