@@ -180,7 +180,10 @@ def confirm_range(min_val, max_val, axis_label):
 #    except ValueError:
 #        print(f"Invalid size in XYZ plot: {x}")
 def apply_size(p, x: str, _):
-    p.aspect_ratios_selection=x
+    width, _, height = x.partition('x')
+    width = int(width.strip())
+    height = int(height.strip())
+    p.aspect_ratios_selection=f"{width} {height}"
 
 
 def find_vae(name: str):
@@ -308,7 +311,7 @@ axis_options = [
 	AxisOption("Styles", str, apply_styles, choices=lambda: list(legal_style_names)),
 	AxisOption("Steps", int, apply_field("steps")),
 	#AxisOption("Aspect Ratio", str, apply_size),
-    AxisOption("Aspect Ratio", str, apply_size,choices=lambda: list(modules.config.available_aspect_ratios)),
+    AxisOption("Aspect Ratio", str, apply_size,choices=lambda: list(modules.config.available_aspect_ratios_labels)),
 	AxisOption("Seed", int, apply_field("seed")),
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
