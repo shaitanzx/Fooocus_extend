@@ -320,7 +320,7 @@ for q in range(modules.config.default_max_lora_number):
 axis_options.extend([
     AxisOption("Refiner checkpoint", str, apply_field('refiner_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: ['None'] + sorted(modules.config.model_filenames, key=str.casefold)),
     AxisOption("Refiner switch at", float, apply_field('refiner_switch')),
-    AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold))
+    AxisOption("Refiner swap method", str, apply_field("refiner_swap_method"), format_value=format_value, choices=lambda: sorted(['joint', 'separate', 'vae'], key=str.casefold)),
     AxisOption("Clip skip", int, apply_field('clip_skip')),
     AxisOption("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: sorted(modules.flags.sampler_list, key=str.casefold)),
     AxisOption("Scheduler", str, apply_field("scheduler_name"), choices=lambda: sorted(modules.flags.scheduler_list, key=str.casefold)),
