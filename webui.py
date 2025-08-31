@@ -137,7 +137,7 @@ def im_batch_run(p):
     temp_var=[]
     for f_name in batch_files:
       if not finished_batch:
-        p.results+=temp_var
+        p.results=temp_var
         print ('----------------',len(p.results),len(temp_var)) 
         pc = copy.deepcopy(p)
         img = Image.open(batch_path+os.path.sep+f_name)
