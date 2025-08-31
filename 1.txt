@@ -12,8 +12,5 @@
 12. Codeformer in xyz
 13. Refiner in xyz
 14. Aspect Ratio in xyz
-
-
-
-full history preview in ImageBatch
-full history preview in PromptBatch
+15.full history preview in ImageBatch
+16.full history preview in PromptBatch
