@@ -118,9 +118,13 @@ Codeformer_Fidelity - signability coefficient, inversely proportional to quality
 This module allows you to get images in svg format in b/w mode.
 
 Transparent PNG - Pre-Create Transparency
+
 Noise Tolerance - setting for cutting off noise in the original image
+
 Quantize - the level of image quantization
+
 Keep temp images - do not save the intermediate transparency file
+
 Threshold - line curvature threshold
 
 **“modules”** panel
