@@ -304,7 +304,7 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),	
 	AxisOption("Styles", str, apply_styles, choices=lambda: list(legal_style_names)),
 	AxisOption("Steps", int, apply_field("steps")),
-#	AxisOption("Aspect Ratio", str, apply_size),
+	AxisOption("Aspect Ratio", str, apply_size),
 	AxisOption("Seed", int, apply_field("seed")),
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),

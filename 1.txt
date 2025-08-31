@@ -14,9 +14,6 @@
 
 
 
-
-
-refiner
 aspect ratio
 full history preview in ImageBatch
 full history preview in PromptBatch
