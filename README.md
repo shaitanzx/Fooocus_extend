@@ -111,6 +111,18 @@ Upscale - image enlargement
 
 Codeformer_Fidelity - signability coefficient, inversely proportional to quality
 
+**Vector**
+
+<img width="1187" height="354" alt="image" src="https://github.com/user-attachments/assets/605b0666-9765-45c0-8a57-b87e7f3f76fc" />
+
+This module allows you to get images in svg format in b/w mode.
+
+Transparent PNG - Pre-Create Transparency
+Noise Tolerance - setting for cutting off noise in the original image
+Quantize - the level of image quantization
+Keep temp images - do not save the intermediate transparency file
+Threshold - line curvature threshold
+
 **“modules”** panel
 
 **Image Batch** (batch image processing)
