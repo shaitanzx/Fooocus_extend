@@ -618,10 +618,8 @@ def parse_file_info(file_info, basename):
 
     filetype = file_info["type"]
     filename = file_info["name"]
-    if not filename and basename:
-        filename = basename
-    elif basename and not filetype == "VAE":
-        filename = f"{basename}.{filename.split('.')[-1]}" if '.' in filename else basename
+    if basename and not filetype == "VAE":
+        filename = f"{basename}.{filename.split('.')[-1]}"
 
     return {
         "url": download_url,
@@ -653,13 +651,9 @@ def download_files(filename, model_folder, ver_info, headers, filetypes, dl_all,
         util.printD(output)
         yield (False, output)
     
-    files = ver_info.get("files", {})
-    if not files and "downloadUrl" in ver_info:
-        files = [ver_info]
 
-    for file_info in files:
+    for file_info in ver_info.get("files", {}):
         if not dl_all:
-            file_type = file_info.get("type", "Model")
             if not file_info["type"] in filetypes:
                 continue
 
