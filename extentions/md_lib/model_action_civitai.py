@@ -13,7 +13,32 @@ from . import downloader
 from . import templates
 from . import md_config
 
+def read_metadata_from_safetensors(filename):
+    import json
 
+    with open(filename, mode="rb") as file:
+        metadata_len = file.read(8)
+        metadata_len = int.from_bytes(metadata_len, "little")
+        json_start = file.read(2)
+
+        assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
+
+        res = {}
+
+        try:
+            json_data = json_start + file.read(metadata_len-2)
+            json_obj = json.loads(json_data)
+            for k, v in json_obj.get("__metadata__", {}).items():
+                res[k] = v
+                if isinstance(v, str) and v[0:1] == '{':
+                    try:
+                        res[k] = json.loads(v)
+                    except Exception:
+                        pass
+        except Exception:
+             errors.report(f"Error reading metadata from file: {filename}", exc_info=True)
+
+        return res
 def get_metadata_skeleton():
     """
     Used to generate at least something when model is not on civitai.
@@ -231,7 +256,7 @@ def dummy_model_info(path, sha256_hash, model_type):
     tags = model_info["tags"]
 
     try:
-        read_metadata = sd_models.read_metadata_from_safetensors(path)
+        read_metadata = read_metadata_from_safetensors(path)
     except AssertionError:
         # model is not a safetensors file. This is fine,
         # it just doesn't have metadata we can read
