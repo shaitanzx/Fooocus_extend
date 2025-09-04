@@ -158,7 +158,7 @@ def get_corner_background_color(image_np, x, y, logo_width, logo_height):
 
 
 def place_logo_in_corner(image_np, logo_pil):
-    logo_pil.save('aaaaa.png')
+    
     size_ratio=0.2
     margin_ratio=0.02
     min_complexity_for_bg=0.3
@@ -282,7 +282,9 @@ def process(logo):
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
     passed=1
+    logo_path.save('aaaaa.png')
     logo_path=Image.open(logo).convert("RGBA")
+    logo_path.save('bbbbbbb.png')
     for f_name in batch_files:
         print (f"\033[91m[Watermarkr QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         gr.Info(f"Watermark Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
