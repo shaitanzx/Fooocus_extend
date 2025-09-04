@@ -338,7 +338,7 @@ def watermark():
     with gr.Row():
             watermark_start=gr.Button(value='Start paste watermark')
     with gr.Row(visible=False):
-        ext_dir_face=gr.Textbox(value='batch_watermark',visible=False)
+        ext_dir=gr.Textbox(value='batch_watermark',visible=False)
     enable_zip_image.change(fn=zip_enable,inputs=[enable_zip_image,image_in_multi],outputs=[image_in,image_in_multi,image_in_single],show_progress=False)
     image_in_single.clear(fn=clear_single,inputs=image_in_single,outputs=[image_in_single,image_in_multi],show_progress=False)
     image_in_multi.upload(fn=single_image,inputs=image_in_multi,outputs=[image_in_single,image_in_multi],show_progress=False)
