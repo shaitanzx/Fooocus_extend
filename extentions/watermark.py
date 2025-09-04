@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import math
+import time
 
 def calculate_logo_size(image_size, logo_original_size, target_ratio=0.1):
     """Рассчитывает размер логотипа для сохранения относительного размера"""
