@@ -72,130 +72,46 @@ def is_position_valid(x, y, logo_width, logo_height, forbidden_zones):
     
     return True
 
-def calculate_optimal_overlay_color(bg_color):
-    """Вычисляет оптимальный цвет подложки на основе цвета фона"""
-    r, g, b = bg_color
-    
-    # Вычисляем яркость фона по формуле WCAG
-    bg_luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    
-    # Вычисляем насыщенность фона
-    max_val = max(r, g, b)
-    min_val = min(r, g, b)
-    saturation = (max_val - min_val) / 255 if max_val > 0 else 0
-    
-    # Стратегия 1: Для ярких цветных фонов
-    if saturation > 0.4 and max_val > 180:
-        # Используем темный нейтральный цвет
-        return (40, 40, 40)
-    
-    # Стратегия 2: Для темных цветных фонов
-    elif saturation > 0.4 and max_val < 100:
-        # Используем светлый нейтральный цвет
-        return (220, 220, 220)
-    
-    # Стратегия 3: Для светлых фоном (любая насыщенность)
-    elif bg_luminance > 0.7:
-        # Темная подложка для контраста
-        return (30, 30, 30)
-    
-    # Стратегия 4: Для темных фоном (любая насыщенность)
-    elif bg_luminance < 0.3:
-        # Светлая подложка для контраста
-        return (240, 240, 240)
-    
-    # Стратегия 5: Для средних по яркости фоном
-    else:
-        # Инвертируем цвет для максимального контраста
-        return (255 - r, 255 - g, 255 - b)
-
-def calculate_contrast_ratio(color1, color2):
-    """Вычисляет коэффициент контрастности между двумя цветами"""
-    def get_luminance(rgb):
-        r, g, b = [x / 255.0 for x in rgb]
-        r = r / 12.92 if r <= 0.03928 else ((r + 0.055) / 1.055) ** 2.4
-        g = g / 12.92 if g <= 0.03928 else ((g + 0.055) / 1.055) ** 2.4
-        b = b / 12.92 if b <= 0.03928 else ((b + 0.055) / 1.055) ** 2.4
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b
-    
-    l1 = get_luminance(color1)
-    l2 = get_luminance(color2)
-    lighter = max(l1, l2)
-    darker = min(l1, l2)
-    return (lighter + 0.05) / (darker + 0.05)
-
-def get_dominant_colors(image_np, x, y, width, height, num_colors=3):
-    """Получает доминирующие цвета в области"""
+def calculate_background_complexity(image_np, x, y, width, height):
+    """Оценивает сложность фона в области (работает для любого изображения)"""
     img_height, img_width = image_np.shape[:2]
     
-    # Определяем область для анализа
+    # Берем область вокруг позиции логотипа
     x1 = max(0, x - width//2)
     y1 = max(0, y - height//2)
     x2 = min(img_width, x + width + width//2)
     y2 = min(img_height, y + height + height//2)
     
     if x2 <= x1 or y2 <= y1:
-        return [image_np[y, x]]
+        return 0.5  # Средняя сложность по умолчанию
     
     region = image_np[y1:y2, x1:x2]
     
-    # Упрощенный анализ доминирующих цветов
-    pixels = region.reshape(-1, 3)
-    unique_colors, counts = np.unique(pixels, axis=0, return_counts=True)
-    dominant_colors = unique_colors[np.argsort(-counts)[:num_colors]]
+    if region.size == 0:
+        return 0.5
     
-    return [tuple(map(int, color)) for color in dominant_colors]
+    # Конвертируем в grayscale и вычисляем вариацию
+    gray_region = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
+    variation = np.std(gray_region)
+    
+    # Нормализуем к 0-1 (0 - простой фон, 1 - сложный)
+    return min(1.0, variation / 64.0)
 
-def add_adaptive_background(logo_pil, image_np, x, y, complexity):
-    """Добавляет адаптивную подложку с автоматическим подбором цвета"""
+def add_adaptive_background(logo_pil, bg_color, complexity):
+    """Добавляет адаптивную подложку для улучшения читаемости"""
     width, height = logo_pil.size
     
-    # Получаем доминирующие цвета в области
-    dominant_colors = get_dominant_colors(image_np, x, y, width, height, 3)
-    
-    # Анализируем каждый цвет и выбираем лучший для подложки
-    best_color = None
-    best_contrast = 0
-    
-    for bg_color in dominant_colors:
-        # Конвертируем BGR в RGB
-        bg_color_rgb = (bg_color[2], bg_color[1], bg_color[0])
-        
-        # Пробуем темную и светлую версии
-        candidate_colors = [
-            (30, 30, 30),    # Темный
-            (240, 240, 240), # Светлый
-            (255 - bg_color_rgb[0], 255 - bg_color_rgb[1], 255 - bg_color_rgb[2])  # Инвертированный
-        ]
-        
-        for candidate in candidate_colors:
-            # Оцениваем контраст с фоном
-            contrast = calculate_contrast_ratio(bg_color_rgb, candidate)
-            
-            if contrast > best_contrast:
-                best_contrast = contrast
-                best_color = candidate
-    
-    # Минимальный контраст 4.5:1 (WCAG AA)
-    if best_contrast < 4.5:
-        # Если ни один цвет не дает хорошего контраста, используем гарантированные варианты
-        avg_color = np.mean(dominant_colors, axis=0)
-        avg_luminance = (0.299 * avg_color[2] + 0.587 * avg_color[1] + 0.114 * avg_color[0]) / 255
-        
-        if avg_luminance > 0.5:
-            best_color = (30, 30, 30)  # Темный
-        else:
-            best_color = (240, 240, 240)  # Светлый
-    
-    # Динамическая прозрачность based on сложности фона
-    min_alpha, max_alpha = 70, 200
-    bg_alpha = int(min_alpha + (max_alpha - min_alpha) * complexity)
+    # Определяем непрозрачность подложки based on complexity фона
+    bg_alpha = int(100 + 155 * complexity)  # 100-255 alpha в зависимости от сложности
+    bg_alpha = min(255, max(100, bg_alpha))
     
     # Создаем подложку
     bg_layer = Image.new('RGBA', (width, height), 
-                       (*best_color, bg_alpha))
+                       (int(bg_color[0]), int(bg_color[1]), int(bg_color[2]), bg_alpha))
     
-    return Image.alpha_composite(bg_layer, logo_pil), best_color, best_contrast
+    # Комбинируем с логотипом
+    result = Image.alpha_composite(bg_layer, logo_pil)
+    return result
 
 def get_corner_positions(img_width, img_height, logo_width, logo_height, margin_ratio=0.02):
     """Возвращает позиции для 4 углов с отступом"""
@@ -232,13 +148,7 @@ def get_corner_background_color(image_np, x, y, logo_width, logo_height):
     # Средний цвет (BGR to RGB)
     avg_color = np.mean(region, axis=(0, 1))
     return (int(avg_color[2]), int(avg_color[1]), int(avg_color[0]))
-#result_path, exec_time = place_logo_in_corner(
-#            image_path="input.jpg",
-#            logo_path="logo.png",
-#            output_path="output.jpg",
-#            size_ratio=0.08,
-#            margin_ratio=0.02,
-#            min_complexity_for_bg=0.3
+
 
 
 def place_logo_in_corner(image_np, logo_pil):
@@ -317,9 +227,8 @@ def place_logo_in_corner(image_np, logo_pil):
     # Добавляем подложку если нужно
     bg_processing_start = time.time()
     final_logo = logo_pil
-    #if bg_complexity > min_complexity_for_bg:
-    #    final_logo = add_adaptive_background(logo_pil, bg_color, bg_complexity)
-    bg_complexity = calculate_background_complexity(image_np, x, y, logo_width, logo_height)
+    if bg_complexity > min_complexity_for_bg:
+        final_logo = add_adaptive_background(logo_pil, bg_color, bg_complexity)
     bg_processing_time = time.time() - bg_processing_start
     
     # Наложение логотипа
@@ -330,8 +239,7 @@ def place_logo_in_corner(image_np, logo_pil):
     
     # Сохранение
     save_start = time.time()
-    #pil_image.convert("RGB").save('final.png')
-    #final_logo.save('logo.png')
+
     save_time = time.time() - save_start
     
     total_time = time.time() - start_time
@@ -436,28 +344,3 @@ def watermark():
                 .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview_out],show_progress=False) \
                 .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
                 .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)  
-
-
-
-
-#                .then(place_logo_in_corner,inputs=[image_in_single,logo_image],outputs=image_out) \
-#                .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)
-
-
-#    inswap_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),
-#                        outputs=[inswap_start,file_out,image_out]) \
-#              .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
-#              .then(fn=batch.clear_dirs,inputs=ext_dir_image) \
-#              .then(fn=batch.unzip_file,inputs=[file_in_face,files_single_face,enable_zip_face,ext_dir_face]) \
-#              .then(fn=batch.unzip_file,inputs=[file_in_image,files_single_image,enable_zip_image,ext_dir_image]) \
-#              .then(lambda: (gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)),
-#                        outputs=[file_in_face,files_single_face,image_single_face,file_in_image,files_single_image,image_single_image]) \
-#              .then(fn=process_insw, inputs=[inswap_source_image_indicies, inswap_target_image_indicies],
-#                        outputs=[preview_face,preview_image,file_out],show_progress=False) \
-#              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False),gr.update(visible=False)),outputs=[file_out,preview_face,preview_image],show_progress=False) \
-#              .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-#              .then(fn=zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
-#              .then(fn=zip_enable,inputs=[enable_zip_image,files_single_image],outputs=[file_in_image,files_single_image,image_single_image],show_progress=False) \
-#              .then(fn=single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False) \
-#              .then(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False) \
-#              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=inswap_start)
