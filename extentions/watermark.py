@@ -282,7 +282,7 @@ def process(logo):
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
     passed=1
-    logo_path=Image.open(logo)
+    #logo_path=Image.open(logo)
     print('-------------',logo_path.mode)
     for f_name in batch_files:
         print (f"\033[91m[Watermarkr QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
@@ -292,7 +292,7 @@ def process(logo):
         image_in=cv2.imread(batch_path+os.path.sep+f_name)
 
 
-        image_out=place_logo_in_corner(image_in, logo_path)
+        image_out=place_logo_in_corner(image_in, logo)
 
         
         name, _ = os.path.splitext(f_name)
@@ -332,7 +332,7 @@ def watermark():
                 enable_zip_image = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
             with gr.Row():
-                logo_image=gr.Image(label="Source Logo",visible=True,height=260,interactive=True,type="numpy", image_mode="RGBA")
+                logo_image=gr.Image(label="Source Logo",visible=True,height=260,interactive=True,type="pil", image_mode="RGBA")
         with gr.Column():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
