@@ -275,7 +275,7 @@ def place_logo_in_corner(image_np, logo_pil):
     return pil_image
 
 
-def watermarc_process(logo):
+def process(logo):
     batch_path=f"{temp_dir}batch_watermark"
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
