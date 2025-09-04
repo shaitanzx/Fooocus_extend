@@ -239,7 +239,7 @@ def place_logo_in_corner(image_np, logo_pil):
     # Наложение логотипа
     paste_start = time.time()
     pil_image = Image.fromarray(cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)).convert("RGBA")
-    pil_image.paste(final_logo, (x, y), final_logo)
+    pil_image.paste(logo_pil, (x, y), logo_pil)
     paste_time = time.time() - paste_start
     
     # Сохранение
