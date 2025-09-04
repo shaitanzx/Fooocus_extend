@@ -6,6 +6,7 @@ from PIL import Image
 import math
 import time
 import extentions.batch as batch
+import modules.config
 temp_dir=modules.config.temp_path+os.path.sep
 
 def calculate_logo_size(image_size, logo_original_size, target_ratio=0.1):
