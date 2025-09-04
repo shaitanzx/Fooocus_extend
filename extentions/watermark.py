@@ -5,6 +5,8 @@ import numpy as np
 from PIL import Image
 import math
 import time
+import extentions.batch as batch
+temp_dir=modules.config.temp_path+os.path.sep
 
 def calculate_logo_size(image_size, logo_original_size, target_ratio=0.1):
     """Рассчитывает размер логотипа для сохранения относительного размера"""
@@ -153,7 +155,7 @@ def get_corner_background_color(image_np, x, y, logo_width, logo_height):
 #            min_complexity_for_bg=0.3
 
 
-def place_logo_in_corner(image_path, logo_path, output_path):
+def place_logo_in_corner(image_np, logo_pil):
     size_ratio=0.08
     margin_ratio=0.02
     min_complexity_for_bg=0.3
@@ -164,16 +166,16 @@ def place_logo_in_corner(image_path, logo_path, output_path):
     
     # Загрузка изображения
     load_start = time.time()
-    image_np = cv2.imread(image_path)
-    if image_np is None:
-        raise ValueError(f"Не удалось загрузить изображение: {image_path}")
+    #image_np = cv2.imread(image_path)
+    #if image_np is None:
+    #    raise ValueError(f"Не удалось загрузить изображение: {image_path}")
     load_time = time.time() - load_start
     
     img_height, img_width = image_np.shape[:2]
     
     # Загрузка логотипа
     logo_load_start = time.time()
-    logo_pil = Image.open(logo_path).convert("RGBA")
+    #logo_pil = Image.open(logo_path).convert("RGBA")
     logo_original_size = logo_pil.size
     logo_load_time = time.time() - logo_load_start
     
@@ -240,8 +242,8 @@ def place_logo_in_corner(image_path, logo_path, output_path):
     
     # Сохранение
     save_start = time.time()
-    pil_image.convert("RGB").save('final.png')
-    final_logo.save('logo.png')
+    #pil_image.convert("RGB").save('final.png')
+    #final_logo.save('logo.png')
     save_time = time.time() - save_start
     
     total_time = time.time() - start_time
@@ -271,6 +273,29 @@ def place_logo_in_corner(image_path, logo_path, output_path):
     return pil_image
 
 
+def watermarc_process(logo):
+    batch_path=f"{temp_dir}batch_watermark"
+    batch_temp=f"{temp_dir}batch_temp"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    passed=1
+    logo_path=Image.open(logo_path).convert("RGBA")
+    for f_name in batch_files:
+        print (f"\033[91m[Watermarkr QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"Watermark Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        img = Image.open(batch_path+os.path.sep+f_name)
+        yield gr.update(value=img,visible=True),gr.update(visible=False)
+        image_in=cv2.imread(image_path)
+
+
+        image_out=place_logo_in_corner(image_in, logo_path)
+
+        
+        name, ext = os.path.splitext(f_name)
+        filename =  batch_temp + os.path.sep + name +'_watermark'+ext
+        image_out.save(filename)
+        passed+=1
+    return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
 
@@ -311,14 +336,25 @@ def watermark():
     with gr.Row():
             watermark_start=gr.Button(value='Start paste watermark')
     with gr.Row(visible=False):
-        ext_dir_face=gr.Textbox(value='batch_insw_face',visible=False)
+        ext_dir_face=gr.Textbox(value='batch_watermark',visible=False)
     enable_zip_image.change(fn=zip_enable,inputs=[enable_zip_image,image_in_multi],outputs=[image_in,image_in_multi,image_in_single],show_progress=False)
     image_in_single.clear(fn=clear_single,inputs=image_in_single,outputs=[image_in_single,image_in_multi],show_progress=False)
     image_in_multi.upload(fn=single_image,inputs=image_in_multi,outputs=[image_in_single,image_in_multi],show_progress=False)
-    watermark_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=True)),
+    watermark_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),
                         outputs=[watermark_start,file_out,image_out]) \
-                .then(place_logo_in_corner,inputs=[image_in_single,logo_image],outputs=image_out) \
-                .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)
+                .then(fn=batch.clear_dirs,inputs=ext_dir) \
+                .then(fn=batch.unzip_file,inputs=[image_in,image_in_multi,enable_zip_image,ext_dir]) \
+                .then(fn=process, inputs=logo_image,outputs=[preview_out,file_out],show_progress=False) \
+
+                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
+                .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
+                .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)  
+
+
+
+
+#                .then(place_logo_in_corner,inputs=[image_in_single,logo_image],outputs=image_out) \
+#                .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)
 
 
 #    inswap_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),
