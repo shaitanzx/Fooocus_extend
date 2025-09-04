@@ -143,13 +143,13 @@ def get_corner_background_color(image_np, x, y, logo_width, logo_height):
     # Средний цвет (BGR to RGB)
     avg_color = np.mean(region, axis=(0, 1))
     return (int(avg_color[2]), int(avg_color[1]), int(avg_color[0]))
-result_path, exec_time = place_logo_in_corner(
-            image_path="input.jpg",
-            logo_path="logo.png",
-            output_path="output.jpg",
-            size_ratio=0.08,
-            margin_ratio=0.02,
-            min_complexity_for_bg=0.3
+#result_path, exec_time = place_logo_in_corner(
+#            image_path="input.jpg",
+#            logo_path="logo.png",
+#            output_path="output.jpg",
+#            size_ratio=0.08,
+#            margin_ratio=0.02,
+#            min_complexity_for_bg=0.3
 
 
 def place_logo_in_corner(image_path, logo_path, output_path):
