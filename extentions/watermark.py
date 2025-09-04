@@ -287,7 +287,7 @@ def process(logo):
         gr.Info(f"Watermark Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
-        image_in=cv2.imread(image_path)
+        image_in=cv2.imread(img)
 
 
         image_out=place_logo_in_corner(image_in, logo_path)
