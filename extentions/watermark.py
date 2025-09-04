@@ -158,7 +158,7 @@ def get_corner_background_color(image_np, x, y, logo_width, logo_height):
 
 
 def place_logo_in_corner(image_np, logo_pil):
-    size_ratio=0.08
+    size_ratio=0.2
     margin_ratio=0.02
     min_complexity_for_bg=0.3
     """
