@@ -240,7 +240,8 @@ def place_logo_in_corner(image_path, logo_path, output_path):
     
     # Сохранение
     save_start = time.time()
-    #pil_image.convert("RGB").save(output_path)
+    #pil_image.convert("RGB").save('final.png')
+    final_logo.save('logo,png')
     save_time = time.time() - save_start
     
     total_time = time.time() - start_time
