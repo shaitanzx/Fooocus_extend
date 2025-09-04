@@ -307,7 +307,7 @@ def watermark():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 preview_out=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
-                image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False)
+                image_out=gr.Image(label="",visible=False,height=260,interactive=False)
     with gr.Row():
             watermark_start=gr.Button(value='Start paste watermark')
     with gr.Row(visible=False):
