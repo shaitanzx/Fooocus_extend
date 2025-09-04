@@ -345,7 +345,6 @@ def watermark():
                 .then(fn=batch.clear_dirs,inputs=ext_dir) \
                 .then(fn=batch.unzip_file,inputs=[image_in,image_in_multi,enable_zip_image,ext_dir]) \
                 .then(fn=process, inputs=logo_image,outputs=[preview_out,file_out],show_progress=False) \
-
                 .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
                 .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
                 .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)  
