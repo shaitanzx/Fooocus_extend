@@ -293,8 +293,8 @@ def process(logo):
         image_out=place_logo_in_corner(image_in, logo_path)
 
         
-        name, ext = os.path.splitext(f_name)
-        filename =  batch_temp + os.path.sep + name +'_watermark'+ext
+        name, _ = os.path.splitext(f_name)
+        filename =  batch_temp + os.path.sep + name +'_watermark.png'
         image_out = image_out.convert('RGB')
         image_out.save(filename)
         passed+=1
