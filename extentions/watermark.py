@@ -19,7 +19,7 @@ def watermark():
     with gr.Row():
         with gr.Column():
             with gr.Row():
-                image_in=gr.File(label="Upload a ZIP file of Source Images",file_count='single',file_types=['.zip'],visible=False,height=260)
+                image_in=gr.File(label="Upload a ZIP file of Source Images",file_count='single',file_types=['.zip'],visible=False,height=260,interactive=True)
                 image_in_multi = gr.Files(label="Drag (Select) 1 or more Source images",file_count="multiple",
                                             file_types=["image"],visible=True,interactive=True,height=260)
                 image_in_single=gr.Image(label="Source Image",visible=False,height=260,interactive=True,type="filepath")
@@ -27,7 +27,7 @@ def watermark():
                 enable_zip_image = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
             with gr.Row():
-                logo_image=gr.Image(label="Source Image",visible=True,height=260,interactive=True,type="filepath")
+                logo_image=gr.Image(label="Source Logo",visible=True,height=260,interactive=True,type="filepath")
         with gr.Column():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
