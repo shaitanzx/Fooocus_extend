@@ -233,8 +233,8 @@ def place_logo_in_corner(image_np, logo_pil):
     # Добавляем подложку если нужно
     bg_processing_start = time.time()
     final_logo = logo_pil
-    #if bg_complexity > min_complexity_for_bg:
-    #    final_logo = add_adaptive_background(logo_pil, bg_color, bg_complexity)
+    if bg_complexity > min_complexity_for_bg:
+        final_logo = add_adaptive_background(logo_pil, bg_color, bg_complexity)
     bg_processing_time = time.time() - bg_processing_start
     
     # Наложение логотипа
@@ -283,6 +283,7 @@ def process(logo):
     batch_all=len(batch_files)
     passed=1
     logo_path=Image.open(logo)
+    print('-------------',logo_path.mode)
     for f_name in batch_files:
         print (f"\033[91m[Watermarkr QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         gr.Info(f"Watermark Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
