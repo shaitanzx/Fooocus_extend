@@ -295,6 +295,7 @@ def process(logo):
         
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_watermark'+ext
+        image_out = image_out.convert('RGB')
         image_out.save(filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
