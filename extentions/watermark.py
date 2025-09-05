@@ -329,7 +329,7 @@ def watermark():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 preview_out=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
                 image_out=gr.Image(label="",visible=False,height=260,interactive=False)
-    with gr.Row:
+    with gr.Row():
         size_ratio = gr.Slider(label='Size Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.2,interactive=True)
         margin_ratio = gr.Slider(label='Margin Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.02,interactive=True)
         min_complexity_for_bg = gr.Slider(label='Minimal complexity for background', minimum=0.0, maximum=1.0, step=0.01, value=0.3,interactive=True)
