@@ -337,14 +337,14 @@ def watermark():
         with gr.Group():
             gr.Markdown("### Сorner priority")
             with gr.Row():
-                with gr.Column():
+                with gr.Column(scale=1, min_width=100):
                     priority1 = gr.Dropdown(choices=priority,value=priority[0],label="Priority 1")
-                with gr.Column():
+                with gr.Column(scale=1, min_width=100):
                     priority2 = gr.Dropdown(choices=priority,value=priority[1],label="Priority 2")
-                with gr.Column():
-                    priority3 = gr.Dropdown(choices=priority,value=priority[2],label="Priority 2")
-                with gr.Column():
-                    priority4 = gr.Dropdown(choices=priority,value=priority[3],label="Priority 2")
+                with gr.Column(scale=1, min_width=100):
+                    priority3 = gr.Dropdown(choices=priority,value=priority[2],label="Priority 3")
+                with gr.Column(scale=1, min_width=100):
+                    priority4 = gr.Dropdown(choices=priority,value=priority[3],label="Priority 4")
 
     with gr.Row():
             watermark_start=gr.Button(value='Start paste watermark')
