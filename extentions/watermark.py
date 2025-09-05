@@ -273,20 +273,20 @@ def place_logo_in_corner(image_np, logo_pil,size_ratio,margin_ratio,min_complexi
 
 def process(logo,size_ratio,margin_ratio,min_complexity_for_bg,priority1,priority2,priority3,priority4):
     corner_priority=[priority1,priority2,priority3,priority4]
-    batch_path=f"{temp_dir}batch_watermark"
+    batch_path=f"{temp_dir}batch_logo"
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_all=len(batch_files)
     passed=1
     for f_name in batch_files:
-        print (f"\033[91m[Watermarkr QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
-        gr.Info(f"Watermark Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        print (f"\033[91m[Logo QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"Logo Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         image_in=cv2.imread(batch_path+os.path.sep+f_name)
         image_out=place_logo_in_corner(image_in, logo,size_ratio,margin_ratio,min_complexity_for_bg,corner_priority)
         name, _ = os.path.splitext(f_name)
-        filename =  batch_temp + os.path.sep + name +'_watermark.png'
+        filename =  batch_temp + os.path.sep + name +'_logo.png'
         image_out = image_out.convert('RGB')
         image_out.save(filename)
         passed+=1
@@ -330,9 +330,9 @@ def watermark():
                 preview_out=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
                 image_out=gr.Image(label="",visible=False,height=260,interactive=False)
     with gr.Row():
-        size_ratio = gr.Slider(label='Size Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.2,interactive=True)
-        margin_ratio = gr.Slider(label='Margin Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.02,interactive=True)
-        min_complexity_for_bg = gr.Slider(label='Minimal complexity for background', minimum=0.0, maximum=1.0, step=0.01, value=0.3,interactive=True)
+        size_ratio = gr.Slider(label='Size Ratio (%)', minimum=0.0, maximum=1.0, step=0.01, value=0.2,interactive=True)
+        margin_ratio = gr.Slider(label='Margin Ratio (%)', minimum=0.0, maximum=1.0, step=0.01, value=0.02,interactive=True)
+        min_complexity_for_bg = gr.Slider(label='Minimal complexity for background (%)', minimum=0.0, maximum=1.0, step=0.01, value=0.3,interactive=True)
     with gr.Row():
         with gr.Group():
             gr.Markdown("### Сorner priority")
@@ -347,9 +347,9 @@ def watermark():
                     priority4 = gr.Dropdown(choices=priority,value=priority[3],label="Priority 4")
 
     with gr.Row():
-            watermark_start=gr.Button(value='Start paste watermark')
+            watermark_start=gr.Button(value='Start paste logo')
     with gr.Row(visible=False):
-        ext_dir=gr.Textbox(value='batch_watermark',visible=False)
+        ext_dir=gr.Textbox(value='batch_logo',visible=False)
     enable_zip_image.change(fn=zip_enable,inputs=[enable_zip_image,image_in_multi],outputs=[image_in,image_in_multi,image_in_single],show_progress=False)
     image_in_single.clear(fn=clear_single,inputs=image_in_single,outputs=[image_in_single,image_in_multi],show_progress=False)
     image_in_multi.upload(fn=single_image,inputs=image_in_multi,outputs=[image_in_single,image_in_multi],show_progress=False)
