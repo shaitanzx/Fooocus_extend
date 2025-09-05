@@ -113,19 +113,19 @@ def add_adaptive_background(logo_pil, bg_color, complexity):
     result = Image.alpha_composite(bg_layer, logo_pil)
     return result
 
-def get_corner_positions(img_width, img_height, logo_width, logo_height, margin_ratio=0.02):
+def get_corner_positions(img_width, img_height, logo_width, logo_height, margin_ratio, corner_priority):
     """Возвращает позиции для 4 углов с отступом"""
     margin_x = int(img_width * margin_ratio)
     margin_y = int(img_height * margin_ratio)
+    'top-left', 'top-right', 'bottom-left', 'bottom-right'
+    corners = {
+        'top-left': (margin_x, margin_y),  # Top-left
+        'top-right': (img_width - logo_width - margin_x, margin_y),  # Top-right
+        'bottom-left': (margin_x, img_height - logo_height - margin_y),  # Bottom-left
+        'bottom-right': (img_width - logo_width - margin_x, img_height - logo_height - margin_y)  # Bottom-right
+    }
     
-    corners = [
-        (margin_x, margin_y),  # Top-left
-        (img_width - logo_width - margin_x, margin_y),  # Top-right
-        (margin_x, img_height - logo_height - margin_y),  # Bottom-left
-        (img_width - logo_width - margin_x, img_height - logo_height - margin_y)  # Bottom-right
-    ]
-    
-    return corners
+    return [corners[x] for x in corner_priority]
 
 def get_corner_background_color(image_np, x, y, logo_width, logo_height):
     """Получает средний цвет фона в области угла"""
@@ -151,11 +151,7 @@ def get_corner_background_color(image_np, x, y, logo_width, logo_height):
 
 
 
-def place_logo_in_corner(image_np, logo_pil):
-    
-    size_ratio=0.2
-    margin_ratio=0.02
-    min_complexity_for_bg=0.3
+def place_logo_in_corner(image_np, logo_pil,size_ratio,margin_ratio,min_complexity_for_bg,corner_priority):
     """
     Размещает логотип в углу изображения для любого типа контента
     """
@@ -193,7 +189,7 @@ def place_logo_in_corner(image_np, logo_pil):
     # Получаем позиции углов
     corners_start = time.time()
     corner_positions = get_corner_positions(
-        img_width, img_height, logo_width, logo_height, margin_ratio
+        img_width, img_height, logo_width, logo_height, margin_ratio,corner_priority
     )
     corners_time = time.time() - corners_start
     
@@ -202,19 +198,25 @@ def place_logo_in_corner(image_np, logo_pil):
     final_position = None
     chosen_corner = None
     
-    corner_names = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+    #corner_names = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
     
+    #for i, (x, y) in enumerate(corner_positions):
+    #    if is_position_valid(x, y, logo_width, logo_height, forbidden_zones):
+    #        final_position = (x, y)
+    #        chosen_corner = corner_names[i]
+    #        break
+
     for i, (x, y) in enumerate(corner_positions):
         if is_position_valid(x, y, logo_width, logo_height, forbidden_zones):
             final_position = (x, y)
-            chosen_corner = corner_names[i]
+            chosen_corner = corner_priority[i]  # Берем имя из переданного приоритета
             break
     
     # Если все углы заняты (маловероятно без лиц), используем первый угол
     if final_position is None:
         final_position = corner_positions[0]
         chosen_corner = f'{corner_names[0]} (forced)'
-    
+
     position_time = time.time() - position_start
     
     # Анализ фона
@@ -269,7 +271,8 @@ def place_logo_in_corner(image_np, logo_pil):
     return pil_image
 
 
-def process(logo):
+def process(logo,size_ratio,margin_ratio,min_complexity_for_bg,priority1,priority2,priority3,priority4):
+    corner_priority=[priority1,priority2,priority3,priority4]
     batch_path=f"{temp_dir}batch_watermark"
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
@@ -281,11 +284,7 @@ def process(logo):
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         image_in=cv2.imread(batch_path+os.path.sep+f_name)
-
-
-        image_out=place_logo_in_corner(image_in, logo)
-
-        
+        image_out=place_logo_in_corner(image_in, logo,size_ratio,margin_ratio,min_complexity_for_bg,corner_priority)
         name, _ = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_watermark.png'
         image_out = image_out.convert('RGB')
@@ -297,6 +296,7 @@ def process(logo):
 
 
 def watermark():
+    priority=['top-left', 'top-right', 'bottom-left', 'bottom-right']
     def zip_enable(enable,single_file):
         if enable:
             return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
@@ -329,6 +329,22 @@ def watermark():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 preview_out=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
                 image_out=gr.Image(label="",visible=False,height=260,interactive=False)
+    with gr.Row:
+        size_ratio = gr.Slider(label='Size Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.2,interactive=True)
+        margin_ratio = gr.Slider(label='Margin Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.02,interactive=True)
+        min_complexity_for_bg = gr.Slider(label='Minimal complexity for background', minimum=0.0, maximum=1.0, step=0.01, value=0.3,interactive=True)
+    with gr.Row():
+        with gr.Group():
+            gr.Markdown("### Сorner priority")
+            with gr.Column():
+                priority1 = gr.Dropdown(choices=priority,value=priority[0],label="Priority 1")
+            with gr.Column():
+                priority2 = gr.Dropdown(choices=priority,value=priority[1],label="Priority 2")
+            with gr.Column():
+                priority3 = gr.Dropdown(choices=priority,value=priority[2],label="Priority 2")
+            with gr.Column():
+                priority4 = gr.Dropdown(choices=priority,value=priority[3],label="Priority 2")
+
     with gr.Row():
             watermark_start=gr.Button(value='Start paste watermark')
     with gr.Row(visible=False):
@@ -340,7 +356,8 @@ def watermark():
                         outputs=[watermark_start,file_out,image_out]) \
                 .then(fn=batch.clear_dirs,inputs=ext_dir) \
                 .then(fn=batch.unzip_file,inputs=[image_in,image_in_multi,enable_zip_image,ext_dir]) \
-                .then(fn=process, inputs=logo_image,outputs=[preview_out,file_out],show_progress=False) \
+                .then(fn=process, inputs=[logo_image,size_ratio,margin_ratio,min_complexity_for_bg,priority1,priority2,priority3,priority4],
+                        outputs=[preview_out,file_out],show_progress=False) \
                 .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview_out],show_progress=False) \
                 .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
                 .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)  
