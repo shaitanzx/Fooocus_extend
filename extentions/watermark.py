@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 from PIL import Image
 import math
-import time
 import extentions.batch as batch
 import modules.config
 temp_dir=modules.config.temp_path+os.path.sep
@@ -155,46 +154,46 @@ def place_logo_in_corner(image_np, logo_pil,size_ratio,margin_ratio,min_complexi
     """
     Размещает логотип в углу изображения для любого типа контента
     """
-    start_time = time.time()
+    #start_time = time.time()
     
     # Загрузка изображения
-    load_start = time.time()
+    #load_start = time.time()
     #image_np = cv2.imread(image_path)
     #if image_np is None:
     #    raise ValueError(f"Не удалось загрузить изображение: {image_path}")
-    load_time = time.time() - load_start
+    #load_time = time.time() - load_start
     
     img_height, img_width = image_np.shape[:2]
     
     # Загрузка логотипа
-    logo_load_start = time.time()
+    #logo_load_start = time.time()
     #logo_pil = Image.open(logo_path).convert("RGBA")
     logo_original_size = logo_pil.size
-    logo_load_time = time.time() - logo_load_start
+    #logo_load_time = time.time() - logo_load_start
     
     # Расчет размера логотипа
-    size_calc_start = time.time()
+    #size_calc_start = time.time()
     logo_width, logo_height = calculate_logo_size(
         (img_width, img_height), logo_original_size, size_ratio
     )
     logo_pil = logo_pil.resize((logo_width, logo_height), Image.LANCZOS)
-    size_calc_time = time.time() - size_calc_start
+    #size_calc_time = time.time() - size_calc_start
     
     # Детекция лиц (может занять время)
-    face_detect_start = time.time()
+    #face_detect_start = time.time()
     faces = detect_faces(image_np)
     forbidden_zones = get_face_regions(faces, img_width, img_height)
-    face_detect_time = time.time() - face_detect_start
+    #face_detect_time = time.time() - face_detect_start
     
     # Получаем позиции углов
-    corners_start = time.time()
+    #corners_start = time.time()
     corner_positions = get_corner_positions(
         img_width, img_height, logo_width, logo_height, margin_ratio,corner_priority
     )
-    corners_time = time.time() - corners_start
+    #corners_time = time.time() - corners_start
     
     # Выбираем первый валидный угол
-    position_start = time.time()
+    #position_start = time.time()
     final_position = None
     chosen_corner = None
     
@@ -217,55 +216,55 @@ def place_logo_in_corner(image_np, logo_pil,size_ratio,margin_ratio,min_complexi
         final_position = corner_positions[0]
         chosen_corner = f'{corner_names[0]} (forced)'
 
-    position_time = time.time() - position_start
+    #position_time = time.time() - position_start
     
     # Анализ фона
-    bg_analysis_start = time.time()
+    #bg_analysis_start = time.time()
     x, y = final_position
     bg_color = get_corner_background_color(image_np, x, y, logo_width, logo_height)
     bg_complexity = calculate_background_complexity(image_np, x, y, logo_width, logo_height)
-    bg_analysis_time = time.time() - bg_analysis_start
+    #bg_analysis_time = time.time() - bg_analysis_start
     
     # Добавляем подложку если нужно
-    bg_processing_start = time.time()
+    #bg_processing_start = time.time()
     final_logo = logo_pil
     if bg_complexity > min_complexity_for_bg:
         final_logo = add_adaptive_background(logo_pil, bg_color, bg_complexity)
-    bg_processing_time = time.time() - bg_processing_start
+    #bg_processing_time = time.time() - bg_processing_start
     
     # Наложение логотипа
-    paste_start = time.time()
+    #paste_start = time.time()
     pil_image = Image.fromarray(cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)).convert("RGBA")
     pil_image.paste(final_logo, (x, y), final_logo)
-    paste_time = time.time() - paste_start
+    #paste_time = time.time() - paste_start
     
     # Сохранение
-    save_start = time.time()
+    #save_start = time.time()
 
-    save_time = time.time() - save_start
+    #save_time = time.time() - save_start
     
-    total_time = time.time() - start_time
+    #total_time = time.time() - start_time
     
     # Вывод информации о времени выполнения
-    print(f"=== ВРЕМЯ ВЫПОЛНЕНИЯ ===")
-    print(f"Загрузка изображения: {load_time:.3f}с")
-    print(f"Загрузка логотипа: {logo_load_time:.3f}с")
-    print(f"Расчет размера: {size_calc_time:.3f}с")
-    print(f"Детекция лиц: {face_detect_time:.3f}с")
-    print(f"Определение углов: {corners_time:.3f}с")
-    print(f"Выбор позиции: {position_time:.3f}с")
-    print(f"Анализ фона: {bg_analysis_time:.3f}с")
-    print(f"Обработка подложки: {bg_processing_time:.3f}с")
-    print(f"Наложение: {paste_time:.3f}с")
-    print(f"Сохранение: {save_time:.3f}с")
-    print(f"ОБЩЕЕ ВРЕМЯ: {total_time:.3f}с")
-    print(f"=== РЕЗУЛЬТАТ ===")
-    print(f"Изображение: {img_width}x{img_height}px")
-    print(f"Логотип: {logo_width}x{logo_height}px")
-    print(f"Позиция: {chosen_corner} ({x}, {y})")
-    print(f"Обнаружено лиц: {len(faces)}")
-    print(f"Сложность фона: {bg_complexity:.2f}")
-    print(f"Подложка: {'ДА' if bg_complexity > min_complexity_for_bg else 'НЕТ'}")
+    #print(f"=== ВРЕМЯ ВЫПОЛНЕНИЯ ===")
+    #print(f"Загрузка изображения: {load_time:.3f}с")
+    #print(f"Загрузка логотипа: {logo_load_time:.3f}с")
+    #print(f"Расчет размера: {size_calc_time:.3f}с")
+    #print(f"Детекция лиц: {face_detect_time:.3f}с")
+    #print(f"Определение углов: {corners_time:.3f}с")
+    #print(f"Выбор позиции: {position_time:.3f}с")
+    #print(f"Анализ фона: {bg_analysis_time:.3f}с")
+    #print(f"Обработка подложки: {bg_processing_time:.3f}с")
+    #print(f"Наложение: {paste_time:.3f}с")
+    #print(f"Сохранение: {save_time:.3f}с")
+    #print(f"ОБЩЕЕ ВРЕМЯ: {total_time:.3f}с")
+    #print(f"=== РЕЗУЛЬТАТ ===")
+    print(f"Image: {img_width}x{img_height}px")
+    print(f"Logo: {logo_width}x{logo_height}px")
+    print(f"Position: {chosen_corner} ({x}, {y})")
+    print(f"Faces: {len(faces)}")
+    print(f"Background complexity: {bg_complexity:.2f}")
+    print(f"Substrate: {'Yes' if bg_complexity > min_complexity_for_bg else 'No'}")
     
     #return output_path
     return pil_image
