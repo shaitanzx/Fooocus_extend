@@ -294,7 +294,7 @@ Save to OUTPUT FOLDER - saving the image to the output folder
 
 This module allows you to create skeletons for subsequent image creation using OpenPose ControlNet. You can also create a skeleton from an existing image.
 
-**Logo** - Logo insertion tool with automatic selection based on image content
+**Logo** - Logo insertion tool with automatic placement selection based on image content
 
 <img width="1059" height="568" alt="image" src="https://github.com/user-attachments/assets/621355ca-4243-4709-80a1-726a9a0fcddd" />
 
