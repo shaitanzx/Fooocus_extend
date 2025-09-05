@@ -214,7 +214,7 @@ def place_logo_in_corner(image_np, logo_pil,size_ratio,margin_ratio,min_complexi
     # Если все углы заняты (маловероятно без лиц), используем первый угол
     if final_position is None:
         final_position = corner_positions[0]
-        chosen_corner = f'{corner_names[0]} (forced)'
+        chosen_corner = f'{corner_priority[0]} (forced)'
 
     #position_time = time.time() - position_start
     
