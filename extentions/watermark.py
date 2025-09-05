@@ -10,7 +10,6 @@ import modules.config
 temp_dir=modules.config.temp_path+os.path.sep
 
 def calculate_logo_size(image_size, logo_original_size, target_ratio=0.1):
-    """Рассчитывает размер логотипа для сохранения относительного размера"""
     img_width, img_height = image_size
     logo_width, logo_height = logo_original_size
     
@@ -27,7 +26,6 @@ def calculate_logo_size(image_size, logo_original_size, target_ratio=0.1):
     return new_width, new_height
 
 def detect_faces(image_np):
-    """Обнаруживает лица на изображении (может не быть лиц)"""
     try:
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         if face_cascade.empty():
@@ -40,7 +38,6 @@ def detect_faces(image_np):
         return []  # Если что-то пошло не wrong, возвращаем пустой список
 
 def get_face_regions(faces, img_width, img_height, padding_ratio=0.3):
-    """Возвращает запрещенные зоны вокруг лиц (если лица есть)"""
     forbidden_zones = []
     
     for (x, y, w, h) in faces:
@@ -56,7 +53,6 @@ def get_face_regions(faces, img_width, img_height, padding_ratio=0.3):
     return forbidden_zones
 
 def is_position_valid(x, y, logo_width, logo_height, forbidden_zones):
-    """Проверяет, не пересекается ли позиция с запрещенными зонами"""
     if not forbidden_zones:  # Если нет запрещенных зон
         return True
     
@@ -65,69 +61,65 @@ def is_position_valid(x, y, logo_width, logo_height, forbidden_zones):
     for zone in forbidden_zones:
         zone_x1, zone_y1, zone_x2, zone_y2 = zone
         
-        # Проверка пересечения прямоугольников
         if not (logo_x2 <= zone_x1 or x >= zone_x2 or logo_y2 <= zone_y1 or y >= zone_y2):
             return False
     
     return True
 
 def calculate_background_complexity(image_np, x, y, width, height):
-    """Оценивает сложность фона в области (работает для любого изображения)"""
     img_height, img_width = image_np.shape[:2]
     
-    # Берем область вокруг позиции логотипа
     x1 = max(0, x - width//2)
     y1 = max(0, y - height//2)
     x2 = min(img_width, x + width + width//2)
     y2 = min(img_height, y + height + height//2)
     
     if x2 <= x1 or y2 <= y1:
-        return 0.5  # Средняя сложность по умолчанию
+        return 0.5  
     
     region = image_np[y1:y2, x1:x2]
     
     if region.size == 0:
         return 0.5
     
-    # Конвертируем в grayscale и вычисляем вариацию
+
     gray_region = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
     variation = np.std(gray_region)
     
-    # Нормализуем к 0-1 (0 - простой фон, 1 - сложный)
     return min(1.0, variation / 64.0)
 
 def add_adaptive_background(logo_pil, bg_color, complexity):
-    """Добавляет адаптивную подложку для улучшения читаемости"""
+
     width, height = logo_pil.size
     
-    # Определяем непрозрачность подложки based on complexity фона
-    bg_alpha = int(100 + 155 * complexity)  # 100-255 alpha в зависимости от сложности
+
+    bg_alpha = int(100 + 155 * complexity) 
     bg_alpha = min(255, max(100, bg_alpha))
     
-    # Создаем подложку
+   
     bg_layer = Image.new('RGBA', (width, height), 
                        (int(bg_color[0]), int(bg_color[1]), int(bg_color[2]), bg_alpha))
     
-    # Комбинируем с логотипом
+    
     result = Image.alpha_composite(bg_layer, logo_pil)
     return result
 
 def get_corner_positions(img_width, img_height, logo_width, logo_height, margin_ratio, corner_priority):
-    """Возвращает позиции для 4 углов с отступом"""
+   
     margin_x = int(img_width * margin_ratio)
     margin_y = int(img_height * margin_ratio)
     'top-left', 'top-right', 'bottom-left', 'bottom-right'
     corners = {
-        'top-left': (margin_x, margin_y),  # Top-left
-        'top-right': (img_width - logo_width - margin_x, margin_y),  # Top-right
-        'bottom-left': (margin_x, img_height - logo_height - margin_y),  # Bottom-left
-        'bottom-right': (img_width - logo_width - margin_x, img_height - logo_height - margin_y)  # Bottom-right
+        'top-left': (margin_x, margin_y),  
+        'top-right': (img_width - logo_width - margin_x, margin_y),  
+        'bottom-left': (margin_x, img_height - logo_height - margin_y),  
+        'bottom-right': (img_width - logo_width - margin_x, img_height - logo_height - margin_y)  t
     }
     
     return [corners[x] for x in corner_priority]
 
 def get_corner_background_color(image_np, x, y, logo_width, logo_height):
-    """Получает средний цвет фона в области угла"""
+    
     img_height, img_width = image_np.shape[:2]
     
     # Берем небольшую область в углу
@@ -144,121 +136,69 @@ def get_corner_background_color(image_np, x, y, logo_width, logo_height):
     if region.size == 0:
         return (128, 128, 128)
     
-    # Средний цвет (BGR to RGB)
+    
     avg_color = np.mean(region, axis=(0, 1))
     return (int(avg_color[2]), int(avg_color[1]), int(avg_color[0]))
 
 
 
 def place_logo_in_corner(image_np, logo_pil,size_ratio,margin_ratio,min_complexity_for_bg,corner_priority):
-    """
-    Размещает логотип в углу изображения для любого типа контента
-    """
-    #start_time = time.time()
     
-    # Загрузка изображения
-    #load_start = time.time()
-    #image_np = cv2.imread(image_path)
-    #if image_np is None:
-    #    raise ValueError(f"Не удалось загрузить изображение: {image_path}")
-    #load_time = time.time() - load_start
+    
     
     img_height, img_width = image_np.shape[:2]
     
-    # Загрузка логотипа
-    #logo_load_start = time.time()
-    #logo_pil = Image.open(logo_path).convert("RGBA")
-    logo_original_size = logo_pil.size
-    #logo_load_time = time.time() - logo_load_start
     
-    # Расчет размера логотипа
-    #size_calc_start = time.time()
+    logo_original_size = logo_pil.size
+    
+    
+    
     logo_width, logo_height = calculate_logo_size(
         (img_width, img_height), logo_original_size, size_ratio
     )
     logo_pil = logo_pil.resize((logo_width, logo_height), Image.LANCZOS)
-    #size_calc_time = time.time() - size_calc_start
     
-    # Детекция лиц (может занять время)
-    #face_detect_start = time.time()
+    
+    
     faces = detect_faces(image_np)
     forbidden_zones = get_face_regions(faces, img_width, img_height)
-    #face_detect_time = time.time() - face_detect_start
     
-    # Получаем позиции углов
-    #corners_start = time.time()
     corner_positions = get_corner_positions(
         img_width, img_height, logo_width, logo_height, margin_ratio,corner_priority
     )
-    #corners_time = time.time() - corners_start
     
-    # Выбираем первый валидный угол
-    #position_start = time.time()
     final_position = None
     chosen_corner = None
     
-    #corner_names = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
     
-    #for i, (x, y) in enumerate(corner_positions):
-    #    if is_position_valid(x, y, logo_width, logo_height, forbidden_zones):
-    #        final_position = (x, y)
-    #        chosen_corner = corner_names[i]
-    #        break
 
     for i, (x, y) in enumerate(corner_positions):
         if is_position_valid(x, y, logo_width, logo_height, forbidden_zones):
             final_position = (x, y)
-            chosen_corner = corner_priority[i]  # Берем имя из переданного приоритета
+            chosen_corner = corner_priority[i]  
             break
     
-    # Если все углы заняты (маловероятно без лиц), используем первый угол
+    
     if final_position is None:
         final_position = corner_positions[0]
         chosen_corner = f'{corner_priority[0]} (forced)'
 
-    #position_time = time.time() - position_start
     
-    # Анализ фона
-    #bg_analysis_start = time.time()
+    
+    
     x, y = final_position
     bg_color = get_corner_background_color(image_np, x, y, logo_width, logo_height)
     bg_complexity = calculate_background_complexity(image_np, x, y, logo_width, logo_height)
-    #bg_analysis_time = time.time() - bg_analysis_start
     
-    # Добавляем подложку если нужно
-    #bg_processing_start = time.time()
     final_logo = logo_pil
     if bg_complexity > min_complexity_for_bg:
         final_logo = add_adaptive_background(logo_pil, bg_color, bg_complexity)
-    #bg_processing_time = time.time() - bg_processing_start
     
-    # Наложение логотипа
-    #paste_start = time.time()
     pil_image = Image.fromarray(cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)).convert("RGBA")
     pil_image.paste(final_logo, (x, y), final_logo)
-    #paste_time = time.time() - paste_start
     
-    # Сохранение
-    #save_start = time.time()
-
-    #save_time = time.time() - save_start
     
-    #total_time = time.time() - start_time
     
-    # Вывод информации о времени выполнения
-    #print(f"=== ВРЕМЯ ВЫПОЛНЕНИЯ ===")
-    #print(f"Загрузка изображения: {load_time:.3f}с")
-    #print(f"Загрузка логотипа: {logo_load_time:.3f}с")
-    #print(f"Расчет размера: {size_calc_time:.3f}с")
-    #print(f"Детекция лиц: {face_detect_time:.3f}с")
-    #print(f"Определение углов: {corners_time:.3f}с")
-    #print(f"Выбор позиции: {position_time:.3f}с")
-    #print(f"Анализ фона: {bg_analysis_time:.3f}с")
-    #print(f"Обработка подложки: {bg_processing_time:.3f}с")
-    #print(f"Наложение: {paste_time:.3f}с")
-    #print(f"Сохранение: {save_time:.3f}с")
-    #print(f"ОБЩЕЕ ВРЕМЯ: {total_time:.3f}с")
-    #print(f"=== РЕЗУЛЬТАТ ===")
     print(f"Image: {img_width}x{img_height}px")
     print(f"Logo: {logo_width}x{logo_height}px")
     print(f"Position: {chosen_corner} ({x}, {y})")
@@ -266,7 +206,7 @@ def place_logo_in_corner(image_np, logo_pil,size_ratio,margin_ratio,min_complexi
     print(f"Background complexity: {bg_complexity:.2f}")
     print(f"Substrate: {'Yes' if bg_complexity > min_complexity_for_bg else 'No'}")
     
-    #return output_path
+    
     return pil_image
 
 
@@ -331,7 +271,7 @@ def watermark():
     with gr.Row():
         size_ratio = gr.Slider(label='Size Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.2,interactive=True)
         margin_ratio = gr.Slider(label='Margin Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.02,interactive=True)
-        min_complexity_for_bg = gr.Slider(label='Minimal complexity for background', minimum=0.0, maximum=1.0, step=0.01, value=0.3,interactive=True)
+        min_complexity_for_bg = gr.Slider(label='Minimal complexity for background', minimum=0.0, maximum=1.0, step=0.01, value=0.7,interactive=True)
     with gr.Row():
         with gr.Group():
             gr.Markdown("### Сorner priority")
