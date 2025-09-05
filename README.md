@@ -294,6 +294,18 @@ Save to OUTPUT FOLDER - saving the image to the output folder
 
 This module allows you to create skeletons for subsequent image creation using OpenPose ControlNet. You can also create a skeleton from an existing image.
 
+**Logo** - Logo insertion tool with automatic placement selection based on image content
+
+<img width="1059" height="568" alt="image" src="https://github.com/user-attachments/assets/621355ca-4243-4709-80a1-726a9a0fcddd" />
+
+Size ratio - the relative size of the logo to the image. Determines what percentage of the smaller side of the image the logo will occupy.
+
+Margin Ratio - logo offset from image edges. Determines how far from the corner the logo will be placed.
+
+Minimal complexity for background - the background complexity threshold at which a background is automatically added under the logo.
+
+Сorner priority - select the priority of choosing the angle when overlaying the logo.
+
 
 **Photopea** - a free online analogue of Photoshop
 
@@ -396,6 +408,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.1
+ 1. Add Logo in tools
 
 v9.2.0
  1. Add Vector Style
