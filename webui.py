@@ -1029,7 +1029,7 @@ with shared.gradio_root:
                         tile_roll.start()
                   with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
                     op_editor.ui()
-                  with gr.TabItem(label='Watermark'):
+                  with gr.TabItem(label='Logo'):
                     watermark.watermark()
                   with gr.TabItem(label='Photopea') as photopea_tab:
                     PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
