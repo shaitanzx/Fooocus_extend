@@ -336,7 +336,7 @@ def watermark():
     with gr.Row():
         with gr.Group():
             gr.Markdown("### Сorner priority")
-            gr.Row():
+            with gr.Row():
                 with gr.Column():
                     priority1 = gr.Dropdown(choices=priority,value=priority[0],label="Priority 1")
                 with gr.Column():
