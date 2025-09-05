@@ -113,7 +113,7 @@ def get_corner_positions(img_width, img_height, logo_width, logo_height, margin_
         'top-left': (margin_x, margin_y),  
         'top-right': (img_width - logo_width - margin_x, margin_y),  
         'bottom-left': (margin_x, img_height - logo_height - margin_y),  
-        'bottom-right': (img_width - logo_width - margin_x, img_height - logo_height - margin_y)  t
+        'bottom-right': (img_width - logo_width - margin_x, img_height - logo_height - margin_y)
     }
     
     return [corners[x] for x in corner_priority]
