@@ -299,7 +299,7 @@ def process_before_every_sampling(self, p: StableDiffusionProcessing, *script_ar
     def remove_concat(cond):
         cond = copy.deepcopy(cond)
         for i in range(len(cond)):
-           try:
+            try:
                 del cond[i]['model_conds']['c_concat']
             except:
                 pass
