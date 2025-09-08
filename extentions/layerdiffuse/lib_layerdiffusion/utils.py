@@ -1,5 +1,5 @@
 import numpy as np
-from .lib_layerdiffusion.enums import ResizeMode
+from .enums import ResizeMode
 from backend import memory_management
 import cv2
 import torch
