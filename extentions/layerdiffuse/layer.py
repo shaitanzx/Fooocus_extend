@@ -323,7 +323,8 @@ def process_before_every_sampling(self, p, *script_args, **kwargs):
     p.sd_model.forge_objects.unet = unet
     return
 
-def postprocess_image_after_composite(self, p: StableDiffusionProcessing, pp, *script_args, **kwargs):
+#def postprocess_image_after_composite(self, p: StableDiffusionProcessing, pp, *script_args, **kwargs):
+def postprocess_image_after_composite(self, p, pp, *script_args, **kwargs):
     global vae_transparent_decoder, vae_transparent_encoder
 
     enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = script_args
@@ -377,7 +378,8 @@ def postprocess_image_after_composite(self, p: StableDiffusionProcessing, pp, *s
         p.extra_result_images.append(vis)
     return
 
-def before_process_init_images(self, p: StableDiffusionProcessingImg2Img, pp, *script_args, **kwargs):
+#def before_process_init_images(self, p: StableDiffusionProcessingImg2Img, pp, *script_args, **kwargs):
+def before_process_init_images(self, p, pp, *script_args, **kwargs):
     global vae_transparent_decoder, vae_transparent_encoder
 
     enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = script_args
