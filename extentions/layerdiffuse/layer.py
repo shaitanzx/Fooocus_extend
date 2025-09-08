@@ -58,35 +58,35 @@ def load_layer_model_state_dict(filename):
 #    def show(self, is_img2img):
 #        return scripts.AlwaysVisible
 
-def ui(self, *args, **kwargs):
-    with gr.Accordion(open=False, label=self.title()):
-        enabled = gr.Checkbox(label='Enabled', value=False)
-        method = gr.Dropdown(choices=[e.value for e in LayerMethod], value=LayerMethod.FG_ONLY_ATTN.value, label="Method", type='value')
-        gr.HTML('</br>')  # some strange gradio problems
+def ui():
+    
+    enabled = gr.Checkbox(label='Enabled', value=False)
+    method = gr.Dropdown(choices=[e.value for e in LayerMethod], value=LayerMethod.FG_ONLY_ATTN.value, label="Method", type='value')
+    gr.HTML('</br>')  # some strange gradio problems
 
-        with gr.Row():
-            with gr.Column(visible=False) as fg_col:
-                gr.Markdown('Foreground')
-                fg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            with gr.Column(visible=False) as bg_col:
-                gr.Markdown('Background')
-                bg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            with gr.Column(visible=False) as blend_col:
-                gr.Markdown('Blending')
-                blend_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+    with gr.Row():
+        with gr.Column(visible=False) as fg_col:
+            gr.Markdown('Foreground')
+            fg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+        with gr.Column(visible=False) as bg_col:
+            gr.Markdown('Background')
+            bg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+        with gr.Column(visible=False) as blend_col:
+            gr.Markdown('Blending')
+            blend_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
 
-        gr.HTML('</br>')  # some strange gradio problems
+    gr.HTML('</br>')  # some strange gradio problems
 
-        with gr.Row():
-            weight = gr.Slider(label=f"Weight", value=1.0, minimum=0.0, maximum=2.0, step=0.001)
-            ending_step = gr.Slider(label="Stop At", value=1.0, minimum=0.0, maximum=1.0)
+    with gr.Row():
+        weight = gr.Slider(label=f"Weight", value=1.0, minimum=0.0, maximum=2.0, step=0.001)
+        ending_step = gr.Slider(label="Stop At", value=1.0, minimum=0.0, maximum=1.0)
 
-        fg_additional_prompt = gr.Textbox(placeholder="Additional prompt for foreground.", visible=False, label='Foreground Additional Prompt')
-        bg_additional_prompt = gr.Textbox(placeholder="Additional prompt for background.", visible=False, label='Background Additional Prompt')
-        blend_additional_prompt = gr.Textbox(placeholder="Additional prompt for blended image.", visible=False, label='Blended Additional Prompt')
+    fg_additional_prompt = gr.Textbox(placeholder="Additional prompt for foreground.", visible=False, label='Foreground Additional Prompt')
+    bg_additional_prompt = gr.Textbox(placeholder="Additional prompt for background.", visible=False, label='Background Additional Prompt')
+    blend_additional_prompt = gr.Textbox(placeholder="Additional prompt for blended image.", visible=False, label='Blended Additional Prompt')
 
-        resize_mode = gr.Radio(choices=[e.value for e in ResizeMode], value=ResizeMode.CROP_AND_RESIZE.value, label="Resize Mode", type='value', visible=False)
-        output_origin = gr.Checkbox(label='Output original mat for img2img', value=False, visible=False)
+    resize_mode = gr.Radio(choices=[e.value for e in ResizeMode], value=ResizeMode.CROP_AND_RESIZE.value, label="Resize Mode", type='value', visible=False)
+    output_origin = gr.Checkbox(label='Output original mat for img2img', value=False, visible=False)
 
     def method_changed(m):
         m = LayerMethod(m)
