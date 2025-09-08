@@ -1,6 +1,6 @@
 import numpy as np
 from .enums import ResizeMode
-from backend import memory_management
+#from backend import memory_management
 import cv2
 import torch
 
