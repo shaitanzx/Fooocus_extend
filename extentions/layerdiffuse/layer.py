@@ -117,7 +117,8 @@ def ui(self, *args, **kwargs):
 
     return enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt
 
-def process_before_every_sampling(self, p: StableDiffusionProcessing, *script_args, **kwargs):
+#def process_before_every_sampling(self, p: StableDiffusionProcessing, *script_args, **kwargs):
+def process_before_every_sampling(self, p, *script_args, **kwargs):
     # This will be called before every sampling.
     # If you use highres fix, this will be called twice.
 
