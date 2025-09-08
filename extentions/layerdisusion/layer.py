@@ -1,4 +1,5 @@
 import gradio as gr
+import modules.gradio_hijack as grh
 import os
 import functools
 import torch
@@ -17,7 +18,7 @@ from .lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEnco
 #from backend.sampling.sampling_function import sampling_prepare
 #from modules.modelloader import load_file_from_url
 from .lib_layerdiffusion.attention_sharing import AttentionSharingPatcher
-from modules.canvas.canvas import ForgeCanvas
+#from modules.canvas.canvas import ForgeCanvas
 #from modules import images
 from PIL import Image, ImageOps
 
@@ -67,13 +68,16 @@ def ui():
     with gr.Row():
         with gr.Column(visible=False) as fg_col:
             gr.Markdown('Foreground')
-            fg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+            #fg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+            fg_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
         with gr.Column(visible=False) as bg_col:
             gr.Markdown('Background')
-            bg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+            #bg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+            bg_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
         with gr.Column(visible=False) as blend_col:
             gr.Markdown('Blending')
-            blend_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+            #blend_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
+            blend_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
 
     gr.HTML('</br>')  # some strange gradio problems
 
