@@ -4,7 +4,7 @@ import functools
 import torch
 import numpy as np
 import copy
-
+import modules.config
 #from modules import scripts
 #from modules.processing import StableDiffusionProcessing, StableDiffusionProcessingImg2Img
 from .lib_layerdiffusion.enums import ResizeMode
@@ -25,8 +25,8 @@ from PIL import Image, ImageOps
 def is_model_loaded(model):
     return any(model == m.model for m in memory_management.current_loaded_models)
 
-path_vae
-layer_model_root = os.path.join(os.path.dirname(path_vae), 'layer_model')
+
+layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
 
 vae_transparent_encoder = None
