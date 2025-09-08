@@ -7,16 +7,16 @@ import copy
 
 #from modules import scripts
 #from modules.processing import StableDiffusionProcessing, StableDiffusionProcessingImg2Img
-from lib_layerdiffusion.enums import ResizeMode
-from lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
+from .lib_layerdiffusion.enums import ResizeMode
+from .lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
 from enum import Enum
 #from modules.paths import models_path
 #from backend import utils, memory_management
 
-from lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
+from .lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
 #from backend.sampling.sampling_function import sampling_prepare
 #from modules.modelloader import load_file_from_url
-from lib_layerdiffusion.attention_sharing import AttentionSharingPatcher
+from .lib_layerdiffusion.attention_sharing import AttentionSharingPatcher
 #from modules_forge.forge_canvas.canvas import ForgeCanvas
 #from modules import images
 from PIL import Image, ImageOps
