@@ -82,8 +82,8 @@ def ui():
     gr.HTML('</br>')  # some strange gradio problems
 
     with gr.Row():
-        weight = gr.Slider(label=f"Weight", value=1.0, minimum=0.0, maximum=2.0, step=0.001)
-        ending_step = gr.Slider(label="Stop At", value=1.0, minimum=0.0, maximum=1.0)
+        weight = gr.Slider(label=f"Weight", value=1.0, minimum=0.0, maximum=2.0, step=0.001,interactive=True)
+        ending_step = gr.Slider(label="Stop At", value=1.0, minimum=0.0, maximum=1.0,interactive=True)
 
     fg_additional_prompt = gr.Textbox(placeholder="Additional prompt for foreground.", visible=False, label='Foreground Additional Prompt')
     bg_additional_prompt = gr.Textbox(placeholder="Additional prompt for background.", visible=False, label='Background Additional Prompt')
@@ -91,18 +91,19 @@ def ui():
 
     resize_mode = gr.Radio(choices=[e.value for e in ResizeMode], value=ResizeMode.CROP_AND_RESIZE.value, label="Resize Mode", type='value', visible=False)
     output_origin = gr.Checkbox(label='Output original mat for img2img', value=False, visible=False)
-
+#    FG_ONLY_ATTN_SD15 = "(SD1.5) Only Generate Transparent Image (Attention Injection)"
+#    FG_TO_BG_SD15 = "(SD1.5) From Foreground to Background (need batch size 2)"
+#    BG_TO_FG_SD15 = "(SD1.5) From Background to Foreground (need batch size 2)"
+#    JOINT_SD15 = "(SD1.5) Generate Everything Together (need batch size 3)"
+    FG_ONLY_ATTN = "(SDXL) Only Generate Transparent Image (Attention Injection)"
+    FG_ONLY_CONV = "(SDXL) Only Generate Transparent Image (Conv Injection)"
+    FG_TO_BLEND = "(SDXL) From Foreground to Blending"
+    FG_BLEND_TO_BG = "(SDXL) From Foreground and Blending to Background"
+    BG_TO_BLEND = "(SDXL) From Background to Blending"
+    BG_BLEND_TO_FG = "(SDXL) From Background and Blending to Foreground"
     def method_changed(m):
         m = LayerMethod(m)
-        if m == LayerMethod.FG_TO_BG_SD15:
-            return gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False, value=''), gr.update(visible=True), gr.update(visible=True)
-
-        if m == LayerMethod.BG_TO_FG_SD15:
-            return gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False, value=''), gr.update(visible=True)
-
-        if m == LayerMethod.JOINT_SD15:
-            return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)
-
+        print('-------------------',m)
         if m == LayerMethod.FG_TO_BLEND:
             return gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False, value=''), gr.update(visible=False, value=''), gr.update(visible=False, value='')
 
