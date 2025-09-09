@@ -16,12 +16,13 @@ from enum import Enum
 
 from .lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
 #from backend.sampling.sampling_function import sampling_prepare
-#from modules.modelloader import load_file_from_url
+from modules.model_loader import load_file_from_url
 from .lib_layerdiffusion.attention_sharing import AttentionSharingPatcher
 #from modules.canvas.canvas import ForgeCanvas
 #from modules import images
 from PIL import Image, ImageOps
 
+import ldm_patched.modules.utils
 
 def is_model_loaded(model):
     return any(model == m.model for m in memory_management.current_loaded_models)
@@ -49,7 +50,7 @@ class LayerMethod(Enum):
 
 @functools.lru_cache(maxsize=2)
 def load_layer_model_state_dict(filename):
-    return utils.load_torch_file(filename, safe_load=True)
+    return ldm_patched.modules.utils.load_torch_file(filename, safe_load=True)
 
 
 #class LayerDiffusionForForge(scripts.Script):
@@ -347,7 +348,7 @@ def postprocess_image_after_composite(self, p, pp, *script_args, **kwargs):
                 model_dir=layer_model_root,
                 file_name='vae_transparent_decoder.safetensors'
             )
-            vae_transparent_decoder = TransparentVAEDecoder(utils.load_torch_file(model_path))
+            vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(model_path))
 
     if method in [LayerMethod.FG_ONLY_ATTN_SD15, LayerMethod.JOINT_SD15, LayerMethod.BG_TO_FG_SD15]:
         need_process = True
@@ -357,7 +358,7 @@ def postprocess_image_after_composite(self, p, pp, *script_args, **kwargs):
                 model_dir=layer_model_root,
                 file_name='layer_sd15_vae_transparent_decoder.safetensors'
             )
-            vae_transparent_decoder = TransparentVAEDecoder(utils.load_torch_file(model_path))
+            vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(model_path))
         if method == LayerMethod.JOINT_SD15:
             mod_number = 3
         if method == LayerMethod.BG_TO_FG_SD15:
@@ -383,12 +384,12 @@ def postprocess_image_after_composite(self, p, pp, *script_args, **kwargs):
     return
 
 #def before_process_init_images(self, p: StableDiffusionProcessingImg2Img, pp, *script_args, **kwargs):
-def before_process_init_images(self, p, pp, *script_args, **kwargs):
+def before_process_init_images(method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt):
     global vae_transparent_decoder, vae_transparent_encoder
 
-    enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = script_args
-    if not enabled:
-        return
+    #enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = script_args
+    #if not enabled:
+    #    return
 
     method = LayerMethod(method)
     need_process = False
@@ -401,17 +402,17 @@ def before_process_init_images(self, p, pp, *script_args, **kwargs):
                 model_dir=layer_model_root,
                 file_name='vae_transparent_encoder.safetensors'
             )
-            vae_transparent_encoder = TransparentVAEEncoder(utils.load_torch_file(model_path))
+            vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(model_path))
 
-    if method in [LayerMethod.FG_ONLY_ATTN_SD15, LayerMethod.JOINT_SD15, LayerMethod.BG_TO_FG_SD15]:
-        need_process = True
-        if vae_transparent_encoder is None:
-            model_path = load_file_from_url(
-                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_vae_transparent_encoder.safetensors',
-                model_dir=layer_model_root,
-                file_name='layer_sd15_vae_transparent_encoder.safetensors'
-            )
-            vae_transparent_encoder = TransparentVAEEncoder(utils.load_torch_file(model_path))
+    #if method in [LayerMethod.FG_ONLY_ATTN_SD15, LayerMethod.JOINT_SD15, LayerMethod.BG_TO_FG_SD15]:
+    #    need_process = True
+    #    if vae_transparent_encoder is None:
+    #        model_path = load_file_from_url(
+    #            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_vae_transparent_encoder.safetensors',
+    #            model_dir=layer_model_root,
+    #            file_name='layer_sd15_vae_transparent_encoder.safetensors'
+    #        )
+    #        vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(model_path))
 
     if not need_process:
         return
