@@ -11,6 +11,7 @@ from diffusers.models.unets.unet_2d_blocks import UNetMidBlock2D, get_down_block
 #from backend import memory_management
 import ldm_patched.modules.model_management as memory_management
 #from backend.patcher.base import ModelPatcher
+from ldm_patched.modules.model_patcher import ModelPatcher
 from torchvision import transforms
 from PIL import Image
 
