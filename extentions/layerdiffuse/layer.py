@@ -67,15 +67,15 @@ def ui():
 
     with gr.Row():
         with gr.Column(visible=False) as fg_col:
-            gr.Markdown('Foreground')
+            gr.Markdown('Foreground fg_co')
             #fg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
             fg_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
         with gr.Column(visible=False) as bg_col:
-            gr.Markdown('Background')
+            gr.Markdown('Background bg_col')
             #bg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
             bg_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
         with gr.Column(visible=False) as blend_col:
-            gr.Markdown('Blending')
+            gr.Markdown('Blending blend_col')
             #blend_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
             blend_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
 
@@ -85,9 +85,9 @@ def ui():
         weight = gr.Slider(label=f"Weight", value=1.0, minimum=0.0, maximum=2.0, step=0.001,interactive=True)
         ending_step = gr.Slider(label="Stop At", value=1.0, minimum=0.0, maximum=1.0,interactive=True)
 
-    fg_additional_prompt = gr.Textbox(placeholder="Additional prompt for foreground.", visible=False, label='Foreground Additional Prompt')
-    bg_additional_prompt = gr.Textbox(placeholder="Additional prompt for background.", visible=False, label='Background Additional Prompt')
-    blend_additional_prompt = gr.Textbox(placeholder="Additional prompt for blended image.", visible=False, label='Blended Additional Prompt')
+    fg_additional_prompt = gr.Textbox(placeholder="Additional prompt for foreground. fg_additional_prompt", visible=False, label='Foreground Additional Prompt')
+    bg_additional_prompt = gr.Textbox(placeholder="Additional prompt for background. bg_additional_prompt", visible=False, label='Background Additional Prompt')
+    blend_additional_prompt = gr.Textbox(placeholder="Additional prompt for blended image. blend_additional_prompt", visible=False, label='Blended Additional Prompt')
 
     resize_mode = gr.Radio(choices=[e.value for e in ResizeMode], value=ResizeMode.CROP_AND_RESIZE.value, label="Resize Mode", type='value', visible=False)
     output_origin = gr.Checkbox(label='Output original mat for img2img', value=False, visible=False)
@@ -103,7 +103,6 @@ def ui():
     BG_BLEND_TO_FG = "(SDXL) From Background and Blending to Foreground"
     def method_changed(m):
         m = LayerMethod(m)
-        print('-------------------',m)
         if m == LayerMethod.FG_TO_BLEND:
             return gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False, value=''), gr.update(visible=False, value=''), gr.update(visible=False, value='')
 
