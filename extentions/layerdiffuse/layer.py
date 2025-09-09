@@ -89,7 +89,7 @@ def ui():
     bg_additional_prompt = gr.Textbox(placeholder="Additional prompt for background. bg_additional_prompt", visible=False, label='Background Additional Prompt')
     blend_additional_prompt = gr.Textbox(placeholder="Additional prompt for blended image. blend_additional_prompt", visible=False, label='Blended Additional Prompt')
 
-    resize_mode = gr.Radio(choices=[e.value for e in ResizeMode], value=ResizeMode.CROP_AND_RESIZE.value, label="Resize Mode", type='value', visible=False)
+    resize_mode = gr.Radio(choices=[e.value for e in ResizeMode], value=ResizeMode.CROP_AND_RESIZE.value, label="Resize Mode", type='value', visible=False, interactive=True)
     output_origin = gr.Checkbox(label='Output original mat for img2img', value=False, visible=False)
 #    FG_ONLY_ATTN_SD15 = "(SD1.5) Only Generate Transparent Image (Attention Injection)"
 #    FG_TO_BG_SD15 = "(SD1.5) From Foreground to Background (need batch size 2)"
