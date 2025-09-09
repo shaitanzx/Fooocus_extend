@@ -415,6 +415,7 @@ def before_process_init_images(method, weight, ending_step, fg_image, bg_image, 
     #        vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(model_path))
 
     if not need_process:
+        print('------------------------------------------------------')
         return
 
     input_png_raw = p.init_images[0]
