@@ -497,14 +497,13 @@ def worker():
                     async_task.adapter_conditioning_factor,
                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
                     loras,modules.config.paths_loras[0],async_task)
-            elif async_task.layer_enabled == True:
-                print('+++++++++++++++++++',initial_latent)
-                if initial_latent is not None and 'samples' in initial_latent:
-                    print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-                    B, C, H, W = initial_latent['samples'].shape
-                    noise = torch.zeros([B, C, H, W], device=ldm_patched.modules.model_management.get_torch_device())
-                layer.process_before_every_sampling(async_task.method_ld, async_task.weight_ld, async_task.ending_step_ld, async_task.fg_image_ld, async_task.bg_image_ld, async_task.blend_image_ld, async_task.resize_mode_ld, async_task.output_origin_ld, async_task.fg_additional_prompt_ld, async_task.bg_additional_prompt_ld, async_task.blend_additional_prompt_ld)
             else:
+                # async_task.layer_enabled == True:
+                device = ldm_patched.modules.model_management.get_torch_device()
+                generator = torch.Generator(device=device).manual_seed(task['task_seed'])
+                noise = torch.randn([1, 4, height // 8, width // 8], generator=generator, device=device)
+                layer.process_before_every_sampling(async_task,noise)
+            #else:
 
                 imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,

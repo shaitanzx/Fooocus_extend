@@ -123,10 +123,20 @@ def ui():
     return enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt
 
 #def process_before_every_sampling(self, p: StableDiffusionProcessing, *script_args, **kwargs):
-def process_before_every_sampling(method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt):
+def process_before_every_sampling(async_task,noise):
     # This will be called before every sampling.
     # If you use highres fix, this will be called twice.
-
+    method = async_task.method_ld
+    weight = async_task.weight_ld
+    ending_step = async_task.ending_step_ld
+    fg_image = async_task.fg_image_ld
+    bg_image = async_task.bg_image_ld
+    blend_image = async_task.blend_image_ld
+    resize_mode = async_task.resize_mode_ld
+    output_origin = async_task.output_origin_ld
+    fg_additional_prompt = async_task.fg_additional_prompt_ld
+    bg_additional_prompt = async_task.bg_additional_prompt_ld
+    blend_additional_prompt = async_task.blend_additional_prompt_ld
     #enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = script_args
 
     #if not enabled:
@@ -146,10 +156,10 @@ def process_before_every_sampling(method, weight, ending_step, fg_image, bg_imag
     #    layerdiffusion_blend_additional_prompt=blend_additional_prompt,
     #))
 
-    B, C, H, W = kwargs['noise'].shape  # latent_shape
+    B, C, H, W = noise.shape  # latent_shape
     height = H * 8
     width = W * 8
-    batch_size = p.batch_size
+    batch_size = 1
 
     method = LayerMethod(method)
     print(f'[LayerDiffuse] {method}')
@@ -159,10 +169,10 @@ def process_before_every_sampling(method, weight, ending_step, fg_image, bg_imag
     bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
     blend_image = crop_and_resize_image(rgba2rgbfp32(blend_image), resize_mode, height, width) if blend_image is not None else None
 
-    original_unet = p.sd_model.forge_objects.unet.clone()
-    unet = p.sd_model.forge_objects.unet.clone()
-    vae = p.sd_model.forge_objects.vae
-    clip = p.sd_model.forge_objects.clip
+    original_unet = pipeline.final_unet
+    unet = pipeline.final_unet.clone()
+    vae = pipeline.final_vae
+    clip = clip = pipeline.final_clip
 
     if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
         if fg_image is not None:
@@ -177,70 +187,70 @@ def process_before_every_sampling(method, weight, ending_step, fg_image, bg_imag
             blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
             blend_image = vae.first_stage_model.process_in(blend_image)
 
-    if method in [LayerMethod.FG_TO_BG_SD15, LayerMethod.BG_TO_FG_SD15]:
-        if fg_image is not None:
-            fg_image = torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())).movedim(-1, 1)
+    #if method in [LayerMethod.FG_TO_BG_SD15, LayerMethod.BG_TO_FG_SD15]:
+    #    if fg_image is not None:
+    #        fg_image = torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())).movedim(-1, 1)
 
-        if bg_image is not None:
-            bg_image = torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())).movedim(-1, 1)
+    #    if bg_image is not None:
+    #        bg_image = torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())).movedim(-1, 1)
 
-        if blend_image is not None:
-            blend_image = torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())).movedim(-1, 1)
+    #    if blend_image is not None:
+    #        blend_image = torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())).movedim(-1, 1)
 
-    if method == LayerMethod.FG_ONLY_ATTN_SD15:
-        model_path = load_file_from_url(
-        url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_transparent_attn.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_sd15_transparent_attn.safetensors'
-        )
-        layer_lora_model = load_layer_model_state_dict(model_path)
-        patcher = AttentionSharingPatcher(unet, frames=1, use_control=False)
-        patcher.load_state_dict(layer_lora_model, strict=True)
+    #if method == LayerMethod.FG_ONLY_ATTN_SD15:
+    #    model_path = load_file_from_url(
+    #    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_transparent_attn.safetensors',
+    #        model_dir=layer_model_root,
+    #        file_name='layer_sd15_transparent_attn.safetensors'
+    #    )
+    #    layer_lora_model = load_layer_model_state_dict(model_path)
+    #    patcher = AttentionSharingPatcher(unet, frames=1, use_control=False)
+    #    patcher.load_state_dict(layer_lora_model, strict=True)
 
-    original_prompt = p.prompts[0]
+    original_prompt = async_task.prompt
 
     fg_additional_prompt = fg_additional_prompt + ', ' + original_prompt if fg_additional_prompt != '' else None
     bg_additional_prompt = bg_additional_prompt + ', ' + original_prompt if bg_additional_prompt != '' else None
     blend_additional_prompt = blend_additional_prompt + ', ' + original_prompt if blend_additional_prompt != '' else None
 
-    fg_cond = forge_clip_encode(p.sd_model, fg_additional_prompt)
-    bg_cond = forge_clip_encode(p.sd_model, bg_additional_prompt)
-    blend_cond = forge_clip_encode(p.sd_model, blend_additional_prompt)
+    #fg_cond = forge_clip_encode(p.sd_model, fg_additional_prompt)
+    #bg_cond = forge_clip_encode(p.sd_model, bg_additional_prompt)
+    #blend_cond = forge_clip_encode(p.sd_model, blend_additional_prompt)
 
-    if method == LayerMethod.JOINT_SD15:
-        unet.set_transformer_option('cond_overwrite', [fg_cond, bg_cond, blend_cond])
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_joint.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_sd15_joint.safetensors'
-        )
-        layer_lora_model = load_layer_model_state_dict(model_path)
-        patcher = AttentionSharingPatcher(unet, frames=3, use_control=False)
-        patcher.load_state_dict(layer_lora_model, strict=True)
+    #if method == LayerMethod.JOINT_SD15:
+    #    unet.set_transformer_option('cond_overwrite', [fg_cond, bg_cond, blend_cond])
+    #    model_path = load_file_from_url(
+    #        url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_joint.safetensors',
+    #        model_dir=layer_model_root,
+    #        file_name='layer_sd15_joint.safetensors'
+    #    )
+    #    layer_lora_model = load_layer_model_state_dict(model_path)
+    #    patcher = AttentionSharingPatcher(unet, frames=3, use_control=False)
+    #    patcher.load_state_dict(layer_lora_model, strict=True)
 
-    if method == LayerMethod.FG_TO_BG_SD15:
-        unet.set_transformer_option('cond_overwrite', [bg_cond, blend_cond])
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_fg2bg.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_sd15_fg2bg.safetensors'
-        )
-        layer_lora_model = load_layer_model_state_dict(model_path)
-        patcher = AttentionSharingPatcher(unet, frames=2, use_control=True)
-        patcher.load_state_dict(layer_lora_model, strict=True)
-        patcher.set_control(fg_image)
+    #if method == LayerMethod.FG_TO_BG_SD15:
+    #    unet.set_transformer_option('cond_overwrite', [bg_cond, blend_cond])
+    #    model_path = load_file_from_url(
+    #        url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_fg2bg.safetensors',
+    #        model_dir=layer_model_root,
+    #        file_name='layer_sd15_fg2bg.safetensors'
+    #    )
+    #    layer_lora_model = load_layer_model_state_dict(model_path)
+    #    patcher = AttentionSharingPatcher(unet, frames=2, use_control=True)
+    #    patcher.load_state_dict(layer_lora_model, strict=True)
+    #    patcher.set_control(fg_image)
 
-    if method == LayerMethod.BG_TO_FG_SD15:
-        unet.set_transformer_option('cond_overwrite', [fg_cond, blend_cond])
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_bg2fg.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_sd15_bg2fg.safetensors'
-        )
-        layer_lora_model = load_layer_model_state_dict(model_path)
-        patcher = AttentionSharingPatcher(unet, frames=2, use_control=True)
-        patcher.load_state_dict(layer_lora_model, strict=True)
-        patcher.set_control(bg_image)
+    #if method == LayerMethod.BG_TO_FG_SD15:
+    #    unet.set_transformer_option('cond_overwrite', [fg_cond, blend_cond])
+    #    model_path = load_file_from_url(
+    #        url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_bg2fg.safetensors',
+    #        model_dir=layer_model_root,
+    #        file_name='layer_sd15_bg2fg.safetensors'
+    #    )
+    #    layer_lora_model = load_layer_model_state_dict(model_path)
+    #    patcher = AttentionSharingPatcher(unet, frames=2, use_control=True)
+    #    patcher.load_state_dict(layer_lora_model, strict=True)
+    #    patcher.set_control(bg_image)
 
     if method == LayerMethod.FG_ONLY_ATTN:
         model_path = load_file_from_url(
@@ -299,7 +309,7 @@ def process_before_every_sampling(method, weight, ending_step, fg_image, bg_imag
         unet.extra_concat_condition = torch.cat([fg_image, blend_image], dim=1)
         layer_lora_model = load_layer_model_state_dict(model_path)
         unet.load_frozen_patcher('layer_xl_fgble2bg.safetensors', layer_lora_model, weight)
-
+    
     sigma_end = unet.model.predictor.percent_to_sigma(ending_step)
 
     def remove_concat(cond):
