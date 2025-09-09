@@ -9,6 +9,7 @@ from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.models.unets.unet_2d_blocks import UNetMidBlock2D, get_down_block, get_up_block
 #from backend import memory_management
+import ldm_patched.modules.model_management as memory_management
 #from backend.patcher.base import ModelPatcher
 from torchvision import transforms
 from PIL import Image
