@@ -498,7 +498,7 @@ def worker():
                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
                     loras,modules.config.paths_loras[0],async_task)
             elif async_task.layer_enabled == True:
-                layer.before_process_init_images(async_task.method, async_task.weight, async_task.ending_step, async_task.fg_image, async_task.bg_image, async_task.blend_image, async_task.resize_mode, async_task.output_origin, async_task.fg_additional_prompt, async_task.bg_additional_prompt, async_task.blend_additional_prompt)
+                layer.before_process_init_images(async_task.method_ld, async_task.weight_ld, async_task.ending_step_ld, async_task.fg_image_ld, async_task.bg_image_ld, async_task.blend_image_ld, async_task.resize_mode_ld, async_task.output_origin_ld, async_task.fg_additional_prompt_ld, async_task.bg_additional_prompt_ld, async_task.blend_additional_prompt_ld)
             else:
 
                 imgs = pipeline.process_diffusion(
