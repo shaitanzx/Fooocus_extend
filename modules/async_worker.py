@@ -498,7 +498,12 @@ def worker():
                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
                     loras,modules.config.paths_loras[0],async_task)
             elif async_task.layer_enabled == True:
-                layer.before_process_init_images(async_task.method_ld, async_task.weight_ld, async_task.ending_step_ld, async_task.fg_image_ld, async_task.bg_image_ld, async_task.blend_image_ld, async_task.resize_mode_ld, async_task.output_origin_ld, async_task.fg_additional_prompt_ld, async_task.bg_additional_prompt_ld, async_task.blend_additional_prompt_ld)
+                print('+++++++++++++++++++',initial_latent)
+                if initial_latent is not None and 'samples' in initial_latent:
+                    print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+                    B, C, H, W = initial_latent['samples'].shape
+                    noise = torch.zeros([B, C, H, W], device=ldm_patched.modules.model_management.get_torch_device())
+                layer.process_before_every_sampling(async_task.method_ld, async_task.weight_ld, async_task.ending_step_ld, async_task.fg_image_ld, async_task.bg_image_ld, async_task.blend_image_ld, async_task.resize_mode_ld, async_task.output_origin_ld, async_task.fg_additional_prompt_ld, async_task.bg_additional_prompt_ld, async_task.blend_additional_prompt_ld)
             else:
 
                 imgs = pipeline.process_diffusion(
@@ -1825,16 +1830,6 @@ def worker():
                         time.sleep(0.01)
                         continue
 
-
-
-
-
-#                if task.iteration_number>0:
-#                    task.iteration_number-=1
-#                if task.iteration_number>0:
-#                    async_tasks.insert(0, task)
-#                    time.sleep(0.01)
-#                    continue
 
                 if task.generate_image_grid:
                     build_image_wall(task)

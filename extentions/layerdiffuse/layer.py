@@ -123,28 +123,28 @@ def ui():
     return enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt
 
 #def process_before_every_sampling(self, p: StableDiffusionProcessing, *script_args, **kwargs):
-def process_before_every_sampling(self, p, *script_args, **kwargs):
+def process_before_every_sampling(method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt):
     # This will be called before every sampling.
     # If you use highres fix, this will be called twice.
 
-    enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = script_args
+    #enabled, method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = script_args
 
-    if not enabled:
-        return
+    #if not enabled:
+    #    return
 
-    p.extra_generation_params.update(dict(
-        layerdiffusion_enabled=enabled,
-        layerdiffusion_method=method,
-        layerdiffusion_weight=weight,
-        layerdiffusion_ending_step=ending_step,
-        layerdiffusion_fg_image=fg_image is not None,
-        layerdiffusion_bg_image=bg_image is not None,
-        layerdiffusion_blend_image=blend_image is not None,
-        layerdiffusion_resize_mode=resize_mode,
-        layerdiffusion_fg_additional_prompt=fg_additional_prompt,
-        layerdiffusion_bg_additional_prompt=bg_additional_prompt,
-        layerdiffusion_blend_additional_prompt=blend_additional_prompt,
-    ))
+    #p.extra_generation_params.update(dict(
+    #    layerdiffusion_enabled=enabled,
+    #    layerdiffusion_method=method,
+    #    layerdiffusion_weight=weight,
+    #    layerdiffusion_ending_step=ending_step,
+    #    layerdiffusion_fg_image=fg_image is not None,
+    #    layerdiffusion_bg_image=bg_image is not None,
+    #    layerdiffusion_blend_image=blend_image is not None,
+    #    layerdiffusion_resize_mode=resize_mode,
+    #    layerdiffusion_fg_additional_prompt=fg_additional_prompt,
+    #    layerdiffusion_bg_additional_prompt=bg_additional_prompt,
+    #    layerdiffusion_blend_additional_prompt=blend_additional_prompt,
+    #))
 
     B, C, H, W = kwargs['noise'].shape  # latent_shape
     height = H * 8
