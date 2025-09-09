@@ -278,6 +278,18 @@ class AsyncTask:
         self.poTransPNGEps = args.pop()
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
+        self.layer_enabled = args.pop()
+        self.method_ld = args.pop()
+        self.weight_ld = args.pop()
+        self.ending_step_ld = args.pop()
+        self.fg_image_ld = args.pop()
+        self.bg_image_ld = args.pop()
+        self.blend_image_ld = args.pop()
+        self.resize_mode_ld = args.pop()
+        self.output_origin_ld = args.pop()
+        self.fg_additional_prompt_ld = args.pop()
+        self.bg_additional_prompt_ld = args.pop()
+        self.blend_additional_prompt_ld = args.pop()
  
 
     
