@@ -24,6 +24,7 @@ from torch.nn.modules.utils import _pair
 
 
 from extentions.layerdiffuse import layer as layer_module
+from ldm_patched.modules import model_patcher
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -409,10 +410,22 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         vae = target_vae
         clip = target_clip
         layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
-        unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
-        sigma_end = unet.model.predictor.percent_to_sigma(ending_step)
 
 
+
+
+        unet = model_patcher.add_patches(unet,
+                                        patches=layer_lora_model,
+                                        strength_patch=weight,
+                                        strength_model=1.0 - weight  # Оригинальная модель "ослабляется"
+                                        )
+        #unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
+        # ✅ ЗАМЕНА percent_to_sigma → используем minmax_sigmas
+        step_index = int((len(minmax_sigmas) - 1) * ending_step)
+        sigma_end = minmax_sigmas[step_index].item()
+        print(f'[LayerDiffusion] Ending at step {step_index}/{len(minmax_sigmas)-1}, sigma = {sigma_end}')
+
+        # ✅ Вспомогательная функция для удаления c_concat
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
             for i in range(len(cond)):
@@ -422,18 +435,32 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     pass
             return cond
 
-        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            if timestep[0].item() < sigma_end:  # После ending_step
-                target_model = original_unet.model
-                cond = remove_concat(cond)
-                uncond = remove_concat(uncond)
-            else:
-                target_model = model
-            return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        # ✅ ЗАМЕНА conditioning_modifier → sampler_cfg_function
+        original_model = original_unet.model
+        patched_model = unet.model
 
-        unet.add_conditioning_modifier(conditioning_modifier)
-        target_unet = unet  # Теперь сэмплер будет использовать патченую UNet
-        print(f'[LayerDiffusion] Applied with ending_step={ending_step}')
+        def sampler_cfg_function(args):
+            sigma = args['sigma'][0].item()
+            cond = args['cond']
+            uncond = args['uncond']
+
+            if sigma < sigma_end:  # После ending_step
+                args['model'] = original_model
+                args['cond'] = remove_concat(cond)
+                args['uncond'] = remove_concat(uncond)
+            else:
+                args['model'] = patched_model
+
+            return args
+
+        # Устанавливаем кастомную функцию в model_options
+        if unet.model_options is None:
+            unet.model_options = {}
+        unet.model_options['sampler_cfg_function'] = sampler_cfg_function
+
+        # Подменяем target_unet — теперь сэмплер использует модифицированную версию
+        target_unet = unet
+        print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
 
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
