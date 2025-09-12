@@ -23,7 +23,7 @@ from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 
 
-import extentions.layerdiffuse.layer as layer
+from extentions.layerdiffuse import layer
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
