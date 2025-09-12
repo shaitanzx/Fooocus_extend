@@ -1480,7 +1480,7 @@ def worker():
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
-        if len(async_task.layer_enable):
+        if async_task.layer_enable:
             async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
 
 
