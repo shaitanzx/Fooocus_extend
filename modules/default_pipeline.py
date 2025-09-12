@@ -414,11 +414,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
 
-        unet = model_patcher.add_patches(unet,
-                                        patches=layer_lora_model,
-                                        strength_patch=weight,
-                                        strength_model=1.0 - weight  # Оригинальная модель "ослабляется"
-                                        )
+        unet = unet.add_patches(
+            patches=layer_lora_model,
+            strength_patch=weight,
+            strength_model=1.0 - weight
+        )
         #unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
         # ✅ Используем уже рассчитанные minmax_sigmas
         step_index = int((len(minmax_sigmas) - 1) * ending_step)
