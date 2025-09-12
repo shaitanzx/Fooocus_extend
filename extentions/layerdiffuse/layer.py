@@ -150,7 +150,7 @@ def vae_layer_decode(method,vae_decoder,latent,pixel):
     png, vis = vae_transparent_decoder.decode(latent, pixel)
     #pp.image = png
     #p.extra_result_images.append(vis)
-return png, vis
+    return png, vis
 
 
 
