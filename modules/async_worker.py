@@ -505,7 +505,7 @@ def worker():
             #    layer.process_before_every_sampling(async_task,noise)
             else:
                 if async_task.layer_enable:
-                    layer_diff=[method_ld,weight_ld = args.pop,ending_step_ld,fg_image_ld,bg_image_ld,blend_image_ld,resize_mode_ld,output_origin_ld,fg_additional_prompt_ld,bg_additional_prompt_ld,blend_additional_prompt_ld]
+                    layer_diff=[method_ld,weight_ld,ending_step_ld,fg_image_ld,bg_image_ld,blend_image_ld,resize_mode_ld,output_origin_ld,fg_additional_prompt_ld,bg_additional_prompt_ld,blend_additional_prompt_ld]
                 else:
                     layer_diff=[False]
                 imgs = pipeline.process_diffusion(
