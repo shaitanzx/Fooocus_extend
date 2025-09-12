@@ -443,7 +443,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         unet.add_conditioning_modifier(conditioning_modifier)
 
-        p.sd_model.forge_objects.unet = unet
+        target_unet = unet
         print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
 
 
