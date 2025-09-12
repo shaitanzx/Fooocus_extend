@@ -1748,8 +1748,13 @@ with shared.gradio_root:
         ctrls += [seed_random]
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
-        ctrls += [layer_enabled, method_ld, weight_ld, ending_step_ld, fg_image_ld, bg_image_ld]
-        ctrls += [blend_image_ld, resize_mode_ld, output_origin_ld, fg_additional_prompt_ld, bg_additional_prompt_ld, blend_additional_prompt_ld]
+        if layer_enabled:
+            ctrls += [method_ld, weight_ld, ending_step_ld, fg_image_ld, bg_image_ld]
+            ctrls += [blend_image_ld, resize_mode_ld, output_origin_ld, fg_additional_prompt_ld, bg_additional_prompt_ld, blend_additional_prompt_ld]    
+        else:
+            ctrls +=[False]
+        #ctrls += [layer_enabled, method_ld, weight_ld, ending_step_ld, fg_image_ld, bg_image_ld]
+        #ctrls += [blend_image_ld, resize_mode_ld, output_origin_ld, fg_additional_prompt_ld, bg_additional_prompt_ld, blend_additional_prompt_ld]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

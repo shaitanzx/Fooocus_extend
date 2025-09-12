@@ -22,6 +22,9 @@ from torch.nn import Conv2d
 from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 
+
+from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
+
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -342,7 +345,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
-        disable_preview=False,tile_x=False,tile_y=False):
+        disable_preview=False,tile_x=False,tile_y=False,layer_list=['False']):
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
@@ -384,6 +387,54 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
+
+
+    if len(layer_list)>1:
+        method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt,vae_encoder, vae_decoder, layer_model = layer_list
+        B, C, H, W = initial_latent['samples'].shape  # latent_shape
+        height = H * 8
+        width = W * 8
+        batch_size = 1
+
+        method = LayerMethod(method)
+        print(f'[LayerDiffuse] {method}')
+
+        resize_mode = ResizeMode(resize_mode)
+        fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
+        bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
+        blend_image = crop_and_resize_image(rgba2rgbfp32(blend_image), resize_mode, height, width) if blend_image is not None else None
+
+        original_unet = target_unet
+        unet = target_unet.clone()
+        vae = target_vae
+        clip = target_clip
+        layer_lora_model = layer.load_layer_model_state_dict(layer_model)
+        unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
+        sigma_end = unet.model.predictor.percent_to_sigma(ending_step)
+
+
+        def remove_concat(cond):
+            cond = copy.deepcopy(cond)
+            for i in range(len(cond)):
+                try:
+                    del cond[i]['model_conds']['c_concat']
+                except:
+                    pass
+            return cond
+
+        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            if timestep[0].item() < sigma_end:  # После ending_step
+                target_model = original_unet.model
+                cond = remove_concat(cond)
+                uncond = remove_concat(uncond)
+            else:
+                target_model = model
+            return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+
+        unet.add_conditioning_modifier(conditioning_modifier)
+        target_unet = unet  # Теперь сэмплер будет использовать патченую UNet
+        print(f'[LayerDiffusion] Applied with ending_step={ending_step}')
+
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
@@ -545,4 +596,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
+    if len(layer_list) > 1:
+        target_unet = original_unet
     return images

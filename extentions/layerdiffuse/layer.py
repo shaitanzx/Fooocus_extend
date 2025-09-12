@@ -59,6 +59,81 @@ def load_layer_model_state_dict(filename):
 #
 #    def show(self, is_img2img):
 #        return scripts.AlwaysVisible
+def prepare_layer(params):
+        #ctrls += [method_ld, weight_ld, ending_step_ld, fg_image_ld, bg_image_ld]
+        #ctrls += [blend_image_ld, resize_mode_ld, output_origin_ld, fg_additional_prompt_ld, bg_additional_prompt_ld, blend_additional_prompt_ld]
+     
+    method = LayerMethod(params[0])
+#before_process_init_images
+    if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
+        vae_encoder = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_encoder.safetensors',
+                model_dir=layer_model_root,
+                file_name='vae_transparent_encoder.safetensors'
+        )
+    else:
+        vae_encoder = None
+            
+#postprocess_image_after_composite
+    if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
+        vae_decoder = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors',
+                model_dir=layer_model_root,
+                file_name='vae_transparent_decoder.safetensors'
+         )
+    else:
+        vae_decoder = None
+
+ #process_before_every_sampling
+
+    if method == LayerMethod.FG_ONLY_ATTN:
+        model_path = load_file_from_url(
+            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
+            model_dir=layer_model_root,
+            file_name='layer_xl_transparent_attn.safetensors'
+        )
+
+    if method == LayerMethod.FG_ONLY_CONV:
+        model_path = load_file_from_url(
+            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
+            model_dir=layer_model_root,
+            file_name='layer_xl_transparent_conv.safetensors'
+        )
+
+    if method == LayerMethod.BG_TO_BLEND:
+        model_path = load_file_from_url(
+            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bg2ble.safetensors',
+            model_dir=layer_model_root,
+            file_name='layer_xl_bg2ble.safetensors'
+        )
+
+    if method == LayerMethod.FG_TO_BLEND:
+        model_path = load_file_from_url(
+            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fg2ble.safetensors',
+            model_dir=layer_model_root,
+            file_name='layer_xl_fg2ble.safetensors'
+        )
+
+    if method == LayerMethod.BG_BLEND_TO_FG:
+        model_path = load_file_from_url(
+            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bgble2fg.safetensors',
+            model_dir=layer_model_root,
+            file_name='layer_xl_bgble2fg.safetensors'
+        )
+
+    if method == LayerMethod.FG_BLEND_TO_BG:
+        model_path = load_file_from_url(
+            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fgble2bg.safetensors',
+            model_dir=layer_model_root,
+            file_name='layer_xl_fgble2bg.safetensors'
+        )
+    
+    params.extend([vae_encoder, vae_decoder, model_path])
+    return params
+
+
+
+
 
 def ui():
     

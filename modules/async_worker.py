@@ -278,18 +278,18 @@ class AsyncTask:
         self.poTransPNGEps = args.pop()
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
-        self.layer_enabled = args.pop()
-        self.method_ld = args.pop()
-        self.weight_ld = args.pop()
-        self.ending_step_ld = args.pop()
-        self.fg_image_ld = args.pop()
-        self.bg_image_ld = args.pop()
-        self.blend_image_ld = args.pop()
-        self.resize_mode_ld = args.pop()
-        self.output_origin_ld = args.pop()
-        self.fg_additional_prompt_ld = args.pop()
-        self.bg_additional_prompt_ld = args.pop()
-        self.blend_additional_prompt_ld = args.pop()
+        self.layer_list = args.pop()
+        #self.method_ld = args.pop()
+        #self.weight_ld = args.pop()
+        #self.ending_step_ld = args.pop()
+        #self.fg_image_ld = args.pop()
+        #self.bg_image_ld = args.pop()
+        #self.blend_image_ld = args.pop()
+        #self.resize_mode_ld = args.pop()
+        #self.output_origin_ld = args.pop()
+        #self.fg_additional_prompt_ld = args.pop()
+        #self.bg_additional_prompt_ld = args.pop()
+        #self.blend_additional_prompt_ld = args.pop()
  
 
     
@@ -497,13 +497,13 @@ def worker():
                     async_task.adapter_conditioning_factor,
                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
                     loras,modules.config.paths_loras[0],async_task)
-            else:
-                # async_task.layer_enabled == True:
-                device = ldm_patched.modules.model_management.get_torch_device()
-                generator = torch.Generator(device=device).manual_seed(task['task_seed'])
-                noise = torch.randn([1, 4, height // 8, width // 8], generator=generator, device=device)
-                layer.process_before_every_sampling(async_task,noise)
             #else:
+            #    # async_task.layer_enabled == True:
+            #    device = ldm_patched.modules.model_management.get_torch_device()
+            #    generator = torch.Generator(device=device).manual_seed(task['task_seed'])
+            #    noise = torch.randn([1, 4, height // 8, width // 8], generator=generator, device=device)
+            #    layer.process_before_every_sampling(async_task,noise)
+            else:
 
                 imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,
@@ -523,7 +523,8 @@ def worker():
                     refiner_swap_method=async_task.refiner_swap_method,
                     disable_preview=async_task.disable_preview,
                     tile_x=async_task.tile_x,
-                    tile_y=async_task.tile_y
+                    tile_y=async_task.tile_y,
+                    layer_diff=async_task.layer_list
                 )
         if async_task.enable_instant == True:
             imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
@@ -1476,6 +1477,9 @@ def worker():
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
+        if len(async_task.layer_list) > 1:
+            async_task.layer_list = layer.prepare_layer(async_task.layer_list)
+
 
         print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
         print(f'[Parameters] Steps = {async_task.steps} - {switch}')
