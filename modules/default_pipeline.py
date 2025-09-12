@@ -411,7 +411,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         clip = target_clip
         layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
 
-
+        Print('qqqqqqqqqqqqqqqqqqqq',layer_lora_model)
 
 
         unet = unet.add_patches(
