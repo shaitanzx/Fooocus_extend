@@ -607,7 +607,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
     if len(layer_diff) > 1:
         if  vae_decoder:
-            png,vis = layer_module.vae_layer_decode(method,vae_decoder,simpled_latent,images)
+            png,vis = layer_module.vae_layer_decode(method,vae_decoder,sampled_latent,images)
             images.append(png)  # добавляем значение переменной png
             images.append(vis)  # добавляем значение переменной vis
         target_unet = original_unet
