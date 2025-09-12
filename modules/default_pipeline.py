@@ -411,11 +411,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         clip = target_clip
         layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
 
-        print('qqqqqqqqqqqqqqqqqqqq',layer_model)
-        #print('qqqqqqqqqqqqqqqqqqqq',layer_lora_model)
 
         unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
-        # ✅ Используем уже рассчитанные minmax_sigmas
         step_index = int((len(minmax_sigmas) - 1) * ending_step)
         sigma_end = minmax_sigmas[step_index].item()
         print(f'[LayerDiffusion] Ending at step {step_index}/{len(minmax_sigmas)-1}, sigma = {sigma_end}')
@@ -445,6 +442,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         target_unet = unet
         print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
+    
 
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
@@ -608,5 +606,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
     if len(layer_diff) > 1:
+        if  vae_decoder:
+            png,vis = vae_layer_decode(method,vae_decoder,simple_latent,images)
+            images.append(png)  # добавляем значение переменной png
+            images.append(vis)  # добавляем значение переменной vis
         target_unet = original_unet
     return images
