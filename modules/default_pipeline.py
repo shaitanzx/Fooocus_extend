@@ -23,7 +23,7 @@ from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 
 
-from extentions.layerdiffuse import layer
+from extentions.layerdiffuse import layer as layer_module
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -408,7 +408,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet = target_unet.clone()
         vae = target_vae
         clip = target_clip
-        layer_lora_model = layer.load_layer_model_state_dict(layer_model)
+        layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
         unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
         sigma_end = unet.model.predictor.percent_to_sigma(ending_step)
 
