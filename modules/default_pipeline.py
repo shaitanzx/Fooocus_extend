@@ -390,7 +390,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     if len(layer_diff)>1:
-        method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt,vae_encoder, vae_decoder, layer_model = layer_list
+        method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt,vae_encoder, vae_decoder, layer_model = layer_diff
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
         height = H * 8
         width = W * 8
