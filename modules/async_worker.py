@@ -508,7 +508,8 @@ def worker():
                     layer_diff=[async_task.method_ld,async_task.weight_ld,async_task.ending_step_ld,async_task.fg_image_ld,
                                 async_task.bg_image_ld,async_task.blend_image_ld,async_task.resize_mode_ld,
                                 async_task.output_origin_ld,async_task.fg_additional_prompt_ld,async_task.bg_additional_prompt_ld,
-                                async_task.blend_additional_prompt_ld]
+                                async_task.blend_additional_prompt_ld,async_task.vae_encoder_ld,
+                                async_task.vae_decoder_ld,async_task.model_ld]
                 else:
                     layer_diff=[False]
                 imgs = pipeline.process_diffusion(
