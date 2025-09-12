@@ -399,10 +399,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         #method = LayerMethod(method)
         print(f'[LayerDiffuse] {method}')
 
-        resize_mode = ResizeMode(resize_mode)
-        fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
-        bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
-        blend_image = crop_and_resize_image(rgba2rgbfp32(blend_image), resize_mode, height, width) if blend_image is not None else None
+        #resize_mode = ResizeMode(resize_mode)
+        #fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
+        #bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
+        #blend_image = crop_and_resize_image(rgba2rgbfp32(blend_image), resize_mode, height, width) if blend_image is not None else None
 
         original_unet = target_unet
         unet = target_unet.clone()
