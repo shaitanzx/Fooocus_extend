@@ -23,7 +23,7 @@ from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 
 
-from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
+import extentions.layerdiffuse.layer as layer
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
