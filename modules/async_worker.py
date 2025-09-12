@@ -1477,7 +1477,7 @@ def worker():
         progressbar(async_task, current_progress, 'Loading control models ...')
         pipeline.refresh_controlnets([controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path])
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
-        ip_adapter.load_ip_adapter(clasync_task.ip_vision_path, ip_negative_path, ip_adapter_face_path)
+        ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
         if len(async_task.layer_enable):
