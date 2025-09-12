@@ -1478,6 +1478,7 @@ def worker():
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
         if len(async_task.layer_list) > 1:
+            print(-----------,async_task.layer_list)
             async_task.layer_list = layer.prepare_layer(async_task.layer_list)
 
 
