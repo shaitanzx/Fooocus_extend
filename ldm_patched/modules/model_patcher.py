@@ -355,3 +355,21 @@ class ModelPatcher:
             setattr(self.model, k, self.object_patches_backup[k])
 
         self.object_patches_backup = {}
+    
+    def load_frozen_patcher(self, filename, state_dict, strength):
+        patch_dict = {}
+        for k, w in state_dict.items():
+            model_key, patch_type, weight_index = k.split('::')
+            if model_key not in patch_dict:
+                patch_dict[model_key] = {}
+            if patch_type not in patch_dict[model_key]:
+                patch_dict[model_key][patch_type] = [None] * 16
+            patch_dict[model_key][patch_type][int(weight_index)] = w
+
+        patch_flat = {}
+        for model_key, v in patch_dict.items():
+            for patch_type, weight_list in v.items():
+                patch_flat[model_key] = (patch_type, weight_list)
+
+        self.add_patches(filename=filename, patches=patch_flat, strength_patch=float(strength), strength_model=1.0)
+        return
