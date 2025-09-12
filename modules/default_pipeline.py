@@ -420,7 +420,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                                         strength_model=1.0 - weight  # Оригинальная модель "ослабляется"
                                         )
         #unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
-        # ✅ ЗАМЕНА percent_to_sigma → используем minmax_sigmas
+        # ✅ Используем уже рассчитанные minmax_sigmas
         step_index = int((len(minmax_sigmas) - 1) * ending_step)
         sigma_end = minmax_sigmas[step_index].item()
         print(f'[LayerDiffusion] Ending at step {step_index}/{len(minmax_sigmas)-1}, sigma = {sigma_end}')
@@ -435,7 +435,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     pass
             return cond
 
-        # ✅ ЗАМЕНА conditioning_modifier → sampler_cfg_function
+        # ✅ Динамическое переключение через sampler_cfg_function
         original_model = original_unet.model
         patched_model = unet.model
 
@@ -458,7 +458,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.model_options = {}
         unet.model_options['sampler_cfg_function'] = sampler_cfg_function
 
-        # Подменяем target_unet — теперь сэмплер использует модифицированную версию
+        # Подменяем target_unet
         target_unet = unet
         print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
 
