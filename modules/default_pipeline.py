@@ -389,7 +389,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
 
-    if len(layer_list)>1:
+    if len(layer_diff)>1:
         method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt,vae_encoder, vae_decoder, layer_model = layer_list
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
         height = H * 8
@@ -596,6 +596,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
-    if len(layer_list) > 1:
+    if len(layer_diff) > 1:
         target_unet = original_unet
     return images
