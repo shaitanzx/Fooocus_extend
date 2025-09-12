@@ -420,7 +420,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigma_end = minmax_sigmas[step_index].item()
         print(f'[LayerDiffusion] Ending at step {step_index}/{len(minmax_sigmas)-1}, sigma = {sigma_end}')
 
-        # ✅ Вспомогательная функция для удаления c_concat
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
             for i in range(len(cond)):
@@ -430,31 +429,21 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     pass
             return cond
 
-        # ✅ Динамическое переключение через sampler_cfg_function
-        original_model = original_unet.model
-        patched_model = unet.model
-
-        def sampler_cfg_function(args):
-            sigma = args['sigma'][0].item()
-            cond = args['cond']
-            uncond = args['uncond']
-
-            if sigma < sigma_end:  # После ending_step
-                args['model'] = original_model
-                args['cond'] = remove_concat(cond)
-                args['uncond'] = remove_concat(uncond)
+        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            if timestep[0].item() < sigma_end:
+                if not is_model_loaded(original_unet):
+                    sampling_prepare(original_unet, x)
+                target_model = original_unet.model
+                cond = remove_concat(cond)
+                uncond = remove_concat(uncond)
             else:
-                args['model'] = patched_model
+                target_model = model
 
-            return args
+            return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
-        # Устанавливаем кастомную функцию в model_options
-        if unet.model_options is None:
-            unet.model_options = {}
-        unet.model_options['sampler_cfg_function'] = sampler_cfg_function
+        unet.add_conditioning_modifier(conditioning_modifier)
 
-        # Подменяем target_unet
-        target_unet = unet
+        p.sd_model.forge_objects.unet = unet
         print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
 
 
