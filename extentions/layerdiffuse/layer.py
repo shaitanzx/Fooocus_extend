@@ -59,11 +59,11 @@ def load_layer_model_state_dict(filename):
 #
 #    def show(self, is_img2img):
 #        return scripts.AlwaysVisible
-def prepare_layer(params):
+def prepare_layer(m):
         #ctrls += [method_ld, weight_ld, ending_step_ld, fg_image_ld, bg_image_ld]
         #ctrls += [blend_image_ld, resize_mode_ld, output_origin_ld, fg_additional_prompt_ld, bg_additional_prompt_ld, blend_additional_prompt_ld]
-    print('---------------',params) 
-    method = LayerMethod(params[0])
+    print('---------------',m) 
+    method = LayerMethod(m)
 #before_process_init_images
     if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
         vae_encoder = load_file_from_url(
@@ -128,8 +128,7 @@ def prepare_layer(params):
             file_name='layer_xl_fgble2bg.safetensors'
         )
     
-    params.extend([vae_encoder, vae_decoder, model_path])
-    return params
+    return vae_encoder, vae_decoder, model_path
 
 
 

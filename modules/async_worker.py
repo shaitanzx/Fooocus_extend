@@ -278,18 +278,18 @@ class AsyncTask:
         self.poTransPNGEps = args.pop()
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
-        self.layer_list = args.pop()
-        #self.method_ld = args.pop()
-        #self.weight_ld = args.pop()
-        #self.ending_step_ld = args.pop()
-        #self.fg_image_ld = args.pop()
-        #self.bg_image_ld = args.pop()
-        #self.blend_image_ld = args.pop()
-        #self.resize_mode_ld = args.pop()
-        #self.output_origin_ld = args.pop()
-        #self.fg_additional_prompt_ld = args.pop()
-        #self.bg_additional_prompt_ld = args.pop()
-        #self.blend_additional_prompt_ld = args.pop()
+        self.layer_enable = args.pop()
+        self.method_ld = args.pop()
+        self.weight_ld = args.pop()
+        self.ending_step_ld = args.pop()
+        self.fg_image_ld = args.pop()
+        self.bg_image_ld = args.pop()
+        self.blend_image_ld = args.pop()
+        self.resize_mode_ld = args.pop()
+        self.output_origin_ld = args.pop()
+        self.fg_additional_prompt_ld = args.pop()
+        self.bg_additional_prompt_ld = args.pop()
+        self.blend_additional_prompt_ld = args.pop()
  
 
     
@@ -504,7 +504,10 @@ def worker():
             #    noise = torch.randn([1, 4, height // 8, width // 8], generator=generator, device=device)
             #    layer.process_before_every_sampling(async_task,noise)
             else:
-
+                if async_task.layer_enable:
+                    layer_diff=[method_ld,weight_ld = args.pop,ending_step_ld,fg_image_ld,bg_image_ld,blend_image_ld,resize_mode_ld,output_origin_ld,fg_additional_prompt_ld,bg_additional_prompt_ld,blend_additional_prompt_ld]
+                else:
+                    layer_diff=[False]
                 imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,
                     negative_cond=negative_cond,
@@ -524,7 +527,7 @@ def worker():
                     disable_preview=async_task.disable_preview,
                     tile_x=async_task.tile_x,
                     tile_y=async_task.tile_y,
-                    layer_diff=async_task.layer_list
+                    layer_diff=layer_diff
                 )
         if async_task.enable_instant == True:
             imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
@@ -1474,12 +1477,11 @@ def worker():
         progressbar(async_task, current_progress, 'Loading control models ...')
         pipeline.refresh_controlnets([controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path])
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
-        ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
+        ip_adapter.load_ip_adapter(clasync_task.ip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
-        if len(async_task.layer_list) > 1:
-            print('-----------',async_task.layer_list)
-            async_task.layer_list = layer.prepare_layer(async_task.layer_list)
+        if len(async_task.layer_enable):
+            async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
 
 
         print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
