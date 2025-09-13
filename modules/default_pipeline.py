@@ -639,8 +639,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
     if len(layer_diff) > 1:
-
-            mod_number = 1
+        if vae_decoder: 
+            
             vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
             lB, lC, lH, lW = sampled_latent['samples'].shape
             if lH != images[0].shape[0] // 8 or lW != images[0].shape[1] // 8:
