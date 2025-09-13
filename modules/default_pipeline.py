@@ -609,12 +609,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
             mod_number = 1
             vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
-            lB, lC, lH, lW = latent.shape
-            if lH != pixel.shape[0] // 8 or lW != pixel.shape[1] // 8:
+            lB, lC, lH, lW = sampled_latent['samples'].shape
+            if lH != images[0].shape[0] // 8 or lW != images[0].shape[1] // 8:
                 print('[LayerDiffuse] VAE zero latent mode.')
-                latent = torch.zeros((lC, pixelshape[0] // 8, pixel.shape[1] // 8)).to(latent)
+                latent = torch.zeros((lC, images[0].shape[0] // 8, images[0].shape[1] // 8)).to(latent)
 
-            png, vis = vae_transparent_decoder.decode(latent, pixel)
+            png, vis = vae_transparent_decoder.decode(sampled_latent['samples'], images[0])
             #pp.image = png
             #p.extra_result_images.append(vis)
             images.append(png)  # добавляем значение переменной png
