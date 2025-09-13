@@ -410,7 +410,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         width = W * 8
         batch_size = 1
 
-        #method = LayerMethod(method)
+        method = LayerMethod(method)
         
 
         resize_mode = ResizeMode(resize_mode)
