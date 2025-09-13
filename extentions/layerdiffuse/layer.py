@@ -157,15 +157,16 @@ def ui():
         with gr.Column(visible=False) as fg_col:
             gr.Markdown('Foreground')
             #fg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            fg_image = gr.Image(label='Image', source='upload', type='numpy', height=300, show_label=False)
+            fg_image = gr.Image(label='Foreground', source='upload', image_mode='RGBA',height=300, show_label=False)
+            
         with gr.Column(visible=False) as bg_col:
             gr.Markdown('Background')
             #bg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            bg_image = gr.Image(label='Image', source='upload', type='numpy', height=300, show_label=False)
+            bg_image = gr.Image(label='Background', source='upload', image_mode='RGBA',height=300, show_label=False)
         with gr.Column(visible=False) as blend_col:
             gr.Markdown('Blending')
             #blend_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            blend_image = gr.Image(label='Image', source='upload', type='numpy', height=300, show_label=False)
+            blend_image = gr.Image(label='Blending', source='upload', image_mode='RGBA',height=300, show_label=False)
 
     gr.HTML('</br>')  # some strange gradio problems
 
