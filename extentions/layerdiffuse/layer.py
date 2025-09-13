@@ -142,7 +142,7 @@ def vae_layer_decode(method,vae_decoder,latent,pixel):
     #    latent = p.latents_after_sampling[i]
     #    pixel = p.pixels_after_sampling[i]
 
-    lC, lH, lW = latent.shape
+    lB, lC, lH, lW = latent.shape
     if lH != pixel.height // 8 or lW != pixel.width // 8:
         print('[LayerDiffuse] VAE zero latent mode.')
         latent = torch.zeros((lC, pixel.height // 8, pixel.width // 8)).to(latent)
