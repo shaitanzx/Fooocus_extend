@@ -268,7 +268,7 @@ def postprocess_image_after_composite(self, p, pp, *script_args, **kwargs):
             print('[LayerDiffuse] VAE zero latent mode.')
             latent = torch.zeros((lC, pixel.height // 8, pixel.width // 8)).to(latent)
 
-        png, vis = vae_transparent_decoder.decode(latent, pixel)
+        png, vis = vae_transparent_decoder.decode(latent['samples'], pixel)
         pp.image = png
         p.extra_result_images.append(vis)
     return
