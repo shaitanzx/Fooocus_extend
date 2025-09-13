@@ -115,7 +115,7 @@ def prepare_layer(m):
             file_name='vae_transparent_encoder.safetensors'
         )
     else:
-        vae_encode=None
+        vae_encoder=None
     
     return vae_encoder, vae_decoder, model_path
 
