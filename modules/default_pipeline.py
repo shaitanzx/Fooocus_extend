@@ -422,10 +422,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet = target_unet.clone()
         vae = target_vae
         clip = target_clip
-
+        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
         if vae_decoder:
+            print('sssssssssssssssssssssssssssssssssssss')
             vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
+            print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             if fg_image is not None:
                 print('------------------------------')
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
@@ -441,7 +443,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
                 blend_image = unet.model.latent_format.process_in(blend_image)
 
-
+        print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
         layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
 
 
