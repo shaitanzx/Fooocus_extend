@@ -473,7 +473,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet.add_conditioning_modifier(conditioning_modifier)
 
         target_unet = unet
-        target_vae - vae
+        target_vae = vae
         print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
     
 
