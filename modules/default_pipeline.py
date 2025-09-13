@@ -428,6 +428,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             if fg_image is not None:
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+                print(f"----------[DEBUG] fg_image encoded type: {type(fg_image)}")
                 fg_image = vae.first_stage_model.process_in(fg_image)
 
             if bg_image is not None:
