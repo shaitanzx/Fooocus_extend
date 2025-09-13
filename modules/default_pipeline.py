@@ -422,26 +422,56 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet = target_unet.clone()
         vae = target_vae
         clip = target_clip
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-        if vae_decoder:
-            print('sssssssssssssssssssssssssssssssssssss')
-            vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
+        
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
             print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             if fg_image is not None:
-                print('------------------------------')
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                print('++++++++++++++++++++++++++++++++++')
-                fg_image = unet.model.latent_format.process_in(fg_image)
-                print('================================')
+                fg_image = vae.first_stage_model.process_in(fg_image)
 
             if bg_image is not None:
                 bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
-                bg_image = unet.model.latent_format.process_in(bg_image)
+                bg_image = vae.first_stage_model.process_in(bg_image)
 
             if blend_image is not None:
                 blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
-                blend_image = unet.model.latent_format.process_in(blend_image)
+                blend_image = vae.first_stage_model.process_in(blend_image)
+        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        if vae_encoder:
+            print('sssssssssssssssssssssssssssssssssssss')
+            vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(vae_encoder))
+
+
+
+            input_png_raw = fg_image #######################################
+            input_png_bg_grey = images.flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
+            init_images = [input_png_bg_grey]
+
+            ########crop_region = pp['crop_region']
+            crop_region=None
+            image = input_png_raw
+
+            if crop_region is None and p.resize_mode != 3:
+                image = images.resize_image(p.resize_mode, image, width, height, force_RGBA=True)
+
+            if crop_region is not None:
+                image = image.crop(crop_region)
+                image = images.resize_image(2, image, width, height, force_RGBA=True)
+
+            latent_offset = vae_transparent_encoder.encode(image)
+
+            vae = terget_vae.clone()
+
+            def vae_regulation(posterior):
+                z = posterior.mean + posterior.std * latent_offset.to(posterior.mean)
+                return z
+
+            vae.patcher.set_model_vae_regulation(vae_regulation)
+
+
+
+
+
 
         print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
         layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
