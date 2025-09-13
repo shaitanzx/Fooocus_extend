@@ -345,7 +345,13 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
     return final_vae, final_refiner_vae
 
-
+class LayerMethod(Enum):
+    FG_ONLY_ATTN = "(SDXL) Only Generate Transparent Image (Attention Injection)"
+    FG_ONLY_CONV = "(SDXL) Only Generate Transparent Image (Conv Injection)"
+    FG_TO_BLEND = "(SDXL) From Foreground to Blending"
+    FG_BLEND_TO_BG = "(SDXL) From Foreground and Blending to Background"
+    BG_TO_BLEND = "(SDXL) From Background to Blending"
+    BG_BLEND_TO_FG = "(SDXL) From Background and Blending to Foreground"
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
