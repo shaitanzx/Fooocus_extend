@@ -427,8 +427,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
             if fg_image is not None:
+                print('------------------------------')
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+                print('++++++++++++++++++++++++++++++++++')
                 fg_image = unet.model.latent_format.process_in(fg_image)
+                print('================================')
 
             if bg_image is not None:
                 bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
