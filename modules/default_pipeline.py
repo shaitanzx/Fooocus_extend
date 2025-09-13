@@ -26,6 +26,8 @@ from torch.nn.modules.utils import _pair
 from extentions.layerdiffuse import layer as layer_module
 from ldm_patched.modules import model_patcher
 
+from .lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
+
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
