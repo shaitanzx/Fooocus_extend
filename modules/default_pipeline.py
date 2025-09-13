@@ -30,6 +30,7 @@ from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDeco
 from extentions.layerdiffuse.lib_layerdiffusion.enums import ResizeMode
 from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
 from enum import Enum
+import numpy as np
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
