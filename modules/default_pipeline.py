@@ -619,8 +619,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             png, vis = vae_transparent_decoder.decode(sampled_latent['samples'][0], images[0])
             #pp.image = png
             #p.extra_result_images.append(vis)
-            images.append(png)  # добавляем значение переменной png
-            images.append(vis)  # добавляем значение переменной vis
+            #images.append(png)  # добавляем значение переменной png
+            #images.append(vis)  # добавляем значение переменной vis
+            images[0]=png
 
         #if  vae_decoder:
         #    png,vis = layer_module.vae_layer_decode(method,vae_decoder,sampled_latent['samples'],images[0])
