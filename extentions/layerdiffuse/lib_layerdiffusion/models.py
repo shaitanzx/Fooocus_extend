@@ -291,11 +291,11 @@ class TransparentVAEDecoder:
 
         vis = (fg * alpha + cb * (1 - alpha))[0]
         vis = (vis * 255.0).detach().cpu().float().numpy().clip(0, 255).astype(np.uint8)
-        vis = Image.fromarray(vis)
+        #vis = Image.fromarray(vis)
 
         png = torch.cat([fg, alpha], dim=3)[0]
         png = (png * 255.0).detach().cpu().float().numpy().clip(0, 255).astype(np.uint8)
-        png = Image.fromarray(png)
+        #png = Image.fromarray(png)
 
         return png, vis
 
