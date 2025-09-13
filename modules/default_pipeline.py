@@ -616,7 +616,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 print('[LayerDiffuse] VAE zero latent mode.')
                 latent = torch.zeros((lC, images[0].shape[0] // 8, images[0].shape[1] // 8)).to(latent)
 
-            png, vis = vae_transparent_decoder.decode(sampled_latent['samples'], images[0])
+            png, vis = vae_transparent_decoder.decode(sampled_latent['samples'][0], images[0])
             #pp.image = png
             #p.extra_result_images.append(vis)
             images.append(png)  # добавляем значение переменной png
