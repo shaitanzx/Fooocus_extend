@@ -417,7 +417,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         clip = target_clip
 
         if vae_decoder:
-            vae_transparent_decoder = TransparentVAEDecoder(utils.load_torch_file(vae_decoder))
+            vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
             if fg_image is not None:
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
