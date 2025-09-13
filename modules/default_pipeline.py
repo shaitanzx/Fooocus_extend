@@ -27,6 +27,8 @@ from extentions.layerdiffuse import layer as layer_module
 from ldm_patched.modules import model_patcher
 
 from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
+from extentions.layerdiffuse.lib_layerdiffusion.enums import ResizeMode
+from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -394,27 +396,48 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     if len(layer_diff)>1:
         method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt,vae_encoder, vae_decoder, layer_model = layer_diff
+        print(f'[LayerDiffuse] {method}')
+
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
         height = H * 8
         width = W * 8
         batch_size = 1
 
         #method = LayerMethod(method)
-        print(f'[LayerDiffuse] {method}')
+        
 
-        #resize_mode = ResizeMode(resize_mode)
-        #fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
-        #bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
-        #blend_image = crop_and_resize_image(rgba2rgbfp32(blend_image), resize_mode, height, width) if blend_image is not None else None
+        resize_mode = ResizeMode(resize_mode)
+        fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
+        bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
+        blend_image = crop_and_resize_image(rgba2rgbfp32(blend_image), resize_mode, height, width) if blend_image is not None else None
 
         original_unet = target_unet
         unet = target_unet.clone()
         vae = target_vae
         clip = target_clip
+
+        if vae_decoder:
+            vae_transparent_decoder = TransparentVAEDecoder(utils.load_torch_file(vae_decoder))
+        if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
+            if fg_image is not None:
+                fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+                fg_image = unet.model.latent_format.process_in(fg_image)
+
+            if bg_image is not None:
+                bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
+                bg_image = unet.model.latent_format.process_in(bg_image)
+
+            if blend_image is not None:
+                blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
+                blend_image = unet.model.latent_format.process_in(blend_image)
+
+
         layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
 
 
         unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
+
+
         step_index = int((len(minmax_sigmas) - 1) * ending_step)
         sigma_end = minmax_sigmas[step_index].item()
         print(f'[LayerDiffusion] Ending at step {step_index}/{len(minmax_sigmas)-1}, sigma = {sigma_end}')
@@ -443,6 +466,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet.add_conditioning_modifier(conditioning_modifier)
 
         target_unet = unet
+        target_vae - vae
         print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
     
 

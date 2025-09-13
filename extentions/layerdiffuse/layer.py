@@ -64,69 +64,62 @@ def prepare_layer(m):
         #ctrls += [blend_image_ld, resize_mode_ld, output_origin_ld, fg_additional_prompt_ld, bg_additional_prompt_ld, blend_additional_prompt_ld]
     print('---------------',m) 
     method = LayerMethod(m)
-#before_process_init_images
-    if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
-        vae_encoder = load_file_from_url(
-                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_encoder.safetensors',
+    #loras
+    if method == LayerMethod.FG_ONLY_ATTN:
+        model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
                 model_dir=layer_model_root,
-                file_name='vae_transparent_encoder.safetensors'
+                file_name='layer_xl_transparent_attn.safetensors'
         )
-    else:
-        vae_encoder = None
-            
-#postprocess_image_after_composite
+
+    if method == LayerMethod.FG_ONLY_CONV:
+        model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_transparent_conv.safetensors'
+        )
+    if method == LayerMethod.FG_TO_BLEND:
+        model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fg2ble.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_fg2ble.safetensors'
+        )
+    if method == LayerMethod.FG_BLEND_TO_BG:
+        model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fgble2bg.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_fgble2bg.safetensors'
+        )
+    if method == LayerMethod.BG_TO_BLEND:
+        model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bg2ble.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_bg2ble.safetensors'
+        )
+    if method == LayerMethod.BG_BLEND_TO_FG:
+        model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bgble2fg.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_bgble2fg.safetensors'
+        )
+    #decode
     if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
         vae_decoder = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors',
                 model_dir=layer_model_root,
                 file_name='vae_transparent_decoder.safetensors'
-         )
+        )
     else:
-        vae_decoder = None
-
- #process_before_every_sampling
-
-    if method == LayerMethod.FG_ONLY_ATTN:
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
+        vae_decoder=None
+    #encode
+    if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
+        vae_encoder = load_file_from_url(
+            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_encoder.safetensors',
             model_dir=layer_model_root,
-            file_name='layer_xl_transparent_attn.safetensors'
+            file_name='vae_transparent_encoder.safetensors'
         )
-
-    if method == LayerMethod.FG_ONLY_CONV:
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_xl_transparent_conv.safetensors'
-        )
-
-    if method == LayerMethod.BG_TO_BLEND:
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bg2ble.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_xl_bg2ble.safetensors'
-        )
-
-    if method == LayerMethod.FG_TO_BLEND:
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fg2ble.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_xl_fg2ble.safetensors'
-        )
-
-    if method == LayerMethod.BG_BLEND_TO_FG:
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bgble2fg.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_xl_bgble2fg.safetensors'
-        )
-
-    if method == LayerMethod.FG_BLEND_TO_BG:
-        model_path = load_file_from_url(
-            url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fgble2bg.safetensors',
-            model_dir=layer_model_root,
-            file_name='layer_xl_fgble2bg.safetensors'
-        )
+    else:
+        vae_encode=None
     
     return vae_encoder, vae_decoder, model_path
 
@@ -162,17 +155,17 @@ def ui():
 
     with gr.Row():
         with gr.Column(visible=False) as fg_col:
-            gr.Markdown('Foreground fg_co')
+            gr.Markdown('Foreground')
             #fg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            fg_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
+            fg_image = gr.Image(label='Image', source='upload', type='numpy', height=300, show_label=False)
         with gr.Column(visible=False) as bg_col:
-            gr.Markdown('Background bg_col')
+            gr.Markdown('Background')
             #bg_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            bg_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
+            bg_image = gr.Image(label='Image', source='upload', type='numpy', height=300, show_label=False)
         with gr.Column(visible=False) as blend_col:
-            gr.Markdown('Blending blend_col')
+            gr.Markdown('Blending')
             #blend_image = ForgeCanvas(numpy=True, no_scribbles=True, height=300).background
-            blend_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=300, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
+            blend_image = gr.Image(label='Image', source='upload', type='numpy', height=300, show_label=False)
 
     gr.HTML('</br>')  # some strange gradio problems
 
