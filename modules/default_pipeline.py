@@ -29,6 +29,7 @@ from ldm_patched.modules import model_patcher
 from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
 from extentions.layerdiffuse.lib_layerdiffusion.enums import ResizeMode
 from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
+from enum import Enum
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
