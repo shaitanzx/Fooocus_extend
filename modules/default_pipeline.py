@@ -347,6 +347,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
                 return final_refiner_vae, None
 
     return final_vae, final_refiner_vae
+LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 def resize_image(resize_mode, im, width, height, upscaler_name=None, force_RGBA=False):
     """
     Resizes an image with the specified resize_mode, width, and height.
