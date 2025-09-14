@@ -430,11 +430,11 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None, force_RGBA=
 def flatten(img, bgcolor):
     """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
 
-        if img.mode == "RGBA":
-            background = Image.new('RGBA', img.size, bgcolor)
-            background.paste(img, mask=img)
-            img = background
-        return img.convert('RGB')
+    if img.mode == "RGBA":
+        background = Image.new('RGBA', img.size, bgcolor)
+        background.paste(img, mask=img)
+        img = background
+    return img.convert('RGB')
 class LayerMethod(Enum):
     FG_ONLY_ATTN = "(SDXL) Only Generate Transparent Image (Attention Injection)"
     FG_ONLY_CONV = "(SDXL) Only Generate Transparent Image (Conv Injection)"
