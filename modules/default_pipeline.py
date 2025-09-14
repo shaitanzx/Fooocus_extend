@@ -535,7 +535,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
 
-            input_png_raw = fg_image #######################################
+            input_png_raw = Image.fromarray(fg_image) #######################################
             input_png_bg_grey = flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
 
 
