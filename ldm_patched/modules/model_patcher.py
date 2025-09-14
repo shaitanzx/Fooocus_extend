@@ -384,3 +384,5 @@ class ModelPatcher:
     def add_conditioning_modifier(self, modifier, ensure_uniqueness=False):
         self.append_model_option('conditioning_modifiers', modifier, ensure_uniqueness)
         return
+    def set_model_vae_regulation(self, vae_regulation):
+        self.model_options["model_vae_regulation"] = vae_regulation
