@@ -515,6 +515,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         vae = target_vae
         clip = target_clip
         print('qqqqqqqqqqqqqqqqqqqqqq',LayerMethod.FG_TO_BLEND)
+        input_image=fg_image
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
             print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             if fg_image is not None:
@@ -535,7 +536,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
 
-            input_png_raw = Image.fromarray(fg_image) #######################################
+            input_png_raw = Image.fromarray(input_image) #######################################
             input_png_bg_grey = flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
 
 
