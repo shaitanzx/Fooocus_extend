@@ -536,7 +536,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
             input_png_raw = fg_image #######################################
-            input_png_bg_grey = images.flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
+            input_png_bg_grey = flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
 
 
             
@@ -549,11 +549,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             image = input_png_raw
 
             if crop_region is None and resize_mode != 3:
-                image = images.resize_image(resize_mode, image, width, height, force_RGBA=True)
+                image = resize_image(resize_mode, image, width, height, force_RGBA=True)
 
             if crop_region is not None:
                 image = image.crop(crop_region)
-                image = images.resize_image(2, image, width, height, force_RGBA=True)
+                image = resize_image(2, image, width, height, force_RGBA=True)
 
             latent_offset = vae_transparent_encoder.encode(image)
 
