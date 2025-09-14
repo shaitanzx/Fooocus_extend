@@ -504,7 +504,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         method = LayerMethod(method)
         
-
+        input_image=fg_image
         resize_mode = ResizeMode(resize_mode)
         fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
         bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
@@ -515,7 +515,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         vae = target_vae
         clip = target_clip
         print('qqqqqqqqqqqqqqqqqqqqqq',LayerMethod.FG_TO_BLEND)
-        input_image=fg_image
+        
         print(f"[DEBUG] input_image dtype: {input_image.dtype}")
         print(f"[DEBUG] input_image shape: {input_image.shape}")
         print(f"[DEBUG] input_image min: {input_image.min()}, max: {input_image.max()}")
