@@ -428,7 +428,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             if fg_image is not None:
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                print(f"-----------------------------[DEBUG] scaling_factor: {vae.first_stage_model.config.scaling_factor}")
                 fg_image = fg_image * 0.13025
 
             if bg_image is not None:
