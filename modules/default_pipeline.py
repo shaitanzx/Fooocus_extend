@@ -562,7 +562,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
             latent_offset = vae_transparent_encoder.encode(image)
 
-            vae = target_vae.clone()
+            #vae = target_vae.clone()
 
             def vae_regulation(posterior):
                 z = posterior.mean + posterior.std * latent_offset.to(posterior.mean)
