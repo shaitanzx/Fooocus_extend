@@ -516,10 +516,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         vae = target_vae
         clip = target_clip
         print('qqqqqqqqqqqqqqqqqqqqqq',LayerMethod.FG_TO_BLEND)
-        
-        print(f"[DEBUG] input_image dtype: {input_image.dtype}")
-        print(f"[DEBUG] input_image shape: {input_image.shape}")
-        print(f"[DEBUG] input_image min: {input_image.min()}, max: {input_image.max()}")
+
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
             print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             if fg_image is not None:
