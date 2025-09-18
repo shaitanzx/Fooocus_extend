@@ -23,15 +23,15 @@ from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 
 
-from extentions.layerdiffuse import layer as layer_module
-from ldm_patched.modules import model_patcher
 
-from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
+from enum import Enum
 from extentions.layerdiffuse.lib_layerdiffusion.enums import ResizeMode
 from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
-from enum import Enum
 import numpy as np
-from PIL import Image
+from modules.model_loader import load_file_from_url
+from extentions.layerdiffuse import layer as layer_module
+from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
+
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -347,95 +347,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
                 return final_refiner_vae, None
 
     return final_vae, final_refiner_vae
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
-def resize_image(resize_mode, im, width, height, upscaler_name=None, force_RGBA=False):
-    """
-    Resizes an image with the specified resize_mode, width, and height.
 
-    Args:
-        resize_mode: The mode to use when resizing the image.
-            0: Resize the image to the specified width and height.
-            1: Resize the image to fill the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, cropping the excess.
-            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, filling empty with data from image.
-        im: The image to resize.
-        width: The width to resize the image to.
-        height: The height to resize the image to.
-        upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
-    """
-
-    if not force_RGBA and im.mode == 'RGBA':
-        im = im.convert('RGB')
-
-    #upscaler_name = upscaler_name or opts.upscaler_for_img2img
-    upscaler_name = None
-
-    def resize(im, w, h):
-        if upscaler_name is None or upscaler_name == "None" or im.mode == 'L' or force_RGBA:
-            return im.resize((w, h), resample=LANCZOS)
-
-        scale = max(w / im.width, h / im.height)
-
-        if scale > 1.0:
-            upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
-            if len(upscalers) == 0:
-                upscaler = shared.sd_upscalers[0]
-                print(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
-            else:
-                upscaler = upscalers[0]
-
-            im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
-
-        if im.width != w or im.height != h:
-            im = im.resize((w, h), resample=LANCZOS)
-
-        return im
-
-    if resize_mode == 0:
-        res = resize(im, width, height)
-
-    elif resize_mode == 1:
-        ratio = width / height
-        src_ratio = im.width / im.height
-
-        src_w = width if ratio > src_ratio else im.width * height // im.height
-        src_h = height if ratio <= src_ratio else im.height * width // im.width
-
-        resized = resize(im, src_w, src_h)
-        res = Image.new("RGB" if not force_RGBA else "RGBA", (width, height))
-        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
-    else:
-        ratio = width / height
-        src_ratio = im.width / im.height
-
-        src_w = width if ratio < src_ratio else im.width * height // im.height
-        src_h = height if ratio >= src_ratio else im.height * width // im.width
-
-        resized = resize(im, src_w, src_h)
-        res = Image.new("RGB" if not force_RGBA else "RGBA", (width, height))
-        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
-        if ratio < src_ratio:
-            fill_height = height // 2 - src_h // 2
-            if fill_height > 0:
-                res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-                res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
-        elif ratio > src_ratio:
-            fill_width = width // 2 - src_w // 2
-            if fill_width > 0:
-                res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-                res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
-
-    return res
-
-def flatten(img, bgcolor):
-    """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
-
-    if img.mode == "RGBA":
-        background = Image.new('RGBA', img.size, bgcolor)
-        background.paste(img, mask=img)
-        img = background
-    return img.convert('RGB')
 class LayerMethod(Enum):
     FG_ONLY_ATTN = "(SDXL) Only Generate Transparent Image (Attention Injection)"
     FG_ONLY_CONV = "(SDXL) Only Generate Transparent Image (Conv Injection)"
@@ -443,15 +355,14 @@ class LayerMethod(Enum):
     FG_BLEND_TO_BG = "(SDXL) From Foreground and Blending to Background"
     BG_TO_BLEND = "(SDXL) From Background to Blending"
     BG_BLEND_TO_FG = "(SDXL) From Background and Blending to Foreground"
+layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
+os.makedirs(layer_model_root, exist_ok=True)
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
         disable_preview=False,tile_x=False,tile_y=False,layer_diff=['False']):
 
-    
-    
-    
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
 
@@ -494,9 +405,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
 
+
     if len(layer_diff)>1:
         method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt,vae_encoder, vae_decoder, layer_model = layer_diff
-        print(f'[LayerDiffuse] {method}')
+
 
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
         height = H * 8
@@ -504,8 +416,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         batch_size = 1
 
         method = LayerMethod(method)
-        
-        input_image=fg_image
+        print(f'[LayerDiffuse] {method}')
+
         resize_mode = ResizeMode(resize_mode)
         fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
         bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
@@ -515,13 +427,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet = target_unet.clone()
         vae = target_vae
         clip = target_clip
-        print('qqqqqqqqqqqqqqqqqqqqqq',LayerMethod.FG_TO_BLEND)
 
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
-            print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
             if fg_image is not None:
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                fg_image = fg_image * 0.13025
+                fg_image = vae.first_stage_model.process_in(fg_image)
 
             if bg_image is not None:
                 bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
@@ -530,59 +440,75 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             if blend_image is not None:
                 blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
                 blend_image = vae.first_stage_model.process_in(blend_image)
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-        if vae_encoder:
-            print('sssssssssssssssssssssssssssssssssssss')
-            vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(vae_encoder))
 
+        if method == LayerMethod.FG_ONLY_ATTN:
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_transparent_attn.safetensors'
+            )
+            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+            #unet.load_frozen_patcher('layer_xl_transparent_attn.safetensors', layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
 
-        if method in [LayerMethod.FG_TO_BLEND]
-            input_png_raw = Image.fromarray(input_image) #######################################
-            input_png_bg_grey = flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
+        if method == LayerMethod.FG_ONLY_CONV:
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_transparent_conv.safetensors'
+            )
+            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+            #unet.load_frozen_patcher('layer_xl_transparent_conv.safetensors', layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
 
+        if method == LayerMethod.BG_TO_BLEND:
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bg2ble.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_bg2ble.safetensors'
+            )
+            unet.extra_concat_condition = bg_image
+            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+            #unet.load_frozen_patcher('layer_xl_bg2ble.safetensors', layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
 
-            
+        if method == LayerMethod.FG_TO_BLEND:
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fg2ble.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_fg2ble.safetensors'
+            )
+            unet.extra_concat_condition = fg_image
+            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+            #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
 
-    
-            init_images = [input_png_bg_grey]
+        if method == LayerMethod.BG_BLEND_TO_FG:
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bgble2fg.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_bgble2fg.safetensors'
+            )
+            unet.extra_concat_condition = torch.cat([bg_image, blend_image], dim=1)
+            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+            #unet.load_frozen_patcher('layer_xl_bgble2fg.safetensors', layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
 
-            ########crop_region = pp['crop_region']
-            crop_region=None
-            image = input_png_raw
-
-            if crop_region is None and resize_mode != 3:
-                image = resize_image(resize_mode, image, width, height, force_RGBA=True)
-
-            if crop_region is not None:
-                image = image.crop(crop_region)
-                image = resize_image(2, image, width, height, force_RGBA=True)
-
-            latent_offset = vae_transparent_encoder.encode(image)
-
-            #vae = target_vae.clone()
-
-            def vae_regulation(posterior):
-                z = posterior.mean + posterior.std * latent_offset.to(posterior.mean)
-                return z
-
-            vae.patcher.set_model_vae_regulation(vae_regulation)
-
-
-
-
-
-
-        print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-        layer_lora_model = layer_module.load_layer_model_state_dict(layer_model)
-
-
-        unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
-
-
+        if method == LayerMethod.FG_BLEND_TO_BG:
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fgble2bg.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_fgble2bg.safetensors'
+            )
+            unet.extra_concat_condition = torch.cat([fg_image, blend_image], dim=1)
+            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+            #unet.load_frozen_patcher('layer_xl_fgble2bg.safetensors', layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(layer_model), layer_lora_model, weight)
+        #sigma_end = unet.model.predictor.percent_to_sigma(ending_step)
         step_index = int((len(minmax_sigmas) - 1) * ending_step)
         sigma_end = minmax_sigmas[step_index].item()
         print(f'[LayerDiffusion] Ending at step {step_index}/{len(minmax_sigmas)-1}, sigma = {sigma_end}')
-
+        
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
             for i in range(len(cond)):
@@ -594,8 +520,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
             if timestep[0].item() < sigma_end:
-                if not is_model_loaded(original_unet):
-                    sampling_prepare(original_unet, x)
+                #if not layer_module.is_model_loaded(original_unet):
+                #    sampling_prepare(original_unet, x)
                 target_model = original_unet.model
                 cond = remove_concat(cond)
                 uncond = remove_concat(uncond)
@@ -603,13 +529,16 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 target_model = model
 
             return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
-
+        
         unet.add_conditioning_modifier(conditioning_modifier)
 
         target_unet = unet
-        target_vae = vae
-        print(f'[LayerDiffusion] Successfully applied with dynamic switch at sigma={sigma_end}')
-    
+
+
+
+
+
+
 
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
@@ -772,24 +701,41 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
+    
+
+
     if len(layer_diff) > 1:
-        if vae_decoder: 
-            
-            vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
-            lB, lC, lH, lW = sampled_latent['samples'].shape
-            if lH != images[0].shape[0] // 8 or lW != images[0].shape[1] // 8:
-                print('[LayerDiffuse] VAE zero latent mode.')
-                latent = torch.zeros((lC, images[0].shape[0] // 8, images[0].shape[1] // 8)).to(latent)
+        mod_number = 1
+        method = LayerMethod(method)
+        need_process = False
 
-            png, _ = vae_transparent_decoder.decode(sampled_latent['samples'][0], images[0])
-            #pp.image = png
-            #p.extra_result_images.append(vis)
-            images.append(png)  # добавляем значение переменной png
-            #images.append(vis)  # добавляем значение переменной vis
-            #images[0]=png
+        if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
+                need_process = True
+            #if vae_transparent_decoder is None:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors',
+                    model_dir=layer_model_root,
+                    file_name='vae_transparent_decoder.safetensors'
+                )
+                vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
+                #vae_transparent_decoder = TransparentVAEDecoder(utils.load_torch_file(model_path))
 
-        #if  vae_decoder:
-        #    png,vis = layer_module.vae_layer_decode(method,vae_decoder,sampled_latent['samples'],images[0])
 
-        target_unet = original_unet
+        if need_process:
+
+            #i = pp.index
+
+            #if i % mod_number == 0:
+            latent = sampled_latent['samples'][0]
+            pixel = images[0]
+
+            lC, lH, lW = latent.shape
+            if lH != pixel.height // 8 or lW != pixel.width // 8:
+                    print('[LayerDiffuse] VAE zero latent mode.')
+                    latent = torch.zeros((lC, pixel.height // 8, pixel.width // 8)).to(latent)
+
+            png, vis = vae_transparent_decoder.decode(latent, pixel)
+            images.append(png)
+            images.append(vis)
+            target_unet = original_unet
     return images
