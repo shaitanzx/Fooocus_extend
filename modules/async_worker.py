@@ -314,7 +314,7 @@ def worker():
     import random
     import copy
     import cv2
-    import modules.default_pipeline as pipeline
+    import modules.default_pipeline_2 as pipeline
     import modules.core as core
     import modules.flags as flags
     import modules.patch
@@ -1484,8 +1484,8 @@ def worker():
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
-        if async_task.layer_enable:
-            async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
+        #if async_task.layer_enable:
+        #    async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
 
 
         print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
