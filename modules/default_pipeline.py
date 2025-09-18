@@ -717,7 +717,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     model_dir=layer_model_root,
                     file_name='vae_transparent_decoder.safetensors'
                 )
-                vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(vae_decoder))
+                vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(model_path))
                 #vae_transparent_decoder = TransparentVAEDecoder(utils.load_torch_file(model_path))
 
 
