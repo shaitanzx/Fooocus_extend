@@ -536,7 +536,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(vae_encoder))
 
 
-
+        if method in [LayerMethod.FG_TO_BLEND]
             input_png_raw = Image.fromarray(input_image) #######################################
             input_png_bg_grey = flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
 
