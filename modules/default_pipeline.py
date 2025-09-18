@@ -449,7 +449,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             )
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_transparent_attn.safetensors', layer_lora_model, weight)
-            unet.load_frozen_patcher(os.path.basename(model_dir), layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
         if method == LayerMethod.FG_ONLY_CONV:
             model_path = load_file_from_url(
@@ -459,7 +459,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             )
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_transparent_conv.safetensors', layer_lora_model, weight)
-            unet.load_frozen_patcher(os.path.basename(model_dir), layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
         if method == LayerMethod.BG_TO_BLEND:
             model_path = load_file_from_url(
@@ -470,7 +470,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.extra_concat_condition = bg_image
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_bg2ble.safetensors', layer_lora_model, weight)
-            unet.load_frozen_patcher(os.path.basename(model_dir), layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
         if method == LayerMethod.FG_TO_BLEND:
             model_path = load_file_from_url(
@@ -481,7 +481,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.extra_concat_condition = fg_image
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
-            unet.load_frozen_patcher(os.path.basename(model_dir), layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
         if method == LayerMethod.BG_BLEND_TO_FG:
             model_path = load_file_from_url(
@@ -492,7 +492,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.extra_concat_condition = torch.cat([bg_image, blend_image], dim=1)
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_bgble2fg.safetensors', layer_lora_model, weight)
-            unet.load_frozen_patcher(os.path.basename(model_dir), layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
         if method == LayerMethod.FG_BLEND_TO_BG:
             model_path = load_file_from_url(
@@ -503,7 +503,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.extra_concat_condition = torch.cat([fg_image, blend_image], dim=1)
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_fgble2bg.safetensors', layer_lora_model, weight)
-            unet.load_frozen_patcher(os.path.basename(model_dir), layer_lora_model, weight)
+            unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
         #sigma_end = unet.model.predictor.percent_to_sigma(ending_step)
         step_index = int((len(minmax_sigmas) - 1) * ending_step)
         sigma_end = minmax_sigmas[step_index].item()
