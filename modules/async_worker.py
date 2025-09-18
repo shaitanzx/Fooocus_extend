@@ -314,7 +314,7 @@ def worker():
     import random
     import copy
     import cv2
-    import modules.default_pipeline_2 as pipeline
+    import modules.default_pipeline as pipeline
     import modules.core as core
     import modules.flags as flags
     import modules.patch
