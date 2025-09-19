@@ -367,14 +367,19 @@ class ModelPatcher:
     def load_frozen_patcher(self, filename, state_dict, strength):
         """
         Применяет полные веса из state_dict напрямую к модели.
-        Игнорирует формат "::weight::0" — работает с обычными ключами.
+        Работает с обычными ключами (без ::diff::0).
         """
+        print(f"[DEBUG] State dict keys sample: {list(state_dict.keys())[:3]}")
         print(f"[LayerDiffuse] Applying frozen patch: {filename} with strength {strength}")
 
+        applied_count = 0
         for key, new_weight in state_dict.items():
             try:
                 # Разбиваем ключ по точкам: например, 'diffusion_model.input_blocks.0.0.weight'
                 keys = key.split('.')
+                if len(keys) < 2:
+                    continue
+
                 target = self.model
 
                 # Проходим по всем компонентам ключа, кроме последней (weight/bias)
@@ -382,6 +387,8 @@ class ModelPatcher:
                     if k.isdigit():
                         target = target[int(k)]
                     else:
+                        if not hasattr(target, k):
+                            raise AttributeError(f"Attribute {k} not found")
                         target = getattr(target, k)
 
                 # Последний компонент — 'weight' или 'bias'
@@ -402,13 +409,19 @@ class ModelPatcher:
 
                 # Заменяем вес
                 setattr(target, param_name, torch.nn.Parameter(new_weight.to(original_param.device, original_param.dtype)))
-                print(f"[DEBUG] Applied patch to {key}, shape {new_weight.shape}")
+                applied_count += 1
 
             except Exception as e:
                 print(f"[ERROR] Failed to apply patch to {key}: {e}")
                 continue
 
-        print(f"[LayerDiffuse] Frozen patch applied successfully: {filename}")
+        print(f"[LayerDiffuse] Frozen patch applied successfully: {filename}, {applied_count} weights updated")
+
+
+
+
+
+
     def add_conditioning_modifier(self, modifier, ensure_uniqueness=False):
         self.append_model_option('conditioning_modifiers', modifier, ensure_uniqueness)
         return
