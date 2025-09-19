@@ -367,17 +367,23 @@ class ModelPatcher:
     def load_frozen_patcher(self, filename, state_dict, strength):
         """
         Применяет полные веса из state_dict напрямую к модели.
-        Работает с обычными ключами (без ::diff::0).
+        Поддерживает ключи в формате 'key::diff::0' (Forge/LayerDiffusion).
         """
-        print(f"[DEBUG] State dict keys sample: {list(state_dict.keys())[:3]}")
         print(f"[LayerDiffuse] Applying frozen patch: {filename} with strength {strength}")
 
         applied_count = 0
-        for key, new_weight in state_dict.items():
+        for full_key, new_weight in state_dict.items():
             try:
+                # Удаляем суффикс '::diff::0' или '::weight::0', если есть
+                if '::' in full_key:
+                    key = full_key.split('::')[0]  # Берём только первую часть
+                else:
+                    key = full_key
+
                 # Разбиваем ключ по точкам: например, 'diffusion_model.input_blocks.0.0.weight'
                 keys = key.split('.')
                 if len(keys) < 2:
+                    print(f"[WARNING] Invalid key format: {full_key}, skipping.")
                     continue
 
                 target = self.model
@@ -388,19 +394,19 @@ class ModelPatcher:
                         target = target[int(k)]
                     else:
                         if not hasattr(target, k):
-                            raise AttributeError(f"Attribute {k} not found")
+                            raise AttributeError(f"Attribute '{k}' not found in {target}")
                         target = getattr(target, k)
 
                 # Последний компонент — 'weight' или 'bias'
                 param_name = keys[-1]
                 if not hasattr(target, param_name):
-                    print(f"[WARNING] Layer {key} not found in model, skipping.")
+                    print(f"[WARNING] Layer '{key}' not found in model, skipping.")
                     continue
 
                 original_param = getattr(target, param_name)
 
                 if new_weight.shape != original_param.shape:
-                    print(f"[ERROR] Shape mismatch for {key}: {new_weight.shape} vs {original_param.shape}")
+                    print(f"[ERROR] Shape mismatch for '{key}': {new_weight.shape} vs {original_param.shape}")
                     continue
 
                 # Применяем strength (если нужно)
@@ -410,12 +416,20 @@ class ModelPatcher:
                 # Заменяем вес
                 setattr(target, param_name, torch.nn.Parameter(new_weight.to(original_param.device, original_param.dtype)))
                 applied_count += 1
+                print(f"[DEBUG] Applied patch to '{key}', shape {new_weight.shape}")
 
             except Exception as e:
-                print(f"[ERROR] Failed to apply patch to {key}: {e}")
+                print(f"[ERROR] Failed to apply patch to '{full_key}': {e}")
                 continue
 
         print(f"[LayerDiffuse] Frozen patch applied successfully: {filename}, {applied_count} weights updated")
+
+        # Проверка первого слоя
+        try:
+            first_layer = self.model.diffusion_model.input_blocks[0][0]
+            print(f"[POST-PATCH] First layer weight shape: {first_layer.weight.shape}")
+        except Exception as e:
+            print(f"[ERROR] Could not check first layer: {e}")
 
 
 
