@@ -568,7 +568,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
             if fg_image is not None:
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                fg_image = vae.first_stage_model.process_in(fg_image)
+                fg_image = fg_image * 0.13025
 
             if bg_image is not None:
                 bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
