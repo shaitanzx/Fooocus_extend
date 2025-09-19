@@ -31,7 +31,6 @@ import numpy as np
 from modules.model_loader import load_file_from_url
 from extentions.layerdiffuse import layer as layer_module
 from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
-from PIL import Image
 
 
 model_base = core.StableDiffusionModel()
@@ -358,94 +357,6 @@ class LayerMethod(Enum):
     BG_BLEND_TO_FG = "(SDXL) From Background and Blending to Foreground"
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
-def flatten(img, bgcolor):
-    """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
-
-    if img.mode == "RGBA":
-        background = Image.new('RGBA', img.size, bgcolor)
-        background.paste(img, mask=img)
-        img = background
-    return img.convert('RGB')
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
-def resize_image(resize_mode, im, width, height, upscaler_name=None, force_RGBA=False):
-    """
-    Resizes an image with the specified resize_mode, width, and height.
-
-    Args:
-        resize_mode: The mode to use when resizing the image.
-            0: Resize the image to the specified width and height.
-            1: Resize the image to fill the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, cropping the excess.
-            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, filling empty with data from image.
-        im: The image to resize.
-        width: The width to resize the image to.
-        height: The height to resize the image to.
-        upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
-    """
-
-    if not force_RGBA and im.mode == 'RGBA':
-        im = im.convert('RGB')
-
-    #upscaler_name = upscaler_name or opts.upscaler_for_img2img
-    upscaler_name = None
-
-    def resize(im, w, h):
-        if upscaler_name is None or upscaler_name == "None" or im.mode == 'L' or force_RGBA:
-            return im.resize((w, h), resample=LANCZOS)
-
-        scale = max(w / im.width, h / im.height)
-
-        if scale > 1.0:
-            upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
-            if len(upscalers) == 0:
-                upscaler = shared.sd_upscalers[0]
-                print(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
-            else:
-                upscaler = upscalers[0]
-
-            im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
-
-        if im.width != w or im.height != h:
-            im = im.resize((w, h), resample=LANCZOS)
-
-        return im
-
-    if resize_mode == 0:
-        res = resize(im, width, height)
-
-    elif resize_mode == 1:
-        ratio = width / height
-        src_ratio = im.width / im.height
-
-        src_w = width if ratio > src_ratio else im.width * height // im.height
-        src_h = height if ratio <= src_ratio else im.height * width // im.width
-
-        resized = resize(im, src_w, src_h)
-        res = Image.new("RGB" if not force_RGBA else "RGBA", (width, height))
-        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
-    else:
-        ratio = width / height
-        src_ratio = im.width / im.height
-
-        src_w = width if ratio < src_ratio else im.width * height // im.height
-        src_h = height if ratio >= src_ratio else im.height * width // im.width
-
-        resized = resize(im, src_w, src_h)
-        res = Image.new("RGB" if not force_RGBA else "RGBA", (width, height))
-        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
-        if ratio < src_ratio:
-            fill_height = height // 2 - src_h // 2
-            if fill_height > 0:
-                res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-                res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
-        elif ratio > src_ratio:
-            fill_width = width // 2 - src_w // 2
-            if fill_width > 0:
-                res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-                res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
-
-    return res
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
@@ -499,54 +410,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = layer_diff
 
 
-        if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND,LayerMethod.BG_BLEND_TO_FG]:
-            method = LayerMethod(method)
-            need_process = False
-
-            if method in [LayerMethod.FG_ONLY_ATTN, LayerMethod.FG_ONLY_CONV, LayerMethod.BG_BLEND_TO_FG]:
-                need_process = True
-                if vae_transparent_encoder is None:
-                    model_path = load_file_from_url(
-                        url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_encoder.safetensors',
-                        model_dir=layer_model_root,
-                        file_name='vae_transparent_encoder.safetensors'
-                    )
-                    vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(model_path))
-
-            input_png_raw = fg_image
-            input_png_bg_grey = flatten(input_png_raw, (127, 127, 127)).convert('RGBA')
-            init_images = [input_png_bg_grey]
-
-            #crop_region = pp['crop_region']
-            crop_region = None
-            image = input_png_raw
-
-            if crop_region is None and resize_mode != 3:
-                image = images.resize_image(resize_mode, image, width, height, force_RGBA=True)
-
-            #if crop_region is not None:
-            #    image = image.crop(crop_region)
-            #    image = images.resize_image(2, image, p.width, p.height, force_RGBA=True)
-
-            latent_offset = vae_transparent_encoder.encode(image)
-
-            vae = p.sd_model.forge_objects.vae.clone()
-
-            def vae_regulation(posterior):
-                z = posterior.mean + posterior.std * latent_offset.to(posterior.mean)
-            return z
-
-            vae.patcher.set_model_vae_regulation(vae_regulation)
-
-            p.sd_model.forge_objects.vae = vae
-
-    
-
-
-
-
-
-
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
         height = H * 8
         width = W * 8
@@ -565,7 +428,18 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         vae = target_vae
         clip = target_clip
 
+        if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
+            if fg_image is not None:
+                fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+                fg_image = vae.first_stage_model.process_in(fg_image)
 
+            if bg_image is not None:
+                bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
+                bg_image = vae.first_stage_model.process_in(bg_image)
+
+            if blend_image is not None:
+                blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
+                blend_image = vae.first_stage_model.process_in(blend_image)
 
         if method == LayerMethod.FG_ONLY_ATTN:
             model_path = load_file_from_url(
@@ -608,8 +482,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
-            #first_layer = unet.model.diffusion_model.input_blocks[0][0]
-            #print(f"[DEBUG] First layer weight shape after patch: {first_layer.weight.shape}")
 
         if method == LayerMethod.BG_BLEND_TO_FG:
             model_path = load_file_from_url(
@@ -632,29 +504,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_fgble2bg.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
-
-
-
-        if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
-            if fg_image is not None:
-
-                fg_latent = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                fg_latent = fg_latent * 0.13025
-
-                noise = initial_latent['samples']  # [B, 4, H, W]
-                fg_latent = fg_latent.expand(noise.shape[0], -1, -1, -1)  # [B, 4, H, W]
-                initial_latent['samples'] = torch.cat([noise, fg_latent], dim=1)  # [B, 8, H, W]
-                print(f"[DEBUG] Modified initial_latent shape: {initial_latent['samples'].shape}")
-
-            if bg_image is not None:
-                bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
-                bg_image = vae.first_stage_model.process_in(bg_image)
-
-            if blend_image is not None:
-                blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
-                blend_image = vae.first_stage_model.process_in(blend_image)
-
-
         #sigma_end = unet.model.predictor.percent_to_sigma(ending_step)
         step_index = int((len(minmax_sigmas) - 1) * ending_step)
         sigma_end = minmax_sigmas[step_index].item()

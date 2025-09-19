@@ -365,94 +365,22 @@ class ModelPatcher:
         self.model_options[k].append(v)
         return    
     def load_frozen_patcher(self, filename, state_dict, strength):
-        """
-        Применяет полные веса из state_dict напрямую к модели.
-        Поддерживает ключи в формате 'key::diff::0' (Forge/LayerDiffusion).
-        Автоматически расширяет входные каналы, если нужно.
-        """
-        print(f"[LayerDiffuse] Applying frozen patch: {filename} with strength {strength}")
+        patch_dict = {}
+        for k, w in state_dict.items():
+            model_key, patch_type, weight_index = k.split('::')
+            if model_key not in patch_dict:
+                patch_dict[model_key] = {}
+            if patch_type not in patch_dict[model_key]:
+                patch_dict[model_key][patch_type] = [None] * 16
+            patch_dict[model_key][patch_type][int(weight_index)] = w
 
-        applied_count = 0
-        for full_key, new_weight in state_dict.items():
-            try:
-                # Удаляем суффикс '::diff::0' или '::weight::0', если есть
-                if '::' in full_key:
-                    key = full_key.split('::')[0]
-                else:
-                    key = full_key
+        patch_flat = {}
+        for model_key, v in patch_dict.items():
+            for patch_type, weight_list in v.items():
+                patch_flat[model_key] = (patch_type, weight_list)
 
-                keys = key.split('.')
-                if len(keys) < 2:
-                    print(f"[WARNING] Invalid key format: {full_key}, skipping.")
-                    continue
-
-                target = self.model
-                for k in keys[:-1]:
-                    if k.isdigit():
-                        target = target[int(k)]
-                    else:
-                        if not hasattr(target, k):
-                            raise AttributeError(f"Attribute '{k}' not found in {target}")
-                        target = getattr(target, k)
-
-                param_name = keys[-1]
-                if not hasattr(target, param_name):
-                    print(f"[WARNING] Layer '{key}' not found in model, skipping.")
-                    continue
-
-                original_param = getattr(target, param_name)
-
-                # Если форма не совпадает — пытаемся расширить по входным каналам (dim=1)
-                if new_weight.shape != original_param.shape:
-                    if len(new_weight.shape) == 4 and len(original_param.shape) == 4 and new_weight.shape[1] > original_param.shape[1]:
-                        # Расширяем вес: копируем оригинальные каналы, остальное — нули
-                        extended_weight = torch.zeros_like(new_weight)
-                        extended_weight[:, :original_param.shape[1], :, :] = original_param
-                        # Остальные каналы можно инициализировать нулями или скопировать оригинальные
-                        # Например, копируем оригинальные веса ещё раз:
-                        remaining_channels = new_weight.shape[1] - original_param.shape[1]
-                        for i in range(remaining_channels):
-                            extended_weight[:, original_param.shape[1] + i, :, :] = original_param[:, i % original_param.shape[1], :, :]
-
-                        # Применяем strength
-                        if strength != 1.0:
-                            extended_weight = original_param.expand_as(extended_weight) * (1 - strength) + extended_weight * strength
-
-                        # Заменяем вес
-                        setattr(target, param_name, torch.nn.Parameter(extended_weight.to(original_param.device, original_param.dtype)))
-                        applied_count += 1
-                        print(f"[DEBUG] Extended and applied patch to '{key}', shape {extended_weight.shape}")
-                        continue
-                    else:
-                        print(f"[ERROR] Shape mismatch for '{key}': {new_weight.shape} vs {original_param.shape}, cannot extend.")
-                        continue
-
-                # Если формы совпадают — применяем как обычно
-                if strength != 1.0:
-                    new_weight = original_param * (1 - strength) + new_weight * strength
-
-                setattr(target, param_name, torch.nn.Parameter(new_weight.to(original_param.device, original_param.dtype)))
-                applied_count += 1
-                print(f"[DEBUG] Applied patch to '{key}', shape {new_weight.shape}")
-
-            except Exception as e:
-                print(f"[ERROR] Failed to apply patch to '{full_key}': {e}")
-                continue
-
-        print(f"[LayerDiffuse] Frozen patch applied successfully: {filename}, {applied_count} weights updated")
-
-        # Проверка первого слоя
-        try:
-            first_layer = self.model.diffusion_model.input_blocks[0][0]
-            print(f"[POST-PATCH] First layer weight shape: {first_layer.weight.shape}")
-        except Exception as e:
-            print(f"[ERROR] Could not check first layer: {e}")
-
-
-
-
-
-
+        self.add_patches(patches=patch_flat, strength_patch=float(strength), strength_model=1.0)
+        return
     def add_conditioning_modifier(self, modifier, ensure_uniqueness=False):
         self.append_model_option('conditioning_modifiers', modifier, ensure_uniqueness)
         return
