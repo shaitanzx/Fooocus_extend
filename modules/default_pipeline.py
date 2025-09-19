@@ -567,8 +567,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
             if fg_image is not None:
-                fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                fg_image = fg_image * 0.13025
+                fg_latent = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+                fg_latent = fg_latent * 0.13025
 
                 noise = initial_latent['samples']  # [B, 4, H, W]
                 fg_latent = fg_latent.expand(noise.shape[0], -1, -1, -1)  # [B, 4, H, W]
