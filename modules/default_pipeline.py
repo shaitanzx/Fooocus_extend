@@ -532,14 +532,14 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
             vae = p.sd_model.forge_objects.vae.clone()
 
-        def vae_regulation(posterior):
-            z = posterior.mean + posterior.std * latent_offset.to(posterior.mean)
+            def vae_regulation(posterior):
+                z = posterior.mean + posterior.std * latent_offset.to(posterior.mean)
             return z
 
-        vae.patcher.set_model_vae_regulation(vae_regulation)
+            vae.patcher.set_model_vae_regulation(vae_regulation)
 
-        p.sd_model.forge_objects.vae = vae
-        return
+            p.sd_model.forge_objects.vae = vae
+
     
 
 
