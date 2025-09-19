@@ -565,24 +565,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         vae = target_vae
         clip = target_clip
 
-        if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
-            if fg_image is not None:
 
-                fg_latent = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                fg_latent = fg_latent * 0.13025
-
-                noise = initial_latent['samples']  # [B, 4, H, W]
-                fg_latent = fg_latent.expand(noise.shape[0], -1, -1, -1)  # [B, 4, H, W]
-                initial_latent['samples'] = torch.cat([noise, fg_latent], dim=1)  # [B, 8, H, W]
-                print(f"[DEBUG] Modified initial_latent shape: {initial_latent['samples'].shape}")
-
-            if bg_image is not None:
-                bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
-                bg_image = vae.first_stage_model.process_in(bg_image)
-
-            if blend_image is not None:
-                blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
-                blend_image = vae.first_stage_model.process_in(blend_image)
 
         if method == LayerMethod.FG_ONLY_ATTN:
             model_path = load_file_from_url(
@@ -652,7 +635,24 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
 
+        if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
+            if fg_image is not None:
 
+                fg_latent = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+                fg_latent = fg_latent * 0.13025
+
+                noise = initial_latent['samples']  # [B, 4, H, W]
+                fg_latent = fg_latent.expand(noise.shape[0], -1, -1, -1)  # [B, 4, H, W]
+                initial_latent['samples'] = torch.cat([noise, fg_latent], dim=1)  # [B, 8, H, W]
+                print(f"[DEBUG] Modified initial_latent shape: {initial_latent['samples'].shape}")
+
+            if bg_image is not None:
+                bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
+                bg_image = vae.first_stage_model.process_in(bg_image)
+
+            if blend_image is not None:
+                blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
+                blend_image = vae.first_stage_model.process_in(blend_image)
 
 
         #sigma_end = unet.model.predictor.percent_to_sigma(ending_step)

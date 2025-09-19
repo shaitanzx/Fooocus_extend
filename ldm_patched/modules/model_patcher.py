@@ -368,6 +368,7 @@ class ModelPatcher:
         """
         Применяет полные веса из state_dict напрямую к модели.
         Поддерживает ключи в формате 'key::diff::0' (Forge/LayerDiffusion).
+        Автоматически расширяет входные каналы, если нужно.
         """
         print(f"[LayerDiffuse] Applying frozen patch: {filename} with strength {strength}")
 
@@ -376,19 +377,16 @@ class ModelPatcher:
             try:
                 # Удаляем суффикс '::diff::0' или '::weight::0', если есть
                 if '::' in full_key:
-                    key = full_key.split('::')[0]  # Берём только первую часть
+                    key = full_key.split('::')[0]
                 else:
                     key = full_key
 
-                # Разбиваем ключ по точкам: например, 'diffusion_model.input_blocks.0.0.weight'
                 keys = key.split('.')
                 if len(keys) < 2:
                     print(f"[WARNING] Invalid key format: {full_key}, skipping.")
                     continue
 
                 target = self.model
-
-                # Проходим по всем компонентам ключа, кроме последней (weight/bias)
                 for k in keys[:-1]:
                     if k.isdigit():
                         target = target[int(k)]
@@ -397,7 +395,6 @@ class ModelPatcher:
                             raise AttributeError(f"Attribute '{k}' not found in {target}")
                         target = getattr(target, k)
 
-                # Последний компонент — 'weight' или 'bias'
                 param_name = keys[-1]
                 if not hasattr(target, param_name):
                     print(f"[WARNING] Layer '{key}' not found in model, skipping.")
@@ -405,15 +402,35 @@ class ModelPatcher:
 
                 original_param = getattr(target, param_name)
 
+                # Если форма не совпадает — пытаемся расширить по входным каналам (dim=1)
                 if new_weight.shape != original_param.shape:
-                    print(f"[ERROR] Shape mismatch for '{key}': {new_weight.shape} vs {original_param.shape}")
-                    continue
+                    if len(new_weight.shape) == 4 and len(original_param.shape) == 4 and new_weight.shape[1] > original_param.shape[1]:
+                        # Расширяем вес: копируем оригинальные каналы, остальное — нули
+                        extended_weight = torch.zeros_like(new_weight)
+                        extended_weight[:, :original_param.shape[1], :, :] = original_param
+                        # Остальные каналы можно инициализировать нулями или скопировать оригинальные
+                        # Например, копируем оригинальные веса ещё раз:
+                        remaining_channels = new_weight.shape[1] - original_param.shape[1]
+                        for i in range(remaining_channels):
+                            extended_weight[:, original_param.shape[1] + i, :, :] = original_param[:, i % original_param.shape[1], :, :]
 
-                # Применяем strength (если нужно)
+                        # Применяем strength
+                        if strength != 1.0:
+                            extended_weight = original_param.expand_as(extended_weight) * (1 - strength) + extended_weight * strength
+
+                        # Заменяем вес
+                        setattr(target, param_name, torch.nn.Parameter(extended_weight.to(original_param.device, original_param.dtype)))
+                        applied_count += 1
+                        print(f"[DEBUG] Extended and applied patch to '{key}', shape {extended_weight.shape}")
+                        continue
+                    else:
+                        print(f"[ERROR] Shape mismatch for '{key}': {new_weight.shape} vs {original_param.shape}, cannot extend.")
+                        continue
+
+                # Если формы совпадают — применяем как обычно
                 if strength != 1.0:
                     new_weight = original_param * (1 - strength) + new_weight * strength
 
-                # Заменяем вес
                 setattr(target, param_name, torch.nn.Parameter(new_weight.to(original_param.device, original_param.dtype)))
                 applied_count += 1
                 print(f"[DEBUG] Applied patch to '{key}', shape {new_weight.shape}")
