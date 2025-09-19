@@ -570,6 +570,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
                 fg_image = fg_image * 0.13025
 
+                noise = initial_latent['samples']  # [B, 4, H, W]
+                fg_latent = fg_latent.expand(noise.shape[0], -1, -1, -1)  # [B, 4, H, W]
+                initial_latent['samples'] = torch.cat([noise, fg_latent], dim=1)  # [B, 8, H, W]
+                print(f"[DEBUG] Modified initial_latent shape: {initial_latent['samples'].shape}")
+
             if bg_image is not None:
                 bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
                 bg_image = vae.first_stage_model.process_in(bg_image)
