@@ -624,6 +624,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
+            first_layer = unet.model.diffusion_model.input_blocks[0][0]
+            print(f"[DEBUG] First layer weight shape after patch: {first_layer.weight.shape}")
 
         if method == LayerMethod.BG_BLEND_TO_FG:
             model_path = load_file_from_url(
