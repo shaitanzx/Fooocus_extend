@@ -560,7 +560,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
             out_conv = unet.model.diffusion_model.out[2]
-            print(f"[LayerDiffuse] FG_TO_BLEND: Output shape: {out_conv.shape}")
+            print(f"[LayerDiffuse] FG_TO_BLEND: Output layer out_channels: {out_conv.out_channels}, weight shape: {out_conv.weight.shape}")
             if out_conv.out_channels != 4:
                 print("[LayerDiffuse] Fixing output layer to 4 channels...")
                 new_out_conv = torch.nn.Conv2d(
