@@ -517,6 +517,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
         if method == LayerMethod.FG_TO_BLEND:
+            import ldm_patched
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fg2ble.safetensors',
                 model_dir=layer_model_root,
