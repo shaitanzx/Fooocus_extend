@@ -524,6 +524,34 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             )
             unet.extra_concat_condition = fg_image
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+
+
+            first_conv = unet.model.diffusion_model.input_blocks[0][0]
+            if first_conv.in_channels == 4:
+                print("[LayerDiffuse] Expanding first conv layer to 8 input channels...")
+                # Создаём новый Conv2d с 8 входными каналами
+                new_conv = torch.nn.Conv2d(
+                    in_channels=8,
+                    out_channels=first_conv.out_channels,
+                    kernel_size=first_conv.kernel_size,
+                    stride=first_conv.stride,
+                    padding=first_conv.padding,
+                    bias=first_conv.bias is not None
+                ).to(first_conv.weight.device, first_conv.weight.dtype)
+
+                # Копируем оригинальные веса в первые 4 канала
+                new_conv.weight.data[:, :4, :, :] = first_conv.weight.data
+                # Остальные 4 канала инициализируем нулями (или можно случайными значениями, но нули безопаснее)
+                new_conv.weight.data[:, 4:, :, :] = 0.0
+
+                if first_conv.bias is not None:
+                    new_conv.bias.data = first_conv.bias.data.clone()
+
+                # Заменяем слой
+                unet.model.diffusion_model.input_blocks[0][0] = new_conv
+                print("[LayerDiffuse] First conv layer expanded successfully.")
+
+
             #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
