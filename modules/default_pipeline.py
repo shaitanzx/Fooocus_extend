@@ -595,6 +595,24 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.model.model_sampling.calculate_denoised = patched_calculate_denoised.__get__(unet.model.model_sampling)
             print("[LayerDiffuse] Patched calculate_denoised to support 8-channel input.")
 
+            from ldm_patched.modules.samplers import calc_cond_uncond_batch as original_calc_cond_uncond_batch
+
+            def patched_calc_cond_uncond_batch(model, cond, uncond, x, timestep, model_options):
+                output = original_calc_cond_uncond_batch(model, cond, uncond, x, timestep, model_options)
+
+                if x.shape[1] == 8 and output.shape[1] == 4:
+                    B, C, H, W = output.shape
+                    expanded_output = torch.zeros(B, 8, H, W, dtype=output.dtype, device=output.device)
+                    expanded_output[:, :4, :, :] = output
+                    output = expanded_output
+                    print(f"[LayerDiffuse] Expanded output from 4 to 8 channels for compatibility.")
+
+                return output
+
+            import ldm_patched.modules.samplers
+            ldm_patched.modules.samplers.calc_cond_uncond_batch = patched_calc_cond_uncond_batch
+            print("[LayerDiffuse] Patched calc_cond_uncond_batch to support 8-channel input.")
+
         if method == LayerMethod.BG_BLEND_TO_FG:
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_bgble2fg.safetensors',
