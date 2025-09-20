@@ -559,6 +559,31 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.extra_concat_condition = fg_image
             #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
+            out_conv = unet.model.diffusion_model.out[2]
+            if out_conv.out_channels != 4:
+                print("[LayerDiffuse] Fixing output layer to 4 channels...")
+                new_out_conv = torch.nn.Conv2d(
+                    in_channels=out_conv.in_channels,
+                    out_channels=4,  # <-- КРИТИЧНО: выход должен быть 4-канальным
+                    kernel_size=out_conv.kernel_size,
+                    stride=out_conv.stride,
+                    padding=out_conv.padding,
+                    bias=out_conv.bias is not None
+                ).to(out_conv.weight.device, out_conv.weight.dtype)
+
+                if out_conv.weight.data.shape[0] >= 4:
+                    new_out_conv.weight.data = out_conv.weight.data[:4, :, :, :].clone()
+                else:
+                    new_out_conv.weight.data.normal_(0, 0.02)
+
+                if out_conv.bias is not None:
+                    if out_conv.bias.data.shape[0] >= 4:
+                        new_out_conv.bias.data = out_conv.bias.data[:4].clone()
+                    else:
+                        new_out_conv.bias.data.zero_()
+
+                unet.model.diffusion_model.out[2] = new_out_conv
+                print("[LayerDiffuse] Output layer fixed to 4 channels.")
 
         if method == LayerMethod.BG_BLEND_TO_FG:
             model_path = load_file_from_url(
