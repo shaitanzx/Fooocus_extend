@@ -553,7 +553,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 
             initial_latent['samples'] = torch.cat([
                         initial_latent['samples'],
-                        fg_latent.to(initial_latent['samples'].dtype)
+                        fg_image.to(initial_latent['samples'].dtype)
                         ], dim=1)
             print(f"[LayerDiffuse] FG_TO_BLEND: Concatenated FG latent. New shape: {initial_latent['samples'].shape}")
             unet.extra_concat_condition = fg_image
