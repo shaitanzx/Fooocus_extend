@@ -423,15 +423,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 )
                 vae_transparent_encoder = TransparentVAEEncoder(utils.load_torch_file(model_path))
 
-        if method in [LayerMethod.FG_ONLY_ATTN_SD15, LayerMethod.JOINT_SD15, LayerMethod.BG_TO_FG_SD15]:
-            need_process = True
-            if vae_transparent_encoder is None:
-                model_path = load_file_from_url(
-                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_vae_transparent_encoder.safetensors',
-                    model_dir=layer_model_root,
-                    file_name='layer_sd15_vae_transparent_encoder.safetensors'
-                )
-                vae_transparent_encoder = TransparentVAEEncoder(ldm_patched.modules.utils.load_torch_file(model_path))
         """
         if not need_process:
             return
