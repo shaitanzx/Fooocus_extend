@@ -522,7 +522,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 model_dir=layer_model_root,
                 file_name='layer_xl_fg2ble.safetensors'
             )
-            unet.extra_concat_condition = fg_image
+            
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
 
 
@@ -550,8 +550,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 # Заменяем слой
                 unet.model.diffusion_model.input_blocks[0][0] = new_conv
                 print("[LayerDiffuse] First conv layer expanded successfully.")
-
-
+                
+            initial_latent['samples'] = torch.cat([
+                        initial_latent['samples'],
+                        fg_latent.to(initial_latent['samples'].dtype)
+                        ], dim=1)
+            print(f"[LayerDiffuse] FG_TO_BLEND: Concatenated FG latent. New shape: {initial_latent['samples'].shape}")
+            unet.extra_concat_condition = fg_image
             #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
@@ -562,6 +567,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 file_name='layer_xl_bgble2fg.safetensors'
             )
             unet.extra_concat_condition = torch.cat([bg_image, blend_image], dim=1)
+
+
+            
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_bgble2fg.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
