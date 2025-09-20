@@ -585,6 +585,15 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
                 unet.model.diffusion_model.out[2] = new_out_conv
                 print("[LayerDiffuse] Output layer fixed to 4 channels.")
+            original_calculate_denoised = unet.model.model_sampling.calculate_denoised
+
+            def patched_calculate_denoised(self, sigma, model_output, model_input):
+            # Берём только первые 4 канала от model_input для вычитания
+                model_input_4ch = model_input[:, :4, :, :]
+                return original_calculate_denoised(sigma, model_output, model_input_4ch)
+
+            unet.model.model_sampling.calculate_denoised = patched_calculate_denoised.__get__(unet.model.model_sampling)
+            print("[LayerDiffuse] Patched calculate_denoised to support 8-channel input.")
 
         if method == LayerMethod.BG_BLEND_TO_FG:
             model_path = load_file_from_url(
