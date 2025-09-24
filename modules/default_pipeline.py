@@ -473,9 +473,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         clip = target_clip
 
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
-            if fg_image is not None:
-                fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-                fg_image = fg_image * 0.13025
+            #if fg_image is not None:
+            #    fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+            #    fg_image = fg_image * 0.13025
 
             if bg_image is not None:
                 bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
@@ -517,13 +517,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
         if method == LayerMethod.FG_TO_BLEND:
-            import ldm_patched
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_fg2ble.safetensors',
                 model_dir=layer_model_root,
                 file_name='layer_xl_fg2ble.safetensors'
             )
-            unet.extra_concat_condition = fg_image
+            #unet.extra_concat_condition = fg_image
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
 
