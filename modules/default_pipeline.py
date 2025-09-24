@@ -408,7 +408,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     if len(layer_diff)>1:
         method, weight, ending_step, fg_image, bg_image, blend_image, resize_mode, output_origin, fg_additional_prompt, bg_additional_prompt, blend_additional_prompt = layer_diff
-
+        """
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
 
             method = LayerMethod(method)
@@ -423,7 +423,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 )
                 vae_transparent_encoder = TransparentVAEEncoder(utils.load_torch_file(model_path))
 
-        """
+    
         if not need_process:
             return
 
