@@ -523,96 +523,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 model_dir=layer_model_root,
                 file_name='layer_xl_fg2ble.safetensors'
             )
-            
-            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
-
-
-            first_conv = unet.model.diffusion_model.input_blocks[0][0]
-            if first_conv.in_channels == 4:
-                print("[LayerDiffuse] Expanding first conv layer to 8 input channels...")
-                # Создаём новый Conv2d с 8 входными каналами
-                new_conv = torch.nn.Conv2d(
-                    in_channels=8,
-                    out_channels=first_conv.out_channels,
-                    kernel_size=first_conv.kernel_size,
-                    stride=first_conv.stride,
-                    padding=first_conv.padding,
-                    bias=first_conv.bias is not None
-                ).to(first_conv.weight.device, first_conv.weight.dtype)
-
-                # Копируем оригинальные веса в первые 4 канала
-                new_conv.weight.data[:, :4, :, :] = first_conv.weight.data
-                # Остальные 4 канала инициализируем нулями (или можно случайными значениями, но нули безопаснее)
-                new_conv.weight.data[:, 4:, :, :] = 0.0
-
-                if first_conv.bias is not None:
-                    new_conv.bias.data = first_conv.bias.data.clone()
-
-                # Заменяем слой
-                unet.model.diffusion_model.input_blocks[0][0] = new_conv
-                print("[LayerDiffuse] First conv layer expanded successfully.")
-                
-            initial_latent['samples'] = torch.cat([
-                        initial_latent['samples'],
-                        fg_image.to(initial_latent['samples'].dtype)
-                        ], dim=1)
-            print(f"[LayerDiffuse] FG_TO_BLEND: Concatenated FG latent. New shape: {initial_latent['samples'].shape}")
             unet.extra_concat_condition = fg_image
-            #unet.load_frozen_patcher('layer_xl_fg2ble.safetensors', layer_lora_model, weight)
+            layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
-            out_conv = unet.model.diffusion_model.out[2]
-            print(f"[LayerDiffuse] FG_TO_BLEND: Output layer out_channels: {out_conv.out_channels}, weight shape: {out_conv.weight.shape}")
-            if out_conv.out_channels != 4:
-                print("[LayerDiffuse] Fixing output layer to 4 channels...")
-                new_out_conv = torch.nn.Conv2d(
-                    in_channels=out_conv.in_channels,
-                    out_channels=4,  # <-- КРИТИЧНО: выход должен быть 4-канальным
-                    kernel_size=out_conv.kernel_size,
-                    stride=out_conv.stride,
-                    padding=out_conv.padding,
-                    bias=out_conv.bias is not None
-                ).to(out_conv.weight.device, out_conv.weight.dtype)
-
-                if out_conv.weight.data.shape[0] >= 4:
-                    new_out_conv.weight.data = out_conv.weight.data[:4, :, :, :].clone()
-                else:
-                    new_out_conv.weight.data.normal_(0, 0.02)
-
-                if out_conv.bias is not None:
-                    if out_conv.bias.data.shape[0] >= 4:
-                        new_out_conv.bias.data = out_conv.bias.data[:4].clone()
-                    else:
-                        new_out_conv.bias.data.zero_()
-
-                unet.model.diffusion_model.out[2] = new_out_conv
-                print("[LayerDiffuse] Output layer fixed to 4 channels.")
-            original_calculate_denoised = unet.model.model_sampling.calculate_denoised
-
-            def patched_calculate_denoised(self, sigma, model_output, model_input):
-            # Берём только первые 4 канала от model_input для вычитания
-                model_input_4ch = model_input[:, :4, :, :]
-                return original_calculate_denoised(sigma, model_output, model_input_4ch)
-
-            unet.model.model_sampling.calculate_denoised = patched_calculate_denoised.__get__(unet.model.model_sampling)
-            print("[LayerDiffuse] Patched calculate_denoised to support 8-channel input.")
-
-            from ldm_patched.modules.samplers import calc_cond_uncond_batch as original_calc_cond_uncond_batch
-
-            def patched_calc_cond_uncond_batch(model, cond, uncond, x, timestep, model_options):
-                output = original_calc_cond_uncond_batch(model, cond, uncond, x, timestep, model_options)
-
-                if x.shape[1] == 8 and output.shape[1] == 4:
-                    B, C, H, W = output.shape
-                    expanded_output = torch.zeros(B, 8, H, W, dtype=output.dtype, device=output.device)
-                    expanded_output[:, :4, :, :] = output
-                    output = expanded_output
-                    print(f"[LayerDiffuse] Expanded output from 4 to 8 channels for compatibility.")
-
-                return output
-
-            import ldm_patched.modules.samplers
-            ldm_patched.modules.samplers.calc_cond_uncond_batch = patched_calc_cond_uncond_batch
-            print("[LayerDiffuse] Patched calc_cond_uncond_batch to support 8-channel input.")
 
         if method == LayerMethod.BG_BLEND_TO_FG:
             model_path = load_file_from_url(
