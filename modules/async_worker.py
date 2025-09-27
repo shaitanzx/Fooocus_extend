@@ -278,18 +278,7 @@ class AsyncTask:
         self.poTransPNGEps = args.pop()
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
-        self.layer_enable = args.pop()
-        self.method_ld = args.pop()
-        self.weight_ld = args.pop()
-        self.ending_step_ld = args.pop()
-        self.fg_image_ld = args.pop()
-        self.bg_image_ld = args.pop()
-        self.blend_image_ld = args.pop()
-        self.resize_mode_ld = args.pop()
-        self.output_origin_ld = args.pop()
-        self.fg_additional_prompt_ld = args.pop()
-        self.bg_additional_prompt_ld = args.pop()
-        self.blend_additional_prompt_ld = args.pop()
+        self.transper = args.pop()
  
 
     
@@ -497,20 +486,7 @@ def worker():
                     async_task.adapter_conditioning_factor,
                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
                     loras,modules.config.paths_loras[0],async_task)
-            #else:
-            #    # async_task.layer_enabled == True:
-            #    device = ldm_patched.modules.model_management.get_torch_device()
-            #    generator = torch.Generator(device=device).manual_seed(task['task_seed'])
-            #    noise = torch.randn([1, 4, height // 8, width // 8], generator=generator, device=device)
-            #    layer.process_before_every_sampling(async_task,noise)
             else:
-                if async_task.layer_enable:
-                    layer_diff=[async_task.method_ld,async_task.weight_ld,async_task.ending_step_ld,async_task.fg_image_ld,
-                                async_task.bg_image_ld,async_task.blend_image_ld,async_task.resize_mode_ld,
-                                async_task.output_origin_ld,async_task.fg_additional_prompt_ld,async_task.bg_additional_prompt_ld,
-                                async_task.blend_additional_prompt_ld]
-                else:
-                    layer_diff=[False]
                 imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,
                     negative_cond=negative_cond,
@@ -530,7 +506,7 @@ def worker():
                     disable_preview=async_task.disable_preview,
                     tile_x=async_task.tile_x,
                     tile_y=async_task.tile_y,
-                    layer_diff=layer_diff
+                    transper=async_task.transper
                 )
         if async_task.enable_instant == True:
             imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
