@@ -511,7 +511,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 model_dir=layer_model_root,
                 file_name='layer_xl_bg2ble.safetensors'
             )
-            unet.extra_concat_condition = bg_image
+            #unet.extra_concat_condition = bg_image
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_bg2ble.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
@@ -532,7 +532,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 model_dir=layer_model_root,
                 file_name='layer_xl_bgble2fg.safetensors'
             )
-            unet.extra_concat_condition = torch.cat([bg_image, blend_image], dim=1)
+            #unet.extra_concat_condition = torch.cat([bg_image, blend_image], dim=1)
 
 
             
@@ -546,7 +546,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 model_dir=layer_model_root,
                 file_name='layer_xl_fgble2bg.safetensors'
             )
-            unet.extra_concat_condition = torch.cat([fg_image, blend_image], dim=1)
+            #unet.extra_concat_condition = torch.cat([fg_image, blend_image], dim=1)
             layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
             #unet.load_frozen_patcher('layer_xl_fgble2bg.safetensors', layer_lora_model, weight)
             unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
