@@ -330,7 +330,7 @@ def worker():
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
-    import extentions.layerdiffuse.layer as layer
+    #import extentions.layerdiffuse.layer as layer
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
