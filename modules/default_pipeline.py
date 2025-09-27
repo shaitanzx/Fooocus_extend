@@ -445,6 +445,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         target_unet = unet
 
 
+
+
+
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
         for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
@@ -626,5 +629,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         images.append(png)
         images.append(vis)
         images.append(maska)
+
+        
         target_unet = original_unet
+
     return images
