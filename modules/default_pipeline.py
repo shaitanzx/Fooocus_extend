@@ -473,17 +473,17 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         clip = target_clip
 
         if method in [LayerMethod.FG_TO_BLEND, LayerMethod.FG_BLEND_TO_BG, LayerMethod.BG_TO_BLEND, LayerMethod.BG_BLEND_TO_FG]:
-            #if fg_image is not None:
-            #    fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
-            #    fg_image = fg_image * 0.13025
+            if fg_image is not None:
+                fg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(fg_image[None].copy())))
+                fg_image = fg_image * 0.13025
 
             if bg_image is not None:
                 bg_image = vae.encode(torch.from_numpy(np.ascontiguousarray(bg_image[None].copy())))
-                bg_image = vae.first_stage_model.process_in(bg_image)
+                bg_image = bg_image * 0.13025
 
             if blend_image is not None:
                 blend_image = vae.encode(torch.from_numpy(np.ascontiguousarray(blend_image[None].copy())))
-                blend_image = vae.first_stage_model.process_in(blend_image)
+                blend_image = blend_image * 0.13025
 
         if method == LayerMethod.FG_ONLY_ATTN:
             model_path = load_file_from_url(
