@@ -66,7 +66,7 @@ from extentions import tile_roll
 from extentions.vector import vector
 import extentions.batch as batch
 import extentions.watermark as watermark
-from extentions.layerdiffuse import layer
+#from extentions.layerdiffuse import layer
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
