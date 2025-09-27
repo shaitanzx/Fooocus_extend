@@ -442,7 +442,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             )
         layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
         #unet.load_frozen_patcher('layer_xl_transparent_attn.safetensors', layer_lora_model, weight)
-        unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, weight)
+        unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
 
         step_index = int((len(minmax_sigmas) - 1))
