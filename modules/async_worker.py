@@ -523,7 +523,6 @@ def worker():
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
         if async_task.inswapper_enabled:
             progressbar(async_task, current_progress, 'inswapper in progress ...')
-#            modules.config.downloading_inswapper()
             imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
 
         if async_task.codeformer_gen_enabled:
@@ -536,8 +535,7 @@ def worker():
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
-#        progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
-#        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
+
         if async_task.poDoVector:
             image = Image.fromarray(imgs[0])
             if async_task.poTransPNG:

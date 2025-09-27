@@ -770,8 +770,6 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='LayerDiffuse'):
-                            layer_enabled, method_ld, weight_ld, ending_step_ld, fg_image_ld, bg_image_ld, blend_image_ld, resize_mode_ld, output_origin_ld, fg_additional_prompt_ld, bg_additional_prompt_ld, blend_additional_prompt_ld = layer.ui()
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,

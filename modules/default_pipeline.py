@@ -29,6 +29,7 @@ from torch.nn.modules.utils import _pair
 #from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
 #import numpy as np
 from modules.model_loader import load_file_from_url
+import ldm_patched.modules.utils
 from extentions.layerdiffuse import layer as layer_module
 from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder
 
@@ -440,7 +441,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 model_dir=layer_model_root,
                 file_name='layer_xl_transparent_conv.safetensors'
             )
-        layer_lora_model = layer_module.load_layer_model_state_dict(model_path)
+        layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
         #unet.load_frozen_patcher('layer_xl_transparent_attn.safetensors', layer_lora_model, weight)
         unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
