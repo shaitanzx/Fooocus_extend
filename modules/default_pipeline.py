@@ -356,9 +356,10 @@ class LayerMethod(Enum):
     BG_TO_BLEND = "(SDXL) From Background to Blending"
     BG_BLEND_TO_FG = "(SDXL) From Background and Blending to Foreground"
 
+
+"""
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
-"""
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
