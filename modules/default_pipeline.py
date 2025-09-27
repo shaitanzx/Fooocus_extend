@@ -22,15 +22,8 @@ from torch.nn import Conv2d
 from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 
-
-
-#from enum import Enum
-#from extentions.layerdiffuse.lib_layerdiffusion.enums import ResizeMode
-#from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
-#import numpy as np
 from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
-#from extentions.layerdiffuse import layer as layer_module
 from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder
 
 
@@ -348,17 +341,7 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
                 return final_refiner_vae, None
 
     return final_vae, final_refiner_vae
-"""
-class LayerMethod(Enum):
-    FG_ONLY_ATTN = "(SDXL) Only Generate Transparent Image (Attention Injection)"
-    FG_ONLY_CONV = "(SDXL) Only Generate Transparent Image (Conv Injection)"
-    FG_TO_BLEND = "(SDXL) From Foreground to Blending"
-    FG_BLEND_TO_BG = "(SDXL) From Foreground and Blending to Background"
-    BG_TO_BLEND = "(SDXL) From Background to Blending"
-    BG_BLEND_TO_FG = "(SDXL) From Background and Blending to Foreground"
 
-
-"""
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
 @torch.no_grad()
@@ -408,21 +391,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-
-
     if transper != "None":
-
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
         height = H * 8
         width = W * 8
         batch_size = 1
-
         print(f'[Transparency] {transper}')
-
-        #resize_mode = ResizeMode(resize_mode)
-        #fg_image = crop_and_resize_image(rgba2rgbfp32(fg_image), resize_mode, height, width) if fg_image is not None else None
-        #bg_image = crop_and_resize_image(rgba2rgbfp32(bg_image), resize_mode, height, width) if bg_image is not None else None
-        #blend_image = crop_and_resize_image(rgba2rgbfp32(blend_image), resize_mode, height, width) if blend_image is not None else None
 
         original_unet = target_unet
         unet = target_unet.clone()
@@ -442,13 +416,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 file_name='layer_xl_transparent_conv.safetensors'
             )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
-        #unet.load_frozen_patcher('layer_xl_transparent_attn.safetensors', layer_lora_model, weight)
         unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
-
 
         step_index = int((len(minmax_sigmas) - 1))
         sigma_end = minmax_sigmas[step_index].item()
-        #print(f'[LayerDiffusion] Ending at step {step_index}/{len(minmax_sigmas)-1}, sigma = {sigma_end}')
         
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
@@ -472,12 +443,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet.add_conditioning_modifier(conditioning_modifier)
 
         target_unet = unet
-
-
-
-
-
-
 
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
@@ -641,20 +606,14 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
     
-
-
     if transper != "None":
         mod_number = 1
-
         model_path = load_file_from_url(
                     url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors',
                     model_dir=layer_model_root,
                     file_name='vae_transparent_decoder.safetensors'
                 )
         vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(model_path))
-        #vae_transparent_decoder = TransparentVAEDecoder(utils.load_torch_file(model_path))
-
-
 
         latent = sampled_latent['samples'][0]
         pixel = images[0]
