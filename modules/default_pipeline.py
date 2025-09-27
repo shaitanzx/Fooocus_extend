@@ -622,9 +622,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         if lH != pixel.shape[0] // 8 or lW != pixel.shape[1] // 8:
             latent = torch.zeros((lC, pixel.shape[0] // 8, pixel.shape[1] // 8)).to(latent)
 
-        png, vis, mask = vae_transparent_decoder.decode(latent, pixel)
+        png, vis, maska = vae_transparent_decoder.decode(latent, pixel)
         images.append(png)
         images.append(vis)
-        images.append(vis)
+        images.append(maska)
         target_unet = original_unet
     return images
