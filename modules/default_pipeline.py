@@ -30,7 +30,7 @@ from torch.nn.modules.utils import _pair
 #import numpy as np
 from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
-from extentions.layerdiffuse import layer as layer_module
+#from extentions.layerdiffuse import layer as layer_module
 from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder
 
 
