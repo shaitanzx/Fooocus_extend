@@ -1460,8 +1460,11 @@ with shared.gradio_root:
                         with gr.Tab(label='Tiled'):
                             tile_x = gr.Checkbox(label='Tiled X', value=False)
                             tile_y = gr.Checkbox(label='Tiled Y', value=False)
-                        
-
+                        with gr.Tab(label='Transparency'):
+                            transper = gr.Dropdown(label='Mode',
+                                    value='None',
+                                    choices=['None','Attention Injection','Conv Injection'],
+                                    interactive=True)
                     with gr.Tab(label='Inpaint'):
                         debugging_inpaint_preprocessor = gr.Checkbox(label='Debug Inpaint Preprocessing', value=False)
                         debugging_enhance_masks_checkbox = gr.Checkbox(label='Debug Enhance Masks', value=False,
@@ -1745,6 +1748,7 @@ with shared.gradio_root:
         ctrls += [seed_random]
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
+        ctrls += [transper]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

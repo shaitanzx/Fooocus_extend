@@ -393,6 +393,23 @@ If trigger words are not shown, then you need to scan LoRa, in the Civitai Helpe
 
 Settings for creating seamless tiles. Located in Advanced - Developer Debug Mode - Control - Tiled. Sometimes a little edge refinement is required in any Photo Editor.
 
+**Transparency**
+
+<img width="452" height="152" alt="image" src="https://github.com/user-attachments/assets/a63e3921-f807-4872-9884-74698ce8a3e9" />
+
+<img width="385" height="100" alt="image" src="https://github.com/user-attachments/assets/4b65d0f9-905f-4a8b-b6dd-8cd13870e3a5" />
+
+Settings for creating images on a transparent background and a mask for it are located in the "Advanced" - "Developer Debug Mode" - "Controls" - "Transparency" section.
+
+<img width="971" height="487" alt="image" src="https://github.com/user-attachments/assets/04db5df6-d9ed-4b75-9073-c5dbdd4549f7" />
+
+None - the normal generation mode
+
+Attention Injection - This mode uses LoRA rank 256, turning SDXL into a transparent image generator. It transforms the model's latent distribution into a "transparent latent space" that can be decoded by a dedicated VAE pipeline.
+
+Conv Injection - This method uses an alternative model to transform SDXL into a transparent image generator. It uses biases on all convolutional layers (and, in fact, on all layers that are not q, k, v in any of the attention layers). These biases can be combined with any XL model to change the latent distribution to transparent images. Since learning the biases on all q, k, v layers was eliminated, the understanding of SDXL should be fully preserved. However, in practice, this first method has proven to yield better results. This method is used for some special cases that require special understanding. This method can have a strong impact on the style of the underlying model. This extension is based on layerdiffuse by lllyasviel (https://github.com/lllyasviel/sd-forge-layerdiffuse)
+
+
 <table>
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend. Base version 2.5.5</td>
@@ -408,6 +425,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.2
+ 1. Settings for Transparency generation
 
 v9.2.1
  1. Add Logo in tools

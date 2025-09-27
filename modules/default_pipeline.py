@@ -22,6 +22,11 @@ from torch.nn import Conv2d
 from torch.nn import functional as F
 from torch.nn.modules.utils import _pair
 
+from modules.model_loader import load_file_from_url
+import ldm_patched.modules.utils
+from extentions.transper.models import TransparentVAEDecoder
+
+
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -337,12 +342,13 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
     return final_vae, final_refiner_vae
 
-
+layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
+os.makedirs(layer_model_root, exist_ok=True)
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
-        disable_preview=False,tile_x=False,tile_y=False):
+        disable_preview=False,tile_x=False,tile_y=False,transper='None'):
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
@@ -384,6 +390,63 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
+
+    if transper != "None":
+        B, C, H, W = initial_latent['samples'].shape  # latent_shape
+        height = H * 8
+        width = W * 8
+        batch_size = 1
+        print(f'[Transparency] {transper}')
+
+        original_unet = target_unet
+        unet = target_unet.clone()
+        vae = target_vae
+        clip = target_clip
+
+        if transper == 'Attention Injection':
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_transparent_attn.safetensors'
+            )
+        else:
+            model_path = load_file_from_url(
+                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
+                model_dir=layer_model_root,
+                file_name='layer_xl_transparent_conv.safetensors'
+            )
+        layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
+        unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
+
+        step_index = int((len(minmax_sigmas) - 1))
+        sigma_end = minmax_sigmas[step_index].item()
+        
+        def remove_concat(cond):
+            cond = copy.deepcopy(cond)
+            for i in range(len(cond)):
+                try:
+                    del cond[i]['model_conds']['c_concat']
+                except:
+                    pass
+            return cond
+
+        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            if timestep[0].item() < sigma_end:
+                target_model = original_unet.model
+                cond = remove_concat(cond)
+                uncond = remove_concat(uncond)
+            else:
+                target_model = model
+
+            return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        
+        unet.add_conditioning_modifier(conditioning_modifier)
+
+        target_unet = unet
+
+
+
+
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
@@ -545,4 +608,30 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
         for layer in [l for l in target_vae.first_stage_model.modules() if isinstance(l, torch.nn.Conv2d)]:
             layer._conv_forward = torch.nn.Conv2d._conv_forward.__get__(layer, Conv2d)
+    
+    if transper != "None":
+        mod_number = 1
+        model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors',
+                    model_dir=layer_model_root,
+                    file_name='vae_transparent_decoder.safetensors'
+                )
+        vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(model_path))
+
+        latent = sampled_latent['samples'][0]
+        pixel = images[0]
+
+        lC, lH, lW = latent.shape
+        if lH != pixel.shape[0] // 8 or lW != pixel.shape[1] // 8:
+            latent = torch.zeros((lC, pixel.shape[0] // 8, pixel.shape[1] // 8)).to(latent)
+
+        png, maska = vae_transparent_decoder.decode(latent, pixel)
+        images[0] = png
+        #images.append(png)
+        #images.append(vis)
+        images.append(maska)
+
+        
+        target_unet = original_unet
+
     return images

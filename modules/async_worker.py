@@ -278,6 +278,7 @@ class AsyncTask:
         self.poTransPNGEps = args.pop()
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
+        self.transper = args.pop()
  
 
     
@@ -485,7 +486,6 @@ def worker():
                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
                     loras,modules.config.paths_loras[0],async_task)
             else:
-
                 imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,
                     negative_cond=negative_cond,
@@ -504,7 +504,8 @@ def worker():
                     refiner_swap_method=async_task.refiner_swap_method,
                     disable_preview=async_task.disable_preview,
                     tile_x=async_task.tile_x,
-                    tile_y=async_task.tile_y
+                    tile_y=async_task.tile_y,
+                    transper=async_task.transper
                 )
         if async_task.enable_instant == True:
             imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
@@ -521,7 +522,6 @@ def worker():
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
         if async_task.inswapper_enabled:
             progressbar(async_task, current_progress, 'inswapper in progress ...')
-#            modules.config.downloading_inswapper()
             imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
 
         if async_task.codeformer_gen_enabled:
@@ -534,8 +534,7 @@ def worker():
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
-#        progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
-#        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
+
         if async_task.poDoVector:
             image = Image.fromarray(imgs[0])
             if async_task.poTransPNG:
@@ -1457,6 +1456,9 @@ def worker():
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
+        #if async_task.layer_enable:
+        #    async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
+
 
         print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
         print(f'[Parameters] Steps = {async_task.steps} - {switch}')
@@ -1810,16 +1812,6 @@ def worker():
                         time.sleep(0.01)
                         continue
 
-
-
-
-
-#                if task.iteration_number>0:
-#                    task.iteration_number-=1
-#                if task.iteration_number>0:
-#                    async_tasks.insert(0, task)
-#                    time.sleep(0.01)
-#                    continue
 
                 if task.generate_image_grid:
                     build_image_wall(task)
