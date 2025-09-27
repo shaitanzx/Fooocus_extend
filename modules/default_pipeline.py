@@ -24,7 +24,7 @@ from torch.nn.modules.utils import _pair
 
 from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
-from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder
+from extentions.transper.models import TransparentVAEDecoder
 
 
 model_base = core.StableDiffusionModel()
