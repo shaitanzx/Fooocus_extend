@@ -355,6 +355,7 @@ class ModelPatcher:
             setattr(self.model, k, self.object_patches_backup[k])
 
         self.object_patches_backup = {}
+    """
     def append_model_option(self, k, v, ensure_uniqueness=False):
         if k not in self.model_options:
             self.model_options[k] = []
@@ -363,7 +364,8 @@ class ModelPatcher:
             return
 
         self.model_options[k].append(v)
-        return    
+        return
+    """    
     def load_frozen_patcher(self, filename, state_dict, strength):
         patch_dict = {}
         for k, w in state_dict.items():
@@ -384,5 +386,7 @@ class ModelPatcher:
     def add_conditioning_modifier(self, modifier, ensure_uniqueness=False):
         self.append_model_option('conditioning_modifiers', modifier, ensure_uniqueness)
         return
+    """
     def set_model_vae_regulation(self, vae_regulation):
         self.model_options["model_vae_regulation"] = vae_regulation
+    """
