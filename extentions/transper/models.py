@@ -298,6 +298,7 @@ class TransparentVAEDecoder:
         #png = Image.fromarray(png)
 
         mask = (alpha[0] * 255.0).detach().cpu().float().numpy().clip(0, 255).astype(np.uint8)
+        mask = mask[:, :, 0]
 
         return png, vis, mask
 
