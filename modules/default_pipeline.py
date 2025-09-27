@@ -24,13 +24,13 @@ from torch.nn.modules.utils import _pair
 
 
 
-from enum import Enum
-from extentions.layerdiffuse.lib_layerdiffusion.enums import ResizeMode
-from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
-import numpy as np
+#from enum import Enum
+#from extentions.layerdiffuse.lib_layerdiffusion.enums import ResizeMode
+#from extentions.layerdiffuse.lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
+#import numpy as np
 from modules.model_loader import load_file_from_url
 from extentions.layerdiffuse import layer as layer_module
-from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder, TransparentVAEEncoder
+from extentions.layerdiffuse.lib_layerdiffusion.models import TransparentVAEDecoder
 
 
 model_base = core.StableDiffusionModel()
@@ -459,8 +459,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
             if timestep[0].item() < sigma_end:
-                #if not layer_module.is_model_loaded(original_unet):
-                #    sampling_prepare(original_unet, x)
                 target_model = original_unet.model
                 cond = remove_concat(cond)
                 uncond = remove_concat(uncond)
