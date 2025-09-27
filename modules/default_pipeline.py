@@ -641,7 +641,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
 
 
-    if transper != "None"::
+    if transper != "None":
         mod_number = 1
 
         model_path = load_file_from_url(
