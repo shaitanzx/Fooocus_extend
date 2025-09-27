@@ -625,6 +625,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         png, vis, mask = vae_transparent_decoder.decode(latent, pixel)
         images.append(png)
         images.append(vis)
-        images.append(mask)
+        images.append(vis)
         target_unet = original_unet
     return images
