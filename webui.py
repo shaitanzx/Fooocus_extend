@@ -1302,7 +1302,7 @@ with shared.gradio_root:
                                                value=modules.config.default_refiner_switch,
                                                visible=modules.config.default_refiner_model_name != 'None')
                     base_model.change(model_tag, inputs=base_model, outputs=base_model_link,queue=False)
-                    refiner_model.change(model_tag, inputs=base_model, outputs=base_model_link,queue=False) \
+                    refiner_model.change(model_tag, inputs=refiner_model, outputs=refiner_link,queue=False) \
                         .then(lambda x: gr.update(visible=x != 'None'),
                                     inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
