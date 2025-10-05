@@ -381,11 +381,11 @@ The preset saves the following parameters: base model, refiner, refiner_switch, 
 
 Allows you to upload a file (in *.json format) with custom styles
 
-**View trigger words of LoRA**
+**View LoRA trigger words and view the models page on civitai.com**
 
-![image](https://github.com/user-attachments/assets/0ea83134-b8ec-4960-a436-c8343d0762f7)
+<img width="482" height="543" alt="image" src="https://github.com/user-attachments/assets/0d5d905c-738f-4e17-9fbb-44456def2fad" />
 
-If trigger words are not shown, then you need to scan LoRa, in the Civitai Helper module in the Scan Models for Civitai section
+If trigger words or links to model pages are not displayed, you will need to scan the models in the Civitai Helper module in the "Scan Models" section.
 
 **Seamless tiling**
 
@@ -425,6 +425,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.3
+ 1. View the models page on civitai.com
 
 v9.2.2
  1. Settings for Transparency generation
