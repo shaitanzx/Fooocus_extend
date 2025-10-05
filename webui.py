@@ -1333,7 +1333,7 @@ with shared.gradio_root:
                                   interactive=False
                                   )
                         
-                        lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,initial_link],queue=False)
+                        lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
                         lora_ctrls += [lora_enabled, lora_model, lora_weight]
 
                 with gr.Row():
