@@ -1,3 +1,6 @@
+v9.2.3
+ 1. View the models page on civitai.com
+
 v9.2.2
  1.Settings for Transparency generation
 
