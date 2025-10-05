@@ -701,7 +701,7 @@ class Script:
         unloader(self, p)
 
     #!def denoiser_callback(self, params: CFGDenoiserParams):
-    def denoiser_callback(self, params: CFGDenoiserParams):
+    def denoiser_callback(self, params):
         denoiser_callback_s(self, params)
 
     def denoised_callback(self, params):
