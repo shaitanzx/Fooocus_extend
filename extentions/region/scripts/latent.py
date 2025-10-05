@@ -17,7 +17,7 @@ reforge = False
 #!if forge:
 #!    from modules.script_callbacks import AfterCFGCallbackParams, on_cfg_after_cfg
 
-denoised_params = AfterCFGCallbackParams if forge else CFGDenoisedParams
+#!denoised_params = AfterCFGCallbackParams if forge else CFGDenoisedParams
 
 islora = True
 in_hr = False
