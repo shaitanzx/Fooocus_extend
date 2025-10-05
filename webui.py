@@ -1287,12 +1287,14 @@ with shared.gradio_root:
                             print(f"Error loading Model tags: {e}")
                             return gr.update(visible=False)                    
                     with gr.Row():
-                        base_model = gr.Dropdown(label='Base Model (SDXL only)', choices=modules.config.model_filenames, value=modules.config.default_base_model_name, show_label=True)
-                        link=model_tag(base_model)
-                        base_model_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
-                        refiner_model = gr.Dropdown(label='Refiner (SDXL or SD 1.5)', choices=['None'] + modules.config.model_filenames, value=modules.config.default_refiner_model_name, show_label=True)
-                        link=model_tag(refiner_model)
-                        refiner_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
+                        with gr.Column():
+                            base_model = gr.Dropdown(label='Base Model (SDXL only)', choices=modules.config.model_filenames, value=modules.config.default_base_model_name, show_label=True)
+                            link=model_tag(base_model)
+                            base_model_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
+                        with gr.Column():
+                            refiner_model = gr.Dropdown(label='Refiner (SDXL or SD 1.5)', choices=['None'] + modules.config.model_filenames, value=modules.config.default_refiner_model_name, show_label=True)
+                            link=model_tag(refiner_model)
+                            refiner_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
 
                     refiner_switch = gr.Slider(label='Refiner Switch At', minimum=0.1, maximum=1.0, step=0.0001,
                                                info='Use 0.4 for SD1.5 realistic models; '
