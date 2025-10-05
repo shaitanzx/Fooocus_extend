@@ -1301,8 +1301,7 @@ with shared.gradio_root:
                             line_count = max(1, len(trained_words) // 50 + 1)
                             model_id = str(data.get("modelId"))
                             version_id = str(data.get("id"))
-                            return gr.update(visible=True,value=trained_words,lines=line_count),
-                                    gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
+                            return gr.update(visible=True,value=trained_words,lines=line_count),gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
                             #f'{trained_words}'
                         except Exception as e:
                             print(f"Error loading LORA tags: {e}")
