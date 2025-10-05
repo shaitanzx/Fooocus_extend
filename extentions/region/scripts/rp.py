@@ -13,9 +13,9 @@ import modules # SBM Apparently, basedir only works when accessed directly.
 #from modules.script_callbacks import (on_ui_settings, CFGDenoisedParams, CFGDenoiserParams, on_cfg_denoised, on_cfg_denoiser)
 import json  # Presets.
 from json.decoder import JSONDecodeError
-from scripts.attention import (TOKENS, hook_forwards, reset_pmasks, savepmasks)
-from scripts.latent import (denoised_callback_s, denoiser_callback_s, lora_namer, setuploras, unloadlorafowards, forge_linear_forward)
-from scripts.regions import (MAXCOLREG, IDIM, KEYBRK, KEYBASE, KEYCOMM, KEYPROMPT, ALLKEYS, ALLALLKEYS,
+from extentions.region.scripts.attention import (TOKENS, hook_forwards, reset_pmasks, savepmasks)
+from extentions.region.scripts.latent import (denoised_callback_s, denoiser_callback_s, lora_namer, setuploras, unloadlorafowards, forge_linear_forward)
+from extentions.region.scripts.regions import (MAXCOLREG, IDIM, KEYBRK, KEYBASE, KEYCOMM, KEYPROMPT, ALLKEYS, ALLALLKEYS,
                              create_canvas, draw_region, change_color,#detect_mask, detect_polygons,  
                              draw_image, save_mask, load_mask, changecs,
                              floatdef, inpaintmaskdealer, makeimgtmp, matrixdealer)
