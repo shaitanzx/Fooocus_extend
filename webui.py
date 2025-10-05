@@ -1269,9 +1269,30 @@ with shared.gradio_root:
 
             with gr.Tab(label='Models'):
                 with gr.Group():
+                    def model_tag(filename_sft):
+                        filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
+                        if filename_value == 'None':
+                            return gr.update(visible=False)
+                        try:
+                            filename = os.path.join(modules.config.paths_checkpoints[0], filename_value[:filename_value.rfind('.')] + ".civitai.info")
+                            with open(filename, "r", encoding="utf-8") as file:
+                                content = file.read()
+                                json_data = re.search(r'\{.*\}', content, re.DOTALL).group()
+                            data = json.loads(json_data)
+                            model_id = str(data.get("modelId"))
+                            version_id = str(data.get("id"))
+                            return gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Checkpoint Page on CivitAI</a>')
+                            #f'{trained_words}'
+                        except Exception as e:
+                            print(f"Error loading Model tags: {e}")
+                            return gr.update(visible=False)                    
                     with gr.Row():
                         base_model = gr.Dropdown(label='Base Model (SDXL only)', choices=modules.config.model_filenames, value=modules.config.default_base_model_name, show_label=True)
+                        link=model_tag(base_model)
+                        base_model_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
                         refiner_model = gr.Dropdown(label='Refiner (SDXL or SD 1.5)', choices=['None'] + modules.config.model_filenames, value=modules.config.default_refiner_model_name, show_label=True)
+                        link=model_tag(refiner_model)
+                        refiner_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
 
                     refiner_switch = gr.Slider(label='Refiner Switch At', minimum=0.1, maximum=1.0, step=0.0001,
                                                info='Use 0.4 for SD1.5 realistic models; '
@@ -1280,9 +1301,10 @@ with shared.gradio_root:
                                                     'or any value for switching two SDXL models.',
                                                value=modules.config.default_refiner_switch,
                                                visible=modules.config.default_refiner_model_name != 'None')
-
-                    refiner_model.change(lambda x: gr.update(visible=x != 'None'),
-                                         inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
+                    base_model.change(model_tag, inputs=base_model, outputs=base_model_link,queue=False)
+                    refiner_model.change(model_tag, inputs=base_model, outputs=base_model_link,queue=False) \
+                        .then(lambda x: gr.update(visible=x != 'None'),
+                                    inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
                 with gr.Group():
                     def lora_tag(filename_sft):
