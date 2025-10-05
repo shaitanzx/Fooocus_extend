@@ -8,9 +8,11 @@ from inspect import isfunction
 from torch import nn, einsum
 from einops import rearrange, repeat
 
-from modules import launch_utils
-forge = launch_utils.git_tag()[0:2] == "f2"
-reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+#!from modules import launch_utils
+#!forge = launch_utils.git_tag()[0:2] == "f2"
+#!reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+forge = True
+reforge = False
 
 TOKENSCON = 77
 TOKENS = 75

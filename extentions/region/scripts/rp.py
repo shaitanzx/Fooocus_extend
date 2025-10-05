@@ -6,11 +6,11 @@ from pprint import pprint
 import gradio as gr
 import numpy as np
 from PIL import Image
-#import modules.ui
+#!import modules.ui
 import modules # SBM Apparently, basedir only works when accessed directly.
-#from modules import paths, scripts, shared, extra_networks, prompt_parser, launch_utils
-#from modules.processing import Processed
-#from modules.script_callbacks import (on_ui_settings, CFGDenoisedParams, CFGDenoiserParams, on_cfg_denoised, on_cfg_denoiser)
+#!from modules import paths, scripts, shared, extra_networks, prompt_parser, launch_utils
+#!from modules.processing import Processed
+#!from modules.script_callbacks import (on_ui_settings, CFGDenoisedParams, CFGDenoiserParams, on_cfg_denoised, on_cfg_denoiser)
 import json  # Presets.
 from json.decoder import JSONDecodeError
 from extentions.region.scripts.attention import (TOKENS, hook_forwards, reset_pmasks, savepmasks)
