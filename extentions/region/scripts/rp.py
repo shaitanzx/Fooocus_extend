@@ -224,6 +224,7 @@ def compress_components(l):
     mode = tabs2mode(*l[:len(RPMODES) + 1])
     return [mode] + l[len(RPMODES) + 1:]
     
+#!class Script(modules.scripts.Script):
 class Script:
     def __init__(self,active = False,mode = "Matrix",calc = "Attention",h = 0, w =0, debug = False, debug2 = False, usebase = False, 
     usecom = False, usencom = False, batch = 1,lstop=0, lstop_hr=0, diff = None):
@@ -699,6 +700,7 @@ class Script:
 
         unloader(self, p)
 
+    #!def denoiser_callback(self, params: CFGDenoiserParams):
     def denoiser_callback(self, params: CFGDenoiserParams):
         denoiser_callback_s(self, params)
 
