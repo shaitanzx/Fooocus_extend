@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 #!import modules.ui
 import modules # SBM Apparently, basedir only works when accessed directly.
-#!from modules import paths, scripts, shared, extra_networks, prompt_parser, launch_utils
+#!from modules import paths, scripts, shared, extra_networks, prompt_parser
 #!from modules.processing import Processed
 #!from modules.script_callbacks import (on_ui_settings, CFGDenoisedParams, CFGDenoiserParams, on_cfg_denoised, on_cfg_denoiser)
 import json  # Presets.
@@ -24,14 +24,19 @@ import base64
 from packaging import version
 from functools import wraps
 
-OPT_RP_DISABLE_IMAGE_EDITOR = "regional_prompter_disable_iamgeeditor"
-disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
+OPT_RP_DISABLE_IMAGE_EDITOR = "regional_prompter_disable_imageeditor"
+#!disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
+disable_image_editor = False
 
 USE_OLD_ACTIVE = "old_active_check"
-use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
+#!use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
+use_old_active = False
 
-forge = launch_utils.git_tag()[0:2] == "f2"
-reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+#!from modules import launch_utils
+#!forge = launch_utils.git_tag()[0:2] == "f2"
+#!reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+forge = True
+reforge = False
 print(f"Forge: {forge}, reForge: {reforge}")
 
 KEYBRK_R = "RP_TEMP_REPLACE"
@@ -47,13 +52,14 @@ OPTDHIRES = "Disabled in Hires Fix"
 OPTIONLIST = [OPTAND,OPTUSEL,OPTBREAK,OPTFLIP,OPTCOUT,OPTAHIRES,OPTDHIRES,"debug", "debug2"]
 
 # Modules.basedir points to extension's dir. script_path or scripts.basedir points to root.
-PTPRESET = modules.scripts.basedir()
-PTPRESETALT = os.path.join(paths.script_path, "scripts")
+PTPRESET = os.path.abspath('extentions/region')
+PTPRESETALT = os.path.abspath('extentions/region')
+print(f"PTPRESET: {PTPRESET}, PTPRESETALT: {PTPRESETALT}")
 
 def lange(l):
     return range(len(l))
 
-orig_batch_cond_uncond = shared.opts.batch_cond_uncond if hasattr(shared.opts,"batch_cond_uncond") else shared.batch_cond_uncond
+#!orig_batch_cond_uncond = shared.opts.batch_cond_uncond if hasattr(shared.opts,"batch_cond_uncond") else shared.batch_cond_uncond
 
 PRESETSDEF =[
     ["Vertical-3", "Vertical",'1,1,1',"",False,False,False,"Attention",False,"0","0"],
