@@ -41,7 +41,6 @@ Let's look at everything in order.
 14. View LoRA trigger words and view the models page on civitai.com
 15. Seamless tiling
 16. Transparency
-17. 
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
