@@ -1322,7 +1322,7 @@ with shared.gradio_root:
                             lora_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
                                                     maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
                                                     elem_classes='lora_weight', scale=5)
-                            lora_link=gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
+                            lora_link=gr.HTML(value=initial_page.get("value",""),visible=initial_page.get("visible", False))
                         with gr.Row():
                             
                             lora_tag_mark = gr.Textbox(label='Trigger word(s)',
@@ -1333,7 +1333,7 @@ with shared.gradio_root:
                                   interactive=False
                                   )
                         
-                        lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,initial_page],queue=False)
+                        lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,initial_link],queue=False)
                         lora_ctrls += [lora_enabled, lora_model, lora_weight]
 
                 with gr.Row():
