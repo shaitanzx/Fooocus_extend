@@ -2,6 +2,47 @@ I would like to introduce a new fork of the popular generative neural network **
 I would like to point out that this fork can be run both locally on your computer and via Google Colab. 
 Let's look at everything in order. 
 
+**Full list of differences from the original Fooocus**
+
+1. Modules running during generation
+   - OneButtonPrompt
+   - Prompt Translate
+   - PhotoMaker
+   - InstantID
+   - Inswapper
+   - CodeFormer
+   - Vector
+2. Additional modules
+   - Image Batch
+   - Prompt Batch
+   - X/Y/Z Plot
+   - Inswapper
+   - CodeFormer
+   - Remove Background
+   - Vector
+3. Tools
+   - Civitai Helper
+   - TextMask
+   - SVGcode
+   - Roller
+   - OpenPoseEditor
+   - Logo
+   - Photopea
+4. Select the resolution and aspect ratio of the generated image
+5. Wildcard
+6. OpenPose ControlNet
+7. Recolor ControlNet
+8. Scribble ControlNet
+9. Manga Recolor ControlNet
+10. Save Image Grid for Each Batch
+11. Filename Prefix
+12. Paths and Presets
+13. Load file of style
+14. View LoRA trigger words and view the models page on civitai.com
+15. Seamless tiling
+16. Transparency
+17. 
+
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
 ![image](https://github.com/user-attachments/assets/468487b8-8d4e-454c-ba92-1c9e5b60feb7)
