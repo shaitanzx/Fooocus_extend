@@ -1319,7 +1319,7 @@ with shared.gradio_root:
                             lora_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
                                                     maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
                                                     elem_classes='lora_weight', scale=5)
-                            lora_link=gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 CivitAI</a>')
+                            lora_link=gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank" style="display: block; text-align: center;>CivitAI</a>')
                         with gr.Row():
                             initial_tag = lora_tag(filename)
                             lora_tag_mark = gr.Textbox(label='Trigger word(s)',
