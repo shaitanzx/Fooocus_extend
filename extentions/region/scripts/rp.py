@@ -30,7 +30,7 @@ disable_image_editor = False
 
 USE_OLD_ACTIVE = "old_active_check"
 #!use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
-use_old_active = True
+use_old_active = False
 
 #!from modules import launch_utils
 #!forge = launch_utils.git_tag()[0:2] == "f2"
@@ -378,7 +378,7 @@ class Script:
 
             dummy_img = gr.Image(type="pil", show_label  = False, height=256, width=256,source = "upload", interactive=True, visible = False)
 
-            dummy_false = gr.Checkbox(value=True, visible=False)
+            dummy_false = gr.Checkbox(value=False, visible=False)
 
             areasimg.upload(fn=lambda x: x,inputs=[areasimg],outputs = [dummy_img])
             areasimg.clear(fn=lambda : None,outputs = [dummy_img])
@@ -456,60 +456,54 @@ class Script:
         return [active, dummy_false, rp_selected_tab, mmode, xmode, pmode, ratios, baseratios,
                 usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper]
 
-    #!def process(self, p, active, a_debug , rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
-    #!            usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper):
+    def process(self, p, active, a_debug , rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
+                usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper):
+        
+        if type(options) is bool:
+            options = ["disable convert 'AND' to 'BREAK'"] if options else []
+        elif type(options) is str:
+            options = options.split(",")
 
+        if a_debug == True:
+            options.append("debug")
 
+        options = [item for item in options if item in OPTIONLIST]
 
-    def process(self, p):
+        debug = "debug" in options
+        debug2 = "debug2" in options
+        flip_prompt = OPTFLIP in options
+        self.slowlora = OPTUSEL in options
 
-
-        if type(p.options) is bool:
-            p.options = ["disable convert 'AND' to 'BREAK'"] if p.options else []
-        elif type(p.options) is str:
-            p.options = p.options.split(",")
-
-        if p.a_debug == True:
-            p.options.append("debug")
-
-        p.options = [item for item in p.options if item in OPTIONLIST]
-
-        debug = "debug" in p.options
-        debug2 = "debug2" in p.options
-        flip_prompt = OPTFLIP in p.options
-        self.slowlora = OPTUSEL in p.options
-
-
-        if type(p.polymask) == str:
+        if type(polymask) == str:
             image = None
             try:
-                image = Image.open(p.polymask)
+                image = Image.open(polymask)
             except:
-                if p.polymask.startswith("data:image/"):
-                    p.polymask = p.polymask.split(";", maxsplit=1)[1].split(",", maxsplit=1)[1]
+                if polymask.startswith("data:image/"):
+                    polymask = polymask.split(";", maxsplit=1)[1].split(",", maxsplit=1)[1]
                 try:
-                    image = Image.open(BytesIO(base64.b64decode(p.polymask)))
+                    image = Image.open(BytesIO(base64.b64decode(polymask)))
                 except:
                     print("Error: The mask image is either not a valid path or not a valid base64 encoded image.")
             if image is not None:
-                p.polymask,_,_ = draw_image(np.array(image.convert('RGB')))
+                polymask,_,_ = draw_image(np.array(image.convert('RGB')))
                 
-        elif isinstance(p.polymask, dict):
+        elif isinstance(polymask, dict):
             if IS_GRADIO_4:
-                composite = p.polymask.get("composite", None)
+                composite = polymask.get("composite", None)
                 if composite is not None and isinstance(composite, np.ndarray) and not np.any(composite):  # すべて0なら False
-                    p.polymask = p.polymask.get("layers", None)[0]  # compositeが全ゼロ → layers を使う
+                    polymask = polymask.get("layers", None)[0]  # compositeが全ゼロ → layers を使う
                 else:
-                    p.polymask = composite  # composite に値がある → composite を使う
+                    polymask = composite  # composite に値がある → composite を使う
             else:
-                p.polymask = p.polymask.get("image", None)
+                polymask = polymask.get("image", None)
 
-            p.polymask, _, _ = draw_image(p.polymask)
+            polymask, _, _ = draw_image(polymask)
 
-        if p.rp_selected_tab == "Nope": p.rp_selected_tab = "Matrix"
+        if rp_selected_tab == "Nope": rp_selected_tab = "Matrix"
 
-        if debug: pprint([p.active_region, debug, p.rp_selected_tab, p.mmode, p.xmode, p.pmode, p.ratios, p.baseratios,
-                p.usebase, p.usecom, p.usencom, p.calcmode, p.options, p.lnter, p.lnur, p.threshold, p.polymask, p.lstop, p.lstop_hr, p.flipper])
+        if debug: pprint([active, debug, rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
+                usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper])
 
         tprompt = p.prompt[0] if type(p.prompt) == list else p.prompt
 
@@ -526,39 +520,39 @@ class Script:
         else:
             diff = False
         
-        #!if forge:
-        #!    from backend.args import dynamic_args
-        #!    self.orig_online_lora = dynamic_args["online_lora"]
+        if forge:
+            from backend.args import dynamic_args
+            self.orig_online_lora = dynamic_args["online_lora"]
 
-        if not any(key in tprompt for key in ALLALLKEYS) or not p.active_region:
+        if not any(key in tprompt for key in ALLALLKEYS) or not active:
             return unloader(self,p)
 
-        #!p.extra_generation_params.update({
-        #!    "RP Active":p.active,
-        #!    "RP Divide mode": p.rp_selected_tab,
-        #!    "RP Matrix submode": p.mmode,
-        #!    "RP Mask submode": p.xmode,
-        #!    "RP Prompt submode": p.pmode,
-        #!    "RP Calc Mode":p.calcmode,
-        #!    "RP Ratios": p.aratios,
-        #!    "RP Base Ratios": p.bratios,
-        #!    "RP Use Base":p.usebase,
-        #!    "RP Use Common":p.usecom,
-        #!    "RP Use Ncommon": p.usencom,
-        #!    "RP Options" : ",".join(p.options) if p.options else "No Options",
-        #!    "RP LoRA Neg Te Ratios": p.lnter,
-        #!    "RP LoRA Neg U Ratios": p.lnur,
-        #!    "RP threshold": p.threshold,
-        #!    "RP LoRA Stop Step":p.lstop,
-        #!    "RP LoRA Hires Stop Step":p.lstop_hr,
-        #!    "RP Flip": p.flipper,
-        #!})
+        p.extra_generation_params.update({
+            "RP Active":active,
+            "RP Divide mode": rp_selected_tab,
+            "RP Matrix submode": mmode,
+            "RP Mask submode": xmode,
+            "RP Prompt submode": pmode,
+            "RP Calc Mode":calcmode,
+            "RP Ratios": aratios,
+            "RP Base Ratios": bratios,
+            "RP Use Base":usebase,
+            "RP Use Common":usecom,
+            "RP Use Ncommon": usencom,
+            "RP Options" : ",".join(options) if options else "No Options",
+            "RP LoRA Neg Te Ratios": lnter,
+            "RP LoRA Neg U Ratios": lnur,
+            "RP threshold": threshold,
+            "RP LoRA Stop Step":lstop,
+            "RP LoRA Hires Stop Step":lstop_hr,
+            "RP Flip": flipper,
+        })
 
-        savepresets("lastrun",p.rp_selected_tab, p.mmode, p.xmode, p.pmode, p.ratios, p.baseratios,
-                     p.usebase, p.usecom, p.usencom, p.calcmode, p.options, p.lnter, p.lnur, p.threshold, p.polymask,p.lstop, p.lstop_hr, p.flipper)
+        savepresets("lastrun",rp_selected_tab, mmode, xmode, pmode, aratios,bratios,
+                     usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask,lstop, lstop_hr, flipper)
 
-        if p.flipper:p.ratios = changecs(p.ratios)
-        #------------------------------------------------------------------------------
+        if flipper:aratios = changecs(aratios)
+
         self.__init__(active, tabs2mode(rp_selected_tab, mmode, xmode, pmode) ,calcmode ,p.height, p.width, debug, debug2,
         usebase, usecom, usencom, p.batch_size, lstop, lstop_hr, diff = diff)
 
