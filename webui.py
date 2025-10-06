@@ -772,8 +772,8 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='Region') as obp_tab:
-                            script_instance = Script()
-                            ui_components_s = script_instance.ui(is_img2img=False)
+                            script_region = Script()
+                            region = script_region.ui(is_img2img=False)
 
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
@@ -1783,6 +1783,7 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
+        ctrls.extend(region)
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

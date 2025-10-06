@@ -279,6 +279,26 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
+        self.active_region = args.pop()
+        self.dummy_false = args.pop()
+        self.rp_selected_tab = args.pop()
+        self.mmode = args.pop()
+        self.xmode = args.pop()
+        self.pmode = args.pop()
+        self.ratios = args.pop()
+        self.baseratios = args.pop()
+        self.usebase = args.pop()
+        self.usecom = args.pop()
+        self.usencom = args.pop()
+        self.calcmode = args.pop()
+        self.options = args.pop()
+        self.lnter = args.pop()
+        self.lnur = args.pop()
+        self.threshold = args.pop()
+        self.polymask = args.pop()
+        self.lstop = args.pop()
+        self.lstop_hr = args.pop()
+        self.flipper = args.pop()
  
 
     
@@ -330,6 +350,10 @@ def worker():
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
+
+    from extentions.region.scripts.rp import Script
+    script_region = Script()
+
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -337,6 +361,9 @@ def worker():
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
+
+
+
 
     try:
         async_gradio_app = shared.gradio_root
@@ -1398,6 +1425,13 @@ def worker():
             set_lightning_defaults(async_task, current_progress, advance_progress=True)
         elif async_task.performance_selection == Performance.HYPER_SD:
             set_hyper_sd_defaults(async_task, current_progress, advance_progress=True)
+
+        if async_task.active_region:
+            region_test = script_region.process(async_task)
+
+
+
+
 
         print(f'[Parameters] Adaptive CFG = {async_task.adaptive_cfg}')
         print(f'[Parameters] CLIP Skip = {async_task.clip_skip}')
