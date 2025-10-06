@@ -1426,8 +1426,13 @@ def worker():
         elif async_task.performance_selection == Performance.HYPER_SD:
             set_hyper_sd_defaults(async_task, current_progress, advance_progress=True)
 
+
+
         if async_task.active_region:
-            region_test = script_region.process(async_task)
+            region_test = script_region.process(async_task, async_task.active_region, async_task.a_debug, async_task.rp_selected_tab, 
+                async_task.mmode, async_task.xmode, async_task.pmode, async_task.aratios, async_task.bratios,async_task.usebase, 
+                async_task.usecom, async_task.usencom, async_task.calcmode, async_task.options, async_task.lnter, async_task.lnur, 
+                async_task.threshold, async_task.polymask, async_task.lstop, async_task.lstop_hr, async_task.flipper)
 
 
 

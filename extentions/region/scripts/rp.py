@@ -26,7 +26,7 @@ from functools import wraps
 
 OPT_RP_DISABLE_IMAGE_EDITOR = "regional_prompter_disable_imageeditor"
 #!disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
-disable_image_editor = False
+disable_image_editor = True
 
 USE_OLD_ACTIVE = "old_active_check"
 #!use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
