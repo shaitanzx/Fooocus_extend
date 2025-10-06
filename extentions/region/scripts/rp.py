@@ -479,7 +479,6 @@ class Script:
         flip_prompt = OPTFLIP in p.options
         self.slowlora = OPTUSEL in p.options
 
-        print('----------------',p.options)
 
         if type(p.polymask) == str:
             image = None
@@ -531,7 +530,7 @@ class Script:
         #!    from backend.args import dynamic_args
         #!    self.orig_online_lora = dynamic_args["online_lora"]
 
-        if not any(key in tprompt for key in ALLALLKEYS) or not active:
+        if not any(key in tprompt for key in ALLALLKEYS) or not p.active_region:
             return unloader(self,p)
 
         #!p.extra_generation_params.update({

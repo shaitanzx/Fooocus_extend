@@ -1426,7 +1426,6 @@ def worker():
         elif async_task.performance_selection == Performance.HYPER_SD:
             set_hyper_sd_defaults(async_task, current_progress, advance_progress=True)
 
-        print ('aaaaaaaaaaaa',async_task.active_region)
         if async_task.active_region:
             region_test = script_region.process(async_task)
 
