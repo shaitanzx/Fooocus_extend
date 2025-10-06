@@ -30,7 +30,7 @@ disable_image_editor = True
 
 USE_OLD_ACTIVE = "old_active_check"
 #!use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
-use_old_active = False
+use_old_active = True
 
 #!from modules import launch_utils
 #!forge = launch_utils.git_tag()[0:2] == "f2"
