@@ -378,7 +378,7 @@ class Script:
 
             dummy_img = gr.Image(type="pil", show_label  = False, height=256, width=256,source = "upload", interactive=True, visible = False)
 
-            dummy_false = gr.Checkbox(value=False, visible=False)
+            dummy_false = gr.Checkbox(value=True, visible=False)
 
             areasimg.upload(fn=lambda x: x,inputs=[areasimg],outputs = [dummy_img])
             areasimg.clear(fn=lambda : None,outputs = [dummy_img])
@@ -509,7 +509,7 @@ class Script:
 
         if p.rp_selected_tab == "Nope": p.rp_selected_tab = "Matrix"
 
-        if debug: pprint([p.active_region, p.debug, p.rp_selected_tab, p.mmode, p.xmode, p.pmode, p.ratios, p.baseratios,
+        if debug: pprint([p.active_region, debug, p.rp_selected_tab, p.mmode, p.xmode, p.pmode, p.ratios, p.baseratios,
                 p.usebase, p.usecom, p.usencom, p.calcmode, p.options, p.lnter, p.lnur, p.threshold, p.polymask, p.lstop, p.lstop_hr, p.flipper])
 
         tprompt = p.prompt[0] if type(p.prompt) == list else p.prompt
