@@ -280,7 +280,7 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.active_region = args.pop()
-        self.dummy_false = args.pop()
+        self.a_debug = args.pop()
         self.rp_selected_tab = args.pop()
         self.mmode = args.pop()
         self.xmode = args.pop()
