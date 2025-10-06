@@ -520,9 +520,9 @@ class Script:
         else:
             diff = False
         
-        if forge:
-            from backend.args import dynamic_args
-            self.orig_online_lora = dynamic_args["online_lora"]
+        #!if forge:
+        #!    from backend.args import dynamic_args
+        #!    self.orig_online_lora = dynamic_args["online_lora"]
 
         if not any(key in tprompt for key in ALLALLKEYS) or not active:
             return unloader(self,p)
@@ -553,19 +553,19 @@ class Script:
 
         if flipper:aratios = changecs(aratios)
 
-        self.__init__(active, tabs2mode(rp_selected_tab, mmode, xmode, pmode) ,calcmode ,p.height, p.width, debug, debug2,
+        self.__init__(active, tabs2mode(rp_selected_tab, mmode, xmode, pmode) ,calcmode,p.height, p.width, debug, debug2,
         usebase, usecom, usencom, p.batch_size, lstop, lstop_hr, diff = diff)
 
-        self.all_prompts = p.all_prompts.copy()
-        self.all_negative_prompts = p.all_negative_prompts.copy()
+        #!self.all_prompts = p.all_prompts.copy()
+        #!self.all_negative_prompts = p.all_negative_prompts.copy()
         self.optbreak = OPTBREAK in options
         self.hiresacts = [OPTAHIRES in options, OPTDHIRES in options]
 
         # SBM ddim / plms detection.
         self.isvanilla = p.sampler_name in ["DDIM", "PLMS", "UniPC"]
-        if forge:
-            self.isvanilla = not self.isvanilla
-
+        #!if forge:
+        #!    self.isvanilla = not self.isvanilla
+        print('qqqqqqqqqqqqqqqq',self.h,self,w)
         if self.h % ATTNSCALE != 0 or self.w % ATTNSCALE != 0:
             # Testing shows a round down occurs in model.
             print("Warning: Nonstandard height / width.")
