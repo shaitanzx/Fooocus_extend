@@ -495,7 +495,7 @@ class Script:
             if image is not None:
                 p.polymask,_,_ = draw_image(np.array(image.convert('RGB')))
                 
-        elif isinstance(polymask, dict):
+        elif isinstance(p.polymask, dict):
             if IS_GRADIO_4:
                 composite = p.polymask.get("composite", None)
                 if composite is not None and isinstance(composite, np.ndarray) and not np.any(composite):  # すべて0なら False
