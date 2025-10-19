@@ -1720,7 +1720,7 @@ with shared.gradio_root:
         ctrls += [uov_method, uov_input_image]
         ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
         ctrls += [disable_preview, disable_intermediate_results, disable_seed_increment, black_out_nsfw]
-        ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, type_cfg, cfg_scale, adaptive_cfg, clip_skip]
+        ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, type_cfg, rescale_cfg, adaptive_cfg, clip_skip]
         ctrls += [sampler_name, scheduler_name, vae_name]
         ctrls += [overwrite_step, overwrite_switch, overwrite_width, overwrite_height, overwrite_vary_strength]
         ctrls += [overwrite_upscale_strength, mixing_image_prompt_and_vary_upscale, mixing_image_prompt_and_inpaint]
