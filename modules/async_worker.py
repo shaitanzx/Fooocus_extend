@@ -601,9 +601,9 @@ def worker():
                     d.append(('Refiner Swap Method', 'refiner_swap_method', async_task.refiner_swap_method))
             d.append(('CFG control type', 'type_cfg', modules.patch.patch_settings[pid].type_cfg))
 
-            if modules.patch.patch_settings[pid].type_cfg != 'CFG Mimicking from TSNR':
+            if modules.patch.patch_settings[pid].type_cfg == 'CFG Mimicking from TSNR':
                 d.append(('CFG Mimicking from TSNR', 'adaptive_cfg', modules.patch.patch_settings[pid].adaptive_cfg))
-            if modules.patch.patch_settings[pid].type_cfg != 'CFG Mimicking from TSNR':
+            if modules.patch.patch_settings[pid].type_cfg == 'CFG rescale':
                 d.append(('CFG rescale', 'rescale_cfg', modules.patch.patch_settings[pid].rescale_cfg))
 
 
