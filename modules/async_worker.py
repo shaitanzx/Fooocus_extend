@@ -599,9 +599,13 @@ def worker():
                     d.append(('Overwrite Switch', 'overwrite_switch', async_task.overwrite_switch))
                 if async_task.refiner_swap_method != flags.refiner_swap_method:
                     d.append(('Refiner Swap Method', 'refiner_swap_method', async_task.refiner_swap_method))
-            if modules.patch.patch_settings[pid].adaptive_cfg != modules.config.default_cfg_tsnr:
-                d.append(
-                    ('CFG Mimicking from TSNR', 'adaptive_cfg', modules.patch.patch_settings[pid].adaptive_cfg))
+            d.append(('CFG control type', 'type_cfg', modules.patch.patch_settings[pid].type_cfg))
+
+            if modules.patch.patch_settings[pid].type_cfg != 'CFG Mimicking from TSNR':
+                d.append(('CFG Mimicking from TSNR', 'adaptive_cfg', modules.patch.patch_settings[pid].adaptive_cfg))
+            if modules.patch.patch_settings[pid].type_cfg != 'CFG Mimicking from TSNR':
+                d.append(('CFG rescale', 'rescale_cfg', modules.patch.patch_settings[pid].rescale_cfg))
+
 
             if async_task.clip_skip > 1:
                 d.append(('CLIP Skip', 'clip_skip', async_task.clip_skip))
