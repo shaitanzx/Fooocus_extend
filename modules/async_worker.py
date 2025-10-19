@@ -1097,7 +1097,7 @@ def worker():
         async_task.sharpness = 0.0
         async_task.cfg_scale = 1.0
         async_task.adaptive_cfg = 1.0
-        async_task.type_cfg='CFG control type'
+        async_task.type_cfg='CFG Mimicking from TSNR'
         async_task.rescale_cfg=0.3
         async_task.refiner_switch = 1.0
         async_task.adm_scaler_positive = 1.0
@@ -1119,7 +1119,7 @@ def worker():
         async_task.sharpness = 0.0
         async_task.cfg_scale = 1.0
         async_task.adaptive_cfg = 1.0
-        async_task.type_cfg='CFG control type'
+        async_task.type_cfg='CFG Mimicking from TSNR'
         async_task.rescale_cfg=0.3
         async_task.refiner_switch = 1.0
         async_task.adm_scaler_positive = 1.0
@@ -1141,6 +1141,8 @@ def worker():
         async_task.sharpness = 0.0
         async_task.cfg_scale = 1.0
         async_task.adaptive_cfg = 1.0
+        async_task.type_cfg='CFG Mimicking from TSNR'
+        async_task.rescale_cfg=0.3
         async_task.refiner_switch = 1.0
         async_task.adm_scaler_positive = 1.0
         async_task.adm_scaler_negative = 1.0
