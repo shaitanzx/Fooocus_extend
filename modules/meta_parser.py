@@ -39,7 +39,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     get_number('sharpness', 'Sharpness', loaded_parameter_dict, results)
     get_adm_guidance('adm_guidance', 'ADM Guidance', loaded_parameter_dict, results)
     get_str('refiner_swap_method', 'Refiner Swap Method', loaded_parameter_dict, results)
-    get_str('type_cfg', 'CFG control type', loaded_parameter_dict, results)
+    
     get_number('adaptive_cfg', 'CFG Mimicking from TSNR', loaded_parameter_dict, results)
     get_number('clip_skip', 'CLIP Skip', loaded_parameter_dict, results, cast_type=int)
     get_str('base_model', 'Base Model', loaded_parameter_dict, results)
@@ -51,7 +51,8 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     get_seed('seed', 'Seed', loaded_parameter_dict, results)
     get_inpaint_engine_version('inpaint_engine_version', 'Inpaint Engine Version', loaded_parameter_dict, results, inpaint_mode)
     get_inpaint_method('inpaint_method', 'Inpaint Mode', loaded_parameter_dict, results)
-    print('aaaaaaaaaaa',results)
+    get_str('type_cfg', 'CFG control type', loaded_parameter_dict, results)
+    
     if is_generating:
         results.append(gr.update())
     else:
