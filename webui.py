@@ -1385,11 +1385,26 @@ with shared.gradio_root:
 
                         refiner_swap_method = gr.Dropdown(label='Refiner swap method', value=flags.refiner_swap_method,
                                                           choices=['joint', 'separate', 'vae'])
-
+                        type_cfg = gr.Radio(choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value='CFG Mimicking from TSNR')
+                        rescale_cfg = gr.Slider(label='CFG rescale', minimum=0, maximum=1, step=0.01,
+                                                 value=0.3,visible=False)
                         adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
-                                                 value=modules.config.default_cfg_tsnr,
+                                                 value=modules.config.default_cfg_tsnr,visible=True,
                                                  info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
                                                       '(effective when real CFG > mimicked CFG).')
+                        def cfg_select(cfg):
+                            if cfg == 'Off':
+                                adaptive=False
+                                scale = False
+                            if cfg == 'CFG rescale'
+                                adaptive=False
+                                scale = True
+                            else:
+                                adaptive=True
+                                scale = False
+                            gr.Info(f"Selected {cfg}")
+                            return gr.update(visible=scale),gr.update(visible=adaptive)
+                        type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
                         clip_skip = gr.Slider(label='CLIP Skip', minimum=1, maximum=flags.clip_skip_max, step=1,
                                                  value=modules.config.default_clip_skip,
                                                  info='Bypass CLIP layers to avoid overfitting (use 1 to not skip any layers, 2 is recommended).')
