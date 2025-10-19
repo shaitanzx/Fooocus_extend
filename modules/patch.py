@@ -35,13 +35,17 @@ class PatchSettings:
                  positive_adm_scale=1.5,
                  negative_adm_scale=0.8,
                  controlnet_softness=0.25,
-                 adaptive_cfg=7.0):
+                 adaptive_cfg=7.0,
+                 type_cfg='CFG Mimicking from TSNR',
+                 rescale_cfg=0.3):
         self.sharpness = sharpness
         self.adm_scaler_end = adm_scaler_end
         self.positive_adm_scale = positive_adm_scale
         self.negative_adm_scale = negative_adm_scale
         self.controlnet_softness = controlnet_softness
         self.adaptive_cfg = adaptive_cfg
+        self.type_cfg=type_cfg
+        self.rescale_cfg=rescale_cfg
         self.global_diffusion_progress = 0
         self.eps_record = None
 
@@ -211,16 +215,31 @@ class BrownianTreeNoiseSamplerPatched:
 
 def compute_cfg(uncond, cond, cfg_scale, t):
     pid = os.getpid()
-    mimic_cfg = float(patch_settings[pid].adaptive_cfg)
-    real_cfg = float(cfg_scale)
+    print ('aaaaaaaaa',patch_settings[pid].type_cfg,patch_settings[pid].adaptive_cfg,patch_settings[pid].rescale_cfg)
+    base_eps = uncond + cfg_scale * (cond - uncond)
+    if patch_settings[pid].type_cfg == 'CFG rescale':
+        rescale_phi = float(patch_settings[pid].rescale_cfg)
+        if rescale_phi > 0.0:
+            std_cond = cond.std()
+            std_cfg = base_eps.std()
+            if std_cfg > 1e-6:
+                rescale_factor = std_cond / std_cfg
+                blend = rescale_phi * rescale_factor + (1.0 - rescale_phi)
+                return base_eps * blend
+        return base_eps
+    elif patch_settings[pid].type_cfg == 'CFG Mimicking from TSNR':
+        mimic_cfg = float(patch_settings[pid].adaptive_cfg)
+        real_cfg = float(cfg_scale)
 
-    real_eps = uncond + real_cfg * (cond - uncond)
+        real_eps = uncond + real_cfg * (cond - uncond)
 
-    if cfg_scale > patch_settings[pid].adaptive_cfg:
-        mimicked_eps = uncond + mimic_cfg * (cond - uncond)
-        return real_eps * t + mimicked_eps * (1 - t)
+        if cfg_scale > patch_settings[pid].adaptive_cfg:
+            mimicked_eps = uncond + mimic_cfg * (cond - uncond)
+            return real_eps * t + mimicked_eps * (1 - t)
+        else:
+            return real_eps
     else:
-        return real_eps
+        return base_eps
 
 
 def patched_sampling_function(model, x, timestep, uncond, cond, cond_scale, model_options=None, seed=None):

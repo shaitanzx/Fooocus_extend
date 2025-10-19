@@ -568,7 +568,9 @@ def worker():
             async_task.adm_scaler_positive,
             async_task.adm_scaler_negative,
             async_task.controlnet_softness,
-            async_task.adaptive_cfg
+            async_task.adaptive_cfg,
+            async_task.type_cfg,
+            async_task.rescale_cfg
         )
 
     def save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image=True) -> list:
