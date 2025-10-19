@@ -1396,7 +1396,7 @@ with shared.gradio_root:
                             if cfg == 'Off':
                                 adaptive=False
                                 scale = False
-                            if cfg == 'CFG rescale'
+                            if cfg == 'CFG rescale':
                                 adaptive=False
                                 scale = True
                             else:
