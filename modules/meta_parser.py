@@ -51,7 +51,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     get_seed('seed', 'Seed', loaded_parameter_dict, results)
     get_inpaint_engine_version('inpaint_engine_version', 'Inpaint Engine Version', loaded_parameter_dict, results, inpaint_mode)
     get_inpaint_method('inpaint_method', 'Inpaint Mode', loaded_parameter_dict, results)
-
+    print('aaaaaaaaaaa',result)
     if is_generating:
         results.append(gr.update())
     else:
