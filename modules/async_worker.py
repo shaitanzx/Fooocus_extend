@@ -76,6 +76,8 @@ class AsyncTask:
         self.adm_scaler_positive = args.pop()
         self.adm_scaler_negative = args.pop()
         self.adm_scaler_end = args.pop()
+        self.type_cfg = args.pop()
+        self.cfg_scale = args.pop()
         self.adaptive_cfg = args.pop()
         self.clip_skip = args.pop()
         self.sampler_name = args.pop()
@@ -1398,8 +1400,14 @@ def worker():
             set_lightning_defaults(async_task, current_progress, advance_progress=True)
         elif async_task.performance_selection == Performance.HYPER_SD:
             set_hyper_sd_defaults(async_task, current_progress, advance_progress=True)
-
-        print(f'[Parameters] Adaptive CFG = {async_task.adaptive_cfg}')
+        if async_task.type_cfg != 'Off':
+            if async_task.type_cfg == 'CFG Mimicking from TSNR':
+                print(f'[Parameters] Adaptive CFG = {async_task.adaptive_cfg}')
+            else:
+                print(f'[Parameters] CFG rescale= {async_task.rescale_cfg}')
+        else:
+            print(f'[Parameters] CFG control = Disable')        
+        #print(f'[Parameters] Adaptive CFG = {async_task.adaptive_cfg}')
         print(f'[Parameters] CLIP Skip = {async_task.clip_skip}')
         print(f'[Parameters] Sharpness = {async_task.sharpness}')
         print(f'[Parameters] ControlNet Softness = {async_task.controlnet_softness}')

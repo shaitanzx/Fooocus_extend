@@ -1387,7 +1387,7 @@ with shared.gradio_root:
                                                           choices=['joint', 'separate', 'vae'])
                         type_cfg = gr.Radio(label='CFG control type',choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value='CFG Mimicking from TSNR')
                         rescale_cfg = gr.Slider(label='CFG rescale', minimum=0, maximum=1, step=0.01,
-                                                 value=0.3,visible=False,Interactive=True)
+                                                 value=0.3,visible=False,interactive=True)
                         adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
                                                  value=modules.config.default_cfg_tsnr,visible=True,
                                                  info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
@@ -1720,7 +1720,7 @@ with shared.gradio_root:
         ctrls += [uov_method, uov_input_image]
         ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
         ctrls += [disable_preview, disable_intermediate_results, disable_seed_increment, black_out_nsfw]
-        ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, adaptive_cfg, clip_skip]
+        ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, type_cfg, cfg_scale, adaptive_cfg, clip_skip]
         ctrls += [sampler_name, scheduler_name, vae_name]
         ctrls += [overwrite_step, overwrite_switch, overwrite_width, overwrite_height, overwrite_vary_strength]
         ctrls += [overwrite_upscale_strength, mixing_image_prompt_and_vary_upscale, mixing_image_prompt_and_inpaint]
