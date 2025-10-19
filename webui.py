@@ -1613,7 +1613,7 @@ with shared.gradio_root:
                              adm_scaler_negative, adm_scaler_end, refiner_swap_method, adaptive_cfg, clip_skip,
                              base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, vae_name,
                              seed_random, image_seed, inpaint_engine, inpaint_engine_state,
-                             inpaint_mode, type_cfg] + enhance_inpaint_mode_ctrls + [generate_button,
+                             inpaint_mode] + enhance_inpaint_mode_ctrls + [generate_button,
                              load_parameter_button] + freeu_ctrls + lora_ctrls
 
         if not args_manager.args.disable_preset_selection:
@@ -1835,7 +1835,7 @@ with shared.gradio_root:
             data["default_styles"]=p.style_selections
             data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
             data["default_vae"]=p.vae_name
-            data["default_inpaint_engine_version"]=p.inpaint_engine
+            #data["default_inpaint_engine_version"]=p.inpaint_engine
             save_path = 'presets/' + name + '.json'
             with open(save_path, "w", encoding="utf-8") as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
