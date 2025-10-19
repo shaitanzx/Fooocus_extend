@@ -77,7 +77,7 @@ class AsyncTask:
         self.adm_scaler_negative = args.pop()
         self.adm_scaler_end = args.pop()
         self.type_cfg = args.pop()
-        self.cfg_scale = args.pop()
+        self.rescale_cfg = args.pop()
         self.adaptive_cfg = args.pop()
         self.clip_skip = args.pop()
         self.sampler_name = args.pop()
