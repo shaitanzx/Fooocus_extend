@@ -1821,6 +1821,8 @@ with shared.gradio_root:
             data["default_loras"]=ctrl
             data["default_cfg_scale"]=p.cfg_scale
             data["default_sample_sharpness"]=p.sharpness
+            data["default_type_cfg"] = p.type_cfg
+            data["default_rescale_cfg"] = rescale_cfg
             data["default_cfg_tsnr"]=p.adaptive_cfg
             data["default_clip_skip"]=p.clip_skip
             data["default_sampler"]=p.sampler_name
