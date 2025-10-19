@@ -94,6 +94,7 @@ inpaint_mask_sam_model = ['vit_b', 'vit_l', 'vit_h']
 
 inpaint_engine_versions = ['None', 'v1', 'v2.5', 'v2.6']
 inpaint_option_default = 'Inpaint or Outpaint (default)'
+type_cfg_default = 'Inpaint or Outpaint (default)'
 inpaint_option_detail = 'Improve Detail (face, hand, eyes, etc.)'
 inpaint_option_modify = 'Modify Content (add objects, change background, etc.)'
 inpaint_options = [inpaint_option_default, inpaint_option_detail, inpaint_option_modify]

@@ -215,10 +215,8 @@ class BrownianTreeNoiseSamplerPatched:
 
 def compute_cfg(uncond, cond, cfg_scale, t):
     pid = os.getpid()
-    print ('aaaaaaaaa',patch_settings[pid].type_cfg,patch_settings[pid].adaptive_cfg,patch_settings[pid].rescale_cfg)
     base_eps = uncond + cfg_scale * (cond - uncond)
     if patch_settings[pid].type_cfg == 'CFG rescale':
-        print('qqqqqqqqqq  rescale')
         rescale_phi = float(patch_settings[pid].rescale_cfg)
         if rescale_phi > 0.0:
             std_cond = cond.std()
@@ -229,7 +227,6 @@ def compute_cfg(uncond, cond, cfg_scale, t):
                 return base_eps * blend
         return base_eps
     elif patch_settings[pid].type_cfg == 'CFG Mimicking from TSNR':
-        print('qqqqqqqqqq  adaptive')
         mimic_cfg = float(patch_settings[pid].adaptive_cfg)
         real_cfg = float(cfg_scale)
 
@@ -241,7 +238,6 @@ def compute_cfg(uncond, cond, cfg_scale, t):
         else:
             return real_eps
     else:
-        print('qqqqqqqqqq none')
         return base_eps
 
 

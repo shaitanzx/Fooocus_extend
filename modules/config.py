@@ -572,6 +572,18 @@ default_cfg_tsnr = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, numbers.Number),
     expected_type=numbers.Number
 )
+default_cfg_rescale = get_config_item_or_set_default(
+    key='default_cfg_rescale',
+    default_value=0.3,
+    validator=lambda x: isinstance(x, numbers.Number),
+    expected_type=numbers.Number
+)
+default_type_cfg = get_config_item_or_set_default(
+    key='default_type_cfg',
+    default_value=modules.flags.type_cfg_default,
+    validator=lambda x: x in modules.flags.type_cfg_default,
+    expected_type=str
+)
 default_clip_skip = get_config_item_or_set_default(
     key='default_clip_skip',
     default_value=2,

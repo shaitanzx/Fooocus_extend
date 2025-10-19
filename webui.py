@@ -1385,9 +1385,9 @@ with shared.gradio_root:
 
                         refiner_swap_method = gr.Dropdown(label='Refiner swap method', value=flags.refiner_swap_method,
                                                           choices=['joint', 'separate', 'vae'])
-                        type_cfg = gr.Radio(label='CFG control type',choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value='CFG Mimicking from TSNR')
+                        type_cfg = gr.Radio(label='CFG control type',choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value=modules.config.default_type_cfg)
                         rescale_cfg = gr.Slider(label='CFG rescale', minimum=0, maximum=1, step=0.01,
-                                                 value=0.3,visible=False,interactive=True)
+                                                 value=modules.config.default_cfg_rescale,visible=False,interactive=True)
                         adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
                                                  value=modules.config.default_cfg_tsnr,visible=True,
                                                  info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '

@@ -1093,6 +1093,8 @@ def worker():
         async_task.sharpness = 0.0
         async_task.cfg_scale = 1.0
         async_task.adaptive_cfg = 1.0
+        async_task.type_cfg='CFG control type'
+        async_task.rescale_cfg=0.3
         async_task.refiner_switch = 1.0
         async_task.adm_scaler_positive = 1.0
         async_task.adm_scaler_negative = 1.0
@@ -1113,6 +1115,8 @@ def worker():
         async_task.sharpness = 0.0
         async_task.cfg_scale = 1.0
         async_task.adaptive_cfg = 1.0
+        async_task.type_cfg='CFG control type'
+        async_task.rescale_cfg=0.3
         async_task.refiner_switch = 1.0
         async_task.adm_scaler_positive = 1.0
         async_task.adm_scaler_negative = 1.0
@@ -1409,7 +1413,6 @@ def worker():
                 print(f'[Parameters] CFG rescale= {async_task.rescale_cfg}')
         else:
             print(f'[Parameters] CFG control = Disable')        
-        #print(f'[Parameters] Adaptive CFG = {async_task.adaptive_cfg}')
         print(f'[Parameters] CLIP Skip = {async_task.clip_skip}')
         print(f'[Parameters] Sharpness = {async_task.sharpness}')
         print(f'[Parameters] ControlNet Softness = {async_task.controlnet_softness}')
