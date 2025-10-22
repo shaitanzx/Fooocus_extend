@@ -5,28 +5,28 @@ Let's look at everything in order.
 **Full list of differences from the original Fooocus**
 
 1. Modules running during generation
-   - OneButtonPrompt
+   - OneButtonPrompt - prompt generator with many settings
    - Prompt Translate
-   - PhotoMaker
-   - InstantID
-   - Inswapper
-   - CodeFormer
-   - Vector
+   - PhotoMaker - generating images with a reference face
+   - InstantID - generating images with a reference face
+   - Inswapper - face replacements in the generated image
+   - CodeFormer - face enhancer
+   - Vector - vector image generation
 2. Additional modules
-   - Image Batch
-   - Prompt Batch
-   - X/Y/Z Plot
-   - Inswapper
-   - CodeFormer
+   - Image Batch - generation with a batch of reference images
+   - Prompt Batch - generating a prompt batch
+   - X/Y/Z Plot - a module that allows you to generate images by changing various parameters
+   - Inswapper - face replacements in the generated image
+   - CodeFormer - face enhancer
    - Remove Background
-   - Vector
+   - Vector - allows you to convert a raster image into a vector
 3. Tools
-   - Civitai Helper
-   - TextMask
-   - SVGcode
-   - Roller
+   - Civitai Helper - A module for working with models and downloading them from Civitai
+   - TextMask - A module for overlaying text on images and generating a mask for it for subsequent generation with text
+   - SVGcode - allows you to convert a raster image into a vector
+   - Roller - module for rolling images
    - OpenPoseEditor
-   - Logo
+   - Logo - overlaying a logo on an image
    - Photopea
 4. Select the resolution and aspect ratio of the generated image
 5. Wildcard
@@ -36,11 +36,11 @@ Let's look at everything in order.
 9. Manga Recolor ControlNet
 10. Save Image Grid for Each Batch
 11. Filename Prefix
-12. Paths and Presets
+12. Paths and Presets - managing paths and presets
 13. Load file of style
 14. View LoRA trigger words and view the models page on civitai.com
 15. Seamless tiling
-16. Transparency
+16. Transparency - generating images on a transparent background
 17. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
