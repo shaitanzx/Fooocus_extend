@@ -1387,17 +1387,17 @@ with shared.gradio_root:
                                                           choices=['joint', 'separate', 'vae'])
                         type_cfg = gr.Radio(label='CFG control type',choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value=modules.config.default_type_cfg)
                         rescale_cfg = gr.Slider(label='CFG rescale', minimum=0, maximum=1, step=0.01,
-                                                 value=modules.config.default_cfg_rescale,visible=False,interactive=True)
+                                                 value=modules.config.default_rescale_cfg,visible=True,interactive=True)
                         adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
                                                  value=modules.config.default_cfg_tsnr,visible=True,
                                                  info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
                                                       '(effective when real CFG > mimicked CFG).')
-                        def cfg_select(cfg):
-                            scale = (cfg == 'CFG rescale')
-                            adaptive = (cfg == 'CFG Mimicking from TSNR')
-                            gr.Info(f"Selected {cfg}")
-                            return gr.update(visible=scale), gr.update(visible=adaptive)
-                        type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
+                        #def cfg_select(cfg):
+                        #    scale = (cfg == 'CFG rescale')
+                        #    adaptive = (cfg == 'CFG Mimicking from TSNR')
+                        #    gr.Info(f"Selected {cfg}")
+                        #    return gr.update(visible=scale), gr.update(visible=adaptive)
+                        #type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
                         clip_skip = gr.Slider(label='CLIP Skip', minimum=1, maximum=flags.clip_skip_max, step=1,
                                                  value=modules.config.default_clip_skip,
                                                  info='Bypass CLIP layers to avoid overfitting (use 1 to not skip any layers, 2 is recommended).')

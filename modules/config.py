@@ -572,8 +572,8 @@ default_cfg_tsnr = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, numbers.Number),
     expected_type=numbers.Number
 )
-default_cfg_rescale = get_config_item_or_set_default(
-    key='default_cfg_rescale',
+default_rescale_cfg = get_config_item_or_set_default(
+    key='default_rescale_cfg',
     default_value=0.3,
     validator=lambda x: isinstance(x, numbers.Number),
     expected_type=numbers.Number
@@ -748,7 +748,7 @@ possible_preset_keys = {
     "default_loras": "<processed>",
     "default_cfg_scale": "guidance_scale",
     "default_sample_sharpness": "sharpness",
-    "default_cfg_rescale": "rescale_cfg",
+    "default_rescale_cfg": "rescale_cfg",
     "default_cfg_tsnr": "adaptive_cfg",
     "default_clip_skip": "clip_skip",
     "default_sampler": "sampler",
