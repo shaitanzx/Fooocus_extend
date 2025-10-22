@@ -41,6 +41,7 @@ Let's look at everything in order.
 14. View LoRA trigger words and view the models page on civitai.com
 15. Seamless tiling
 16. Transparency
+17. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -449,6 +450,11 @@ Attention Injection - This mode uses LoRA rank 256, turning SDXL into a transpar
 
 Conv Injection - This method uses an alternative model to transform SDXL into a transparent image generator. It uses biases on all convolutional layers (and, in fact, on all layers that are not q, k, v in any of the attention layers). These biases can be combined with any XL model to change the latent distribution to transparent images. Since learning the biases on all q, k, v layers was eliminated, the understanding of SDXL should be fully preserved. However, in practice, this first method has proven to yield better results. This method is used for some special cases that require special understanding. This method can have a strong impact on the style of the underlying model. This extension is based on layerdiffuse by lllyasviel (https://github.com/lllyasviel/sd-forge-layerdiffuse)
 
+**CFG control type**
+
+<img width="441" height="154" alt="image" src="https://github.com/user-attachments/assets/da27c255-7707-44d0-8228-a62aa7d9c820" />
+
+
 
 <table>
   <tr>
@@ -463,8 +469,16 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ![image](https://github.com/user-attachments/assets/5cf86b6d-e378-4d85-aed1-c48920b6c107)
 
+CFG control type determines how guidance is applied during image generation:
+
+Off - uses the standard CFG without adjustments;
+CFG rescale - reduces artifacts at high Guidance Scale values by rescaling the guidance signal;
+CFG Mimicking from TSNR -  adaptively adjusts guidance strength based on the noise level at each diffusion step, improving image quality and coherence.
 
 ***Change log***
+
+v9.2.4
+ 1. Added CFG control type selection
 
 v9.2.3
  1. View the models page on civitai.com
