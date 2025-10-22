@@ -748,7 +748,7 @@ possible_preset_keys = {
     "default_loras": "<processed>",
     "default_cfg_scale": "guidance_scale",
     "default_sample_sharpness": "sharpness",
-    "default_rescale_cfg": "rescale_cfg",
+    "default_rescale_cfg": "cfg_rescale",
     "default_cfg_tsnr": "adaptive_cfg",
     "default_clip_skip": "clip_skip",
     "default_sampler": "sampler",
