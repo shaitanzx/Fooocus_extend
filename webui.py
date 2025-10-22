@@ -1631,8 +1631,9 @@ with shared.gradio_root:
                     vae_downloads)
                 if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
                     del preset_prepared['prompt']
-
-                return modules.meta_parser.load_parameter_button_click(json.dumps(preset_prepared), is_generating, inpaint_mode)
+                results=modules.meta_parser.load_parameter_button_click(json.dumps(preset_prepared), is_generating, inpaint_mode)
+                print('zzzzzzzz',results)
+                return results
 
 
             def inpaint_engine_state_change(inpaint_engine_version, *args):
