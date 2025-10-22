@@ -454,7 +454,11 @@ Conv Injection - This method uses an alternative model to transform SDXL into a 
 
 <img width="441" height="154" alt="image" src="https://github.com/user-attachments/assets/da27c255-7707-44d0-8228-a62aa7d9c820" />
 
+CFG control type determines how guidance is applied during image generation:
 
+Off - uses the standard CFG without adjustments;
+CFG rescale - reduces artifacts at high Guidance Scale values by rescaling the guidance signal;
+CFG Mimicking from TSNR -  adaptively adjusts guidance strength based on the noise level at each diffusion step, improving image quality and coherence.
 
 <table>
   <tr>
@@ -469,11 +473,6 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ![image](https://github.com/user-attachments/assets/5cf86b6d-e378-4d85-aed1-c48920b6c107)
 
-CFG control type determines how guidance is applied during image generation:
-
-Off - uses the standard CFG without adjustments;
-CFG rescale - reduces artifacts at high Guidance Scale values by rescaling the guidance signal;
-CFG Mimicking from TSNR -  adaptively adjusts guidance strength based on the noise level at each diffusion step, improving image quality and coherence.
 
 ***Change log***
 
