@@ -50,7 +50,6 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     get_seed('seed', 'Seed', loaded_parameter_dict, results)
     get_inpaint_engine_version('inpaint_engine_version', 'Inpaint Engine Version', loaded_parameter_dict, results, inpaint_mode)
     get_inpaint_method('inpaint_method', 'Inpaint Mode', loaded_parameter_dict, results)
-    get_number('cfg_rescale', 'CFG rescale', loaded_parameter_dict, results)
 
     if is_generating:
         results.append(gr.update())
@@ -69,6 +68,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
 
     for i in range(modules.config.default_max_lora_number):
         get_lora(f'lora_combined_{i + 1}', f'LoRA {i + 1}', loaded_parameter_dict, results, performance_filename)
+
     return results
 
 

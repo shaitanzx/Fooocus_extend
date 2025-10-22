@@ -301,9 +301,6 @@ def sort_enhance_images(images, task):
 
 
 def inpaint_mode_change(mode, inpaint_engine_version):
-    print ('mmmmm',mode)
-    print ('mmmmm',inpaint_engine_version)
-    print ('mmmmm',modules.flags.inpaint_options)
     assert mode in modules.flags.inpaint_options
 
     # inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
@@ -1388,18 +1385,19 @@ with shared.gradio_root:
 
                         refiner_swap_method = gr.Dropdown(label='Refiner swap method', value=flags.refiner_swap_method,
                                                           choices=['joint', 'separate', 'vae'])
-                        type_cfg = gr.Radio(label='CFG control type',choices=modules.flags.type_cfg_choices, value=modules.config.default_type_cfg)
+                        type_cfg = gr.Radio(label='CFG control type',choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value=modules.config.default_type_cfg)
                         rescale_cfg = gr.Slider(label='CFG rescale', minimum=0, maximum=1, step=0.01,
-                                                 value=modules.config.default_cfg_rescale,visible=True,interactive=True)
+                                                 value=modules.config.default_cfg_rescale,visible=False,interactive=True)
                         adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
                                                  value=modules.config.default_cfg_tsnr,visible=True,
                                                  info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
                                                       '(effective when real CFG > mimicked CFG).')
-                        #def cfg_select(cfg):
-                        #    scale = (cfg == 'CFG rescale')
-                        #    adaptive = (cfg == 'CFG Mimicking from TSNR')   
-                        #    return gr.update(visible=scale), gr.update(visible=adaptive)
-                        #type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
+                        def cfg_select(cfg):
+                            scale = (cfg == 'CFG rescale')
+                            adaptive = (cfg == 'CFG Mimicking from TSNR')
+                            gr.Info(f"Selected {cfg}")
+                            return gr.update(visible=scale), gr.update(visible=adaptive)
+                        type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
                         clip_skip = gr.Slider(label='CLIP Skip', minimum=1, maximum=flags.clip_skip_max, step=1,
                                                  value=modules.config.default_clip_skip,
                                                  info='Bypass CLIP layers to avoid overfitting (use 1 to not skip any layers, 2 is recommended).')
@@ -1617,7 +1615,7 @@ with shared.gradio_root:
                              seed_random, image_seed, inpaint_engine, inpaint_engine_state,
                              inpaint_mode] + enhance_inpaint_mode_ctrls + [generate_button,
                              load_parameter_button] + freeu_ctrls + lora_ctrls
-        print('asasas',load_data_outputs)
+
         if not args_manager.args.disable_preset_selection:
             def preset_selection_change(preset, is_generating, inpaint_mode):
                 preset_content = modules.config.try_get_preset_content(preset) if preset != 'initial' else {}
@@ -1633,9 +1631,8 @@ with shared.gradio_root:
                     vae_downloads)
                 if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
                     del preset_prepared['prompt']
-                results=modules.meta_parser.load_parameter_button_click(json.dumps(preset_prepared), is_generating, inpaint_mode)
-                print('zzzzzzzz',results)
-                return results
+
+                return modules.meta_parser.load_parameter_button_click(json.dumps(preset_prepared), is_generating, inpaint_mode)
 
 
             def inpaint_engine_state_change(inpaint_engine_version, *args):
@@ -1648,7 +1645,7 @@ with shared.gradio_root:
                         result.append(gr.update(value=inpaint_engine_version))
                     else:
                         result.append(gr.update())
-                print ('xxxxxxxxxxxx',result)
+
                 return result
 
             preset_selection.change(preset_selection_change, inputs=[preset_selection, state_is_generating, inpaint_mode], outputs=load_data_outputs, queue=False, show_progress=True) \
@@ -1825,7 +1822,7 @@ with shared.gradio_root:
             data["default_cfg_scale"]=p.cfg_scale
             data["default_sample_sharpness"]=p.sharpness
             data["default_type_cfg"] = p.type_cfg
-            data["default_cfg_rescale"] = p.rescale_cfg
+            data["default_rescale_cfg"] = p.rescale_cfg
             data["default_cfg_tsnr"]=p.adaptive_cfg
             data["default_clip_skip"]=p.clip_skip
             data["default_sampler"]=p.sampler_name

@@ -30,8 +30,6 @@
         ]
     ],
     "default_cfg_scale": 6.0,
-    "default_type_cfg": "CFG rescale",
-    "default_cfg_rescale": 0.87,
     "default_sample_sharpness": 2.0,
     "default_sampler": "dpmpp_2m_sde_gpu",
     "default_scheduler": "karras",

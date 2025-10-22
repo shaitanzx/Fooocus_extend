@@ -94,7 +94,6 @@ inpaint_mask_sam_model = ['vit_b', 'vit_l', 'vit_h']
 
 inpaint_engine_versions = ['None', 'v1', 'v2.5', 'v2.6']
 inpaint_option_default = 'Inpaint or Outpaint (default)'
-type_cfg_choices=['CFG Mimicking from TSNR','CFG rescale','Off']
 type_cfg_default = 'CFG Mimicking from TSNR'
 inpaint_option_detail = 'Improve Detail (face, hand, eyes, etc.)'
 inpaint_option_modify = 'Modify Content (add objects, change background, etc.)'
