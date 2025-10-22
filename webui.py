@@ -301,6 +301,9 @@ def sort_enhance_images(images, task):
 
 
 def inpaint_mode_change(mode, inpaint_engine_version):
+    print ('mmmmm',mode)
+    print ('mmmmm',inpaint_engine_version)
+    print ('mmmmm',modules.flags.inpaint_options)
     assert mode in modules.flags.inpaint_options
 
     # inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
