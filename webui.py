@@ -1645,7 +1645,7 @@ with shared.gradio_root:
                         result.append(gr.update(value=inpaint_engine_version))
                     else:
                         result.append(gr.update())
-
+                print ('xxxxxxxxxxxx',result)
                 return result
 
             preset_selection.change(preset_selection_change, inputs=[preset_selection, state_is_generating, inpaint_mode], outputs=load_data_outputs, queue=False, show_progress=True) \
