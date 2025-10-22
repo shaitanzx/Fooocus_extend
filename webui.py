@@ -1392,12 +1392,11 @@ with shared.gradio_root:
                                                  value=modules.config.default_cfg_tsnr,visible=True,
                                                  info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
                                                       '(effective when real CFG > mimicked CFG).')
-                        #def cfg_select(cfg):
-                        #    scale = (cfg == 'CFG rescale')
-                        #    adaptive = (cfg == 'CFG Mimicking from TSNR')
-                        #    gr.Info(f"Selected {cfg}")
-                        #    return gr.update(visible=scale), gr.update(visible=adaptive)
-                        #type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
+                        def cfg_select(cfg):
+                            scale = (cfg == 'CFG rescale')
+                            adaptive = (cfg == 'CFG Mimicking from TSNR')
+                            return gr.update(visible=scale), gr.update(visible=adaptive)
+                        type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
                         clip_skip = gr.Slider(label='CLIP Skip', minimum=1, maximum=flags.clip_skip_max, step=1,
                                                  value=modules.config.default_clip_skip,
                                                  info='Bypass CLIP layers to avoid overfitting (use 1 to not skip any layers, 2 is recommended).')
