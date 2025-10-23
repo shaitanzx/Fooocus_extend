@@ -323,7 +323,7 @@ class Script():
         presets = loadpresets(filepath)
         presets = LPRESET.update(presets)
 
-        with InputAccordion(False, label=self.title()) as active:
+        with gr.Row():
             with gr.Row():
                 if use_old_active:
                     active = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="RP_active" + eladd)
