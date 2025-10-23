@@ -67,7 +67,7 @@ from extentions.vector import vector
 import extentions.batch as batch
 import extentions.watermark as watermark
 
-from extentions.regional import scripts as region_script
+from extentions.regional.scripts.rp import scripts as region_script
 region_script = Script()
 
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
