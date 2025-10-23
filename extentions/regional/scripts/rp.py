@@ -240,12 +240,17 @@ class Script():
         self.usencom = usencom
         self.batch_size = batch
 
-        model = shared.sd_model
-        self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
-        self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
-        self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
-        self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
-        
+        model = "shared.sd_model"
+        #!self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
+        #!self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
+        #!self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
+        #!self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
+        self.is_sdxl = True
+        self.is_sd2 = False
+        self.is_sd1 = False
+        self.is_flux = False
+
+
         self.aratios = []
         self.bratios = []
         self.divide = 0
