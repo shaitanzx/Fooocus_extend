@@ -455,7 +455,7 @@ class Script():
 
     def process(self, p, active, a_debug , rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
                 usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper):
-        print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
+        print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',aratios)
         if type(options) is bool:
             options = ["disable convert 'AND' to 'BREAK'"] if options else []
         elif type(options) is str:
