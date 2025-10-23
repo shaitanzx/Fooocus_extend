@@ -1,19 +1,21 @@
 import copy
 from pprint import pprint
 import torch
-from modules import devices, shared, extra_networks, sd_hijack
-from modules.script_callbacks import CFGDenoisedParams, CFGDenoiserParams
+#!from modules import devices, shared, extra_networks, sd_hijack
+#!from modules.script_callbacks import CFGDenoisedParams, CFGDenoiserParams
 from torchvision.transforms import InterpolationMode, Resize  # Mask.
-import scripts.attention as att
-from scripts.regions import floatdef
-from scripts.attention import makerrandman
+import extentions.regional.scripts.attention as att
+from extentions.regional.scripts.regions import floatdef
+from extentions.regional.scripts.attention import makerrandman
 
-from modules import launch_utils
-forge = launch_utils.git_tag()[0:2] == "f2"
-reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+#!from modules import launch_utils
+#!forge = launch_utils.git_tag()[0:2] == "f2"
+forge = True
+#!reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+reforge = False
 
-if forge:
-    from modules.script_callbacks import AfterCFGCallbackParams, on_cfg_after_cfg
+#!if forge:
+#!    from modules.script_callbacks import AfterCFGCallbackParams, on_cfg_after_cfg
 
 denoised_params = AfterCFGCallbackParams if forge else CFGDenoisedParams
 
