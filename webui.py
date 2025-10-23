@@ -1789,7 +1789,7 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        #!ctrls.append(region_params)
+        ctrls.extend(region_params)
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
