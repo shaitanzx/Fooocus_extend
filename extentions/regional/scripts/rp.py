@@ -25,13 +25,17 @@ from packaging import version
 from functools import wraps
 
 OPT_RP_DISABLE_IMAGE_EDITOR = "regional_prompter_disable_iamgeeditor"
-disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
+#!disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
+disable_image_editor = False
 
 USE_OLD_ACTIVE = "old_active_check"
-use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
+#!use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
+use_old_active = False
 
-forge = launch_utils.git_tag()[0:2] == "f2"
-reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+#!forge = launch_utils.git_tag()[0:2] == "f2"
+forge = True
+#!reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+reforge = False
 print(f"Forge: {forge}, reForge: {reforge}")
 
 KEYBRK_R = "RP_TEMP_REPLACE"
@@ -47,8 +51,8 @@ OPTDHIRES = "Disabled in Hires Fix"
 OPTIONLIST = [OPTAND,OPTUSEL,OPTBREAK,OPTFLIP,OPTCOUT,OPTAHIRES,OPTDHIRES,"debug", "debug2"]
 
 # Modules.basedir points to extension's dir. script_path or scripts.basedir points to root.
-PTPRESET = modules.scripts.basedir()
-PTPRESETALT = os.path.join(paths.script_path, "scripts")
+PTPRESET = extentions.regional.scripts.basedir()
+PTPRESETALT = PTPRESET
 
 def lange(l):
     return range(len(l))
