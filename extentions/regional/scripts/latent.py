@@ -90,7 +90,8 @@ def cloneparams(orig,target):
 # [Batch1-Area3, Batch2-Area1] -> [Batch1-Area2, Batch2-Area2] 
 # [Batch2-Area2, Batch2-Area3] -> [Batch1-Area3, Batch2-Area3] 
 
-def denoiser_callback_s(self, params: CFGDenoiserParams):
+#!def denoiser_callback_s(self, params: CFGDenoiserParams):
+def denoiser_callback_s(self, params):
     self.step = params.sampling_step
     self.total_step = params.total_sampling_steps
 
