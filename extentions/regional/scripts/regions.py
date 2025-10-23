@@ -6,7 +6,7 @@ import gradio as gr
 import numpy as np
 import PIL
 import torch
-from modules import devices
+#!from modules import devices
 
 def lange(l):
     return range(len(l))
