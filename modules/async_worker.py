@@ -7,6 +7,7 @@ import modules.config
 import sys
 import random
 
+
 patch_all()
 
 
@@ -281,6 +282,7 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
+        self.region_params = args.pop(20)
  
 
     
@@ -332,6 +334,10 @@ def worker():
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
+
+    from extentions.regional.scripts.rp import Script as region_script
+
+
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -1460,6 +1466,14 @@ def worker():
         goals = []
         tasks = []
         current_progress = 1
+
+        (active, a_debug, rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
+            usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold,
+            polymask, lstop, lstop_hr, flipper
+            ) = region_args
+        region = region_script()
+        region_script.process(async_task,active, a_debug, rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
+            usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold,polymask, lstop, lstop_hr, flipper)
 
         if async_task.input_image_checkbox:
             base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner = apply_image_input(
