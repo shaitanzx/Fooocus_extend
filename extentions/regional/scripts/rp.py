@@ -1323,7 +1323,7 @@ def log(prop):
     else:
         print("Property not found in local scope.")
 
-on_ui_settings(ext_on_ui_settings)
+#!on_ui_settings(ext_on_ui_settings)
 
 class InputAccordionImpl(gr.Checkbox):
     webui_do_not_create_gradio_pyi_thank_you = True
