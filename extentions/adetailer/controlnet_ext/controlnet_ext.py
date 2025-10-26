@@ -10,8 +10,10 @@ from pathlib import Path
 
 from .common import cn_model_module, cn_model_regex
 
-ext_path = Path(extensions_dir)
-ext_builtin_path = Path(extensions_builtin_dir)
+#!ext_path = Path(extensions_dir)
+ext_path = Path(__file__).resolve().parent.parent
+#!ext_builtin_path = Path(extensions_builtin_dir)
+ext_builtin_path = Path(__file__).resolve().parent.parent
 controlnet_exists = False
 controlnet_type = "standard"
 controlnet_path = None
