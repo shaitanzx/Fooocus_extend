@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-from extentions.adetailer import PredictOutput
-from adetailer.common import create_bbox_from_mask, create_mask_from_bbox
+from extentions.adetailer.adetailer import PredictOutput
+from extentions.adetailer.adetailer.common import create_bbox_from_mask, create_mask_from_bbox
 
 
 def mediapipe_predict(
