@@ -83,11 +83,12 @@ if TYPE_CHECKING:
 
 PARAMS_TXT = "params.txt"
 
-no_huggingface = getattr(cmd_opts, "ad_no_huggingface", False)
-adetailer_dir = Path(paths.models_path, "adetailer")
-safe_mkdir(adetailer_dir)
+#!no_huggingface = getattr(cmd_opts, "ad_no_huggingface", False)
+no_huggingface=False
+detection_dir = Path(path_checkpoints).parent / "detection"
+#!(adetailer_dir)
 
-extra_models_dirs = shared.opts.data.get("ad_extra_models_dir", "")
+extra_models_dirs = ""
 model_mapping = get_models(
     adetailer_dir,
     *extra_models_dirs.split("|"),
