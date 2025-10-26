@@ -15,15 +15,15 @@ from PIL import Image, ImageChops
 from rich import print  # noqa: A004  Shadowing built-in 'print'
 
 import modules
-from aaaaaa.conditional import create_binary_mask, schedulers
-from aaaaaa.helper import (
+from extentions.adetailer.aaaaaa.conditional import create_binary_mask, schedulers
+from extentions.adetailer.aaaaaa.helper import (
     PPImage,
     copy_extra_params,
     disable_safe_unpickle,
     pause_total_tqdm,
     preserve_prompts,
 )
-from aaaaaa.p_method import (
+from extentions.adetailer.aaaaaa.p_method import (
     get_i,
     is_img2img_inpaint,
     is_inpaint_only_masked,
@@ -31,16 +31,16 @@ from aaaaaa.p_method import (
     need_call_postprocess,
     need_call_process,
 )
-from aaaaaa.traceback import rich_traceback
-from aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
-from adetailer import (
+from extentions.adetailer.aaaaaa.traceback import rich_traceback
+from extentions.adetailer.aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
+from extentions.adetailer.adetailer import (
     ADETAILER,
     __version__,
     get_models,
     mediapipe_predict,
     ultralytics_predict,
 )
-from adetailer.args import (
+from extentions.adetailer.adetailer.args import (
     BBOX_SORTBY,
     BUILTIN_SCRIPT,
     INPAINT_BBOX_MATCH_MODES,
@@ -49,8 +49,8 @@ from adetailer.args import (
     InpaintBBoxMatchMode,
     SkipImg2ImgOrig,
 )
-from adetailer.common import PredictOutput, ensure_pil_image, safe_mkdir
-from adetailer.mask import (
+from extentions.adetailer.adetailer.common import PredictOutput, ensure_pil_image, safe_mkdir
+from extentions.adetailer.adetailer.mask import (
     filter_by_ratio,
     filter_k_by,
     has_intersection,
@@ -58,8 +58,8 @@ from adetailer.mask import (
     mask_preprocess,
     sort_bboxes,
 )
-from adetailer.opts import dynamic_denoise_strength, optimal_crop_size
-from controlnet_ext import (
+from extentions.adetailer.adetailer.opts import dynamic_denoise_strength, optimal_crop_size
+from extentions.adetailer.controlnet_ext import (
     CNHijackRestore,
     ControlNetExt,
     cn_allow_script_control,
@@ -67,16 +67,16 @@ from controlnet_ext import (
     controlnet_type,
     get_cn_models,
 )
-from modules import images, paths, script_callbacks, scripts, shared
-from modules.devices import NansException
-from modules.processing import (
+#!from modules import images, paths, script_callbacks, scripts, shared
+#!from modules.devices import NansException
+#!from modules.processing import (
     Processed,
     StableDiffusionProcessingImg2Img,
     create_infotext,
     process_images,
 )
-from modules.sd_samplers import all_samplers
-from modules.shared import cmd_opts, opts, state
+#!from modules.sd_samplers import all_samplers
+#!from modules.shared import cmd_opts, opts, state
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
