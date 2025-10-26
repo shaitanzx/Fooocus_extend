@@ -94,7 +94,8 @@ model_mapping = get_models(
     *extra_models_dirs.split("|"),
     huggingface=not no_huggingface,
 )
-
+print('zzzzzzzzzz',adetailer_dir)
+print('zzzzzzzzzz',model_mapping)
 txt2img_submit_button = img2img_submit_button = None
 txt2img_submit_button = cast(gr.Button, txt2img_submit_button)
 img2img_submit_button = cast(gr.Button, img2img_submit_button)
