@@ -591,7 +591,7 @@ class Script():
             keyconverter(aratios, self.mode, usecom, usebase, p) #convert BREAKs to ADDROMM/ADDCOL/ADDROW
         bckeydealer(self, p)                                                      #detect COMM/BASE keys
         keycounter(self, p)                                                       #count keys and set to self.divide
-            
+        pprint(vars(self))    
         if "Pro" not in self.mode: # skip region assign in prompt mode
             ##### region mode
             if "Mask" in self.mode:
