@@ -13,7 +13,7 @@ from typing_extensions import Protocol
 #!from modules import safe
 #!from modules.shared import cmd_opts, opts
 
-if TYPE_CHECKING:
+if not TYPE_CHECKING:
     # 타입 체커가 빨간 줄을 긋지 않게 하는 편법
     from types import SimpleNamespace
 
