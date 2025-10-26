@@ -282,7 +282,6 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
-        self.region_params = [args.pop() for _ in range(20)]
  
 
     
@@ -484,14 +483,6 @@ def worker():
                         positive_cond, negative_cond,
                         pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
         imgs=None 
-
-        if async_task.region_params[0]:
-            from extentions.regional.scripts.rp import Script as region_script
-            region = region_script()
-            region.process(async_task,height, width,*async_task.region_params)
-            print('zzzzzzzzzzzzzzz',p.prompt)
-
-
 
         if (async_task.enable_instant == True and async_task.pre_gen == True) or async_task.enable_instant == False:
             if async_task.enable_pm ==True:
