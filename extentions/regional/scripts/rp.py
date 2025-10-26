@@ -455,7 +455,7 @@ class Script():
         return [active, dummy_false, rp_selected_tab, mmode, xmode, pmode, ratios, baseratios,
                 usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper]
 
-    def process(self, p, active, a_debug , rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
+    def process(self, p,height, width, active, a_debug , rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
                 usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper):
         if type(options) is bool:
             options = ["disable convert 'AND' to 'BREAK'"] if options else []
@@ -556,7 +556,7 @@ class Script():
 
         if flipper:aratios = changecs(aratios)
 
-        self.__init__(active, tabs2mode(rp_selected_tab, mmode, xmode, pmode) ,calcmode ,p.height, p.width, debug, debug2,
+        self.__init__(active, tabs2mode(rp_selected_tab, mmode, xmode, pmode) ,calcmode ,height, width, debug, debug2,
         usebase, usecom, usencom, p.batch_size, lstop, lstop_hr, diff = diff)
 
         #!self.all_prompts = p.all_prompts.copy()

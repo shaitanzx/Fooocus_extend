@@ -1469,7 +1469,7 @@ def worker():
         if async_task.region_params[0]:
             from extentions.regional.scripts.rp import Script as region_script
             region = region_script()
-            region.process(async_task,*async_task.region_params)
+            region.process(async_task,height, width,*async_task.region_params)
             print('zzzzzzzzzzzzzzz',p.prompt)
 
         if async_task.input_image_checkbox:
