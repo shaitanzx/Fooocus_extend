@@ -455,7 +455,6 @@ class Script():
 
     def process(self, p, active, a_debug , rp_selected_tab, mmode, xmode, pmode, aratios, bratios,
                 usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask, lstop, lstop_hr, flipper):
-        print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',aratios)
         if type(options) is bool:
             options = ["disable convert 'AND' to 'BREAK'"] if options else []
         elif type(options) is str:
@@ -517,12 +516,17 @@ class Script():
         else:
             diff = False
         
-        if forge:
-            from backend.args import dynamic_args
-            self.orig_online_lora = dynamic_args["online_lora"]
+        #!if forge:
+        #!    from backend.args import dynamic_args
+        #!    self.orig_online_lora = dynamic_args["online_lora"]
+        self.orig_online_lora=True
 
         if not any(key in tprompt for key in ALLALLKEYS) or not active:
-            return unloader(self,p)
+            self.active=False
+            p.region_params[0]=False
+            print('[Regional Prompter] Deactivate')
+            #!return unloader(self,p)
+            return
 
         p.extra_generation_params.update({
             "RP Active":active,
@@ -553,15 +557,15 @@ class Script():
         self.__init__(active, tabs2mode(rp_selected_tab, mmode, xmode, pmode) ,calcmode ,p.height, p.width, debug, debug2,
         usebase, usecom, usencom, p.batch_size, lstop, lstop_hr, diff = diff)
 
-        self.all_prompts = p.all_prompts.copy()
-        self.all_negative_prompts = p.all_negative_prompts.copy()
+        #!self.all_prompts = p.all_prompts.copy()
+        #!self.all_negative_prompts = p.all_negative_prompts.copy()
         self.optbreak = OPTBREAK in options
         self.hiresacts = [OPTAHIRES in options, OPTDHIRES in options]
 
         # SBM ddim / plms detection.
         self.isvanilla = p.sampler_name in ["DDIM", "PLMS", "UniPC"]
-        if forge:
-            self.isvanilla = not self.isvanilla
+        #!if forge:
+        #!    self.isvanilla = not self.isvanilla
 
         if self.h % ATTNSCALE != 0 or self.w % ATTNSCALE != 0:
             # Testing shows a round down occurs in model.
@@ -569,15 +573,15 @@ class Script():
             self.h = self.h - self.h % ATTNSCALE
             self.w = self.w - self.w % ATTNSCALE
 
-        if hasattr(p,"enable_hr"): # Img2img doesn't have it.
-            self.hr = p.enable_hr
-            self.hr_w = (p.hr_resize_x if p.hr_resize_x > p.width else p.width * p.hr_scale)
-            self.hr_h = (p.hr_resize_y if p.hr_resize_y > p.height else p.height * p.hr_scale)
-            if self.hr_h % ATTNSCALE != 0 or self.hr_w % ATTNSCALE != 0:
-                # Testing shows a round down occurs in model.
-                print("Warning: Nonstandard height / width for ulscaled size")
-                self.hr_h = self.hr_h - self.hr_h % ATTNSCALE
-                self.hr_w = self.hr_w - self.hr_w % ATTNSCALE
+        #!if hasattr(p,"enable_hr"): # Img2img doesn't have it.
+        #!    self.hr = p.enable_hr
+        #!    self.hr_w = (p.hr_resize_x if p.hr_resize_x > p.width else p.width * p.hr_scale)
+        #!    self.hr_h = (p.hr_resize_y if p.hr_resize_y > p.height else p.height * p.hr_scale)
+        #!    if self.hr_h % ATTNSCALE != 0 or self.hr_w % ATTNSCALE != 0:
+        #!        # Testing shows a round down occurs in model.
+        #!        print("Warning: Nonstandard height / width for ulscaled size")
+        #!        self.hr_h = self.hr_h - self.hr_h % ATTNSCALE
+        #!        self.hr_w = self.hr_w - self.hr_w % ATTNSCALE
     
         loraverchekcer(self)                                                  #check web-ui version
         if OPTAND not in options: allchanger(p, "AND", KEYBRK)                                          #Change AND to BREAK
@@ -617,9 +621,9 @@ class Script():
             denoiserdealer(self, False)
 
         if OPTCOUT in options: commentouter(p)
-        neighbor(self,p)                                                    #detect other extention
+        #!neighbor(self,p)                                                    #detect other extention
         if self.optbreak: allchanger(p,KEYBRK,KEYBRK_R)
-        keyreplacer(self, p)                                                      #replace all keys to BREAK
+        #!keyreplacer(self, p)                                                      #replace all keys to BREAK
         blankdealer(self, p)                                               #add "_" if prompt of last region is blank
         commondealer(p, self.usecom, self.usencom, flip_prompt)          #add commom prompt to all region
         if "La" in self.calc: allchanger(p, KEYBRK,"AND")      #replace BREAK to AND in Latent mode
@@ -783,16 +787,18 @@ def commondealer(p, usecom, usencom, flip):
         return prompt
 
     if usecom:
-        for pr in p.all_prompts:
-            all_prompts.append(comadder(pr))
-        p.all_prompts = all_prompts
-        p.prompt = all_prompts[0]
+        #!for pr in p.all_prompts:
+        #!    all_prompts.append(comadder(pr))
+        #!p.all_prompts = all_prompts
+        #!p.prompt = all_prompts[0]
+        p.prompt = (commadder(p.prompt))
 
     if usencom:
-        for pr in p.all_negative_prompts:
-            all_negative_prompts.append(comadder(pr))
-        p.all_negative_prompts = all_negative_prompts
-        p.negative_prompt = all_negative_prompts[0]
+        #!for pr in p.all_negative_prompts:
+        #!    all_negative_prompts.append(comadder(pr))
+        #!p.all_negative_prompts = all_negative_prompts
+        #!p.negative_prompt = all_negative_prompts[0]
+        p.negative_prompt = (commadder(p.negative_prompt))
 
 def commentouter(p):
     all_prompts = []
@@ -827,11 +833,11 @@ def hrdealer(p):
 
 def allchanger(p, a, b):
     p.prompt = p.prompt.replace(a, b)
-    for i in lange(p.all_prompts):
-        p.all_prompts[i] = p.all_prompts[i].replace(a, b)
+    #!for i in lange(p.all_prompts):
+    #!    p.all_prompts[i] = p.all_prompts[i].replace(a, b)
     p.negative_prompt = p.negative_prompt.replace(a, b)
-    for i in lange(p.all_negative_prompts):
-        p.all_negative_prompts[i] = p.all_negative_prompts[i].replace(a, b)
+    #!for i in lange(p.all_negative_prompts):
+    #!    p.all_negative_prompts[i] = p.all_negative_prompts[i].replace(a, b)
 
 def tokendealer(self, p):
     seps = "AND" if "La" in self.calc else KEYBRK
@@ -1301,18 +1307,23 @@ def resetpcache(p):
     p.cached_hr_uc = [None, None]
 
 def loraverchekcer(self):
-    try:
-        self.ui_version = int(launch.git_tag().replace("v","").replace(".",""))
-    except:
-        self.ui_version = 100
+    self.isbefore15 = False
+    self.layer_name = "lora_layer_name"
+
+
+#!def loraverchekcer(self):
+#!    try:
+#!        self.ui_version = int(launch.git_tag().replace("v","").replace(".",""))
+#!    except:
+#!        self.ui_version = 100
         
-    try:
-        import lora
-        self.isbefore15 =  "assign_lora_names_to_compvis_modules" in dir(lora)
-        self.layer_name = "lora_layer_name" if self.isbefore15 else "network_layer_name"
-    except:
-        self.isbefore15 = False
-        self.layer_name = "lora_layer_name"
+#!    try:
+#!        import lora
+#!        self.isbefore15 =  "assign_lora_names_to_compvis_modules" in dir(lora)
+#!        self.layer_name = "lora_layer_name" if self.isbefore15 else "network_layer_name"
+#!    except:
+#!        self.isbefore15 = False
+#!        self.layer_name = "lora_layer_name"
 
 def log(prop):
     frame = inspect.currentframe().f_back
