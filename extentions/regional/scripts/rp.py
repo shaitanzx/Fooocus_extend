@@ -529,7 +529,7 @@ class Script():
             print('[Regional Prompter] Deactivate')
             #!return unloader(self,p)
             return
-
+        """
         p.extra_generation_params.update({
             "RP Active":active,
             "RP Divide mode": rp_selected_tab,
@@ -550,7 +550,7 @@ class Script():
             "RP LoRA Hires Stop Step":lstop_hr,
             "RP Flip": flipper,
         })
-
+        """
         savepresets("lastrun",rp_selected_tab, mmode, xmode, pmode, aratios,bratios,
                      usebase, usecom, usencom, calcmode, options, lnter, lnur, threshold, polymask,lstop, lstop_hr, flipper)
 
