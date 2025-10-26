@@ -70,11 +70,11 @@ from extentions.adetailer.controlnet_ext import (
 #!from modules import images, paths, script_callbacks, scripts, shared
 #!from modules.devices import NansException
 #!from modules.processing import (
-    Processed,
-    StableDiffusionProcessingImg2Img,
-    create_infotext,
-    process_images,
-)
+#!    Processed,
+#!    StableDiffusionProcessingImg2Img,
+#!    create_infotext,
+#!    process_images,
+#!)
 #!from modules.sd_samplers import all_samplers
 #!from modules.shared import cmd_opts, opts, state
 
