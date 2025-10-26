@@ -24,6 +24,8 @@ import base64
 from packaging import version
 from functools import wraps
 
+from extentions.regional.scripts.latent import (denoised_callback_s, denoiser_callback_s, lora_namer, setuploras, unloadlorafowards, forge_linear_forward)
+
 OPT_RP_DISABLE_IMAGE_EDITOR = "regional_prompter_disable_iamgeeditor"
 #!disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
 disable_image_editor = False
@@ -627,7 +629,11 @@ class Script():
         blankdealer(self, p)                                               #add "_" if prompt of last region is blank
         commondealer(p, self.usecom, self.usencom, flip_prompt)          #add commom prompt to all region
         if "La" in self.calc: allchanger(p, KEYBRK,"AND")      #replace BREAK to AND in Latent mode
-        if tokendealer(self, p): return unloader(self,p)          #count tokens and calcrate target tokens
+        if tokendealer(self, p): 
+            self.active=False
+            p.region_params[0]=False
+            print('[Regional Prompter] Deactivate in tokenizator')
+            return unloader(self,p)          #count tokens and calcrate target tokens
         if self.optbreak: allchanger(p,KEYBRK_R,KEYBRK)
         thresholddealer(self, p, threshold)                          #set threshold
         
@@ -635,7 +641,7 @@ class Script():
         if not self.diff: hrdealer(p)
 
         print(f"Regional Prompter Active, Pos tokens : {self.ppt}, Neg tokens : {self.pnt}")
-        self.used_prompt = p.all_prompts[0]
+        self.used_prompt = p.prompt
 
         if debug : debugall(self)
 
@@ -838,7 +844,7 @@ def allchanger(p, a, b):
     p.negative_prompt = p.negative_prompt.replace(a, b)
     #!for i in lange(p.all_negative_prompts):
     #!    p.all_negative_prompts[i] = p.all_negative_prompts[i].replace(a, b)
-
+"""
 def tokendealer(self, p):
     seps = "AND" if "La" in self.calc else KEYBRK
     self.seps = seps
@@ -909,7 +915,92 @@ def tokendealer(self, p):
     if notarget:
         print("No target word is detected in Prompt mode")
     return notarget
+"""
 
+def tokendealer(self, p):
+    """
+    Анализ промптов и подсчёт токенов для Regional Prompter в Fooocus.
+    """
+    seps = "AND" if "La" in self.calc else KEYBRK
+    self.seps = seps
+
+    # Получаем основной промпт (первый из batch)
+    prompt_text = p.all_prompts[0]
+    negative_prompt_text = p.all_negative_prompts[0]
+
+    # Разбиваем по разделителю
+    ppl = prompt_text.split(seps)
+    npl = negative_prompt_text.split(seps)
+
+    # Обработка optbreak (временная замена RP_TEMP_REPLACE)
+    if self.optbreak:
+        ppl = [p.replace(KEYBRK_R, KEYBRK) for p in ppl]
+        npl = [p.replace(KEYBRK_R, KEYBRK) for p in npl]
+
+    # Target-слова для Prompt mode (последнее слово в каждом регионе, кроме первого)
+    targets = [p.split(",")[-1].strip() for p in ppl[1:]] if "Pro" in self.mode else []
+
+    pt, nt, ppt, pnt, tt = [], [], [], [], []
+    padd = 0
+
+    # === ТОКЕНИЗАЦИЯ ПОЗИТИВНОГО ПРОМПТА ===
+    for i, region_prompt in enumerate(ppl):
+        # Используем clip_encode для получения токенов
+        cond = pipeline.clip_encode(texts=[region_prompt], pool_top_k=1)
+        tokensnum = cond.shape[1]  # [1, T, D] → T = число токенов
+
+        # Число чанков (каждый = 75 токенов)
+        chunk_count = (tokensnum + TOKENS - 1) // TOKENS  # ceil division
+        pt.append([padd, padd + chunk_count])
+        ppt.append(tokensnum)
+        padd += chunk_count
+
+    # === ПОИСК TARGET-ТОКЕНОВ (Prompt mode) ===
+    if "Pro" in self.mode and ppl:
+        base_cond = pipeline.clip_encode(texts=[ppl[0]], pool_top_k=1)
+        base_tokens = base_cond.shape[1]
+
+        for target in targets:
+            if not target:
+                tt.append([])
+                continue
+
+            target_cond = pipeline.clip_encode(texts=[target], pool_top_k=1)
+            tlist = []
+
+            # Проходим по токенам target и ищем их в базовом промпте
+            for t_idx in range(target_cond.shape[1]):
+                target_token_id = target_cond[0, t_idx, :].sum().item()  # упрощённый хеш
+                for b_idx in range(base_tokens):
+                    base_token_id = base_cond[0, b_idx, :].sum().item()
+                    if abs(target_token_id - base_token_id) < 1e-6:
+                        tlist.append(b_idx)
+                        break
+            tt.append(tlist)
+
+    # === ТОКЕНИЗАЦИЯ НЕГАТИВНОГО ПРОМПТА ===
+    padd_neg = 0
+    for region_neg in npl:
+        cond = pipeline.clip_encode(texts=[region_neg], pool_top_k=1)
+        tokensnum = cond.shape[1]
+        chunk_count = (tokensnum + TOKENS - 1) // TOKENS
+        nt.append([padd_neg, padd_neg + chunk_count])
+        pnt.append(tokensnum)
+        padd_neg += chunk_count
+
+    # Сохраняем результаты
+    self.eq = (padd == padd_neg) and (len(ppl) == len(npl))
+    self.pt = pt
+    self.nt = nt
+    self.pe = tt
+    self.ppt = ppt
+    self.pnt = pnt
+
+    # Проверка: есть ли target в Prompt mode?
+    notarget = "Pro" in self.mode and all(len(t) == 0 for t in tt)
+    if notarget:
+        print("No target word is detected in Prompt mode")
+    return notarget
 def thresholddealer(self, p ,threshold):
     if "Pro" in self.mode:
         threshold = threshold.split(",")
