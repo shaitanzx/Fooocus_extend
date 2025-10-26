@@ -557,7 +557,7 @@ class Script():
         if flipper:aratios = changecs(aratios)
 
         self.__init__(active, tabs2mode(rp_selected_tab, mmode, xmode, pmode) ,calcmode ,height, width, debug, debug2,
-        usebase, usecom, usencom, p.batch_size, lstop, lstop_hr, diff = diff)
+        usebase, usecom, usencom, 1, lstop, lstop_hr, diff = diff)
 
         #!self.all_prompts = p.all_prompts.copy()
         #!self.all_negative_prompts = p.all_negative_prompts.copy()
