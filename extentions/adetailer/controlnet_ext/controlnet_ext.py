@@ -18,7 +18,7 @@ controlnet_exists = False
 controlnet_type = "standard"
 controlnet_path = None
 cn_base_path = ""
-
+"""
 for extension in extensions.active():
     if not extension.enabled:
         continue
@@ -35,7 +35,7 @@ if controlnet_path is not None:
         target_path = str(sd_webui_controlnet_path.parent)
         if target_path not in sys.path:
             sys.path.append(target_path)
-
+"""
 
 class ControlNetExt:
     def __init__(self):
