@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-from adetailer import PredictOutput
+from extentions.adetailer.scripts.adetailer import PredictOutput
 from adetailer.common import create_bbox_from_mask, create_mask_from_bbox
 
 
