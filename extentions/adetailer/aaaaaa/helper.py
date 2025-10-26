@@ -19,11 +19,11 @@ if TYPE_CHECKING:
 
     StableDiffusionProcessingTxt2Img = SimpleNamespace
     StableDiffusionProcessingImg2Img = SimpleNamespace
-else:
-    from modules.processing import (
-        StableDiffusionProcessingImg2Img,
-        StableDiffusionProcessingTxt2Img,
-    )
+#!else:
+#!    from modules.processing import (
+#!        StableDiffusionProcessingImg2Img,
+#!        StableDiffusionProcessingTxt2Img,
+#!    )
 
 PT = Union[StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img]
 
