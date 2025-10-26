@@ -67,6 +67,9 @@ from extentions.vector import vector
 import extentions.batch as batch
 import extentions.watermark as watermark
 
+from extentions.adetailer.scripts.!adetailer import AfterDetailerScript as adetailer
+adetailer=Script()
+
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -769,6 +772,8 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+                        with gr.TabItem(label='OneButtonPrompt') as obp_tab:
+                            adetailer.ui()
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
