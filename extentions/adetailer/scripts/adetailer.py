@@ -85,7 +85,7 @@ PARAMS_TXT = "params.txt"
 
 #!no_huggingface = getattr(cmd_opts, "ad_no_huggingface", False)
 no_huggingface=False
-detection_dir = Path(modules.config.path_checkpoints).parent / "detection"
+detection_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
 #!(adetailer_dir)
 
 extra_models_dirs = ""
