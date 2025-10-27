@@ -140,7 +140,7 @@ class AfterDetailerScript():
             vae_list="vae_list",
         )
 
-        components, infotext_fields = adui(num_models, is_img2img, webui_info)
+        components = adui(num_models, is_img2img, webui_info)
 
         self.infotext_fields = infotext_fields
         return components
