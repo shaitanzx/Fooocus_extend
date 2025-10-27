@@ -470,82 +470,85 @@ with shared.gradio_root:
                                            queue=False, show_progress=False)
 
                     with gr.Tab(label='Inpaint or Outpaint', id='inpaint_tab') as inpaint_tab:
-                        with gr.Row():
-                            with gr.Column():
-                                inpaint_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
-                                inpaint_advanced_masking_checkbox = gr.Checkbox(label='Enable Advanced Masking Features', value=modules.config.default_inpaint_advanced_masking_checkbox)
-                                inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.config.default_inpaint_method, label='Method')
-                                inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
-                                outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom'], value=[], label='Outpaint Direction')
-                                example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
-                                                                     label='Additional Prompt Quick List',
-                                                                     components=[inpaint_additional_prompt],
-                                                                     visible=False)
-                                gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Documentation</a>')
-                                example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
+                        with gr.Tab(label='Inpaint or Outpaint'):
+                            with gr.Row():
+                                with gr.Column():
+                                    inpaint_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
+                                    inpaint_advanced_masking_checkbox = gr.Checkbox(label='Enable Advanced Masking Features', value=modules.config.default_inpaint_advanced_masking_checkbox)
+                                    inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.config.default_inpaint_method, label='Method')
+                                    inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
+                                    outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom'], value=[], label='Outpaint Direction')
+                                    example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
+                                                                         label='Additional Prompt Quick List',
+                                                                         components=[inpaint_additional_prompt],
+                                                                         visible=False)
+                                    gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Documentation</a>')
+                                    example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
 
-                            with gr.Column(visible=modules.config.default_inpaint_advanced_masking_checkbox) as inpaint_mask_generation_col:
-                                inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", mask_opacity=1, elem_id='inpaint_mask_canvas')
-                                invert_mask_checkbox = gr.Checkbox(label='Invert Mask When Generating', value=modules.config.default_invert_mask_checkbox)
-                                inpaint_mask_model = gr.Dropdown(label='Mask generation model',
-                                                                 choices=flags.inpaint_mask_models,
-                                                                 value=modules.config.default_inpaint_mask_model)
-                                inpaint_mask_cloth_category = gr.Dropdown(label='Cloth category',
-                                                             choices=flags.inpaint_mask_cloth_category,
-                                                             value=modules.config.default_inpaint_mask_cloth_category,
-                                                             visible=False)
-                                inpaint_mask_dino_prompt_text = gr.Textbox(label='Detection prompt', value='', visible=False, info='Use singular whenever possible', placeholder='Describe what you want to detect.')
-                                example_inpaint_mask_dino_prompt_text = gr.Dataset(
-                                    samples=modules.config.example_enhance_detection_prompts,
-                                    label='Detection Prompt Quick List',
-                                    components=[inpaint_mask_dino_prompt_text],
-                                    visible=modules.config.default_inpaint_mask_model == 'sam')
-                                example_inpaint_mask_dino_prompt_text.click(lambda x: x[0],
-                                                                            inputs=example_inpaint_mask_dino_prompt_text,
-                                                                            outputs=inpaint_mask_dino_prompt_text,
-                                                                            show_progress=False, queue=False)
+                                with gr.Column(visible=modules.config.default_inpaint_advanced_masking_checkbox) as inpaint_mask_generation_col:
+                                    inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", mask_opacity=1, elem_id='inpaint_mask_canvas')
+                                    invert_mask_checkbox = gr.Checkbox(label='Invert Mask When Generating', value=modules.config.default_invert_mask_checkbox)
+                                    inpaint_mask_model = gr.Dropdown(label='Mask generation model',
+                                                                     choices=flags.inpaint_mask_models,
+                                                                     value=modules.config.default_inpaint_mask_model)
+                                    inpaint_mask_cloth_category = gr.Dropdown(label='Cloth category',
+                                                                 choices=flags.inpaint_mask_cloth_category,
+                                                                 value=modules.config.default_inpaint_mask_cloth_category,
+                                                                 visible=False)
+                                    inpaint_mask_dino_prompt_text = gr.Textbox(label='Detection prompt', value='', visible=False, info='Use singular whenever possible', placeholder='Describe what you want to detect.')
+                                    example_inpaint_mask_dino_prompt_text = gr.Dataset(
+                                        samples=modules.config.example_enhance_detection_prompts,
+                                        label='Detection Prompt Quick List',
+                                        components=[inpaint_mask_dino_prompt_text],
+                                        visible=modules.config.default_inpaint_mask_model == 'sam')
+                                    example_inpaint_mask_dino_prompt_text.click(lambda x: x[0],
+                                                                                inputs=example_inpaint_mask_dino_prompt_text,
+                                                                                outputs=inpaint_mask_dino_prompt_text,
+                                                                                show_progress=False, queue=False)
 
-                                with gr.Accordion("Advanced options", visible=False, open=False) as inpaint_mask_advanced_options:
-                                    inpaint_mask_sam_model = gr.Dropdown(label='SAM model', choices=flags.inpaint_mask_sam_model, value=modules.config.default_inpaint_mask_sam_model)
-                                    inpaint_mask_box_threshold = gr.Slider(label="Box Threshold", minimum=0.0, maximum=1.0, value=0.3, step=0.05)
-                                    inpaint_mask_text_threshold = gr.Slider(label="Text Threshold", minimum=0.0, maximum=1.0, value=0.25, step=0.05)
-                                    inpaint_mask_sam_max_detections = gr.Slider(label="Maximum number of detections", info="Set to 0 to detect all", minimum=0, maximum=10, value=modules.config.default_sam_max_detections, step=1, interactive=True)
-                                generate_mask_button = gr.Button(value='Generate mask from image')
+                                    with gr.Accordion("Advanced options", visible=False, open=False) as inpaint_mask_advanced_options:
+                                        inpaint_mask_sam_model = gr.Dropdown(label='SAM model', choices=flags.inpaint_mask_sam_model, value=modules.config.default_inpaint_mask_sam_model)
+                                        inpaint_mask_box_threshold = gr.Slider(label="Box Threshold", minimum=0.0, maximum=1.0, value=0.3, step=0.05)
+                                        inpaint_mask_text_threshold = gr.Slider(label="Text Threshold", minimum=0.0, maximum=1.0, value=0.25, step=0.05)
+                                        inpaint_mask_sam_max_detections = gr.Slider(label="Maximum number of detections", info="Set to 0 to detect all", minimum=0, maximum=10, value=modules.config.default_sam_max_detections, step=1, interactive=True)
+                                    generate_mask_button = gr.Button(value='Generate mask from image')
 
-                                def generate_mask(image, mask_model, cloth_category, dino_prompt_text, sam_model, box_threshold, text_threshold, sam_max_detections, dino_erode_or_dilate, dino_debug):
-                                    from extras.inpaint_mask import generate_mask_from_image
+                                    def generate_mask(image, mask_model, cloth_category, dino_prompt_text, sam_model, box_threshold, text_threshold, sam_max_detections, dino_erode_or_dilate, dino_debug):
+                                        from extras.inpaint_mask import generate_mask_from_image
 
-                                    extras = {}
-                                    sam_options = None
-                                    if mask_model == 'u2net_cloth_seg':
-                                        extras['cloth_category'] = cloth_category
-                                    elif mask_model == 'sam':
-                                        sam_options = SAMOptions(
-                                            dino_prompt=dino_prompt_text,
-                                            dino_box_threshold=box_threshold,
-                                            dino_text_threshold=text_threshold,
-                                            dino_erode_or_dilate=dino_erode_or_dilate,
-                                            dino_debug=dino_debug,
-                                            max_detections=sam_max_detections,
-                                            model_type=sam_model
-                                        )
+                                        extras = {}
+                                        sam_options = None
+                                        if mask_model == 'u2net_cloth_seg':
+                                            extras['cloth_category'] = cloth_category
+                                        elif mask_model == 'sam':
+                                            sam_options = SAMOptions(
+                                                dino_prompt=dino_prompt_text,
+                                                dino_box_threshold=box_threshold,
+                                                dino_text_threshold=text_threshold,
+                                                dino_erode_or_dilate=dino_erode_or_dilate,
+                                                dino_debug=dino_debug,
+                                                max_detections=sam_max_detections,
+                                                model_type=sam_model
+                                            )
 
-                                    mask, _, _, _ = generate_mask_from_image(image, mask_model, extras, sam_options)
+                                        mask, _, _, _ = generate_mask_from_image(image, mask_model, extras, sam_options)
 
-                                    return mask
+                                        return mask
 
 
-                                inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
-                                                                    [gr.update(visible=x == 'sam')] * 2 +
-                                                                    [gr.Dataset.update(visible=x == 'sam',
-                                                                                       samples=modules.config.example_enhance_detection_prompts)],
-                                                          inputs=inpaint_mask_model,
-                                                          outputs=[inpaint_mask_cloth_category,
-                                                                   inpaint_mask_dino_prompt_text,
-                                                                   inpaint_mask_advanced_options,
-                                                                   example_inpaint_mask_dino_prompt_text],
-                                                          queue=False, show_progress=False)
-
+                                    inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
+                                                                        [gr.update(visible=x == 'sam')] * 2 +
+                                                                        [gr.Dataset.update(visible=x == 'sam',
+                                                                                           samples=modules.config.example_enhance_detection_prompts)],
+                                                              inputs=inpaint_mask_model,
+                                                              outputs=[inpaint_mask_cloth_category,
+                                                                       inpaint_mask_dino_prompt_text,
+                                                                       inpaint_mask_advanced_options,
+                                                                       example_inpaint_mask_dino_prompt_text],
+                                                              queue=False, show_progress=False)
+                        with gr.Tab(label='Adetail', id='adetail_tab') as adetail_tab:
+                            adetail_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='adetail_canvas', show_label=False)
+                            ad_component, ad_info = adetailer.ui(is_img2img=False)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
@@ -772,10 +775,10 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='ADetailer'):
-                            ad_component, ad_info = adetailer.ui(is_img2img=False)
-                            print('aaaaaaaaaaaaaaaa',ad_component)
-                            print('aaaaaaaaaaaaaaaa',ad_info)
+                        #!with gr.TabItem(label='ADetailer'):
+                        #!    ad_component, ad_info = adetailer.ui(is_img2img=False)
+                        #!    print('aaaaaaaaaaaaaaaa',ad_component)
+                        #!    print('aaaaaaaaaaaaaaaa',ad_info)
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
