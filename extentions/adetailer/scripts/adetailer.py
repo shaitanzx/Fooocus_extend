@@ -132,12 +132,12 @@ class AfterDetailerScript():
 
         webui_info = WebuiInfo(
             ad_model_list=ad_model_list,
-            sampler_names="sampler_names",
-            scheduler_names="scheduler_names",
+            sampler_names=["sampler_names"],
+            scheduler_names=["scheduler_names]",
             t2i_button=txt2img_submit_button,
             i2i_button=img2img_submit_button,
-            checkpoints_list="checkpoint_list",
-            vae_list="vae_list",
+            checkpoints_list=["checkpoint_list"],
+            vae_list=["vae_list"],
         )
 
         components = adui(num_models, is_img2img, webui_info)

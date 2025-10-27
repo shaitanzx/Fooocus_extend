@@ -271,7 +271,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         widget.change(fn=on_change, inputs=[state, widget], outputs=state, queue=False)
 
     all_inputs = [state, *w.tolist()]
-    target_button = webui_info.i2i_button if is_img2img else webui_info.t2i_button
+    target_button = gr.Button(value='img2img') if is_img2img else gr.Button(value='txt2img')
     target_button.click(
         fn=on_generate_click, inputs=all_inputs, outputs=state, queue=False
     )
