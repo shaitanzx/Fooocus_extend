@@ -94,8 +94,7 @@ model_mapping = get_models(
     huggingface=not no_huggingface,
     download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
 )
-print('zzzzzzzzzz',adetailer_dir)
-print('zzzzzzzzzz',model_mapping)
+
 txt2img_submit_button = img2img_submit_button = None
 txt2img_submit_button = cast(gr.Button, txt2img_submit_button)
 img2img_submit_button = cast(gr.Button, img2img_submit_button)
@@ -122,7 +121,7 @@ class AfterDetailerScript():
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        num_models = 2
+        num_models = 5
         ad_model_list = list(model_mapping.keys())
         #!sampler_names = [sampler.name for sampler in all_samplers]
         #!scheduler_names = [x.label for x in schedulers]
