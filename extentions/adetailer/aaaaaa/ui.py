@@ -128,12 +128,13 @@ def adui(
     infotext_fields = []
     eid = partial(elem_id, n=0, is_img2img=is_img2img)
 
-    with InputAccordion(
-        value=False,
-        elem_id=eid("ad_main_accordion"),
-        label=ADETAILER,
-        visible=True,
-    ) as ad_enable:
+    with gr.Column():
+    #!with InputAccordion(
+    #!    value=False,
+    #!    elem_id=eid("ad_main_accordion"),
+    #!    label=ADETAILER,
+    #!    visible=True,
+    #!) as ad_enable:
         with gr.Row():
             with gr.Column(scale=8):
                 ad_skip_img2img = gr.Checkbox(
