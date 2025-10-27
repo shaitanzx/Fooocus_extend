@@ -49,7 +49,7 @@ from extentions.adetailer.adetailer.args import (
     InpaintBBoxMatchMode,
     SkipImg2ImgOrig,
 )
-from extentions.adetailer.adetailer.common import PredictOutput, ensure_pil_image, safe_mkdir
+from extentions.adetailer.adetailer.common import PredictOutput, ensure_pil_image
 from extentions.adetailer.adetailer.mask import (
     filter_by_ratio,
     filter_k_by,
