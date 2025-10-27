@@ -100,7 +100,11 @@ def download_models(local_dir: Path, *names: str, check_remote: bool = True) -> 
 
     return {k: v for k, v in models.items() if v != "INVALID"}
 
-
+def scan_model_dir(path: Path) -> list[Path]:
+    if not path.is_dir():
+        return []
+    return [p for p in path.rglob("*") if p.is_file() and p.suffix == ".pt"]
+    
 def get_models(
     *dirs: str | os.PathLike[str],
     huggingface: bool = True,
