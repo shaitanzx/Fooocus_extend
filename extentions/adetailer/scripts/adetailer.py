@@ -266,15 +266,15 @@ class AfterDetailerScript():
 
     @staticmethod
     def get_ultralytics_device() -> str:
-        if "adetailer" in shared.cmd_opts.use_cpu:
-            return "cpu"
+        #!if "adetailer" in shared.cmd_opts.use_cpu:
+        #!    return "cpu"
 
-        if platform.system() == "Darwin":
-            return ""
+        #!if platform.system() == "Darwin":
+        #!!    return ""
 
-        vram_args = ["lowvram", "medvram", "medvram_sdxl"]
-        if any(getattr(cmd_opts, vram, False) for vram in vram_args):
-            return "cpu"
+        #!vram_args = ["lowvram", "medvram", "medvram_sdxl"]
+        #!if any(getattr(cmd_opts, vram, False) for vram in vram_args):
+        #!    return "cpu"
 
         return ""
 
