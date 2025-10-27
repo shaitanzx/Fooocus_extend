@@ -88,11 +88,11 @@ no_huggingface=False
 adetailer_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
 #!(adetailer_dir)
 
-extra_models_dirs = ""
+#extra_models_dirs = ""
 model_mapping = get_models(
     adetailer_dir,
-    *extra_models_dirs.split("|"),
     huggingface=not no_huggingface,
+    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
 )
 print('zzzzzzzzzz',adetailer_dir)
 print('zzzzzzzzzz',model_mapping)
