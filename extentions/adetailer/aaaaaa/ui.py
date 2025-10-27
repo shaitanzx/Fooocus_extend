@@ -272,9 +272,9 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
 
     all_inputs = [state, *w.tolist()]
     target_button = webui_info.i2i_button if is_img2img else webui_info.t2i_button
-    target_button.click(
-        fn=on_generate_click, inputs=all_inputs, outputs=state, queue=False
-    )
+    #!target_button.click(
+    #!    fn=on_generate_click, inputs=all_inputs, outputs=state, queue=False
+    #!)
 
     infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
 
