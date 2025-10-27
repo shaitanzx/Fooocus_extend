@@ -122,22 +122,22 @@ class AfterDetailerScript():
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        num_models = opts.data.get("ad_max_models", 2)
+        num_models = 2
         ad_model_list = list(model_mapping.keys())
-        sampler_names = [sampler.name for sampler in all_samplers]
-        scheduler_names = [x.label for x in schedulers]
+        #!sampler_names = [sampler.name for sampler in all_samplers]
+        #!scheduler_names = [x.label for x in schedulers]
 
-        checkpoint_list = modules.sd_models.checkpoint_tiles(use_short=True)
-        vae_list = modules.shared_items.sd_vae_items()
+        #!checkpoint_list = modules.sd_models.checkpoint_tiles(use_short=True)
+        #!vae_list = modules.shared_items.sd_vae_items()
 
         webui_info = WebuiInfo(
             ad_model_list=ad_model_list,
-            sampler_names=sampler_names,
-            scheduler_names=scheduler_names,
+            sampler_names="sampler_names",
+            scheduler_names="scheduler_names",
             t2i_button=txt2img_submit_button,
             i2i_button=img2img_submit_button,
-            checkpoints_list=checkpoint_list,
-            vae_list=vae_list,
+            checkpoints_list="checkpoint_list",
+            vae_list="vae_list",
         )
 
         components, infotext_fields = adui(num_models, is_img2img, webui_info)
