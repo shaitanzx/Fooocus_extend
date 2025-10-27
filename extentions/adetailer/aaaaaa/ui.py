@@ -126,6 +126,8 @@ def adui(
 ):
     states = []
     infotext_fields = []
+    ad_enable=True
+    
     eid = partial(elem_id, n=0, is_img2img=is_img2img)
 
     with gr.Column():
