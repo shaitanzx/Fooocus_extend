@@ -142,8 +142,8 @@ class AfterDetailerScript():
 
         components = adui(num_models, is_img2img, webui_info)
 
-        #!self.infotext_fields = infotext_fields
-        return components
+        self.infotext_fields = infotext_fields
+        return components, infotext_fields
 
     def init_controlnet_ext(self) -> None:
         if self.controlnet_ext is not None:
