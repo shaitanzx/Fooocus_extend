@@ -150,8 +150,8 @@ def adui(
                     elem_id=eid("ad_version"),
                 )
 
-        infotext_fields.append((ad_enable, "ADetailer enable"))
-        infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
+        #!infotext_fields.append((ad_enable, "ADetailer enable"))
+        #!infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
 
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
@@ -163,11 +163,11 @@ def adui(
                     )
 
                 states.append(state)
-                infotext_fields.extend(infofields)
+                #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
     components = [ad_enable, ad_skip_img2img, *states]
-    return components, infotext_fields
+    return components   #!, infotext_fields
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
