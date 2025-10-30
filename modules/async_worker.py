@@ -1167,7 +1167,7 @@ def worker():
                 async_task, goals, async_task.uov_input_image, async_task.uov_method, async_task.performance_selection,
                 async_task.steps, 1, skip_prompt_processing=skip_prompt_processing)
         if async_task.current_tab == 'adetail':
-            inpaint_image = adetail_input_image
+            inpaint_image = async_task.adetail_input_image
             goals.append('adetail')
         if (async_task.current_tab == 'inpaint' or (
                 async_task.current_tab == 'ip' and async_task.mixing_image_prompt_and_inpaint)) \
