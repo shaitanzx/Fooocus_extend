@@ -126,6 +126,7 @@ def ui(is_img2img):
         components, infotext_fields = adui(num_models, is_img2img, webui_info)
 
         #!self.infotext_fields = infotext_fields
+        print('xxxxxxxxxxx',components)
         return components, infotext_fields
 class AfterDetailerScript():
     def __init__(self):

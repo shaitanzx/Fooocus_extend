@@ -167,6 +167,7 @@ def adui(
 
     # components: [bool, bool, dict, dict, ...]
     components = [ad_enable, ad_skip_img2img, *states]
+    print('zzzzzz',components)
     return components, infotext_fields
 
 
