@@ -157,7 +157,7 @@ def postprocess_image(p,inpaint_image,arg_list):
         for n, args in enumerate(arg_list):
             print ('aaaaaa',n,args)
         #!    if args.need_skip():
-                continue
+        #!        continue
         #!is_processed |= _postprocess_image_inner(p, pp, args, n=n)
 
         if is_processed and not is_skip_img2img(p):
