@@ -1556,9 +1556,9 @@ def worker():
                 return
         if 'adetail' in goals:
             print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',goals)
-            ad_component = adetailer.enabler(ad_component)
-            print ('xxxxxxxxxx',len(ad_component))
-            if not ad_component:
+            async_task.ad_component = adetailer.enabler(async_task.ad_component)
+            print ('xxxxxxxxxx',len(async_task.ad_component))
+            if not async_task.ad_component:
                 return
 
             
