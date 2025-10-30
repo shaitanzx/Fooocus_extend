@@ -128,6 +128,41 @@ def ui(is_img2img):
         #!self.infotext_fields = infotext_fields
 
         return components, infotext_fields
+@rich_traceback
+def process(self, p, *args_):
+        if getattr(p, "_ad_disabled", False):
+            return
+
+        if is_img2img_inpaint(p) and is_all_black(self.get_image_mask(p)):
+            p._ad_disabled = True
+            msg = (
+                "[-] ADetailer: img2img inpainting with no mask -- adetailer disabled."
+            )
+            print(msg)
+            return
+
+        if not self.is_ad_enabled(*args_):
+            p._ad_disabled = True
+            return
+
+        self.set_skip_img2img(p, *args_)
+        if getattr(p, "_ad_disabled", False):
+            # case when img2img inpainting with skip img2img
+            return
+
+        arg_list = self.get_args(p, *args_)
+
+        if hasattr(p, "_ad_xyz_prompt_sr"):
+            replaced_positive_prompt, replaced_negative_prompt = self.get_prompt(
+                p, arg_list[0]
+            )
+            arg_list[0].ad_prompt = replaced_positive_prompt[0]
+            arg_list[0].ad_negative_prompt = replaced_negative_prompt[0]
+
+        extra_params = self.extra_params(arg_list)
+        p.extra_generation_params.update(extra_params)
+
+
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
@@ -792,39 +827,39 @@ class AfterDetailerScript():
                 p2.width, p2.height, pred.bboxes[j]
             )
 
-    @rich_traceback
-    def process(self, p, *args_):
-        if getattr(p, "_ad_disabled", False):
-            return
+    #!@rich_traceback
+    #!def process(self, p, *args_):
+    #!    if getattr(p, "_ad_disabled", False):
+    #!        return
 
-        if is_img2img_inpaint(p) and is_all_black(self.get_image_mask(p)):
-            p._ad_disabled = True
-            msg = (
-                "[-] ADetailer: img2img inpainting with no mask -- adetailer disabled."
-            )
-            print(msg)
-            return
+    #!    if is_img2img_inpaint(p) and is_all_black(self.get_image_mask(p)):
+    #!        p._ad_disabled = True
+    #!        msg = (
+    #!            "[-] ADetailer: img2img inpainting with no mask -- adetailer disabled."
+    #!        )
+    #!        print(msg)
+    #!        return
 
-        if not self.is_ad_enabled(*args_):
-            p._ad_disabled = True
-            return
+    #!    if not self.is_ad_enabled(*args_):
+    #!        p._ad_disabled = True
+    #!        return
 
-        self.set_skip_img2img(p, *args_)
-        if getattr(p, "_ad_disabled", False):
+    #!    self.set_skip_img2img(p, *args_)
+    #!    if getattr(p, "_ad_disabled", False):
             # case when img2img inpainting with skip img2img
-            return
+    #!        return
 
-        arg_list = self.get_args(p, *args_)
+    #!    arg_list = self.get_args(p, *args_)
 
-        if hasattr(p, "_ad_xyz_prompt_sr"):
-            replaced_positive_prompt, replaced_negative_prompt = self.get_prompt(
-                p, arg_list[0]
-            )
-            arg_list[0].ad_prompt = replaced_positive_prompt[0]
-            arg_list[0].ad_negative_prompt = replaced_negative_prompt[0]
+    #!    if hasattr(p, "_ad_xyz_prompt_sr"):
+    #!        replaced_positive_prompt, replaced_negative_prompt = self.get_prompt(
+    #!            p, arg_list[0]
+    #!        )
+    #!        arg_list[0].ad_prompt = replaced_positive_prompt[0]
+    #!        arg_list[0].ad_negative_prompt = replaced_negative_prompt[0]
 
-        extra_params = self.extra_params(arg_list)
-        p.extra_generation_params.update(extra_params)
+    #!    extra_params = self.extra_params(arg_list)
+    #!    p.extra_generation_params.update(extra_params)
 
     def _postprocess_image_inner(
         self, p, pp: PPImage, args: ADetailerArgs, *, n: int = 0

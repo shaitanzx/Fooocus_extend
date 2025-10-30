@@ -546,7 +546,7 @@ with shared.gradio_root:
                                                                    example_inpaint_mask_dino_prompt_text],
                                                           queue=False, show_progress=False)
                     with gr.Tab(label='Adetail', id='adetail_tab') as adetail_tab:
-                            adetail_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='adetail_canvas', show_label=False)
+                            adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500)
                             ad_component, _ = adetailer.ui(is_img2img=True)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
@@ -1795,6 +1795,7 @@ with shared.gradio_root:
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
         ctrls += ad_component
+        ctrls += [adetail_input_image]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

@@ -283,6 +283,7 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
+        self.adetail_input_image = args.pop ()
 
     
 
@@ -333,7 +334,7 @@ def worker():
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
-
+    import extentions.adetailer.scripts.adetailer as adetailer
     
 
 
@@ -1165,6 +1166,9 @@ def worker():
             async_task.uov_input_image, skip_prompt_processing, async_task.steps = prepare_upscale(
                 async_task, goals, async_task.uov_input_image, async_task.uov_method, async_task.performance_selection,
                 async_task.steps, 1, skip_prompt_processing=skip_prompt_processing)
+        if (async_task.current_tab == 'adetail':
+            inpaint_image = adetail_input_image
+            goals.append('adetail')
         if (async_task.current_tab == 'inpaint' or (
                 async_task.current_tab == 'ip' and async_task.mixing_image_prompt_and_inpaint)) \
                 and isinstance(async_task.inpaint_input_image, dict):
@@ -1535,7 +1539,6 @@ def worker():
                 return
 
         if 'inpaint' in goals:
-            print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',goals)
             try:
                 denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(async_task,
                                                                                                     initial_latent,
@@ -1551,6 +1554,9 @@ def worker():
                                                                                                     advance_progress=True)
             except EarlyReturnException:
                 return
+        if 'adetail' in goals:
+            print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',goals)
+            
 
         if 'cn' in goals:
             apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress)
