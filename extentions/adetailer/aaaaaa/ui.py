@@ -127,7 +127,7 @@ def adui(
     states = []
     infotext_fields = []
     eid = partial(elem_id, n=0, is_img2img=is_img2img)
-    ad_enable = gr.Checkbox(label='Enable', value=False)
+    ad_enable = gr.Checkbox(label='Enable', value=False,visible=not is_img2img)
     with gr.Column():
     #!with InputAccordion(
     #!    value=False,

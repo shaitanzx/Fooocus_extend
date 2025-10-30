@@ -547,7 +547,7 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
                     with gr.Tab(label='Adetail', id='adetail_tab') as adetail_tab:
                             adetail_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='adetail_canvas', show_label=False)
-                            ad_component, _ = adetailer.ui(is_img2img=False)
+                            ad_component, _ = adetailer.ui(is_img2img=True)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
