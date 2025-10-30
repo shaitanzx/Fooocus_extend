@@ -103,24 +103,7 @@ print(
     f"[-] ADetailer initialized. version: {__version__}, num models: {len(model_mapping)}"
 )
 
-
-class AfterDetailerScript():
-    def __init__(self):
-        super().__init__()
-        self.ultralytics_device = self.get_ultralytics_device()
-
-        self.controlnet_ext = None
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(version={__version__})"
-
-    def title(self):
-        return ADETAILER
-
-    def show(self, is_img2img):
-        return scripts.AlwaysVisible
-
-    def ui(self, is_img2img):
+def ui(is_img2img):
         num_models = 5
         ad_model_list = list(model_mapping.keys())
         #!sampler_names = [sampler.name for sampler in all_samplers]
@@ -141,8 +124,47 @@ class AfterDetailerScript():
 
         components, infotext_fields = adui(num_models, is_img2img, webui_info)
 
-        self.infotext_fields = infotext_fields
+        #!self.infotext_fields = infotext_fields
         return components, infotext_fields
+class AfterDetailerScript():
+    def __init__(self):
+        super().__init__()
+        self.ultralytics_device = self.get_ultralytics_device()
+
+        self.controlnet_ext = None
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(version={__version__})"
+
+    def title(self):
+        return ADETAILER
+
+    def show(self, is_img2img):
+        return scripts.AlwaysVisible
+
+    #!def ui(self, is_img2img):
+    #!    num_models = 5
+    #!    ad_model_list = list(model_mapping.keys())
+        #!sampler_names = [sampler.name for sampler in all_samplers]
+        #!scheduler_names = [x.label for x in schedulers]
+
+        #!checkpoint_list = modules.sd_models.checkpoint_tiles(use_short=True)
+        #!vae_list = modules.shared_items.sd_vae_items()
+
+    #!    webui_info = WebuiInfo(
+    #!        ad_model_list=ad_model_list,
+    #!        sampler_names=["sampler_names"],
+    #!        scheduler_names=["scheduler_names"],
+    #!        t2i_button=txt2img_submit_button,
+    #!        i2i_button=img2img_submit_button,
+    #!        checkpoints_list=["checkpoint_list"],
+    #!        vae_list=["vae_list"],
+    #!    )
+
+    #!    components, infotext_fields = adui(num_models, is_img2img, webui_info)
+
+    #!    self.infotext_fields = infotext_fields
+    #!    return components, infotext_fields
 
     def init_controlnet_ext(self) -> None:
         if self.controlnet_ext is not None:
