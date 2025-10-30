@@ -143,7 +143,7 @@ def postprocess_image(p,inpaint_image,arg_list):
 
         #!pp.image = self.get_i2i_init_image(p, pp)
         #!pp.image = ensure_pil_image(pp.image, "RGB")
-        init_image = copy(inpaint_imagee)
+        init_image = copy(inpaint_image)
         #!arg_list = self.get_args(p, *args_)
         #!params_txt_content = self.read_params_txt()
 
