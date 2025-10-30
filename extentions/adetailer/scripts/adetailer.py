@@ -123,10 +123,10 @@ def ui(is_img2img):
             vae_list=["vae_list"],
         )
 
-        components, infotext_fields = adui(num_models, is_img2img, webui_info)
+        #!components, infotext_fields = adui(num_models, is_img2img, webui_info)
 
         #!self.infotext_fields = infotext_fields
-        return components, infotext_fields
+        return adui(num_models, is_img2img, webui_info)
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
