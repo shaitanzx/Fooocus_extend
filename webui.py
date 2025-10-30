@@ -547,13 +547,7 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
                     with gr.Tab(label='Adetail', id='adetail_tab') as adetail_tab:
                             adetail_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='adetail_canvas', show_label=False)
-                            ad_component, ad_info = adetailer.ui(is_img2img=False)
-                            print('ccccccccccc',ad_component)
-                            print("Тип ad_component:", type(ad_component))
-                            if isinstance(ad_component, list):
-                                print("Длина:", len(ad_component))
-                                if ad_component:
-                                    print("Первый элемент — компонент Gradio?", hasattr(ad_component[0], '_id'))
+                            ad_component, _ = adetailer.ui(is_img2img=False)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
@@ -1800,7 +1794,6 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        print('vvvvvvvvvvvv',len(ad_component))
         ctrls += ad_component
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):

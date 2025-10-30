@@ -282,10 +282,7 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
-
         self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
-        print('aaaaaaaaaaaaaaaa',self.ad_component)
-        print('bbbbbbbbbbbbbbbb',len(self.ad_component))
 
     
 
