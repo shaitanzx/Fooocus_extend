@@ -1535,6 +1535,7 @@ def worker():
                 return
 
         if 'inpaint' in goals:
+            print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',goals)
             try:
                 denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(async_task,
                                                                                                     initial_latent,
