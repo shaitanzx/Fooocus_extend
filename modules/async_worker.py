@@ -286,7 +286,7 @@ class AsyncTask:
 
 
 
-        self.ad_component = [args.pop() for _ in range(default_adetail_tab)]
+        self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
         print('aaaaaaaaaaaaaaaa',self.ad_component)
         print('bbbbbbbbbbbbbbbb',len(self.ad_component))
 
