@@ -282,6 +282,7 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
+        self.ad_componet = args.pop()
  
 
     
