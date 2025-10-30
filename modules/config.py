@@ -347,6 +347,12 @@ default_max_lora_number = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, int) and x >= 1,
     expected_type=int
 )
+default_adetail_tab = get_config_item_or_set_default(
+    key='default_adetail_tab',
+    default_value=5,
+    validator=lambda x: isinstance(x, int) and x >= 1,
+    expected_type=int
+)
 default_cfg_scale = get_config_item_or_set_default(
     key='default_cfg_scale',
     default_value=7.0,

@@ -15,7 +15,7 @@ class AsyncTask:
     def __init__(self, args):
         from modules.flags import Performance, MetadataScheme, ip_list, disabled
         from modules.util import get_enabled_loras
-        from modules.config import default_max_lora_number
+        from modules.config import default_max_lora_number, default_adetail_tabs
         import args_manager
 
         self.args = args.copy()
@@ -284,8 +284,7 @@ class AsyncTask:
         self.transper = args.pop()
         self.ad_componet = args.pop()
         self.ad_component = []
-        n = args.pop()
-        self.ad_component = [args.pop() for _ in range(n)]
+        self.ad_component = [args.pop() for _ in range(default_adetail_tabs)]
         print('aaaaaaaaaaaaaaaa',self.ad_component)
 
     
