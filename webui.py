@@ -70,7 +70,6 @@ import extentions.watermark as watermark
 #!from extentions.adetailer.scripts.adetailer import AfterDetailerScript
 #!adetailer=AfterDetailerScript()
 import extentions.adetailer.scripts.adetailer as adetailer
-
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -548,7 +547,7 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
                     with gr.Tab(label='Adetail', id='adetail_tab') as adetail_tab:
                             adetail_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='adetail_canvas', show_label=False)
-                            ad_component = adetailer.ui(is_img2img=False)
+                            ad_component, ad_info = adetailer.ui(is_img2img=False)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
@@ -1795,7 +1794,6 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        ctrls += [ad_component]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
