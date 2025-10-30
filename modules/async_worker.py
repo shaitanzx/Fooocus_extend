@@ -283,7 +283,10 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.ad_componet = args.pop()
- 
+        self.ad_component = []
+        n = args.pop()
+        self.ad_component = [args.pop() for _ in range(n)]
+        print('aaaaaaaaaaaaaaaa',self.ad_component)
 
     
 
