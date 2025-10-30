@@ -77,7 +77,7 @@ from extentions.adetailer.controlnet_ext import (
 #!)
 #!from modules.sd_samplers import all_samplers
 #!from modules.shared import cmd_opts, opts, state
-from modules.config import default_adetail_tabs
+from modules.config import default_adetail_tab
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -105,7 +105,7 @@ print(
 )
 
 def ui(is_img2img):
-        num_models = default_adetail_tabs
+        num_models = default_adetail_tab
         ad_model_list = list(model_mapping.keys())
         #!sampler_names = [sampler.name for sampler in all_samplers]
         #!scheduler_names = [x.label for x in schedulers]
