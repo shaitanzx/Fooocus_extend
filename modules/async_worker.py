@@ -1560,6 +1560,7 @@ def worker():
             print ('xxxxxxxxxx',len(async_task.ad_component))
             if not async_task.ad_component:
                 return
+            postprocess_image(async_task,inpaint_image,async_task.ad_component)
 
             
 

@@ -137,6 +137,41 @@ def enabler(ad_component):
     ]
     return valid_tabs
 
+def postprocess_image(p,inpaint_image,arg_list):
+        #!if getattr(p, "_ad_disabled", False) or not self.is_ad_enabled(*args_):
+        #!    return
+
+        #!pp.image = self.get_i2i_init_image(p, pp)
+        #!pp.image = ensure_pil_image(pp.image, "RGB")
+        init_image = copy(inpaint_imagee)
+        #!arg_list = self.get_args(p, *args_)
+        #!params_txt_content = self.read_params_txt()
+
+        #!if need_call_postprocess(p):
+        #!    dummy = Processed(p, [], p.seed, "")
+        #!    with preserve_prompts(p):
+        #!        p.scripts.postprocess(copy(p), dummy)
+
+        #!is_processed = False
+        #!with CNHijackRestore(), pause_total_tqdm(), cn_allow_script_control():
+        for n, args in enumerate(arg_list):
+            print ('aaaaaa',n,args)
+        #!    if args.need_skip():
+                continue
+        #!is_processed |= _postprocess_image_inner(p, pp, args, n=n)
+
+        if is_processed and not is_skip_img2img(p):
+            self.save_image(
+                p, init_image, condition="ad_save_images_before", suffix="-ad-before"
+            )
+
+        if need_call_process(p):
+            with preserve_prompts(p):
+                copy_p = copy(p)
+                p.scripts.before_process(copy_p)
+                p.scripts.process(copy_p)
+
+        self.write_params_txt(params_txt_content)
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
@@ -926,41 +961,41 @@ class AfterDetailerScript():
 
         return False
 
-    @rich_traceback
-    def postprocess_image(self, p, pp: PPImage, *args_):
-        if getattr(p, "_ad_disabled", False) or not self.is_ad_enabled(*args_):
-            return
+#!    @rich_traceback
+#!    def postprocess_image(self, p, pp: PPImage, *args_):
+#!        if getattr(p, "_ad_disabled", False) or not self.is_ad_enabled(*args_):
+#!            return
 
-        pp.image = self.get_i2i_init_image(p, pp)
-        pp.image = ensure_pil_image(pp.image, "RGB")
-        init_image = copy(pp.image)
-        arg_list = self.get_args(p, *args_)
-        params_txt_content = self.read_params_txt()
+#!        pp.image = self.get_i2i_init_image(p, pp)
+#!        pp.image = ensure_pil_image(pp.image, "RGB")
+#!        init_image = copy(pp.image)
+#!        arg_list = self.get_args(p, *args_)
+#!        params_txt_content = self.read_params_txt()
 
-        if need_call_postprocess(p):
-            dummy = Processed(p, [], p.seed, "")
-            with preserve_prompts(p):
-                p.scripts.postprocess(copy(p), dummy)
+#!        if need_call_postprocess(p):
+#!            dummy = Processed(p, [], p.seed, "")
+#!            with preserve_prompts(p):
+#!                p.scripts.postprocess(copy(p), dummy)
 
-        is_processed = False
-        with CNHijackRestore(), pause_total_tqdm(), cn_allow_script_control():
-            for n, args in enumerate(arg_list):
-                if args.need_skip():
-                    continue
-                is_processed |= self._postprocess_image_inner(p, pp, args, n=n)
+#!        is_processed = False
+#!        with CNHijackRestore(), pause_total_tqdm(), cn_allow_script_control():
+#!            for n, args in enumerate(arg_list):
+#!                if args.need_skip():
+#!                    continue
+#!                is_processed |= self._postprocess_image_inner(p, pp, args, n=n)
 
-        if is_processed and not is_skip_img2img(p):
-            self.save_image(
-                p, init_image, condition="ad_save_images_before", suffix="-ad-before"
-            )
+#!        if is_processed and not is_skip_img2img(p):
+#!            self.save_image(
+#!                p, init_image, condition="ad_save_images_before", suffix="-ad-before"
+#!            )
 
-        if need_call_process(p):
-            with preserve_prompts(p):
-                copy_p = copy(p)
-                p.scripts.before_process(copy_p)
-                p.scripts.process(copy_p)
+#!        if need_call_process(p):
+#!            with preserve_prompts(p):
+#!                copy_p = copy(p)
+#!                p.scripts.before_process(copy_p)
+#!                p.scripts.process(copy_p)
 
-        self.write_params_txt(params_txt_content)
+#!        self.write_params_txt(params_txt_content)
 
 
 def on_after_component(component, **_kwargs):
