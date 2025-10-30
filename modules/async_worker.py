@@ -284,7 +284,7 @@ class AsyncTask:
         self.transper = args.pop()
         self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
         self.adetail_input_image = args.pop ()
-
+        print(self.ad_component)
     
 
 async_tasks = []
@@ -1166,7 +1166,7 @@ def worker():
             async_task.uov_input_image, skip_prompt_processing, async_task.steps = prepare_upscale(
                 async_task, goals, async_task.uov_input_image, async_task.uov_method, async_task.performance_selection,
                 async_task.steps, 1, skip_prompt_processing=skip_prompt_processing)
-        if (async_task.current_tab == 'adetail':
+        if async_task.current_tab == 'adetail':
             inpaint_image = adetail_input_image
             goals.append('adetail')
         if (async_task.current_tab == 'inpaint' or (
