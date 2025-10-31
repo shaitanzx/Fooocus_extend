@@ -1556,6 +1556,7 @@ def worker():
             except EarlyReturnException:
                 return
         if 'adetail' in goals:
+            from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
             def is_mediapipe_model(args):
                 return args.ad_model.lower().startswith("mediapipe")
             async_task.ad_component = adetailer.enabler(async_task.ad_component)
@@ -1567,7 +1568,7 @@ def worker():
                 args = SimpleNamespace(**arg_s)
                 print ('aaaaaa',n,args)
                 is_mediapipe = is_mediapipe_model(args)
-
+                print ('aaaaaa',is_mediapipe)
                 if is_mediapipe:
                     pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
 
