@@ -336,6 +336,7 @@ def worker():
     from extentions.vector import vector as vector
     import extentions.adetailer.scripts.adetailer as adetailer
     from copy import copy
+    from types import SimpleNamespace
 
 
     sys.path.append(os.path.abspath('extentions/inswapper'))
@@ -1555,16 +1556,16 @@ def worker():
             except EarlyReturnException:
                 return
         if 'adetail' in goals:
-            def is_mediapipe_model(arg):
+            def is_mediapipe_model(args):
                 return arg.ad_model.lower().startswith("mediapipe")
             async_task.ad_component = adetailer.enabler(async_task.ad_component)
             print ('xxxxxxxxxx',len(async_task.ad_component))
             if not async_task.ad_component:
                 return
             init_image = copy(inpaint_image)
-            for n, args in enumerate(async_task.ad_component):
+            for n, arg_s in enumerate(async_task.ad_component):
                 print ('aaaaaa',n,args)
-                
+                args = SimpleNamespace(**arg_s)
                 is_mediapipe = is_mediapipe_model(args)
 
                 if is_mediapipe:
