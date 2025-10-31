@@ -137,84 +137,28 @@ def enabler(ad_component):
     ]
     return valid_tabs
 
-def _postprocess_image_inner(p, init_image, args, n: int = 0) -> bool:
-        i = get_i(p)
-
-        i2i = self.get_i2i_p(p, args, pp.image)
-        ad_prompts, ad_negatives = self.get_prompt(p, args)
-
-        is_mediapipe = args.is_mediapipe()
-
-        if is_mediapipe:
-            pred = mediapipe_predict(args.ad_model, pp.image, args.ad_confidence)
-
-        else:
-            ad_model = self.get_ad_model(args.ad_model)
-            with disable_safe_unpickle():
-                pred = ultralytics_predict(
-                    ad_model,
-                    image=pp.image,
-                    confidence=args.ad_confidence,
-                    device=self.ultralytics_device,
-                    classes=args.ad_model_classes,
-                )
-
-        if pred.preview is None:
-            print(
-                f"[-] ADetailer: nothing detected on image {i + 1} with {ordinal(n + 1)} settings."
-            )
-            return False
-
-        masks = self.pred_preprocessing(p, pred, args)
-        shared.state.assign_current_image(pred.preview)
-
-        self.save_image(
-            p,
-            pred.preview,
-            condition="ad_save_previews",
-            suffix="-ad-preview" + suffix(n, "-"),
+def sort_bboxes(pred: PredictOutput) -> PredictOutput:
+        sortby = BBOX_SORTBY[0]
+        sortby_idx = BBOX_SORTBY.index(sortby)
+        return sort_bboxes(pred, sortby_idx)
+def pred_preprocessing(p, pred: PredictOutput, args):
+        pred = filter_by_ratio(
+            pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
+        )
+        pred = filter_k_by(pred, k=args.ad_mask_k, by=args.ad_mask_filter_method)
+        pred = sort_bboxes(pred)
+        masks = mask_preprocess(
+            pred.masks,
+            kernel=args.ad_dilate_erode,
+            x_offset=args.ad_x_offset,
+            y_offset=args.ad_y_offset,
+            merge_invert=args.ad_mask_merge_invert,
         )
 
-        steps = len(masks)
-        processed = None
-        state.job_count += steps
-
-        if is_mediapipe:
-            print(f"mediapipe: {steps} detected.")
-
-        p2 = copy(i2i)
-        for j in range(steps):
-            p2.image_mask = masks[j]
-            p2.init_images[0] = ensure_pil_image(p2.init_images[0], "RGB")
-            self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
-
-            if re.match(r"^\s*\[SKIP\]\s*$", p2.prompt):
-                continue
-
-            self.fix_p2(p, p2, pp, args, pred, j)
-
-            try:
-                processed = process_images(p2)
-            except NansException as e:
-                msg = f"[-] ADetailer: 'NansException' occurred with {ordinal(n + 1)} settings.\n{e}"
-                print(msg, file=sys.stderr)
-                continue
-            finally:
-                p2.close()
-
-            if not processed.images:
-                processed = None
-                break
-
-            self.compare_prompt(p.extra_generation_params, processed, n=n)
-            p2 = copy(i2i)
-            p2.init_images = [processed.images[0]]
-
-        if processed is not None:
-            pp.image = processed.images[0]
-            return True
-
-        return False
+        #!if is_img2img_inpaint(p) and not is_inpaint_only_masked(p):
+        #!    image_mask = self.get_image_mask(p)
+        #!    masks = self.inpaint_mask_filter(image_mask, masks)
+        return masks
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
@@ -711,29 +655,9 @@ class AfterDetailerScript():
             raise ValueError(msg)
         return model_mapping[name]
 
-    def sort_bboxes(self, pred: PredictOutput) -> PredictOutput:
-        sortby = opts.data.get("ad_bbox_sortby", BBOX_SORTBY[0])
-        sortby_idx = BBOX_SORTBY.index(sortby)
-        return sort_bboxes(pred, sortby_idx)
 
-    def pred_preprocessing(self, p, pred: PredictOutput, args: ADetailerArgs):
-        pred = filter_by_ratio(
-            pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
-        )
-        pred = filter_k_by(pred, k=args.ad_mask_k, by=args.ad_mask_filter_method)
-        pred = self.sort_bboxes(pred)
-        masks = mask_preprocess(
-            pred.masks,
-            kernel=args.ad_dilate_erode,
-            x_offset=args.ad_x_offset,
-            y_offset=args.ad_y_offset,
-            merge_invert=args.ad_mask_merge_invert,
-        )
 
-        if is_img2img_inpaint(p) and not is_inpaint_only_masked(p):
-            image_mask = self.get_image_mask(p)
-            masks = self.inpaint_mask_filter(image_mask, masks)
-        return masks
+
 
     @staticmethod
     def i2i_prompts_replace(
