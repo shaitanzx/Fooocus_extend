@@ -137,41 +137,84 @@ def enabler(ad_component):
     ]
     return valid_tabs
 
-def postprocess_image(p,inpaint_image,arg_list):
-        #!if getattr(p, "_ad_disabled", False) or not self.is_ad_enabled(*args_):
-        #!    return
+def _postprocess_image_inner(p, init_image, args, n: int = 0) -> bool:
+        i = get_i(p)
 
-        #!pp.image = self.get_i2i_init_image(p, pp)
-        #!pp.image = ensure_pil_image(pp.image, "RGB")
-        init_image = copy(inpaint_image)
-        #!arg_list = self.get_args(p, *args_)
-        #!params_txt_content = self.read_params_txt()
+        i2i = self.get_i2i_p(p, args, pp.image)
+        ad_prompts, ad_negatives = self.get_prompt(p, args)
 
-        #!if need_call_postprocess(p):
-        #!    dummy = Processed(p, [], p.seed, "")
-        #!    with preserve_prompts(p):
-        #!        p.scripts.postprocess(copy(p), dummy)
+        is_mediapipe = args.is_mediapipe()
 
-        #!is_processed = False
-        #!with CNHijackRestore(), pause_total_tqdm(), cn_allow_script_control():
-        for n, args in enumerate(arg_list):
-            print ('aaaaaa',n,args)
-        #!    if args.need_skip():
-        #!        continue
-        #!is_processed |= _postprocess_image_inner(p, pp, args, n=n)
+        if is_mediapipe:
+            pred = mediapipe_predict(args.ad_model, pp.image, args.ad_confidence)
 
-        if is_processed and not is_skip_img2img(p):
-            self.save_image(
-                p, init_image, condition="ad_save_images_before", suffix="-ad-before"
+        else:
+            ad_model = self.get_ad_model(args.ad_model)
+            with disable_safe_unpickle():
+                pred = ultralytics_predict(
+                    ad_model,
+                    image=pp.image,
+                    confidence=args.ad_confidence,
+                    device=self.ultralytics_device,
+                    classes=args.ad_model_classes,
+                )
+
+        if pred.preview is None:
+            print(
+                f"[-] ADetailer: nothing detected on image {i + 1} with {ordinal(n + 1)} settings."
             )
+            return False
 
-        if need_call_process(p):
-            with preserve_prompts(p):
-                copy_p = copy(p)
-                p.scripts.before_process(copy_p)
-                p.scripts.process(copy_p)
+        masks = self.pred_preprocessing(p, pred, args)
+        shared.state.assign_current_image(pred.preview)
 
-        self.write_params_txt(params_txt_content)
+        self.save_image(
+            p,
+            pred.preview,
+            condition="ad_save_previews",
+            suffix="-ad-preview" + suffix(n, "-"),
+        )
+
+        steps = len(masks)
+        processed = None
+        state.job_count += steps
+
+        if is_mediapipe:
+            print(f"mediapipe: {steps} detected.")
+
+        p2 = copy(i2i)
+        for j in range(steps):
+            p2.image_mask = masks[j]
+            p2.init_images[0] = ensure_pil_image(p2.init_images[0], "RGB")
+            self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
+
+            if re.match(r"^\s*\[SKIP\]\s*$", p2.prompt):
+                continue
+
+            self.fix_p2(p, p2, pp, args, pred, j)
+
+            try:
+                processed = process_images(p2)
+            except NansException as e:
+                msg = f"[-] ADetailer: 'NansException' occurred with {ordinal(n + 1)} settings.\n{e}"
+                print(msg, file=sys.stderr)
+                continue
+            finally:
+                p2.close()
+
+            if not processed.images:
+                processed = None
+                break
+
+            self.compare_prompt(p.extra_generation_params, processed, n=n)
+            p2 = copy(i2i)
+            p2.init_images = [processed.images[0]]
+
+        if processed is not None:
+            pp.image = processed.images[0]
+            return True
+
+        return False
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
@@ -633,34 +676,34 @@ class AfterDetailerScript():
 
         return i2i
 
-    def save_image(self, p, image, *, condition: str, suffix: str) -> None:
-        if not opts.data.get(condition, False):
-            return
+    #!def save_image(self, p, image, *, condition: str, suffix: str) -> None:
+    #!    if not opts.data.get(condition, False):
+    #!        return
 
-        i = get_i(p)
-        if p.all_prompts:
-            i %= len(p.all_prompts)
-            save_prompt = p.all_prompts[i]
-        else:
-            save_prompt = p.prompt
-        seed, _ = self.get_seed(p)
+    #!    i = get_i(p)
+    #!    if p.all_prompts:
+    #!        i %= len(p.all_prompts)
+    #!        save_prompt = p.all_prompts[i]
+    #!    else:
+    #!        save_prompt = p.prompt
+    #!    seed, _ = self.get_seed(p)
 
-        ad_save_images_dir: str = opts.data.get("ad_save_images_dir", "")
+    #!    ad_save_images_dir: str = opts.data.get("ad_save_images_dir", "")
 
-        if not ad_save_images_dir.strip():
-            ad_save_images_dir = p.outpath_samples
+    #!    if not ad_save_images_dir.strip():
+    #!        ad_save_images_dir = p.outpath_samples
 
-        images.save_image(
-            image=image,
-            path=ad_save_images_dir,
-            basename="",
-            seed=seed,
-            prompt=save_prompt,
-            extension=opts.samples_format,
-            info=self.infotext(p),
-            p=p,
-            suffix=suffix,
-        )
+    #!    images.save_image(
+    #!        image=image,
+    #!        path=ad_save_images_dir,
+    #!        basename="",
+    #!        seed=seed,
+    #!        prompt=save_prompt,
+    #!        extension=opts.samples_format,
+    #!        info=self.infotext(p),
+    #!        p=p,
+    #!        suffix=suffix,
+    #1    )
 
     def get_ad_model(self, name: str):
         if name not in model_mapping:
