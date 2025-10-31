@@ -1555,7 +1555,8 @@ def worker():
             except EarlyReturnException:
                 return
         if 'adetail' in goals:
-            print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',goals)
+            def is_mediapipe(arg):
+                return arg.ad_model.lower().startswith("mediapipe")
             async_task.ad_component = adetailer.enabler(async_task.ad_component)
             print ('xxxxxxxxxx',len(async_task.ad_component))
             if not async_task.ad_component:
@@ -1581,63 +1582,63 @@ def worker():
 
 
 
-                    if pred.preview is None:
-                        print(
-                            f"[-] ADetailer: nothing detected on image {i + 1} with {ordinal(n + 1)} settings."
-                        )
-                        return False
+                if pred.preview is None:
+                    print(
+                        f"[-] ADetailer: nothing detected on image {i + 1} with {ordinal(n + 1)} settings."
+                    )
+                    return False
 
-                    masks = self.pred_preprocessing(p, pred, args)
-                    shared.state.assign_current_image(pred.preview)
+                masks = self.pred_preprocessing(p, pred, args)
+                shared.state.assign_current_image(pred.preview)
 
-                    self.save_image(
-                        p,
-                        pred.preview,
-                        condition="ad_save_previews",
-                        suffix="-ad-preview" + suffix(n, "-"),
-                        )
+                self.save_image(
+                    p,
+                    pred.preview,
+                    condition="ad_save_previews",
+                    suffix="-ad-preview" + suffix(n, "-"),
+                    )
 
-                    steps = len(masks)
-                    processed = None
-                    state.job_count += steps
+                steps = len(masks)
+                processed = None
+                state.job_count += steps
 
-                    if is_mediapipe:
-                        print(f"mediapipe: {steps} detected.")
+                if is_mediapipe:
+                    print(f"mediapipe: {steps} detected.")
 
+                p2 = copy(i2i)
+                for j in range(steps):
+                    p2.image_mask = masks[j]
+                    p2.init_images[0] = ensure_pil_image(p2.init_images[0], "RGB")
+                    self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
+
+                    if re.match(r"^\s*\[SKIP\]\s*$", p2.prompt):
+                        continue
+
+                    self.fix_p2(p, p2, pp, args, pred, j)
+
+                    try:
+                        processed = process_images(p2)
+                    except NansException as e:
+                        msg = f"[-] ADetailer: 'NansException' occurred with {ordinal(n + 1)} settings.\n{e}"
+                        print(msg, file=sys.stderr)
+                        continue
+                    finally:
+                        p2.close()
+
+                    if not processed.images:
+                        processed = None
+                        break
+
+                    self.compare_prompt(p.extra_generation_params, processed, n=n)
                     p2 = copy(i2i)
-                    for j in range(steps):
-                        p2.image_mask = masks[j]
-                        p2.init_images[0] = ensure_pil_image(p2.init_images[0], "RGB")
-                        self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
+                    p2.init_images = [processed.images[0]]
 
-                        if re.match(r"^\s*\[SKIP\]\s*$", p2.prompt):
-                            continue
+                if processed is not None:
+                    pp.image = processed.images[0]
+                    return True
 
-                        self.fix_p2(p, p2, pp, args, pred, j)
-
-                        try:
-                            processed = process_images(p2)
-                        except NansException as e:
-                            msg = f"[-] ADetailer: 'NansException' occurred with {ordinal(n + 1)} settings.\n{e}"
-                            print(msg, file=sys.stderr)
-                            continue
-                        finally:
-                            p2.close()
-
-                        if not processed.images:
-                            processed = None
-                            break
-
-                        self.compare_prompt(p.extra_generation_params, processed, n=n)
-                        p2 = copy(i2i)
-                        p2.init_images = [processed.images[0]]
-
-                    if processed is not None:
-                        pp.image = processed.images[0]
-                        return True
-
-                    return False    
-            adetailer._postprocess_image_inner(p, init_image, args, n=n)
+                return False    
+            #!adetailer._postprocess_image_inner(p, init_image, args, n=n)
             
            #! _postprocess_image_inner(p, init_image, args, n: int = 0) -> bool:
 
