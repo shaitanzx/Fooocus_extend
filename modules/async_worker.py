@@ -1561,7 +1561,7 @@ def worker():
             if not async_task.ad_component:
                 return
             init_image = copy(inpaint_image)
-            for n, args in enumerate(arg_list):
+            for n, args in enumerate(async_task.ad_component):
                 print ('aaaaaa',n,args)
                 
                 is_mediapipe = args.is_mediapipe()
