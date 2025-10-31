@@ -1594,7 +1594,7 @@ def worker():
                     )
                     return False
 
-                masks = adetailer.pred_preprocessing(p, pred, args)
+                masks = adetailer.pred_preprocessing(pred, args)
                 print ('aaaaaa',type(masks))
                 shared.state.assign_current_image(pred.preview)
 

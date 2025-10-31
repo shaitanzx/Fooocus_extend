@@ -141,7 +141,7 @@ def sort_bboxes(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[0]
         sortby_idx = BBOX_SORTBY.index(sortby)
         return sort_bboxes(pred, sortby_idx)
-def pred_preprocessing(p, pred: PredictOutput, args):
+def pred_preprocessing(pred: PredictOutput, args):
         pred = filter_by_ratio(
             pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
         )
