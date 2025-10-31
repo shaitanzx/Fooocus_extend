@@ -1558,6 +1558,7 @@ def worker():
                 return
         if 'adetail' in goals:
             from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
+            from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
             def is_mediapipe_model(args):
                 return args.ad_model.lower().startswith("mediapipe")
             async_task.ad_component = adetailer.enabler(async_task.ad_component)
@@ -1576,13 +1577,14 @@ def worker():
                 else:
                     ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
                     print ('aaaaaa',ad_model)
-                    pred = ultralytics_predict(
-                        ad_model,
-                        image=init_image,
-                        confidence=args.ad_confidence,
-                        #!device=ultralytics_device,
-                        classes=args.ad_model_classes,
-                        )
+                    with disable_safe_unpickle():
+                        pred = ultralytics_predict(
+                            ad_model,
+                            image=init_image,
+                            confidence=args.ad_confidence,
+                            #!device=ultralytics_device,
+                            classes=args.ad_model_classes,
+                            )
 
 
 
