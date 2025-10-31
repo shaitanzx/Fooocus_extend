@@ -1639,7 +1639,7 @@ def worker():
                     return False    
             adetailer._postprocess_image_inner(p, init_image, args, n=n)
             
-            _postprocess_image_inner(p, init_image, args, n: int = 0) -> bool:
+           #! _postprocess_image_inner(p, init_image, args, n: int = 0) -> bool:
 
             
 
