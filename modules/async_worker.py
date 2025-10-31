@@ -1573,7 +1573,8 @@ def worker():
                     pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
 
                 else:
-                    ad_model = args.ad_model
+                    ad_model = modules.config.paths_checkpoints[0]+sep+"detection"+sep+args.ad_model
+                    print ('aaaaaa',ad_model)
                     pred = ultralytics_predict(
                         ad_model,
                         image=init_image,
