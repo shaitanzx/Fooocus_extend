@@ -1565,7 +1565,7 @@ def worker():
             for n, args in enumerate(async_task.ad_component):
                 print ('aaaaaa',n,args)
                 
-                is_mediapipe = is_mediapipe_model()
+                is_mediapipe = is_mediapipe_model(args)
 
                 if is_mediapipe:
                     pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
