@@ -1578,7 +1578,7 @@ def worker():
                         ad_model,
                         image=init_image,
                         confidence=args.ad_confidence,
-                        device=ultralytics_device,
+                        #!device=ultralytics_device,
                         classes=args.ad_model_classes,
                         )
 
