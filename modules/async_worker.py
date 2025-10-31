@@ -335,7 +335,7 @@ def worker():
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
     import extentions.adetailer.scripts.adetailer as adetailer
-    
+    from copy import copy
 
 
     sys.path.append(os.path.abspath('extentions/inswapper'))
