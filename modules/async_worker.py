@@ -1557,7 +1557,7 @@ def worker():
                 return
         if 'adetail' in goals:
             def is_mediapipe_model(args):
-                return arg.ad_model.lower().startswith("mediapipe")
+                return args.ad_model.lower().startswith("mediapipe")
             async_task.ad_component = adetailer.enabler(async_task.ad_component)
             print ('xxxxxxxxxx',len(async_task.ad_component))
             if not async_task.ad_component:
