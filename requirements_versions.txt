@@ -37,4 +37,6 @@ diffusers==0.29.0
 controlnet_aux==0.0.10
 potracer
 deep-translator
+ultralytics==8.2",
+mediapipe==0.10.13"
 transformers==4.42.4
