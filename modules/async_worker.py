@@ -1555,7 +1555,7 @@ def worker():
             except EarlyReturnException:
                 return
         if 'adetail' in goals:
-            def is_mediapipe(arg):
+            def is_mediapipe_model(arg):
                 return arg.ad_model.lower().startswith("mediapipe")
             async_task.ad_component = adetailer.enabler(async_task.ad_component)
             print ('xxxxxxxxxx',len(async_task.ad_component))
@@ -1565,7 +1565,7 @@ def worker():
             for n, args in enumerate(async_task.ad_component):
                 print ('aaaaaa',n,args)
                 
-                is_mediapipe = args.is_mediapipe()
+                is_mediapipe = is_mediapipe_model()
 
                 if is_mediapipe:
                     pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
