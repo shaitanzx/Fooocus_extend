@@ -337,6 +337,7 @@ def worker():
     import extentions.adetailer.scripts.adetailer as adetailer
     from copy import copy
     from types import SimpleNamespace
+    from pathlib import Path
 
 
     sys.path.append(os.path.abspath('extentions/inswapper'))
@@ -1573,7 +1574,7 @@ def worker():
                     pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
 
                 else:
-                    ad_model = modules.config.paths_checkpoints[0]+os.sep+"detection"+os.sep+args.ad_model
+                    ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
                     print ('aaaaaa',ad_model)
                     pred = ultralytics_predict(
                         ad_model,
