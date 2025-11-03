@@ -1729,7 +1729,7 @@ def worker():
         exception_result = None
         if 'adetail' in goals:
             for index, img in enumerate(images_to_adetailer):
-                async_task.adetailer_stats[index] = 0
+                #!async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
 
                 last_adetailer_prompt = async_task.prompt
@@ -1767,7 +1767,7 @@ def worker():
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', masks)])
                         yield_result(async_task, masks, current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
-                        async_task.enhance_stats[index] += 1
+                        #!async_task.enhance_stats[index] += 1
 
                     #!print(f'[Enhance] {dino_detection_count} boxes detected')
                     #!print(f'[Enhance] {sam_detection_count} segments detected in boxes')
@@ -1790,7 +1790,7 @@ def worker():
                             adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
                             preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
                             use_synthetic_refiner, width, persist_image=persist_image)
-                        async_task.enhance_stats[index] += 1
+                        #!async_task.enhance_stats[index] += 1
 
                         #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
                         #!        and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
