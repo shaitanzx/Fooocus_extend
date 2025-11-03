@@ -1584,8 +1584,8 @@ def worker():
         images_to_adetailer = []
         if 'enhance' in goals:
             async_task.image_number = 1
-            images_to_enhance += [async_task.adetail_input_image]
-            height, width, _ = async_task.adetail_input_image.shape
+            images_to_enhance += [async_task.enhance_input_image]
+            height, width, _ = async_task.enhance_input_image.shape
             # input image already provided, processing is skipped
             steps = 0
             yield_result(async_task, async_task.enhance_input_image, current_progress, async_task.black_out_nsfw, False,
@@ -1593,12 +1593,12 @@ def worker():
 
         if 'adetail' in goals:
             async_task.image_number = 1
-            images_to_adetailer += [async_task.enhance_input_image]
-            height, width, _ = async_task.enhance_input_image.shape
+            images_to_adetailer += [async_task.adetail_input_image]
+            height, width, _ = async_task.adetail_input_image.shape
 
             # input image already provided, processing is skipped
             steps = 0
-            yield_result(async_task, async_task.enhance_input_image, current_progress, async_task.black_out_nsfw, False,
+            yield_result(async_task, async_task.adetail_input_image, current_progress, async_task.black_out_nsfw, False,
                          async_task.disable_intermediate_results)
 
 
