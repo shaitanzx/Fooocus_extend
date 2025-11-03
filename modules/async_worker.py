@@ -1521,7 +1521,8 @@ def worker():
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
         async_task.should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
-        print('eeeeeeeeeeee',async_task.should_adetail)
+        print(f"[DEBUG] 'adetail' in goals: {'adetail' in goals}")
+        print(f"[DEBUG] ad_component length: {len(async_task.ad_component)}")
         if 'vary' in goals:
             async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
                 async_task, async_task.uov_method, denoising_strength, async_task.uov_input_image, switch,
@@ -1592,7 +1593,6 @@ def worker():
                          async_task.disable_intermediate_results)
 
         if 'adetail' in goals:
-            print('qqqqqqqqqqqqqq')
             async_task.image_number = 1
             images_to_adetailer += [async_task.adetail_input_image]
             width, height = async_task.adetail_input_image.size
@@ -1621,7 +1621,6 @@ def worker():
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
         
         if 'adetail' in goals and len(async_task.ad_component) != 0:
-            print('wwwwwwwwwwwwwwwwwwwwww')
             adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
             all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
 
