@@ -284,6 +284,7 @@ class AsyncTask:
         self.transper = args.pop()
         self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
         self.adetail_input_image = args.pop ()
+        self.save_final_adetail_image_only=True
         print(self.ad_component)
     
 
