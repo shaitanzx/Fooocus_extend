@@ -137,7 +137,7 @@ def enabler(ad_component):
     ]
     return valid_tabs
 
-def sort_bboxes(pred: PredictOutput) -> PredictOutput:
+def sort_bboxes_main(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[0]
         sortby_idx = BBOX_SORTBY.index(sortby)
         return sort_bboxes(pred, sortby_idx)
@@ -146,7 +146,7 @@ def pred_preprocessing(pred: PredictOutput, args):
             pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
         )
         pred = filter_k_by(pred, k=args.ad_mask_k, by=args.ad_mask_filter_method)
-        pred = sort_bboxes(pred)
+        pred = sort_bboxes_main(pred)
         masks = mask_preprocess(
             pred.masks,
             kernel=args.ad_dilate_erode,

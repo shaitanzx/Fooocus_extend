@@ -1595,8 +1595,9 @@ def worker():
                     return False
 
                 masks = adetailer.pred_preprocessing(pred, args)
-                print ('aaaaaa',type(masks))
-                shared.state.assign_current_image(pred.preview)
+                print ('aaaaaa preview',type(pred.preview))
+                print ('aaaaaa mask',type(masks))
+                #!shared.state.assign_current_image(pred.preview)
 
                 self.save_image(
                     p,
