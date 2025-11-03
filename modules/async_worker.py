@@ -1728,6 +1728,7 @@ def worker():
         adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
         if 'adetail' in goals:
+            from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
             for index, img in enumerate(images_to_adetailer):
                 #!async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
