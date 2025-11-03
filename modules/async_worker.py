@@ -1597,8 +1597,9 @@ def worker():
                 masks = adetailer.pred_preprocessing(pred, args)
                 print ('aaaaaa preview',type(pred.preview))
                 print ('aaaaaa mask',type(masks))
+                print ('aaaaaa mask',masks)
                 #!shared.state.assign_current_image(pred.preview)
-
+                pred.preview('/content/Fooocus_extend/preview.png')
                 self.save_image(
                     p,
                     pred.preview,
