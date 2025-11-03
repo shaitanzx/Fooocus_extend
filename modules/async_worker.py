@@ -1677,7 +1677,7 @@ def worker():
                             inpaint_parameterized, async_task.inpaint_strength,
                             async_task.inpaint_respective_field, switch, async_task.inpaint_disable_initial_latent,
                             current_progress, True)
-                    imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
+                    imgs, img_paths, current_progress = process_task(steps_masks, async_task, callback, controlnet_canny_path,
                                                          controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
                                                          controlnet_scribble_path, controlnet_manga_path, current_task_id, denoising_strength,
                                                          final_scheduler_name, goals, initial_latent, steps, switch,
