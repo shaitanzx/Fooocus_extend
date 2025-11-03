@@ -1686,7 +1686,7 @@ def worker():
                         continue
                     def prepare_adetail_prompt(prompt: str, fallback_prompt: str):
                         if safe_str(prompt) == '' or len(remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')) == 0:
-                        prompt = fallback_prompt
+                            prompt = fallback_prompt
                         return prompt
                     base_model_additional_loras = []
                     inpaint_head_model_path = None
