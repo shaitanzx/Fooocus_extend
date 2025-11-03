@@ -1168,9 +1168,6 @@ def worker():
             async_task.uov_input_image, skip_prompt_processing, async_task.steps = prepare_upscale(
                 async_task, goals, async_task.uov_input_image, async_task.uov_method, async_task.performance_selection,
                 async_task.steps, 1, skip_prompt_processing=skip_prompt_processing)
-        if async_task.current_tab == 'adetail':
-            inpaint_image = async_task.adetail_input_image
-            goals.append('adetail')
         if (async_task.current_tab == 'inpaint' or (
                 async_task.current_tab == 'ip' and async_task.mixing_image_prompt_and_inpaint)) \
                 and isinstance(async_task.inpaint_input_image, dict):
@@ -1250,6 +1247,10 @@ def worker():
             goals.append('enhance')
             skip_prompt_processing = True
             async_task.enhance_input_image = HWC3(async_task.enhance_input_image)
+        if async_task.current_tab == 'adetail' and async_task.adetail_input_image is not None:
+            goals.append('adetail')
+            skip_prompt_processing = True
+
         return base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner
 
     def prepare_upscale(async_task, goals, uov_input_image, uov_method, performance, steps, current_progress,
