@@ -1741,7 +1741,8 @@ def worker():
                     progressbar(async_task, current_progress, f'Preparing ADetailer {current_task_id + 1}/{total_count} ...')
                     adetailer_task_start_time = time.perf_counter()
                     is_last_adetailer_for_image = (current_task_id + 1) % active_adetail_tabs == 0
-                    persist_image = not async_task.save_final_adetailer_image_only or is_last_adetailer_for_image                    
+                    persist_image = not async_task.save_final_adetail_image_only or is_last_adetailer_for_image   
+                
                     args = SimpleNamespace(**arg_s)
                     def is_mediapipe_model(args):
                         return args.ad_model.lower().startswith("mediapipe")
