@@ -1521,8 +1521,6 @@ def worker():
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
         async_task.should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
-        print(f"[DEBUG] 'adetail' in goals: {'adetail' in goals}")
-        print(f"[DEBUG] ad_component length: {len(async_task.ad_component)}")
         if 'vary' in goals:
             async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
                 async_task, async_task.uov_method, denoising_strength, async_task.uov_input_image, switch,
@@ -1658,7 +1656,8 @@ def worker():
 
         show_intermediate_results = len(tasks) > 1 or async_task.should_enhance or async_task.should_adetail
         
-        persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only or not async_task.should_adetail or not async_task.save_final_adetail_image_only
+        persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only
+        persist_image_adetailer = not async_task.should_adetail or not async_task.save_final_adetail_image_only
 
         for current_task_id, task in enumerate(tasks):
             if async_task.aspect_random==True:
@@ -1697,12 +1696,14 @@ def worker():
             execution_time = time.perf_counter() - execution_start_time
             print(f'Generating and saving time: {execution_time:.2f} seconds')
 
-        if not async_task.should_enhance:
-            print(f'[Enhance] Skipping, preconditions aren\'t met')
+        if not async_task.should_enhance and not async_task.should_adetail:
+            #!print(f'[Enhance] Skipping, preconditions aren\'t met')
             stop_processing(async_task, processing_start_time)
             return
-
-        progressbar(async_task, current_progress, 'Processing enhance ...')
+        if 'enhance' in goals:
+            progressbar(async_task, current_progress, 'Processing enhance ...')
+        else:
+            progressbar(async_task, current_progress, 'Processing Adetailer ...')
 
         active_enhance_tabs = len(async_task.enhance_ctrls)
         active_adetail_tabs = len(async_task.ad_component)
