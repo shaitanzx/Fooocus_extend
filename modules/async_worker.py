@@ -1756,7 +1756,7 @@ def worker():
                         with disable_safe_unpickle():
                             pred = ultralytics_predict(
                                 ad_model,
-                                image=init_image,
+                                image=img,
                                 confidence=args.ad_confidence,
                                 #!device=ultralytics_device,
                                 classes=args.ad_model_classes,
