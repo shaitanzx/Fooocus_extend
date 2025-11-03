@@ -1656,7 +1656,7 @@ def worker():
 
                     progressbar(async_task, current_progress, 'Downloading inpainter ...')
                     inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
-                        inpaint_engine)
+                        async_task.inpaint_engine)
                     if inpaint_patch_model_path not in base_model_additional_loras:
                             base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
                     progressbar(async_task, current_progress, 'Preparing adetail prompts ...')
