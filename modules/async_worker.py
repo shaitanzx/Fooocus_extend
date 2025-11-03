@@ -1520,7 +1520,7 @@ def worker():
             progressbar(async_task, current_progress, 'Image processing ...')
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
-        should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
+        async_task.should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
 
         if 'vary' in goals:
             async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
