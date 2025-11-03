@@ -1729,6 +1729,7 @@ def worker():
         exception_result = None
         if 'adetail' in goals:
             from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
+            from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
             for index, img in enumerate(images_to_adetailer):
                 #!async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
