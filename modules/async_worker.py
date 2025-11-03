@@ -1732,7 +1732,7 @@ def worker():
                 last_adetailer_prompt = async_task.prompt
                 last_adetailer_negative_prompt = async_task.negative_prompt
             # inpaint for all other tabs
-                for n, arg_s in enumerate(async_task.ad_component)
+                for n, arg_s in enumerate(async_task.ad_component):
                     current_task_id += 1
                     current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_inpainting))
                     progressbar(async_task, current_progress, f'Preparing ADetailer {current_task_id + 1}/{total_count} ...')
