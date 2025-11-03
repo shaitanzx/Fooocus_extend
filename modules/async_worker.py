@@ -1631,7 +1631,8 @@ def worker():
                 #!p2 = copy(i2i)
 
                 for j in range(steps_masks):
-                    image_mask = masks[j]
+                    image_mask = np.array(masks[j])
+                    inpaint_image = np.array(init_image)
                     #!init_images = ensure_pil_image(p2.init_images[0], "RGB")
                     #!self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
                     def prepare_adetail_prompt(prompt: str, fallback_prompt: str):
@@ -1672,7 +1673,7 @@ def worker():
                         apply_freeu(async_task)
                     patch_samplers(async_task)
                     denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
-                            async_task, None, inpaint_head_model_path, init_image, image_mask,
+                            async_task, None, inpaint_head_model_path, inpaint_image, image_mask,
                             inpaint_parameterized, async_task.inpaint_strength,
                             async_task.inpaint_respective_field, switch, async_task.inpaint_disable_initial_latent,
                             current_progress, True)
