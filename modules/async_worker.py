@@ -338,6 +338,7 @@ def worker():
     from copy import copy
     from types import SimpleNamespace
     from pathlib import Path
+    import re
 
 
     sys.path.append(os.path.abspath('extentions/inswapper'))
