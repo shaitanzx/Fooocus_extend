@@ -1769,7 +1769,7 @@ def worker():
 
                     if async_task.debugging_adetailer_masks_checkbox:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
-                        yield_result(async_task, masks, current_progress, async_task.black_out_nsfw, False,
+                        yield_result(async_task, pred.preview, current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
                         #!async_task.enhance_stats[index] += 1
 
