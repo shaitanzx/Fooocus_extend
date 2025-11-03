@@ -1592,6 +1592,7 @@ def worker():
                          async_task.disable_intermediate_results)
 
         if 'adetail' in goals:
+            print('qqqqqqqqqqqqqq')
             async_task.image_number = 1
             images_to_adetailer += [async_task.adetail_input_image]
             width, height = async_task.adetail_input_image.size
@@ -1620,6 +1621,7 @@ def worker():
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
         
         if 'adetail' in goals and len(async_task.ad_component) != 0:
+            print('wwwwwwwwwwwwwwwwwwwwww')
             adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
             all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
 
