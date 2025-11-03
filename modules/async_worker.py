@@ -1682,8 +1682,11 @@ def worker():
                     image_mask = masks[j]
                     #!init_images = ensure_pil_image(p2.init_images[0], "RGB")
                     #!self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
-
-                    if re.match(r"^\s*\[SKIP\]\s*$", p2.prompt):
+                    i1 = min(j, len(ad_prompts) - 1)
+                    i2 = min(j, len(ad_negatives) - 1)
+                    prompt = prepare_adetail_prompt(ad_prompts[i1], async_task.prompt)
+                    negative_prompt = prepare_adetail_prompt(ad_negatives[i2], async_task.negative_prompt)
+                    if re.match(r"^\s*\[SKIP\]\s*$", prompt):
                         continue
                     def prepare_adetail_prompt(prompt: str, fallback_prompt: str):
                         if safe_str(prompt) == '' or len(remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')) == 0:
