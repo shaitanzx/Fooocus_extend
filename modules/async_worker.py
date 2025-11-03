@@ -1673,8 +1673,8 @@ def worker():
                     patch_samplers(async_task)
                     denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
                             async_task, None, inpaint_head_model_path, init_image, image_mask,
-                            inpaint_parameterized, inpaint_strength,
-                            inpaint_respective_field, switch, inpaint_disable_initial_latent,
+                            inpaint_parameterized, async_task.inpaint_strength,
+                            async_task.inpaint_respective_field, switch, async_task.inpaint_disable_initial_latent,
                             current_progress, True)
                     imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
                                                          controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
