@@ -335,7 +335,6 @@ def worker():
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
     import extentions.adetailer.scripts.adetailer as adetailer
-    from copy import copy
     from types import SimpleNamespace
     from pathlib import Path
     import re
