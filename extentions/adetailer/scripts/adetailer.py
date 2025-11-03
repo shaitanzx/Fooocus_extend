@@ -159,6 +159,55 @@ def pred_preprocessing(pred: PredictOutput, args):
         #!    image_mask = self.get_image_mask(p)
         #!    masks = self.inpaint_mask_filter(image_mask, masks)
         return masks
+def prompt_blank_replacement(all_prompts: list[str], i: int, default: str) -> str:
+        if not all_prompts:
+            return default
+        if i < len(all_prompts):
+            return all_prompts[i]
+        j = i % len(all_prompts)
+        return all_prompts[j]
+def get_prompt(p, args) -> tuple[list[str], list[str]]:
+    """
+    Обрабатывает ad_prompt и ad_negative_prompt с поддержкой:
+      - [SEP] — разделение на несколько промптов,
+      - [PROMPT] — вставка основного промпта,
+      - пустых частей — замена на основной промпт.
+
+    Возвращает кортеж из двух списков: (позитивные промпты, негативные промпты).
+    """
+
+    # Основные промпты из генерации
+    main_prompt = p.prompt
+    main_negative = p.negative_prompt
+
+    def _process_one(ad_text: str, fallback: str) -> list[str]:
+        # 1. Разбиваем строку по [SEP], игнорируя пробелы вокруг
+        parts = re.split(r"\s*\[SEP\]\s*", ad_text.strip())
+        result = []
+
+        for part in parts:
+            part = part.strip()
+
+            # 2. Если часть пустая → заменяем на основной промпт
+            if not part:
+                result.append(fallback)
+
+            # 3. Если есть [PROMPT] → подставляем основной промпт
+            elif "[PROMPT]" in part:
+                result.append(part.replace("[PROMPT]", fallback))
+
+            # 4. Иначе — оставляем как есть
+            else:
+                result.append(part)
+
+        return result
+
+    # 5. Обрабатываем позитивный и негативный промпты
+    prompts = _process_one(args.ad_prompt, main_prompt)
+    negative_prompts = _process_one(args.ad_negative_prompt, main_negative)
+
+    return prompts, negative_prompts
+
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
@@ -342,46 +391,7 @@ class AfterDetailerScript():
         j = i % len(all_prompts)
         return all_prompts[j]
 
-    def _get_prompt(
-        self,
-        ad_prompt: str,
-        all_prompts: list[str],
-        i: int,
-        default: str,
-        replacements: list[PromptSR],
-    ) -> list[str]:
-        prompts = re.split(r"\s*\[SEP\]\s*", ad_prompt)
-        blank_replacement = self.prompt_blank_replacement(all_prompts, i, default)
-        for n in range(len(prompts)):
-            if not prompts[n]:
-                prompts[n] = blank_replacement
-            elif "[PROMPT]" in prompts[n]:
-                prompts[n] = prompts[n].replace("[PROMPT]", blank_replacement)
 
-            for pair in replacements:
-                prompts[n] = prompts[n].replace(pair.s, pair.r)
-        return prompts
-
-    def get_prompt(self, p, args: ADetailerArgs) -> tuple[list[str], list[str]]:
-        i = get_i(p)
-        prompt_sr = p._ad_xyz_prompt_sr if hasattr(p, "_ad_xyz_prompt_sr") else []
-
-        prompt = self._get_prompt(
-            ad_prompt=args.ad_prompt,
-            all_prompts=p.all_prompts,
-            i=i,
-            default=p.prompt,
-            replacements=prompt_sr,
-        )
-        negative_prompt = self._get_prompt(
-            ad_prompt=args.ad_negative_prompt,
-            all_prompts=p.all_negative_prompts,
-            i=i,
-            default=p.negative_prompt,
-            replacements=prompt_sr,
-        )
-
-        return prompt, negative_prompt
 
     def get_seed(self, p) -> tuple[int, int]:
         i = get_i(p)

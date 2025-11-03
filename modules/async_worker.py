@@ -1391,7 +1391,55 @@ def worker():
             finally:
                 done_steps_upscaling += steps
         return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
+    def process_adetailer(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
+                        controlnet_manga_path,
+                        current_progress, current_task_id, denoising_strength, inpaint_disable_initial_latent,
+                        inpaint_engine, inpaint_respective_field, inpaint_strength,
+                        prompt, negative_prompt, final_scheduler_name, goals, height, img, mask,
+                        preparation_steps, steps, switch, tiled, total_count, use_expansion, use_style,
+                        use_synthetic_refiner, width, show_intermediate_results=True, persist_image=True):
+        base_model_additional_loras = []
+        inpaint_head_model_path = None
+        inpaint_parameterized = inpaint_engine != 'None'  # inpaint_engine = None, improve detail
+        initial_latent = None
 
+        prompt = prepare_enhance_prompt(prompt, async_task.prompt)
+        negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
+
+        progressbar(async_task, current_progress, 'Downloading inpainter ...')
+        inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
+                inpaint_engine)
+        if inpaint_patch_model_path not in base_model_additional_loras:
+                base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+        progressbar(async_task, current_progress, 'Preparing adetail prompts ...')
+        # positive and negative conditioning aren't available here anymore, process prompt again
+        tasks_enhance, use_expansion, loras, current_progress = process_prompt(
+            async_task, prompt, negative_prompt, base_model_additional_loras, 1, True,
+            use_expansion, use_style, use_synthetic_refiner, current_progress)
+        task_enhance = tasks_enhance[0]
+        # TODO could support vary, upscale and CN in the future
+        # if 'cn' in goals:
+        #     apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width)
+        if async_task.freeu_enabled:
+            apply_freeu(async_task)
+        patch_samplers(async_task)
+        denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
+                async_task, None, inpaint_head_model_path, img, mask,
+                inpaint_parameterized, inpaint_strength,
+                inpaint_respective_field, switch, inpaint_disable_initial_latent,
+                current_progress, True)
+        imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
+                                                         controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
+                                                         controlnet_scribble_path, controlnet_manga_path, current_task_id, denoising_strength,
+                                                         final_scheduler_name, goals, initial_latent, steps, switch,
+                                                         task_enhance['c'], task_enhance['uc'], task_enhance, loras,
+                                                         tiled, use_expansion, width, height, current_progress,
+                                                         preparation_steps, total_count, show_intermediate_results,
+                                                         persist_image)
+
+        del task_enhance['c'], task_enhance['uc']  # Save memory
+        return current_progress, imgs[0], prompt, negative_prompt
     @torch.no_grad()
     @torch.inference_mode()
     def handler(async_task: AsyncTask):
@@ -1556,13 +1604,26 @@ def worker():
                                                                                                     advance_progress=True)
             except EarlyReturnException:
                 return
+
+
+            
+
+        if 'cn' in goals:
+            apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress)
+            if async_task.debugging_cn_preprocessor:
+                return
+
+        if async_task.freeu_enabled:
+            apply_freeu(async_task)
+
+        # async_task.steps can have value of uov steps here when upscale has been applied
+        steps, _, _, _ = apply_overrides(async_task, async_task.steps, height, width)
         if 'adetail' in goals:
             from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
             from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
             def is_mediapipe_model(args):
                 return args.ad_model.lower().startswith("mediapipe")
             async_task.ad_component = adetailer.enabler(async_task.ad_component)
-            print ('xxxxxxxxxx',len(async_task.ad_component))
             if not async_task.ad_component:
                 return
             init_image = copy(inpaint_image)
@@ -1570,13 +1631,17 @@ def worker():
                 args = SimpleNamespace(**arg_s)
                 print ('aaaaaa',n,args)
                 is_mediapipe = is_mediapipe_model(args)
-                print ('aaaaaa',is_mediapipe)
+
+                ad_prompts, ad_negatives = adetailer.get_prompt(async_task,args)
+
+
+
+
                 if is_mediapipe:
                     pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
 
                 else:
                     ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
-                    print ('aaaaaa',ad_model)
                     with disable_safe_unpickle():
                         pred = ultralytics_predict(
                             ad_model,
@@ -1595,49 +1660,77 @@ def worker():
                     return False
 
                 masks = adetailer.pred_preprocessing(pred, args)
-                print ('aaaaaa preview',type(pred.preview))
-                print ('aaaaaa mask',type(masks))
-                print ('aaaaaa mask',masks)
-                #!shared.state.assign_current_image(pred.preview)
-                pred.preview.save('/content/Fooocus_extend/preview.png')
-                masks[0].save('/content/Fooocus_extend/mask.png')
-                self.save_image(
-                    p,
-                    pred.preview,
-                    condition="ad_save_previews",
-                    suffix="-ad-preview" + suffix(n, "-"),
-                    )
 
-                steps = len(masks)
+                #!self.save_image(
+                #!    p,
+                #!    pred.preview,
+                #!    condition="ad_save_previews",
+                #!    suffix="-ad-preview" + suffix(n, "-"),
+                #!    )
+
+                steps_masks = len(masks)
                 processed = None
-                state.job_count += steps
+                job_count += steps
 
                 if is_mediapipe:
                     print(f"mediapipe: {steps} detected.")
 
-                p2 = copy(i2i)
-                for j in range(steps):
-                    p2.image_mask = masks[j]
-                    p2.init_images[0] = ensure_pil_image(p2.init_images[0], "RGB")
-                    self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
+                #!p2 = copy(i2i)
+
+                for j in range(steps_masks):
+                    image_mask = masks[j]
+                    #!init_images = ensure_pil_image(p2.init_images[0], "RGB")
+                    #!self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
 
                     if re.match(r"^\s*\[SKIP\]\s*$", p2.prompt):
                         continue
+                    def prepare_adetail_prompt(prompt: str, fallback_prompt: str):
+                        if safe_str(prompt) == '' or len(remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')) == 0:
+                        prompt = fallback_prompt
+                        return prompt
+                    base_model_additional_loras = []
+                    inpaint_head_model_path = None
+                    inpaint_parameterized = inpaint_engine != 'None'  # inpaint_engine = None, improve detail
+                    initial_latent = None
+                    i1 = min(j, len(ad_prompts) - 1)
+                    i2 = min(j, len(ad_negatives) - 1)
+                    prompt = prepare_adetail_prompt(ad_prompts[i1], async_task.prompt)
+                    negative_prompt = prepare_adetail_prompt(ad_negatives[i2], async_task.negative_prompt)
 
-                    self.fix_p2(p, p2, pp, args, pred, j)
+                    progressbar(async_task, current_progress, 'Downloading inpainter ...')
+                    inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
+                        inpaint_engine)
+                    if inpaint_patch_model_path not in base_model_additional_loras:
+                            base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+                    progressbar(async_task, current_progress, 'Preparing adetail prompts ...')
+        # positive and negative conditioning aren't available here anymore, process prompt again
+                    tasks_adetail, use_expansion, loras, current_progress = process_prompt(
+                        async_task, prompt, negative_prompt, base_model_additional_loras, 1, True,
+                        use_expansion, use_style, use_synthetic_refiner, current_progress)
+                    task_adetail = tasks_adetail[0]
+        # TODO could support vary, upscale and CN in the future
+        # if 'cn' in goals:
+        #     apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width)
+                    if async_task.freeu_enabled:
+                        apply_freeu(async_task)
+                    patch_samplers(async_task)
+                    denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
+                            async_task, None, inpaint_head_model_path, init_image, image_mask,
+                            inpaint_parameterized, inpaint_strength,
+                            inpaint_respective_field, switch, inpaint_disable_initial_latent,
+                            current_progress, True)
+                    imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
+                                                         controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
+                                                         controlnet_scribble_path, controlnet_manga_path, current_task_id, denoising_strength,
+                                                         final_scheduler_name, goals, initial_latent, steps, switch,
+                                                         task_adetail['c'], task_adetail['uc'], task_adetail, loras,
+                                                         tiled, use_expansion, width, height, current_progress,
+                                                         preparation_steps, total_count, show_intermediate_results,
+                                                         persist_image)
 
-                    try:
-                        processed = process_images(p2)
-                    except NansException as e:
-                        msg = f"[-] ADetailer: 'NansException' occurred with {ordinal(n + 1)} settings.\n{e}"
-                        print(msg, file=sys.stderr)
-                        continue
-                    finally:
-                        p2.close()
 
-                    if not processed.images:
-                        processed = None
-                        break
+
+
 
                     self.compare_prompt(p.extra_generation_params, processed, n=n)
                     p2 = copy(i2i)
@@ -1652,18 +1745,11 @@ def worker():
             
            #! _postprocess_image_inner(p, init_image, args, n: int = 0) -> bool:
 
-            
 
-        if 'cn' in goals:
-            apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress)
-            if async_task.debugging_cn_preprocessor:
-                return
 
-        if async_task.freeu_enabled:
-            apply_freeu(async_task)
 
-        # async_task.steps can have value of uov steps here when upscale has been applied
-        steps, _, _, _ = apply_overrides(async_task, async_task.steps, height, width)
+
+
 
         images_to_enhance = []
         if 'enhance' in goals:
