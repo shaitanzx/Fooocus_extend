@@ -1599,7 +1599,8 @@ def worker():
                 print ('aaaaaa mask',type(masks))
                 print ('aaaaaa mask',masks)
                 #!shared.state.assign_current_image(pred.preview)
-                pred.preview('/content/Fooocus_extend/preview.png')
+                pred.preview.save_image('/content/Fooocus_extend/preview.png')
+                masks[0].save_image('/content/Fooocus_extend/mask.png')
                 self.save_image(
                     p,
                     pred.preview,
