@@ -1518,8 +1518,9 @@ def worker():
         if len(goals) > 0:
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
-
+        async_task.ad_component = adetailer.enabler(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
+        should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
 
         if 'vary' in goals:
             async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
@@ -1571,137 +1572,7 @@ def worker():
 
         # async_task.steps can have value of uov steps here when upscale has been applied
         steps, _, _, _ = apply_overrides(async_task, async_task.steps, height, width)
-        if 'adetail' in goals:
-            from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
-            from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
-            def is_mediapipe_model(args):
-                return args.ad_model.lower().startswith("mediapipe")
-            async_task.ad_component = adetailer.enabler(async_task.ad_component)
-            if not async_task.ad_component:
-                return
-            init_image = copy(inpaint_image)
-            for n, arg_s in enumerate(async_task.ad_component):
-                args = SimpleNamespace(**arg_s)
-                print ('aaaaaa',n,args)
-                is_mediapipe = is_mediapipe_model(args)
-
-                ad_prompts, ad_negatives = adetailer.get_prompt(async_task,args)
-
-
-
-
-                if is_mediapipe:
-                    pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
-
-                else:
-                    ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
-                    with disable_safe_unpickle():
-                        pred = ultralytics_predict(
-                            ad_model,
-                            image=init_image,
-                            confidence=args.ad_confidence,
-                            #!device=ultralytics_device,
-                            classes=args.ad_model_classes,
-                            )
-
-
-
-                if pred.preview is None:
-                    print(
-                        f"[-] ADetailer: nothing detected on image {i + 1} with {ordinal(n + 1)} settings."
-                    )
-                    return False
-
-                masks = adetailer.pred_preprocessing(pred, args)
-
-                #!self.save_image(
-                #!    p,
-                #!    pred.preview,
-                #!    condition="ad_save_previews",
-                #!    suffix="-ad-preview" + suffix(n, "-"),
-                #!    )
-
-                steps_masks = len(masks)
-                processed = None
-                #!job_count += steps
-
-                if is_mediapipe:
-                    print(f"mediapipe: {steps} detected.")
-
-                #!p2 = copy(i2i)
-
-                for j in range(steps_masks):
-                    image_mask = np.array(masks[j])
-                    inpaint_image = np.array(init_image)
-                    #!init_images = ensure_pil_image(p2.init_images[0], "RGB")
-                    #!self.i2i_prompts_replace(p2, ad_prompts, ad_negatives, j)
-                    def prepare_adetail_prompt(prompt: str, fallback_prompt: str):
-                        if safe_str(prompt) == '' or len(remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')) == 0:
-                            prompt = fallback_prompt
-                        return prompt
-                    i1 = min(j, len(ad_prompts) - 1)
-                    i2 = min(j, len(ad_negatives) - 1)
-                    prompt = prepare_adetail_prompt(ad_prompts[i1], async_task.prompt)
-                    negative_prompt = prepare_adetail_prompt(ad_negatives[i2], async_task.negative_prompt)
-                    if re.match(r"^\s*\[SKIP\]\s*$", prompt):
-                        continue
-
-                    base_model_additional_loras = []
-                    inpaint_head_model_path = None
-                    inpaint_parameterized = async_task.inpaint_engine != 'None'  # inpaint_engine = None, improve detail
-                    initial_latent = None
-                    i1 = min(j, len(ad_prompts) - 1)
-                    i2 = min(j, len(ad_negatives) - 1)
-                    prompt = prepare_adetail_prompt(ad_prompts[i1], async_task.prompt)
-                    negative_prompt = prepare_adetail_prompt(ad_negatives[i2], async_task.negative_prompt)
-
-                    progressbar(async_task, current_progress, 'Downloading inpainter ...')
-                    inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
-                        async_task.inpaint_engine)
-                    if inpaint_patch_model_path not in base_model_additional_loras:
-                            base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
-                    progressbar(async_task, current_progress, 'Preparing adetail prompts ...')
-        # positive and negative conditioning aren't available here anymore, process prompt again
-                    tasks_adetail, use_expansion, loras, current_progress = process_prompt(
-                        async_task, prompt, negative_prompt, base_model_additional_loras, 1, True,
-                        use_expansion, use_style, use_synthetic_refiner, current_progress)
-                    task_adetail = tasks_adetail[0]
-        # TODO could support vary, upscale and CN in the future
-        # if 'cn' in goals:
-        #     apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width)
-                    if async_task.freeu_enabled:
-                        apply_freeu(async_task)
-                    patch_samplers(async_task)
-                    denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
-                            async_task, None, inpaint_head_model_path, inpaint_image, image_mask,
-                            inpaint_parameterized, async_task.inpaint_strength,
-                            async_task.inpaint_respective_field, switch, async_task.inpaint_disable_initial_latent,
-                            current_progress, True)
-                    imgs, img_paths, current_progress = process_task(steps_masks, async_task, callback, controlnet_canny_path,
-                                                         controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
-                                                         controlnet_scribble_path, controlnet_manga_path, current_task_id, denoising_strength,
-                                                         final_scheduler_name, goals, initial_latent, steps, switch,
-                                                         task_adetail['c'], task_adetail['uc'], task_adetail, loras,
-                                                         tiled, use_expansion, width, height, current_progress,
-                                                         preparation_steps, total_count, show_intermediate_results,
-                                                         persist_image)
-
-
-
-
-
-                    self.compare_prompt(p.extra_generation_params, processed, n=n)
-                    p2 = copy(i2i)
-                    p2.init_images = [processed.images[0]]
-
-                if processed is not None:
-                    pp.image = processed.images[0]
-                    return True
-
-                return False    
-            #!adetailer._postprocess_image_inner(p, init_image, args, n=n)
-            
-           #! _postprocess_image_inner(p, init_image, args, n: int = 0) -> bool:
+ 
 
 
 
@@ -1710,14 +1581,26 @@ def worker():
 
 
         images_to_enhance = []
+        images_to_adetailer = []
         if 'enhance' in goals:
             async_task.image_number = 1
-            images_to_enhance += [async_task.enhance_input_image]
-            height, width, _ = async_task.enhance_input_image.shape
+            images_to_enhance += [async_task.adetail_input_image]
+            height, width, _ = async_task.adetail_input_image.shape
             # input image already provided, processing is skipped
             steps = 0
             yield_result(async_task, async_task.enhance_input_image, current_progress, async_task.black_out_nsfw, False,
                          async_task.disable_intermediate_results)
+
+        if 'adetail' in goals:
+            async_task.image_number = 1
+            images_to_adetailer += [async_task.enhance_input_image]
+            height, width, _ = async_task.enhance_input_image.shape
+
+            # input image already provided, processing is skipped
+            steps = 0
+            yield_result(async_task, async_task.enhance_input_image, current_progress, async_task.black_out_nsfw, False,
+                         async_task.disable_intermediate_results)
+
 
         all_steps = steps * async_task.image_number
 
@@ -1735,6 +1618,10 @@ def worker():
         if async_task.enhance_checkbox and len(async_task.enhance_ctrls) != 0:
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
+        
+        if 'adetail' in goals and len(async_task.ad_component) != 0:
+            adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
+            all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
 
         all_steps = max(all_steps, 1)
 
@@ -1768,8 +1655,9 @@ def worker():
                 int(current_progress + async_task.callback_steps),
                 f'Sampling step {step + 1}/{total_steps}, image {current_task_id + 1}/{total_count} ...', y)])
 
-        show_intermediate_results = len(tasks) > 1 or async_task.should_enhance
-        persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only
+        show_intermediate_results = len(tasks) > 1 or async_task.should_enhance or async_task.should_adetail
+        
+        persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only or not async_task.should_adetail or not async_task.save_final_adetail_image_only
 
         for current_task_id, task in enumerate(tasks):
             if async_task.aspect_random==True:
@@ -1816,6 +1704,7 @@ def worker():
         progressbar(async_task, current_progress, 'Processing enhance ...')
 
         active_enhance_tabs = len(async_task.enhance_ctrls)
+        active_adetail_tabs = len(async_task.ad_component)
         should_process_enhance_uov = async_task.enhance_uov_method != flags.disabled.casefold()
         enhance_uov_before = False
         enhance_uov_after = False
@@ -1825,14 +1714,112 @@ def worker():
             enhance_uov_after = async_task.enhance_uov_processing_order == flags.enhancement_uov_after
         total_count = len(images_to_enhance) * active_enhance_tabs
         async_task.images_to_enhance_count = len(images_to_enhance)
-
+        if 'adetail' in goals:
+            total_count = len(images_to_adetailer) * active_adetail_tabs
+            async_task.images_to_adetail_count = len(images_to_adetailer)
         base_progress = current_progress
         current_task_id = -1
         done_steps_upscaling = 0
         done_steps_inpainting = 0
         enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
+        adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
-        for index, img in enumerate(images_to_enhance):
+        if 'adetail' in goals:
+            for index, img in enumerate(images_to_adetailer):
+                async_task.adetailer_stats[index] = 0
+                adetailer_image_start_time = time.perf_counter()
+
+                last_adetailer_prompt = async_task.prompt
+                last_adetailer_negative_prompt = async_task.negative_prompt
+            # inpaint for all other tabs
+                for n, arg_s in enumerate(async_task.ad_component)
+                    current_task_id += 1
+                    current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_inpainting))
+                    progressbar(async_task, current_progress, f'Preparing ADetailer {current_task_id + 1}/{total_count} ...')
+                    adetailer_task_start_time = time.perf_counter()
+                    is_last_adetailer_for_image = (current_task_id + 1) % active_adetail_tabs == 0
+                    persist_image = not async_task.save_final_adetailer_image_only or is_last_adetailer_for_image                    
+                    args = SimpleNamespace(**arg_s)
+                    def is_mediapipe_model(args):
+                        return args.ad_model.lower().startswith("mediapipe")
+                    is_mediapipe = is_mediapipe_model(args)
+                    if is_mediapipe:
+                        pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
+                    else:
+                        ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
+                        with disable_safe_unpickle():
+                            pred = ultralytics_predict(
+                                ad_model,
+                                image=init_image,
+                                confidence=args.ad_confidence,
+                                #!device=ultralytics_device,
+                                classes=args.ad_model_classes,
+                                )
+                    masks = adetailer.pred_preprocessing(pred, args)
+
+
+
+
+                    if async_task.debugging_adetailer_masks_checkbox:
+                        async_task.yields.append(['preview', (current_progress, 'Loading ...', masks)])
+                        yield_result(async_task, masks, current_progress, async_task.black_out_nsfw, False,
+                                     async_task.disable_intermediate_results)
+                        async_task.enhance_stats[index] += 1
+
+                    #!print(f'[Enhance] {dino_detection_count} boxes detected')
+                    #!print(f'[Enhance] {sam_detection_count} segments detected in boxes')
+                    #!print(f'[Enhance] {sam_detection_on_mask_count} segments applied to mask')
+
+                    if len(masks) == 0:
+                        print(f'[ADetailer] No detected, skipping')
+                        continue
+                    
+                    goals_adetail = ['inpaint']
+                    adetail_prompt = args.ad_prompts
+                    adetail_negative_prompt = args.ad_negatives
+
+                    try:
+                        current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
+                            all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                            controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                            current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
+                            async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
+                            adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0)],
+                            preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
+                            use_synthetic_refiner, width, persist_image=persist_image)
+                        async_task.enhance_stats[index] += 1
+
+                        #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
+                        #!        and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
+                        #!    if enhance_prompt_processed != '':
+                        #!        last_enhance_prompt = enhance_prompt_processed
+                        #!    if enhance_negative_prompt_processed != '':
+                        #!        last_enhance_negative_prompt = enhance_negative_prompt_processed
+
+                    except ldm_patched.modules.model_management.InterruptProcessingException:
+                        if async_task.last_stop == 'skip':
+                            print('User skipped')
+                            async_task.last_stop = False
+                            continue
+                        else:
+                            print('User stopped')
+                            exception_result = 'break'
+                            break
+                    finally:
+                        done_steps_inpainting += adetail_steps
+
+                    enhancement_task_time = time.perf_counter() - enhancement_task_start_time
+                    print(f'Enhancement time: {enhancement_task_time:.2f} seconds')
+
+                if exception_result == 'break':
+                    break
+
+                adetail_image_time = time.perf_counter() - adetailer_image_start_time
+                print(f'Adetailer image time: {enhancement_image_time:.2f} seconds')
+
+
+        else:    
+          for index, img in enumerate(images_to_enhance):
             async_task.enhance_stats[index] = 0
             enhancement_image_start_time = time.perf_counter()
 
