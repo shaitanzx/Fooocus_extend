@@ -1594,7 +1594,7 @@ def worker():
         if 'adetail' in goals:
             async_task.image_number = 1
             images_to_adetailer += [async_task.adetail_input_image]
-            height, width, _ = async_task.adetail_input_image.shape
+            width, height = async_task.adetail_input_image.size
 
             # input image already provided, processing is skipped
             steps = 0
