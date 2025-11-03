@@ -1670,7 +1670,7 @@ def worker():
 
                 steps_masks = len(masks)
                 processed = None
-                job_count += steps
+                #!job_count += steps
 
                 if is_mediapipe:
                     print(f"mediapipe: {steps} detected.")
