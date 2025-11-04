@@ -1797,6 +1797,7 @@ with shared.gradio_root:
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
         ctrls += ad_component
+        ctrls += ad_component_gen
         ctrls += [adetail_input_image]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):

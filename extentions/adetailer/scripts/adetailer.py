@@ -100,9 +100,6 @@ txt2img_submit_button = img2img_submit_button = None
 txt2img_submit_button = cast(gr.Button, txt2img_submit_button)
 img2img_submit_button = cast(gr.Button, img2img_submit_button)
 
-print(
-    f"[-] ADetailer initialized. version: {__version__}, num models: {len(model_mapping)}"
-)
 
 def ui(is_img2img):
         num_models = default_adetail_tab

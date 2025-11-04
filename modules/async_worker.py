@@ -283,6 +283,7 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
+        self.ad_component_gen = [args.pop() for _ in range(default_adetail_tab+2)]
         self.adetail_input_image = args.pop ()
         self.save_final_adetail_image_only=True
         self.debugging_adetailer_masks_checkbox=True
@@ -1521,6 +1522,8 @@ def worker():
         if len(goals) > 0:
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
+        if 'adetail' not in goals:
+            async_task.ad_component=async_task.ad_component_gen
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
         async_task.should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
@@ -1685,6 +1688,7 @@ def worker():
 
                 current_progress = int(preparation_steps + (100 - preparation_steps) / float(all_steps) * async_task.steps * (current_task_id + 1))
                 images_to_enhance += imgs
+                images_to_adetailer += imgs
 
             except ldm_patched.modules.model_management.InterruptProcessingException:
                 if async_task.last_stop == 'skip':
