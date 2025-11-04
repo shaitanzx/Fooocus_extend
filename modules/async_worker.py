@@ -1782,6 +1782,7 @@ def worker():
                     goals_adetail = ['inpaint']
                     adetail_prompt = args.ad_prompt
                     adetail_negative_prompt = args.ad_negative_prompt
+                    async_task.base_model_name=args.ad_checkpoint
 
                     try:
                         current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
