@@ -1769,8 +1769,10 @@ def worker():
 
                     if async_task.debugging_adetailer_masks_checkbox:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
+                        imgs.append(np.array(pred.preview))
                         yield_result(async_task, pred.preview, current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
+                        imgs.append(np.array(pred.preview))
                         #!async_task.enhance_stats[index] += 1
 
                     #!print(f'[Enhance] {dino_detection_count} boxes detected')
