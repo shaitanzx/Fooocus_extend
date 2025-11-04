@@ -1765,11 +1765,6 @@ def worker():
                                 )
                     masks = adetailer.pred_preprocessing(pred, args)
 
-
-
-                    print ('zzzzzzzzzzzzzzzzzzzzzz',async_task.debugging_adetailer_masks_checkbox)
-                    print ('zzzzzzzzzzzzzzzzzzzzzz',type(pred.preview))
-                    print(f"persist_image = {persist_image}, save_final_only = {async_task.save_final_adetail_image_only}, is_last = {is_last_adetailer_for_image}")
                     if async_task.debugging_adetailer_masks_checkbox:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
                         yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
