@@ -119,7 +119,7 @@ def ui(is_img2img):
             scheduler_names=["scheduler_names"],
             t2i_button=txt2img_submit_button,
             i2i_button=img2img_submit_button,
-            checkpoints_list=["checkpoint_list"],
+            checkpoints_list=checkpoint_list,
             vae_list=["vae_list"],
         )
 
