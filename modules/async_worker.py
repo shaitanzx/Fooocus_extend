@@ -1783,6 +1783,11 @@ def worker():
                     adetail_prompt = args.ad_prompt
                     adetail_negative_prompt = args.ad_negative_prompt
                     async_task.base_model_name=args.ad_checkpoint
+                    async_task.vae_name=args.ad_use_vae
+                    async_task.sampler_name=args.ad_sampler
+                    async_task.scheduler_name=args.ad_scheduler
+                    async_task.inpaint_strength=args.ad_denoising_strength
+                    
 
                     try:
                         current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(

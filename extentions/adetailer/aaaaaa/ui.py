@@ -391,7 +391,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 maximum=64,
                 step=1,
                 value=4,
-                visible=True,
+                visible=False,
                 elem_id=eid("ad_mask_blur"),
             )
 
@@ -399,13 +399,13 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 label="Inpaint denoising strength" + suffix(n),
                 minimum=0.0,
                 maximum=1.0,
-                step=0.01,
-                value=0.4,
+                step=0.001,
+                value=1,
                 visible=True,
                 elem_id=eid("ad_denoising_strength"),
             )
 
-        with gr.Row():
+        with gr.Row(visible=False):
             with gr.Column(variant="compact"):
                 w.ad_inpaint_only_masked = gr.Checkbox(
                     label="Inpaint only masked" + suffix(n),
@@ -470,7 +470,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 w.ad_use_steps = gr.Checkbox(
                     label="Use separate steps" + suffix(n),
                     value=False,
-                    visible=True,
+                    visible=False,
                     elem_id=eid("ad_use_steps"),
                 )
 
@@ -479,7 +479,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     minimum=1,
                     maximum=150,
                     step=1,
-                    value=28,
+                    value=30,
                     visible=True,
                     elem_id=eid("ad_steps"),
                 )
@@ -525,7 +525,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_use_checkpoint"),
                 )
 
-                ckpts = ["Use cuurrent checkpoint", *webui_info.checkpoints_list]
+                ckpts = ["Use current checkpoint", *webui_info.checkpoints_list]
 
                 w.ad_checkpoint = gr.Dropdown(
                     label="ADetailer checkpoint" + suffix(n),
@@ -570,7 +570,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 w.ad_sampler = gr.Dropdown(
                     label="ADetailer sampler" + suffix(n),
                     choices=sampler_names,
-                    value=sampler_names[1],
+                    value=sampler_names[0],
                     visible=True,
                     elem_id=eid("ad_sampler"),
                 )
@@ -650,6 +650,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 label="Restore faces after ADetailer" + suffix(n),
                 value=False,
                 elem_id=eid("ad_restore_face"),
+                visible=False
             )
 
 
