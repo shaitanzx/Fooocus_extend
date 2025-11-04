@@ -412,6 +412,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 value=1,
                 visible=True,
                 elem_id=eid("ad_denoising_strength"),
+            )
             w.ad_mask_blur = gr.Slider(
                 label="Inpaint respective Field" + suffix(n),
                 minimum=0.0,
@@ -424,7 +425,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
             )
 
         with gr.Row(visible=False):
-            with gr.Column(variant="compact"):
+            
 
 
 
