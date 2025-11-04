@@ -1815,8 +1815,8 @@ def worker():
                     finally:
                         done_steps_inpainting += adetail_steps
 
-                    enhancement_task_time = time.perf_counter() - enhancement_task_start_time
-                    print(f'Enhancement time: {enhancement_task_time:.2f} seconds')
+                    adetail_task_time = time.perf_counter() - adetail_task_start_time
+                    print(f'ADetailer time: {adetail_task_time:.2f} seconds')
 
                 if exception_result == 'break':
                     break
