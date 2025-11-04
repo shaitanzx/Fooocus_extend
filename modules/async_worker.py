@@ -1772,7 +1772,7 @@ def worker():
                     print(f"persist_image = {persist_image}, save_final_only = {async_task.save_final_adetail_image_only}, is_last = {is_last_adetailer_for_image}")
                     if async_task.debugging_adetailer_masks_checkbox:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
-                        yield_result(async_task, pred.preview, current_progress, async_task.black_out_nsfw, False,
+                        yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
                         async_task.adetailer_stats[index] += 1
 
