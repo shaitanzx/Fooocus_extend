@@ -385,24 +385,25 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
 
     with gr.Group():
-        with gr.Row(visible=False):
+        with gr.Row(visible=True):
             with gr.Column(variant="compact"):
-                w.ad_inpaint_only_masked = gr.Checkbox(
-                    label="Disable initial latent in inpaint" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_inpaint_only_masked"),
-                )
+                
                 inpaint_engine = [
                 "Use current Inpaint Engine",
                 *webui_info.engine,
-            ]
+                ]
                 w.ad_inpaint_only_masked_padding = gr.Dropdown(
                     label="ADetailer Inpaint Engine" + suffix(n),
                     choices=inpaint_engine,
                     value=inpaint_engine[0],
                     visible=True,
                     elem_id=eid("ad_inpaint_only_masked_padding"),
+                )
+                w.ad_inpaint_only_masked = gr.Checkbox(
+                    label="Disable initial latent in inpaint" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_inpaint_only_masked"),
                 )
         with gr.Row():
             w.ad_denoising_strength = gr.Slider(
