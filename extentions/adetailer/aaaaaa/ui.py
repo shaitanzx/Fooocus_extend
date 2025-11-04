@@ -518,12 +518,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
 
         with gr.Row():
             with gr.Column(variant="compact"):
-                #!w.ad_use_checkpoint = gr.Checkbox(
-                #!    label="Use separate checkpoint" + suffix(n),
-                #!    value=False,
-                #!    visible=True,
-                #!    elem_id=eid("ad_use_checkpoint"),
-                #!)
+                w.ad_use_checkpoint = gr.Checkbox(
+                    label="Use separate checkpoint" + suffix(n),
+                    value=False,
+                    visible=False,
+                    elem_id=eid("ad_use_checkpoint"),
+                )
 
                 ckpts = ["Use cuurrent checkpoint", *webui_info.checkpoints_list]
 
@@ -536,12 +536,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
             with gr.Column(variant="compact"):
-                #!w.ad_use_vae = gr.Checkbox(
-                #!    label="Use separate VAE" + suffix(n),
-                #!    value=False,
-                #!    visible=True,
-                #!    elem_id=eid("ad_use_vae"),
-                #!)
+                w.ad_use_vae = gr.Checkbox(
+                    label="Use separate VAE" + suffix(n),
+                    value=False,
+                    visible=False,
+                    elem_id=eid("ad_use_vae"),
+                )
 
                 vaes = ["Use current VAE", *webui_info.vae_list]
 
@@ -554,12 +554,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
         with gr.Row(), gr.Column(variant="compact"):
-            #!w.ad_use_sampler = gr.Checkbox(
-            #!    label="Use separate sampler" + suffix(n),
-            #!    value=False,
-            #!    visible=True,
-            #!    elem_id=eid("ad_use_sampler"),
-            #!)
+            w.ad_use_sampler = gr.Checkbox(
+                label="Use separate sampler" + suffix(n),
+                value=False,
+                visible=False,
+                elem_id=eid("ad_use_sampler"),
+            )
 
             sampler_names = [
                 "Use current sampler",
