@@ -124,11 +124,11 @@ def ui(is_img2img):
             engine=modules.flags.inpaint_engine_versions
         )
 
-        components, infotext_fields = adui(num_models, is_img2img, webui_info)
+        components = adui(num_models, is_img2img, webui_info)
 
         #!self.infotext_fields = infotext_fields
 
-        return components, infotext_fields
+        return components
 
 def enabler(ad_component):
     tabs = [item for item in ad_component if isinstance(item, dict)]
