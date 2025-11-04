@@ -1735,7 +1735,7 @@ def worker():
             temp_base_model_name=async_task.base_model_name
             temp_sampler_name=async_task.sampler_name
             temp_scheduler_name=async_task.scheduler_name
-            temp_inpaint_strength=async_task.inpaint_strength
+            
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
@@ -1789,8 +1789,8 @@ def worker():
                     async_task.base_model_name=temp_base_model_name if 'current' in args.ad_checkpoint else args.ad_checkpoint
                     async_task.sampler_name=temp_sampler_name if 'current' in args.ad_sampler else args.ad_sampler
                     async_task.scheduler_name=temp_scheduler_name if 'current' in args.ad_scheduler else args.ad_scheduler
-                    async_task.inpaint_strength=temp_inpaint_strength if 'current' in args.ad_denoising_strength else args.ad_scheduler
-
+                    async_task.inpaint_strength=args.ad_denoising_strength
+                    
 
                     try:
                         current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(

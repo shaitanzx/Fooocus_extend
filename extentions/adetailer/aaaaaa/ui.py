@@ -405,7 +405,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 elem_id=eid("ad_denoising_strength"),
             )
 
-        with gr.Row(visible=False):
+        with gr.Row():
             with gr.Column(variant="compact"):
                 w.ad_inpaint_only_masked = gr.Checkbox(
                     label="Inpaint only masked" + suffix(n),
@@ -430,7 +430,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     queue=False,
                 )
 
-            with gr.Column(variant="compact"):
+            with gr.Column(variant="compact",visible=False):
                 w.ad_use_inpaint_width_height = gr.Checkbox(
                     label="Use separate width/height" + suffix(n),
                     value=False,
@@ -465,12 +465,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     queue=False,
                 )
 
-        with gr.Row():
+        with gr.Row(visible=False):
             with gr.Column(variant="compact"):
                 w.ad_use_steps = gr.Checkbox(
                     label="Use separate steps" + suffix(n),
                     value=False,
-                    visible=False,
+                    visible=True,
                     elem_id=eid("ad_use_steps"),
                 )
 
@@ -479,7 +479,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     minimum=1,
                     maximum=150,
                     step=1,
-                    value=30,
+                    value=28,
                     visible=True,
                     elem_id=eid("ad_steps"),
                 )
@@ -535,7 +535,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_checkpoint"),
                 )
 
-            with gr.Column(variant="compact",visible=False):
+            with gr.Column(variant="compact"):
                 w.ad_use_vae = gr.Checkbox(
                     label="Use separate VAE" + suffix(n),
                     value=False,
@@ -543,13 +543,13 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_use_vae"),
                 )
 
-                vaes = ["Use current VAE", "None", *webui_info.vae_list]
+                vaes = ["Use current VAE", *webui_info.vae_list]
 
                 w.ad_vae = gr.Dropdown(
                     label="ADetailer VAE" + suffix(n),
                     choices=vaes,
                     value=vaes[0],
-                    visible=True,
+                    visible=False,
                     elem_id=eid("ad_vae"),
                 )
 
@@ -594,7 +594,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 #!    queue=False,
                 #!)
 
-        with gr.Row():
+        with gr.Row(visible=False):
             with gr.Column(variant="compact"):
                 w.ad_use_noise_multiplier = gr.Checkbox(
                     label="Use separate noise multiplier" + suffix(n),
@@ -658,7 +658,7 @@ def controlnet(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
     cn_models = ["None", "Passthrough", *get_cn_models()]
 
-    with gr.Row(variant="panel"):
+    with gr.Row(variant="panel",visible=False):
         with gr.Column(variant="compact"):
             w.ad_controlnet_model = gr.Dropdown(
                 label="ControlNet model" + suffix(n),
