@@ -405,7 +405,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 elem_id=eid("ad_denoising_strength"),
             )
 
-        with gr.Row():
+        with gr.Row(visible=False):
             with gr.Column(variant="compact"):
                 w.ad_inpaint_only_masked = gr.Checkbox(
                     label="Inpaint only masked" + suffix(n),
@@ -535,7 +535,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_checkpoint"),
                 )
 
-            with gr.Column(variant="compact"):
+            with gr.Column(variant="compact",visible=False):
                 w.ad_use_vae = gr.Checkbox(
                     label="Use separate VAE" + suffix(n),
                     value=False,
