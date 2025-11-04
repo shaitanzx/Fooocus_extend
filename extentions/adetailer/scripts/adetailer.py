@@ -121,6 +121,7 @@ def ui(is_img2img):
             i2i_button=img2img_submit_button,
             checkpoints_list=checkpoint_list,
             vae_list=vae_list,
+            engine=modules.flags.inpaint_engine_versions
         )
 
         components, infotext_fields = adui(num_models, is_img2img, webui_info)

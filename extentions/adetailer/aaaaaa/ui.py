@@ -384,17 +384,26 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
 
     with gr.Group():
+        with gr.Row(visible=False):
+            with gr.Column(variant="compact"):
+                w.ad_inpaint_only_masked = gr.Checkbox(
+                    label="Disable initial latent in inpaint" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_inpaint_only_masked"),
+                )
+                inpaint_engine = [
+                "Use current Inpaint Engine",
+                *webui_info.engine,
+            ]
+                w.ad_inpaint_only_masked_padding = gr.Dropdown(
+                    label="ADetailer Inpaint Engine" + suffix(n),
+                    choices=inpaint_engine,
+                    value=inpaint_engine[0],
+                    visible=True,
+                    elem_id=eid("ad_inpaint_only_masked_padding"),
+                )
         with gr.Row():
-            w.ad_mask_blur = gr.Slider(
-                label="Inpaint mask blur" + suffix(n),
-                minimum=0,
-                maximum=64,
-                step=1,
-                value=4,
-                visible=False,
-                elem_id=eid("ad_mask_blur"),
-            )
-
             w.ad_denoising_strength = gr.Slider(
                 label="Inpaint denoising strength" + suffix(n),
                 minimum=0.0,
@@ -403,32 +412,22 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 value=1,
                 visible=True,
                 elem_id=eid("ad_denoising_strength"),
+            w.ad_mask_blur = gr.Slider(
+                label="Inpaint respective Field" + suffix(n),
+                minimum=0.0,
+                maximum=1.0,
+                step=0.001,
+                value=0.618,
+                visible=True,
+                elem_id=eid("ad_mask_blur"),
+            
             )
 
         with gr.Row(visible=False):
             with gr.Column(variant="compact"):
-                w.ad_inpaint_only_masked = gr.Checkbox(
-                    label="Inpaint only masked" + suffix(n),
-                    value=True,
-                    visible=True,
-                    elem_id=eid("ad_inpaint_only_masked"),
-                )
-                w.ad_inpaint_only_masked_padding = gr.Slider(
-                    label="Inpaint only masked padding, pixels" + suffix(n),
-                    minimum=0,
-                    maximum=256,
-                    step=4,
-                    value=32,
-                    visible=True,
-                    elem_id=eid("ad_inpaint_only_masked_padding"),
-                )
 
-                w.ad_inpaint_only_masked.change(
-                    gr_interactive,
-                    inputs=w.ad_inpaint_only_masked,
-                    outputs=w.ad_inpaint_only_masked_padding,
-                    queue=False,
-                )
+
+
 
             with gr.Column(variant="compact",visible=False):
                 w.ad_use_inpaint_width_height = gr.Checkbox(
@@ -458,12 +457,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_inpaint_height"),
                 )
 
-                w.ad_use_inpaint_width_height.change(
-                    lambda value: (gr_interactive(value), gr_interactive(value)),
-                    inputs=w.ad_use_inpaint_width_height,
-                    outputs=[w.ad_inpaint_width, w.ad_inpaint_height],
-                    queue=False,
-                )
+
 
         with gr.Row(visible=False):
             with gr.Column(variant="compact"):
@@ -484,12 +478,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_steps"),
                 )
 
-                w.ad_use_steps.change(
-                    gr_interactive,
-                    inputs=w.ad_use_steps,
-                    outputs=w.ad_steps,
-                    queue=False,
-                )
+
 
             with gr.Column(variant="compact"):
                 w.ad_use_cfg_scale = gr.Checkbox(
@@ -509,12 +498,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_cfg_scale"),
                 )
 
-                w.ad_use_cfg_scale.change(
-                    gr_interactive,
-                    inputs=w.ad_use_cfg_scale,
-                    outputs=w.ad_cfg_scale,
-                    queue=False,
-                )
+
 
         with gr.Row():
             with gr.Column(variant="compact"):
