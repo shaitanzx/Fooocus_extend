@@ -61,6 +61,7 @@ class WebuiInfo:
     i2i_button: gr.Button
     checkpoints_list: list[str]
     vae_list: list[str]
+    engine: list[str]
 
 
 def gr_interactive(value: bool = True):
