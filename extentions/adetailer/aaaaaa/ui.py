@@ -126,7 +126,7 @@ def adui(
     webui_info: WebuiInfo,
 ):
     states = []
-    infotext_fields = []
+    #!infotext_fields = []
     eid = partial(elem_id, n=0, is_img2img=is_img2img)
     ad_enable = gr.Checkbox(label='Enable', value=False,visible=not is_img2img)
     with gr.Column():
@@ -136,7 +136,7 @@ def adui(
     #!    label=ADETAILER,
     #!    visible=True,
     #!) as ad_enable:
-        with gr.Row():
+        with gr.Row(visible=False):
             with gr.Column(scale=8):
                 ad_skip_img2img = gr.Checkbox(
                     label="Skip img2img",
@@ -145,30 +145,25 @@ def adui(
                     elem_id=eid("ad_skip_img2img"),
                 )
 
-            with gr.Column(scale=1, min_width=180):
-                gr.Markdown(
-                    f"v{__version__}",
-                    elem_id=eid("ad_version"),
-                )
 
-        infotext_fields.append((ad_enable, "ADetailer enable"))
-        infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
+        #!infotext_fields.append((ad_enable, "ADetailer enable"))
+        #!infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
 
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
-                    state, infofields = one_ui_group(
+                    state = one_ui_group(
                         n=n,
                         is_img2img=is_img2img,
                         webui_info=webui_info,
                     )
 
                 states.append(state)
-                infotext_fields.extend(infofields)
+                #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
     components = [ad_enable, ad_skip_img2img, *states]
-    return components, infotext_fields
+    return components #!, infotext_fields
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
@@ -277,9 +272,9 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         fn=on_generate_click, inputs=all_inputs, outputs=state, queue=False
     )
 
-    infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
+    #!infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
 
-    return state, infotext_fields
+    return state #!, infotext_fields
 
 
 def detection(w: Widgets, n: int, is_img2img: bool):
@@ -416,7 +411,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 elem_id=eid("ad_denoising_strength"),
             )
             w.ad_mask_blur = gr.Slider(
-                label="Inpaint respective Field" + suffix(n),
+                label="Inpaint respective field" + suffix(n),
                 minimum=0.0,
                 maximum=1.0,
                 step=0.001,
