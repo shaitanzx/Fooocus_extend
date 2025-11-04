@@ -535,7 +535,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_checkpoint"),
                 )
 
-            with gr.Column(variant="compact"):
+            with gr.Column(variant="compact",visible=False):
                 w.ad_use_vae = gr.Checkbox(
                     label="Use separate VAE" + suffix(n),
                     value=False,
@@ -543,7 +543,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_use_vae"),
                 )
 
-                vaes = ["Use current VAE", *webui_info.vae_list]
+                vaes = ["Use current VAE", "None", *webui_info.vae_list]
 
                 w.ad_vae = gr.Dropdown(
                     label="ADetailer VAE" + suffix(n),
