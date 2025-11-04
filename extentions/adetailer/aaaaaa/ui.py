@@ -518,14 +518,14 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
 
         with gr.Row():
             with gr.Column(variant="compact"):
-                w.ad_use_checkpoint = gr.Checkbox(
-                    label="Use separate checkpoint" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_checkpoint"),
-                )
+                #!w.ad_use_checkpoint = gr.Checkbox(
+                #!    label="Use separate checkpoint" + suffix(n),
+                #!    value=False,
+                #!    visible=True,
+                #!    elem_id=eid("ad_use_checkpoint"),
+                #!)
 
-                ckpts = ["Use same checkpoint", *webui_info.checkpoints_list]
+                ckpts = ["Use cuurrent checkpoint", *webui_info.checkpoints_list]
 
                 w.ad_checkpoint = gr.Dropdown(
                     label="ADetailer checkpoint" + suffix(n),
@@ -536,14 +536,14 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
             with gr.Column(variant="compact"):
-                w.ad_use_vae = gr.Checkbox(
-                    label="Use separate VAE" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_vae"),
-                )
+                #!w.ad_use_vae = gr.Checkbox(
+                #!    label="Use separate VAE" + suffix(n),
+                #!    value=False,
+                #!    visible=True,
+                #!    elem_id=eid("ad_use_vae"),
+                #!)
 
-                vaes = ["Use same VAE", *webui_info.vae_list]
+                vaes = ["Use current VAE", *webui_info.vae_list]
 
                 w.ad_vae = gr.Dropdown(
                     label="ADetailer VAE" + suffix(n),
@@ -554,15 +554,15 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
         with gr.Row(), gr.Column(variant="compact"):
-            w.ad_use_sampler = gr.Checkbox(
-                label="Use separate sampler" + suffix(n),
-                value=False,
-                visible=True,
-                elem_id=eid("ad_use_sampler"),
-            )
+            #!w.ad_use_sampler = gr.Checkbox(
+            #!    label="Use separate sampler" + suffix(n),
+            #!    value=False,
+            #!    visible=True,
+            #!    elem_id=eid("ad_use_sampler"),
+            #!)
 
             sampler_names = [
-                "Use same sampler",
+                "Use current sampler",
                 *webui_info.sampler_names,
             ]
 
@@ -576,7 +576,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
                 scheduler_names = [
-                    "Use same scheduler",
+                    "Use current scheduler",
                     *webui_info.scheduler_names,
                 ]
                 w.ad_scheduler = gr.Dropdown(
@@ -587,12 +587,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_scheduler"),
                 )
 
-                w.ad_use_sampler.change(
-                    lambda value: (gr_interactive(value), gr_interactive(value)),
-                    inputs=w.ad_use_sampler,
-                    outputs=[w.ad_sampler, w.ad_scheduler],
-                    queue=False,
-                )
+                #!w.ad_use_sampler.change(
+                #!    lambda value: (gr_interactive(value), gr_interactive(value)),
+                #!    inputs=w.ad_use_sampler,
+                #!    outputs=[w.ad_sampler, w.ad_scheduler],
+                #!    queue=False,
+                #!)
 
         with gr.Row():
             with gr.Column(variant="compact"):

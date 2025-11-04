@@ -107,20 +107,20 @@ print(
 def ui(is_img2img):
         num_models = default_adetail_tab
         ad_model_list = list(model_mapping.keys())
-        #!sampler_names = [sampler.name for sampler in all_samplers]
-        #!scheduler_names = [x.label for x in schedulers]
+        sampler_names = modules.flags.sampler_list
+        scheduler_names = flags.scheduler_list
 
         checkpoint_list = modules.config.model_filenames
         #!vae_list = modules.shared_items.sd_vae_items()
 
         webui_info = WebuiInfo(
             ad_model_list=ad_model_list,
-            sampler_names=["sampler_names"],
-            scheduler_names=["scheduler_names"],
+            sampler_names=sampler_names,
+            scheduler_names=modules.flags.scheduler_list,
             t2i_button=txt2img_submit_button,
             i2i_button=img2img_submit_button,
             checkpoints_list=checkpoint_list,
-            vae_list=["vae_list"],
+            vae_list=[modules.flags.default_vae] + modules.config.vae_filenames,
         )
 
         components, infotext_fields = adui(num_models, is_img2img, webui_info)
