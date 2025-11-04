@@ -286,6 +286,7 @@ class AsyncTask:
         self.adetail_input_image = args.pop ()
         self.save_final_adetail_image_only=True
         self.debugging_adetailer_masks_checkbox=True
+        self.adetailer_stats = {}
         print(self.ad_component)
     
 
@@ -1773,7 +1774,7 @@ def worker():
                         yield_result(async_task, pred.preview, current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
                         imgs.append(np.array(pred.preview))
-                        async_task.enhance_stats[index] += 1
+                        async_task.adetailer_stats[index] += 1
 
                     #!print(f'[Enhance] {dino_detection_count} boxes detected')
                     #!print(f'[Enhance] {sam_detection_count} segments detected in boxes')
@@ -1796,7 +1797,7 @@ def worker():
                             adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
                             preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
                             use_synthetic_refiner, width, persist_image=persist_image)
-                        async_task.enhance_stats[index] += 1
+                        async_task.adetailer_stats[index] += 1
 
                         #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
                         #!        and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
