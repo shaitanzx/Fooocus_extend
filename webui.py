@@ -834,7 +834,9 @@ with shared.gradio_root:
                             enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
-
+                        with gr.Tab(label='Adetail', id='adetail_tab'):
+                            #!adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
+                            ad_component_gen = adetailer.ui(is_img2img=False)
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
