@@ -1523,13 +1523,15 @@ def worker():
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
         adetailer_generator=False
-        if 'adetail' not in goals:
-            async_task.ad_component=async_task.ad_component_gen
+        if 'adetail' not in goals and async_task.ad_component_gen[0]:
             adetailer_generator=True
+
+            async_task.ad_component=async_task.ad_component_gen
+            
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         print(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
-        async_task.should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
+        async_task.should_adetail = ('adetail' in goals or adetailer_generator) and (len(async_task.ad_component) > 0)
         if 'vary' in goals:
             async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
                 async_task, async_task.uov_method, denoising_strength, async_task.uov_input_image, switch,
@@ -1708,7 +1710,6 @@ def worker():
 
         if not async_task.should_enhance and not async_task.should_adetail:
             #!print(f'[Enhance] Skipping, preconditions aren\'t met')
-            print('xxxxxxxxxxxxxxxxxxxxxx')
             stop_processing(async_task, processing_start_time)
             return
         if 'enhance' in goals:
