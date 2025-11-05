@@ -1522,8 +1522,10 @@ def worker():
         if len(goals) > 0:
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
+        adetailer_generator=False
         if 'adetail' not in goals:
             async_task.ad_component=async_task.ad_component_gen
+            adetailer_generator=True
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         print(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
@@ -1625,7 +1627,7 @@ def worker():
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
         
-        if 'adetail' in goals and len(async_task.ad_component) != 0:
+        if 'adetailer_generator=Trueadetail' in goals or adetailer_generator) and len(async_task.ad_component) != 0:
             adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
             all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
 
@@ -1734,7 +1736,7 @@ def worker():
         enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
-        if 'adetail' in goals:
+        if 'adetail' in goals or adetailer_generator:
             from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
             from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
             temp_base_model_name=async_task.base_model_name
