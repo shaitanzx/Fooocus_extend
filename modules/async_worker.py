@@ -1627,7 +1627,7 @@ def worker():
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
         
-        if 'adetailer_generator=Trueadetail' in goals or adetailer_generator) and len(async_task.ad_component) != 0:
+        if 'adetail' in goals or adetailer_generator) and len(async_task.ad_component) != 0:
             adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
             all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
 
