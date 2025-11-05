@@ -282,9 +282,9 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
-        self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
+        self.ad_component = [args.pop() for _ in range(default_adetail_tab+1)]
         self.adetail_gen_enable = args.pop()
-        self.ad_component_gen = [args.pop() for _ in range(default_adetail_tab+2)]
+        self.ad_component_gen = [args.pop() for _ in range(default_adetail_tab+1)]
         self.adetail_input_image = args.pop ()
         self.debugging_adetailer_masks_checkbox=args.pop()
         self.save_final_adetail_image_only = self.save_final_enhanced_image_only       
