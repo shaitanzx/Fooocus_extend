@@ -867,7 +867,7 @@ with shared.gradio_root:
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                adetail_gen_enable.(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                adetail_gen_enable.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
