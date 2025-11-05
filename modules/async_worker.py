@@ -1739,8 +1739,6 @@ def worker():
         enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
-        print('zzzzzzzzzz','adetail' in goals)
-        print('zzzzzzzzzz',adetailer_generator)
         if 'adetail' in goals or adetailer_generator:
             from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
             from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
@@ -1815,7 +1813,7 @@ def worker():
                             async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
                             adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
                             preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
-                            use_synthetic_refiner, width, persist_image=persist_image)
+                            use_synthetic_refiner, width, persist_image=False)
                         async_task.adetailer_stats[index] += 1
 
                         #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
