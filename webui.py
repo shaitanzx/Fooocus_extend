@@ -1474,6 +1474,9 @@ with shared.gradio_root:
                         if not args_manager.args.disable_image_log:
                             save_final_enhanced_image_only = gr.Checkbox(label='Save only final enhanced image',
                                                                          value=modules.config.default_save_only_final_enhanced_image)
+                        if not args_manager.args.disable_image_log:
+                            save_final_detail_image_only = gr.Checkbox(label='Save only final ADetailer image',
+                                                                         value=modules.config.default_save_only_final_adetail_image)
 
                         if not args_manager.args.disable_metadata:
                             save_metadata_to_images = gr.Checkbox(label='Save Metadata to Images', value=modules.config.default_save_metadata_to_images,
