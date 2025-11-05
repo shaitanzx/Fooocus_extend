@@ -1804,6 +1804,8 @@ with shared.gradio_root:
         ctrls += [adetail_gen_enable]
         ctrls += ad_component_gen
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox]
+        if not args_manager.args.disable_image_log:
+            ctrls += [save_final_adetail_image_only]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
