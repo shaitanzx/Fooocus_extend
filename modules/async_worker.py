@@ -1708,6 +1708,7 @@ def worker():
 
         if not async_task.should_enhance and not async_task.should_adetail:
             #!print(f'[Enhance] Skipping, preconditions aren\'t met')
+            print('xxxxxxxxxxxxxxxxxxxxxx')
             stop_processing(async_task, processing_start_time)
             return
         if 'enhance' in goals:
