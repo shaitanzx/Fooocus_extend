@@ -1813,7 +1813,7 @@ def worker():
                             async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
                             adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
                             preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
-                            use_synthetic_refiner, width, persist_image=False)
+                            use_synthetic_refiner, width, persist_image=True)
                         async_task.adetailer_stats[index] += 1
 
                         #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
