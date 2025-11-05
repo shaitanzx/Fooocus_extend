@@ -1761,13 +1761,17 @@ def worker():
                     adetailer_task_start_time = time.perf_counter()
                     is_last_adetailer_for_image = (current_task_id + 1) % active_adetail_tabs == 0
                     persist_image = not async_task.save_final_adetail_image_only or is_last_adetailer_for_image   
+                    print('zzzzz',(current_task_id + 1))
+                    print('zzzzz', active_adetail_tabs)
+                    print('zzzzz',is_last_adetailer_for_image)
+                    print('zzzzz',persist_image)
                 
                     args = SimpleNamespace(**arg_s)
                     def is_mediapipe_model(args):
                         return args.ad_model.lower().startswith("mediapipe")
                     is_mediapipe = is_mediapipe_model(args)
                     if is_mediapipe:
-                        pred = mediapipe_predict(args.ad_model, init_image, args.ad_confidence)
+                        pred = mediapipe_predict(args.ad_model, img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
                     else:
                         ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
                         with disable_safe_unpickle():
@@ -1813,7 +1817,7 @@ def worker():
                             async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
                             adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
                             preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
-                            use_synthetic_refiner, width, persist_image=True)
+                            use_synthetic_refiner, width, persist_image=persist_image)
                         async_task.adetailer_stats[index] += 1
 
                         #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
