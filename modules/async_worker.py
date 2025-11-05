@@ -287,7 +287,7 @@ class AsyncTask:
         self.ad_component_gen = [args.pop() for _ in range(default_adetail_tab+2)]
         self.adetail_input_image = args.pop ()
         self.debugging_adetailer_masks_checkbox=args.pop()
-        self.save_final_adetail_image_only = args.pop() if not args_manager.args.disable_image_log else False       
+        self.save_final_adetail_image_only = self.save_final_enhanced_image_only       
         self.adetailer_stats = {}
 
     

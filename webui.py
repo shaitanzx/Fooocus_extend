@@ -1472,11 +1472,8 @@ with shared.gradio_root:
 
 
                         if not args_manager.args.disable_image_log:
-                            save_final_enhanced_image_only = gr.Checkbox(label='Save only final enhanced image',
+                            save_final_enhanced_image_only = gr.Checkbox(label='Save only final enhanced/ADetailer image',
                                                                          value=modules.config.default_save_only_final_enhanced_image)
-                        if not args_manager.args.disable_image_log:
-                            save_final_adetail_image_only = gr.Checkbox(label='Save only final ADetailer image',
-                                                                         value=modules.config.default_save_only_final_adetail_image)
 
                         if not args_manager.args.disable_metadata:
                             save_metadata_to_images = gr.Checkbox(label='Save Metadata to Images', value=modules.config.default_save_metadata_to_images,
@@ -1807,8 +1804,6 @@ with shared.gradio_root:
         ctrls += [adetail_gen_enable]
         ctrls += ad_component_gen
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox]
-        if not args_manager.args.disable_image_log:
-            ctrls += [save_final_adetail_image_only]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
