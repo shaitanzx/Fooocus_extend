@@ -283,6 +283,7 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.ad_component = [args.pop() for _ in range(default_adetail_tab+2)]
+        self.adetail_gen_enable = args.pop()
         self.ad_component_gen = [args.pop() for _ in range(default_adetail_tab+2)]
         self.adetail_input_image = args.pop ()
         self.save_final_adetail_image_only=True
@@ -1523,7 +1524,7 @@ def worker():
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
         adetailer_generator=False
-        if 'adetail' not in goals and async_task.ad_component_gen[0]:
+        if 'adetail' not in goals and async_task.adetail_gen_enable:
             adetailer_generator=True
 
             async_task.ad_component=async_task.ad_component_gen

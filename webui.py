@@ -811,7 +811,7 @@ with shared.gradio_root:
                                 return {viewstrans: gr.update(visible=checkbox)} 
                                        
                             with gr.Row():
-                                translate_enabled = gr.Checkbox(label='Enable translate', value=False, elem_id='translate_enabled_el')
+                                translate_enabled = gr.Checkbox(label='Enabled', value=False, elem_id='translate_enabled_el')
                             with gr.Row():
                                 gtrans = gr.Button(value="Translate")        
 
@@ -834,8 +834,8 @@ with shared.gradio_root:
                             enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
-                        with gr.Tab(label='Adetail', id='adetail_tab'):
-                            #!adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
+                        with gr.Tab(label='ADetailer', id='adetail_tab'):
+                            adetail_gen_enable = gr.Checkbox(label='Enabled', value=False)
                             ad_component_gen = adetailer.ui(is_img2img=False)
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
@@ -844,12 +844,13 @@ with shared.gradio_root:
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
-                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
+                def gen_acc_name(obp,translate, photomaker, instant, adetail, inswapper, codeformer,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
+                        ('Adetailer', adetail),
                         ('Inswapper', inswapper),
                         ('Codeformer', codeformer),
                         ('Vector', vector)
@@ -859,13 +860,14 @@ with shared.gradio_root:
                     if active_modules:
                         main_name += f" — {', '.join(active_modules)}"   
                     return gr.update(label=main_name)
-                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled,poDoVector]
+                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,adetail,inswapper_enabled,codeformer_gen_enabled,poDoVector]
                 poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                adetail_gen_enable.(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
@@ -1797,6 +1799,7 @@ with shared.gradio_root:
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
         ctrls += ad_component
+        ctrls += [adetail_gen_enable]
         ctrls += ad_component_gen
         ctrls += [adetail_input_image]
         ctrls += [translate_enabled, srcTrans, toTrans]
