@@ -1525,7 +1525,7 @@ def worker():
         if 'adetail' not in goals:
             async_task.ad_component=async_task.ad_component_gen
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
-        print(self.ad_component)
+        print(async_task.ad_component)
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
         async_task.should_adetail = 'adetail' in goals and (len(async_task.ad_component) > 0)
         if 'vary' in goals:
