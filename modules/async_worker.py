@@ -289,7 +289,7 @@ class AsyncTask:
         self.debugging_adetailer_masks_checkbox=args.pop()
         self.save_final_adetail_image_only = self.save_final_enhanced_image_only       
         self.adetailer_stats = {}
-        print('zzzzzzzzzzzzzzz',self.ad_component)
+        
 
     
 
@@ -1763,8 +1763,12 @@ def worker():
                     progressbar(async_task, current_progress, f'Preparing ADetailer {current_task_id + 1}/{total_count} ...')
                     adetailer_task_start_time = time.perf_counter()
                     is_last_adetailer_for_image = (current_task_id + 1) % active_adetail_tabs == 0
-                    persist_image = not async_task.save_final_adetail_image_only or is_last_adetailer_for_image                   
+                    persist_image = not async_task.save_final_adetail_image_only or is_last_adetailer_for_image  
+                    print('aaaaaaaaaaa',async_task.ad_component)
+                    print('xxxxxxxxxxx',arg_s)
+                                     
                     args = SimpleNamespace(**arg_s)
+                    print('ccccccccccc',args)
                     def is_mediapipe_model(args):
                         return args.ad_model.lower().startswith("mediapipe")
                     is_mediapipe = is_mediapipe_model(args)
