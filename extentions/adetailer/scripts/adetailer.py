@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import platform
+#!import platform
 import re
 import sys
 import traceback
-from collections.abc import Sequence
-from copy import copy
-from functools import partial
+#!from collections.abc import Sequence
+#!from copy import copy
+#!from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
@@ -16,37 +16,37 @@ from rich import print  # noqa: A004  Shadowing built-in 'print'
 
 import modules
 from extentions.adetailer.aaaaaa.helper import (
-    PPImage,
-    copy_extra_params,
+#!    PPImage,
+#!    copy_extra_params,
     disable_safe_unpickle,
-    pause_total_tqdm,
-    preserve_prompts,
+#!    pause_total_tqdm,
+#!    preserve_prompts,
 )
-from extentions.adetailer.aaaaaa.p_method import (
-    get_i,
-    is_img2img_inpaint,
-    is_inpaint_only_masked,
-    is_skip_img2img,
-    need_call_postprocess,
-    need_call_process,
-)
+#!from extentions.adetailer.aaaaaa.p_method import (
+#!    get_i,
+#!    is_img2img_inpaint,
+#!    is_inpaint_only_masked,
+#!    is_skip_img2img,
+#!    need_call_postprocess,
+#!    need_call_process,
+#!)
 from extentions.adetailer.aaaaaa.traceback import rich_traceback
 from extentions.adetailer.aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
-from extentions.adetailer.adetailer import (
-    ADETAILER,
-    __version__,
+#!from extentions.adetailer.adetailer import (
+    #!ADETAILER,
+    #! __version__,
     get_models,
     mediapipe_predict,
     ultralytics_predict,
-)
+#!)
 from extentions.adetailer.adetailer.args import (
     BBOX_SORTBY,
-    BUILTIN_SCRIPT,
-    INPAINT_BBOX_MATCH_MODES,
-    SCRIPT_DEFAULT,
-    ADetailerArgs,
-    InpaintBBoxMatchMode,
-    SkipImg2ImgOrig,
+    #!BUILTIN_SCRIPT,
+    #!INPAINT_BBOX_MATCH_MODES,
+   #! SCRIPT_DEFAULT,
+    #!ADetailerArgs,
+   #!InpaintBBoxMatchMode,
+    #!SkipImg2ImgOrig,
 )
 from extentions.adetailer.adetailer.common import PredictOutput, ensure_pil_image
 from extentions.adetailer.adetailer.mask import (
