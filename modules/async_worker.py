@@ -1845,6 +1845,7 @@ def worker():
                             for part in inner.split(','):
                                 p = part.strip()
                                 if p:
+                                    print('zzzzzzzzzzzz',p)
                                     async_task.style_selections.append(p.strip())
     # Удаляем тег из prompt
                             prompt = prompt[:style_tag_start] + prompt[style_tag_end + 1:]
