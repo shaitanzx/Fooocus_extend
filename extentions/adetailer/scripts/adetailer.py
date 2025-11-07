@@ -38,7 +38,7 @@ from extentions.adetailer.aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
     get_models,
     mediapipe_predict,
     ultralytics_predict,
-#!)
+)
 from extentions.adetailer.adetailer.args import (
     BBOX_SORTBY,
     #!BUILTIN_SCRIPT,
