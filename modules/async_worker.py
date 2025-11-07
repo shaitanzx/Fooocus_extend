@@ -1812,6 +1812,8 @@ def worker():
                         use_style = False
                         prompt=adetail_prompt[n]
                         negative=adetail_negative_prompt[n]
+                        print('pppppppp',prompt)
+                        print('nnnnnnnn',negative)
                         if '[PROMPT]' in prompt:
                             prompt = prompt.replace("[PROMPT]", async_task.prompt)
                             #!use_expansion = False
@@ -1840,7 +1842,8 @@ def worker():
                         if '[N_PROMPT]' in negative:
                             negative = negative.replace("[N_PROMPT]", async_task.negative_prompt)
                             
-
+                        print('pppppppp',prompt)
+                        print('nnnnnnnn',negative)
                     #!adetail_prompt = args.ad_prompt
                     #!adetail_negative_prompt = args.ad_negative_prompt
                     
