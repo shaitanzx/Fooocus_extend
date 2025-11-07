@@ -136,7 +136,7 @@ def enabler(ad_component):
     return valid_tabs
 
 def sort_bboxes_main(pred: PredictOutput) -> PredictOutput:
-        sortby = BBOX_SORTBY[0]
+        sortby = BBOX_SORTBY[1]
         sortby_idx = BBOX_SORTBY.index(sortby)
         return sort_bboxes(pred, sortby_idx)
 def pred_preprocessing(pred: PredictOutput, args):

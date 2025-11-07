@@ -1733,7 +1733,7 @@ def worker():
         exception_result = None
         if 'adetail' in goals or adetailer_generator:
             from extentions.adetailer.aaaaaa.helper import (disable_safe_unpickle)
-            from extentions.adetailer.adetailer import (mediapipe_predict,ultralytics_predict)
+            from extentions.adetailer.adetailer import (mediapipe_predict,ultralytics_predict,prompt_cut)
             temp_base_model_name=async_task.base_model_name
             temp_sampler_name=async_task.sampler_name
             temp_scheduler_name=async_task.scheduler_name
