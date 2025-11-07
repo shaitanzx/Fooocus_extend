@@ -205,11 +205,13 @@ def get_prompt(p, args) -> tuple[list[str], list[str]]:
     negative_prompts = _process_one(args.ad_negative_prompt, main_negative)
 
     return prompts, negative_prompts
-def prompt_cut(a: list, b: list, n: int):
-    def process(lst):
-        lst = [""] if not lst else lst
-        return (lst + [lst[-1]] * n)[:n]
-        return process(a), process(b)
+def prompt_cut(pos_text: str, neg_text: str, target_len: int):    
+    def process(s: str):
+        parts = re.split(r"\s*\[SEP\]\s*", s.strip()) if s.strip() else []
+        lst = [""] if not parts else parts
+        return (lst + [lst[-1]] * target_len)[:target_len]
+    
+    return process(pos_text), process(neg_text)
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
