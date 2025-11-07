@@ -289,6 +289,7 @@ class AsyncTask:
         self.debugging_adetailer_masks_checkbox=args.pop()
         self.save_final_adetail_image_only = self.save_final_enhanced_image_only       
         self.adetailer_stats = {}
+        print('zzzzzzzzzzzzzzz',self.ad_component)
 
     
 
@@ -1531,7 +1532,7 @@ def worker():
             async_task.ad_component=async_task.ad_component_gen
             
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
-        print(async_task.ad_component)
+        
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
         async_task.should_adetail = ('adetail' in goals or adetailer_generator) and (len(async_task.ad_component) > 0)
         if 'vary' in goals:
