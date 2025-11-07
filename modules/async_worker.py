@@ -1848,6 +1848,11 @@ def worker():
                                     async_task.style_selections.append(p)
     # Удаляем тег из prompt
                             prompt = prompt[:style_tag_start] + prompt[style_tag_end + 1:]
+                        if fooocus_expansion in async_task.style_selections:
+                            use_expansion = True
+                            async_task.style_selections.remove(fooocus_expansion)
+                        else:
+                            use_expansion = False
                         if '[N_PROMPT]' in negative:
                             negative = negative.replace("[N_PROMPT]", async_task.negative_prompt)
                             
