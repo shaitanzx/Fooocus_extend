@@ -545,7 +545,7 @@ with shared.gradio_root:
                                                                    inpaint_mask_advanced_options,
                                                                    example_inpaint_mask_dino_prompt_text],
                                                           queue=False, show_progress=False)
-                    with gr.Tab(label='Adetail', id='adetail_tab') as adetail_tab:
+                    with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
                             adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
                             ad_component = adetailer.ui(is_img2img=True)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
