@@ -205,7 +205,7 @@ def get_prompt(p, args) -> tuple[list[str], list[str]]:
     negative_prompts = _process_one(args.ad_negative_prompt, main_negative)
 
     return prompts, negative_prompts
-def prompt_cuth(a: list, b: list, n: int):
+def prompt_cut(a: list, b: list, n: int):
     def process(lst):
         lst = [""] if not lst else lst
         return (lst + [lst[-1]] * n)[:n]
