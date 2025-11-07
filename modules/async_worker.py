@@ -1840,12 +1840,12 @@ def worker():
                             if style_tag_end == -1:
                                 break
     # Извлекаем содержимое между '[STYLE=' и ']'
-                            inner = prompt[style_tag_start + 8 : style_tag_end]  # 8 = len('[STYLE=')
+                            inner = prompt[style_tag_start + 7 : style_tag_end]  # 8 = len('[STYLE=')
     # Разбиваем по запятым, очищаем от пробелов, отбрасываем пустые
                             for part in inner.split(','):
                                 p = part.strip()
                                 if p:
-                                    async_task.style_selections.append(p)
+                                    async_task.style_selections.append(p.strip())
     # Удаляем тег из prompt
                             prompt = prompt[:style_tag_start] + prompt[style_tag_end + 1:]
                         if fooocus_expansion in async_task.style_selections:
