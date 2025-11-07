@@ -1840,7 +1840,7 @@ def worker():
                             if style_tag_end == -1:
                                 break
     # Извлекаем содержимое между '[STYLE=' и ']'
-                            inner = prompt[style_tag_start + 7 : style_tag_end]  # 8 = len('[STYLE=')
+                            inner = prompt[style_tag_start + 8 : style_tag_end]  # 8 = len('[STYLE=')
     # Разбиваем по запятым, очищаем от пробелов, отбрасываем пустые
                             for part in inner.split(','):
                                 p = part.strip()
