@@ -164,48 +164,58 @@ def prompt_blank_replacement(all_prompts: list[str], i: int, default: str) -> st
             return all_prompts[i]
         j = i % len(all_prompts)
         return all_prompts[j]
-def get_prompt(p, args) -> tuple[list[str], list[str]]:
-    """
-    Обрабатывает ad_prompt и ad_negative_prompt с поддержкой:
-      - [SEP] — разделение на несколько промптов,
-      - [PROMPT] — вставка основного промпта,
-      - пустых частей — замена на основной промпт.
+#!def get_prompt(p, args) -> tuple[list[str], list[str]]:
+#!    """
+#!    Обрабатывает ad_prompt и ad_negative_prompt с поддержкой:
+#!      - [SEP] — разделение на несколько промптов,
+#!      - [PROMPT] — вставка основного промпта,
+#!      - пустых частей — замена на основной промпт.
+#!
+#!    Возвращает кортеж из двух списков: (позитивные промпты, негативные промпты).
+#!    """
+#!
+#!    # Основные промпты из генерации
+#!    main_prompt = p.prompt
+#!    main_negative = p.negative_prompt
+#!
+#!    def _process_one(ad_text: str, fallback: str) -> list[str]:
+#!        # 1. Разбиваем строку по [SEP], игнорируя пробелы вокруг
+#!        parts = re.split(r"\s*\[SEP\]\s*", ad_text.strip())
+#!        result = []
+#!
+#!        for part in parts:
+#!            part = part.strip()
+#!
+#!            # 2. Если часть пустая → заменяем на основной промпт
+#!            if not part:
+#!                result.append(fallback)
+#!
+#!            # 3. Если есть [PROMPT] → подставляем основной промпт
+#!            elif "[PROMPT]" in part:
+#!                result.append(part.replace("[PROMPT]", fallback))
+#!
+#!            # 4. Иначе — оставляем как есть
+#!            else:
+#!                result.append(part)
 
-    Возвращает кортеж из двух списков: (позитивные промпты, негативные промпты).
-    """
-
-    # Основные промпты из генерации
-    main_prompt = p.prompt
-    main_negative = p.negative_prompt
-
-    def _process_one(ad_text: str, fallback: str) -> list[str]:
-        # 1. Разбиваем строку по [SEP], игнорируя пробелы вокруг
-        parts = re.split(r"\s*\[SEP\]\s*", ad_text.strip())
-        result = []
-
-        for part in parts:
-            part = part.strip()
-
-            # 2. Если часть пустая → заменяем на основной промпт
-            if not part:
-                result.append(fallback)
-
-            # 3. Если есть [PROMPT] → подставляем основной промпт
-            elif "[PROMPT]" in part:
-                result.append(part.replace("[PROMPT]", fallback))
-
-            # 4. Иначе — оставляем как есть
-            else:
-                result.append(part)
-
-        return result
+#!        return result
 
     # 5. Обрабатываем позитивный и негативный промпты
-    prompts = _process_one(args.ad_prompt, main_prompt)
-    negative_prompts = _process_one(args.ad_negative_prompt, main_negative)
+#!    prompts = _process_one(args.ad_prompt, main_prompt)
+#!    negative_prompts = _process_one(args.ad_negative_prompt, main_negative)
 
-    return prompts, negative_prompts
+#!    return prompts, negative_prompts
+def prompt_cut(pos_text: str, neg_text: str, target_len: int):
 
+    
+    def process(s: str):
+        # 1. Разбиваем строку: убираем пробелы, делим по [SEP]
+        parts = re.split(r"\s*\[SEP\]\s*", s.strip()) #!if s.strip() else []
+        # 2. Пустой → [""], затем дополняем/обрезаем до target_len
+        lst = [""] if not parts else parts
+        return (lst + [lst[-1]] * target_len)[:target_len]
+    
+    return process(pos_text), process(neg_text)
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()

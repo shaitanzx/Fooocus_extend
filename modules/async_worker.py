@@ -1746,6 +1746,7 @@ def worker():
             temp_sampler_name=async_task.sampler_name
             temp_scheduler_name=async_task.scheduler_name
             temp_inpaint_engine=async_task.inpaint_engine
+
             
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
@@ -1794,11 +1795,6 @@ def worker():
                         continue
                     
                     goals_adetail = ['inpaint']
-
-
-                    
-                    adetail_prompt = args.ad_prompt
-                    adetail_negative_prompt = args.ad_negative_prompt
                     async_task.base_model_name=temp_base_model_name if 'current' in args.ad_checkpoint else args.ad_checkpoint
                     async_task.sampler_name=temp_sampler_name if 'current' in args.ad_sampler else args.ad_sampler
                     async_task.scheduler_name=temp_scheduler_name if 'current' in args.ad_scheduler else args.ad_scheduler
@@ -1807,16 +1803,57 @@ def worker():
                     async_task.inpaint_disable_initial_latent=args.ad_inpaint_only_masked
                     async_task.inpaint_engine=temp_inpaint_engine if 'current' in args.ad_inpaint_only_masked_padding else args.ad_inpaint_only_masked_padding
 
-                    try:
-                        current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
-                            all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
-                            controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
-                            current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
-                            async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
-                            adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
-                            preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
-                            use_synthetic_refiner, width, persist_image=persist_image)
-                        async_task.adetailer_stats[index] += 1
+                    adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_promp,args.ad_negative_prompt,len(masks))
+                    for n in range(len(masks))
+                        temp_use_expansion=use_expansion
+                        temp_use_style=use_style
+                        temp_style_selections=async_task.style_selections
+                        use_expansion = False
+                        use_style = False
+                        prompt=adetail_prompt[n]
+                        negative=adetail_negative_prompt[n]
+                        if '[PROMPT]' in prompt:
+                            prompt = prompt.replace("[PROMPT]", async_task.prompt)
+                            #!use_expansion = False
+                            #!use_style = False
+                        if '[PROMPT+]' in prompt:
+                            prompt = prompt.replace("[PROMPT+]", async_task.prompt)
+                            use_expansion = True
+                            use_style = True
+                        async_task.style_selections = []
+                        while True:
+                            style_tag_start = prompt.find('[STYLE=')
+                            if style_tag_start == -1:
+                                break
+                            style_tag_end = prompt.find(']', style_tag_start)
+                            if style_tag_end == -1:
+                                break
+    # Извлекаем содержимое между '[STYLE=' и ']'
+                            inner = prompt[style_tag_start + 8 : style_tag_end]  # 8 = len('[STYLE=')
+    # Разбиваем по запятым, очищаем от пробелов, отбрасываем пустые
+                            for part in inner.split(','):
+                                p = part.strip()
+                                if p:
+                                    async_task.style_selections.append(p)
+    # Удаляем тег из prompt
+                            prompt = prompt[:style_tag_start] + prompt[style_tag_end + 1:]
+                        if '[N_PROMPT]' in negative:
+                            negative = negative.replace("[N_PROMPT]", async_task.negative_prompt)
+                            
+
+                    #!adetail_prompt = args.ad_prompt
+                    #!adetail_negative_prompt = args.ad_negative_prompt
+                    
+                        try:
+                            current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
+                                all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                                controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                                current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
+                                async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
+                                adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
+                                preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
+                                use_synthetic_refiner, width, persist_image=persist_image)
+                            async_task.adetailer_stats[index] += 1
 
                         #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
                         #!        and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
@@ -1825,18 +1862,20 @@ def worker():
                         #!    if enhance_negative_prompt_processed != '':
                         #!        last_enhance_negative_prompt = enhance_negative_prompt_processed
 
-                    except ldm_patched.modules.model_management.InterruptProcessingException:
-                        if async_task.last_stop == 'skip':
-                            print('User skipped')
-                            async_task.last_stop = False
-                            continue
-                        else:
-                            print('User stopped')
-                            exception_result = 'break'
-                            break
-                    finally:
-                        done_steps_inpainting += adetail_steps
-
+                        except ldm_patched.modules.model_management.InterruptProcessingException:
+                            if async_task.last_stop == 'skip':
+                                print('User skipped')
+                                async_task.last_stop = False
+                                continue
+                            else:
+                                print('User stopped')
+                                exception_result = 'break'
+                                break
+                        finally:
+                            done_steps_inpainting += adetail_steps
+                        use_expansion=temp_use_expansion
+                        use_style=temp_use_styles
+                        async_task.style_selection=temp_style_selections
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
 
