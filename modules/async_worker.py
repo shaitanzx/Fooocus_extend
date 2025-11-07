@@ -1874,8 +1874,8 @@ def worker():
                         finally:
                             done_steps_inpainting += adetail_steps
                         use_expansion=temp_use_expansion
-                        use_style=temp_use_styles
-                        async_task.style_selection=temp_style_selections
+                        use_style=temp_use_style
+                        async_task.style_selections=temp_style_selections
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
 
