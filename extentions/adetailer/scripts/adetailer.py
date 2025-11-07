@@ -66,16 +66,7 @@ from extentions.adetailer.controlnet_ext import (
     controlnet_type,
     get_cn_models,
 )
-#!from modules import images, paths, script_callbacks, scripts, shared
-#!from modules.devices import NansException
-#!from modules.processing import (
-#!    Processed,
-#!    StableDiffusionProcessingImg2Img,
-#!    create_infotext,
-#!    process_images,
-#!)
-#!from modules.sd_samplers import all_samplers
-#!from modules.shared import cmd_opts, opts, state
+
 from modules.config import default_adetail_tab
 
 if TYPE_CHECKING:
