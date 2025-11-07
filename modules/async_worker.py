@@ -1803,7 +1803,7 @@ def worker():
                     async_task.inpaint_disable_initial_latent=args.ad_inpaint_only_masked
                     async_task.inpaint_engine=temp_inpaint_engine if 'current' in args.ad_inpaint_only_masked_padding else args.ad_inpaint_only_masked_padding
 
-                    adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_promp,args.ad_negative_prompt,len(masks))
+                    adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                     for n in range(len(masks)):
                         temp_use_expansion=use_expansion
                         temp_use_style=use_style
@@ -1850,7 +1850,7 @@ def worker():
                                 controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
                                 current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
                                 async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
-                                adetail_prompt, adetail_negative_prompt, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[0]),
+                                prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[n]),
                                 preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
                                 use_synthetic_refiner, width, persist_image=persist_image)
                             async_task.adetailer_stats[index] += 1
