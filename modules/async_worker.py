@@ -1295,14 +1295,15 @@ def worker():
                         inpaint_engine, inpaint_respective_field, inpaint_strength,
                         prompt, negative_prompt, final_scheduler_name, goals, height, img, mask,
                         preparation_steps, steps, switch, tiled, total_count, use_expansion, use_style,
-                        use_synthetic_refiner, width, show_intermediate_results=True, persist_image=True):
+                        use_synthetic_refiner, width, show_intermediate_results=True, persist_image=True,adetail=False):
         base_model_additional_loras = []
         inpaint_head_model_path = None
         inpaint_parameterized = inpaint_engine != 'None'  # inpaint_engine = None, improve detail
         initial_latent = None
 
-        prompt = prepare_enhance_prompt(prompt, async_task.prompt)
-        negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
+        if not adetail:
+            prompt = prepare_enhance_prompt(prompt, async_task.prompt)
+            negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
 
         if 'vary' in goals:
             img, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
@@ -1855,7 +1856,7 @@ def worker():
                                 async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
                                 prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[n]),
                                 preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
-                                use_synthetic_refiner, width, persist_image=persist_image)
+                                use_synthetic_refiner, width, persist_image=persist_image,adetail=True)
                             async_task.adetailer_stats[index] += 1
 
                         #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
