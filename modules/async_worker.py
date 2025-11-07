@@ -1829,7 +1829,7 @@ def worker():
                                 use_expansion = False
                             use_style = True
                         temp_style_start = prompt.find('[STYLE=')
-                        if first_style_start != -1:
+                        if temp_style_start != -1:
                             async_task.style_selections = []
                         while True:
                             style_tag_start = prompt.find('[STYLE=')
