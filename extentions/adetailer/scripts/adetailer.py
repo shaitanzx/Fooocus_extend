@@ -157,8 +157,59 @@ def pred_preprocessing(pred: PredictOutput, args):
         #!    image_mask = self.get_image_mask(p)
         #!    masks = self.inpaint_mask_filter(image_mask, masks)
         return masks
+def prompt_blank_replacement(all_prompts: list[str], i: int, default: str) -> str:
+        if not all_prompts:
+            return default
+        if i < len(all_prompts):
+            return all_prompts[i]
+        j = i % len(all_prompts)
+        return all_prompts[j]
+def get_prompt(p, args) -> tuple[list[str], list[str]]:
+    """
+    Обрабатывает ad_prompt и ad_negative_prompt с поддержкой:
+      - [SEP] — разделение на несколько промптов,
+      - [PROMPT] — вставка основного промпта,
+      - пустых частей — замена на основной промпт.
 
+    Возвращает кортеж из двух списков: (позитивные промпты, негативные промпты).
+    """
 
+    # Основные промпты из генерации
+    main_prompt = p.prompt
+    main_negative = p.negative_prompt
+
+    def _process_one(ad_text: str, fallback: str) -> list[str]:
+        # 1. Разбиваем строку по [SEP], игнорируя пробелы вокруг
+        parts = re.split(r"\s*\[SEP\]\s*", ad_text.strip())
+        result = []
+
+        for part in parts:
+            part = part.strip()
+
+            # 2. Если часть пустая → заменяем на основной промпт
+            if not part:
+                result.append(fallback)
+
+            # 3. Если есть [PROMPT] → подставляем основной промпт
+            elif "[PROMPT]" in part:
+                result.append(part.replace("[PROMPT]", fallback))
+
+            # 4. Иначе — оставляем как есть
+            else:
+                result.append(part)
+
+        return result
+
+    # 5. Обрабатываем позитивный и негативный промпты
+    prompts = _process_one(args.ad_prompt, main_prompt)
+    negative_prompts = _process_one(args.ad_negative_prompt, main_negative)
+
+    return prompts, negative_prompts
+def prompt_cuth(a: list, b: list, n: int):
+    def process(lst):
+        lst = [""] if not lst else lst
+        return (lst + [lst[-1]] * n)[:n]
+        return process(a), process(b)
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
