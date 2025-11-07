@@ -1572,9 +1572,6 @@ def worker():
             except EarlyReturnException:
                 return
 
-
-            
-
         if 'cn' in goals:
             apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress)
             if async_task.debugging_cn_preprocessor:
@@ -1586,13 +1583,6 @@ def worker():
         # async_task.steps can have value of uov steps here when upscale has been applied
         steps, _, _, _ = apply_overrides(async_task, async_task.steps, height, width)
  
-
-
-
-
-
-
-
         images_to_enhance = []
         images_to_adetailer = []
         if 'enhance' in goals:
@@ -1742,8 +1732,8 @@ def worker():
         adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
         if 'adetail' in goals or adetailer_generator:
-            from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
-            from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
+            from extentions.adetailer.aaaaaa.helper import (disable_safe_unpickle)
+            from extentions.adetailer.adetailer import (mediapipe_predict,ultralytics_predict)
             temp_base_model_name=async_task.base_model_name
             temp_sampler_name=async_task.sampler_name
             temp_scheduler_name=async_task.scheduler_name
