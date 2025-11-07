@@ -1823,6 +1823,7 @@ def worker():
                         if '[PROMPT+]' in prompt:
                             prompt = prompt.replace("[PROMPT+]", async_task.prompt)
                             if fooocus_expansion in async_task.style_selections:
+                                print('zzzzzzzzzzz')
                                 use_expansion = True
                                 async_task.style_selections.remove(fooocus_expansion)
                             else:
