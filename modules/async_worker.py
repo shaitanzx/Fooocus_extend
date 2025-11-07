@@ -1788,9 +1788,6 @@ def worker():
                                      async_task.disable_intermediate_results)
                         async_task.adetailer_stats[index] += 1
 
-                    #!print(f'[Enhance] {dino_detection_count} boxes detected')
-                    #!print(f'[Enhance] {sam_detection_count} segments detected in boxes')
-                    #!print(f'[Enhance] {sam_detection_on_mask_count} segments applied to mask')
 
                     if len(masks) == 0:
                         print(f'[ADetailer] No detected, skipping')
@@ -1804,28 +1801,14 @@ def worker():
                     async_task.inpaint_respective_field=args.ad_mask_blur
                     async_task.inpaint_disable_initial_latent=args.ad_inpaint_only_masked
                     async_task.inpaint_engine=temp_inpaint_engine if 'current' in args.ad_inpaint_only_masked_padding else args.ad_inpaint_only_masked_padding
-                    print('pppppppp',args.ad_prompt)
-                    print('nnnnnnnn',args.ad_negative_prompt)
                     adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                     for n in range(len(masks)):
-                        temp_use_expansion=use_expansion
-                        temp_use_style=use_style
-                        temp_style_selections=async_task.style_selections
-                        use_expansion = False
-                        use_style = False
                         prompt=adetail_prompt[n]
                         negative=adetail_negative_prompt[n]
                         if re.match(r"^\s*\[SKIP\]\s*$", prompt):
                             continue
                         prompt = prompt.replace("[PROMPT]", async_task.prompt)
-                        negative = negative.replace("[PROMPT]", async_task.negative_prompt)
-
-                            
-                        print('pppppppp',prompt)
-                        print('nnnnnnnn',negative)
-                    #!adetail_prompt = args.ad_prompt
-                    #!adetail_negative_prompt = args.ad_negative_prompt
-                    
+                        negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
                         try:
                             current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
                                 all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
@@ -1836,14 +1819,6 @@ def worker():
                                 preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
                                 use_synthetic_refiner, width, persist_image=persist_image)
                             async_task.adetailer_stats[index] += 1
-
-                        #!if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
-                        #!        and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
-                        #!    if enhance_prompt_processed != '':
-                        #!        last_enhance_prompt = enhance_prompt_processed
-                        #!    if enhance_negative_prompt_processed != '':
-                        #!        last_enhance_negative_prompt = enhance_negative_prompt_processed
-
                         except ldm_patched.modules.model_management.InterruptProcessingException:
                             if async_task.last_stop == 'skip':
                                 print('User skipped')
@@ -1855,9 +1830,6 @@ def worker():
                                 break
                         finally:
                             done_steps_inpainting += adetail_steps
-                        use_expansion=temp_use_expansion
-                        use_style=temp_use_style
-                        async_task.style_selections=temp_style_selections
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
 

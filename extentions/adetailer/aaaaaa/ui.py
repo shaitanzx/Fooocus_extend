@@ -126,16 +126,9 @@ def adui(
     webui_info: WebuiInfo,
 ):
     states = []
-    #!infotext_fields = []
     eid = partial(elem_id, n=0, is_img2img=is_img2img)
     
     with gr.Column():
-    #!with InputAccordion(
-    #!    value=False,
-    #!    elem_id=eid("ad_main_accordion"),
-    #!    label=ADETAILER,
-    #!    visible=True,
-    #!) as ad_enable:
         with gr.Row(visible=False):
             with gr.Column(scale=8):
                 ad_skip_img2img = gr.Checkbox(
@@ -144,11 +137,6 @@ def adui(
                     visible=is_img2img,
                     elem_id=eid("ad_skip_img2img"),
                 )
-
-
-        #!infotext_fields.append((ad_enable, "ADetailer enable"))
-        #!infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
-
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
@@ -159,11 +147,10 @@ def adui(
                     )
 
                 states.append(state)
-                #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
     components = [ad_skip_img2img, *states]
-    return components #!, infotext_fields
+    return components
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
@@ -267,14 +254,8 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         widget.change(fn=on_change, inputs=[state, widget], outputs=state, queue=False)
 
     all_inputs = [state, *w.tolist()]
-    target_button = gr.Button(value='img2img') if is_img2img else gr.Button(value='txt2img')
-    target_button.click(
-        fn=on_generate_click, inputs=all_inputs, outputs=state, queue=False
-    )
 
-    #!infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
-
-    return state #!, infotext_fields
+    return state
 
 
 def detection(w: Widgets, n: int, is_img2img: bool):
@@ -423,10 +404,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
 
         with gr.Row(visible=False):
             
-
-
-
-
             with gr.Column(variant="compact",visible=False):
                 w.ad_use_inpaint_width_height = gr.Checkbox(
                     label="Use separate width/height" + suffix(n),
@@ -455,8 +432,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     elem_id=eid("ad_inpaint_height"),
                 )
 
-
-
         with gr.Row(visible=False):
             with gr.Column(variant="compact"):
                 w.ad_use_steps = gr.Checkbox(
@@ -475,8 +450,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=True,
                     elem_id=eid("ad_steps"),
                 )
-
-
 
             with gr.Column(variant="compact"):
                 w.ad_use_cfg_scale = gr.Checkbox(
@@ -568,13 +541,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=len(scheduler_names) > 1,
                     elem_id=eid("ad_scheduler"),
                 )
-
-                #!w.ad_use_sampler.change(
-                #!    lambda value: (gr_interactive(value), gr_interactive(value)),
-                #!    inputs=w.ad_use_sampler,
-                #!    outputs=[w.ad_sampler, w.ad_scheduler],
-                #!    queue=False,
-                #!)
 
         with gr.Row(visible=False):
             with gr.Column(variant="compact"):
