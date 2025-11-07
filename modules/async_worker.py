@@ -1822,9 +1822,15 @@ def worker():
                             #!use_style = False
                         if '[PROMPT+]' in prompt:
                             prompt = prompt.replace("[PROMPT+]", async_task.prompt)
-                            use_expansion = True
+                            if fooocus_expansion in async_task.style_selections:
+                                use_expansion = True
+                                async_task.style_selections.remove(fooocus_expansion)
+                            else:
+                                use_expansion = False
                             use_style = True
-                        async_task.style_selections = []
+                        temp_style_start = prompt.find('[STYLE=')
+                        if first_style_start != -1:
+                            async_task.style_selections = []
                         while True:
                             style_tag_start = prompt.find('[STYLE=')
                             if style_tag_start == -1:
