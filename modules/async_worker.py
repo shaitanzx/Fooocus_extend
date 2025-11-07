@@ -1804,7 +1804,7 @@ def worker():
                     async_task.inpaint_engine=temp_inpaint_engine if 'current' in args.ad_inpaint_only_masked_padding else args.ad_inpaint_only_masked_padding
 
                     adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_promp,args.ad_negative_prompt,len(masks))
-                    for n in range(len(masks))
+                    for n in range(len(masks)):
                         temp_use_expansion=use_expansion
                         temp_use_style=use_style
                         temp_style_selections=async_task.style_selections
