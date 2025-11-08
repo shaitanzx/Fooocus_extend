@@ -1737,8 +1737,9 @@ def worker():
         adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
         if 'adetail' in goals or adetailer_generator:
-            from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
-            from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
+            #!from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
+            from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
+            #!from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
             temp_base_model_name=async_task.base_model_name
             temp_sampler_name=async_task.sampler_name
             temp_scheduler_name=async_task.scheduler_name
@@ -1749,8 +1750,8 @@ def worker():
                 async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
 
-                last_adetailer_prompt = async_task.prompt
-                last_adetailer_negative_prompt = async_task.negative_prompt
+                #!last_adetailer_prompt = async_task.prompt
+                #!last_adetailer_negative_prompt = async_task.negative_prompt
             # inpaint for all other tabs
                 for n, arg_s in enumerate(async_task.ad_component):
                     current_task_id += 1
@@ -1764,11 +1765,11 @@ def worker():
                         return args.ad_model.lower().startswith("mediapipe")
                     is_mediapipe = is_mediapipe_model(args)
                     if is_mediapipe:
-                        pred = mediapipe_predict(args.ad_model, img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
+                        pred = adetailer.mediapipe_predict(args.ad_model, img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
                     else:
                         ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
                         with disable_safe_unpickle():
-                            pred = ultralytics_predict(
+                            pred = adetailer.ultralytics_predict(
                                 ad_model,
                                 image=img if isinstance(img, Image.Image) else Image.fromarray(img),
                                 confidence=args.ad_confidence,
@@ -1827,7 +1828,8 @@ def worker():
                             done_steps_inpainting += adetail_steps
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                del pred
                 if exception_result == 'break':
                     break
 
