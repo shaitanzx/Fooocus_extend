@@ -86,7 +86,7 @@ def enabler(ad_component):
     tabs = [item for item in ad_component if isinstance(item, dict)]
     valid_tabs = [
         tab for tab in tabs
-        if tab.get("ad_tab_enable") is True #!and tab.get("ad_model") != "None"
+        if tab.get("ad_tab_enable") is True and tab.get("ad_model") != "None"
     ]
     return valid_tabs
 
