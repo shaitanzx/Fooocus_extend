@@ -1,41 +1,41 @@
-from __future__ import annotations
+#!from __future__ import annotations
 
-import platform
+#!import platform
 import re
 import sys
-import traceback
-from collections.abc import Sequence
-from copy import copy
-from functools import partial
+#!import traceback
+#!from collections.abc import Sequence
+#!from copy import copy
+#!from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, cast
+#!from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import gradio as gr
 from PIL import Image, ImageChops
-from rich import print  # noqa: A004  Shadowing built-in 'print'
+#!from rich import print  # noqa: A004  Shadowing built-in 'print'
 
 import modules
 #!from extentions.adetailer.aaaaaa.conditional import create_binary_mask, schedulers
-from extentions.adetailer.aaaaaa.helper import (
-    PPImage,
-    copy_extra_params,
-    disable_safe_unpickle,
-    pause_total_tqdm,
-    preserve_prompts,
-)
-from extentions.adetailer.aaaaaa.p_method import (
-    get_i,
-    is_img2img_inpaint,
-    is_inpaint_only_masked,
-    is_skip_img2img,
-    need_call_postprocess,
-    need_call_process,
-)
-from extentions.adetailer.aaaaaa.traceback import rich_traceback
+#!from extentions.adetailer.aaaaaa.helper import (
+#!    PPImage,
+#!    copy_extra_params,
+#!    disable_safe_unpickle,
+#!    pause_total_tqdm,
+#!    preserve_prompts,
+#!)
+#!from extentions.adetailer.aaaaaa.p_method import (
+#!    get_i,
+#!    is_img2img_inpaint,
+#!    is_inpaint_only_masked,
+#!    is_skip_img2img,
+#!    need_call_postprocess,
+#!    need_call_process,
+#!)
+#!from extentions.adetailer.aaaaaa.traceback import rich_traceback
 from extentions.adetailer.aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
 from extentions.adetailer.adetailer import (
-    ADETAILER,
-    __version__,
+    #!ADETAILER,
+    #!__version__,
     get_models,
     mediapipe_predict,
     ultralytics_predict,
@@ -58,15 +58,15 @@ from extentions.adetailer.adetailer.mask import (
     mask_preprocess,
     sort_bboxes,
 )
-from extentions.adetailer.adetailer.opts import dynamic_denoise_strength, optimal_crop_size
-from extentions.adetailer.controlnet_ext import (
-    CNHijackRestore,
-    ControlNetExt,
-    cn_allow_script_control,
-    controlnet_exists,
-    controlnet_type,
-    get_cn_models,
-)
+#!from extentions.adetailer.adetailer.opts import dynamic_denoise_strength, optimal_crop_size
+#!from extentions.adetailer.controlnet_ext import (
+#!    CNHijackRestore,
+#!    ControlNetExt,
+#!    cn_allow_script_control,
+#!    controlnet_exists,
+#!    controlnet_type,
+#!    get_cn_models,
+#!)
 #!from modules import images, paths, script_callbacks, scripts, shared
 #!from modules.devices import NansException
 #!from modules.processing import (
@@ -79,8 +79,8 @@ from extentions.adetailer.controlnet_ext import (
 #!from modules.shared import cmd_opts, opts, state
 from modules.config import default_adetail_tab
 
-if TYPE_CHECKING:
-    from fastapi import FastAPI
+#!if TYPE_CHECKING:
+#!    from fastapi import FastAPI
 
 PARAMS_TXT = "params.txt"
 
@@ -96,9 +96,9 @@ model_mapping = get_models(
     download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
 )
 
-txt2img_submit_button = img2img_submit_button = None
-txt2img_submit_button = cast(gr.Button, txt2img_submit_button)
-img2img_submit_button = cast(gr.Button, img2img_submit_button)
+#!txt2img_submit_button = img2img_submit_button = None
+#!txt2img_submit_button = cast(gr.Button, txt2img_submit_button)
+#!img2img_submit_button = cast(gr.Button, img2img_submit_button)
 
 
 def ui(is_img2img):
@@ -157,6 +157,7 @@ def pred_preprocessing(pred: PredictOutput, args):
         #!    image_mask = self.get_image_mask(p)
         #!    masks = self.inpaint_mask_filter(image_mask, masks)
         return masks
+"""
 def prompt_blank_replacement(all_prompts: list[str], i: int, default: str) -> str:
         if not all_prompts:
             return default
@@ -164,15 +165,17 @@ def prompt_blank_replacement(all_prompts: list[str], i: int, default: str) -> st
             return all_prompts[i]
         j = i % len(all_prompts)
         return all_prompts[j]
+"""
+"""        
 def get_prompt(p, args) -> tuple[list[str], list[str]]:
-    """
+    
     Обрабатывает ad_prompt и ad_negative_prompt с поддержкой:
       - [SEP] — разделение на несколько промптов,
       - [PROMPT] — вставка основного промпта,
       - пустых частей — замена на основной промпт.
 
     Возвращает кортеж из двух списков: (позитивные промпты, негативные промпты).
-    """
+    
 
     # Основные промпты из генерации
     main_prompt = p.prompt
@@ -205,6 +208,7 @@ def get_prompt(p, args) -> tuple[list[str], list[str]]:
     negative_prompts = _process_one(args.ad_negative_prompt, main_negative)
 
     return prompts, negative_prompts
+"""
 def prompt_cut(pos_text: str, neg_text: str, target_len: int):    
     def process(s: str):
         parts = re.split(r"\s*\[SEP\]\s*", s.strip()) if s.strip() else []
@@ -212,6 +216,7 @@ def prompt_cut(pos_text: str, neg_text: str, target_len: int):
         return (lst + [lst[-1]] * target_len)[:target_len]
     
     return process(pos_text), process(neg_text)
+"""    
 class AfterDetailerScript():
     def __init__(self):
         super().__init__()
@@ -854,13 +859,13 @@ class AfterDetailerScript():
     def _postprocess_image_inner(
         self, p, pp: PPImage, args: ADetailerArgs, *, n: int = 0
     ) -> bool:
-        """
+       
         Returns
         -------
             bool
 
             `True` if image was processed, `False` otherwise.
-        """
+       
         if state.interrupted or state.skipped:
             return False
 
@@ -1262,3 +1267,4 @@ def add_api_endpoints(_: gr.Blocks, app: FastAPI):
 #!script_callbacks.on_after_component(on_after_component)
 #!script_callbacks.on_app_started(add_api_endpoints)
 #!script_callbacks.on_before_ui(on_before_ui)
+"""
