@@ -114,8 +114,8 @@ def ui(is_img2img):
             ad_model_list=ad_model_list,
             sampler_names=sampler_names,
             scheduler_names=modules.flags.scheduler_list,
-            t2i_button=txt2img_submit_button,
-            i2i_button=img2img_submit_button,
+            #!t2i_button=txt2img_submit_button,
+            #!i2i_button=img2img_submit_button,
             checkpoints_list=checkpoint_list,
             vae_list=vae_list,
             engine=modules.flags.inpaint_engine_versions
