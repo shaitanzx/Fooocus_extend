@@ -57,8 +57,8 @@ class WebuiInfo:
     ad_model_list: list[str]
     sampler_names: list[str]
     scheduler_names: list[str]
-    t2i_button: gr.Button
-    i2i_button: gr.Button
+    #!t2i_button: gr.Button
+    #!i2i_button: gr.Button
     checkpoints_list: list[str]
     vae_list: list[str]
     engine: list[str]
