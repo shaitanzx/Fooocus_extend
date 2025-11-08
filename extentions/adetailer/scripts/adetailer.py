@@ -39,7 +39,7 @@ no_huggingface=False
 adetailer_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
 def download_yola(name):
     load_file_from_url(
-        url='https://huggingface.co/Bingsu/adetailer/resolve/main/'+name+'.pt',
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name+'.pt',
         model_dir=adetailer_dir,
         file_name=name+'.pt'
     )
@@ -51,11 +51,19 @@ def download_yola(name):
 #!    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
 #!)
 yolo_model_list=[
+            "deepfashion2_yolo8s-seg",
+            "face_yolov8m",
             "face_yolov8n",
+            "face_yolov8n_v2",
             "face_yolov8s",
             "hand_yolov8n",
+            "hand_yolov8s",
+            "person_yolov8m-seg",
             "person_yolov8n-seg",
             "person_yolov8s-seg",
+            "yolov8l-worldv2",
+            "yolov8m-worldv2",
+            "yolov8s-worldv2",
             "yolov8x-worldv2",
             "mediapipe_face_full",
             "mediapipe_face_short",
