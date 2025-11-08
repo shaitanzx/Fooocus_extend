@@ -344,8 +344,6 @@ def worker():
     from types import SimpleNamespace
     from pathlib import Path
     import re
-
-
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -1301,8 +1299,6 @@ def worker():
         inpaint_head_model_path = None
         inpaint_parameterized = inpaint_engine != 'None'  # inpaint_engine = None, improve detail
         initial_latent = None
-
-        
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
 
@@ -1583,11 +1579,6 @@ def worker():
         # async_task.steps can have value of uov steps here when upscale has been applied
         steps, _, _, _ = apply_overrides(async_task, async_task.steps, height, width)
  
-
-
-
-
-
         images_to_enhance = []
         images_to_adetailer = []
         if 'enhance' in goals:
@@ -1737,21 +1728,16 @@ def worker():
         adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
         if 'adetail' in goals or adetailer_generator:
-            #!from extentions.adetailer.aaaaaa.helper import (PPImage,copy_extra_params,disable_safe_unpickle,pause_total_tqdm,preserve_prompts)
             from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
-            #!from extentions.adetailer.adetailer import (ADETAILER,__version__,get_models,mediapipe_predict,ultralytics_predict)
             temp_base_model_name=async_task.base_model_name
             temp_sampler_name=async_task.sampler_name
             temp_scheduler_name=async_task.scheduler_name
             temp_inpaint_engine=async_task.inpaint_engine
-
-            
+   
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
 
-                #!last_adetailer_prompt = async_task.prompt
-                #!last_adetailer_negative_prompt = async_task.negative_prompt
             # inpaint for all other tabs
                 for n, arg_s in enumerate(async_task.ad_component):
                     current_task_id += 1
@@ -1783,7 +1769,6 @@ def worker():
                         yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
                         async_task.adetailer_stats[index] += 1
-
 
                     if len(masks) == 0:
                         print(f'[ADetailer] No detected, skipping')
@@ -1828,15 +1813,11 @@ def worker():
                             done_steps_inpainting += adetail_steps
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 del pred
                 if exception_result == 'break':
                     break
-
                 adetail_image_time = time.perf_counter() - adetailer_image_start_time
                 print(f'Adetailer image time: {adetail_image_time:.2f} seconds')
-
-
         else:    
           for index, img in enumerate(images_to_enhance):
             async_task.enhance_stats[index] = 0
@@ -1978,7 +1959,6 @@ def worker():
         if len(async_tasks) > 0:
             task = async_tasks.pop(0)
             
-
             try:
                 handler(task)
                 if task.enable_obp:
@@ -1989,7 +1969,6 @@ def worker():
                         async_tasks.insert(0, task)
                         time.sleep(0.01)
                         continue
-
 
                 if task.generate_image_grid:
                     build_image_wall(task)
