@@ -8,7 +8,6 @@ from typing import Any
 
 import gradio as gr
 
-#!from aaaaaa.conditional import InputAccordion
 from extentions.adetailer.adetailer import ADETAILER, __version__
 from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
 from extentions.adetailer.controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
@@ -57,8 +56,6 @@ class WebuiInfo:
     ad_model_list: list[str]
     sampler_names: list[str]
     scheduler_names: list[str]
-    #!t2i_button: gr.Button
-    #!i2i_button: gr.Button
     checkpoints_list: list[str]
     vae_list: list[str]
     engine: list[str]
