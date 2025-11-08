@@ -51,7 +51,7 @@ def download_yola(name):
 #!    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
 #!)
 yolo_model_list=[
-            "deepfashion2_yolo8s-seg",
+            "deepfashion2_yolov8s-seg",
             "face_yolov8m",
             "face_yolov8n",
             "face_yolov8n_v2",
