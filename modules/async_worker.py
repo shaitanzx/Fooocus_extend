@@ -1753,7 +1753,7 @@ def worker():
                     if is_mediapipe:
                         pred = adetailer.mediapipe_predict(args.ad_model, img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
                     else:
-                        ad_model = Path(modules.config.paths_checkpoints[0]).parent / "detection" / args.ad_model
+                        ad_model = adetailer.download_yola(args.ad_model)
                         with disable_safe_unpickle():
                             pred = adetailer.ultralytics_predict(
                                 ad_model,

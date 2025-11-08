@@ -30,20 +30,40 @@ from extentions.adetailer.adetailer.mask import (
 )
 
 from modules.config import default_adetail_tab
+from modules.model_loader import load_file_from_url
+
 PARAMS_TXT = "params.txt"
 
 no_huggingface=False
 adetailer_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
+def download_yola(name):
+    load_file_from_url(
+        url='https://huggingface.co/Bingsu/adetailer/resolve/main/'+name+'.pt',
+        model_dir=adetailer_dir,
+        file_name=name+'.pt'
+    )
+    return os.path.join(adetailer_dir, name+'.pt')
 
-model_mapping = get_models(
-    adetailer_dir,
-    huggingface=not no_huggingface,
-    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
-)
-
+#!model_mapping = get_models(
+#!    adetailer_dir,
+#!    huggingface=not no_huggingface,
+#!    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
+#!)
+yolo_model_list=[
+            "face_yolov8n",
+            "face_yolov8s",
+            "hand_yolov8n",
+            "person_yolov8n-seg",
+            "person_yolov8s-seg",
+            "yolov8x-worldv2",
+            "mediapipe_face_full",
+            "mediapipe_face_short",
+            "mediapipe_face_mesh",
+            "mediapipe_face_mesh_eyes_only"
+            ]
 def ui(is_img2img):
         num_models = default_adetail_tab
-        ad_model_list = list(model_mapping.keys())
+        ad_model_list = yolo_model_list
         sampler_names = modules.flags.sampler_list
         scheduler_names = modules.flags.scheduler_list
 
