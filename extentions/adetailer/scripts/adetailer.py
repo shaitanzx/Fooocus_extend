@@ -166,7 +166,7 @@ def ui(is_img2img):
 
         #!infotext_fields = infotext_fields
         return components
-def sort_bboxes_from_class(self, pred: PredictOutput) -> PredictOutput:
+def sort_bboxes_from_class(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[1]
         sortby_idx = BBOX_SORTBY.index(sortby)
         return sort_bboxes(pred, sortby_idx)
