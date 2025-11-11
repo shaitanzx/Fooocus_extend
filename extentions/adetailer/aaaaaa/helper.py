@@ -13,12 +13,12 @@ from typing_extensions import Protocol
 #!from modules import safe
 #!from modules.shared import cmd_opts, opts
 
-#!if TYPE_CHECKING:
+if TYPE_CHECKING:
     # 타입 체커가 빨간 줄을 긋지 않게 하는 편법
-#!    from types import SimpleNamespace
+    from types import SimpleNamespace
 
-#!    StableDiffusionProcessingTxt2Img = SimpleNamespace
-#!    StableDiffusionProcessingImg2Img = SimpleNamespace
+    StableDiffusionProcessingTxt2Img = SimpleNamespace
+    StableDiffusionProcessingImg2Img = SimpleNamespace
 #!else:
 #!    from modules.processing import (
 #!        StableDiffusionProcessingImg2Img,
