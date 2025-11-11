@@ -547,8 +547,8 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
                     with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
                             adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
-                            #!ad_component = adetailer.ui(is_img2img=True)
-                            adetailer.ui(is_img2img=True)
+                            ad_component = adetailer.ui(is_img2img=True)
+                            #!adetailer.ui(is_img2img=True)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
@@ -1799,7 +1799,7 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        #!ctrls += ad_component
+        ctrls += ad_component
         ctrls += [adetail_gen_enable]
         #!ctrls += ad_component_gen
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox]
