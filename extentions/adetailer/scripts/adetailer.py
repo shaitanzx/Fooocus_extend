@@ -15,15 +15,15 @@ from PIL import Image, ImageChops
 from rich import print  # noqa: A004  Shadowing built-in 'print'
 
 import modules
-from aaaaaa.conditional import create_binary_mask, schedulers
-from aaaaaa.helper import (
+from extentions.adetailer.aaaaaa.conditional import create_binary_mask, schedulers
+from extentions.adetailer.aaaaaa.helper import (
     PPImage,
     copy_extra_params,
     disable_safe_unpickle,
     pause_total_tqdm,
     preserve_prompts,
 )
-from aaaaaa.p_method import (
+from extentions.adetailer.aaaaaa.p_method import (
     get_i,
     is_img2img_inpaint,
     is_inpaint_only_masked,
@@ -31,16 +31,16 @@ from aaaaaa.p_method import (
     need_call_postprocess,
     need_call_process,
 )
-from aaaaaa.traceback import rich_traceback
-from aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
-from adetailer import (
+from extentions.adetailer.aaaaaa.traceback import rich_traceback
+from extentions.adetailer.aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
+from extentions.adetailer.adetailer import (
     ADETAILER,
     __version__,
     get_models,
     mediapipe_predict,
     ultralytics_predict,
 )
-from adetailer.args import (
+from extentions.adetailer.adetailer.args import (
     BBOX_SORTBY,
     BUILTIN_SCRIPT,
     INPAINT_BBOX_MATCH_MODES,
@@ -49,8 +49,8 @@ from adetailer.args import (
     InpaintBBoxMatchMode,
     SkipImg2ImgOrig,
 )
-from adetailer.common import PredictOutput, ensure_pil_image, safe_mkdir
-from adetailer.mask import (
+from extentions.adetailer.adetailer.common import PredictOutput, ensure_pil_image, safe_mkdir
+from extentions.adetailer.adetailer.mask import (
     filter_by_ratio,
     filter_k_by,
     has_intersection,
@@ -58,8 +58,8 @@ from adetailer.mask import (
     mask_preprocess,
     sort_bboxes,
 )
-from adetailer.opts import dynamic_denoise_strength, optimal_crop_size
-from controlnet_ext import (
+from extentions.adetailer.adetailer.opts import dynamic_denoise_strength, optimal_crop_size
+from extentions.adetailer.controlnet_ext import (
     CNHijackRestore,
     ControlNetExt,
     cn_allow_script_control,
@@ -67,60 +67,83 @@ from controlnet_ext import (
     controlnet_type,
     get_cn_models,
 )
-from modules import images, paths, script_callbacks, scripts, shared
-from modules.devices import NansException
-from modules.processing import (
-    Processed,
-    StableDiffusionProcessingImg2Img,
-    create_infotext,
-    process_images,
-)
-from modules.sd_samplers import all_samplers
-from modules.shared import cmd_opts, opts, state
-
+#!from modules import images, paths, script_callbacks, scripts, shared
+#!from modules.devices import NansException
+#!from modules.processing import (
+#!    Processed,
+#!    StableDiffusionProcessingImg2Img,
+#!    create_infotext,
+#!    process_images,
+#!)
+#!from modules.sd_samplers import all_samplers
+#!from modules.shared import cmd_opts, opts, state
+from modules.config import default_adetail_tab
+from modules.model_loader import load_file_from_url
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
 PARAMS_TXT = "params.txt"
 
-no_huggingface = getattr(cmd_opts, "ad_no_huggingface", False)
-adetailer_dir = Path(paths.models_path, "adetailer")
-safe_mkdir(adetailer_dir)
+no_huggingface=False
+adetailer_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
+def download_yola(name):
+    if 'yolov8' in name:
+        load_file_from_url(
+            url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name+'.pt',
+            model_dir=adetailer_dir,
+            file_name=name+'.pt'
+        )
+    return os.path.join(adetailer_dir, name+'.pt')
 
-extra_models_dirs = shared.opts.data.get("ad_extra_models_dir", "")
-model_mapping = get_models(
-    adetailer_dir,
-    *extra_models_dirs.split("|"),
-    huggingface=not no_huggingface,
-)
+#!model_mapping = get_models(
+#!    adetailer_dir,
+#!    huggingface=not no_huggingface,
+#!    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
+#!)
+yolo_model_list=[
+            "deepfashion2_yolov8s-seg",
+            "face_yolov8m",
+            "face_yolov8n",
+            "face_yolov8n_v2",
+            "face_yolov8s",
+            "hand_yolov8n",
+            "hand_yolov8s",
+            "person_yolov8m-seg",
+            "person_yolov8n-seg",
+            "person_yolov8s-seg",
+            "yolov8l-worldv2",
+            "yolov8m-worldv2",
+            "yolov8s-worldv2",
+            "yolov8x-worldv2",
+            "mediapipe_face_full",
+            "mediapipe_face_short",
+            "mediapipe_face_mesh",
+            "mediapipe_face_mesh_eyes_only"
+            ]
+
+
+    # Получаем имена файлов *.pt (без расширения), нормализованные к str
+existing_pt_names = {
+        f.stem  # без расширения, и без пути — только имя
+        for f in adetailer_dir.glob("*.pt")
+        if f.is_file()
+    }
+
+    # Удаляем дубли и добавляем новые имена, которых ещё нет в yolo_model_list
+current_set = set(yolo_model_list)
+new_models = sorted(existing_pt_names - current_set)  # сортируем для порядка
+if new_models:
+        yolo_model_list.extend(new_models)
 
 txt2img_submit_button = img2img_submit_button = None
 txt2img_submit_button = cast(gr.Button, txt2img_submit_button)
 img2img_submit_button = cast(gr.Button, img2img_submit_button)
 
-print(
-    f"[-] ADetailer initialized. version: {__version__}, num models: {len(model_mapping)}"
-)
-
-
-class AfterDetailerScript(scripts.Script):
-    def __init__(self):
-        super().__init__()
-        self.ultralytics_device = self.get_ultralytics_device()
-
-        self.controlnet_ext = None
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(version={__version__})"
-
-    def title(self):
-        return ADETAILER
-
-    def show(self, is_img2img):
-        return scripts.AlwaysVisible
-
-    def ui(self, is_img2img):
-        num_models = opts.data.get("ad_max_models", 2)
+#!print(
+#!    f"[-] ADetailer initialized. version: {__version__}, num models: {len(model_mapping)}"
+#!)
+def ui(is_img2img):
+        num_models = default_adetail_tab
         ad_model_list = list(model_mapping.keys())
         sampler_names = [sampler.name for sampler in all_samplers]
         scheduler_names = [x.label for x in schedulers]
@@ -142,6 +165,24 @@ class AfterDetailerScript(scripts.Script):
 
         self.infotext_fields = infotext_fields
         return components
+
+class AfterDetailerScript(scripts.Script):
+    def __init__(self):
+        super().__init__()
+        self.ultralytics_device = self.get_ultralytics_device()
+
+        self.controlnet_ext = None
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(version={__version__})"
+
+    def title(self):
+        return ADETAILER
+
+    def show(self, is_img2img):
+        return scripts.AlwaysVisible
+
+    
 
     def init_controlnet_ext(self) -> None:
         if self.controlnet_ext is not None:
