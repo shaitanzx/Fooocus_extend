@@ -1790,6 +1790,11 @@ def worker():
                             continue
                         prompt = prompt.replace("[PROMPT]", async_task.prompt)
                         negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
+                        print('zzzzzzzzzzzzzzzz')
+                        print('async_task.inpaint_disable_initial_latent',async_task.inpaint_disable_initial_latent,
+                                'async_task.inpaint_engine',async_task.inpaint_engine, 
+                                'async_task.inpaint_respective_field',async_task.inpaint_respective_field, 
+                                'async_task.inpaint_strength',async_task.inpaint_strength)
                         try:
                             current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
                                 all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
