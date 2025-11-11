@@ -8,10 +8,10 @@ from typing import Any
 
 import gradio as gr
 
-from aaaaaa.conditional import InputAccordion
-from adetailer import ADETAILER, __version__
-from adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
-from controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
+#!from aaaaaa.conditional import InputAccordion
+from extentions.adetailer.adetailer import ADETAILER, __version__
+from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
+from extentions.adetailer.controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
 
 if controlnet_type == "forge":
     from lib_controlnet import global_state
