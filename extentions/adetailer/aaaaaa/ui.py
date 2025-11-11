@@ -249,10 +249,10 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         ):
             mask_preprocessing(w, n, is_img2img)
 
-        with gr.Accordion(
-            "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
-        ):
-            inpainting(w, n, is_img2img, webui_info)
+        #!with gr.Accordion(
+        #!    "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
+        #!):
+        #!    inpainting(w, n, is_img2img, webui_info)
 
     #!with gr.Group():
     #!    controlnet(w, n, is_img2img)
@@ -373,7 +373,7 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                 info="None: do nothing, Merge: merge masks, Merge and Invert: merge all masks and invert",
             )
 
-
+"""
 def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # noqa: PLR0915
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
 
@@ -645,7 +645,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 value=False,
                 elem_id=eid("ad_restore_face"),
             )
-
+"""
 """
 def controlnet(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
