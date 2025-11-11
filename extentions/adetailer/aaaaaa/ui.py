@@ -150,7 +150,7 @@ def adui(
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
-                    state, infofields = one_ui_group(
+                    state = one_ui_group(
                         n=n,
                         is_img2img=is_img2img,
                         webui_info=webui_info,
