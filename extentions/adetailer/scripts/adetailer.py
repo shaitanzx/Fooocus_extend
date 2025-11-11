@@ -15,7 +15,7 @@ from PIL import Image, ImageChops
 from rich import print  # noqa: A004  Shadowing built-in 'print'
 
 import modules
-from extentions.adetailer.aaaaaa.conditional import create_binary_mask, schedulers
+#!from extentions.adetailer.aaaaaa.conditional import create_binary_mask, schedulers
 from extentions.adetailer.aaaaaa.helper import (
     PPImage,
     copy_extra_params,
