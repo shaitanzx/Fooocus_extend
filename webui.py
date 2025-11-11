@@ -1799,9 +1799,9 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        ctrls += ad_component
+        #!ctrls += ad_component
         ctrls += [adetail_gen_enable]
-        ctrls += ad_component_gen
+        #!ctrls += ad_component_gen
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
