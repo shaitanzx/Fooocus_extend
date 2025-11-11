@@ -1775,6 +1775,7 @@ def worker():
                         continue
                     
                     goals_adetail = ['inpaint']
+                    print('xxxxxxxxxxxx',args)
                     async_task.base_model_name=temp_base_model_name if 'current' in args.ad_checkpoint else args.ad_checkpoint
                     async_task.sampler_name=temp_sampler_name if 'current' in args.ad_sampler else args.ad_sampler
                     async_task.scheduler_name=temp_scheduler_name if 'current' in args.ad_scheduler else args.ad_scheduler
