@@ -38,7 +38,7 @@ PARAMS_TXT = "params.txt"
 no_huggingface=False
 adetailer_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
 def download_yola(name):
-    if 'yolo8' in name:
+    if 'yolov8' in name:
         load_file_from_url(
             url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name+'.pt',
             model_dir=adetailer_dir,
