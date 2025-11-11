@@ -11,8 +11,8 @@ import gradio as gr
 #!from aaaaaa.conditional import InputAccordion
 from extentions.adetailer.adetailer import ADETAILER, __version__
 from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
-from extentions.adetailer.controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
-
+#!from extentions.adetailer.controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
+"""
 if controlnet_type == "forge":
     from lib_controlnet import global_state
 
@@ -45,7 +45,7 @@ else:
 
 union = list(chain.from_iterable(cn_module_choices.values()))
 cn_module_choices["union"] = union
-
+"""
 
 class Widgets(SimpleNamespace):
     def tolist(self):
@@ -249,10 +249,10 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         ):
             mask_preprocessing(w, n, is_img2img)
 
-        with gr.Accordion(
-            "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
-        ):
-            pass
+        #!with gr.Accordion(
+        #!    "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
+        #!):
+        #!    pass
         #!    inpainting(w, n, is_img2img, webui_info)
 
     #!with gr.Group():
