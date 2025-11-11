@@ -380,7 +380,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
     with gr.Group():
         with gr.Row():
             w.ad_mask_blur = gr.Slider(
-                label="Inpaint mask blur" + suffix(n),
+                label="!!!!!!!!!!!!!!!Inpaint mask blur" + suffix(n),
                 minimum=0,
                 maximum=64,
                 step=1,
@@ -390,7 +390,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
             )
 
             w.ad_denoising_strength = gr.Slider(
-                label="Inpaint denoising strength" + suffix(n),
+                label="!!!!!!!!!!!!!!!Inpaint denoising strength" + suffix(n),
                 minimum=0.0,
                 maximum=1.0,
                 step=0.01,
@@ -402,13 +402,13 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
         with gr.Row():
             with gr.Column(variant="compact"):
                 w.ad_inpaint_only_masked = gr.Checkbox(
-                    label="Inpaint only masked" + suffix(n),
+                    label="!!!!!!!!!!!!!Inpaint only masked" + suffix(n),
                     value=True,
                     visible=True,
                     elem_id=eid("ad_inpaint_only_masked"),
                 )
                 w.ad_inpaint_only_masked_padding = gr.Slider(
-                    label="Inpaint only masked padding, pixels" + suffix(n),
+                    label="!!!!!!!!!!!!!!!!Inpaint only masked padding, pixels" + suffix(n),
                     minimum=0,
                     maximum=256,
                     step=4,
@@ -426,14 +426,14 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
 
             with gr.Column(variant="compact"):
                 w.ad_use_inpaint_width_height = gr.Checkbox(
-                    label="Use separate width/height" + suffix(n),
+                    label="!!!!!!!!!!!!!Use separate width/height" + suffix(n),
                     value=False,
                     visible=True,
                     elem_id=eid("ad_use_inpaint_width_height"),
                 )
 
                 w.ad_inpaint_width = gr.Slider(
-                    label="inpaint width" + suffix(n),
+                    label="!!!!!!!!!inpaint width" + suffix(n),
                     minimum=64,
                     maximum=2048,
                     step=4,
@@ -443,7 +443,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
                 w.ad_inpaint_height = gr.Slider(
-                    label="inpaint height" + suffix(n),
+                    label="!!!!!!!!!!!!!!inpaint height" + suffix(n),
                     minimum=64,
                     maximum=2048,
                     step=4,
@@ -462,14 +462,14 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
         with gr.Row():
             with gr.Column(variant="compact"):
                 w.ad_use_steps = gr.Checkbox(
-                    label="Use separate steps" + suffix(n),
+                    label="!!!!!!!!!!!!!!Use separate steps" + suffix(n),
                     value=False,
                     visible=True,
                     elem_id=eid("ad_use_steps"),
                 )
 
                 w.ad_steps = gr.Slider(
-                    label="ADetailer steps" + suffix(n),
+                    label="!!!!!!!!!!!!!!!!!!!!ADetailer steps" + suffix(n),
                     minimum=1,
                     maximum=150,
                     step=1,
@@ -487,14 +487,14 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
 
             with gr.Column(variant="compact"):
                 w.ad_use_cfg_scale = gr.Checkbox(
-                    label="Use separate CFG scale" + suffix(n),
+                    label="!!!!!!!!!!!!!!!!!!!!Use separate CFG scale" + suffix(n),
                     value=False,
                     visible=True,
                     elem_id=eid("ad_use_cfg_scale"),
                 )
 
                 w.ad_cfg_scale = gr.Slider(
-                    label="ADetailer CFG scale" + suffix(n),
+                    label="!!!!!!!!!!!!!!!!!!!!!!!!!!ADetailer CFG scale" + suffix(n),
                     minimum=0.0,
                     maximum=30.0,
                     step=0.5,
@@ -564,7 +564,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 w.ad_sampler = gr.Dropdown(
                     label="ADetailer sampler" + suffix(n),
                     choices=sampler_names,
-                    value=sampler_names[1],
+                    value=sampler_names[0],
                     visible=True,
                     elem_id=eid("ad_sampler"),
                 )
@@ -591,14 +591,14 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
         with gr.Row():
             with gr.Column(variant="compact"):
                 w.ad_use_noise_multiplier = gr.Checkbox(
-                    label="Use separate noise multiplier" + suffix(n),
+                    label="!!!!!!!!!!!!!Use separate noise multiplier" + suffix(n),
                     value=False,
                     visible=True,
                     elem_id=eid("ad_use_noise_multiplier"),
                 )
 
                 w.ad_noise_multiplier = gr.Slider(
-                    label="Noise multiplier for img2img" + suffix(n),
+                    label="!!!!!!!!!!!!!Noise multiplier for img2img" + suffix(n),
                     minimum=0.5,
                     maximum=1.5,
                     step=0.01,
@@ -616,14 +616,14 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
 
             with gr.Column(variant="compact"):
                 w.ad_use_clip_skip = gr.Checkbox(
-                    label="Use separate CLIP skip" + suffix(n),
+                    label="!!!!!!!!!!!!!!Use separate CLIP skip" + suffix(n),
                     value=False,
                     visible=True,
                     elem_id=eid("ad_use_clip_skip"),
                 )
 
                 w.ad_clip_skip = gr.Slider(
-                    label="ADetailer CLIP skip" + suffix(n),
+                    label="!!!!!!!!!!!!!!!ADetailer CLIP skip" + suffix(n),
                     minimum=1,
                     maximum=12,
                     step=1,
@@ -641,7 +641,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
 
         with gr.Row(), gr.Column(variant="compact"):
             w.ad_restore_face = gr.Checkbox(
-                label="Restore faces after ADetailer" + suffix(n),
+                label="!!!!!!!!!!!!!!!!Restore faces after ADetailer" + suffix(n),
                 value=False,
                 elem_id=eid("ad_restore_face"),
             )
@@ -651,7 +651,7 @@ def controlnet(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
     cn_models = ["None", "Passthrough", *get_cn_models()]
 
-    with gr.Row(variant="panel"):
+    with gr.Row(variant="panel",visible=True):
         with gr.Column(variant="compact"):
             w.ad_controlnet_model = gr.Dropdown(
                 label="ControlNet model" + suffix(n),

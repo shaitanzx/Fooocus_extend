@@ -577,7 +577,7 @@ class AfterDetailerScript():
         i2i = StableDiffusionProcessingImg2Img(
             init_images=[image],
             resize_mode=0,
-            denoising_strength=args.ad_denoising_strength,
+            denoising_strength=args.ad_inpaint_only_masked,
             mask=None,
             mask_blur=args.ad_mask_blur,
             inpainting_fill=1,
