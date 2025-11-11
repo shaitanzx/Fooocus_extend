@@ -59,14 +59,14 @@ from extentions.adetailer.adetailer.mask import (
     mask_preprocess,
     sort_bboxes,
 )
-from extentions.adetailer.adetailer.opts import dynamic_denoise_strength, optimal_crop_size
-from extentions.adetailer.controlnet_ext import (
-    CNHijackRestore,
-    ControlNetExt,
-    cn_allow_script_control,
-    controlnet_exists,
-    controlnet_type,
-    get_cn_models,
+#!from extentions.adetailer.adetailer.opts import dynamic_denoise_strength, optimal_crop_size
+#!from extentions.adetailer.controlnet_ext import (
+#!    CNHijackRestore,
+#!    ControlNetExt,
+#!    cn_allow_script_control,
+#!    controlnet_exists,
+#!    controlnet_type,
+#!    get_cn_models,
 )
 #!from modules import images, paths, script_callbacks, scripts, shared
 #!from modules.devices import NansException
