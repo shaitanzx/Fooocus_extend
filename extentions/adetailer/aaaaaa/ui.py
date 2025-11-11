@@ -249,9 +249,10 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         ):
             mask_preprocessing(w, n, is_img2img)
 
-        #!with gr.Accordion(
-        #!    "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
-        #!):
+        with gr.Accordion(
+            "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
+        ):
+            pass
         #!    inpainting(w, n, is_img2img, webui_info)
 
     #!with gr.Group():
