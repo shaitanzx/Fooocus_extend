@@ -785,6 +785,7 @@ def worker():
                       inpaint_mask, inpaint_parameterized, denoising_strength, inpaint_respective_field, switch,
                       inpaint_disable_initial_latent, current_progress, skip_apply_outpaint=False,
                       advance_progress=False):
+        print('aaaaaaa', inpaint_strength, inpaint_respective_field)
         if not skip_apply_outpaint:
             inpaint_image, inpaint_mask = apply_outpaint(async_task, inpaint_image, inpaint_mask)
 
@@ -1338,7 +1339,7 @@ def worker():
             apply_freeu(async_task)
         patch_samplers(async_task)
         if 'inpaint' in goals:
-            print('aaaaaaa', inpaint_strength, inpaint_respective_field)
+            
             denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
                 async_task, None, inpaint_head_model_path, img, mask,
                 inpaint_parameterized, inpaint_strength,
