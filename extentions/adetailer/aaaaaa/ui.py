@@ -254,8 +254,8 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         ):
             inpainting(w, n, is_img2img, webui_info)
 
-    with gr.Group():
-        controlnet(w, n, is_img2img)
+    #!with gr.Group():
+    #!    controlnet(w, n, is_img2img)
 
     state = gr.State(lambda: state_init(w))
 
