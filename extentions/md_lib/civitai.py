@@ -26,7 +26,8 @@ MODEL_TYPES = {
     "LORA": "lora",
     "LoCon": "lycoris",
     "DoRA": "lora",
-    "VAE": "vae"
+    "VAE": "vae",
+    "Detection": "detection"
 }
 
 FILE_TYPES = [

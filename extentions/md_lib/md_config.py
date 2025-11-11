@@ -1,5 +1,6 @@
 import sys
 import os
+from pathlib import Path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 # Теперь можно использовать абсолютный импорт
@@ -40,3 +41,4 @@ path_ckp=config.paths_checkpoints[0]
 path_lora=config.paths_loras[0]
 path_emb=config.path_embeddings
 path_vae=config.path_vae
+path_detect = Path(modules.config.paths_checkpoints[0]).parent / "detection"
