@@ -548,6 +548,7 @@ with shared.gradio_root:
                     with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
                             adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
                             #!ad_component = adetailer.ui(is_img2img=True)
+                            adetailer.ui(is_img2img=True)
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
@@ -775,10 +776,7 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        #!with gr.TabItem(label='ADetailer'):
-                        #!    ad_component, ad_info = adetailer.ui(is_img2img=False)
-                        #!    print('aaaaaaaaaaaaaaaa',ad_component)
-                        #!    print('aaaaaaaaaaaaaaaa',ad_info)
+
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
@@ -836,7 +834,8 @@ with shared.gradio_root:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
                         with gr.Tab(label='ADetailer', id='adetail_tab'):
                             adetail_gen_enable = gr.Checkbox(label='Enabled', value=False)
-                            ad_component_gen = adetailer.ui(is_img2img=False)
+                            #!ad_component_gen = adetailer.ui(is_img2img=False)
+                            adetailer.ui(is_img2img=False)
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
