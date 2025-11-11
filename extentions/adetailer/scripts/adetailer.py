@@ -67,7 +67,7 @@ from extentions.adetailer.adetailer.mask import (
 #!    controlnet_exists,
 #!    controlnet_type,
 #!    get_cn_models,
-)
+#!)
 #!from modules import images, paths, script_callbacks, scripts, shared
 #!from modules.devices import NansException
 #!from modules.processing import (
