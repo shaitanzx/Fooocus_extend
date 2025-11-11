@@ -41,4 +41,4 @@ path_ckp=config.paths_checkpoints[0]
 path_lora=config.paths_loras[0]
 path_emb=config.path_embeddings
 path_vae=config.path_vae
-path_detect = Path(modules.config.paths_checkpoints[0]).parent / "detection"
+path_detect = Path(path_ckp.parent / "detection"
