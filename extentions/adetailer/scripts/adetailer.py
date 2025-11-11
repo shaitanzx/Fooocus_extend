@@ -1,4 +1,4 @@
-from __future__ import annotations
+#!from __future__ import annotations
 
 import platform
 import re
@@ -17,6 +17,7 @@ from rich import print  # noqa: A004  Shadowing built-in 'print'
 
 import modules
 #!from extentions.adetailer.aaaaaa.conditional import create_binary_mask, schedulers
+"""
 from extentions.adetailer.aaaaaa.helper import (
     PPImage,
     copy_extra_params,
@@ -33,10 +34,9 @@ from extentions.adetailer.aaaaaa.p_method import (
     need_call_process,
 )
 from extentions.adetailer.aaaaaa.traceback import rich_traceback
+"""
 from extentions.adetailer.aaaaaa.ui import WebuiInfo, adui, ordinal, suffix
 from extentions.adetailer.adetailer import (
-    ADETAILER,
-    __version__,
     get_models,
     mediapipe_predict,
     ultralytics_predict,
