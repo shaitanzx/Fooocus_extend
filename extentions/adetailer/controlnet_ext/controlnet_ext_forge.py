@@ -6,8 +6,8 @@ import numpy as np
 from lib_controlnet import external_code, global_state
 from lib_controlnet.external_code import ControlNetUnit
 
-from modules import scripts
-from modules.processing import StableDiffusionProcessing
+#!from modules import scripts
+#!from modules.processing import StableDiffusionProcessing
 
 from .common import cn_model_regex
 

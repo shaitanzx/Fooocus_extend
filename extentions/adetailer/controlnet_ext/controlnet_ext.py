@@ -5,8 +5,8 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
-from modules import extensions, sd_models, shared
-from modules.paths import extensions_builtin_dir, extensions_dir, models_path
+#!from modules import extensions, sd_models, shared
+#!from modules.paths import extensions_builtin_dir, extensions_dir, models_path
 
 from .common import cn_model_module, cn_model_regex
 
