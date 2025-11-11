@@ -1338,6 +1338,7 @@ def worker():
             apply_freeu(async_task)
         patch_samplers(async_task)
         if 'inpaint' in goals:
+            print('aaaaaaa', inpaint_strength, inpaint_respective_field)
             denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
                 async_task, None, inpaint_head_model_path, img, mask,
                 inpaint_parameterized, inpaint_strength,
