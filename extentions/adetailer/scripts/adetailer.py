@@ -195,6 +195,13 @@ def enabler(ad_component):
         if tab.get("ad_tab_enable") is True and tab.get("ad_model") != "None"
     ]
     return valid_tabs
+def prompt_cut(pos_text: str, neg_text: str, target_len: int):    
+    def process(s: str):
+        parts = re.split(r"\s*\[SEP\]\s*", s.strip()) if s.strip() else []
+        lst = [""] if not parts else parts
+        return (lst + [lst[-1]] * target_len)[:target_len]
+    
+    return process(pos_text), process(neg_text)
 class AfterDetailerScript():
     """
     def __init__(self):
