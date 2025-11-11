@@ -38,11 +38,12 @@ PARAMS_TXT = "params.txt"
 no_huggingface=False
 adetailer_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
 def download_yola(name):
-    load_file_from_url(
-        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name+'.pt',
-        model_dir=adetailer_dir,
-        file_name=name+'.pt'
-    )
+    if 'yolo8' in name:
+        load_file_from_url(
+            url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name+'.pt',
+            model_dir=adetailer_dir,
+            file_name=name+'.pt'
+        )
     return os.path.join(adetailer_dir, name+'.pt')
 
 #!model_mapping = get_models(
@@ -70,6 +71,23 @@ yolo_model_list=[
             "mediapipe_face_mesh",
             "mediapipe_face_mesh_eyes_only"
             ]
+
+
+    # Получаем имена файлов *.pt (без расширения), нормализованные к str
+existing_pt_names = {
+        f.stem  # без расширения, и без пути — только имя
+        for f in adetailer_dir.glob("*.pt")
+        if f.is_file()
+    }
+
+    # Удаляем дубли и добавляем новые имена, которых ещё нет в yolo_model_list
+current_set = set(yolo_model_list)
+new_models = sorted(existing_pt_names - current_set)  # сортируем для порядка
+if new_models:
+        print(f"[ADetailer] Найдены новые модели: {new_models}")
+        yolo_model_list.extend(new_models)
+else:
+        print("[ADetailer] Новых моделей не обнаружено.")
 def ui(is_img2img):
         num_models = default_adetail_tab
         ad_model_list = yolo_model_list
