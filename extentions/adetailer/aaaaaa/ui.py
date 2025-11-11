@@ -124,16 +124,11 @@ def adui(
     is_img2img: bool,
     webui_info: WebuiInfo,
 ):
-    states = []
-    infotext_fields = []
-    eid = partial(elem_id, n=0, is_img2img=is_img2img)
+        states = []
+        infotext_fields = []
+        eid = partial(elem_id, n=0, is_img2img=is_img2img)
 
-    with InputAccordion(
-        value=False,
-        elem_id=eid("ad_main_accordion"),
-        label=ADETAILER,
-        visible=True,
-    ) as ad_enable:
+        ad_enable=True
         with gr.Row():
             with gr.Column(scale=8):
                 ad_skip_img2img = gr.Checkbox(
@@ -165,8 +160,8 @@ def adui(
                 infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
-    components = [ad_enable, ad_skip_img2img, *states]
-    return components, infotext_fields
+        components = [ad_enable, ad_skip_img2img, *states]
+        return components, infotext_fields
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
