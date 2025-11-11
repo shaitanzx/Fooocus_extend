@@ -165,8 +165,31 @@ def ui(is_img2img):
 
         #!infotext_fields = infotext_fields
         return components
+def sort_bboxes_from_class(self, pred: PredictOutput) -> PredictOutput:
+        sortby = BBOX_SORTBY[1]
+        sortby_idx = BBOX_SORTBY.index(sortby)
+        return sort_bboxes(pred, sortby_idx)
+def pred_preprocessing(p, pred: PredictOutput, args):
+        pred = filter_by_ratio(
+            pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
+        )
+        pred = filter_k_by(pred, k=args.ad_mask_k, by=args.ad_mask_filter_method)
+        pred = sort_bboxes_from_class(pred)
+        masks = mask_preprocess(
+            pred.masks,
+            kernel=args.ad_dilate_erode,
+            x_offset=args.ad_x_offset,
+            y_offset=args.ad_y_offset,
+            merge_invert=args.ad_mask_merge_invert,
+        )
+
+        #!if is_img2img_inpaint(p) and not is_inpaint_only_masked(p):
+        #!    image_mask = self.get_image_mask(p)
+        #!    masks = self.inpaint_mask_filter(image_mask, masks)
+        return masks
 
 class AfterDetailerScript():
+    """
     def __init__(self):
         super().__init__()
         self.ultralytics_device = ""
@@ -216,7 +239,7 @@ class AfterDetailerScript():
                 guidance_start=args.ad_controlnet_guidance_start,
                 guidance_end=args.ad_controlnet_guidance_end,
             )
-
+    """
     def is_ad_enabled(self, *args) -> bool:
         arg_list = [arg for arg in args if isinstance(arg, dict)]
         if not arg_list:
@@ -640,29 +663,8 @@ class AfterDetailerScript():
             raise ValueError(msg)
         return model_mapping[name]
 
-    def sort_bboxes(self, pred: PredictOutput) -> PredictOutput:
-        sortby = opts.data.get("ad_bbox_sortby", BBOX_SORTBY[0])
-        sortby_idx = BBOX_SORTBY.index(sortby)
-        return sort_bboxes(pred, sortby_idx)
 
-    def pred_preprocessing(self, p, pred: PredictOutput, args: ADetailerArgs):
-        pred = filter_by_ratio(
-            pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
-        )
-        pred = filter_k_by(pred, k=args.ad_mask_k, by=args.ad_mask_filter_method)
-        pred = self.sort_bboxes(pred)
-        masks = mask_preprocess(
-            pred.masks,
-            kernel=args.ad_dilate_erode,
-            x_offset=args.ad_x_offset,
-            y_offset=args.ad_y_offset,
-            merge_invert=args.ad_mask_merge_invert,
-        )
 
-        if is_img2img_inpaint(p) and not is_inpaint_only_masked(p):
-            image_mask = self.get_image_mask(p)
-            masks = self.inpaint_mask_filter(image_mask, masks)
-        return masks
 
     @staticmethod
     def i2i_prompts_replace(

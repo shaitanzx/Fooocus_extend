@@ -1729,10 +1729,10 @@ def worker():
         exception_result = None
         if 'adetail' in goals or adetailer_generator:
             from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
-            temp_base_model_name=async_task.base_model_name
-            temp_sampler_name=async_task.sampler_name
-            temp_scheduler_name=async_task.scheduler_name
-            temp_inpaint_engine=async_task.inpaint_engine
+            #!temp_base_model_name=async_task.base_model_name
+            #!temp_sampler_name=async_task.sampler_name
+            #!temp_scheduler_name=async_task.scheduler_name
+            #!temp_inpaint_engine=async_task.inpaint_engine
    
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
@@ -1747,7 +1747,7 @@ def worker():
                     is_last_adetailer_for_image = (current_task_id + 1) % active_adetail_tabs == 0
                     persist_image = not async_task.save_final_adetail_image_only or is_last_adetailer_for_image  
                     args = SimpleNamespace(**arg_s)
-                    print('aaaaaaaaaa',args)
+
                     def is_mediapipe_model(args):
                         return args.ad_model.lower().startswith("mediapipe")
                     is_mediapipe = is_mediapipe_model(args)
@@ -1763,6 +1763,7 @@ def worker():
                                 #!device=ultralytics_device,
                                 classes=args.ad_model_classes,
                                 )
+                                
                     masks = adetailer.pred_preprocessing(pred, args)
 
                     if async_task.debugging_adetailer_masks_checkbox:
@@ -1776,14 +1777,14 @@ def worker():
                         continue
                     
                     goals_adetail = ['inpaint']
-                    print('xxxxxxxxxxxx',args)
-                    async_task.base_model_name=temp_base_model_name if 'current' in args.ad_checkpoint else args.ad_checkpoint
-                    async_task.sampler_name=temp_sampler_name if 'current' in args.ad_sampler else args.ad_sampler
-                    async_task.scheduler_name=temp_scheduler_name if 'current' in args.ad_scheduler else args.ad_scheduler
-                    async_task.inpaint_strength=args.ad_denoising_strength
-                    async_task.inpaint_respective_field=args.ad_mask_blur
-                    async_task.inpaint_disable_initial_latent=args.ad_inpaint_only_masked
-                    async_task.inpaint_engine=temp_inpaint_engine if 'current' in args.ad_inpaint_only_masked_padding else args.ad_inpaint_only_masked_padding
+
+                    #!async_task.base_model_name=temp_base_model_name if 'current' in args.ad_checkpoint else args.ad_checkpoint
+                    #!async_task.sampler_name=temp_sampler_name if 'current' in args.ad_sampler else args.ad_sampler
+                    #!async_task.scheduler_name=temp_scheduler_name if 'current' in args.ad_scheduler else args.ad_scheduler
+                    #!async_task.inpaint_strength=args.ad_denoising_strength
+                    #!async_task.inpaint_respective_field=args.ad_mask_blur
+                    #!async_task.inpaint_disable_initial_latent=args.ad_inpaint_only_masked
+                    #!async_task.inpaint_engine=temp_inpaint_engine if 'current' in args.ad_inpaint_only_masked_padding else args.ad_inpaint_only_masked_padding
                     adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                     for n in range(len(masks)):
                         prompt=adetail_prompt[n]
@@ -1792,11 +1793,7 @@ def worker():
                             continue
                         prompt = prompt.replace("[PROMPT]", async_task.prompt)
                         negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
-                        print('zzzzzzzzzzzzzzzz')
-                        print('async_task.inpaint_disable_initial_latent',async_task.inpaint_disable_initial_latent,
-                                'async_task.inpaint_engine',async_task.inpaint_engine, 
-                                'async_task.inpaint_respective_field',async_task.inpaint_respective_field, 
-                                'async_task.inpaint_strength',async_task.inpaint_strength)
+
                         try:
                             current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
                                 all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
