@@ -785,7 +785,6 @@ def worker():
                       inpaint_mask, inpaint_parameterized, denoising_strength, inpaint_respective_field, switch,
                       inpaint_disable_initial_latent, current_progress, skip_apply_outpaint=False,
                       advance_progress=False):
-        print('aaaaaaa', inpaint_respective_field)
         if not skip_apply_outpaint:
             inpaint_image, inpaint_mask = apply_outpaint(async_task, inpaint_image, inpaint_mask)
 
