@@ -166,10 +166,10 @@ def ui(is_img2img):
         self.infotext_fields = infotext_fields
         return components
 
-class AfterDetailerScript(scripts.Script):
+class AfterDetailerScript():
     def __init__(self):
         super().__init__()
-        self.ultralytics_device = self.get_ultralytics_device()
+        self.ultralytics_device = ""
 
         self.controlnet_ext = None
 
