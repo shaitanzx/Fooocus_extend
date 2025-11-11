@@ -13,8 +13,8 @@ from rich.table import Table
 from rich.traceback import Traceback
 from typing_extensions import ParamSpec
 
-from extentions.adetailer.adetailer.__version__ import __version__
-from extentions.adetailer.adetailer.args import ADetailerArgs
+from adetailer.__version__ import __version__
+from adetailer.args import ADetailerArgs
 
 
 def processing(*args: Any) -> dict[str, Any]:

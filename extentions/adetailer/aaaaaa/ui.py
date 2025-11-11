@@ -8,10 +8,10 @@ from typing import Any
 
 import gradio as gr
 
-#!from aaaaaa.conditional import InputAccordion
-from extentions.adetailer.adetailer import ADETAILER, __version__
-from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
-from extentions.adetailer.controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
+from aaaaaa.conditional import InputAccordion
+from adetailer import ADETAILER, __version__
+from adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
+from controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
 
 if controlnet_type == "forge":
     from lib_controlnet import global_state
@@ -57,8 +57,8 @@ class WebuiInfo:
     ad_model_list: list[str]
     sampler_names: list[str]
     scheduler_names: list[str]
-    #!t2i_button: gr.Button
-    #!i2i_button: gr.Button
+    t2i_button: gr.Button
+    i2i_button: gr.Button
     checkpoints_list: list[str]
     vae_list: list[str]
 
@@ -128,13 +128,13 @@ def adui(
     infotext_fields = []
     eid = partial(elem_id, n=0, is_img2img=is_img2img)
 
-    #!with InputAccordion(
-    #!    value=False,
-    #!    elem_id=eid("ad_main_accordion"),
-    #!    label=ADETAILER,
-    #!    visible=True,
-    #!) as ad_enable:
-    with gr.Row():
+    with InputAccordion(
+        value=False,
+        elem_id=eid("ad_main_accordion"),
+        label=ADETAILER,
+        visible=True,
+    ) as ad_enable:
+        with gr.Row():
             with gr.Column(scale=8):
                 ad_skip_img2img = gr.Checkbox(
                     label="Skip img2img",
@@ -149,24 +149,24 @@ def adui(
                     elem_id=eid("ad_version"),
                 )
 
-        #!infotext_fields.append((ad_enable, "ADetailer enable"))
-        #!infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
+        infotext_fields.append((ad_enable, "ADetailer enable"))
+        infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
 
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
-                    state = one_ui_group(
+                    state, infofields = one_ui_group(
                         n=n,
                         is_img2img=is_img2img,
                         webui_info=webui_info,
                     )
 
                 states.append(state)
-                #!infotext_fields.extend(infofields)
+                infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
-    components = [*states]
-    return components
+    components = [ad_enable, ad_skip_img2img, *states]
+    return components, infotext_fields
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
@@ -277,7 +277,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
 
     infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
 
-    return state
+    return state, infotext_fields
 
 
 def detection(w: Widgets, n: int, is_img2img: bool):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 
-#!from modules import img2img, processing, shared
+from modules import img2img, processing, shared
 
 
 class CNHijackRestore:
