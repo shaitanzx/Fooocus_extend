@@ -84,10 +84,7 @@ existing_pt_names = {
 current_set = set(yolo_model_list)
 new_models = sorted(existing_pt_names - current_set)  # сортируем для порядка
 if new_models:
-        print(f"[ADetailer] Найдены новые модели: {new_models}")
         yolo_model_list.extend(new_models)
-else:
-        print("[ADetailer] Новых моделей не обнаружено.")
 def ui(is_img2img):
         num_models = default_adetail_tab
         ad_model_list = yolo_model_list
