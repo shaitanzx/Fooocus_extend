@@ -9,7 +9,7 @@ from typing import Any
 import gradio as gr
 
 #!from aaaaaa.conditional import InputAccordion
-from extentions.adetailer.adetailer import ADETAILER, __version__
+#!from extentions.adetailer.adetailer import ADETAILER, __version__
 from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
 #!from extentions.adetailer.controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
 """
@@ -127,7 +127,7 @@ def adui(
         states = []
         infotext_fields = []
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
-
+        """
         ad_enable=True
         with gr.Row():
             with gr.Column(scale=8):
@@ -146,7 +146,7 @@ def adui(
 
         #!infotext_fields.append((ad_enable, "ADetailer enable"))
         #!infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
-
+        """
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
