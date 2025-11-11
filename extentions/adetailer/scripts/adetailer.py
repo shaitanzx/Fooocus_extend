@@ -144,12 +144,12 @@ img2img_submit_button = cast(gr.Button, img2img_submit_button)
 #!)
 def ui(is_img2img):
         num_models = default_adetail_tab
-        ad_model_list = list(model_mapping.keys())
-        sampler_names = [sampler.name for sampler in all_samplers]
-        scheduler_names = [x.label for x in schedulers]
+        ad_model_list = yolo_model_list
+        sampler_names = modules.flags.sampler_list
+        scheduler_names = modules.flags.scheduler_list
 
-        checkpoint_list = modules.sd_models.checkpoint_tiles(use_short=True)
-        vae_list = modules.shared_items.sd_vae_items()
+        checkpoint_list = modules.config.model_filenames
+        vae_list = [modules.flags.default_vae] + modules.config.vae_filenames
 
         webui_info = WebuiInfo(
             ad_model_list=ad_model_list,
