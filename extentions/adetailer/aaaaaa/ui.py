@@ -651,7 +651,7 @@ def controlnet(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
     cn_models = ["None", "Passthrough", *get_cn_models()]
 
-    with gr.Row(variant="panel",visible=True):
+    with gr.Row(variant="panel",visible=False):
         with gr.Column(variant="compact"):
             w.ad_controlnet_model = gr.Dropdown(
                 label="ControlNet model" + suffix(n),
