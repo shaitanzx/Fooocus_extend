@@ -1248,8 +1248,9 @@ def add_api_endpoints(_: gr.Blocks, app: FastAPI):
     async def ad_model():
         return {"ad_model": list(model_mapping)}
 
-
+"""
 script_callbacks.on_ui_settings(on_ui_settings)
 script_callbacks.on_after_component(on_after_component)
 script_callbacks.on_app_started(add_api_endpoints)
 script_callbacks.on_before_ui(on_before_ui)
+"""
