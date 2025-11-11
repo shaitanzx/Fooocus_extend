@@ -253,11 +253,11 @@ _all_args = [
     ("ad_use_clip_skip", "ADetailer use separate CLIP skip"),
     ("ad_clip_skip", "ADetailer CLIP skip"),
     ("ad_restore_face", "ADetailer restore face"),
-    ("ad_controlnet_model", "ADetailer ControlNet model"),
-    ("ad_controlnet_module", "ADetailer ControlNet module"),
-    ("ad_controlnet_weight", "ADetailer ControlNet weight"),
-    ("ad_controlnet_guidance_start", "ADetailer ControlNet guidance start"),
-    ("ad_controlnet_guidance_end", "ADetailer ControlNet guidance end"),
+    #!("ad_controlnet_model", "ADetailer ControlNet model"),
+    #!("ad_controlnet_module", "ADetailer ControlNet module"),
+    #!("ad_controlnet_weight", "ADetailer ControlNet weight"),
+    #!("ad_controlnet_guidance_start", "ADetailer ControlNet guidance start"),
+    #!("ad_controlnet_guidance_end", "ADetailer ControlNet guidance end"),
 ]
 
 _args = [Arg(*args) for args in _all_args]
