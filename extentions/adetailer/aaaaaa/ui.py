@@ -127,6 +127,10 @@ def adui(
         states = []
         infotext_fields = []
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
+        only_detect = gr.Checkbox(
+                label=f"Only detect",
+                value=False,
+                visible=True),
         """
         ad_enable=True
         with gr.Row():
@@ -160,7 +164,7 @@ def adui(
                 #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
-        components = [*states]
+        components = [only_detect,*states]
         return components
 
 

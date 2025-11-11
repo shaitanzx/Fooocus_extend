@@ -1731,7 +1731,7 @@ def worker():
         if 'adetail' in goals or adetailer_generator:
             from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
 
-   
+            only_detect, *async_task.ad_componen = async_task.ad_componen
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
@@ -1764,7 +1764,7 @@ def worker():
 
                     masks = adetailer.pred_preprocessing(pred, args)
 
-                    if async_task.debugging_adetailer_masks_checkbox:
+                    if async_task.debugging_adetailer_masks_checkbox or only_detect:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
                         yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
@@ -1779,6 +1779,7 @@ def worker():
 
                     adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                     for n in range(len(masks)):
+                      if not only_detect:
                         prompt=adetail_prompt[n]
 
                         negative=adetail_negative_prompt[n]
