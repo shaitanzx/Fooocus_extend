@@ -253,7 +253,7 @@ class AfterDetailerScript():
                 guidance_start=args.ad_controlnet_guidance_start,
                 guidance_end=args.ad_controlnet_guidance_end,
             )
-    """
+    
     def is_ad_enabled(self, *args) -> bool:
         arg_list = [arg for arg in args if isinstance(arg, dict)]
         if not arg_list:
@@ -861,13 +861,13 @@ class AfterDetailerScript():
     def _postprocess_image_inner(
         self, p, pp: PPImage, args: ADetailerArgs, *, n: int = 0
     ) -> bool:
-        """
+        
         Returns
         -------
             bool
 
             `True` if image was processed, `False` otherwise.
-        """
+        
         if state.interrupted or state.skipped:
             return False
 
@@ -984,8 +984,8 @@ class AfterDetailerScript():
                 p.scripts.process(copy_p)
 
         self.write_params_txt(params_txt_content)
-
-
+"""
+"""
 def on_after_component(component, **_kwargs):
     global txt2img_submit_button, img2img_submit_button
     if getattr(component, "elem_id", None) == "txt2img_generate":
@@ -994,8 +994,8 @@ def on_after_component(component, **_kwargs):
 
     if getattr(component, "elem_id", None) == "img2img_generate":
         img2img_submit_button = component
-
-
+"""
+"""
 def on_ui_settings():
     section = ("ADetailer", ADETAILER)
     shared.opts.add_option(
@@ -1264,7 +1264,7 @@ def add_api_endpoints(_: gr.Blocks, app: FastAPI):
     async def ad_model():
         return {"ad_model": list(model_mapping)}
 
-"""
+
 script_callbacks.on_ui_settings(on_ui_settings)
 script_callbacks.on_after_component(on_after_component)
 script_callbacks.on_app_started(add_api_endpoints)

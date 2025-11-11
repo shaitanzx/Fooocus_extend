@@ -646,7 +646,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 elem_id=eid("ad_restore_face"),
             )
 
-
+"""
 def controlnet(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
     cn_models = ["None", "Passthrough", *get_cn_models()]
@@ -713,3 +713,4 @@ def controlnet(w: Widgets, n: int, is_img2img: bool):
                 interactive=controlnet_exists,
                 elem_id=eid("ad_controlnet_guidance_end"),
             )
+"""
