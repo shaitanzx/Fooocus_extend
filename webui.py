@@ -582,8 +582,7 @@ with shared.gradio_root:
                         with gr.Row():
                             with gr.Column():
                                 adetail_input_image = gr.Image(label='Use with Adetailer, skips image generation', source='upload', type='numpy',image_mode='RGB')
-                               #! enhance_input_image = grh.Image(label='Use with Enhance, skips image generation', source='upload', type='numpy')
-                                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/3281" target="_blank">\U0001F4D4 Documentation</a>')
+
                     with gr.Tab(label='Metadata', id='metadata_tab') as metadata_tab:
                         with gr.Column():
                             metadata_input_image = grh.Image(label='For images created by Fooocus', source='upload', type='pil')
