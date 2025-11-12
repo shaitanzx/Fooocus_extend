@@ -867,8 +867,6 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
 
     return files
 
-#zzzzzzzzzzzzzzzz ['deepfashion2_yolov8s-seg.pt', 'face_yolov8m.pt', 'hand_yolov8n.pt', 'hand_yolov8s.pt', 'person_yolov8m-seg.pt', 'deepfashion2_yolov8s-seg', 'face_yolov8m', 'hand_yolov8n', 'hand_yolov8s', 'person_yolov8m-seg']    
-
 def update_files():
     global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames
     model_filenames = get_model_filenames(paths_checkpoints)
@@ -877,7 +875,6 @@ def update_files():
     yolo_from_disk = get_model_filenames(str(path_yolo))
     yolo_filenames = list(dict.fromkeys(YOLO_DEFAULT_FILENAMES + yolo_from_disk))
 
-    print('zzzzzzzzzzzzzzzz',yolo_filenames)
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
     return
