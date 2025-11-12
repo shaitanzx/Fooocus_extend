@@ -823,7 +823,28 @@ with open(config_example_path, "w", encoding="utf-8") as json_file:
 model_filenames = []
 lora_filenames = []
 vae_filenames = []
-yolo_filenames = []
+YOLO_DEFAULT_FILENAMES = (
+    "deepfashion2_yolov8s-seg.pt",
+    "face_yolov8m.pt",
+    "face_yolov8n.pt",
+    "face_yolov8n_v2.pt",
+    "face_yolov8s.pt",
+    "hand_yolov8n.pt",
+    "hand_yolov8s.pt",
+    "person_yolov8m-seg.pt",
+    "person_yolov8n-seg.pt",
+    "person_yolov8s-seg.pt",
+    "yolov8l-worldv2.pt",
+    "yolov8m-worldv2.pt",
+    "yolov8s-worldv2.pt",
+    "yolov8x-worldv2.pt",
+    "mediapipe_face_full.pt",
+    "mediapipe_face_short.pt",
+    "mediapipe_face_mesh.pt",
+    "mediapipe_face_mesh_eyes_only.pt"
+)
+
+yolo_filenames = list(YOLO_DEFAULT_FILENAMES)
 wildcard_filenames = []
 
 
@@ -840,26 +861,6 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     return files
 
 #zzzzzzzzzzzzzzzz ['deepfashion2_yolov8s-seg.pt', 'face_yolov8m.pt', 'hand_yolov8n.pt', 'hand_yolov8s.pt', 'person_yolov8m-seg.pt', 'deepfashion2_yolov8s-seg', 'face_yolov8m', 'hand_yolov8n', 'hand_yolov8s', 'person_yolov8m-seg']    
-YOLO_DEFAULT_FILENAMES=(
-            "deepfashion2_yolov8s-seg.pt",
-            "face_yolov8m.pt",
-            "face_yolov8n.pt",
-            "face_yolov8n_v2.pt",
-            "face_yolov8s.pt",
-            "hand_yolov8n.pt",
-            "hand_yolov8s.pt",
-            "person_yolov8m-seg.pt",
-            "person_yolov8n-seg.pt",
-            "person_yolov8s-seg.pt",
-            "yolov8l-worldv2.pt",
-            "yolov8m-worldv2.pt",
-            "yolov8s-worldv2.pt",
-            "yolov8x-worldv2.pt",
-            "mediapipe_face_full.pt",
-            "mediapipe_face_short.pt",
-            "mediapipe_face_mesh.pt",
-            "mediapipe_face_mesh_eyes_only.pt"
-            )
 
 def update_files():
     global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames
