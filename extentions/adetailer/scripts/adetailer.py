@@ -90,11 +90,11 @@ no_huggingface=False
 def download_yola(name):
     if 'yolov8' in name:
         load_file_from_url(
-            url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name+'.pt',
+            url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name,
             model_dir=modules.config.path_yolo,
-            file_name=name+'.pt'
+            file_name=name
         )
-    return os.path.join(modules.config.path_yolo, name+'.pt')
+    return os.path.join(modules.config.path_yolo, name)
 
 #!model_mapping = get_models(
 #!    adetailer_dir,
