@@ -1605,11 +1605,13 @@ with shared.gradio_root:
 
                 dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
                                 queue=False, show_progress=False)
+
                 def update_ad_model_choices():
-                    model_list = modules.config.yolo_filenames
-                    choices = ["None"] + model_list
-                    return ([gr.update(choices=choices) for _ in range(modules.config.default_adetail_tab)],
-                    [gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)])
+                    models=[gr.update(choices=["None"] + modules.config.yolo_filenamest) for _ in range(modules.config.default_adetail_tab)]
+                    ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)])
+
+                    return models + ckpt
+                    
 
                 def refresh_files_clicked():
                     modules.config.update_files()
@@ -1628,7 +1630,7 @@ with shared.gradio_root:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
                                     queue=False, show_progress=False) \
-                                    .then(update_ad_model_choices,inputs=[],outputs=ad_model_dropdowns,ad_ckpt_dropdowns)
+                                    .then(update_ad_model_choices,inputs=[],outputs=ad_model_dropdowns+ad_ckpt_dropdowns)
 
         state_is_generating = gr.State(False)
 
