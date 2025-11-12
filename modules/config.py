@@ -840,7 +840,7 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     return files
 
 #zzzzzzzzzzzzzzzz ['deepfashion2_yolov8s-seg.pt', 'face_yolov8m.pt', 'hand_yolov8n.pt', 'hand_yolov8s.pt', 'person_yolov8m-seg.pt', 'deepfashion2_yolov8s-seg', 'face_yolov8m', 'hand_yolov8n', 'hand_yolov8s', 'person_yolov8m-seg']    
-yolo_filenames_default=[
+YOLO_DEFAULT_FILENAMES=(
             "deepfashion2_yolov8s-seg.pt",
             "face_yolov8m.pt",
             "face_yolov8n.pt",
@@ -859,7 +859,7 @@ yolo_filenames_default=[
             "mediapipe_face_short.pt",
             "mediapipe_face_mesh.pt",
             "mediapipe_face_mesh_eyes_only.pt"
-            ]
+            )
 
 def update_files():
     global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames
