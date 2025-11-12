@@ -1746,7 +1746,7 @@ def worker():
                         return args.ad_model.lower().removesuffix('.pt').startswith('mediapipe')
                     is_mediapipe = is_mediapipe_model(args)
                     if is_mediapipe:
-                        pred = adetailer.mediapipe_predict(args.ad_model, img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
+                        pred = adetailer.mediapipe_predict(args.ad_model.removesuffix('.pt'), img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
                     else:
                         ad_model = adetailer.download_yola(args.ad_model)
                         with disable_safe_unpickle():
