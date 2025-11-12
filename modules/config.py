@@ -823,7 +823,8 @@ with open(config_example_path, "w", encoding="utf-8") as json_file:
 model_filenames = []
 lora_filenames = []
 vae_filenames = []
-YOLO_DEFAULT_FILENAMES = (
+YOLO_DEFAULT_FILENAMES = [
+
     "deepfashion2_yolov8s-seg.pt",
     "face_yolov8m.pt",
     "face_yolov8n.pt",
@@ -842,9 +843,9 @@ YOLO_DEFAULT_FILENAMES = (
     "mediapipe_face_short.pt",
     "mediapipe_face_mesh.pt",
     "mediapipe_face_mesh_eyes_only.pt"
-)
+]
 
-yolo_filenames = list(YOLO_DEFAULT_FILENAMES)
+yolo_filenames = YOLO_DEFAULT_FILENAMES.copy()
 wildcard_filenames = []
 
 
