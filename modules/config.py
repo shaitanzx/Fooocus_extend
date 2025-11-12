@@ -12,6 +12,8 @@ from modules.model_loader import load_file_from_url
 from modules.extra_utils import makedirs_with_log, get_files_from_folder, try_eval_env_var
 from modules.flags import OutputFormat, Performance, MetadataScheme
 
+from pathlib import Path
+
 
 def get_config_path(key, default_value):
     env = os.getenv(key)
@@ -205,6 +207,7 @@ path_fooocus_expansion = get_dir_or_set_default('path_fooocus_expansion', '../mo
 path_wildcards = get_dir_or_set_default('path_wildcards', '../wildcards/')
 path_safety_checker = get_dir_or_set_default('path_safety_checker', '../models/safety_checker/')
 path_sam = get_dir_or_set_default('path_sam', '../models/sam/')
+path_yolo=adetailer_dir = str(Path(paths_checkpoints[0]).parent / "detection")
 path_outputs = get_path_output()
 
 
@@ -825,7 +828,7 @@ wildcard_filenames = []
 
 def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     if extensions is None:
-        extensions = ['.pth', '.ckpt', '.bin', '.safetensors', '.fooocus.patch']
+        extensions = ['.pth', '.ckpt', '.bin', '.safetensors', '.fooocus.patch', '.pt']
     files = []
 
     if not isinstance(folder_paths, list):

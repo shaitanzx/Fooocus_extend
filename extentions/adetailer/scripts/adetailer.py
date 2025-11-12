@@ -8,7 +8,7 @@ import traceback
 from collections.abc import Sequence
 from copy import copy
 from functools import partial
-from pathlib import Path
+
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import gradio as gr
@@ -86,21 +86,22 @@ if TYPE_CHECKING:
 PARAMS_TXT = "params.txt"
 
 no_huggingface=False
-adetailer_dir = Path(modules.config.paths_checkpoints[0]).parent / "detection"
+
 def download_yola(name):
     if 'yolov8' in name:
         load_file_from_url(
             url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/YOLO8/'+name+'.pt',
-            model_dir=adetailer_dir,
+            model_dir=modules.config.path_yolo,
             file_name=name+'.pt'
         )
-    return os.path.join(adetailer_dir, name+'.pt')
+    return os.path.join(modules.config.path_yolo, name+'.pt')
 
 #!model_mapping = get_models(
 #!    adetailer_dir,
 #!    huggingface=not no_huggingface,
 #!    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
 #!)
+yolo_model=[]
 yolo_model_list=[
             "deepfashion2_yolov8s-seg",
             "face_yolov8m",
@@ -126,7 +127,7 @@ yolo_model_list=[
     # Получаем имена файлов *.pt (без расширения), нормализованные к str
 existing_pt_names = {
         f.stem  # без расширения, и без пути — только имя
-        for f in adetailer_dir.glob("*.pt")
+        for f in modules.config.path_yolo.glob("*.pt")
         if f.is_file()
     }
 
