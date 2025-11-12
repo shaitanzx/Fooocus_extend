@@ -172,17 +172,13 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
     w = Widgets()
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
 
-    model_choices = (
-        [*webui_info.ad_model_list, "None"]
-        if n == 0
-        else ["None", *webui_info.ad_model_list]
-    )
+    model_choices = [*webui_info.ad_model_list]
 
     with gr.Group():
         with gr.Row(variant="compact"):
             w.ad_tab_enable = gr.Checkbox(
                 label=f"Enable this tab ({ordinal(n + 1)})",
-                value=True,
+                value=True if n==0 esle False,
                 visible=True,
                 elem_id=eid("ad_tab_enable"),
             )
