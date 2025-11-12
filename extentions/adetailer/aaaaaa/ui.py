@@ -379,6 +379,26 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
 
 def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # noqa: PLR0915
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
+    with gr.Group():   
+        with gr.Row():
+            with gr.Column(variant="compact"):
+                w.ad_use_checkpoint = gr.Checkbox(
+                    label="Use separate checkpoint" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_checkpoint"),
+                )
+
+                ckpts = ["Use same checkpoint", *webui_info.checkpoints_list]
+
+                w.ad_checkpoint = gr.Dropdown(
+                    label="ADetailer checkpoint" + suffix(n),
+                    choices=ckpts,
+                    value=ckpts[0],
+                    visible=True,
+                    elem_id=eid("ad_checkpoint"),
+                )
+    return w.ad_checkpoint
 """
     with gr.Group():
         with gr.Row():
@@ -512,27 +532,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     outputs=w.ad_cfg_scale,
                     queue=False,
                 )
-""" 
-    with gr.Group():   
-        with gr.Row():
-            with gr.Column(variant="compact"):
-                w.ad_use_checkpoint = gr.Checkbox(
-                    label="Use separate checkpoint" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_checkpoint"),
-                )
 
-                ckpts = ["Use same checkpoint", *webui_info.checkpoints_list]
-
-                w.ad_checkpoint = gr.Dropdown(
-                    label="ADetailer checkpoint" + suffix(n),
-                    choices=ckpts,
-                    value=ckpts[0],
-                    visible=True,
-                    elem_id=eid("ad_checkpoint"),
-                )
-"""
             with gr.Column(variant="compact"):
                 w.ad_use_vae = gr.Checkbox(
                     label="Use separate VAE" + suffix(n),
@@ -649,9 +649,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 value=False,
                 elem_id=eid("ad_restore_face"),
             )
-"""
-    return w.ad_checkpoint
-"""
+
 def controlnet(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
     cn_models = ["None", "Passthrough", *get_cn_models()]
