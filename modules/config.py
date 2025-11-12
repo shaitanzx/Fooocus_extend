@@ -844,6 +844,8 @@ def update_files():
     model_filenames = get_model_filenames(paths_checkpoints)
     lora_filenames = get_model_filenames(paths_loras)
     vae_filenames = get_model_filenames(path_vae)
+    yolo_filenames = get_model_filenames(str(path_yolo))
+    print('zzzzzzzzzzzzzzzz',yolo_filenames)
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
     return
