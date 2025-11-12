@@ -1776,41 +1776,41 @@ def worker():
                         async_task.adetailer_stats[index] += 1
 
 
+                    if not async_task.only_detect:                    
+                        goals_adetail = ['inpaint']
                     
-                    goals_adetail = ['inpaint']
-                    
 
-                    adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
-                    for n in range(len(masks)):
-                        prompt=adetail_prompt[n]
+                        adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
+                        for n in range(len(masks)):
+                            prompt=adetail_prompt[n]
 
-                        negative=adetail_negative_prompt[n]
-                        if re.match(r"^\s*\[SKIP\]\s*$", prompt):
-                            continue
-                        prompt = prompt.replace("[PROMPT]", async_task.prompt)
-                        negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
-
-                        try:
-                            current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
-                                all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
-                                controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
-                                current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
-                                async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
-                                prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[n]),
-                                preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
-                                use_synthetic_refiner, width, persist_image=persist_image)
-                            async_task.adetailer_stats[index] += 1
-                        except ldm_patched.modules.model_management.InterruptProcessingException:
-                            if async_task.last_stop == 'skip':
-                                print('User skipped')
-                                async_task.last_stop = False
+                            negative=adetail_negative_prompt[n]
+                            if re.match(r"^\s*\[SKIP\]\s*$", prompt):
                                 continue
-                            else:
-                                print('User stopped')
-                                exception_result = 'break'
-                                break
-                        finally:
-                            done_steps_inpainting += adetail_steps
+                            prompt = prompt.replace("[PROMPT]", async_task.prompt)
+                            negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
+
+                            try:
+                                current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
+                                    all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                                    controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                                    current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
+                                    async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
+                                    prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[n]),
+                                    preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
+                                    use_synthetic_refiner, width, persist_image=persist_image)
+                                async_task.adetailer_stats[index] += 1
+                            except ldm_patched.modules.model_management.InterruptProcessingException:
+                                if async_task.last_stop == 'skip':
+                                    print('User skipped')
+                                    async_task.last_stop = False
+                                    continue
+                                else:
+                                    print('User stopped')
+                                    exception_result = 'break'
+                                    break
+                            finally:
+                                done_steps_inpainting += adetail_steps
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
                 del pred
