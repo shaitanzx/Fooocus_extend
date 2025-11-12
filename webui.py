@@ -546,9 +546,7 @@ with shared.gradio_root:
                                                                    inpaint_mask_advanced_options,
                                                                    example_inpaint_mask_dino_prompt_text],
                                                           queue=False, show_progress=False)
-                    with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
-                            adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
-                            only_detect, ad_component,ad_model_dropdowns = adetailer.ui(is_img2img=True)
+
                             
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
@@ -577,6 +575,15 @@ with shared.gradio_root:
                                 enhance_input_image = grh.Image(label='Use with Enhance, skips image generation', source='upload', type='numpy')
                                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/3281" target="_blank">\U0001F4D4 Documentation</a>')
 
+
+
+
+                    with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
+                        with gr.Row():
+                            with gr.Column():
+                                adetail_input_image = gr.Image(label='Use with Adetailer, skips image generation', source='upload', type='numpy',image_mode='RGB')
+                               #! enhance_input_image = grh.Image(label='Use with Enhance, skips image generation', source='upload', type='numpy')
+                                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/3281" target="_blank">\U0001F4D4 Documentation</a>')
                     with gr.Tab(label='Metadata', id='metadata_tab') as metadata_tab:
                         with gr.Column():
                             metadata_input_image = grh.Image(label='For images created by Fooocus', source='upload', type='pil')
@@ -761,7 +768,8 @@ with shared.gradio_root:
                                      example_enhance_mask_dino_prompt_text],
                             queue=False, show_progress=False)
             with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
-                only_detect, ad_component,ad_model_dropdowns = adetailer.ui(is_img2img=True)
+                with gr.Tabs():
+                    only_detect, ad_component,ad_model_dropdowns = adetailer.ui(is_img2img=True)
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
