@@ -823,6 +823,7 @@ with open(config_example_path, "w", encoding="utf-8") as json_file:
 model_filenames = []
 lora_filenames = []
 vae_filenames = []
+yolo_filenames = []
 wildcard_filenames = []
 
 
@@ -837,25 +838,25 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
         files += get_files_from_folder(folder, extensions, name_filter)
 
     return files
-yolo_filenames=[
-            "deepfashion2_yolov8s-seg",
-            "face_yolov8m",
-            "face_yolov8n",
-            "face_yolov8n_v2",
-            "face_yolov8s",
-            "hand_yolov8n",
-            "hand_yolov8s",
-            "person_yolov8m-seg",
-            "person_yolov8n-seg",
-            "person_yolov8s-seg",
-            "yolov8l-worldv2",
-            "yolov8m-worldv2",
-            "yolov8s-worldv2",
-            "yolov8x-worldv2",
-            "mediapipe_face_full",
-            "mediapipe_face_short",
-            "mediapipe_face_mesh",
-            "mediapipe_face_mesh_eyes_only"
+yolo_filenames_default=[
+            "deepfashion2_yolov8s-seg.pt",
+            "face_yolov8m.pt",
+            "face_yolov8n.pt",
+            "face_yolov8n_v2.pt",
+            "face_yolov8s.pt",
+            "hand_yolov8n.pt",
+            "hand_yolov8s.pt",
+            "person_yolov8m-seg.pt",
+            "person_yolov8n-seg.pt",
+            "person_yolov8s-seg.pt",
+            "yolov8l-worldv2.pt",
+            "yolov8m-worldv2.pt",
+            "yolov8s-worldv2.pt",
+            "yolov8x-worldv2.pt",
+            "mediapipe_face_full.pt",
+            "mediapipe_face_short.pt",
+            "mediapipe_face_mesh.pt",
+            "mediapipe_face_mesh_eyes_only.pt"
             ]
 
 def update_files():
@@ -872,7 +873,7 @@ def update_files():
         }
 
     # Удаляем дубли и добавляем новые имена, которых ещё нет в yolo_model_list
-    current_set = set(yolo_filenames)
+    current_set = set(yolo_filenames_default)
     new_models = sorted(existing_pt_names - current_set)  # сортируем для порядка
     if new_models:
         yolo_filenames.extend(new_models)
