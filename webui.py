@@ -1068,7 +1068,7 @@ with shared.gradio_root:
             enhance_checkbox.change(lambda x: gr.update(visible=x), inputs=enhance_checkbox,
                                         outputs=enhance_input_panel, queue=False, show_progress=False, _js=switch_js)
             adetailer_checkbox.change(lambda x: gr.update(visible=x), inputs=adetailer_checkbox,
-                                        outputs=adedtailer_input_panel, queue=False, show_progress=False, _js=switch_js)
+                                        outputs=adetailer_input_panel, queue=False, show_progress=False, _js=switch_js)
 
         with gr.Column(scale=1, visible=modules.config.default_advanced_checkbox) as advanced_column:
             with gr.Tab(label='Settings'):
