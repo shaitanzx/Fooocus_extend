@@ -838,6 +838,8 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
         files += get_files_from_folder(folder, extensions, name_filter)
 
     return files
+
+#zzzzzzzzzzzzzzzz ['deepfashion2_yolov8s-seg.pt', 'face_yolov8m.pt', 'hand_yolov8n.pt', 'hand_yolov8s.pt', 'person_yolov8m-seg.pt', 'deepfashion2_yolov8s-seg', 'face_yolov8m', 'hand_yolov8n', 'hand_yolov8s', 'person_yolov8m-seg']    
 yolo_filenames_default=[
             "deepfashion2_yolov8s-seg.pt",
             "face_yolov8m.pt",
@@ -864,19 +866,8 @@ def update_files():
     model_filenames = get_model_filenames(paths_checkpoints)
     lora_filenames = get_model_filenames(paths_loras)
     vae_filenames = get_model_filenames(path_vae)
-    yolo_filenames = get_model_filenames(str(path_yolo))
-
-    existing_pt_names = {
-        f.stem  # без расширения, и без пути — только имя
-        for f in modules.config.path_yolo.glob("*.pt")
-        if f.is_file()
-        }
-
-    # Удаляем дубли и добавляем новые имена, которых ещё нет в yolo_model_list
-    current_set = set(yolo_filenames_default)
-    new_models = sorted(existing_pt_names - current_set)  # сортируем для порядка
-    if new_models:
-        yolo_filenames.extend(new_models)
+    yolo_from_disk = get_model_filenames(str(path_yolo))
+    yolo_filenames = list(dict.fromkeys(YOLO_DEFAULT_FILENAMES + yolo_from_disk))
 
     print('zzzzzzzzzzzzzzzz',yolo_filenames)
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
