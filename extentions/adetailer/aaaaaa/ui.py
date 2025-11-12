@@ -125,7 +125,7 @@ def adui(
     webui_info: WebuiInfo,
 ):
         states = []
-        infotext_fields = []
+        ad_model_dropdowns = []
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
         only_detect = gr.Checkbox(
                 label=f"Only detect",
@@ -154,18 +154,18 @@ def adui(
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
-                    state = one_ui_group(
+                    state,ad_model_dd = one_ui_group(
                         n=n,
                         is_img2img=is_img2img,
                         webui_info=webui_info,
                     )
-
+                ad_model_dropdowns.append(ad_model_dd)
                 states.append(state)
                 #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
         components = [*states]
-        return only_detect, components
+        return only_detect, components,ad_model_dropdowns
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
@@ -277,7 +277,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
 
     #!infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
 
-    return state #!, infotext_fields
+    return state, w.ad_model #!, infotext_fields
 
 
 def detection(w: Widgets, n: int, is_img2img: bool):

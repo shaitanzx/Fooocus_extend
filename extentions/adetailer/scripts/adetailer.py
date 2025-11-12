@@ -134,11 +134,11 @@ def ui(is_img2img):
             vae_list=vae_list,
         )
 
-        only_detect_tur, components = adui(num_models, is_img2img, webui_info)
+        only_detect_tur, components,ad_model_dropdowns = adui(num_models, is_img2img, webui_info)
         only_detect = only_detect_tur[0]
 
         #!infotext_fields = infotext_fields
-        return only_detect, components
+        return only_detect, components,ad_model_dropdowns
 def sort_bboxes_from_class(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[1]
         sortby_idx = BBOX_SORTBY.index(sortby)

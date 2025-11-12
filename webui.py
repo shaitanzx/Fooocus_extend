@@ -547,7 +547,7 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
                     with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
                             adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
-                            only_detect, ad_component = adetailer.ui(is_img2img=True)
+                            only_detect, ad_component,ad_model_dropdowns = adetailer.ui(is_img2img=True)
                             
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
@@ -834,7 +834,7 @@ with shared.gradio_root:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
                         with gr.Tab(label='ADetailer', id='adetail_tab'):
                             adetail_gen_enable = gr.Checkbox(label='Enabled', value=False)
-                            only_detect_gen, ad_component_gen = adetailer.ui(is_img2img=False)
+                            only_detect_gen, ad_component_gen, _ = adetailer.ui(is_img2img=False)
                           
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
@@ -1600,7 +1600,10 @@ with shared.gradio_root:
 
                 dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
                                 queue=False, show_progress=False)
-
+                def update_ad_model_choices():
+                    model_list = modules.config.yolo_filenames
+                    choices = ["None"] + model_list
+                    return [gr.update(choices=choices) for _ in range(modules.config.default_adetail_tab)]
                 def refresh_files_clicked():
                     modules.config.update_files()
                     results = [gr.update(choices=modules.config.model_filenames)]
@@ -1617,7 +1620,8 @@ with shared.gradio_root:
                 if not args_manager.args.disable_preset_selection:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
-                                    queue=False, show_progress=False)
+                                    queue=False, show_progress=False) \
+                                    .then(update_ad_model_choices,inputs=[],outputs=ad_model_dropdowns)
 
         state_is_generating = gr.State(False)
 
