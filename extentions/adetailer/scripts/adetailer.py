@@ -162,8 +162,8 @@ def ui(is_img2img):
             vae_list=vae_list,
         )
 
-        only_detect, components = adui(num_models, is_img2img, webui_info)
-        
+        only_detect_tur, components = adui(num_models, is_img2img, webui_info)
+        only_detect = only_detect_tur[0]
 
         #!infotext_fields = infotext_fields
         return only_detect, components
