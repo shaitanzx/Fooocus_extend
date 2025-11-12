@@ -1801,9 +1801,6 @@ with shared.gradio_root:
         ctrls += [transper]
         ctrls += [only_detect]
         ctrls += ad_component
-        ctrls += [adetail_gen_enable]
-        ctrls += [only_detect_gen]
-        ctrls += ad_component_gen
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
