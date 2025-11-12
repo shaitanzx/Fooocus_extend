@@ -1733,7 +1733,7 @@ def worker():
         if 'adetail' in goals or adetailer_generator:
             from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
 
-            only_detect, *async_task.ad_componen = async_task.ad_componen
+            
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
