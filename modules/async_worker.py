@@ -1724,7 +1724,7 @@ def worker():
         enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
         exception_result = None
-        if 'adetail' in goals or async_task.enhance_checkbox:
+        if 'adetail' in goals or async_task.adetailer_checkbox:
             from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
 
             
