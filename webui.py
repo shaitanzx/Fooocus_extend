@@ -1608,7 +1608,7 @@ with shared.gradio_root:
 
                 def update_ad_model_choices():
                     models=[gr.update(choices=["None"] + modules.config.yolo_filenamest) for _ in range(modules.config.default_adetail_tab)]
-                    ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)])
+                    ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)]
 
                     return models + ckpt
                     
