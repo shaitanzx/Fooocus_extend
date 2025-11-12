@@ -1628,7 +1628,7 @@ with shared.gradio_root:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
                                     queue=False, show_progress=False) \
-                                    .then(update_ad_model_choices,inputs=[],outputs=[ad_model_dropdowns,ad_ckpt_dropdowns])
+                                    .then(update_ad_model_choices,inputs=[],outputs=ad_model_dropdowns+ad_ckpt_dropdowns)
 
         state_is_generating = gr.State(False)
 
