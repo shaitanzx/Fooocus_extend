@@ -1609,7 +1609,7 @@ with shared.gradio_root:
                     model_list = modules.config.yolo_filenames
                     choices = ["None"] + model_list
                     return [gr.update(choices=choices) for _ in range(modules.config.default_adetail_tab)],
-                    [gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames]) for _ in range(modules.config.default_adetail_tab)],
+                    [gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)],
 
                 def refresh_files_clicked():
                     modules.config.update_files()
