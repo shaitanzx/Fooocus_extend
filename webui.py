@@ -1800,6 +1800,10 @@ with shared.gradio_root:
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
         ctrls += [only_detect]
+        print ('ad_component',ad_component)
+        print ('ad_component_gen',ad_component_gen)
+        print ('only_detect',only_detect)
+        print ('only_detect_gen',only_detect_gen)
         ctrls += ad_component
         ctrls += [adetail_gen_enable]
         ctrls += [only_detect_gen]
