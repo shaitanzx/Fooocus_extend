@@ -1743,7 +1743,7 @@ def worker():
                     args = SimpleNamespace(**arg_s)
 
                     def is_mediapipe_model(args):
-                        return args.ad_model.lower().startswith("mediapipe")
+                        return args.ad_model.lower().removesuffix('.pt').startswith('mediapipe')
                     is_mediapipe = is_mediapipe_model(args)
                     if is_mediapipe:
                         pred = adetailer.mediapipe_predict(args.ad_model, img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
