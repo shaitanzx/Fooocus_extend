@@ -287,7 +287,8 @@ class AsyncTask:
         self.ad_component = [args.pop() for _ in range(default_adetail_tab)]
         self.adetail_input_image = args.pop ()
         self.debugging_adetailer_masks_checkbox=args.pop()
-        self.save_final_adetail_image_only = self.save_final_enhanced_image_only       
+        self.save_final_adetail_image_only = self.save_final_enhanced_image_only 
+        self.adetailer_checkbox = args.pop()      
         self.adetailer_stats = {}
         
 
@@ -1526,7 +1527,7 @@ def worker():
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
-        async_task.should_adetail = ('adetail' in goals or async_task.adetail_checkbox) and (len(async_task.ad_component) > 0)
+        async_task.should_adetail = ('adetail' in goals or async_task.adetailer_checkbox) and (len(async_task.ad_component) > 0)
         if 'vary' in goals:
             async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
                 async_task, async_task.uov_method, denoising_strength, async_task.uov_input_image, switch,
@@ -1614,7 +1615,7 @@ def worker():
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
         
-        if ('adetail' in goals or async_task.adetail_checkbox) and len(async_task.ad_component) != 0:
+        if ('adetail' in goals or async_task.adetailer_checkbox) and len(async_task.ad_component) != 0:
             adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
             all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
 
