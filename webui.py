@@ -547,7 +547,7 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
                     with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
                             adetail_input_image = gr.Image(label='Image', source='upload', type='numpy', height=500,image_mode='RGB')
-                            only_detect, *ad_component = adetailer.ui(is_img2img=True)
+                            only_detect, ad_component = adetailer.ui(is_img2img=True)
                             
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
@@ -834,7 +834,7 @@ with shared.gradio_root:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
                         with gr.Tab(label='ADetailer', id='adetail_tab'):
                             adetail_gen_enable = gr.Checkbox(label='Enabled', value=False)
-                            only_detect_gen, *ad_component_gen = adetailer.ui(is_img2img=False)
+                            only_detect_gen, ad_component_gen = adetailer.ui(is_img2img=False)
                           
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
@@ -1800,10 +1800,10 @@ with shared.gradio_root:
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
         ctrls += [only_detect]
-        ctrls += ad_component
+        ctrls += [ad_component]
         ctrls += [adetail_gen_enable]
         ctrls += [only_detect_gen]
-        ctrls += ad_component_gen
+        ctrls += [ad_component_gen]
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):

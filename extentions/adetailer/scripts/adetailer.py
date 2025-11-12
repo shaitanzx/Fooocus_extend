@@ -163,9 +163,10 @@ def ui(is_img2img):
         )
 
         components = adui(num_models, is_img2img, webui_info)
+        only_detect, *components = components
 
         #!infotext_fields = infotext_fields
-        return components
+        return only_detect, components
 def sort_bboxes_from_class(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[1]
         sortby_idx = BBOX_SORTBY.index(sortby)
