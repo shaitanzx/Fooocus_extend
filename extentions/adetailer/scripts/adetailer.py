@@ -101,41 +101,12 @@ def download_yola(name):
 #!    huggingface=not no_huggingface,
 #!    download_dir=adetailer_dir,  # ← КЛЮЧЕВОЙ параметр
 #!)
-yolo_model=[]
-yolo_model_list=[
-            "deepfashion2_yolov8s-seg",
-            "face_yolov8m",
-            "face_yolov8n",
-            "face_yolov8n_v2",
-            "face_yolov8s",
-            "hand_yolov8n",
-            "hand_yolov8s",
-            "person_yolov8m-seg",
-            "person_yolov8n-seg",
-            "person_yolov8s-seg",
-            "yolov8l-worldv2",
-            "yolov8m-worldv2",
-            "yolov8s-worldv2",
-            "yolov8x-worldv2",
-            "mediapipe_face_full",
-            "mediapipe_face_short",
-            "mediapipe_face_mesh",
-            "mediapipe_face_mesh_eyes_only"
-            ]
+
+
 
 
     # Получаем имена файлов *.pt (без расширения), нормализованные к str
-existing_pt_names = {
-        f.stem  # без расширения, и без пути — только имя
-        for f in modules.config.path_yolo.glob("*.pt")
-        if f.is_file()
-    }
 
-    # Удаляем дубли и добавляем новые имена, которых ещё нет в yolo_model_list
-current_set = set(yolo_model_list)
-new_models = sorted(existing_pt_names - current_set)  # сортируем для порядка
-if new_models:
-        yolo_model_list.extend(new_models)
 
 txt2img_submit_button = img2img_submit_button = None
 txt2img_submit_button = cast(gr.Button, txt2img_submit_button)
@@ -146,7 +117,7 @@ img2img_submit_button = cast(gr.Button, img2img_submit_button)
 #!)
 def ui(is_img2img):
         num_models = default_adetail_tab
-        ad_model_list = yolo_model_list
+        ad_model_list = modules.config.yolo_filenames
         sampler_names = modules.flags.sampler_list
         scheduler_names = modules.flags.scheduler_list
 

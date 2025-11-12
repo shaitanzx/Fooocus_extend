@@ -837,14 +837,46 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
         files += get_files_from_folder(folder, extensions, name_filter)
 
     return files
-
+yolo_filenames=[
+            "deepfashion2_yolov8s-seg",
+            "face_yolov8m",
+            "face_yolov8n",
+            "face_yolov8n_v2",
+            "face_yolov8s",
+            "hand_yolov8n",
+            "hand_yolov8s",
+            "person_yolov8m-seg",
+            "person_yolov8n-seg",
+            "person_yolov8s-seg",
+            "yolov8l-worldv2",
+            "yolov8m-worldv2",
+            "yolov8s-worldv2",
+            "yolov8x-worldv2",
+            "mediapipe_face_full",
+            "mediapipe_face_short",
+            "mediapipe_face_mesh",
+            "mediapipe_face_mesh_eyes_only"
+            ]
 
 def update_files():
-    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets
+    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames
     model_filenames = get_model_filenames(paths_checkpoints)
     lora_filenames = get_model_filenames(paths_loras)
     vae_filenames = get_model_filenames(path_vae)
     yolo_filenames = get_model_filenames(str(path_yolo))
+
+    existing_pt_names = {
+        f.stem  # без расширения, и без пути — только имя
+        for f in modules.config.path_yolo.glob("*.pt")
+        if f.is_file()
+        }
+
+    # Удаляем дубли и добавляем новые имена, которых ещё нет в yolo_model_list
+    current_set = set(yolo_filenames)
+    new_models = sorted(existing_pt_names - current_set)  # сортируем для порядка
+    if new_models:
+        yolo_filenames.extend(new_models)
+
     print('zzzzzzzzzzzzzzzz',yolo_filenames)
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
