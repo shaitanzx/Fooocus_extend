@@ -1522,7 +1522,6 @@ def worker():
         if len(goals) > 0:
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
-            async_task.ad_component=async_task.ad_component_gen
             
         async_task.ad_component = adetailer.enabler(async_task.ad_component)
         
