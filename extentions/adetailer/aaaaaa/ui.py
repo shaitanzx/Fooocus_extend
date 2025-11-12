@@ -164,8 +164,8 @@ def adui(
                 #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
-        components = [only_detect,*states]
-        return components
+        components = [*states]
+        return only_detect, components
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
