@@ -416,6 +416,7 @@ with shared.gradio_root:
             with gr.Row(elem_classes='advanced_check_row'):
                 input_image_checkbox = gr.Checkbox(label='Input Image', value=modules.config.default_image_prompt_checkbox, container=False, elem_classes='min_check')
                 enhance_checkbox = gr.Checkbox(label='Enhance', value=modules.config.default_enhance_checkbox, container=False, elem_classes='min_check')
+                adetailer_checkbox = gr.Checkbox(label='Adetailer', value=modules.config.default_adetailer_checkbox, container=False, elem_classes='min_check')
                 advanced_checkbox = gr.Checkbox(label='Advanced', value=modules.config.default_advanced_checkbox, container=False, elem_classes='min_check')
             with gr.Row(visible=modules.config.default_image_prompt_checkbox) as image_input_panel:
                 with gr.Tabs(selected=modules.config.default_selected_image_input_tab_id):
@@ -759,7 +760,8 @@ with shared.gradio_root:
                             outputs=[enhance_mask_cloth_category, enhance_mask_dino_prompt_text, sam_options,
                                      example_enhance_mask_dino_prompt_text],
                             queue=False, show_progress=False)
-
+            with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
+                only_detect, ad_component,ad_model_dropdowns = adetailer.ui(is_img2img=True)
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
@@ -831,11 +833,7 @@ with shared.gradio_root:
                         with gr.TabItem(label='Photomaker') as photomaker_tab:
                             enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
-                            enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
-                        with gr.Tab(label='ADetailer', id='adetail_tab'):
-                            adetail_gen_enable = gr.Checkbox(label='Enabled', value=False)
-                            only_detect_gen, ad_component_gen, _ = adetailer.ui(is_img2img=False)
-                          
+                            enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()                          
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
@@ -843,13 +841,12 @@ with shared.gradio_root:
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
-                def gen_acc_name(obp,translate, photomaker, instant, adetail, inswapper, codeformer,vector):
+                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
-                        ('Adetailer', adetail),
                         ('Inswapper', inswapper),
                         ('Codeformer', codeformer),
                         ('Vector', vector)
@@ -866,7 +863,6 @@ with shared.gradio_root:
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                adetail_gen_enable.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):

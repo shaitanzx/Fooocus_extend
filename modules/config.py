@@ -428,6 +428,12 @@ default_enhance_checkbox = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, bool),
     expected_type=bool
 )
+default_adetailer_checkbox = get_config_item_or_set_default(
+    key='default_adetailer_checkbox',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
 default_advanced_checkbox = get_config_item_or_set_default(
     key='default_advanced_checkbox',
     default_value=False,
