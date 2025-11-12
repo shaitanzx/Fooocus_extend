@@ -126,6 +126,7 @@ def adui(
 ):
         states = []
         ad_model_dropdowns = []
+        ad_ckpt_dropdown =[]
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
         only_detect = gr.Checkbox(
                 label=f"Only detect",
@@ -154,18 +155,19 @@ def adui(
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
-                    state,ad_model_dd = one_ui_group(
+                    state,ad_model_dd, ad_ckpt_dd = one_ui_group(
                         n=n,
                         is_img2img=is_img2img,
                         webui_info=webui_info,
                     )
                 ad_model_dropdowns.append(ad_model_dd)
+                ad_ckpt_dropdown.append(ad_ckpt_dd)
                 states.append(state)
                 #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
         components = [*states]
-        return only_detect, components,ad_model_dropdowns
+        return only_detect, components,ad_model_dropdowns,ad_ckpt_dropdown
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
@@ -249,11 +251,11 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         ):
             mask_preprocessing(w, n, is_img2img)
 
-        #!with gr.Accordion(
-        #!    "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
-        #!):
-        #!    pass
-        #!    inpainting(w, n, is_img2img, webui_info)
+        with gr.Accordion(
+            "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
+        ):
+            pass
+            w.ad_checkpoint = inpainting(w, n, is_img2img, webui_info)
 
     #!with gr.Group():
     #!    controlnet(w, n, is_img2img)
@@ -273,7 +275,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
 
     #!infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
 
-    return state, w.ad_model #!, infotext_fields
+    return state, w.ad_model, w.ad_checkpoint #!, infotext_fields
 
 
 def detection(w: Widgets, n: int, is_img2img: bool):
@@ -374,10 +376,10 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                 info="None: do nothing, Merge: merge masks, Merge and Invert: merge all masks and invert",
             )
 
-"""
+
 def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # noqa: PLR0915
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
-
+"""
     with gr.Group():
         with gr.Row():
             w.ad_mask_blur = gr.Slider(
@@ -510,7 +512,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     outputs=w.ad_cfg_scale,
                     queue=False,
                 )
-
+""" with gr.Group():   
         with gr.Row():
             with gr.Column(variant="compact"):
                 w.ad_use_checkpoint = gr.Checkbox(
@@ -529,7 +531,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=True,
                     elem_id=eid("ad_checkpoint"),
                 )
-
+"""
             with gr.Column(variant="compact"):
                 w.ad_use_vae = gr.Checkbox(
                     label="Use separate VAE" + suffix(n),
@@ -647,6 +649,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 elem_id=eid("ad_restore_face"),
             )
 """
+    return w.ad_checkpoint
 """
 def controlnet(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
