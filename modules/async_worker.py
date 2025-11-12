@@ -1781,7 +1781,7 @@ def worker():
 
                     adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                     for n in range(len(masks)):
-                      if not only_detect:
+                      if not async_task.only_detect:
                         prompt=adetail_prompt[n]
 
                         negative=adetail_negative_prompt[n]
