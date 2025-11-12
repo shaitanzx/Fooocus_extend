@@ -1765,6 +1765,9 @@ def worker():
                                 )
 
                     masks = adetailer.pred_preprocessing(pred, args)
+                    if len(masks) == 0:
+                        print(f'[ADetailer] No detected, skipping')
+                        continue
 
                     if async_task.debugging_adetailer_masks_checkbox or only_detect:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
@@ -1772,16 +1775,13 @@ def worker():
                                      async_task.disable_intermediate_results)
                         async_task.adetailer_stats[index] += 1
 
-                    if len(masks) == 0:
-                        print(f'[ADetailer] No detected, skipping')
-                        continue
+
                     
                     goals_adetail = ['inpaint']
                     
 
                     adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                     for n in range(len(masks)):
-                      if not async_task.only_detect:
                         prompt=adetail_prompt[n]
 
                         negative=adetail_negative_prompt[n]
