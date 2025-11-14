@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import gradio as gr
-
+import modules
 #!from aaaaaa.conditional import InputAccordion
 #!from extentions.adetailer.adetailer import ADETAILER, __version__
 from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
@@ -395,7 +395,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
                 w.ad_inpaint_enginet = gr.Dropdown(
                     label="Inpaint Engine" + suffix(n),
-                    choices=flags.inpaint_engine_versions,
+                    choices=modules.flags.inpaint_engine_versions,
                     value=modules.config.default_inpaint_engine_version,
                     visible=True,
                     interactive=False,
