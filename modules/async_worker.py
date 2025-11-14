@@ -1769,7 +1769,7 @@ def worker():
                         )
                     if args.ad_use_checkpoint and args.ad_checkpoint != "Use same checkpoint":
                         async_task.base_model_name = args.ad_checkpoint
-                    if args.ad_use_sample:
+                    if args.ad_use_sampler:
                         if args.ad_sampler != "Use same sampler":
                             async_task.sampler_name = args.ad_sampler
                         if args.ad_scheduler != "Use same scheduler":
