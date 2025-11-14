@@ -452,7 +452,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
 
-     with gr.Group():
+    with gr.Group():
         with gr.Row():
             with gr.Column(variant="compact"):
                 w.ad_use_cfg_scale = gr.Checkbox(
