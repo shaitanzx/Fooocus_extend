@@ -400,7 +400,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=True,
                     interactive=False,
                     elem_id=eid("ad_inpaint_engine"),
-                    interactive=False
                 )
                 w.ad_use_inpaint_engin.change(
                     lambda value: (gr_interactive(value)),
