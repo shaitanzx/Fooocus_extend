@@ -1788,7 +1788,7 @@ def worker():
                         async_task.inpaint_engine  = args.ad_inpaint_engine
                     if args.ad_use_cfg_scale :
                         async_task.cfg_scale  = args.ad_cfg_scale
-                    async_task.inpaint_disable_initial_latent = args.ad_disable_laten
+                    async_task.inpaint_disable_initial_latent = args.ad_disable_latent
                     if async_task.debugging_adetailer_masks_checkbox or async_task.only_detect:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
                         yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
