@@ -125,12 +125,11 @@ def adui(
     webui_info: WebuiInfo,
 ):
         states = []
-<<<<<<< HEAD
+
         #!infotext_fields = []
-=======
         ad_model_dropdowns = []
         ad_ckpt_dropdown =[]
->>>>>>> ca15901f8cb36b2dd9854417454dee18e11b1a8b
+
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
         only_detect = gr.Checkbox(
                 label=f"Only detect",
