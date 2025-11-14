@@ -381,6 +381,91 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
 
 def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # noqa: PLR0915
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
+    with gr.Group():
+        with gr.Row():
+
+
+
+            with gr.Column(variant="compact"):
+                w.ad_use_inpaint_engine = gr.Checkbox(
+                    label="ADetailer use separate Inpaint Engine" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_inpaint_engine"),
+                )
+                w.ad_inpaint_enginet = gr.Dropdown(
+                    label="Inpaint Engine" + suffix(n),
+                    choices=flags.inpaint_engine_versions,
+                    value=modules.config.default_inpaint_engine_version,
+                    visible=True,
+                    elem_id=eid("ad_inpaint_engine"),
+                    interactive=False
+                )
+                w.ad_use_inpaint_engin.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_inpaint_engin,
+                    outputs=w.ad_inpaint_enginet,
+                    queue=False,
+                )
+
+
+
+
+
+
+            with gr.Column(variant="compact"):
+                w.ad_use_denoising_strength = gr.Checkbox(
+                    label="ADetailer use separate denoising strength" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_denoising_strength"),
+                )
+                w.ad_denoising_strength = gr.Slider(
+                    label="Inpaint denoising strength" + suffix(n),
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=1,
+                    visible=True,
+                    interactive=False
+                    elem_id=eid("ad_denoising_strength"),
+                )
+                w.ad_use_denoising_strength.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_denoising_strength,
+                    outputs=w.ad_denoising_strength,
+                    queue=False,
+                )
+            with gr.Column(variant="compact"):
+                w.ad_use_resp_field = gr.Checkbox(
+                    label="ADetailer use separate Respective Field" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_resp_field"),
+                )
+                w.ad_resp_field = gr.Slider(
+                    label="Inpaint Respective Field" + suffix(n),
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=0.618,
+                    visible=True,
+                    interactive=False
+                    elem_id=eid("ad_resp_field"),
+                )
+                w.ad_use_resp_field.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_resp_field,
+                    outputs=w.ad_resp_field,
+                    queue=False,
+                )
+
+
+
+
+
+
+
     with gr.Group():   
         with gr.Row():
             with gr.Column(variant="compact"):
@@ -464,15 +549,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 elem_id=eid("ad_mask_blur"),
             )
 
-            w.ad_denoising_strength = gr.Slider(
-                label="!!!!!!!!!!!!!!!Inpaint denoising strength" + suffix(n),
-                minimum=0.0,
-                maximum=1.0,
-                step=0.01,
-                value=0.4,
-                visible=True,
-                elem_id=eid("ad_denoising_strength"),
-            )
 
         with gr.Row():
             with gr.Column(variant="compact"):

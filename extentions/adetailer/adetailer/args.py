@@ -232,7 +232,12 @@ _all_args = [
     ("ad_mask_merge_invert", "ADetailer mask merge invert"),
     
     #!("ad_mask_blur", "ADetailer mask blur"),
-    #!("ad_denoising_strength", "ADetailer denoising strength"),
+    ("ad_use_inpaint_engine", "ADetailer use separate Inpaint Engine"),
+    ("ad_inpaint_engine", "Inpaint Engine"),
+    ("ad_use_denoising_strength", "ADetailer use separate denoising strength"),
+    ("ad_denoising_strength", "ADetailer denoising strength"),
+    ("ad_use_resp_field", "ADetailer use separate Respective Field"),
+    ("ad_resp_field", "ADetailer Respective Field"),
     #!("ad_inpaint_only_masked", "ADetailer inpaint only masked"),
     #!("ad_inpaint_only_masked_padding", "ADetailer inpaint padding"),
     #!("ad_use_inpaint_width_height", "ADetailer use inpaint width height"),
