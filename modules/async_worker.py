@@ -1733,6 +1733,7 @@ def worker():
                 adetailer_image_start_time = time.perf_counter()
 
             # inpaint for all other tabs
+                print ('zzzzzz',async_task.ad_component)
                 for n, arg_s in enumerate(async_task.ad_component):
                     current_task_id += 1
                     current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_inpainting))
