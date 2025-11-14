@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 # Теперь можно использовать абсолютный импорт
-import modules
+from modules import config
 
 def get_civitai_api_key():
     file_path = 'civitai_api_key.txt'
@@ -37,8 +37,8 @@ ch_download_examples=False
 ch_nsfw_threshold=False
 ch_dl_webui_metadata=True
 ch_proxy=""
-path_ckp=modules.config.paths_checkpoints[0]
-path_lora=modules.config.paths_loras[0]
-path_emb=modules.config.path_embeddings
-path_vae=modules.config.path_vae
-path_detect = str(modules.config.path_yolo)
+path_ckp=config.paths_checkpoints[0]
+path_lora=config.paths_loras[0]
+path_emb=config.path_embeddings
+path_vae=config.path_vae
+path_detect = str(Path(path_ckp).parent / "detection")
