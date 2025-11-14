@@ -232,6 +232,7 @@ _all_args = [
     ("ad_mask_merge_invert", "ADetailer mask merge invert"),
     
     #!("ad_mask_blur", "ADetailer mask blur"),
+    ("ad_disable_latent", "ADetailer Disable initial latent"),
     ("ad_use_inpaint_engine", "ADetailer use separate Inpaint Engine"),
     ("ad_inpaint_engine", "Inpaint Engine"),
     ("ad_use_denoising_strength", "ADetailer use separate denoising strength"),

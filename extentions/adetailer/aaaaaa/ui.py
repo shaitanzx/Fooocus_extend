@@ -411,6 +411,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=True,
                     elem_id=eid("ad_use_denoising_strength"),
                 )
+                w.ad_disable_latent = gr.Checkbox(
+                    label="ADetailer Disable initial latent" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_disable_latent"),
+                )
                 w.ad_denoising_strength = gr.Slider(
                     label="Inpaint denoising strength" + suffix(n),
                     minimum=0.0,
