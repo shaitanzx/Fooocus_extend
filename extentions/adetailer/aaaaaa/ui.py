@@ -398,6 +398,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     choices=flags.inpaint_engine_versions,
                     value=modules.config.default_inpaint_engine_version,
                     visible=True,
+                    interactive=False,
                     elem_id=eid("ad_inpaint_engine"),
                     interactive=False
                 )
@@ -427,7 +428,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     step=0.01,
                     value=1,
                     visible=True,
-                    interactive=False
+                    interactive=False,
                     elem_id=eid("ad_denoising_strength"),
                 )
                 w.ad_use_denoising_strength.change(
@@ -450,7 +451,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     step=0.01,
                     value=0.618,
                     visible=True,
-                    interactive=False
+                    interactive=False,
                     elem_id=eid("ad_resp_field"),
                 )
                 w.ad_use_resp_field.change(
