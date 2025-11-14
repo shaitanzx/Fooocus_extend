@@ -393,7 +393,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=True,
                     elem_id=eid("ad_use_inpaint_engine"),
                 )
-                w.ad_inpaint_enginet = gr.Dropdown(
+                w.ad_inpaint_engine = gr.Dropdown(
                     label="Inpaint Engine" + suffix(n),
                     choices=modules.flags.inpaint_engine_versions,
                     value=modules.config.default_inpaint_engine_version,
@@ -401,10 +401,10 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     interactive=False,
                     elem_id=eid("ad_inpaint_engine"),
                 )
-                w.ad_use_inpaint_engin.change(
+                w.ad_use_inpaint_engine.change(
                     lambda value: (gr_interactive(value)),
-                    inputs=w.ad_use_inpaint_engin,
-                    outputs=w.ad_inpaint_enginet,
+                    inputs=w.ad_use_inpaint_engine,
+                    outputs=w.ad_inpaint_engine,
                     queue=False,
                 )
 
