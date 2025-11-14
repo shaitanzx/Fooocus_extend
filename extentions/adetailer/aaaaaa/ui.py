@@ -399,6 +399,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     value=ckpts[0],
                     visible=True,
                     elem_id=eid("ad_checkpoint"),
+                    interactive=False
                 )
                 w.ad_use_checkpoint.change(
                     lambda value: (gr_interactive(value)),
@@ -426,6 +427,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     value=sampler_names[0],
                     visible=True,
                     elem_id=eid("ad_sampler"),
+                    interactive=False
                 )
 
                 scheduler_names = [
@@ -438,6 +440,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     value=scheduler_names[0],
                     visible=len(scheduler_names) > 1,
                     elem_id=eid("ad_scheduler"),
+                    interactive=False
                 )
 
                 w.ad_use_sampler.change(
