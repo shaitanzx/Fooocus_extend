@@ -1762,6 +1762,18 @@ def worker():
                     if len(masks) == 0:
                         print(f'[ADetailer] No detected, skipping')
                         continue
+                    aditail_copy = (
+                        async_task.base_model_name,
+                        async_task.sampler_name,
+                        async_task.scheduler_name,
+                        )
+                    if args.ad_use_checkpoint and args.ad_checkpoint != "Use same checkpoint":
+                        async_task.base_model_name = args.ad_checkpoint
+                    if args.ad_use_sample:
+                        if args.ad_sampler != "Use same sampler":
+                            async_task.sampler_name = args.ad_sampler
+                        if args.ad_scheduler != "Use same scheduler":
+                            async_task.scheduler_name = args.ad_scheduler
 
                     if async_task.debugging_adetailer_masks_checkbox or async_task.only_detect:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
@@ -1805,6 +1817,8 @@ def worker():
                                     break
                             finally:
                                 done_steps_inpainting += adetail_steps
+
+                    async_task.base_model_name, async_task.sampler_name, async_task.scheduler_name = aditail_copy
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
                 del pred
