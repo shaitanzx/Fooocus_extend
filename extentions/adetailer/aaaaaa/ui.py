@@ -400,6 +400,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=True,
                     elem_id=eid("ad_checkpoint"),
                 )
+                w.ad_use_checkpoint.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_checkpoint,
+                    outputs=w.ad_checkpoint,
+                    queue=False,
+                )
         with gr.Row(), gr.Column(variant="compact"):
             w.ad_use_sampler = gr.Checkbox(
                 label="Use separate sampler" + suffix(n),
