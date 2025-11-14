@@ -1768,7 +1768,9 @@ def worker():
                         async_task.scheduler_name,
                         async_task.inpaint_strength,
                         async_task.inpaint_respective_field,
-                        async_task.inpaint_engine 
+                        async_task.inpaint_engine,
+                        async_task.cfg_scale,
+                        async_task.clip_skip 
                         )
                     if args.ad_use_checkpoint and args.ad_checkpoint != "Use same checkpoint":
                         async_task.base_model_name = args.ad_checkpoint
@@ -1783,6 +1785,10 @@ def worker():
                         async_task.inpaint_respective_field  = args.ad_resp_field
                     if args.ad_use_inpaint_engine :
                         async_task.inpaint_engine  = args.ad_inpaint_engine
+                    if args.ad_use_cfg_scale :
+                        async_task.cfg_scale  = args.ad_cfg_scale
+                    if args.ad_use_clip_skip :
+                        async_task.clip_skip   = args.ad_clip_skip
                     if async_task.debugging_adetailer_masks_checkbox or async_task.only_detect:
                         async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
                         yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
@@ -1826,7 +1832,7 @@ def worker():
                             finally:
                                 done_steps_inpainting += adetail_steps
 
-                    async_task.base_model_name, async_task.sampler_name, async_task.scheduler_name,async_task.inpaint_strength,async_task.inpaint_respective_field,async_task.inpaint_engine = aditail_copy
+                    async_task.base_model_name, async_task.sampler_name, async_task.scheduler_name,async_task.inpaint_strength,async_task.inpaint_respective_field,async_task.inpaint_engine,async_task.cfg_scale,async_task.clip_skip = aditail_copy
                     adetail_task_time = time.perf_counter() - adetailer_task_start_time
                     print(f'ADetailer time: {adetail_task_time:.2f} seconds')
                 del pred

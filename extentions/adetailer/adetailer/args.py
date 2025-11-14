@@ -238,6 +238,11 @@ _all_args = [
     ("ad_denoising_strength", "ADetailer denoising strength"),
     ("ad_use_resp_field", "ADetailer use separate Respective Field"),
     ("ad_resp_field", "ADetailer Respective Field"),
+    ("ad_use_cfg_scale", "ADetailer use separate CFG scale"),
+    ("ad_cfg_scale", "ADetailer CFG scale"),
+    ("ad_use_clip_skip", "ADetailer use separate CLIP skip"),
+    ("ad_clip_skip", "ADetailer CLIP skip"),
+
     #!("ad_inpaint_only_masked", "ADetailer inpaint only masked"),
     #!("ad_inpaint_only_masked_padding", "ADetailer inpaint padding"),
     #!("ad_use_inpaint_width_height", "ADetailer use inpaint width height"),
@@ -245,8 +250,7 @@ _all_args = [
     #!("ad_inpaint_height", "ADetailer inpaint height"),
     #!("ad_use_steps", "ADetailer use separate steps"),
     #!("ad_steps", "ADetailer steps"),
-    #!("ad_use_cfg_scale", "ADetailer use separate CFG scale"),
-    #!("ad_cfg_scale", "ADetailer CFG scale"),
+
     ("ad_use_checkpoint", "ADetailer use separate checkpoint"),
     ("ad_checkpoint", "ADetailer checkpoint"),
     #!("ad_use_vae", "ADetailer use separate VAE"),
@@ -256,8 +260,7 @@ _all_args = [
     ("ad_scheduler", "ADetailer scheduler"),
     #!("ad_use_noise_multiplier", "ADetailer use separate noise multiplier"),
     #!("ad_noise_multiplier", "ADetailer noise multiplier"),
-    #!("ad_use_clip_skip", "ADetailer use separate CLIP skip"),
-    #!("ad_clip_skip", "ADetailer CLIP skip"),
+
     #!("ad_restore_face", "ADetailer restore face"),
     #!("ad_controlnet_model", "ADetailer ControlNet model"),
     #!("ad_controlnet_module", "ADetailer ControlNet module"),

@@ -383,9 +383,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
     with gr.Group():
         with gr.Row():
-
-
-
             with gr.Column(variant="compact"):
                 w.ad_use_inpaint_engine = gr.Checkbox(
                     label="ADetailer use separate Inpaint Engine" + suffix(n),
@@ -407,12 +404,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     outputs=w.ad_inpaint_engine,
                     queue=False,
                 )
-
-
-
-
-
-
             with gr.Column(variant="compact"):
                 w.ad_use_denoising_strength = gr.Checkbox(
                     label="ADetailer use separate denoising strength" + suffix(n),
@@ -461,8 +452,59 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
 
+     with gr.Group():
+        with gr.Row():
+            with gr.Column(variant="compact"):
+                w.ad_use_cfg_scale = gr.Checkbox(
+                    label="ADetailer use separate CFG scale" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_cfg_scale"),
+                )
+                w.ad_cfg_scale = gr.Dropdown(
+                    label="ADetailer CFG scale" + suffix(n),
+                    minimum=0.0,
+                    maximum=30.0,
+                    step=0.5,
+                    value=7.0,
+                    visible=True,
+                    interactive=False,
+                    elem_id=eid("ad_cfg_scale"),
+                )
+                w.ad_use_cfg_scale.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_cfg_scale,
+                    outputs=w.ad_cfg_scale,
+                    queue=False,
+                )
 
 
+
+            with gr.Column(variant="compact"):
+                w.ad_use_clip_skip = gr.Checkbox(
+                    label="Use separate CLIP skip" + suffix(n),
+                    value=False,
+                    visible=True,
+                    interactiv=False,
+                    elem_id=eid("ad_use_clip_skip"),
+                )
+
+                w.ad_clip_skip = gr.Slider(
+                    label="ADetailer CLIP skip" + suffix(n),
+                    minimum=1,
+                    maximum=12,
+                    step=1,
+                    value=1,
+                    visible=True,
+                    elem_id=eid("ad_clip_skip"),
+                )
+
+                w.ad_use_clip_skip.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_clip_skip,
+                    outputs=w.ad_clip_skip,
+                    queue=False,
+                )
 
 
 
@@ -636,30 +678,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     queue=False,
                 )
 
-            with gr.Column(variant="compact"):
-                w.ad_use_cfg_scale = gr.Checkbox(
-                    label="!!!!!!!!!!!!!!!!!!!!Use separate CFG scale" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_cfg_scale"),
-                )
 
-                w.ad_cfg_scale = gr.Slider(
-                    label="!!!!!!!!!!!!!!!!!!!!!!!!!!ADetailer CFG scale" + suffix(n),
-                    minimum=0.0,
-                    maximum=30.0,
-                    step=0.5,
-                    value=7.0,
-                    visible=True,
-                    elem_id=eid("ad_cfg_scale"),
-                )
-
-                w.ad_use_cfg_scale.change(
-                    gr_interactive,
-                    inputs=w.ad_use_cfg_scale,
-                    outputs=w.ad_cfg_scale,
-                    queue=False,
-                )
 
             with gr.Column(variant="compact"):
                 w.ad_use_vae = gr.Checkbox(
@@ -706,30 +725,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     queue=False,
                 )
 
-            with gr.Column(variant="compact"):
-                w.ad_use_clip_skip = gr.Checkbox(
-                    label="!!!!!!!!!!!!!!Use separate CLIP skip" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_clip_skip"),
-                )
 
-                w.ad_clip_skip = gr.Slider(
-                    label="!!!!!!!!!!!!!!!ADetailer CLIP skip" + suffix(n),
-                    minimum=1,
-                    maximum=12,
-                    step=1,
-                    value=1,
-                    visible=True,
-                    elem_id=eid("ad_clip_skip"),
-                )
-
-                w.ad_use_clip_skip.change(
-                    gr_interactive,
-                    inputs=w.ad_use_clip_skip,
-                    outputs=w.ad_clip_skip,
-                    queue=False,
-                )
 
         with gr.Row(), gr.Column(variant="compact"):
             w.ad_restore_face = gr.Checkbox(
