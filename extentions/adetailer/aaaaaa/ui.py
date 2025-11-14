@@ -461,7 +461,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     visible=True,
                     elem_id=eid("ad_use_cfg_scale"),
                 )
-                w.ad_cfg_scale = gr.Dropdown(
+                w.ad_cfg_scale =  gr.Slider(
                     label="ADetailer CFG scale" + suffix(n),
                     minimum=0.0,
                     maximum=30.0,
