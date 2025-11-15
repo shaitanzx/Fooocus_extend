@@ -129,7 +129,7 @@ def ui_module():
                 with gr.Box():
                     with gr.Group():
                         with gr.Row():
-                            poKeepPnm = gr.Checkbox(label="Keep temp images", value=False)
+                            poKeepPnm = gr.Checkbox(label="Save temp images", value=False)
                             poThreshold = gr.Slider(label="Threshold", minimum=0.0, maximum=1.0, step=0.05, value=0.5,interactive=True)
     with gr.Row():
         start = gr.Button(value='Start vectorization')
