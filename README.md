@@ -284,7 +284,8 @@ The full analog of this module in the “in generation” panel, unlike which yo
 
 **Civitai Helper**
 
-![014](https://github.com/user-attachments/assets/27814499-2c24-4421-a4f9-0c3503b5f66b)
+<img width="1180" height="2585" alt="image" src="https://github.com/user-attachments/assets/62c3a4ab-2423-47b4-9f2c-c65586ded0e9" />
+
 
 
 
