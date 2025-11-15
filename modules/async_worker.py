@@ -562,7 +562,7 @@ def worker():
 
                 _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
-                if not async_task.poKeepPnm:
+                if async_task.poKeepPnm:
                     image_png = np.array(image)
                     imgs.append(image_png)
 
