@@ -549,9 +549,9 @@ def worker():
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
-
+        number_for_vector = int(async_task.codeformer_temp) 
         if async_task.poDoVector:
-            image = Image.fromarray(imgs[0])
+            image = Image.fromarray(imgs[number_for_vector])
             if async_task.poTransPNG:
                 progressbar(async_task, current_progress, f'Transparenting image ...')
                 image = vector.trans(image,async_task.poTransPNGQuant,async_task.poTransPNGEps)

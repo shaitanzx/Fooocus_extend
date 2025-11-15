@@ -190,7 +190,7 @@ def codeformer_process(image,face_align,background_enhance,face_upsample,upscale
             return codeform_array
         else:
             if codeformer_temp:
-                return [image,np.array(restored_img)]
+                return image.append(np.array(restored_img))
             else:
                 return np.array(restored_img)
 
