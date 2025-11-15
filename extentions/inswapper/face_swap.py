@@ -74,6 +74,7 @@ def inswapper(generator):
     def clear_single(image):
         return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
     def single_image(single_upload):
+        print('zzzzzzzzz')
         if len(single_upload) == 1:
             return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
         else:
