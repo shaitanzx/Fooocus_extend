@@ -844,7 +844,8 @@ with shared.gradio_root:
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
                         with gr.TabItem(label='CodeFormer'):
-                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
+                            #!codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
+                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gui(True)
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
@@ -1023,7 +1024,8 @@ with shared.gradio_root:
                   with gr.TabItem(label='Inswapper'):
                     face_swap.inswapper_gui2()
                   with gr.TabItem(label='CodeFormer'):
-                    codeformer.codeformer_gen_gui2()
+                    #!codeformer.codeformer_gen_gui2()
+                    codeformer.codeformer_gui(False)
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
                   with gr.TabItem(label='Vector'):
