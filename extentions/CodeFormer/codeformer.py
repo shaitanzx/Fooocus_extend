@@ -226,6 +226,7 @@ def codeformer_gui(generator):
             codeformer_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
             codeformer_background_enhance=gr.Checkbox(label="Background Enchanced", value=True)
             codeformer_face_upsample=gr.Checkbox(label="Face Upsample", value=True)
+            codeformer_temp=gr.Checkbox(label="Keep temp image", value=False, visible=generator)
         with gr.Column():
             codeformer_upscale = gr.Slider(label='Upscale', minimum=1.0, maximum=4.0, step=1.0, value=1,interactive=True)
             codeformer_fidelity =gr.Slider(label='Codeformer_Fidelity', minimum=0, maximum=1, value=0.5, step=0.01, info='0 for better quality, 1 for better identity (default=0.5)')
@@ -245,4 +246,4 @@ def codeformer_gui(generator):
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)   
-    return codeformer_gen_enabled,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity 
+    return codeformer_gen_enabled,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity,codeformer_temp 
