@@ -537,6 +537,7 @@ def worker():
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
+        print('zzzzzzzz',type(imgs))
         if async_task.inswapper_enabled:
             image_temp=imgs
             progressbar(async_task, current_progress, 'inswapper in progress ...')
