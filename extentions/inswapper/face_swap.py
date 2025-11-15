@@ -236,4 +236,4 @@ def inswapper(generator):
               .then(fn=single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False) \
               .then(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=inswap_start)
-    return inswapper_enabled,inswappper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image
+    return inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image
