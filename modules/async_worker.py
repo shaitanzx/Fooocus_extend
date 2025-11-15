@@ -537,21 +537,17 @@ def worker():
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
-        if async_task.inswapper_enabled:
-            image_temp=imgs[:]
+        if async_task.inswapper_enabled:            
             progressbar(async_task, current_progress, 'inswapper in progress ...')
-            imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
-            if async_task.inswapper_temp:
-                imgs.insert(-1, image_temp[-1])
-
+            temp_imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
+            imgs[-1 if not async_task.inswapper_temp else len(imgs):] = temp_imgs
+            
         if async_task.codeformer_gen_enabled:
             progressbar(async_task, current_progress, 'CodeFormer in progress ...')
-            image_temp=imgs[:]
-            imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
+            temp_imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
                     async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
                     async_task.codeformer_gen_fidelity)
-            if async_task.codeformer_temp:
-                imgs.insert(-1, image_temp[-1])
+            imgs[-1 if not async_task.codeformer_temp else len(imgs):] = temp_imgs
 
         
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
