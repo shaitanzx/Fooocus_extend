@@ -105,7 +105,7 @@ def download_yola(name):
 
 
 
-    # Получаем имена файлов *.pt (без расширения), нормализованные к str
+
 
 
 txt2img_submit_button = img2img_submit_button = None

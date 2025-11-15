@@ -169,6 +169,8 @@ def adui(
 
     # components: [bool, bool, dict, dict, ...]
         components = [*states]
+        with gr.Row():
+            gr.HTML('* \"ADetailer\" is powered by Bing-su. <a href="https://github.com/Bing-su/adetailer" target="_blank">\U0001F4D4 Document</a>')
         return only_detect, components,ad_model_dropdowns,ad_ckpt_dropdown
 
 
