@@ -546,7 +546,7 @@ def worker():
             imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
                     async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
                     async_task.codeformer_gen_fidelity)
-            if codeformer_gen_enabled:
+            if async_task.codeformer_temp:
                 imgs.insert(-1, image_temp[-1])
 
         
