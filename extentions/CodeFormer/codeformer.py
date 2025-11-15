@@ -65,7 +65,7 @@ def get_image(input_data: Union[list, np.ndarray]) -> np.ndarray:
         
         return input_data,False
 
-def codeformer_process(image,face_align,background_enhance,face_upsample,upscale,codeformer_fidelity,codeformer_temp=False):
+def codeformer_process(image,face_align,background_enhance,face_upsample,upscale,codeformer_fidelity):
     codeform_array=[]
     check_ckpts()
     upsampler = set_realesrgan()
@@ -189,10 +189,7 @@ def codeformer_process(image,face_align,background_enhance,face_upsample,upscale
         if generator:
             return codeform_array
         else:
-            if codeformer_temp:
-                return image.append(np.array(restored_img))
-            else:
-                return np.array(restored_img)
+            return np.array(restored_img)
 
     except Exception as error:
         print('Global exception', error)
@@ -210,7 +207,7 @@ def process(codeformer_preface,codeformer_background_enhance,codeformer_face_ups
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         image=np.array(img)
-        img_cf=Image.fromarray(codeformer_process(image,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity,False))
+        img_cf=Image.fromarray(codeformer_process(image,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity))
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_cf'+ext
         img_cf.save(filename)
