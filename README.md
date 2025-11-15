@@ -127,7 +127,9 @@ Enhance non-face region - enhance non-face parts of the image
 **Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 7 minutes.**
 
 **Inswapper**
-![image](https://github.com/user-attachments/assets/3399327d-0fe4-46cc-8f34-430e94ab7910)
+
+<img width="746" height="381" alt="image" src="https://github.com/user-attachments/assets/138962ee-5dda-4e61-9b3d-24879922de99" />
+
 
 This module is also intended for face replacement.
 
@@ -136,6 +138,8 @@ Source Image Index - index of the face in the reference image. Faces are numbere
 Target Image Index - index of the face in the output image. This is the index of the face to be replaced in the output image. If you specify -1, all faces will be replaced.
 
 Source Face Image - image with face
+
+Sace input image - saves the input image from the previous iteration (generation or previous Extention)
 
 **CodeFormer**
 
