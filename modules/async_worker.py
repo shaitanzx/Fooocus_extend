@@ -212,6 +212,7 @@ class AsyncTask:
         self.inswapper_source_image_indicies = args.pop()
         self.inswapper_target_image_indicies = args.pop()
         self.inswapper_source_image = args.pop()
+        self.inswapper_temp = args.pop()
         self.codeformer_gen_enabled = args.pop()
         self.codeformer_gen_preface = args.pop()
         self.codeformer_gen_background_enhance = args.pop()
@@ -537,8 +538,11 @@ def worker():
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
         if async_task.inswapper_enabled:
+            image_temp=imgs
             progressbar(async_task, current_progress, 'inswapper in progress ...')
             imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
+            if async_task.inswapper_temp:
+                imgs.insert(-1, image_temp[-1])
 
         if async_task.codeformer_gen_enabled:
             progressbar(async_task, current_progress, 'CodeFormer in progress ...')

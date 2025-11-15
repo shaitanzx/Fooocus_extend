@@ -175,6 +175,7 @@ def inswapper(generator):
             inswapper_target_image_indicies = gr.Text(label = "Target Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
         with gr.Column():
             inswapper_source_image = grh.Image(label='Source Face Image', source='upload', type='numpy')
+            inswapper_temp = gr.Checkbox(label="Save input image", value=False)
     with gr.Row(visible=not generator):
         with gr.Column():
             with gr.Row():
@@ -236,4 +237,4 @@ def inswapper(generator):
               .then(fn=single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False) \
               .then(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=inswap_start)
-    return inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image
+    return inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp
