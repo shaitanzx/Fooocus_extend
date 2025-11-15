@@ -137,7 +137,8 @@ Source Face Image - image with face
 
 **CodeFormer**
 
-![image](https://github.com/user-attachments/assets/512eb538-1923-439d-ad2a-826d7594e49e)
+<img width="745" height="247" alt="image" src="https://github.com/user-attachments/assets/8056fb9a-28e3-43ee-8166-4b4330f9dae8" />
+
 
 Face enhancement module with upscale capability
 
@@ -150,6 +151,8 @@ Face Upsample - adjust reference face to the size of the input image face
 Upscale - image enlargement
 
 Codeformer_Fidelity - signability coefficient, inversely proportional to quality
+
+Sace input image - saves the input image from the previous iteration (generation or previous Extention)
 
 **Vector**
 
