@@ -42,6 +42,7 @@ Let's look at everything in order.
 15. Seamless tiling
 16. Transparency - generating images on a transparent background
 17. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
+18. Adetailer - extension for automatic masking and inpainting
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -461,6 +462,39 @@ Off - uses the standard CFG without adjustments;
 CFG rescale - reduces artifacts at high Guidance Scale values by rescaling the guidance signal;
 CFG Mimicking from TSNR -  adaptively adjusts guidance strength based on the noise level at each diffusion step, improving image quality and coherence.
 
+**ADetailer**
+
+<img width="830" height="965" alt="image" src="https://github.com/user-attachments/assets/30c8ea16-5c00-46f1-8d3e-740338ea1705" />
+
+
+| Model, Prompts                    |                                                                                    |                                                                                                                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ADetailer model                   | Determine what to detect.                                                          |                                                                                                                                      |
+| ADetailer model classes           | Comma separated class names to detect. only available when using YOLO World models | If blank, use default values.<br/>default = [COCO 80 classes](https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco.yaml) |
+| ADetailer prompt, negative prompt | Prompts and negative prompts to apply                                              | If left blank, it will use the same as the input.                                                                                                      |
+
+
+| Detection                            |                                                                                              |              |
+| ------------------------------------ | -------------------------------------------------------------------------------------------- | ------------ |
+| Detection model confidence threshold | Only objects with a detection model confidence above this threshold are used for inpainting. |              |
+| Mask min/max ratio                   | Only use masks whose area is between those ratios for the area of the entire image.          |              |
+| Mask only the top k largest          | Only use the k objects with the largest area of the bbox.                                    | 0 to disable |
+
+If you want to exclude objects in the background, try setting the min ratio to around `0.01`.
+
+| Mask Preprocessing              |                                                                                                                                     |                                                                                         |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Mask x, y offset                | Moves the mask horizontally and vertically by                                                                                       |                                                                                         |
+| Mask erosion (-) / dilation (+) | Enlarge or reduce the detected mask.                                                                                                | [opencv example](https://docs.opencv.org/4.7.0/db/df6/tutorial_erosion_dilatation.html) |
+| Mask merge mode                 | `None`: Inpaint each mask<br/>`Merge`: Merge all masks and inpaint<br/>`Merge and Invert`: Merge all masks and Invert, then inpaint |                                                                                         |
+
+Applied in this order: x, y offset → erosion/dilation → merge/invert.
+
+Inpainting
+
+Each option corresponds to a corresponding option on the inpaint tab. Therefore, please refer to the inpaint tab for usage details on how to use each option.
+
+Support [SEP], [SKIP], [PROMPT] tokens: [wiki/Advanced](https://github.com/Bing-su/adetailer/wiki/Advanced)
 <table>
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend. Base version 2.5.5</td>
@@ -479,6 +513,7 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 v9.2.4
  1. Added CFG control type selection
+ 2. Add ADetailer
 
 v9.2.3
  1. View the models page on civitai.com
