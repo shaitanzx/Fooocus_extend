@@ -8,44 +8,10 @@ from typing import Any
 
 import gradio as gr
 import modules
-#!from aaaaaa.conditional import InputAccordion
-#!from extentions.adetailer.adetailer import ADETAILER, __version__
+
 from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
-#!from extentions.adetailer.controlnet_ext import controlnet_exists, controlnet_type, get_cn_models
-"""
-if controlnet_type == "forge":
-    from lib_controlnet import global_state
 
-    cn_module_choices = {
-        "inpaint": list(global_state.get_filtered_preprocessors("Inpaint")),
-        "lineart": list(global_state.get_filtered_preprocessors("Lineart")),
-        "openpose": list(global_state.get_filtered_preprocessors("OpenPose")),
-        "tile": list(global_state.get_filtered_preprocessors("Tile")),
-        "scribble": list(global_state.get_filtered_preprocessors("Scribble")),
-        "depth": list(global_state.get_filtered_preprocessors("Depth")),
-    }
-else:
-    cn_module_choices = {
-        "inpaint": [
-            "inpaint_global_harmonious",
-            "inpaint_only",
-            "inpaint_only+lama",
-        ],
-        "lineart": [
-            "lineart_coarse",
-            "lineart_realistic",
-            "lineart_anime",
-            "lineart_anime_denoise",
-        ],
-        "openpose": ["openpose_full", "dw_openpose_full"],
-        "tile": ["tile_resample", "tile_colorfix", "tile_colorfix+sharp"],
-        "scribble": ["t2ia_sketch_pidi"],
-        "depth": ["depth_midas", "depth_hand_refiner"],
-    }
 
-union = list(chain.from_iterable(cn_module_choices.values()))
-cn_module_choices["union"] = union
-"""
 
 class Widgets(SimpleNamespace):
     def tolist(self):
@@ -134,26 +100,7 @@ def adui(
                 label=f"Only detect",
                 value=False,
                 visible=True),
-        """
-        ad_enable=True
-        with gr.Row():
-            with gr.Column(scale=8):
-                ad_skip_img2img = gr.Checkbox(
-                    label="Skip img2img",
-                    value=False,
-                    visible=is_img2img,
-                    elem_id=eid("ad_skip_img2img"),
-                )
 
-            with gr.Column(scale=1, min_width=180):
-                gr.Markdown(
-                    f"v{__version__}",
-                    elem_id=eid("ad_version"),
-                )
-
-        #!infotext_fields.append((ad_enable, "ADetailer enable"))
-        #!infotext_fields.append((ad_skip_img2img, "ADetailer skip img2img"))
-        """
         with gr.Group(), gr.Tabs():
             for n in range(num_models):
                 with gr.Tab(ordinal(n + 1)):
@@ -261,8 +208,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
             pass
             w.ad_checkpoint = inpainting(w, n, is_img2img, webui_info)
 
-    #!with gr.Group():
-    #!    controlnet(w, n, is_img2img)
+
 
     state = gr.State(lambda: state_init(w))
 
@@ -272,14 +218,9 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         widget.change(fn=on_change, inputs=[state, widget], outputs=state, queue=False)
 
     all_inputs = [state, *w.tolist()]
-    #!target_button = webui_info.i2i_button if is_img2img else webui_info.t2i_button
-    #!target_button.click(
-    #!    fn=on_generate_click, inputs=all_inputs, outputs=state, queue=False
-    #!)
 
-    #!infotext_fields = [(getattr(w, attr), name + suffix(n)) for attr, name in ALL_ARGS]
 
-    return state, w.ad_model, w.ad_checkpoint #!, infotext_fields
+    return state, w.ad_model, w.ad_checkpoint 
 
 
 def detection(w: Widgets, n: int, is_img2img: bool):
@@ -587,226 +528,3 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
     return w.ad_checkpoint
-"""
-    with gr.Group():
-        with gr.Row():
-            w.ad_mask_blur = gr.Slider(
-                label="!!!!!!!!!!!!!!!Inpaint mask blur" + suffix(n),
-                minimum=0,
-                maximum=64,
-                step=1,
-                value=4,
-                visible=True,
-                elem_id=eid("ad_mask_blur"),
-            )
-
-
-        with gr.Row():
-            with gr.Column(variant="compact"):
-                w.ad_inpaint_only_masked = gr.Checkbox(
-                    label="!!!!!!!!!!!!!Inpaint only masked" + suffix(n),
-                    value=True,
-                    visible=True,
-                    elem_id=eid("ad_inpaint_only_masked"),
-                )
-                w.ad_inpaint_only_masked_padding = gr.Slider(
-                    label="!!!!!!!!!!!!!!!!Inpaint only masked padding, pixels" + suffix(n),
-                    minimum=0,
-                    maximum=256,
-                    step=4,
-                    value=32,
-                    visible=True,
-                    elem_id=eid("ad_inpaint_only_masked_padding"),
-                )
-
-                w.ad_inpaint_only_masked.change(
-                    gr_interactive,
-                    inputs=w.ad_inpaint_only_masked,
-                    outputs=w.ad_inpaint_only_masked_padding,
-                    queue=False,
-                )
-
-            with gr.Column(variant="compact"):
-                w.ad_use_inpaint_width_height = gr.Checkbox(
-                    label="!!!!!!!!!!!!!Use separate width/height" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_inpaint_width_height"),
-                )
-
-                w.ad_inpaint_width = gr.Slider(
-                    label="!!!!!!!!!inpaint width" + suffix(n),
-                    minimum=64,
-                    maximum=2048,
-                    step=4,
-                    value=512,
-                    visible=True,
-                    elem_id=eid("ad_inpaint_width"),
-                )
-
-                w.ad_inpaint_height = gr.Slider(
-                    label="!!!!!!!!!!!!!!inpaint height" + suffix(n),
-                    minimum=64,
-                    maximum=2048,
-                    step=4,
-                    value=512,
-                    visible=True,
-                    elem_id=eid("ad_inpaint_height"),
-                )
-
-                w.ad_use_inpaint_width_height.change(
-                    lambda value: (gr_interactive(value), gr_interactive(value)),
-                    inputs=w.ad_use_inpaint_width_height,
-                    outputs=[w.ad_inpaint_width, w.ad_inpaint_height],
-                    queue=False,
-                )
-
-        with gr.Row():
-            with gr.Column(variant="compact"):
-                w.ad_use_steps = gr.Checkbox(
-                    label="!!!!!!!!!!!!!!Use separate steps" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_steps"),
-                )
-
-                w.ad_steps = gr.Slider(
-                    label="!!!!!!!!!!!!!!!!!!!!ADetailer steps" + suffix(n),
-                    minimum=1,
-                    maximum=150,
-                    step=1,
-                    value=28,
-                    visible=True,
-                    elem_id=eid("ad_steps"),
-                )
-
-                w.ad_use_steps.change(
-                    gr_interactive,
-                    inputs=w.ad_use_steps,
-                    outputs=w.ad_steps,
-                    queue=False,
-                )
-
-
-
-            with gr.Column(variant="compact"):
-                w.ad_use_vae = gr.Checkbox(
-                    label="Use separate VAE" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_vae"),
-                )
-
-                vaes = ["Use same VAE", *webui_info.vae_list]
-
-                w.ad_vae = gr.Dropdown(
-                    label="ADetailer VAE" + suffix(n),
-                    choices=vaes,
-                    value=vaes[0],
-                    visible=True,
-                    elem_id=eid("ad_vae"),
-                )
-
-
-        with gr.Row():
-            with gr.Column(variant="compact"):
-                w.ad_use_noise_multiplier = gr.Checkbox(
-                    label="!!!!!!!!!!!!!Use separate noise multiplier" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_noise_multiplier"),
-                )
-
-                w.ad_noise_multiplier = gr.Slider(
-                    label="!!!!!!!!!!!!!Noise multiplier for img2img" + suffix(n),
-                    minimum=0.5,
-                    maximum=1.5,
-                    step=0.01,
-                    value=1.0,
-                    visible=True,
-                    elem_id=eid("ad_noise_multiplier"),
-                )
-
-                w.ad_use_noise_multiplier.change(
-                    gr_interactive,
-                    inputs=w.ad_use_noise_multiplier,
-                    outputs=w.ad_noise_multiplier,
-                    queue=False,
-                )
-
-
-
-        with gr.Row(), gr.Column(variant="compact"):
-            w.ad_restore_face = gr.Checkbox(
-                label="!!!!!!!!!!!!!!!!Restore faces after ADetailer" + suffix(n),
-                value=False,
-                elem_id=eid("ad_restore_face"),
-            )
-
-def controlnet(w: Widgets, n: int, is_img2img: bool):
-    eid = partial(elem_id, n=n, is_img2img=is_img2img)
-    cn_models = ["None", "Passthrough", *get_cn_models()]
-
-    with gr.Row(variant="panel",visible=False):
-        with gr.Column(variant="compact"):
-            w.ad_controlnet_model = gr.Dropdown(
-                label="ControlNet model" + suffix(n),
-                choices=cn_models,
-                value="None",
-                visible=True,
-                type="value",
-                interactive=controlnet_exists,
-                elem_id=eid("ad_controlnet_model"),
-            )
-
-            w.ad_controlnet_module = gr.Dropdown(
-                label="ControlNet module" + suffix(n),
-                choices=["None"],
-                value="None",
-                visible=False,
-                type="value",
-                interactive=controlnet_exists,
-                elem_id=eid("ad_controlnet_module"),
-            )
-
-            w.ad_controlnet_weight = gr.Slider(
-                label="ControlNet weight" + suffix(n),
-                minimum=0.0,
-                maximum=1.0,
-                step=0.01,
-                value=1.0,
-                visible=True,
-                interactive=controlnet_exists,
-                elem_id=eid("ad_controlnet_weight"),
-            )
-
-            w.ad_controlnet_model.change(
-                on_cn_model_update,
-                inputs=w.ad_controlnet_model,
-                outputs=w.ad_controlnet_module,
-                queue=False,
-            )
-
-        with gr.Column(variant="compact"):
-            w.ad_controlnet_guidance_start = gr.Slider(
-                label="ControlNet guidance start" + suffix(n),
-                minimum=0.0,
-                maximum=1.0,
-                step=0.01,
-                value=0.0,
-                visible=True,
-                interactive=controlnet_exists,
-                elem_id=eid("ad_controlnet_guidance_start"),
-            )
-
-            w.ad_controlnet_guidance_end = gr.Slider(
-                label="ControlNet guidance end" + suffix(n),
-                minimum=0.0,
-                maximum=1.0,
-                step=0.01,
-                value=1.0,
-                visible=True,
-                interactive=controlnet_exists,
-                elem_id=eid("ad_controlnet_guidance_end"),
-            )
-"""
