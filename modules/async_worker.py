@@ -542,16 +542,17 @@ def worker():
 
         if async_task.codeformer_gen_enabled:
             progressbar(async_task, current_progress, 'CodeFormer in progress ...')
-            imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
+            imgs = codeformer_process(imgs[-1], async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
                     async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
                     async_task.codeformer_gen_fidelity,async_task.codeformer_temp)
+
         
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
-        number_for_vector = int(async_task.codeformer_temp) 
+
         if async_task.poDoVector:
-            image = Image.fromarray(imgs[number_for_vector])
+            image = Image.fromarray(imgs[0])
             if async_task.poTransPNG:
                 progressbar(async_task, current_progress, f'Transparenting image ...')
                 image = vector.trans(image,async_task.poTransPNGQuant,async_task.poTransPNGEps)
