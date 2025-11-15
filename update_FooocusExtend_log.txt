@@ -1,3 +1,7 @@
+v9.2.4
+ 1.Added CFG control type selection
+ 2. Add ADetailer
+
 v9.2.3
  1. View the models page on civitai.com
 
