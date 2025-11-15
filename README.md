@@ -158,7 +158,8 @@ Sace input image - saves the input image from the previous iteration (generation
 
 **Vector**
 
-<img width="1187" height="354" alt="image" src="https://github.com/user-attachments/assets/605b0666-9765-45c0-8a57-b87e7f3f76fc" />
+<img width="747" height="354" alt="image" src="https://github.com/user-attachments/assets/6fe3d566-4630-49aa-b366-15af53c4be5d" />
+
 
 This module allows you to get images in svg format in b/w mode.
 
@@ -168,7 +169,7 @@ Noise Tolerance - setting for cutting off noise in the original image
 
 Quantize - the level of image quantization
 
-Keep temp images - do not save the intermediate transparency file
+Save temp images - save the intermediate transparency file
 
 Threshold - line curvature threshold
 
@@ -277,7 +278,7 @@ All processing results are automatically saved to the output folder without savi
 
 **Vector**
 
-<img width="1073" height="587" alt="image" src="https://github.com/user-attachments/assets/3d9f7fc0-c7b9-49aa-bcc1-16f03e7f3965" />
+<img width="674" height="586" alt="image" src="https://github.com/user-attachments/assets/8f042628-4ead-4db4-b68c-98b549674d0b" />
 
 
 The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
