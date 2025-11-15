@@ -522,6 +522,7 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 v9.2.4
  1. Added CFG control type selection
  2. Add ADetailer
+ 3. Some bug fix and optimization
 
 v9.2.3
  1. View the models page on civitai.com
