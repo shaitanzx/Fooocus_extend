@@ -226,7 +226,7 @@ def codeformer_gui(generator):
             codeformer_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
             codeformer_background_enhance=gr.Checkbox(label="Background Enchanced", value=True)
             codeformer_face_upsample=gr.Checkbox(label="Face Upsample", value=True)
-            codeformer_temp=gr.Checkbox(label="Keep temp image", value=False, visible=generator)
+            codeformer_temp=gr.Checkbox(label="Save input image", value=False, visible=generator)
         with gr.Column():
             codeformer_upscale = gr.Slider(label='Upscale', minimum=1.0, maximum=4.0, step=1.0, value=1,interactive=True)
             codeformer_fidelity =gr.Slider(label='Codeformer_Fidelity', minimum=0, maximum=1, value=0.5, step=0.01, info='0 for better quality, 1 for better identity (default=0.5)')
