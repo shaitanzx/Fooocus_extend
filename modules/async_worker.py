@@ -545,7 +545,6 @@ def worker():
             imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
                     async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
                     async_task.codeformer_gen_fidelity,async_task.codeformer_temp)
-            imgs = imgs + [codeformer_imgs] if async_task.codeformer_temp else codeformer_imgs
         
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
