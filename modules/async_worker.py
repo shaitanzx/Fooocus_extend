@@ -540,14 +540,14 @@ def worker():
         if async_task.inswapper_enabled:
             image_temp=imgs
             progressbar(async_task, current_progress, 'inswapper in progress ...')
-            imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
+            imgs = perform_face_swap(imgs[-1], async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
             if async_task.inswapper_temp:
                 imgs.insert(-1, image_temp[-1])
 
         if async_task.codeformer_gen_enabled:
             progressbar(async_task, current_progress, 'CodeFormer in progress ...')
             image_temp=imgs
-            imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
+            imgs = codeformer_process(imgs[-1], async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
                     async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
                     async_task.codeformer_gen_fidelity)
             if async_task.codeformer_temp:
