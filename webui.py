@@ -842,7 +842,8 @@ with shared.gradio_root:
                         with gr.TabItem(label='InstantID') as instantid_tab:
                             enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()                          
                         with gr.TabItem(label='Inswapper'):
-                            inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
+                            #!inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
+                            inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper(True)
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
                         with gr.TabItem(label='Vector'):
@@ -1021,7 +1022,9 @@ with shared.gradio_root:
                     gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
                     gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
                   with gr.TabItem(label='Inswapper'):
-                    face_swap.inswapper_gui2()
+                    #!face_swap.inswapper_gui2()
+                    face_swap.inswapper(False)
+
                   with gr.TabItem(label='CodeFormer'):
                     codeformer.codeformer_gui(False)
                   with gr.TabItem(label='Remove Background') as rembg_tab:
