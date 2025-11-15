@@ -65,7 +65,7 @@ def get_image(input_data: Union[list, np.ndarray]) -> np.ndarray:
         
         return input_data,False
 
-def codeformer_process(image,face_align,background_enhance,face_upsample,upscale,codeformer_fidelity):
+def codeformer_process(image,face_align,background_enhance,face_upsample,upscale,codeformer_fidelity,codeformer_temp=False):
     codeform_array=[]
     check_ckpts()
     upsampler = set_realesrgan()
@@ -189,7 +189,10 @@ def codeformer_process(image,face_align,background_enhance,face_upsample,upscale
         if generator:
             return codeform_array
         else:
-            return np.array(restored_img)
+            if codeformer_temp:
+                return [image,np.array(restored_img)]
+            else:
+                return np.array(restored_img)
 
     except Exception as error:
         print('Global exception', error)
