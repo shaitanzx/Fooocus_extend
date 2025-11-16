@@ -1808,7 +1808,7 @@ def worker():
 
                         adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                         for n in range(len(masks)):
-                            masks[n].save('mask.png')
+                            masks[n].save("/content/Fooocus_extend/mask.png")
                             prompt=adetail_prompt[n]
 
                             negative=adetail_negative_prompt[n]
