@@ -1762,15 +1762,14 @@ def worker():
                                 classes=args.ad_model_classes,
                                 )
                             print('zzzzzzz',pred)
-                            mask_pil = pred.masks[0]  # или masks[n]
-                            mask_np = np.array(mask_pil)
+                            #!mask_pil = pred.masks[0]  # или masks[n]
+                            #!mask_np = np.array(mask_pil)
 
-                            print("Mask stats:")
-                            print(f"Min: {mask_np.min()}, Max: {mask_np.max()}, Mean: {mask_np.mean():.3f}")
-                            print(f"Non-zero pixels: {np.count_nonzero(mask_np > 0)}")
-                            print(f"Pixels above 0.5: {np.count_nonzero(mask_np > 0.5)}")
-                            print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
-                            pred.masks[0].save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
+                            #!print("Mask stats:")
+                            #!print(f"Min: {mask_np.min()}, Max: {mask_np.max()}, Mean: {mask_np.mean():.3f}")
+                            #!print(f"Non-zero pixels: {np.count_nonzero(mask_np > 0)}")
+                            #!print(f"Pixels above 0.5: {np.count_nonzero(mask_np > 0.5)}")
+                            
 
                     masks = adetailer.pred_preprocessing(pred, args)
                     print(masks)
@@ -1826,6 +1825,12 @@ def worker():
                                 continue
                             prompt = prompt.replace("[PROMPT]", async_task.prompt)
                             negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
+                            mask_binary = np.array(masks[n])
+                            mask_binary = (mask_binary > 0.5).astype(np.uint8) * 255
+                            mask_tt=Image.fromarray(mask_binary)
+                            print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
+                            mask_tt.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
+
 
                             try:
                                 current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
