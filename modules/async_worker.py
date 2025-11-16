@@ -790,6 +790,19 @@ def worker():
                       inpaint_mask, inpaint_parameterized, denoising_strength, inpaint_respective_field, switch,
                       inpaint_disable_initial_latent, current_progress, skip_apply_outpaint=False,
                       advance_progress=False):
+
+        print('zzzzzzzzzzzzz')
+        print('initial_latent',initial_latent)
+        print('inpaint_head_model_path',inpaint_head_model_path)
+        print('inpaint_parameterized',inpaint_parameterized)
+        print('denoising_strength',denoising_strength)
+        print('inpaint_respective_field',inpaint_respective_field)
+        print('switch',switch)
+        print('inpaint_disable_initial_latent',inpaint_disable_initial_latent)
+        print('current_progress',current_progress)
+        print('skip_apply_outpaint',skip_apply_outpaint)
+        print('advance_progress',advance_progress)
+
         if not skip_apply_outpaint:
             inpaint_image, inpaint_mask = apply_outpaint(async_task, inpaint_image, inpaint_mask)
 
@@ -1418,23 +1431,6 @@ def worker():
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
 
-        if 'vary' in goals:
-            img, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
-                async_task, async_task.enhance_uov_method, denoising_strength, img, switch, current_progress)
-        if 'upscale' in goals:
-            direct_return, img, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
-                async_task, img, async_task.enhance_uov_method, switch, current_progress)
-            if direct_return:
-                d = [('Upscale (Fast)', 'upscale_fast', '2x')]
-                if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
-                    progressbar(async_task, current_progress, 'Checking for NSFW content ...')
-                    img = default_censor(img)
-                progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
-                uov_image_path = log(img, d, output_format=async_task.output_format, persist_image=persist_image,name_prefix=async_task.name_prefix)
-                yield_result(async_task, uov_image_path, current_progress, async_task.black_out_nsfw, False,
-                             do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
-                return current_progress, img, prompt, negative_prompt
-
         if 'inpaint' in goals and inpaint_parameterized:
             progressbar(async_task, current_progress, 'Downloading inpainter ...')
             inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
@@ -1444,8 +1440,9 @@ def worker():
         progressbar(async_task, current_progress, 'Preparing enhance prompts ...')
         # positive and negative conditioning aren't available here anymore, process prompt again
         tasks_enhance, use_expansion, loras, current_progress = process_prompt(
-            async_task, prompt, negative_prompt, base_model_additional_loras, 1, True,
-            use_expansion, use_style, use_synthetic_refiner, current_progress)
+            async_task, prompt, negative_prompt, base_model_additional_loras, 1, True, 
+            use_expansion, use_style, use_synthetic_refiner, current_progress, advance_progress=True)
+
         task_enhance = tasks_enhance[0]
         # TODO could support vary, upscale and CN in the future
         # if 'cn' in goals:
@@ -1456,10 +1453,12 @@ def worker():
         if 'inpaint' in goals:
             
             denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
-                async_task, None, inpaint_head_model_path, img, mask,
-                inpaint_parameterized, inpaint_strength,
-                inpaint_respective_field, switch, inpaint_disable_initial_latent,
-                current_progress, True)
+                async_task, None, inpaint_head_model_path, img, mask, inpaint_parameterized, 
+                async_task.inpaint_strength, async_task.inpaint_respective_field, switch, 
+                async_task.inpaint_disable_initial_latent,current_progress, advance_progress=True)
+
+
+
         imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
                                                          controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
                                                          controlnet_scribble_path, controlnet_manga_path, current_task_id, denoising_strength,
