@@ -1762,6 +1762,13 @@ def worker():
                                 classes=args.ad_model_classes,
                                 )
                             print('zzzzzzz',pred)
+                            mask_pil = pred.masks[0]  # или masks[n]
+                            mask_np = np.array(mask_pil)
+
+                            print("Mask stats:")
+                            print(f"Min: {mask_np.min()}, Max: {mask_np.max()}, Mean: {mask_np.mean():.3f}")
+                            print(f"Non-zero pixels: {np.count_nonzero(mask_np > 0)}")
+                            print(f"Pixels above 0.5: {np.count_nonzero(mask_np > 0.5)}")
                             print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
                             pred.masks[0].save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
 
