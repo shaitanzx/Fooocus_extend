@@ -1762,6 +1762,8 @@ def worker():
                                 classes=args.ad_model_classes,
                                 )
                             print('zzzzzzz',pred)
+                            print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
+                            pred.masks[0].save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
 
                     masks = adetailer.pred_preprocessing(pred, args)
                     print(masks)
@@ -1808,8 +1810,8 @@ def worker():
 
                         adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                         for n in range(len(masks)):
-                            print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
-                            masks[0].save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
+                            #!print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
+                            #!masks[0].save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
                             prompt=adetail_prompt[n]
 
                             negative=adetail_negative_prompt[n]
