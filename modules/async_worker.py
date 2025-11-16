@@ -799,7 +799,7 @@ def worker():
         print('inpaint_respective_field',inpaint_respective_field)
         print('switch',switch)
         print('inpaint_disable_initial_latent',inpaint_disable_initial_latent)
-        print('current_progress'current_progress)
+        print('current_progress',current_progress)
         print('skip_apply_outpaint',skip_apply_outpaint)
         print('advance_progress',advance_progress)
         if not skip_apply_outpaint:
