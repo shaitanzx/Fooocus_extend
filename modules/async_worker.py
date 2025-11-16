@@ -1903,7 +1903,7 @@ def worker():
                                     controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
                                     current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
                                     async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
-                                    prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), mask_binary),
+                                    prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), mask_binary,
                                     preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
                                     use_synthetic_refiner, width, persist_image=persist_image)
                                 async_task.adetailer_stats[index] += 1
