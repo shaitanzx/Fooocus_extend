@@ -1402,6 +1402,82 @@ def worker():
                 done_steps_upscaling += steps
         return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
 
+
+        def process_adetailer(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
+                        controlnet_manga_path,
+                        current_progress, current_task_id, denoising_strength, inpaint_disable_initial_latent,
+                        inpaint_engine, inpaint_respective_field, inpaint_strength,
+                        prompt, negative_prompt, final_scheduler_name, goals, height, img, mask,
+                        preparation_steps, steps, switch, tiled, total_count, use_expansion, use_style,
+                        use_synthetic_refiner, width, show_intermediate_results=True, persist_image=True):
+        base_model_additional_loras = []
+        inpaint_head_model_path = None
+        inpaint_parameterized = inpaint_engine != 'None'  # inpaint_engine = None, improve detail
+        initial_latent = None
+        prompt = prepare_enhance_prompt(prompt, async_task.prompt)
+        negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
+
+        if 'vary' in goals:
+            img, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
+                async_task, async_task.enhance_uov_method, denoising_strength, img, switch, current_progress)
+        if 'upscale' in goals:
+            direct_return, img, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
+                async_task, img, async_task.enhance_uov_method, switch, current_progress)
+            if direct_return:
+                d = [('Upscale (Fast)', 'upscale_fast', '2x')]
+                if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
+                    progressbar(async_task, current_progress, 'Checking for NSFW content ...')
+                    img = default_censor(img)
+                progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
+                uov_image_path = log(img, d, output_format=async_task.output_format, persist_image=persist_image,name_prefix=async_task.name_prefix)
+                yield_result(async_task, uov_image_path, current_progress, async_task.black_out_nsfw, False,
+                             do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
+                return current_progress, img, prompt, negative_prompt
+
+        if 'inpaint' in goals and inpaint_parameterized:
+            progressbar(async_task, current_progress, 'Downloading inpainter ...')
+            inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
+                inpaint_engine)
+            if inpaint_patch_model_path not in base_model_additional_loras:
+                base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+        progressbar(async_task, current_progress, 'Preparing enhance prompts ...')
+        # positive and negative conditioning aren't available here anymore, process prompt again
+        tasks_enhance, use_expansion, loras, current_progress = process_prompt(
+            async_task, prompt, negative_prompt, base_model_additional_loras, 1, True,
+            use_expansion, use_style, use_synthetic_refiner, current_progress)
+        task_enhance = tasks_enhance[0]
+        # TODO could support vary, upscale and CN in the future
+        # if 'cn' in goals:
+        #     apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width)
+        if async_task.freeu_enabled:
+            apply_freeu(async_task)
+        patch_samplers(async_task)
+        if 'inpaint' in goals:
+            
+            denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
+                async_task, None, inpaint_head_model_path, img, mask,
+                inpaint_parameterized, inpaint_strength,
+                inpaint_respective_field, switch, inpaint_disable_initial_latent,
+                current_progress, True)
+        imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
+                                                         controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
+                                                         controlnet_scribble_path, controlnet_manga_path, current_task_id, denoising_strength,
+                                                         final_scheduler_name, goals, initial_latent, steps, switch,
+                                                         task_enhance['c'], task_enhance['uc'], task_enhance, loras,
+                                                         tiled, use_expansion, width, height, current_progress,
+                                                         preparation_steps, total_count, show_intermediate_results,
+                                                         persist_image)
+
+        del task_enhance['c'], task_enhance['uc']  # Save memory
+        return current_progress, imgs[0], prompt, negative_prompt
+
+
+
+
+
+
+
     @torch.no_grad()
     @torch.inference_mode()
     def handler(async_task: AsyncTask):
@@ -1761,14 +1837,7 @@ def worker():
                                 #!device=ultralytics_device,
                                 classes=args.ad_model_classes,
                                 )
-                            print('zzzzzzz',pred)
-                            #!mask_pil = pred.masks[0]  # или masks[n]
-                            #!mask_np = np.array(mask_pil)
 
-                            #!print("Mask stats:")
-                            #!print(f"Min: {mask_np.min()}, Max: {mask_np.max()}, Mean: {mask_np.mean():.3f}")
-                            #!print(f"Non-zero pixels: {np.count_nonzero(mask_np > 0)}")
-                            #!print(f"Pixels above 0.5: {np.count_nonzero(mask_np > 0.5)}")
                             
 
                     masks = adetailer.pred_preprocessing(pred, args)
@@ -1816,8 +1885,6 @@ def worker():
 
                         adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                         for n in range(len(masks)):
-                            #!print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
-                            #!masks[0].save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
                             prompt=adetail_prompt[n]
 
                             negative=adetail_negative_prompt[n]
@@ -1827,18 +1894,16 @@ def worker():
                             negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
                             mask_binary = np.array(masks[n])
                             mask_binary = (mask_binary > 0.5).astype(np.uint8) * 255
-                            mask_tt=Image.fromarray(mask_binary)
-                            print ('aaaaaaaa',os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
-                            mask_tt.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), "output.png"))
+
 
 
                             try:
-                                current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
+                                current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_adetailer(
                                     all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
                                     controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
                                     current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
                                     async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
-                                    prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), np.array(masks[n]),
+                                    prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), mask_binary),
                                     preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
                                     use_synthetic_refiner, width, persist_image=persist_image)
                                 async_task.adetailer_stats[index] += 1
