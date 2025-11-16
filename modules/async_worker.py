@@ -1867,7 +1867,7 @@ def worker():
                         async_task.cfg_scale  = args.ad_cfg_scale
                     async_task.inpaint_disable_initial_latent = args.ad_disable_latent
                     if async_task.debugging_adetailer_masks_checkbox or async_task.only_detect:
-                        async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
+                        async_task.yields.append(['preview', (current_progress, 'Loading ...', masks[0])])
                         yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
                                      async_task.disable_intermediate_results)
                         async_task.adetailer_stats[index] += 1
