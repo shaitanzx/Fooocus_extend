@@ -389,7 +389,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     minimum=0.0,
                     maximum=1.0,
                     step=0.01,
-                    value=0.618,
+                    value=0,
                     visible=True,
                     interactive=False,
                     elem_id=eid("ad_resp_field"),
