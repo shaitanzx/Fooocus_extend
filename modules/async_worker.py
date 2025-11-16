@@ -790,6 +790,18 @@ def worker():
                       inpaint_mask, inpaint_parameterized, denoising_strength, inpaint_respective_field, switch,
                       inpaint_disable_initial_latent, current_progress, skip_apply_outpaint=False,
                       advance_progress=False):
+
+        print('zzzzzzzzzzzzzz')
+        print('initial_latent',initial_latent)
+        print('inpaint_head_model_path',inpaint_head_model_path)
+        print('inpaint_parameterized',inpaint_parameterized)
+        print('denoising_strength',denoising_strength)
+        print('inpaint_respective_field',inpaint_respective_field)
+        print('switch',switch)
+        print('inpaint_disable_initial_latent',inpaint_disable_initial_latent)
+        print('current_progress'current_progress)
+        print('skip_apply_outpaint',skip_apply_outpaint)
+        print('advance_progress',advance_progress)
         if not skip_apply_outpaint:
             inpaint_image, inpaint_mask = apply_outpaint(async_task, inpaint_image, inpaint_mask)
 
