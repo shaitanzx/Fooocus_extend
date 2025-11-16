@@ -1430,7 +1430,8 @@ def worker():
         initial_latent = None
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
-
+        print('[ADetailer] Positive prompt: ',prompt)
+        print('[ADetailer] Negative prompt: ',prompt)
         if 'inpaint' in goals and inpaint_parameterized:
             progressbar(async_task, current_progress, 'Downloading inpainter ...')
             inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
@@ -1885,7 +1886,6 @@ def worker():
                         adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                         for n in range(len(masks)):
                             prompt=adetail_prompt[n]
-
                             negative=adetail_negative_prompt[n]
                             if re.match(r"^\s*\[SKIP\]\s*$", prompt):
                                 continue
