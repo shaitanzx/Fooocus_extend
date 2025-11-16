@@ -1764,6 +1764,7 @@ def worker():
                             print('zzzzzzz',pred)
 
                     masks = adetailer.pred_preprocessing(pred, args)
+                    print(masks)
                     if len(masks) == 0:
                         print(f'[ADetailer] No detected, skipping')
                         continue
