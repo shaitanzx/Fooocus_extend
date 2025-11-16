@@ -1840,10 +1840,7 @@ def worker():
                                 classes=args.ad_model_classes,
                                 )
 
-                            
-
                     masks = adetailer.pred_preprocessing(pred, args)
-                    print(masks)
                     if len(masks) == 0:
                         print(f'[ADetailer] No detected, skipping')
                         continue
