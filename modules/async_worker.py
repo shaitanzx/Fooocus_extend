@@ -1403,7 +1403,7 @@ def worker():
         return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
 
 
-        def process_adetailer(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+    def process_adetailer(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
                         controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
                         controlnet_manga_path,
                         current_progress, current_task_id, denoising_strength, inpaint_disable_initial_latent,
