@@ -1420,7 +1420,7 @@ def worker():
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
         print('[ADetailer] Positive prompt: ',prompt)
-        print('[ADetailer] Negative prompt: ',prompt)
+        print('[ADetailer] Negative prompt: ',negative_prompt)
         if 'inpaint' in goals and inpaint_parameterized:
             progressbar(async_task, current_progress, 'Downloading inpainter ...')
             inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
