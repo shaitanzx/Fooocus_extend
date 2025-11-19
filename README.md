@@ -473,6 +473,8 @@ CFG Mimicking from TSNR -  adaptively adjusts guidance strength based on the noi
 **ADetailer**
 
 <img width="830" height="965" alt="image" src="https://github.com/user-attachments/assets/30c8ea16-5c00-46f1-8d3e-740338ea1705" />
+<img width="344" height="286" alt="image" src="https://github.com/user-attachments/assets/0fd1ecc4-b9e7-4670-bbca-f9c1b34dd4e3" />
+
 
 
 | Model, Prompts                    |                                                                                    |                                                                                                                                                        |
@@ -503,6 +505,8 @@ Inpainting
 Each option corresponds to a corresponding option on the inpaint tab. Therefore, please refer to the inpaint tab for usage details on how to use each option.
 
 Support [SEP], [SKIP], [PROMPT] tokens: [wiki/Advanced](https://github.com/Bing-su/adetailer/wiki/Advanced)
+
+The YOLO and Mediapipe models are used as detection models. Additional models can be downloaded from civitai.com using the Civitai Model Helper.
 <table>
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend. Base version 2.5.5</td>
