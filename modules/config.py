@@ -207,7 +207,7 @@ path_fooocus_expansion = get_dir_or_set_default('path_fooocus_expansion', '../mo
 path_wildcards = get_dir_or_set_default('path_wildcards', '../wildcards/')
 path_safety_checker = get_dir_or_set_default('path_safety_checker', '../models/safety_checker/')
 path_sam = get_dir_or_set_default('path_sam', '../models/sam/')
-path_yolo = Path(paths_checkpoints[0]).parent / "detection"
+path_yolo = Path(__file__).parent.parent / "models" / "detection"
 path_outputs = get_path_output()
 
 
