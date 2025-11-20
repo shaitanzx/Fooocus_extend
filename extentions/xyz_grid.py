@@ -315,6 +315,9 @@ axis_options = [
 	AxisOption("Seed", int, apply_field("seed")),
 	AxisOption("Sharpness", int, apply_field("sharpness")),
 	AxisOption("CFG (Guidance) Scale", float, apply_field("cfg_scale")),
+    AxisOption("CFG control type", str, apply_field("type_cfg"), format_value=format_value, choices=lambda: sorted(['CFG Mimicking from TSNR','CFG rescale','Off'], key=str.casefold)),
+    AxisOption("CFG Mimicking from TSNR", float, apply_field("adaptive_cfg")),
+    AxisOption("CFG rescale", float, apply_field("rescale_cfg")),
 	AxisOption("Checkpoint name", str, apply_field('base_model_name'), format_value=format_remove_path, confirm=None, cost=1.0, choices=lambda: sorted(modules.config.model_filenames, key=str.casefold))
     
 

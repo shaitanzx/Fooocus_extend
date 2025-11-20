@@ -39,7 +39,8 @@ folders = {
     "ckp": md_config.path_ckp,
     "lora": md_config.path_lora,
     "lycoris": md_config.path_lora,
-    "vae": md_config.path_vae
+    "vae": md_config.path_vae,
+    "detection": md_config.path_detect
 }
 
 # Separate because the above is used for detecting supported models

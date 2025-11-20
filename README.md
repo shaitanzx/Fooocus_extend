@@ -5,28 +5,28 @@ Let's look at everything in order.
 **Full list of differences from the original Fooocus**
 
 1. Modules running during generation
-   - OneButtonPrompt
+   - OneButtonPrompt - prompt generator with many settings
    - Prompt Translate
-   - PhotoMaker
-   - InstantID
-   - Inswapper
-   - CodeFormer
-   - Vector
+   - PhotoMaker - generating images with a reference face
+   - InstantID - generating images with a reference face
+   - Inswapper - face replacements in the generated image
+   - CodeFormer - face enhancer
+   - Vector - vector image generation
 2. Additional modules
-   - Image Batch
-   - Prompt Batch
-   - X/Y/Z Plot
-   - Inswapper
-   - CodeFormer
+   - Image Batch - generation with a batch of reference images
+   - Prompt Batch - generating a prompt batch
+   - X/Y/Z Plot - a module that allows you to generate images by changing various parameters
+   - Inswapper - face replacements in the generated image
+   - CodeFormer - face enhancer
    - Remove Background
-   - Vector
+   - Vector - allows you to convert a raster image into a vector
 3. Tools
-   - Civitai Helper
-   - TextMask
-   - SVGcode
-   - Roller
+   - Civitai Helper - A module for working with models and downloading them from Civitai
+   - TextMask - A module for overlaying text on images and generating a mask for it for subsequent generation with text
+   - SVGcode - allows you to convert a raster image into a vector
+   - Roller - module for rolling images
    - OpenPoseEditor
-   - Logo
+   - Logo - overlaying a logo on an image
    - Photopea
 4. Select the resolution and aspect ratio of the generated image
 5. Wildcard
@@ -36,11 +36,13 @@ Let's look at everything in order.
 9. Manga Recolor ControlNet
 10. Save Image Grid for Each Batch
 11. Filename Prefix
-12. Paths and Presets
+12. Paths and Presets - managing paths and presets
 13. Load file of style
 14. View LoRA trigger words and view the models page on civitai.com
 15. Seamless tiling
-16. Transparency
+16. Transparency - generating images on a transparent background
+17. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
+18. Adetailer - extension for automatic masking and inpainting
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -125,7 +127,9 @@ Enhance non-face region - enhance non-face parts of the image
 **Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 7 minutes.**
 
 **Inswapper**
-![image](https://github.com/user-attachments/assets/3399327d-0fe4-46cc-8f34-430e94ab7910)
+
+<img width="746" height="381" alt="image" src="https://github.com/user-attachments/assets/138962ee-5dda-4e61-9b3d-24879922de99" />
+
 
 This module is also intended for face replacement.
 
@@ -135,9 +139,12 @@ Target Image Index - index of the face in the output image. This is the index of
 
 Source Face Image - image with face
 
+Sace input image - saves the input image from the previous iteration (generation or previous Extention)
+
 **CodeFormer**
 
-![image](https://github.com/user-attachments/assets/512eb538-1923-439d-ad2a-826d7594e49e)
+<img width="743" height="252" alt="image" src="https://github.com/user-attachments/assets/ef798a4d-3329-4318-a4c0-7d704d82b8f7" />
+
 
 
 Face enhancement module with upscale capability
@@ -153,10 +160,15 @@ Upscale - image enlargement
 Codeformer_Fidelity - signability coefficient, inversely proportional to quality
 
 
+Sace input image - saves the input image from the previous iteration (generation or previous Extention)
+=======
+
+
 
 **Vector**
 
-<img width="1187" height="354" alt="image" src="https://github.com/user-attachments/assets/605b0666-9765-45c0-8a57-b87e7f3f76fc" />
+<img width="747" height="354" alt="image" src="https://github.com/user-attachments/assets/6fe3d566-4630-49aa-b366-15af53c4be5d" />
+
 
 This module allows you to get images in svg format in b/w mode.
 
@@ -166,7 +178,7 @@ Noise Tolerance - setting for cutting off noise in the original image
 
 Quantize - the level of image quantization
 
-Keep temp images - do not save the intermediate transparency file
+Save temp images - save the intermediate transparency file
 
 Threshold - line curvature threshold
 
@@ -275,7 +287,7 @@ All processing results are automatically saved to the output folder without savi
 
 **Vector**
 
-<img width="1073" height="587" alt="image" src="https://github.com/user-attachments/assets/3d9f7fc0-c7b9-49aa-bcc1-16f03e7f3965" />
+<img width="674" height="586" alt="image" src="https://github.com/user-attachments/assets/8f042628-4ead-4db4-b68c-98b549674d0b" />
 
 
 The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
@@ -286,7 +298,8 @@ The full analog of this module in the “in generation” panel, unlike which yo
 
 **Civitai Helper**
 
-![014](https://github.com/user-attachments/assets/27814499-2c24-4421-a4f9-0c3503b5f66b)
+<img width="1180" height="2585" alt="image" src="https://github.com/user-attachments/assets/62c3a4ab-2423-47b4-9f2c-c65586ded0e9" />
+
 
 
 
@@ -452,7 +465,53 @@ Attention Injection - This mode uses LoRA rank 256, turning SDXL into a transpar
 
 Conv Injection - This method uses an alternative model to transform SDXL into a transparent image generator. It uses biases on all convolutional layers (and, in fact, on all layers that are not q, k, v in any of the attention layers). These biases can be combined with any XL model to change the latent distribution to transparent images. Since learning the biases on all q, k, v layers was eliminated, the understanding of SDXL should be fully preserved. However, in practice, this first method has proven to yield better results. This method is used for some special cases that require special understanding. This method can have a strong impact on the style of the underlying model. This extension is based on layerdiffuse by lllyasviel (https://github.com/lllyasviel/sd-forge-layerdiffuse)
 
+**CFG control type**
 
+<img width="441" height="154" alt="image" src="https://github.com/user-attachments/assets/da27c255-7707-44d0-8228-a62aa7d9c820" />
+
+CFG control type determines how guidance is applied during image generation:
+
+Off - uses the standard CFG without adjustments;
+CFG rescale - reduces artifacts at high Guidance Scale values by rescaling the guidance signal;
+CFG Mimicking from TSNR -  adaptively adjusts guidance strength based on the noise level at each diffusion step, improving image quality and coherence.
+
+**ADetailer**
+
+<img width="830" height="965" alt="image" src="https://github.com/user-attachments/assets/30c8ea16-5c00-46f1-8d3e-740338ea1705" />
+<img width="344" height="286" alt="image" src="https://github.com/user-attachments/assets/0fd1ecc4-b9e7-4670-bbca-f9c1b34dd4e3" />
+
+
+
+| Model, Prompts                    |                                                                                    |                                                                                                                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ADetailer model                   | Determine what to detect.                                                          |                                                                                                                                      |
+| ADetailer model classes           | Comma separated class names to detect. only available when using YOLO World models | If blank, use default values.<br/>default = [COCO 80 classes](https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco.yaml) |
+| ADetailer prompt, negative prompt | Prompts and negative prompts to apply                                              | If left blank, it will use the same as the input.                                                                                                      |
+
+
+| Detection                            |                                                                                              |              |
+| ------------------------------------ | -------------------------------------------------------------------------------------------- | ------------ |
+| Detection model confidence threshold | Only objects with a detection model confidence above this threshold are used for inpainting. |              |
+| Mask min/max ratio                   | Only use masks whose area is between those ratios for the area of the entire image.          |              |
+| Mask only the top k largest          | Only use the k objects with the largest area of the bbox.                                    | 0 to disable |
+
+If you want to exclude objects in the background, try setting the min ratio to around `0.01`.
+
+| Mask Preprocessing              |                                                                                                                                     |                                                                                         |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Mask x, y offset                | Moves the mask horizontally and vertically by                                                                                       |                                                                                         |
+| Mask erosion (-) / dilation (+) | Enlarge or reduce the detected mask.                                                                                                | [opencv example](https://docs.opencv.org/4.7.0/db/df6/tutorial_erosion_dilatation.html) |
+| Mask merge mode                 | `None`: Inpaint each mask<br/>`Merge`: Merge all masks and inpaint<br/>`Merge and Invert`: Merge all masks and Invert, then inpaint |                                                                                         |
+
+Applied in this order: x, y offset → erosion/dilation → merge/invert.
+
+Inpainting
+
+Each option corresponds to a corresponding option on the inpaint tab. Therefore, please refer to the inpaint tab for usage details on how to use each option.
+
+Support [SEP], [SKIP], [PROMPT] tokens: [wiki/Advanced](https://github.com/Bing-su/adetailer/wiki/Advanced)
+
+The YOLO and Mediapipe models are used as detection models. Additional models can be downloaded from civitai.com using the Civitai Model Helper.
 <table>
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend. Base version 2.5.5</td>
@@ -468,6 +527,11 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.4
+ 1. Added CFG control type selection
+ 2. Add ADetailer
+ 3. Some bug fix and optimization
 
 v9.2.3
  1. View the models page on civitai.com

@@ -1,0 +1,530 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from functools import partial
+from itertools import chain
+from types import SimpleNamespace
+from typing import Any
+
+import gradio as gr
+import modules
+
+from extentions.adetailer.adetailer.args import ALL_ARGS, MASK_MERGE_INVERT
+
+
+
+class Widgets(SimpleNamespace):
+    def tolist(self):
+        return [getattr(self, attr) for attr in ALL_ARGS.attrs]
+
+
+@dataclass
+class WebuiInfo:
+    ad_model_list: list[str]
+    sampler_names: list[str]
+    scheduler_names: list[str]
+    #!t2i_button: gr.Button
+    #!i2i_button: gr.Button
+    checkpoints_list: list[str]
+    vae_list: list[str]
+
+
+def gr_interactive(value: bool = True):
+    return gr.update(interactive=value)
+
+
+def ordinal(n: int) -> str:
+    d = {1: "st", 2: "nd", 3: "rd"}
+    return str(n) + ("th" if 11 <= n % 100 <= 13 else d.get(n % 10, "th"))
+
+
+def suffix(n: int, c: str = " ") -> str:
+    return "" if n == 0 else c + ordinal(n + 1)
+
+
+def on_widget_change(state: dict, value: Any, *, attr: str):
+    if "is_api" in state:
+        state = state.copy()
+        state.pop("is_api")
+    state[attr] = value
+    return state
+
+
+def on_generate_click(state: dict, *values: Any):
+    for attr, value in zip(ALL_ARGS.attrs, values):
+        state[attr] = value  # noqa: PERF403
+    state["is_api"] = ()
+    return state
+
+
+def on_ad_model_update(model: str):
+    if "-world" in model:
+        return gr.update(
+            visible=True,
+            placeholder="Comma separated class names to detect, ex: 'person,cat'. default: COCO 80 classes",
+        )
+    return gr.update(visible=False, placeholder="")
+
+
+def on_cn_model_update(cn_model_name: str):
+    cn_model_name = cn_model_name.replace("inpaint_depth", "depth")
+    for t in cn_module_choices:
+        if t in cn_model_name:
+            choices = cn_module_choices[t]
+            return gr.update(visible=True, choices=choices, value=choices[0])
+    return gr.update(visible=False, choices=["None"], value="None")
+
+
+def elem_id(item_id: str, n: int, is_img2img: bool) -> str:
+    tab = "img2img" if is_img2img else "txt2img"
+    suf = suffix(n, "_")
+    return f"script_{tab}_adetailer_{item_id}{suf}"
+
+
+def state_init(w: Widgets) -> dict[str, Any]:
+    return {attr: getattr(w, attr).value for attr in ALL_ARGS.attrs}
+
+
+def adui(
+    num_models: int,
+    is_img2img: bool,
+    webui_info: WebuiInfo,
+):
+        states = []
+
+        ad_model_dropdowns = []
+        ad_ckpt_dropdown =[]
+
+        eid = partial(elem_id, n=0, is_img2img=is_img2img)
+        only_detect = gr.Checkbox(
+                label=f"Only detect",
+                value=False,
+                visible=True),
+
+        with gr.Group(), gr.Tabs():
+            for n in range(num_models):
+                with gr.Tab(ordinal(n + 1)):
+                    state,ad_model_dd, ad_ckpt_dd = one_ui_group(
+                        n=n,
+                        is_img2img=is_img2img,
+                        webui_info=webui_info,
+                    )
+                ad_model_dropdowns.append(ad_model_dd)
+                ad_ckpt_dropdown.append(ad_ckpt_dd)
+                states.append(state)
+                #!infotext_fields.extend(infofields)
+
+    # components: [bool, bool, dict, dict, ...]
+        components = [*states]
+        with gr.Row():
+            gr.HTML('* \"ADetailer\" is powered by Bing-su. <a href="https://github.com/Bing-su/adetailer" target="_blank">\U0001F4D4 Document</a>')
+        return only_detect, components,ad_model_dropdowns,ad_ckpt_dropdown
+
+
+def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
+    w = Widgets()
+    eid = partial(elem_id, n=n, is_img2img=is_img2img)
+
+    model_choices = [*webui_info.ad_model_list]
+
+    with gr.Group():
+        with gr.Row(variant="compact"):
+            w.ad_tab_enable = gr.Checkbox(
+                label=f"Enable this tab ({ordinal(n + 1)})",
+                value=True if n==0 else False,
+                visible=True,
+                elem_id=eid("ad_tab_enable"),
+            )
+
+        with gr.Row():
+            w.ad_model = gr.Dropdown(
+                label="ADetailer detector" + suffix(n),
+                choices=model_choices,
+                value=model_choices[0],
+                visible=True,
+                type="value",
+                elem_id=eid("ad_model"),
+                info="Select a model to use for detection.",
+            )
+
+        with gr.Row():
+            w.ad_model_classes = gr.Textbox(
+                label="ADetailer detector classes" + suffix(n),
+                value="",
+                visible=False,
+                elem_id=eid("ad_model_classes"),
+            )
+
+            w.ad_model.change(
+                on_ad_model_update,
+                inputs=w.ad_model,
+                outputs=w.ad_model_classes,
+                queue=False,
+            )
+
+    gr.HTML("<br>")
+
+    with gr.Group():
+        with gr.Row(elem_id=eid("ad_toprow_prompt")):
+            w.ad_prompt = gr.Textbox(
+                value="",
+                label="ad_prompt" + suffix(n),
+                show_label=False,
+                lines=3,
+                placeholder="ADetailer prompt"
+                + suffix(n)
+                + "\nIf blank, the main prompt is used.",
+                elem_id=eid("ad_prompt"),
+            )
+
+        with gr.Row(elem_id=eid("ad_toprow_negative_prompt")):
+            w.ad_negative_prompt = gr.Textbox(
+                value="",
+                label="ad_negative_prompt" + suffix(n),
+                show_label=False,
+                lines=2,
+                placeholder="ADetailer negative prompt"
+                + suffix(n)
+                + "\nIf blank, the main negative prompt is used.",
+                elem_id=eid("ad_negative_prompt"),
+            )
+
+    with gr.Group():
+        with gr.Accordion(
+            "Detection", open=False, elem_id=eid("ad_detection_accordion")
+        ):
+            detection(w, n, is_img2img)
+
+        with gr.Accordion(
+            "Mask Preprocessing",
+            open=False,
+            elem_id=eid("ad_mask_preprocessing_accordion"),
+        ):
+            mask_preprocessing(w, n, is_img2img)
+
+        with gr.Accordion(
+            "Inpainting", open=False, elem_id=eid("ad_inpainting_accordion")
+        ):
+            pass
+            w.ad_checkpoint = inpainting(w, n, is_img2img, webui_info)
+
+
+
+    state = gr.State(lambda: state_init(w))
+
+    for attr in ALL_ARGS.attrs:
+        widget = getattr(w, attr)
+        on_change = partial(on_widget_change, attr=attr)
+        widget.change(fn=on_change, inputs=[state, widget], outputs=state, queue=False)
+
+    all_inputs = [state, *w.tolist()]
+
+
+    return state, w.ad_model, w.ad_checkpoint 
+
+
+def detection(w: Widgets, n: int, is_img2img: bool):
+    eid = partial(elem_id, n=n, is_img2img=is_img2img)
+
+    with gr.Row():
+        with gr.Column(variant="compact"):
+            w.ad_confidence = gr.Slider(
+                label="Detection model confidence threshold" + suffix(n),
+                minimum=0.0,
+                maximum=1.0,
+                step=0.01,
+                value=0.3,
+                visible=True,
+                elem_id=eid("ad_confidence"),
+            )
+            w.ad_mask_filter_method = gr.Radio(
+                choices=["Area", "Confidence"],
+                value="Area",
+                label="Method to filter top k masks by (confidence or area)"
+                + suffix(n),
+                visible=True,
+                elem_id=eid("ad_mask_filter_method"),
+            )
+            w.ad_mask_k = gr.Slider(
+                label="Mask only the top k (0 to disable)" + suffix(n),
+                minimum=0,
+                maximum=10,
+                step=1,
+                value=0,
+                visible=True,
+                elem_id=eid("ad_mask_k"),
+            )
+
+        with gr.Column(variant="compact"):
+            w.ad_mask_min_ratio = gr.Slider(
+                label="Mask min area ratio" + suffix(n),
+                minimum=0.0,
+                maximum=1.0,
+                step=0.001,
+                value=0.0,
+                visible=True,
+                elem_id=eid("ad_mask_min_ratio"),
+            )
+            w.ad_mask_max_ratio = gr.Slider(
+                label="Mask max area ratio" + suffix(n),
+                minimum=0.0,
+                maximum=1.0,
+                step=0.001,
+                value=1.0,
+                visible=True,
+                elem_id=eid("ad_mask_max_ratio"),
+            )
+
+
+def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
+    eid = partial(elem_id, n=n, is_img2img=is_img2img)
+
+    with gr.Group():
+        with gr.Row():
+            with gr.Column(variant="compact"):
+                w.ad_x_offset = gr.Slider(
+                    label="Mask x(→) offset" + suffix(n),
+                    minimum=-200,
+                    maximum=200,
+                    step=1,
+                    value=0,
+                    visible=True,
+                    elem_id=eid("ad_x_offset"),
+                )
+                w.ad_y_offset = gr.Slider(
+                    label="Mask y(↑) offset" + suffix(n),
+                    minimum=-200,
+                    maximum=200,
+                    step=1,
+                    value=0,
+                    visible=True,
+                    elem_id=eid("ad_y_offset"),
+                )
+
+            with gr.Column(variant="compact"):
+                w.ad_dilate_erode = gr.Slider(
+                    label="Mask erosion (-) / dilation (+)" + suffix(n),
+                    minimum=-128,
+                    maximum=128,
+                    step=4,
+                    value=4,
+                    visible=True,
+                    elem_id=eid("ad_dilate_erode"),
+                )
+
+        with gr.Row():
+            w.ad_mask_merge_invert = gr.Radio(
+                label="Mask merge mode" + suffix(n),
+                choices=MASK_MERGE_INVERT,
+                value="None",
+                elem_id=eid("ad_mask_merge_invert"),
+                info="None: do nothing, Merge: merge masks, Merge and Invert: merge all masks and invert",
+            )
+
+
+def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # noqa: PLR0915
+    eid = partial(elem_id, n=n, is_img2img=is_img2img)
+    with gr.Group():
+        with gr.Row():
+            with gr.Column(variant="compact"):
+                w.ad_use_inpaint_engine = gr.Checkbox(
+                    label="ADetailer use separate Inpaint Engine" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_inpaint_engine"),
+                )
+                w.ad_inpaint_engine = gr.Dropdown(
+                    label="Inpaint Engine" + suffix(n),
+                    choices=modules.flags.inpaint_engine_versions,
+                    value=modules.config.default_inpaint_engine_version,
+                    visible=True,
+                    interactive=False,
+                    elem_id=eid("ad_inpaint_engine"),
+                )
+                w.ad_use_inpaint_engine.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_inpaint_engine,
+                    outputs=w.ad_inpaint_engine,
+                    queue=False,
+                )
+            with gr.Column(variant="compact"):
+                w.ad_disable_latent = gr.Checkbox(
+                    label="ADetailer Disable initial latent" + suffix(n),
+                    value=True,
+                    visible=True,
+                    elem_id=eid("ad_disable_latent"),
+                )
+                w.ad_use_denoising_strength = gr.Checkbox(
+                    label="ADetailer use separate denoising strength" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_denoising_strength"),
+                )
+                
+                w.ad_denoising_strength = gr.Slider(
+                    label="Inpaint denoising strength" + suffix(n),
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=1,
+                    visible=True,
+                    interactive=False,
+                    elem_id=eid("ad_denoising_strength"),
+                )
+                w.ad_use_denoising_strength.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_denoising_strength,
+                    outputs=w.ad_denoising_strength,
+                    queue=False,
+                )
+            with gr.Column(variant="compact"):
+                w.ad_use_resp_field = gr.Checkbox(
+                    label="ADetailer use separate Respective Field" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_resp_field"),
+                )
+                w.ad_resp_field = gr.Slider(
+                    label="Inpaint Respective Field" + suffix(n),
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=0,
+                    visible=True,
+                    interactive=False,
+                    elem_id=eid("ad_resp_field"),
+                )
+                w.ad_use_resp_field.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_resp_field,
+                    outputs=w.ad_resp_field,
+                    queue=False,
+                )
+
+
+    with gr.Group():
+        with gr.Row():
+            with gr.Column(variant="compact"):
+                w.ad_use_cfg_scale = gr.Checkbox(
+                    label="ADetailer use separate CFG scale" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_cfg_scale"),
+                )
+                w.ad_cfg_scale =  gr.Slider(
+                    label="ADetailer CFG scale" + suffix(n),
+                    minimum=0.0,
+                    maximum=30.0,
+                    step=0.5,
+                    value=7.0,
+                    visible=True,
+                    interactive=False,
+                    elem_id=eid("ad_cfg_scale"),
+                )
+                w.ad_use_cfg_scale.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_cfg_scale,
+                    outputs=w.ad_cfg_scale,
+                    queue=False,
+                )
+
+
+
+            with gr.Column(variant="compact"):
+                w.ad_use_clip_skip = gr.Checkbox(
+                    label="Use separate CLIP skip" + suffix(n),
+                    value=False,
+                    visible=True,
+                    interactiv=False,
+                    elem_id=eid("ad_use_clip_skip"),
+                )
+
+                w.ad_clip_skip = gr.Slider(
+                    label="ADetailer CLIP skip" + suffix(n),
+                    minimum=1,
+                    maximum=12,
+                    step=1,
+                    value=1,
+                    visible=True,
+                    elem_id=eid("ad_clip_skip"),
+                )
+
+                w.ad_use_clip_skip.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_clip_skip,
+                    outputs=w.ad_clip_skip,
+                    queue=False,
+                )
+
+
+
+    with gr.Group():   
+        with gr.Row():
+            with gr.Column(variant="compact"):
+                w.ad_use_checkpoint = gr.Checkbox(
+                    label="Use separate checkpoint" + suffix(n),
+                    value=False,
+                    visible=True,
+                    elem_id=eid("ad_use_checkpoint"),
+                )
+
+                ckpts = ["Use same checkpoint", *webui_info.checkpoints_list]
+
+                w.ad_checkpoint = gr.Dropdown(
+                    label="ADetailer checkpoint" + suffix(n),
+                    choices=ckpts,
+                    value=ckpts[0],
+                    visible=True,
+                    elem_id=eid("ad_checkpoint"),
+                    interactive=False
+                )
+                w.ad_use_checkpoint.change(
+                    lambda value: (gr_interactive(value)),
+                    inputs=w.ad_use_checkpoint,
+                    outputs=w.ad_checkpoint,
+                    queue=False,
+                )
+        with gr.Row(), gr.Column(variant="compact"):
+            w.ad_use_sampler = gr.Checkbox(
+                label="Use separate sampler" + suffix(n),
+                value=False,
+                visible=True,
+                elem_id=eid("ad_use_sampler"),
+            )
+
+            sampler_names = [
+                "Use same sampler",
+                *webui_info.sampler_names,
+            ]
+
+            with gr.Row():
+                w.ad_sampler = gr.Dropdown(
+                    label="ADetailer sampler" + suffix(n),
+                    choices=sampler_names,
+                    value=sampler_names[0],
+                    visible=True,
+                    elem_id=eid("ad_sampler"),
+                    interactive=False
+                )
+
+                scheduler_names = [
+                    "Use same scheduler",
+                    *webui_info.scheduler_names,
+                ]
+                w.ad_scheduler = gr.Dropdown(
+                    label="ADetailer scheduler" + suffix(n),
+                    choices=scheduler_names,
+                    value=scheduler_names[0],
+                    visible=len(scheduler_names) > 1,
+                    elem_id=eid("ad_scheduler"),
+                    interactive=False
+                )
+
+                w.ad_use_sampler.change(
+                    lambda value: (gr_interactive(value), gr_interactive(value)),
+                    inputs=w.ad_use_sampler,
+                    outputs=[w.ad_sampler, w.ad_scheduler],
+                    queue=False,
+                )
+
+    return w.ad_checkpoint

@@ -12,6 +12,8 @@ from modules.model_loader import load_file_from_url
 from modules.extra_utils import makedirs_with_log, get_files_from_folder, try_eval_env_var
 from modules.flags import OutputFormat, Performance, MetadataScheme
 
+from pathlib import Path
+
 
 def get_config_path(key, default_value):
     env = os.getenv(key)
@@ -205,6 +207,7 @@ path_fooocus_expansion = get_dir_or_set_default('path_fooocus_expansion', '../mo
 path_wildcards = get_dir_or_set_default('path_wildcards', '../wildcards/')
 path_safety_checker = get_dir_or_set_default('path_safety_checker', '../models/safety_checker/')
 path_sam = get_dir_or_set_default('path_sam', '../models/sam/')
+path_yolo = Path(paths_checkpoints[0]).parent / "detection"
 path_outputs = get_path_output()
 
 
@@ -347,6 +350,12 @@ default_max_lora_number = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, int) and x >= 1,
     expected_type=int
 )
+default_adetail_tab = get_config_item_or_set_default(
+    key='default_adetail_tab',
+    default_value=5,
+    validator=lambda x: isinstance(x, int) and x >= 1,
+    expected_type=int
+)
 default_cfg_scale = get_config_item_or_set_default(
     key='default_cfg_scale',
     default_value=7.0,
@@ -415,6 +424,12 @@ default_image_prompt_checkbox = get_config_item_or_set_default(
 )
 default_enhance_checkbox = get_config_item_or_set_default(
     key='default_enhance_checkbox',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_adetailer_checkbox = get_config_item_or_set_default(
+    key='default_adetailer_checkbox',
     default_value=False,
     validator=lambda x: isinstance(x, bool),
     expected_type=bool
@@ -571,6 +586,18 @@ default_cfg_tsnr = get_config_item_or_set_default(
     default_value=7.0,
     validator=lambda x: isinstance(x, numbers.Number),
     expected_type=numbers.Number
+)
+default_rescale_cfg = get_config_item_or_set_default(
+    key='default_rescale_cfg',
+    default_value=0.3,
+    validator=lambda x: isinstance(x, numbers.Number),
+    expected_type=numbers.Number
+)
+default_type_cfg = get_config_item_or_set_default(
+    key='default_type_cfg',
+    default_value=modules.flags.type_cfg_default,
+    validator=lambda x: x in modules.flags.type_cfg_default,
+    expected_type=str
 )
 default_clip_skip = get_config_item_or_set_default(
     key='default_clip_skip',
@@ -736,6 +763,8 @@ possible_preset_keys = {
     "default_loras": "<processed>",
     "default_cfg_scale": "guidance_scale",
     "default_sample_sharpness": "sharpness",
+    "default_rescale_cfg": "rescale_cfg",
+    "default_type_cfg": "type_cfg",
     "default_cfg_tsnr": "adaptive_cfg",
     "default_clip_skip": "clip_skip",
     "default_sampler": "sampler",
@@ -800,12 +829,35 @@ with open(config_example_path, "w", encoding="utf-8") as json_file:
 model_filenames = []
 lora_filenames = []
 vae_filenames = []
+YOLO_DEFAULT_FILENAMES = [
+
+    "deepfashion2_yolov8s-seg.pt",
+    "face_yolov8m.pt",
+    "face_yolov8n.pt",
+    "face_yolov8n_v2.pt",
+    "face_yolov8s.pt",
+    "hand_yolov8n.pt",
+    "hand_yolov8s.pt",
+    "person_yolov8m-seg.pt",
+    "person_yolov8n-seg.pt",
+    "person_yolov8s-seg.pt",
+    "yolov8l-worldv2.pt",
+    "yolov8m-worldv2.pt",
+    "yolov8s-worldv2.pt",
+    "yolov8x-worldv2.pt",
+    "mediapipe_face_full.pt",
+    "mediapipe_face_short.pt",
+    "mediapipe_face_mesh.pt",
+    "mediapipe_face_mesh_eyes_only.pt"
+]
+
+yolo_filenames = YOLO_DEFAULT_FILENAMES.copy()
 wildcard_filenames = []
 
 
 def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     if extensions is None:
-        extensions = ['.pth', '.ckpt', '.bin', '.safetensors', '.fooocus.patch']
+        extensions = ['.pth', '.ckpt', '.bin', '.safetensors', '.fooocus.patch', '.pt']
     files = []
 
     if not isinstance(folder_paths, list):
@@ -815,12 +867,14 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
 
     return files
 
-
 def update_files():
-    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets
+    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames
     model_filenames = get_model_filenames(paths_checkpoints)
     lora_filenames = get_model_filenames(paths_loras)
     vae_filenames = get_model_filenames(path_vae)
+    yolo_from_disk = get_model_filenames(str(path_yolo))
+    yolo_filenames = list(dict.fromkeys(YOLO_DEFAULT_FILENAMES + yolo_from_disk))
+
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
     return

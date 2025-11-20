@@ -67,6 +67,9 @@ from extentions.vector import vector
 import extentions.batch as batch
 import extentions.watermark as watermark
 
+#!from extentions.adetailer.scripts.adetailer import AfterDetailerScript
+#!adetailer=AfterDetailerScript()
+import extentions.adetailer.scripts.adetailer as adetailer
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -413,6 +416,7 @@ with shared.gradio_root:
             with gr.Row(elem_classes='advanced_check_row'):
                 input_image_checkbox = gr.Checkbox(label='Input Image', value=modules.config.default_image_prompt_checkbox, container=False, elem_classes='min_check')
                 enhance_checkbox = gr.Checkbox(label='Enhance', value=modules.config.default_enhance_checkbox, container=False, elem_classes='min_check')
+                adetailer_checkbox = gr.Checkbox(label='Adetailer', value=modules.config.default_adetailer_checkbox, container=False, elem_classes='min_check')
                 advanced_checkbox = gr.Checkbox(label='Advanced', value=modules.config.default_advanced_checkbox, container=False, elem_classes='min_check')
             with gr.Row(visible=modules.config.default_image_prompt_checkbox) as image_input_panel:
                 with gr.Tabs(selected=modules.config.default_selected_image_input_tab_id):
@@ -543,6 +547,7 @@ with shared.gradio_root:
                                                                    example_inpaint_mask_dino_prompt_text],
                                                           queue=False, show_progress=False)
 
+                            
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
@@ -569,6 +574,14 @@ with shared.gradio_root:
                             with gr.Column():
                                 enhance_input_image = grh.Image(label='Use with Enhance, skips image generation', source='upload', type='numpy')
                                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/3281" target="_blank">\U0001F4D4 Documentation</a>')
+
+
+
+
+                    with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
+                        with gr.Row():
+                            with gr.Column():
+                                adetail_input_image = gr.Image(label='Use with Adetailer, skips image generation', source='upload', type='numpy',image_mode='RGB')
 
                     with gr.Tab(label='Metadata', id='metadata_tab') as metadata_tab:
                         with gr.Column():
@@ -753,7 +766,9 @@ with shared.gradio_root:
                             outputs=[enhance_mask_cloth_category, enhance_mask_dino_prompt_text, sam_options,
                                      example_enhance_mask_dino_prompt_text],
                             queue=False, show_progress=False)
-
+            with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
+                with gr.Tabs():
+                    only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
@@ -764,11 +779,13 @@ with shared.gradio_root:
             current_tab = gr.Textbox(value='uov', visible=False)
             uov_tab.select(lambda: 'uov', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             inpaint_tab.select(lambda: 'inpaint', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
+            adetail_tab.select(lambda: 'adetail', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
                                 prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
@@ -801,7 +818,7 @@ with shared.gradio_root:
                                 return {viewstrans: gr.update(visible=checkbox)} 
                                        
                             with gr.Row():
-                                translate_enabled = gr.Checkbox(label='Enable translate', value=False, elem_id='translate_enabled_el')
+                                translate_enabled = gr.Checkbox(label='Enabled', value=False, elem_id='translate_enabled_el')
                             with gr.Row():
                                 gtrans = gr.Button(value="Translate")        
 
@@ -823,12 +840,11 @@ with shared.gradio_root:
                         with gr.TabItem(label='Photomaker') as photomaker_tab:
                             enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
-                            enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()
-
+                            enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen=instantid.gui()                          
                         with gr.TabItem(label='Inswapper'):
-                            inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image = face_swap.inswapper_gui()
+                            inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
                         with gr.TabItem(label='CodeFormer'):
-                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity = codeformer.codeformer_gen_gui()
+                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
@@ -1005,9 +1021,10 @@ with shared.gradio_root:
                     gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
                     gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
                   with gr.TabItem(label='Inswapper'):
-                    face_swap.inswapper_gui2()
+                    face_swap.inswapper(False)
+
                   with gr.TabItem(label='CodeFormer'):
-                    codeformer.codeformer_gen_gui2()
+                    codeformer.codeformer_gui(False)
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
                   with gr.TabItem(label='Vector'):
@@ -1058,6 +1075,8 @@ with shared.gradio_root:
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             enhance_checkbox.change(lambda x: gr.update(visible=x), inputs=enhance_checkbox,
                                         outputs=enhance_input_panel, queue=False, show_progress=False, _js=switch_js)
+            adetailer_checkbox.change(lambda x: gr.update(visible=x), inputs=adetailer_checkbox,
+                                        outputs=adetailer_input_panel, queue=False, show_progress=False, _js=switch_js)
 
         with gr.Column(scale=1, visible=modules.config.default_advanced_checkbox) as advanced_column:
             with gr.Tab(label='Settings'):
@@ -1385,11 +1404,18 @@ with shared.gradio_root:
 
                         refiner_swap_method = gr.Dropdown(label='Refiner swap method', value=flags.refiner_swap_method,
                                                           choices=['joint', 'separate', 'vae'])
-
+                        type_cfg = gr.Radio(label='CFG control type',choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value=modules.config.default_type_cfg)
+                        rescale_cfg = gr.Slider(label='CFG rescale', minimum=0, maximum=1, step=0.01,
+                                                 value=modules.config.default_rescale_cfg,visible=False,interactive=True)
                         adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
-                                                 value=modules.config.default_cfg_tsnr,
+                                                 value=modules.config.default_cfg_tsnr,visible=True,
                                                  info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
                                                       '(effective when real CFG > mimicked CFG).')
+                        def cfg_select(cfg):
+                            scale = (cfg == 'CFG rescale')
+                            adaptive = (cfg == 'CFG Mimicking from TSNR')
+                            return gr.update(visible=scale), gr.update(visible=adaptive)
+                        type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
                         clip_skip = gr.Slider(label='CLIP Skip', minimum=1, maximum=flags.clip_skip_max, step=1,
                                                  value=modules.config.default_clip_skip,
                                                  info='Bypass CLIP layers to avoid overfitting (use 1 to not skip any layers, 2 is recommended).')
@@ -1451,7 +1477,7 @@ with shared.gradio_root:
 
 
                         if not args_manager.args.disable_image_log:
-                            save_final_enhanced_image_only = gr.Checkbox(label='Save only final enhanced image',
+                            save_final_enhanced_image_only = gr.Checkbox(label='Save only final enhanced/ADetailer image',
                                                                          value=modules.config.default_save_only_final_enhanced_image)
 
                         if not args_manager.args.disable_metadata:
@@ -1497,6 +1523,8 @@ with shared.gradio_root:
                         debugging_inpaint_preprocessor = gr.Checkbox(label='Debug Inpaint Preprocessing', value=False)
                         debugging_enhance_masks_checkbox = gr.Checkbox(label='Debug Enhance Masks', value=False,
                                                                        info='Show enhance masks in preview and final results')
+                        debugging_adetailer_masks_checkbox = gr.Checkbox(label='Debug ADetailer Masks', value=False,
+                                                                       info='Show ADetailer masks in preview and final results')
                         debugging_dino = gr.Checkbox(label='Debug GroundingDINO', value=False,
                                                      info='Use GroundingDINO boxes instead of more detailed SAM masks')
                         inpaint_disable_initial_latent = gr.Checkbox(label='Disable initial latent in inpaint', value=False)
@@ -1579,6 +1607,13 @@ with shared.gradio_root:
                 dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
                                 queue=False, show_progress=False)
 
+                def update_ad_model_choices():
+                    models=[gr.update(choices = modules.config.yolo_filenames) for _ in range(modules.config.default_adetail_tab)]
+                    ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)]
+
+                    return models + ckpt
+                    
+
                 def refresh_files_clicked():
                     modules.config.update_files()
                     results = [gr.update(choices=modules.config.model_filenames)]
@@ -1595,14 +1630,15 @@ with shared.gradio_root:
                 if not args_manager.args.disable_preset_selection:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
-                                    queue=False, show_progress=False)
+                                    queue=False, show_progress=False) \
+                                    .then(update_ad_model_choices,inputs=[],outputs=ad_model_dropdowns+ad_ckpt_dropdowns)
 
         state_is_generating = gr.State(False)
 
         load_data_outputs = [advanced_checkbox, image_number, prompt, negative_prompt, style_selections,
                              performance_selection, overwrite_step, overwrite_switch, aspect_ratios_selection,
                              overwrite_width, overwrite_height, guidance_scale, sharpness, adm_scaler_positive,
-                             adm_scaler_negative, adm_scaler_end, refiner_swap_method, adaptive_cfg, clip_skip,
+                             adm_scaler_negative, adm_scaler_end, refiner_swap_method, adaptive_cfg, rescale_cfg, type_cfg, clip_skip,
                              base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, vae_name,
                              seed_random, image_seed, inpaint_engine, inpaint_engine_state,
                              inpaint_mode] + enhance_inpaint_mode_ctrls + [generate_button,
@@ -1705,7 +1741,7 @@ with shared.gradio_root:
         ctrls += [uov_method, uov_input_image]
         ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
         ctrls += [disable_preview, disable_intermediate_results, disable_seed_increment, black_out_nsfw]
-        ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, adaptive_cfg, clip_skip]
+        ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, type_cfg, rescale_cfg, adaptive_cfg, clip_skip]
         ctrls += [sampler_name, scheduler_name, vae_name]
         ctrls += [overwrite_step, overwrite_switch, overwrite_width, overwrite_height, overwrite_vary_strength]
         ctrls += [overwrite_upscale_strength, mixing_image_prompt_and_vary_upscale, mixing_image_prompt_and_inpaint]
@@ -1762,8 +1798,8 @@ with shared.gradio_root:
         ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [batch_prompt,positive_batch,negative_batch]
         ctrls += [name_prefix]
-        ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image]
-        ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity]
+        ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
+        ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
         ctrls += [enable_instant,face_file_id,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,controlnet_selection_id,canny_strength_id,depth_strength_id,scheduler_id,enhance_face_region_id,pre_gen]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
@@ -1777,6 +1813,9 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
+        ctrls += [only_detect]
+        ctrls += ad_component
+        ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
@@ -1813,6 +1852,8 @@ with shared.gradio_root:
             data["default_loras"]=ctrl
             data["default_cfg_scale"]=p.cfg_scale
             data["default_sample_sharpness"]=p.sharpness
+            data["default_type_cfg"] = p.type_cfg
+            data["default_rescale_cfg"] = p.rescale_cfg
             data["default_cfg_tsnr"]=p.adaptive_cfg
             data["default_clip_skip"]=p.clip_skip
             data["default_sampler"]=p.sampler_name
@@ -1825,7 +1866,7 @@ with shared.gradio_root:
             data["default_styles"]=p.style_selections
             data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
             data["default_vae"]=p.vae_name
-            data["default_inpaint_engine_version"]=p.inpaint_engine
+            #data["default_inpaint_engine_version"]=p.inpaint_engine
             save_path = 'presets/' + name + '.json'
             with open(save_path, "w", encoding="utf-8") as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)

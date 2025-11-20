@@ -60,7 +60,7 @@ def set_realesrgan():
     return upsampler
 def get_image(input_data: Union[list, np.ndarray]) -> np.ndarray:
     if isinstance(input_data, (list, tuple)) and len(input_data) > 0:        
-        return input_data[0],True
+        return input_data[-1],True
     elif isinstance(input_data, np.ndarray):
         
         return input_data,False
@@ -215,41 +215,25 @@ def process(codeformer_preface,codeformer_background_enhance,codeformer_face_ups
     return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
+def codeformer_gui(generator):
 
-
-
-def codeformer_gen_gui():
-    with gr.Row():
-          codeformer_gen_enabled = gr.Checkbox(label="Enabled", value=False)
-    with gr.Row():
-        with gr.Column():      
-          codeformer_gen_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
-          codeformer_gen_background_enhance=gr.Checkbox(label="Background Enchanced", value=True)
-          codeformer_gen_face_upsample=gr.Checkbox(label="Face Upsample", value=True)
-        with gr.Column(): 
-          codeformer_gen_upscale = gr.Slider(label='Upscale', minimum=1.0, maximum=4.0, step=1.0, value=1,interactive=True)
-          codeformer_gen_fidelity =gr.Slider(label='Codeformer_Fidelity', minimum=0, maximum=1, value=0.5, step=0.01, info='0 for better quality, 1 for better identity (default=0.5)')
-    with gr.Row():
-        gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
-    return codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity
-def codeformer_gen_gui2():
-
-    with gr.Row():
+    with gr.Row(visible=not generator):
         file_in,files_single,image_single,enable_zip,file_out,preview, image_out = batch.ui_batch()
+    with gr.Row(visible=generator):
+          codeformer_gen_enabled = gr.Checkbox(label="Enabled", value=False)
     with gr.Row():
         with gr.Column():
             codeformer_preface=gr.Checkbox(value=True, label="Pre_Face_Align")
             codeformer_background_enhance=gr.Checkbox(label="Background Enchanced", value=True)
             codeformer_face_upsample=gr.Checkbox(label="Face Upsample", value=True)
+            codeformer_temp=gr.Checkbox(label="Save input image", value=False, visible=generator)
         with gr.Column():
             codeformer_upscale = gr.Slider(label='Upscale', minimum=1.0, maximum=4.0, step=1.0, value=1,interactive=True)
             codeformer_fidelity =gr.Slider(label='Codeformer_Fidelity', minimum=0, maximum=1, value=0.5, step=0.01, info='0 for better quality, 1 for better identity (default=0.5)')
-        #with gr.Column():
-        #    codeformer_input=gr.Image(type="numpy", label="Input")
-    with gr.Row():
+
+    with gr.Row(visible=not generator):
         codeformer_start=gr.Button(value='Start CodeFormer')
-    #with gr.Row():
-    #    codeformer_output=gr.Image(type="numpy", label="Output")
+
     with gr.Row():
         gr.HTML('* \"CodeFormer\" is powered by sczhou. <a href="https://github.com/sczhou/CodeFormer" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
@@ -261,5 +245,5 @@ def codeformer_gen_gui2():
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)               
-    #codeformer_start.click(codeformer_process,inputs=[codeformer_input,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity],outputs=codeformer_output)
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)   
+    return codeformer_gen_enabled,codeformer_preface,codeformer_background_enhance,codeformer_face_upsample,codeformer_upscale,codeformer_fidelity,codeformer_temp 

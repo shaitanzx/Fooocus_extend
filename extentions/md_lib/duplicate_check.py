@@ -180,7 +180,8 @@ def get_hash(model_path, model_file, model_type, cached_hash):
         "ti": "textual_inversion",
         "hyper": "hypernet",
         "lora": "lora",
-        "lycoris": "lycoris"
+        "lycoris": "lycoris",
+        "detection": "detection"
     }[model_type]
 
     result = None

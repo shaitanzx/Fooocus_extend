@@ -12,21 +12,9 @@ from extentions.inswapper.swapper import process
 import extentions.batch as batch
 temp_dir=modules.config.temp_path+os.path.sep
 
-def inswapper_gui():
-  with gr.Row():
-    with gr.Column():
-      inswapper_enabled = gr.Checkbox(label="Enabled", value=False)
-      inswapper_source_image_indicies = gr.Text(label="Source Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
-      inswapper_target_image_indicies = gr.Text(label = "Target Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
-    with gr.Column():
-      inswapper_source_image = grh.Image(label='Source Face Image', source='upload', type='numpy')
-  with gr.Row():
-    gr.HTML('* \"inswapper\" is powered by haofanwang. <a href="https://github.com/haofanwang/inswapper" target="_blank">\U0001F4D4 Document</a>')
-  return inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image
-
 def get_image(input_data: Union[list, np.ndarray]) -> np.ndarray:
     if isinstance(input_data, (list, tuple)) and len(input_data) > 0:
-        return input_data[0],True
+        return input_data[-1],True
     elif isinstance(input_data, np.ndarray):
         return input_data,False
 
@@ -72,7 +60,9 @@ def process_insw(inswap_source_image_indicies, inswap_target_image_indicies):
           passed+=1
     return gr.update(value=None,visible=False),gr.update(value=None,visible=False),gr.update(visible=True)
 
-def inswapper_gui2():
+
+
+def inswapper(generator):
     def zip_enable(enable,single_file):
         if enable:
             return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
@@ -84,11 +74,21 @@ def inswapper_gui2():
     def clear_single(image):
         return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
     def single_image(single_upload):
+        if single_upload is None:
+            return gr.update(), gr.update()
         if len(single_upload) == 1:
             return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
         else:
             return gr.update (visible=False),gr.update(visible=True)
-    with gr.Row():
+    with gr.Row(visible=generator):
+        with gr.Column():
+            inswapper_enabled = gr.Checkbox(label="Enabled", value=False)
+            inswapper_source_image_indicies = gr.Text(label="Source Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+            inswapper_target_image_indicies = gr.Text(label = "Target Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+            inswapper_temp = gr.Checkbox(label="Save input image", value=False)
+        with gr.Column():
+            inswapper_source_image = grh.Image(label='Source Face Image', source='upload', type='numpy')
+    with gr.Row(visible=not generator):
         with gr.Column():
             with gr.Row():
                 file_in_face=gr.File(label="Upload a ZIP file of Source Face",file_count='single',file_types=['.zip'],visible=False,height=260)
@@ -112,12 +112,12 @@ def inswapper_gui2():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 #preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
                 image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False)
-    with gr.Row():
+    with gr.Row(visible=not generator):
         with gr.Column():
             inswap_source_image_indicies = gr.Text(label="Source Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
         with gr.Column():        
             inswap_target_image_indicies = gr.Text(label = "Target Image Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
-    with gr.Row():
+    with gr.Row(visible=not generator):
             inswap_start=gr.Button(value='Start inswapper')
     with gr.Row():
         gr.HTML('* \"inswapper\" is powered by haofanwang. <a href="https://github.com/haofanwang/inswapper" target="_blank">\U0001F4D4 Document</a>')
@@ -149,3 +149,4 @@ def inswapper_gui2():
               .then(fn=single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False) \
               .then(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=inswap_start)
+    return inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp
