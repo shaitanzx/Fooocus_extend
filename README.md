@@ -146,6 +146,7 @@ Sace input image - saves the input image from the previous iteration (generation
 <img width="743" height="252" alt="image" src="https://github.com/user-attachments/assets/ef798a4d-3329-4318-a4c0-7d704d82b8f7" />
 
 
+
 Face enhancement module with upscale capability
 
 Pre_Face_Align - aligns the face if it is tilted
@@ -158,7 +159,11 @@ Upscale - image enlargement
 
 Codeformer_Fidelity - signability coefficient, inversely proportional to quality
 
+
 Sace input image - saves the input image from the previous iteration (generation or previous Extention)
+=======
+
+
 
 **Vector**
 
