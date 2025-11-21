@@ -2026,7 +2026,7 @@ with shared.gradio_root:
     gr.HTML("""
     <div style="text-align: center;">
         <p>We are in <a href="https://t.me/+xlhhGmrz9SlmYzg6" target="_blank">Telegram</a></p>
-        <p><a href="https://photofaerie.ru/anonsy" target="_blank">The course on Fooocus Extend</a></p>
+        
     </div>
     """)
     
