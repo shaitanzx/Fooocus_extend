@@ -90,7 +90,7 @@ def load_models():
                 file_name='shape_predictor_68_face_landmarks.dat'
             )
 
-def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_color):
+def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 
         #!if proc_order == "Restoration First":
 
@@ -102,20 +102,7 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_col
             #!img = pp.image
             
         img =np.array(main(img, do_scratch, is_hr, do_face_res, use_cpu))
-        if do_color:
-            from modelscope.pipelines import pipeline
-            from modelscope.utils.constant import Tasks
-            from modelscope.outputs import OutputKeys
-            from modelscope.hub.snapshot_download import snapshot_download
-            path_color=Path(__file__).parent / "color_model"
-            os.makedirs(path_color, exist_ok=True)
-            model_dir = snapshot_download('iic/cv_ddcolor_image-colorization',cache_dir=path_color)
-            img_colorization = pipeline(task=Tasks.image_colorization,model=model_dir)
-            rgb_image = img[..., ::-1] if img.shape[-1] == 3 else img
-            output = img_colorization(rgb_image)
-            result = output[OutputKeys.OUTPUT_IMG].astype(np.uint8)
-            img = result[...,::-1]
-            del img_colorization
+        
         return img
 def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
     batch_path=f"{temp_dir}batch_old_photo"
@@ -129,7 +116,25 @@ def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         #!image=np.array(img)
-        img_old=Image.fromarray(process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_color))
+        img_old=Image.fromarray(process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img))
+        yield gr.update(value=img,visible=True),gr.update(visible=False)
+        if do_color:
+            from modelscope.pipelines import pipeline
+            from modelscope.utils.constant import Tasks
+            from modelscope.outputs import OutputKeys
+            from modelscope.hub.snapshot_download import snapshot_download
+            path_color=Path(__file__).parent / "color_model"
+            os.makedirs(path_color, exist_ok=True)
+            model_dir = snapshot_download('iic/cv_ddcolor_image-colorization',cache_dir=path_color)
+            img_colorization = pipeline(task=Tasks.image_colorization,model=model_dir)
+            rgb_image = img[..., ::-1] if img.shape[-1] == 3 else img
+            output = img_colorization(rgb_image)
+            result = output[OutputKeys.OUTPUT_IMG].astype(np.uint8)
+            img = result[...,::-1]
+            yield gr.update(value=img,visible=True),gr.update(visible=False)
+            del img_colorization
+
+            
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_old'+ext
         img_old.save(filename)
