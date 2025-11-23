@@ -126,7 +126,8 @@ def ui():
     #!args = {enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu}
     start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
         .then (load_models) \
-        .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,image_input],outputs=image_output)
+        .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,image_input],outputs=image_output) \
+        .then (lambda: (gr.update(interactive=True)),outputs=[start])
     
 
 
