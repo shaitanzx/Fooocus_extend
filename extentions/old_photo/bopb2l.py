@@ -131,8 +131,11 @@ def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
             output = img_colorization(rgb_image)
             result = output[OutputKeys.OUTPUT_IMG].astype(np.uint8)
             img = result[...,::-1]
-            yield gr.update(value=img,visible=True),gr.update(visible=False)
             del img_colorization
+            import gc
+            gc.collect()
+            import torch
+            torch.cuda.empty_cache()
 
         img=Image.fromarray(img)    
         name, ext = os.path.splitext(f_name)
@@ -175,64 +178,3 @@ def ui():
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
-
-    
-
-
-
-
-class OldPhotoRestoration():
-    name = "BOP"
-    order = 200409484
-    """
-    def ui(self):
-        with InputAccordion(False, label="Old Photo Restoration") as enable:
-            proc_order = gr.Radio(
-                choices=("Restoration First", "Upscale First"),
-                value="Restoration First",
-                label="Processing Order",
-            )
-
-            with gr.Row():
-                do_scratch = gr.Checkbox(False, label="Process Scratch")
-                do_face_res = gr.Checkbox(False, label="Face Restore")
-            with gr.Row():
-                is_hr = gr.Checkbox(False, label="High Resolution")
-                use_cpu = gr.Checkbox(True, label="Use CPU")
-
-        args = {
-            "enable": enable,
-            "proc_order": proc_order,
-            "do_scratch": do_scratch,
-            "do_face_res": do_face_res,
-            "is_hr": is_hr,
-            "use_cpu": use_cpu,
-        }
-
-        return args
-
-    def process_firstpass(self, pp, **args):
-
-        if args["enable"] and args["proc_order"] == "Restoration First":
-
-            do_scratch: bool = args["do_scratch"]
-            do_face_res: bool = args["do_face_res"]
-            is_hr: bool = args["is_hr"]
-            use_cpu: bool = args["use_cpu"]
-
-            img = pp.image
-            pp.image = main(img, do_scratch, is_hr, do_face_res, use_cpu)
-    """    
-
-
-    def process(self, pp, **args):
-
-        if args["enable"] and args["proc_order"] == "Upscale First":
-
-            do_scratch: bool = args["do_scratch"]
-            do_face_res: bool = args["do_face_res"]
-            is_hr: bool = args["is_hr"]
-            use_cpu: bool = args["use_cpu"]
-
-            img = pp.image
-            pp.image = main(img, do_scratch, is_hr, do_face_res, use_cpu)
