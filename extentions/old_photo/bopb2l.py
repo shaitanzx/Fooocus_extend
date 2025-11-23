@@ -16,12 +16,12 @@ def ui():
             label="Processing Order",interactive=True
             )
 
-    with gr.Row(interactive=True):
+    with gr.Row():
         do_scratch = gr.Checkbox(False, label="Process Scratch")
         do_face_res = gr.Checkbox(False, label="Face Restore")
-    with gr.Row(interactive=True):
+    with gr.Row():
         is_hr = gr.Checkbox(False, label="High Resolution")
-        use_cpu = gr.Checkbox(True, label="Use CPU")
+        use_cpu = gr.Checkbox(True, label="Use CPU",interactive=True)
     with gr.Row():
         start=gr.Button(value='Start')
     args = {
