@@ -6,10 +6,10 @@ from extentions.old_photo.bopb2l_main import main
 
 def ui():
     enable=True
-    with gr.Row:
+    with gr.Row():
         files_input = gr.Files(label="",visible=True,interactive=True,height=260)
         files_output = gr.Files(label="",visible=True,interactive=True,height=260)  
-    with gr.Row:
+    with gr.Row():
         proc_order = gr.Radio(
             choices=("Restoration First", "Upscale First"),
             value="Restoration First",
@@ -22,7 +22,7 @@ def ui():
     with gr.Row(interactive=True):
         is_hr = gr.Checkbox(False, label="High Resolution")
         use_cpu = gr.Checkbox(True, label="Use CPU")
-    with gr.Row:
+    with gr.Row():
         start=gr.Button(value='Start')
     args = {
         "enable": enable,
