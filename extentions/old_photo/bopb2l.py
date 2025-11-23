@@ -63,7 +63,7 @@ def load_models():
             Path(__file__).parent / "lib_bopb2l" / "Face_Enhancement" / "checkpoints",
             "face/checkpoints",
             [
-                ("FaceSR_512", "latest_net_G.pt"),
+                ("FaceSR_512", "latest_net_G.pth"),
                 ("Setting_9_epoch_100", "latest_net_G.pth"),
                 
             ]
