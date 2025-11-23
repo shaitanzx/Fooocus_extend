@@ -33,7 +33,7 @@ def ui():
 
 
 
-class OldPhotoRestoration(scripts_postprocessing.ScriptPostprocessing):
+class OldPhotoRestoration():
     name = "BOP"
     order = 200409484
     """
