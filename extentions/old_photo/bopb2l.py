@@ -19,7 +19,7 @@ def ui():
         is_hr = gr.Checkbox(False, label="High Resolution")
         use_cpu = gr.Checkbox(True, label="Use CPU")
 
-     args = {
+    args = {
         "enable": enable,
         "proc_order": proc_order,
         "do_scratch": do_scratch,
