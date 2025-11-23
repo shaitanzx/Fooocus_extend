@@ -6,7 +6,7 @@ from extentions.old_photo.bopb2l_main import main
 from modules.model_loader import load_file_from_url
 from pathlib import Path
 import extentions.batch as batch
-
+temp_dir=modules.config.temp_path+os.path.sep
 
 def load_models():
     
