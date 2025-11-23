@@ -149,7 +149,7 @@ def ui():
               .then(fn=process, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu],outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
 
 
 
