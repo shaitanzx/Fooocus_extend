@@ -116,7 +116,7 @@ def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         #!image=np.array(img)
-        img_old=Image.fromarray(process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img))
+        img=process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         if do_color:
             from modelscope.pipelines import pipeline
@@ -134,10 +134,10 @@ def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
             yield gr.update(value=img,visible=True),gr.update(visible=False)
             del img_colorization
 
-            
+        img=Image.fromarray(img)    
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_old'+ext
-        img_old.save(filename)
+        img.save(filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
 
