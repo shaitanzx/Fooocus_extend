@@ -873,7 +873,7 @@ with shared.gradio_root:
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='OldPhotoRestoration'):
-                    old_photo.bopb2l.scripts.ui()
+                    old_photo.scripts.ui()
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def clear_single(image):
                             return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
