@@ -4,7 +4,7 @@ import gradio as gr
 #!from modules.ui_components import InputAccordion
 from extentions.old_photo.scripts.bopb2l_main import main
 
-def ui(self):
+def ui():
         with InputAccordion(False, label="Old Photo Restoration") as enable:
             proc_order = gr.Radio(
                 choices=("Restoration First", "Upscale First"),
