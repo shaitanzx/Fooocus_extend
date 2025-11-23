@@ -5,7 +5,7 @@ import gradio as gr
 from extentions.old_photo.bopb2l_main import main
 
 def ui():
-        
+    enable=True   
     proc_order = gr.Radio(
         choices=("Restoration First", "Upscale First"),
         value="Restoration First",
