@@ -39,4 +39,5 @@ potracer
 deep-translator
 ultralytics==8.3.227
 mediapipe==0.10.13
+modelscope==1.11.0
 transformers==4.42.4
