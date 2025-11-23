@@ -84,9 +84,9 @@ def load_models():
                 model_dir=Path(__file__).parent / "lib_bopb2l" / "Face_Detection",
                 file_name='shape_predictor_68_face_landmarks.dat'
             )
-def process_firstpass(enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
+def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 
-        if enable and proc_order == "Restoration First":
+        if proc_order == "Restoration First":
 
             #!do_scratch: bool = args["do_scratch"]
             #!do_face_res: bool = args["do_face_res"]
@@ -127,7 +127,7 @@ def ui():
     #!args = {enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu}
     start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
         .then (load_models) \
-        .then (process_firstpass, inputs=[enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu,files_input],outputs=files_output)
+        .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,files_input],outputs=files_output)
     
 
 
