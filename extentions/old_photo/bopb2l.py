@@ -5,20 +5,25 @@ import gradio as gr
 from extentions.old_photo.bopb2l_main import main
 
 def ui():
-    enable=True   
-    proc_order = gr.Radio(
-        choices=("Restoration First", "Upscale First"),
-        value="Restoration First",
-        label="Processing Order",
-    )
+    enable=True
+    with gr.Row:
+        files_input = gr.Files(label="",visible=True,interactive=True,height=260)
+        files_output = gr.Files(label="",visible=True,interactive=True,height=260)  
+    with gr.Row:
+        proc_order = gr.Radio(
+            choices=("Restoration First", "Upscale First"),
+            value="Restoration First",
+            label="Processing Order",interactive=True
+            )
 
-    with gr.Row():
+    with gr.Row(interactive=True):
         do_scratch = gr.Checkbox(False, label="Process Scratch")
         do_face_res = gr.Checkbox(False, label="Face Restore")
-    with gr.Row():
+    with gr.Row(interactive=True):
         is_hr = gr.Checkbox(False, label="High Resolution")
         use_cpu = gr.Checkbox(True, label="Use CPU")
-
+    with gr.Row:
+        start=gr.Button(value='Start')
     args = {
         "enable": enable,
         "proc_order": proc_order,
