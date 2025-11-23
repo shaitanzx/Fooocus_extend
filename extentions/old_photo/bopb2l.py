@@ -144,7 +144,7 @@ def ui():
         ext_dir=gr.Textbox(value='batch_old_photo',visible=False) 
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
-              .then (load_models)
+              .then (load_models) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=process, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu],outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
