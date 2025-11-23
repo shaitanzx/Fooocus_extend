@@ -63,7 +63,7 @@ class OldPhotoRestoration():
 
         return args
     """    
-    def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, **args):
+    def process_firstpass(self, pp, **args):
 
         if args["enable"] and args["proc_order"] == "Restoration First":
 
@@ -75,7 +75,7 @@ class OldPhotoRestoration():
             img = pp.image
             pp.image = main(img, do_scratch, is_hr, do_face_res, use_cpu)
 
-    def process(self, pp: scripts_postprocessing.PostprocessedImage, **args):
+    def process(self, pp, **args):
 
         if args["enable"] and args["proc_order"] == "Upscale First":
 
