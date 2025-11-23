@@ -9,22 +9,81 @@ from pathlib import Path
 
 def load_models():
     
-    load_file_from_url(
-        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/checkpoints/detection/FT_Epoch_latest.pt',
-        model_dir=Path(__file__).parent / "lib_bopb2l" / "Global" / "checkpoints" / "detection",
-        file_name='FT_Epoch_latest.pt'
-    )
-    load_file_from_url(
-        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/checkpoints/restoration/VAE_A_quality/latest_net_D.pth',
-        model_dir=Path(__file__).parent / "lib_bopb2l" / "Global" / "checkpoints" / "restoration" / "VAE_A_quality",
-        file_name='latest_net_D.pth'
-    )
-    load_file_from_url(
-        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/checkpoints/restoration/VAE_A_quality/latest_net_G.pth',
-        model_dir=Path(__file__).parent / "lib_bopb2l" / "Global" / "checkpoints" / "restoration" / "VAE_A_quality",
-        file_name='latest_net_G.pth'
-    )
+    hf_root = "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo"
 
+    # Группы загрузок: (base_local_dir, hf_subdir, [(rel_path, filename), ...])
+    groups = [
+        # Группа 1: Global
+        (
+            Path(__file__).parent / "lib_bopb2l" / "Global" / "checkpoints",
+            "global/checkpoints",
+            [
+                ("detection", "FT_Epoch_latest.pt"),
+                ("restoration/VAE_A_quality", "latest_net_D.pth"),
+                ("restoration/VAE_A_quality", "latest_net_featD.pth"),
+                ("restoration/VAE_A_quality", "latest_net_G.pth"),
+                ("restoration/VAE_A_quality", "latest_optimizer_D.pth"),
+                ("restoration/VAE_A_quality", "latest_optimizer_featD.pth"),
+                ("restoration/VAE_A_quality", "latest_optimizer_G.pth"),
+
+                ("restoration/VAE_B_quality", "latest_net_D.pth"),
+                ("restoration/VAE_B_quality", "latest_net_G.pth"),
+                ("restoration/VAE_B_quality", "latest_optimizer_D.pth"),
+                ("restoration/VAE_B_quality", "latest_optimizer_G.pth"),
+
+
+                ("restoration/VAE_B_scratch", "latest_net_D.pth"),
+                ("restoration/VAE_B_scratch", "latest_net_G.pth"),
+                ("restoration/VAE_B_scratch", "latest_optimizer_D.pth"),
+                ("restoration/VAE_B_scratch", "latest_optimizer_G.pth"),
+
+
+
+                ("restoration/mapping_Patch_Attention", "latest_net_D.pth"),
+                ("restoration/mapping_Patch_Attention", "latest_net_mapping_net.pth"),
+
+
+
+                ("restoration/mapping_quality", "latest_net_D.pth"),
+                ("restoration/mapping_quality", "latest_net_mapping_net.pth"),
+                ("restoration/mapping_quality", "latest_optimizer_D.pth"),
+                ("restoration/mapping_quality", "latest_optimizer_mapping_net.pth"),
+
+
+
+                ("restoration/mapping_scratch", "latest_net_D.pth"),
+                ("restoration/mapping_scratch", "latest_net_mapping_net.pth"),
+                ("restoration/mapping_scratch", "latest_optimizer_D.pth"),
+                ("restoration/mapping_scratch", "latest_optimizer_mapping_net.pth"),
+                
+            ]
+        ),
+        # Группа 2: Face
+        (
+            Path(__file__).parent / "lib_bopb2l" / "Face_Enhancement" / "checkpoints",
+            "face/checkpoints",
+            [
+                ("FaceSR_512", "latest_net_G.pt"),
+                ("Setting_9_epoch_100", "latest_net_G.pth"),
+                
+            ]
+        ),
+        
+    ]
+
+    for base_dir, hf_subdir, files in groups:
+        repo_prefix = f"{hf_root}/{hf_subdir}"
+        for rel_path, filename in files:
+            load_file_from_url(
+                url=f"{repo_prefix}/{rel_path}/{filename}",
+                model_dir=base_dir / rel_path,
+                file_name=filename
+            )
+    load_file_from_url(
+                url=f"https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/shape_predictor_68_face_landmarks.dat",
+                model_dir=Path(__file__).parent / "lib_bopb2l" / "Face_Detection",
+                file_name='shape_predictor_68_face_landmarks.dat'
+            )
 
 
 
