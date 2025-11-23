@@ -4,6 +4,7 @@ import gradio as gr
 #!from modules.ui_components import InputAccordion
 from extentions.old_photo.bopb2l_main import main
 from modules.model_loader import load_file_from_url
+import numpy as np
 from pathlib import Path
 from PIL import Image
 import extentions.batch as batch
