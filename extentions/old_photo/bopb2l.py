@@ -6,20 +6,21 @@ from extentions.old_photo.bopb2l_main import main
 
 def ui():
         
-        proc_order = gr.Radio(
-            choices=("Restoration First", "Upscale First"),
-            value="Restoration First",
-            label="Processing Order",
-        )
+    proc_order = gr.Radio(
+        choices=("Restoration First", "Upscale First"),
+        value="Restoration First",
+        label="Processing Order",
+    )
 
-        with gr.Row():
-            do_scratch = gr.Checkbox(False, label="Process Scratch")
-            do_face_res = gr.Checkbox(False, label="Face Restore")
-        with gr.Row():
-            is_hr = gr.Checkbox(False, label="High Resolution")
-            use_cpu = gr.Checkbox(True, label="Use CPU")
+    with gr.Row():
+        do_scratch = gr.Checkbox(False, label="Process Scratch")
+        do_face_res = gr.Checkbox(False, label="Face Restore")
+    with gr.Row():
+        is_hr = gr.Checkbox(False, label="High Resolution")
+        use_cpu = gr.Checkbox(True, label="Use CPU")
 
-    args = {"enable": enable,
+     args = {
+        "enable": enable,
         "proc_order": proc_order,
         "do_scratch": do_scratch,
         "do_face_res": do_face_res,
