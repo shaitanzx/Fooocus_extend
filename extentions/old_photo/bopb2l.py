@@ -2,7 +2,7 @@ import gradio as gr
 
 #!from modules import scripts_postprocessing
 #!from modules.ui_components import InputAccordion
-from extentions.old_photo.scripts.bopb2l_main import main
+from extentions.old_photo.bopb2l_main import main
 
 def ui():
         with InputAccordion(False, label="Old Photo Restoration") as enable:
@@ -36,7 +36,7 @@ def ui():
 class OldPhotoRestoration(scripts_postprocessing.ScriptPostprocessing):
     name = "BOP"
     order = 200409484
-
+    """
     def ui(self):
         with InputAccordion(False, label="Old Photo Restoration") as enable:
             proc_order = gr.Radio(
@@ -62,7 +62,7 @@ class OldPhotoRestoration(scripts_postprocessing.ScriptPostprocessing):
         }
 
         return args
-
+    """    
     def process_firstpass(self, pp: scripts_postprocessing.PostprocessedImage, **args):
 
         if args["enable"] and args["proc_order"] == "Restoration First":
