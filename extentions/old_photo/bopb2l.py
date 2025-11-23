@@ -142,8 +142,7 @@ def ui():
     #!args = {enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu}
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_old_photo',visible=False) 
-    start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),
-    outputs=[start,file_out,image_out]) \
+    start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then (load_models)
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
@@ -154,10 +153,10 @@ def ui():
 
 
 
-    start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
-        .then (load_models) \
-        .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,image_input],outputs=image_output) \
-        .then (lambda: (gr.update(interactive=True)),outputs=[start])
+    #!start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
+    #!    .then (load_models) \
+    #!    .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,image_input],outputs=image_output) \
+    #!    .then (lambda: (gr.update(interactive=True)),outputs=[start])
     
 
 
