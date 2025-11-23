@@ -107,7 +107,7 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 def ui():
     with gr.Row():
         image_input=gr.Image(label="Input image",visible=True,height=260,interactive=True,type="pil")
-        image_output=gr.Image(label="Output image",visible=True,height=260,interactive=True,type="numpy") 
+        image_output=gr.Image(label="Output image",visible=True,height=260,interactive=True,type="numpy",show_download_button=True) 
     with gr.Row():
         proc_order = gr.Radio(
             choices=("Restoration First", "Upscale First"),
