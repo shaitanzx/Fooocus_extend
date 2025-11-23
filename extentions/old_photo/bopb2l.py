@@ -134,8 +134,6 @@ def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
             del img_colorization
             import gc
             gc.collect()
-            import torch
-            torch.cuda.empty_cache()
 
         img=Image.fromarray(img)    
         name, ext = os.path.splitext(f_name)
