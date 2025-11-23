@@ -90,7 +90,7 @@ def load_models():
                 file_name='shape_predictor_68_face_landmarks.dat'
             )
 
-def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
+def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_color):
 
         #!if proc_order == "Restoration First":
 
