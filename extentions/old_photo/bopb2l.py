@@ -99,7 +99,7 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 
             #!img = pp.image
             img = main(img, do_scratch, is_hr, do_face_res, use_cpu)
-        return img
+        return return np.array(img)
 
 def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
     batch_path=f"{temp_dir}batch_old_photo"
