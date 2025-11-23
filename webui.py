@@ -66,7 +66,7 @@ from extentions import tile_roll
 from extentions.vector import vector
 import extentions.batch as batch
 import extentions.watermark as watermark
-import extentions.old_photo as old_photo
+from extentions.old_photo import bopb2l as old_photo
 
 import extentions.adetailer.scripts.adetailer as adetailer
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
@@ -873,7 +873,7 @@ with shared.gradio_root:
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='OldPhotoRestoration'):
-                    old_photo.bopb2l.ui()
+                    old_photo.ui()
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def clear_single(image):
                             return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
