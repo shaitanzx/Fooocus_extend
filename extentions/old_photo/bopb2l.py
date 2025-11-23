@@ -101,22 +101,22 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_col
 
             #!img = pp.image
             
-        img = main(img, do_scratch, is_hr, do_face_res, use_cpu)
+        img =np.array(main(img, do_scratch, is_hr, do_face_res, use_cpu))
         if do_color:
             from modelscope.pipelines import pipeline
             from modelscope.utils.constant import Tasks
             from modelscope.outputs import OutputKeys
             from modelscope.hub.snapshot_download import snapshot_download
             path_color=Path(__file__).parent / "color_model"
-            os.makedirs("path_color", exist_ok=True)
-            model_dir = snapshot_download('iic/cv_ddcolor_image-colorization',cache_dir='color_model')
+            os.makedirs(path_color, exist_ok=True)
+            model_dir = snapshot_download('iic/cv_ddcolor_image-colorization',cache_dir=path_color)
             img_colorization = pipeline(task=Tasks.image_colorization,model=model_dir)
             rgb_image = img[..., ::-1] if img.shape[-1] == 3 else img
             output = img_colorization(rgb_image)
             result = output[OutputKeys.OUTPUT_IMG].astype(np.uint8)
             image = result[...,::-1]
             del img_colorization
-        return np.array(img)
+        return img
 def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
     batch_path=f"{temp_dir}batch_old_photo"
     batch_temp=f"{temp_dir}batch_temp"
