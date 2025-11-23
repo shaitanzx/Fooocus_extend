@@ -84,8 +84,18 @@ def load_models():
                 model_dir=Path(__file__).parent / "lib_bopb2l" / "Face_Detection",
                 file_name='shape_predictor_68_face_landmarks.dat'
             )
+def process_firstpass(enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 
+        if enable and proc_order == "Restoration First":
 
+            #!do_scratch: bool = args["do_scratch"]
+            #!do_face_res: bool = args["do_face_res"]
+            #!is_hr: bool = args["is_hr"]
+            #!use_cpu: bool = args["use_cpu"]
+
+            #!img = pp.image
+            img = main(img, do_scratch, is_hr, do_face_res, use_cpu)
+        return img
 
 
 
@@ -114,16 +124,10 @@ def ui():
         use_cpu = gr.Checkbox(True, label="Use CPU",interactive=True)
     with gr.Row():
         start=gr.Button(value='Start')
-    args = {
-        "enable": enable,
-        "proc_order": proc_order,
-        "do_scratch": do_scratch,
-        "do_face_res": do_face_res,
-        "is_hr": is_hr,
-        "use_cpu": use_cpu,
-        }
+    #!args = {enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu}
     start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
-        .then (load_models) 
+        .then (load_models) \
+        .then (process_firstpass, inputs=[enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu,files_input])
     return args
 
 
@@ -158,7 +162,7 @@ class OldPhotoRestoration():
         }
 
         return args
-    """    
+
     def process_firstpass(self, pp, **args):
 
         if args["enable"] and args["proc_order"] == "Restoration First":
@@ -170,6 +174,8 @@ class OldPhotoRestoration():
 
             img = pp.image
             pp.image = main(img, do_scratch, is_hr, do_face_res, use_cpu)
+    """    
+
 
     def process(self, pp, **args):
 
