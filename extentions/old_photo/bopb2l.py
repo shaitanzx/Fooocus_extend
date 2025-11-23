@@ -5,6 +5,7 @@ import gradio as gr
 from extentions.old_photo.bopb2l_main import main
 from modules.model_loader import load_file_from_url
 from pathlib import Path
+import extentions.batch as batch
 
 
 def load_models():
@@ -97,7 +98,24 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
             img = main(img, do_scratch, is_hr, do_face_res, use_cpu)
         return img
 
-
+def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
+    batch_path=f"{temp_dir}batch_old_photo"
+    batch_temp=f"{temp_dir}batch_temp"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    passed=1
+    for f_name in batch_files:
+        print (f"\033[91m[OldPhotoRestoration QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"OldPhotoRestoration Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        img = Image.open(batch_path+os.path.sep+f_name)
+        yield gr.update(value=img,visible=True),gr.update(visible=False)
+        #!image=np.array(img)
+        img_old=Image.fromarray(process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img))
+        name, ext = os.path.splitext(f_name)
+        filename =  batch_temp + os.path.sep + name +'_old'+ext
+        img_old.save(filename)
+        passed+=1
+    return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
 
@@ -105,9 +123,7 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 
     
 def ui():
-    with gr.Row():
-        image_input=gr.Image(label="Input image",visible=True,height=260,interactive=True,type="pil")
-        image_output=gr.Image(label="Output image",visible=True,height=260,interactive=True,type="numpy",show_download_button=True) 
+    file_in,files_single,image_single,enable_zip,file_out,preview, image_out = batch.ui_batch()
     with gr.Row():
         proc_order = gr.Radio(
             choices=("Restoration First", "Upscale First"),
@@ -124,6 +140,20 @@ def ui():
     with gr.Row():
         start=gr.Button(value='Start')
     #!args = {enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu}
+    with gr.Row(visible=False):
+        ext_dir=gr.Textbox(value='batch_old_photo',visible=False) 
+    start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),
+    outputs=[start,file_out,image_out]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
+              .then (load_models)
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
+              .then(fn=process, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu],outputs=[preview,file_out],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
+              .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=codeformer_start)
+
+
+
     start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
         .then (load_models) \
         .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,image_input],outputs=image_output) \
