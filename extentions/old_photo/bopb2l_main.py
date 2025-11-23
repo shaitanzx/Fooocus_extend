@@ -13,10 +13,10 @@ from PIL import Image
 #!from modules import scripts
 
 GLOBAL_CHECKPOINTS_FOLDER = os.path.join(
-    scripts.basedir(), "lib_bopb2l", "Global", "checkpoints", "restoration"
+    os.path.dirname(__file__), "lib_bopb2l", "Global", "checkpoints", "restoration"
 )
 FACE_CHECKPOINTS_FOLDER = os.path.join(
-    scripts.basedir(), "lib_bopb2l", "Face_Enhancement", "checkpoints"
+    os.path.dirname(__file__), "lib_bopb2l", "Face_Enhancement", "checkpoints"
 )
 
 FACE_ENHANCEMENT_CHECKPOINTS = ("Setting_9_epoch_100", "FaceSR_512")
