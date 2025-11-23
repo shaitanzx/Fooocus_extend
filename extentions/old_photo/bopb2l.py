@@ -89,9 +89,10 @@ def load_models():
                 model_dir=Path(__file__).parent / "lib_bopb2l" / "Face_Detection",
                 file_name='shape_predictor_68_face_landmarks.dat'
             )
+
 def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 
-        if proc_order == "Restoration First":
+        #!if proc_order == "Restoration First":
 
             #!do_scratch: bool = args["do_scratch"]
             #!do_face_res: bool = args["do_face_res"]
@@ -99,10 +100,25 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
             #!use_cpu: bool = args["use_cpu"]
 
             #!img = pp.image
-            img = main(img, do_scratch, is_hr, do_face_res, use_cpu)
+            
+        img = main(img, do_scratch, is_hr, do_face_res, use_cpu)
+        if do_color:
+            from modelscope.pipelines import pipeline
+            from modelscope.utils.constant import Tasks
+            from modelscope.outputs import OutputKeys
+            from modelscope.hub.snapshot_download import snapshot_download
+            path_color=Path(__file__).parent / "color_model"
+            os.makedirs("path_color", exist_ok=True)
+            model_dir = snapshot_download('iic/cv_ddcolor_image-colorization',cache_dir='color_model')
+            img_colorization = pipeline(task=Tasks.image_colorization,model=model_dir)
+            rgb_image = img[..., ::-1] if img.shape[-1] == 3 else img
+            output = img_colorization(rgb_image)
+            result = output[OutputKeys.OUTPUT_IMG].astype(np.uint8)
+            image = result[...,::-1]
+            del img_colorization
         return np.array(img)
 
-def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
+def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_color):
     batch_path=f"{temp_dir}batch_old_photo"
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
@@ -114,7 +130,7 @@ def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
         img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         #!image=np.array(img)
-        img_old=Image.fromarray(process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img))
+        img_old=Image.fromarray(process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_color))
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_old'+ext
         img_old.save(filename)
@@ -132,12 +148,13 @@ def ui():
         proc_order = gr.Radio(
             choices=("Restoration First", "Upscale First"),
             value="Restoration First",
-            label="Processing Order",interactive=True
+            label="Processing Order",interactive=True,visible=False
             )
 
     with gr.Row():
         do_scratch = gr.Checkbox(False, label="Process Scratch")
         do_face_res = gr.Checkbox(False, label="Face Restore")
+        do_color = gr.Checkbox(False, label="Colorization")
     with gr.Row():
         is_hr = gr.Checkbox(False, label="High Resolution")
         use_cpu = gr.Checkbox(True, label="Use CPU",interactive=True)
@@ -149,18 +166,12 @@ def ui():
     start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then (load_models) \
-              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir,do_color]) \
               .then(fn=process, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu],outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=start)
 
-
-
-    #!start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
-    #!    .then (load_models) \
-    #!    .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,image_input],outputs=image_output) \
-    #!    .then (lambda: (gr.update(interactive=True)),outputs=[start])
     
 
 
