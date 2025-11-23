@@ -114,7 +114,7 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img,do_col
             rgb_image = img[..., ::-1] if img.shape[-1] == 3 else img
             output = img_colorization(rgb_image)
             result = output[OutputKeys.OUTPUT_IMG].astype(np.uint8)
-            image = result[...,::-1]
+            img = result[...,::-1]
             del img_colorization
         return img
 def process(proc_order,do_scratch,do_face_res,is_hr,use_cpu,do_color):
