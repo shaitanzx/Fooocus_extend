@@ -105,10 +105,9 @@ def process_firstpass(proc_order,do_scratch,do_face_res,is_hr,use_cpu,img):
 
     
 def ui():
-    enable=True
     with gr.Row():
-        files_input = gr.Files(label="",visible=True,interactive=True,height=260)
-        files_output = gr.Files(label="",visible=True,interactive=True,height=260)  
+        image_input=gr.Image(label="Input image",visible=True,height=260,interactive=True,type="pil")
+        image_output=gr.Image(label="Output image",visible=False,height=260,interactive=True,type="pil") 
     with gr.Row():
         proc_order = gr.Radio(
             choices=("Restoration First", "Upscale First"),
@@ -127,7 +126,7 @@ def ui():
     #!args = {enable,proc_order,do_scratch,do_face_res,is_hr,use_cpu}
     start.click(lambda: (gr.update(interactive=False)),outputs=[start]) \
         .then (load_models) \
-        .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,files_input],outputs=files_output)
+        .then (process_firstpass, inputs=[proc_order,do_scratch,do_face_res,is_hr,use_cpu,image_input],outputs=image_output)
     
 
 
