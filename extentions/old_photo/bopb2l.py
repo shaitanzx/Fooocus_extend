@@ -3,43 +3,36 @@ import gradio as gr
 #!from modules import scripts_postprocessing
 #!from modules.ui_components import InputAccordion
 from extentions.old_photo.bopb2l_main import main
-from huggingface_hub import snapshot_download
+from modules.model_loader import load_file_from_url
 from pathlib import Path
 
 
 def load_models():
-    model_dir = Path(__file__).parent / "lib_bopb2l" / "Global"
-    snapshot_download(
-        repo_id="shaitanzx/FooocusExtend",
-        local_dir=model_dir,              # куда сохранить локально
-        local_dir_use_symlinks=False,
-        allow_patterns=["old_photo/global/**/*"],        # скачиваем только папку old_photo и всё внутри
-        resume_download=True,
-        )
-
-
-
-
-
-    """
-    model_dir = Path(__file__).parent / "lib_bopb2l" / "Face_detection"
+    
     load_file_from_url(
-        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/shape_predictor_68_face_landmarks.dat',
-        model_dir=model_dir,
-        file_name='shape_predictor_68_face_landmarks.dat'
-    )
-    model_dir = Path(__file__).parent / "lib_bopb2l" / "global" / "detection"
-    load_file_from_url(
-        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/detection/FT_Epoch_latest.pt',
-        model_dir=model_dir,
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/checkpoints/detection/FT_Epoch_latest.pt',
+        model_dir=Path(__file__).parent / "lib_bopb2l" / "Global" / "checkpoints" / "detection",
         file_name='FT_Epoch_latest.pt'
     )
-    model_dir = Path(__file__).parent / "lib_bopb2l" / "global" / "detection"
     load_file_from_url(
-        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/detection/FT_Epoch_latest.pt',
-        model_dir=model_dir,
-        file_name='FT_Epoch_latest.pt'
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/checkpoints/restoration/VAE_A_quality/latest_net_D.pth',
+        model_dir=Path(__file__).parent / "lib_bopb2l" / "Global" / "checkpoints" / "restoration" / "VAE_A_quality",
+        file_name='latest_net_D.pth'
     )
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/old_photo/global/checkpoints/restoration/VAE_A_quality/latest_net_G.pth',
+        model_dir=Path(__file__).parent / "lib_bopb2l" / "Global" / "checkpoints" / "restoration" / "VAE_A_quality",
+        file_name='latest_net_G.pth'
+    )
+
+
+
+
+
+
+
+
+
     """
     
 def ui():
