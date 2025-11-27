@@ -427,7 +427,7 @@ with shared.gradio_root:
                                 with gr.Row():
                                     uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list, value=modules.config.default_uov_method)
                                 with gr.Row():
-                                    uov_model = gr.Dropdown(choices=modules.flags.uov_model, value=modules.flags.uov_model[0], label='Model')
+                                    uov_model = gr.Dropdown(choices=modules.config.upscale_filenames, value=modules.config.upscale_filenames[0], label='Model')
                                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/390" target="_blank">\U0001F4D4 Documentation</a>')
                     with gr.Tab(label='Image Prompt', id='ip_tab') as ip_tab:
                         with gr.Row():
