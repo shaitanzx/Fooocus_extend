@@ -884,7 +884,7 @@ def worker():
         return inpaint_image, inpaint_mask
 
     def apply_upscale(async_task, uov_input_image, uov_method, switch, current_progress, advance_progress=False):
-        print('222222222222222222222222222222222')
+        print('222222222222222222222222222222222',uov_method)
         H, W, C = uov_input_image.shape
         if advance_progress:
             current_progress += 1
