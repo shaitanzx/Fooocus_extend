@@ -877,7 +877,7 @@ def update_files():
     yolo_from_disk = get_model_filenames(str(path_yolo))
     yolo_filenames = list(dict.fromkeys(YOLO_DEFAULT_FILENAMES + yolo_from_disk))
     upscaler_from_disk = get_model_filenames(path_upscale_models)
-    upscaler_filenames = list(dict.fromkeys(UPSCALE_DEFAULT_FILENAMES + upsacler_from_disk))
+    upscaler_filenames = list(dict.fromkeys(UPSCALE_DEFAULT_FILENAMES + upscaler_from_disk))
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
     return
