@@ -86,7 +86,7 @@ def perform_upscale(img,upscale_model):
         upscale_model_glob = model_filename
 
         arch = get_model_architecture_safe(model_filename)
-        print(f"✅ Model '{upscale_model}' → {arch}"
+        print(f"✅ Model '{upscale_model}' → {arch}")
         
         sd = torch.load(model_filename, weights_only=True)
         sdo = OrderedDict()
