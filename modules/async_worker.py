@@ -1288,7 +1288,9 @@ def worker():
                 current_progress += 1
             progressbar(async_task, current_progress, 'Downloading upscale models ...')
             #!modules.config.downloading_upscale_model2(async_task.uov_model)
+            print('66666666666666666666666')
             modules.config.downloading_upscale_model()
+            print('777777777777777777777')
         return uov_input_image, skip_prompt_processing, steps
 
     def prepare_enhance_prompt(prompt: str, fallback_prompt: str):
