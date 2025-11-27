@@ -181,7 +181,8 @@ def get_hash(model_path, model_file, model_type, cached_hash):
         "hyper": "hypernet",
         "lora": "lora",
         "lycoris": "lycoris",
-        "detection": "detection"
+        "detection": "detection",
+        "upscaler": "upscaler"
     }[model_type]
 
     result = None
