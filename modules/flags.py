@@ -21,6 +21,7 @@ uov_model =[
     '4x_fatal_Anime_500000_G.pth','4x_foolhardy_Remacri.pth','8xNMKDFaces160000G_v10.pt','8x_NMKD-Superscale_150000_G.pth',
     'RealESRGAN_x4plus.pth','RealESRGAN_x4plus_anime_6B.pth','dm600_ludvae.pth','ghibli_grain.pth','realesr-animevideov3.pth',
     'sudo_rife4_269.662_testV1_scale1.pth'
+    ]
 
 
 
