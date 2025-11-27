@@ -15,9 +15,9 @@ def perform_upscale(img,upscale_model):
     global model, upscale_model_glob
 
     print(f'Upscaling image with shape {str(img.shape)} ...')
-    print('33333333333333333',upscale_model_glob)
+    h_in, w_in = img.shape[:2]  # img — numpy, HWC
+    print(f"📥 Input image: {w_in} × {h_in}")
     if  model is None or upscale_model != upscale_model_glob:
-    #!if model is None:
         model_filename = downloading_upscale_model2(upscale_model)
         upscale_model_glob = model_filename
         sd = torch.load(model_filename, weights_only=True)
@@ -30,9 +30,9 @@ def perform_upscale(img,upscale_model):
               f"blocks = {model.num_blocks}, arch = {model.model_arch}")
         model.cpu()
         model.eval()
-    print('444444444444444444444444',upscale_model_glob)
     img = core.numpy_to_pytorch(img)
     img = opImageUpscaleWithModel.upscale(model, img)[0]
     img = core.pytorch_to_numpy(img)[0]
-
+    h_out, w_out = img.shape[:2]
+    print(f"📏 Input: {w_in}×{h_in} → Output: {w_out}×{h_out} (×{w_out / w_in:.2f})")
     return img
