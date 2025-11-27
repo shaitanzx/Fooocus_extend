@@ -889,7 +889,7 @@ def worker():
         if advance_progress:
             current_progress += 1
         progressbar(async_task, current_progress, f'Upscaling image from {str((W, H))} ...')
-        uov_input_image = perform_upscale(uov_input_image)
+        uov_input_image = perform_upscale(uov_input_image,async_task.uov_model)
         print(f'Image upscaled.')
         if '1.5x' in uov_method:
             f = 1.5
@@ -1215,8 +1215,8 @@ def worker():
             if isinstance(inpaint_image, np.ndarray) and isinstance(inpaint_mask, np.ndarray) \
                     and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
                 progressbar(async_task, 1, 'Downloading upscale models ...')
-                modules.config.downloading_upscale_model2(async_task.uov_model)
-                #!modules.config.downloading_upscale_model()
+                #!modules.config.downloading_upscale_model2(async_task.uov_model)
+                modules.config.downloading_upscale_model()
                 if inpaint_parameterized:
                     progressbar(async_task, 1, 'Downloading inpainter ...')
                     inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
@@ -1283,8 +1283,8 @@ def worker():
             if advance_progress:
                 current_progress += 1
             progressbar(async_task, current_progress, 'Downloading upscale models ...')
-            modules.config.downloading_upscale_model2(async_task.uov_model)
-            #!modules.config.downloading_upscale_model()
+            #!modules.config.downloading_upscale_model2(async_task.uov_model)
+            modules.config.downloading_upscale_model()
         return uov_input_image, skip_prompt_processing, steps
 
     def prepare_enhance_prompt(prompt: str, fallback_prompt: str):
