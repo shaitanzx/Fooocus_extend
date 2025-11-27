@@ -19,11 +19,7 @@ from modules.config import downloading_upscale_model2
 # 👇 ИМПОРТИРУЕМ ТВОЙ model_loading.py (должен лежать в модуле, где вызывается perform_upscale)
 from .model_loading import load_state_dict, UnsupportedModel  # ← важно: не из ldm_patched!
 
-# Импорты для isinstance — нужны ТОЛЬКО они, остальное не требуется
-from .model_loading import (
-    ESRGAN, RealESRGANv2, SPSR, SwiftSRGAN, SwinIR, Swin2SR,
-    HAT, DAT, OmniSR, SCUNet, GFPGANv1Clean, RestoreFormer, CodeFormer, LaMa
-)
+
 
 
 
