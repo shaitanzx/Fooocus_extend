@@ -42,3 +42,4 @@ path_lora=modules.config.paths_loras[0]
 path_emb=modules.config.path_embeddings
 path_vae=modules.config.path_vae
 path_detect = str(modules.config.path_yolo)
+path_upscale = modules.config.path_upscale_models
