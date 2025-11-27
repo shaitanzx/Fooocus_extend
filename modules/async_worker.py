@@ -292,6 +292,7 @@ class AsyncTask:
         self.save_final_adetail_image_only = self.save_final_enhanced_image_only 
         self.adetailer_checkbox = args.pop()      
         self.adetailer_stats = {}
+        self.uov_model = args.pop()
         
 
     
@@ -1280,7 +1281,8 @@ def worker():
             if advance_progress:
                 current_progress += 1
             progressbar(async_task, current_progress, 'Downloading upscale models ...')
-            modules.config.downloading_upscale_model()
+            modules.config.downloading_upscale_model2(async_task.uov_model)
+            #!modules.config.downloading_upscale_model()
         return uov_input_image, skip_prompt_processing, steps
 
     def prepare_enhance_prompt(prompt: str, fallback_prompt: str):
