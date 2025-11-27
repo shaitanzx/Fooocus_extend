@@ -870,7 +870,7 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     return files
 
 def update_files():
-    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames
+    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames, upscaler_filenames
     model_filenames = get_model_filenames(paths_checkpoints)
     lora_filenames = get_model_filenames(paths_loras)
     vae_filenames = get_model_filenames(path_vae)
