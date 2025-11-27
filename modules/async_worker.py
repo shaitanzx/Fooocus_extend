@@ -1219,7 +1219,7 @@ def worker():
                 progressbar(async_task, 1, 'Downloading upscale models ...')
                 #!modules.config.downloading_upscale_model2(async_task.uov_model)
                 print('444444444444444444')
-                modules.config.downloading_upscale_model()
+                modules.config.downloading_upscale_model2()
                 print('5555555555555555555')
                 if inpaint_parameterized:
                     progressbar(async_task, 1, 'Downloading inpainter ...')
@@ -1278,7 +1278,7 @@ def worker():
             goals.append('vary')
         elif 'upscale' in uov_method:
             goals.append('upscale')
-            if 'fast' in uov_method:
+            if 'final' in uov_method:
                 skip_prompt_processing = True
                 steps = 0
             else:
@@ -1289,7 +1289,7 @@ def worker():
             progressbar(async_task, current_progress, 'Downloading upscale models ...')
             #!modules.config.downloading_upscale_model2(async_task.uov_model)
             print('66666666666666666666666')
-            modules.config.downloading_upscale_model()
+            modules.config.downloading_upscale_model2()
             print('777777777777777777777')
         return uov_input_image, skip_prompt_processing, steps
 
@@ -1684,7 +1684,7 @@ def worker():
         if async_task.enhance_checkbox and async_task.enhance_uov_method != flags.disabled.casefold():
             enhance_upscale_steps = async_task.performance_selection.steps()
             if 'upscale' in async_task.enhance_uov_method:
-                if 'fast' in async_task.enhance_uov_method:
+                if 'final' in async_task.enhance_uov_method:
                     enhance_upscale_steps = 0
                 else:
                     enhance_upscale_steps = async_task.performance_selection.steps_uov()

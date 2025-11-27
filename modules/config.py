@@ -1035,19 +1035,22 @@ def downloading_ip_adapters(v):
     return results
 
 def downloading_upscale_model2(model):
-    load_file_from_url(
-        url=f'https://huggingface.co/iahhnim/ESRGAN_collection/resolve/main/{model}',
-        model_dir=path_upscale_models,
-        file_name=f'{model}'
-    )
+    if model==UPSCALE_DEFAULT_FILENAMES[0]:
+        load_file_from_url(
+            url=f'https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
+            model_dir=path_upscale_models,
+            file_name=f'{model}
+        )
     return os.path.join(path_upscale_models, f'{model}')
-def downloading_upscale_model():
-    load_file_from_url(
-        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
-        model_dir=path_upscale_models,
-        file_name='fooocus_upscaler_s409985e5.bin'
-    )
-    return os.path.join(path_upscale_models, 'fooocus_upscaler_s409985e5.bin')
+
+
+#!def downloading_upscale_model():
+#!    load_file_from_url(
+#!        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
+#!        model_dir=path_upscale_models,
+#!        file_name='fooocus_upscaler_s409985e5.bin'
+#!    )
+#!    return os.path.join(path_upscale_models, 'fooocus_upscaler_s409985e5.bin')
 
 def downloading_safety_checker_model():
     load_file_from_url(
