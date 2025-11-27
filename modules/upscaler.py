@@ -26,6 +26,8 @@ def perform_upscale(img,upscale_model):
             sdo[k.replace('residual_block_', 'RDB')] = v
         del sd
         model = ESRGAN(sdo)
+        print(f"✅ Loaded model '{upscale_model_glob}': scale = {model.scale}x, "
+              f"blocks = {model.num_blocks}, arch = {model.model_arch}")
         model.cpu()
         model.eval()
     print('444444444444444444444444',upscale_model_glob)
