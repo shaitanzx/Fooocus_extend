@@ -14,6 +14,7 @@ def perform_upscale(img):
     global model
 
     print(f'Upscaling image with shape {str(img.shape)} ...')
+    print('33333333333333333',model)
 
     if model is None:
         model_filename = downloading_upscale_model()
@@ -25,7 +26,7 @@ def perform_upscale(img):
         model = ESRGAN(sdo)
         model.cpu()
         model.eval()
-
+    print('444444444444444444444444',model)
     img = core.numpy_to_pytorch(img)
     img = opImageUpscaleWithModel.upscale(model, img)[0]
     img = core.pytorch_to_numpy(img)[0]

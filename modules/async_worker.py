@@ -884,6 +884,7 @@ def worker():
         return inpaint_image, inpaint_mask
 
     def apply_upscale(async_task, uov_input_image, uov_method, switch, current_progress, advance_progress=False):
+        print('222222222222222222222222222222222')
         H, W, C = uov_input_image.shape
         if advance_progress:
             current_progress += 1
@@ -1606,6 +1607,7 @@ def worker():
                 current_progress)
 
         if 'upscale' in goals:
+            print('11111111111111111111111111111111111')
             direct_return, async_task.uov_input_image, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
                 async_task, async_task.uov_input_image, async_task.uov_method, switch, current_progress,
                 advance_progress=True)
