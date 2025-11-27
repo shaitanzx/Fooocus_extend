@@ -75,17 +75,63 @@ def perform_upscale(img,upscale_model):
         model_filename = downloading_upscale_model2(upscale_model)
         upscale_model_glob = model_filename
 
+        # 🔹 Шаг 1: загружаем state_dict
+        sd = torch.load(model_filename, map_location='cpu', weights_only=True)
+
+        # 🔹 Шаг 2: определяем архитектуру — как раньше
         arch = get_model_architecture_safe(model_filename)
         print(f"✅ Model '{upscale_model}' → {arch}")
-        
-        sd = torch.load(model_filename, weights_only=True)
-        sdo = OrderedDict()
-        for k, v in sd.items():
-            sdo[k.replace('residual_block_', 'RDB')] = v
+
+        # 🔹 Шаг 3: создаём модель в зависимости от архитектуры
+        if arch == "RealESRGANv2":
+            model = RealESRGANv2(sd)
+        elif arch == "ESRGAN":
+            # Для ESRGAN делаем совместимость с legacy-ключами (ваш sdo)
+            sdo = OrderedDict()
+            for k, v in sd.items():
+                sdo[k.replace('residual_block_', 'RDB')] = v
+            model = ESRGAN(sdo)
+        elif arch == "SPSR":
+            model = SPSR(sd)
+        elif arch == "SwiftSRGAN":
+            model = SwiftSRGAN(sd)
+        elif arch == "SwinIR":
+            model = SwinIR(sd)
+        elif arch == "Swin2SR":
+            model = Swin2SR(sd)
+        elif arch == "HAT":
+            model = HAT(sd)
+        elif arch == "DAT":
+            model = DAT(sd)
+        elif arch == "OmniSR":
+            model = OmniSR(sd)
+        elif arch == "SCUNet":
+            model = SCUNet(sd)
+        elif arch == "GFPGAN":
+            model = GFPGANv1Clean(sd)
+        elif arch == "RestoreFormer":
+            model = RestoreFormer(sd)
+        elif arch == "CodeFormer":
+            model = CodeFormer(sd)
+        elif arch == "LaMa":
+            model = LaMa(sd)
+        else:
+            # Fallback: пробуем ESRGAN (для RealESRGAN-1x и совместимых)
+            sdo = OrderedDict()
+            for k, v in sd.items():
+                sdo[k.replace('residual_block_', 'RDB')] = v
+            try:
+                model = ESRGAN(sdo)
+                print(f"⚠️ Fallback to ESRGAN for '{arch}'")
+            except Exception as e:
+                raise RuntimeError(f"Не удалось загрузить модель '{upscale_model}': {e}")
+
+        # 🔹 Выводим параметры
+        scale = getattr(model, 'scale', '?')
+        blocks = getattr(model, 'num_blocks', '?')
+        arch_name = getattr(model, 'model_arch', arch)
+        print(f"✅ Loaded model '{upscale_model_glob}': scale = {scale}x, blocks = {blocks}, arch = {arch_name}")
         del sd
-        model = ESRGAN(sdo)
-        print(f"✅ Loaded model '{upscale_model_glob}': scale = {model.scale}x, "
-              f"blocks = {model.num_blocks}, arch = {model.model_arch}")
         model.cpu()
         model.eval()
     img = core.numpy_to_pytorch(img)

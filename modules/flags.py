@@ -11,16 +11,45 @@ upscale_fast = 'Final Upscale'
 uov_list = [disabled, subtle_variation, strong_variation, upscale_15, upscale_2, upscale_fast]
 
 uov_model =[ 
-    '16x-ESRGAN.pth','16xPSNR.pth','1x-AnimeUndeint-Compact.pth','1x-DeJpeg-Fatality-PlusULTRA.pth',
-    '1x-ITF-SkinDiffDetail-Lite-v1.pth','1x_DeBLR.pth','1x_Manhwa_Null.pth','1x_NMKDDetoon_97500_G.pth',
-    '1x_SSAntiAlias9x.pth','4x-AnimeSharp.pth','4x-Fatal-Anime.pth','4x-NMKD-YandereNeo.pth','4x-UltraSharp.pth',
-    '4xFaceUpSharpDAT.pth','4xLexicaHAT.pth','4xNomos8kDAT.pth','4xNomos8kSCHAT-L.pth','4xNomos8kSCSRFormer.pth',
-    '4xNomosUniDAT2_box.pth','4xNomosUniDAT_bokeh_jpg.pth','4xOpscaler_anime.pt','4xOpscaler_general.pt','4xOpscaler_mixed.pt',
-    '4x_NMKD-Siax_200k.pth','4x_NMKD-Superscale-Artisoftject_210000_G.pth','4x_NMKD-Superscale-SP_178000_G.pth',
-    '4x_NMKDSuperscale_Artisoft_120000_G.pth','4x_Nickelback_70000G.pth','4x_RealisticRescaler_100000_G.pth',
-    '4x_fatal_Anime_500000_G.pth','4x_foolhardy_Remacri.pth','8xNMKDFaces160000G_v10.pt','8x_NMKD-Superscale_150000_G.pth',
-    'RealESRGAN_x4plus.pth','RealESRGAN_x4plus_anime_6B.pth','dm600_ludvae.pth','ghibli_grain.pth','realesr-animevideov3.pth',
-    'sudo_rife4_269.662_testV1_scale1.pth'
+    '16x-ESRGAN.pth', #----------------
+    '16xPSNR.pth', #-------------------
+    '1x-AnimeUndeint-Compact.pth', #RealESRGANv2
+    '1x-DeJpeg-Fatality-PlusULTRA.pth', #ESRGAN
+    '1x-ITF-SkinDiffDetail-Lite-v1.pth', #ESRGAN
+    '1x_DeBLR.pth', #ESRGAN
+    '1x_Manhwa_Null.pth', #ESRGAN------------------
+    '1x_NMKDDetoon_97500_G.pth', #ESRGAN
+    '1x_SSAntiAlias9x.pth', #ESRGAN
+    '4x-AnimeSharp.pth', #ESRGAN
+    '4x-Fatal-Anime.pth', #ESRGAN
+    '4x-NMKD-YandereNeo.pth', #ESRGAN
+    '4x-UltraSharp.pth', #ESRGAN
+    '4xFaceUpSharpDAT.pth',#DAT
+    '4xLexicaHAT.pth',#HAT
+    '4xNomos8kDAT.pth',#DAT
+    '4xNomos8kSCHAT-L.pth',#HAT
+    '4xNomos8kSCSRFormer.pth',#Error
+    '4xNomosUniDAT2_box.pth',#DAT
+    '4xNomosUniDAT_bokeh_jpg.pth',#DAT
+    '4xOpscaler_anime.pt',#ESRGAN
+    '4xOpscaler_general.pt',#ESRGAN
+    '4xOpscaler_mixed.pt',#ESRGAN
+    '4x_NMKD-Siax_200k.pth',#ESRGAN
+    '4x_NMKD-Superscale-Artisoftject_210000_G.pth',#ESRGAN
+    '4x_NMKD-Superscale-SP_178000_G.pth',#ESRGAN
+    '4x_NMKDSuperscale_Artisoft_120000_G.pth',#ESRGAN
+    '4x_Nickelback_70000G.pth',#ESRGAN
+    '4x_RealisticRescaler_100000_G.pth',#ESRGAN
+    '4x_fatal_Anime_500000_G.pth',#ESRGAN
+    '4x_foolhardy_Remacri.pth',#ESRGAN
+    '8xNMKDFaces160000G_v10.pt',#ESRGAN
+    '8x_NMKD-Superscale_150000_G.pth',#ESRGAN
+    'RealESRGAN_x4plus.pth',#ESRGAN
+    'RealESRGAN_x4plus_anime_6B.pth',#ESRGAN
+    'dm600_ludvae.pth',#Error
+    'ghibli_grain.pth',#ESRGAN
+    'realesr-animevideov3.pth',#RealESRGANv2
+    'sudo_rife4_269.662_testV1_scale1.pth'#error
     ]
 
 
