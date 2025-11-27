@@ -1039,7 +1039,7 @@ def downloading_upscale_model2(model):
         load_file_from_url(
             url=f'https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
             model_dir=path_upscale_models,
-            file_name=f'{model}
+            file_name=f'{model}'
         )
     return os.path.join(path_upscale_models, f'{model}')
 
