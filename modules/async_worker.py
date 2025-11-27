@@ -891,6 +891,8 @@ def worker():
         progressbar(async_task, current_progress, f'Upscaling image from {str((W, H))} ...')
         uov_input_image = perform_upscale(uov_input_image,async_task.uov_model)
         print(f'Image upscaled.')
+        if 'Final' in uov_method:
+            return True, uov_input_image, None, None, None, None, None, current_progress
         if '1.5x' in uov_method:
             f = 1.5
         elif '2x' in uov_method:
