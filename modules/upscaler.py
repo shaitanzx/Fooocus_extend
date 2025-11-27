@@ -16,12 +16,6 @@ from modules.config import downloading_upscale_model2
 
 
 
-# 👇 ИМПОРТИРУЕМ ТВОЙ model_loading.py (должен лежать в модуле, где вызывается perform_upscale)
-from .model_loading import load_state_dict, UnsupportedModel  # ← важно: не из ldm_patched!
-
-
-
-
 
 opImageUpscaleWithModel = ImageUpscaleWithModel()
 model = None
