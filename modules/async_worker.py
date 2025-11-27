@@ -1218,7 +1218,9 @@ def worker():
                     and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
                 progressbar(async_task, 1, 'Downloading upscale models ...')
                 #!modules.config.downloading_upscale_model2(async_task.uov_model)
+                print('444444444444444444')
                 modules.config.downloading_upscale_model()
+                print('5555555555555555555')
                 if inpaint_parameterized:
                     progressbar(async_task, 1, 'Downloading inpainter ...')
                     inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
