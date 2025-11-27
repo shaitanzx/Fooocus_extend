@@ -1219,7 +1219,7 @@ def worker():
                 progressbar(async_task, 1, 'Downloading upscale models ...')
                 #!modules.config.downloading_upscale_model2(async_task.uov_model)
                 print('444444444444444444')
-                modules.config.downloading_upscale_model2()
+                modules.config.downloading_upscale_model2(async_task.uov_model)
                 print('5555555555555555555')
                 if inpaint_parameterized:
                     progressbar(async_task, 1, 'Downloading inpainter ...')
@@ -1289,7 +1289,7 @@ def worker():
             progressbar(async_task, current_progress, 'Downloading upscale models ...')
             #!modules.config.downloading_upscale_model2(async_task.uov_model)
             print('66666666666666666666666')
-            modules.config.downloading_upscale_model2()
+            modules.config.downloading_upscale_model2(async_task.uov_model)
             print('777777777777777777777')
         return uov_input_image, skip_prompt_processing, steps
 
