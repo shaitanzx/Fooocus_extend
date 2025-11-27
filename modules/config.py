@@ -853,7 +853,7 @@ YOLO_DEFAULT_FILENAMES = [
 
 yolo_filenames = YOLO_DEFAULT_FILENAMES.copy()
 UPSCALE_DEFAULT_FILENAMES=['fooocus_upscaler_s409985e5.bin']
-upscale_filenames = UPSCALE_DEFAULT_FILENAMES.copy()
+upscaler_filenames = UPSCALE_DEFAULT_FILENAMES.copy()
 wildcard_filenames = []
 
 
