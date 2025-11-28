@@ -2,11 +2,7 @@ from collections import OrderedDict
 import os
 import modules.core as core
 import torch
-try:
-    from safetensors.torch import load_file as load_safetensors
-    SAFETENSORS_AVAILABLE = True
-except ImportError:
-    SAFETENSORS_AVAILABLE = False
+from safetensors.torch import load_file as load_safetensors
 from ldm_patched.contrib.external_upscale_model import ImageUpscaleWithModel
 from ldm_patched.pfn.model_loading import load_state_dict,UnsupportedModel
 from ldm_patched.pfn.model_loading import (
@@ -25,8 +21,6 @@ def load_state_dict_robust(path: str):
     ext = ext.lower().lstrip('.')
 
     if ext == "safetensors":
-        if not SAFETENSORS_AVAILABLE:
-            raise RuntimeError("Модель в формате .safetensors, но библиотека safetensors не установлена. Выполните: pip install safetensors")
         return load_safetensors(path, device="cpu")
 
     elif ext in ("pth", "pt"):
@@ -152,7 +146,7 @@ def perform_upscale(img,upscale_model):
         scale = getattr(model, 'scale', '?')
         blocks = getattr(model, 'num_blocks', '?')
         arch_name = getattr(model, 'model_arch', arch)
-        print(f"✅ Loaded model '{upscale_model_glob}': scale = {scale}x, blocks = {blocks}, arch = {arch_name}")
+        print(f"scale = {scale}x, blocks = {blocks}, arch = {arch_name}")
         del sd
         model.cpu()
         model.eval()

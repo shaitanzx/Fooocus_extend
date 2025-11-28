@@ -1616,6 +1616,11 @@ with shared.gradio_root:
                     ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)]
 
                     return models + ckpt
+                def update_upscaler():
+                    models=[gr.update(choices = modules.config.upscaler_filenames))
+                    ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames)]
+
+                    return models + ckpt
                     
 
                 def refresh_files_clicked():
@@ -1623,14 +1628,16 @@ with shared.gradio_root:
                     results = [gr.update(choices=modules.config.model_filenames)]
                     results += [gr.update(choices=['None'] + modules.config.model_filenames)]
                     results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
+                    results += [gr.update(choices=modules.config.upscaler_filenames)]
                     if not args_manager.args.disable_preset_selection:
                         results += [gr.update(choices=modules.config.available_presets)]
                     for i in range(modules.config.default_max_lora_number):
                         results += [gr.update(interactive=True),
                                     gr.update(choices=['None'] + modules.config.lora_filenames), gr.update()]
+                    
                     return results
 
-                refresh_files_output = [base_model, refiner_model, vae_name]
+                refresh_files_output = [base_model, refiner_model, vae_name, uov_model]
                 if not args_manager.args.disable_preset_selection:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,

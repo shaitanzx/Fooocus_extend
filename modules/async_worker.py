@@ -884,7 +884,6 @@ def worker():
         return inpaint_image, inpaint_mask
 
     def apply_upscale(async_task, uov_input_image, uov_method, switch, current_progress, advance_progress=False):
-        print('22222222222222222222')
         H, W, C = uov_input_image.shape
         if advance_progress:
             current_progress += 1
@@ -1218,9 +1217,7 @@ def worker():
                     and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
                 #!progressbar(async_task, 1, 'Downloading upscale models ...')
                 #!modules.config.downloading_upscale_model2(async_task.uov_model)
-                print('444444444444444444')
                 modules.config.downloading_upscale_model2(async_task.uov_model)
-                print('5555555555555555555')
                 if inpaint_parameterized:
                     progressbar(async_task, 1, 'Downloading inpainter ...')
                     inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
@@ -1288,9 +1285,7 @@ def worker():
                 current_progress += 1
             #!progressbar(async_task, current_progress, 'Downloading upscale models ...')
             #!modules.config.downloading_upscale_model2(async_task.uov_model)
-            print('66666666666666666666666')
             modules.config.downloading_upscale_model2(async_task.uov_model)
-            print('777777777777777777777')
         return uov_input_image, skip_prompt_processing, steps
 
     def prepare_enhance_prompt(prompt: str, fallback_prompt: str):
@@ -1613,11 +1608,9 @@ def worker():
                 current_progress)
 
         if 'upscale' in goals:
-            print('111111111111111111111')
             direct_return, async_task.uov_input_image, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
                 async_task, async_task.uov_input_image, async_task.uov_method, switch, current_progress,
                 advance_progress=True)
-            print('33333333333333333333333333333')
             if direct_return:
                 d = [('Final Upscale', 'upscale_fast', async_task.uov_model)]
                 if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
