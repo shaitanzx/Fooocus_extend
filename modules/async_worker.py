@@ -1769,7 +1769,7 @@ def worker():
             print(f'Generating and saving time: {execution_time:.2f} seconds')
 
         if not async_task.should_enhance and not async_task.should_adetail:
-            #!print(f'[Enhance] Skipping, preconditions aren\'t met')
+
             stop_processing(async_task, processing_start_time)
             return
         if 'enhance' in goals:
@@ -1831,7 +1831,6 @@ def worker():
                                 ad_model,
                                 image=img if isinstance(img, Image.Image) else Image.fromarray(img),
                                 confidence=args.ad_confidence,
-                                #!device=ultralytics_device,
                                 classes=args.ad_model_classes,
                                 )
 

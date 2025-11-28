@@ -121,11 +121,11 @@ def perform_upscale(img,upscale_model):
                 sdo[k.replace('residual_block_', 'RDB')] = v
             try:
                 model = ESRGAN(sdo)
-                print(f"⚠️ Fallback to ESRGAN for '{arch}'")
+
             except Exception as e:
                 raise RuntimeError(f"Error model '{upscale_model}': {e}")
 
-        # 🔹 Выводим параметры
+
         scale = getattr(model, 'scale', '?')
         blocks = getattr(model, 'num_blocks', '?')
         arch_name = getattr(model, 'model_arch', arch)
