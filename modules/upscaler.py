@@ -1,7 +1,12 @@
 from collections import OrderedDict
-
+import os
 import modules.core as core
 import torch
+try:
+    from safetensors.torch import load_file as load_safetensors
+    SAFETENSORS_AVAILABLE = True
+except ImportError:
+    SAFETENSORS_AVAILABLE = False
 from ldm_patched.contrib.external_upscale_model import ImageUpscaleWithModel
 from ldm_patched.pfn.model_loading import load_state_dict,UnsupportedModel
 from ldm_patched.pfn.model_loading import (
@@ -11,7 +16,28 @@ from ldm_patched.pfn.model_loading import (
 from ldm_patched.pfn.architecture.RRDB import RRDBNet as ESRGAN
 from modules.config import downloading_upscale_model2
 
+def load_state_dict_robust(path: str):
+    """Загружает state_dict из .pth, .pt или .safetensors — безопасно и совместимо."""
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Model file not found: {path}")
 
+    _, ext = os.path.splitext(path)
+    ext = ext.lower().lstrip('.')
+
+    if ext == "safetensors":
+        if not SAFETENSORS_AVAILABLE:
+            raise RuntimeError("Модель в формате .safetensors, но библиотека safetensors не установлена. Выполните: pip install safetensors")
+        return load_safetensors(path, device="cpu")
+
+    elif ext in ("pth", "pt"):
+        # Сначала weights_only=True (безопасно), fallback на False при ошибке
+        try:
+            return torch.load(path, map_location="cpu", weights_only=True)
+        except Exception:
+            return torch.load(path, map_location="cpu", weights_only=False)
+
+    else:
+        raise ValueError(f"Неподдерживаемое расширение модели: .{ext} (ожидаются: .pth, .pt, .safetensors)")
 
 
 
@@ -24,7 +50,7 @@ upscale_model_glob=None
 def get_model_architecture_safe(model_path: str) -> str:
     """Определяет архитектуру через фактическую загрузку модели на CPU (лёгкая, без весов в GPU)."""
     try:
-        sd = torch.load(model_path, map_location='cpu', weights_only=True)
+        sd = load_state_dict_robust(model_path)
         
         # Загружаем модель — но держим её на CPU, без .to('cuda')
         model = load_state_dict(sd)
@@ -52,10 +78,6 @@ def get_model_architecture_safe(model_path: str) -> str:
             return "SCUNet"
         elif isinstance(model, GFPGANv1Clean):
             return "GFPGAN"
-        elif isinstance(model, RestoreFormer):
-            return "RestoreFormer"
-        elif isinstance(model, CodeFormer):
-            return "CodeFormer"
         elif isinstance(model, LaMa):
             return "LaMa"
         else:
@@ -76,7 +98,7 @@ def perform_upscale(img,upscale_model):
         upscale_model_glob = model_filename
 
         # 🔹 Шаг 1: загружаем state_dict
-        sd = torch.load(model_filename, map_location='cpu', weights_only=True)
+        sd = load_state_dict_robust(model_filename)
 
         # 🔹 Шаг 2: определяем архитектуру — как раньше
         arch = get_model_architecture_safe(model_filename)
