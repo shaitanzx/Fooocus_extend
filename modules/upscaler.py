@@ -13,43 +13,29 @@ from ldm_patched.pfn.architecture.RRDB import RRDBNet as ESRGAN
 from modules.config import downloading_upscale_model2
 
 def load_state_dict_robust(path: str):
-    """Загружает state_dict из .pth, .pt или .safetensors — безопасно и совместимо."""
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f"Model file not found: {path}")
-
     _, ext = os.path.splitext(path)
     ext = ext.lower().lstrip('.')
 
     if ext == "safetensors":
         return load_safetensors(path, device="cpu")
 
-    elif ext in ("pth", "pt"):
+    else:
         # Сначала weights_only=True (безопасно), fallback на False при ошибке
         try:
             return torch.load(path, map_location="cpu", weights_only=True)
         except Exception:
             return torch.load(path, map_location="cpu", weights_only=False)
 
-    else:
-        raise ValueError(f"Неподдерживаемое расширение модели: .{ext} (ожидаются: .pth, .pt, .safetensors)")
-
-
-
-
-
 opImageUpscaleWithModel = ImageUpscaleWithModel()
 model = None
 upscale_model_glob=None
 
 def get_model_architecture_safe(model_path: str) -> str:
-    """Определяет архитектуру через фактическую загрузку модели на CPU (лёгкая, без весов в GPU)."""
     try:
         sd = load_state_dict_robust(model_path)
         
-        # Загружаем модель — но держим её на CPU, без .to('cuda')
         model = load_state_dict(sd)
         
-        # Определяем по типу
         if isinstance(model, ESRGAN):
             return "ESRGAN"
         elif isinstance(model, RealESRGANv2):
@@ -91,12 +77,10 @@ def perform_upscale(img,upscale_model):
         model_filename = downloading_upscale_model2(upscale_model)
         upscale_model_glob = model_filename
 
-        # 🔹 Шаг 1: загружаем state_dict
         sd = load_state_dict_robust(model_filename)
 
-        # 🔹 Шаг 2: определяем архитектуру — как раньше
         arch = get_model_architecture_safe(model_filename)
-        print(f"✅ Model '{upscale_model}' → {arch}")
+
 
         # 🔹 Шаг 3: создаём модель в зависимости от архитектуры
         if arch == "RealESRGANv2":
@@ -132,7 +116,6 @@ def perform_upscale(img,upscale_model):
         elif arch == "LaMa":
             model = LaMa(sd)
         else:
-            # Fallback: пробуем ESRGAN (для RealESRGAN-1x и совместимых)
             sdo = OrderedDict()
             for k, v in sd.items():
                 sdo[k.replace('residual_block_', 'RDB')] = v
@@ -140,13 +123,14 @@ def perform_upscale(img,upscale_model):
                 model = ESRGAN(sdo)
                 print(f"⚠️ Fallback to ESRGAN for '{arch}'")
             except Exception as e:
-                raise RuntimeError(f"Не удалось загрузить модель '{upscale_model}': {e}")
+                raise RuntimeError(f"Error model '{upscale_model}': {e}")
 
         # 🔹 Выводим параметры
         scale = getattr(model, 'scale', '?')
         blocks = getattr(model, 'num_blocks', '?')
         arch_name = getattr(model, 'model_arch', arch)
-        print(f"scale = {scale}x, blocks = {blocks}, arch = {arch_name}")
+        print(f"✅ Model '{upscale_model_glob}' → {arch}")
+        print(f"✅ scale = {scale}x, blocks = {blocks}, arch = {arch_name}")
         del sd
         model.cpu()
         model.eval()
