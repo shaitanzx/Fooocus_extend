@@ -1216,7 +1216,7 @@ def worker():
             inpaint_image = HWC3(inpaint_image)
             if isinstance(inpaint_image, np.ndarray) and isinstance(inpaint_mask, np.ndarray) \
                     and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
-                progressbar(async_task, 1, 'Downloading upscale models ...')
+                #!progressbar(async_task, 1, 'Downloading upscale models ...')
                 #!modules.config.downloading_upscale_model2(async_task.uov_model)
                 print('444444444444444444')
                 modules.config.downloading_upscale_model2(async_task.uov_model)
@@ -1286,7 +1286,7 @@ def worker():
 
             if advance_progress:
                 current_progress += 1
-            progressbar(async_task, current_progress, 'Downloading upscale models ...')
+            #!progressbar(async_task, current_progress, 'Downloading upscale models ...')
             #!modules.config.downloading_upscale_model2(async_task.uov_model)
             print('66666666666666666666666')
             modules.config.downloading_upscale_model2(async_task.uov_model)
