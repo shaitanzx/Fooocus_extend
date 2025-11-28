@@ -1616,11 +1616,7 @@ with shared.gradio_root:
                     ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)]
 
                     return models + ckpt
-                def update_upscaler():
-                    models=[gr.update(choices = modules.config.upscaler_filenames))
-                    ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames)]
 
-                    return models + ckpt
                     
 
                 def refresh_files_clicked():
