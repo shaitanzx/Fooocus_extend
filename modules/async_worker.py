@@ -800,7 +800,8 @@ def worker():
             image=inpaint_image,
             mask=inpaint_mask,
             use_fill=denoising_strength > 0.99,
-            k=inpaint_respective_field
+            k=inpaint_respective_field,
+            uov=async_task.uov_model
         )
         if async_task.debugging_inpaint_preprocessor:
             yield_result(async_task, inpaint_worker.current_task.visualize_mask_processing(), 100,
@@ -2085,4 +2086,5 @@ def worker():
 
 
 threading.Thread(target=worker, daemon=True).start()
+
 
