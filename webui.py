@@ -172,14 +172,29 @@ def im_batch_run(p):
                   p.prompt = positive
                   p.negative_prompt = negative        
         yield from generate_clicked(p)
+		temp_ar=p.aspect_random
         temp_var=p.results
-        p = copy.deepcopy(pc)        
+        p = copy.deepcopy(pc) 
+		p.aspect_random=temp_ar
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
     p.input_image_checkbox=check
     finished_batch=False
     del temp_var
     return
+
+        yield from generate_clicked(p)
+        temp_ar=p.aspect_random
+        temp_var=p.results
+      p = copy.deepcopy(pc)
+      p.aspect_random=temp_ar
+      if p.seed_random:
+        p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+      passed+=1
+  return 
+
+
+	
 def pr_batch_start(p):
   global finished_batch
   finished_batch=False
@@ -212,8 +227,10 @@ def pr_batch_start(p):
                   p.prompt = positive
                   p.negative_prompt = negative
         yield from generate_clicked(p)
+        temp_ar=p.aspect_random
         temp_var=p.results
       p = copy.deepcopy(pc)
+      p.aspect_random=temp_ar
       if p.seed_random:
         p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
       passed+=1
@@ -2052,5 +2069,6 @@ shared.gradio_root.launch(
     allowed_paths=[modules.config.path_outputs],
     blocked_paths=[constants.AUTH_FILENAME]
 )
+
 
 
