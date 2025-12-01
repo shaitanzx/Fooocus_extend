@@ -148,7 +148,7 @@ def fooocus_fill(image, mask):
 
 
 class InpaintWorker:
-    def __init__(self, image, mask, use_fill=True, k=0.618):
+    def __init__(self, image, mask, use_fill=True, k=0.618,uov=''):
         a, b, c, d = compute_initial_abcd(mask > 0)
         a, b, c, d = solve_abcd(mask, a, b, c, d, k=k)
 
@@ -159,7 +159,7 @@ class InpaintWorker:
 
         # super resolution
         if get_image_shape_ceil(self.interested_image) < 1024:
-            self.interested_image = perform_upscale(self.interested_image)
+            self.interested_image = perform_upscale(self.interested_image,uov)
 
         # resize to make images ready for diffusion
         self.interested_image = set_image_shape_ceil(self.interested_image, 1024)
