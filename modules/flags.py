@@ -6,9 +6,10 @@ subtle_variation = 'Vary (Subtle)'
 strong_variation = 'Vary (Strong)'
 upscale_15 = 'Upscale (1.5x)'
 upscale_2 = 'Upscale (2x)'
-upscale_fast = 'Upscale (Fast 2x)'
+upscale_fast = 'Final Upscale'
 
 uov_list = [disabled, subtle_variation, strong_variation, upscale_15, upscale_2, upscale_fast]
+
 
 enhancement_uov_before = "Before First Enhancement"
 enhancement_uov_after = "After Last Enhancement"
@@ -194,3 +195,4 @@ class Performance(Enum):
 
     def lora_filename(self) -> str | None:
         return PerformanceLoRA[self.name].value if self.name in PerformanceLoRA.__members__ else None
+

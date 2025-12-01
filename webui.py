@@ -67,8 +67,6 @@ from extentions.vector import vector
 import extentions.batch as batch
 import extentions.watermark as watermark
 
-#!from extentions.adetailer.scripts.adetailer import AfterDetailerScript
-#!adetailer=AfterDetailerScript()
 import extentions.adetailer.scripts.adetailer as adetailer
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
@@ -425,7 +423,10 @@ with shared.gradio_root:
                             with gr.Column():
                                 uov_input_image = grh.Image(label='Image', source='upload', type='numpy', show_label=False)
                             with gr.Column():
-                                uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list, value=modules.config.default_uov_method)
+                                with gr.Row():
+                                    uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list, value=modules.config.default_uov_method)
+                                with gr.Row():
+                                    uov_model = gr.Dropdown(choices=modules.config.upscaler_filenames, value=modules.config.upscaler_filenames[0], label='Model')
                                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/390" target="_blank">\U0001F4D4 Documentation</a>')
                     with gr.Tab(label='Image Prompt', id='ip_tab') as ip_tab:
                         with gr.Row():
@@ -1612,6 +1613,7 @@ with shared.gradio_root:
                     ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)]
 
                     return models + ckpt
+
                     
 
                 def refresh_files_clicked():
@@ -1619,14 +1621,16 @@ with shared.gradio_root:
                     results = [gr.update(choices=modules.config.model_filenames)]
                     results += [gr.update(choices=['None'] + modules.config.model_filenames)]
                     results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
+                    results += [gr.update(choices=modules.config.upscaler_filenames)]
                     if not args_manager.args.disable_preset_selection:
                         results += [gr.update(choices=modules.config.available_presets)]
                     for i in range(modules.config.default_max_lora_number):
                         results += [gr.update(interactive=True),
                                     gr.update(choices=['None'] + modules.config.lora_filenames), gr.update()]
+                    
                     return results
 
-                refresh_files_output = [base_model, refiner_model, vae_name]
+                refresh_files_output = [base_model, refiner_model, vae_name, uov_model]
                 if not args_manager.args.disable_preset_selection:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
@@ -1816,6 +1820,7 @@ with shared.gradio_root:
         ctrls += [only_detect]
         ctrls += ad_component
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
+        ctrls += [uov_model]
         ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

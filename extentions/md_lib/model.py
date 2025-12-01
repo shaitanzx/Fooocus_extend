@@ -22,7 +22,7 @@ from . import md_config
 ##ROOT_PATH = paths_internal.data_path
 ###ROOT_PATH = '/content/helper'
 
-EXTS = (".bin", ".pt", ".safetensors", ".ckpt")
+EXTS = (".bin", ".pt", ".pth", ".safetensors", ".ckpt")
 CIVITAI_EXT = ".info"
 SDWEBUI_EXT = ".json"
 
@@ -40,7 +40,8 @@ folders = {
     "lora": md_config.path_lora,
     "lycoris": md_config.path_lora,
     "vae": md_config.path_vae,
-    "detection": md_config.path_detect
+    "detection": md_config.path_detect,
+    "upscaler": md_config.path_upscale
 }
 
 # Separate because the above is used for detecting supported models

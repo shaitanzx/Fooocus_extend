@@ -852,6 +852,8 @@ YOLO_DEFAULT_FILENAMES = [
 ]
 
 yolo_filenames = YOLO_DEFAULT_FILENAMES.copy()
+UPSCALE_DEFAULT_FILENAMES=['fooocus_upscaler_s409985e5.bin']
+upscaler_filenames = UPSCALE_DEFAULT_FILENAMES.copy()
 wildcard_filenames = []
 
 
@@ -868,13 +870,14 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     return files
 
 def update_files():
-    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames
+    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames, upscaler_filenames
     model_filenames = get_model_filenames(paths_checkpoints)
     lora_filenames = get_model_filenames(paths_loras)
     vae_filenames = get_model_filenames(path_vae)
     yolo_from_disk = get_model_filenames(str(path_yolo))
     yolo_filenames = list(dict.fromkeys(YOLO_DEFAULT_FILENAMES + yolo_from_disk))
-
+    upscaler_from_disk = get_model_filenames(path_upscale_models)
+    upscaler_filenames = list(dict.fromkeys(UPSCALE_DEFAULT_FILENAMES + upscaler_from_disk))
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
     return
@@ -1031,14 +1034,23 @@ def downloading_ip_adapters(v):
 
     return results
 
+def downloading_upscale_model2(model):
+    if model==UPSCALE_DEFAULT_FILENAMES[0]:
+        load_file_from_url(
+            url=f'https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
+            model_dir=path_upscale_models,
+            file_name=f'{model}'
+        )
+    return os.path.join(path_upscale_models, f'{model}')
 
-def downloading_upscale_model():
-    load_file_from_url(
-        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
-        model_dir=path_upscale_models,
-        file_name='fooocus_upscaler_s409985e5.bin'
-    )
-    return os.path.join(path_upscale_models, 'fooocus_upscaler_s409985e5.bin')
+
+#!def downloading_upscale_model():
+#!    load_file_from_url(
+#!        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
+#!        model_dir=path_upscale_models,
+#!        file_name='fooocus_upscaler_s409985e5.bin'
+#!    )
+#!    return os.path.join(path_upscale_models, 'fooocus_upscaler_s409985e5.bin')
 
 def downloading_safety_checker_model():
     load_file_from_url(

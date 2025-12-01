@@ -27,7 +27,8 @@ MODEL_TYPES = {
     "LoCon": "lycoris",
     "DoRA": "lora",
     "VAE": "vae",
-    "Detection": "detection"
+    "Detection": "detection",
+    "Upscaler": "upscaler"
 }
 
 FILE_TYPES = [

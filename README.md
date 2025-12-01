@@ -43,6 +43,7 @@ Let's look at everything in order.
 16. Transparency - generating images on a transparent background
 17. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
 18. Adetailer - extension for automatic masking and inpainting
+19. Support external upscalers
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -512,6 +513,14 @@ Each option corresponds to a corresponding option on the inpaint tab. Therefore,
 Support [SEP], [SKIP], [PROMPT] tokens: [wiki/Advanced](https://github.com/Bing-su/adetailer/wiki/Advanced)
 
 The YOLO and Mediapipe models are used as detection models. Additional models can be downloaded from civitai.com using the Civitai Model Helper.
+
+**Support external upscalers**
+
+<img width="834" height="380" alt="image" src="https://github.com/user-attachments/assets/c25bd5f1-5103-44b8-a04d-b51ad0d2406c" />
+
+You can load external upscalers using civatai helper. The upscaler is based on the data the model was trained on.
+
+
 <table>
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/Fooocus_extend_wo_update.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Fooocus_extend. Base version 2.5.5</td>
@@ -527,6 +536,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.5
+ 1. Support external upscalers
 
 v9.2.4
  1. Added CFG control type selection

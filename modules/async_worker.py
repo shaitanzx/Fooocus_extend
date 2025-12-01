@@ -292,6 +292,7 @@ class AsyncTask:
         self.save_final_adetail_image_only = self.save_final_enhanced_image_only 
         self.adetailer_checkbox = args.pop()      
         self.adetailer_stats = {}
+        self.uov_model = args.pop()
         
 
     
@@ -887,8 +888,10 @@ def worker():
         if advance_progress:
             current_progress += 1
         progressbar(async_task, current_progress, f'Upscaling image from {str((W, H))} ...')
-        uov_input_image = perform_upscale(uov_input_image)
+        uov_input_image = perform_upscale(uov_input_image,async_task.uov_model)
         print(f'Image upscaled.')
+        if 'final' in uov_method:
+            return True, uov_input_image, None, None, None, None, None, current_progress
         if '1.5x' in uov_method:
             f = 1.5
         elif '2x' in uov_method:
@@ -1212,8 +1215,9 @@ def worker():
             inpaint_image = HWC3(inpaint_image)
             if isinstance(inpaint_image, np.ndarray) and isinstance(inpaint_mask, np.ndarray) \
                     and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
-                progressbar(async_task, 1, 'Downloading upscale models ...')
-                modules.config.downloading_upscale_model()
+                #!progressbar(async_task, 1, 'Downloading upscale models ...')
+                #!modules.config.downloading_upscale_model2(async_task.uov_model)
+                modules.config.downloading_upscale_model2(async_task.uov_model)
                 if inpaint_parameterized:
                     progressbar(async_task, 1, 'Downloading inpainter ...')
                     inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
@@ -1271,7 +1275,7 @@ def worker():
             goals.append('vary')
         elif 'upscale' in uov_method:
             goals.append('upscale')
-            if 'fast' in uov_method:
+            if 'final' in uov_method:
                 skip_prompt_processing = True
                 steps = 0
             else:
@@ -1279,8 +1283,9 @@ def worker():
 
             if advance_progress:
                 current_progress += 1
-            progressbar(async_task, current_progress, 'Downloading upscale models ...')
-            modules.config.downloading_upscale_model()
+            #!progressbar(async_task, current_progress, 'Downloading upscale models ...')
+            #!modules.config.downloading_upscale_model2(async_task.uov_model)
+            modules.config.downloading_upscale_model2(async_task.uov_model)
         return uov_input_image, skip_prompt_processing, steps
 
     def prepare_enhance_prompt(prompt: str, fallback_prompt: str):
@@ -1316,7 +1321,7 @@ def worker():
             direct_return, img, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
                 async_task, img, async_task.enhance_uov_method, switch, current_progress)
             if direct_return:
-                d = [('Upscale (Fast)', 'upscale_fast', '2x')]
+                d = [('Final Upscale', 'upscale_fast', async_task.uov_model)]
                 if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
                     progressbar(async_task, current_progress, 'Checking for NSFW content ...')
                     img = default_censor(img)
@@ -1607,7 +1612,7 @@ def worker():
                 async_task, async_task.uov_input_image, async_task.uov_method, switch, current_progress,
                 advance_progress=True)
             if direct_return:
-                d = [('Upscale (Fast)', 'upscale_fast', '2x')]
+                d = [('Final Upscale', 'upscale_fast', async_task.uov_model)]
                 if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
                     progressbar(async_task, 100, 'Checking for NSFW content ...')
                     async_task.uov_input_image = default_censor(async_task.uov_input_image)
@@ -1672,7 +1677,7 @@ def worker():
         if async_task.enhance_checkbox and async_task.enhance_uov_method != flags.disabled.casefold():
             enhance_upscale_steps = async_task.performance_selection.steps()
             if 'upscale' in async_task.enhance_uov_method:
-                if 'fast' in async_task.enhance_uov_method:
+                if 'final' in async_task.enhance_uov_method:
                     enhance_upscale_steps = 0
                 else:
                     enhance_upscale_steps = async_task.performance_selection.steps_uov()
@@ -1764,7 +1769,7 @@ def worker():
             print(f'Generating and saving time: {execution_time:.2f} seconds')
 
         if not async_task.should_enhance and not async_task.should_adetail:
-            #!print(f'[Enhance] Skipping, preconditions aren\'t met')
+
             stop_processing(async_task, processing_start_time)
             return
         if 'enhance' in goals:
@@ -1826,7 +1831,6 @@ def worker():
                                 ad_model,
                                 image=img if isinstance(img, Image.Image) else Image.fromarray(img),
                                 confidence=args.ad_confidence,
-                                #!device=ultralytics_device,
                                 classes=args.ad_model_classes,
                                 )
 
