@@ -1,3 +1,6 @@
+v9.2.5
+ 1. Support external upscalers
+
 v9.2.4
  1. Added CFG control type selection
  2. Add ADetailer
