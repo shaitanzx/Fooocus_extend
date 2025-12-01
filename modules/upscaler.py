@@ -129,7 +129,7 @@ def perform_upscale(img,upscale_model):
         scale = getattr(model, 'scale', '?')
         blocks = getattr(model, 'num_blocks', '?')
         arch_name = getattr(model, 'model_arch', arch)
-        print(f"✅ Model '{upscale_model_glob}' → {arch}")
+        print(f"✅ Model '{upscale_model_glob}'")
         print(f"✅ scale = {scale}x, blocks = {blocks}, arch = {arch_name}")
         del sd
         model.cpu()
