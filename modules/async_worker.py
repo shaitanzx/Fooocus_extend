@@ -42,7 +42,7 @@ class AsyncTask:
         self.aspect_ratios_selection = args.pop()
         if self.aspect_ratios_selection=='Random':
             self.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
-            self.aspect_random=None
+            self.aspect_random=True
         else:
             self.aspect_random=False
 
@@ -1736,8 +1736,6 @@ def worker():
                 async_task.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
                 width, height = async_task.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
                 width, height = int(width), int(height)
-            if async_task.aspect_random==None:
-                async_task.aspect_random=True
             progressbar(async_task, current_progress, f'Preparing task {current_task_id + 1}/{async_task.image_number} ...')
             execution_start_time = time.perf_counter()
 
@@ -2086,5 +2084,6 @@ def worker():
 
 
 threading.Thread(target=worker, daemon=True).start()
+
 
 
