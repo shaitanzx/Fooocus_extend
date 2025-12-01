@@ -172,10 +172,10 @@ def im_batch_run(p):
                   p.prompt = positive
                   p.negative_prompt = negative        
         yield from generate_clicked(p)
-
+        temp_ar=p.aspect_random
         temp_var=p.results
-        p = copy.deepcopy(pc) 
-
+        p = copy.deepcopy(pc)
+        p.aspect_random=temp_ar
         if p.seed_random:
           p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
     p.input_image_checkbox=check
