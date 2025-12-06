@@ -96,10 +96,7 @@ def xyz_plot_ext(currentTask):
         print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if not finished_batch:
-            if currentTask.translate_enabled:
-                  positive, negative = translate(currentTask.prompt, currentTask.negative_prompt, currentTask.srcTrans, currentTask.toTrans)            
-                  currentTask.prompt = positive
-                  currentTask.negative_prompt = negative
+
             if currentTask.always_random:
                   currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
             yield from generate_clicked(currentTask)
@@ -157,11 +154,7 @@ def im_batch_run(p):
         print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         gr.Info(f"Image Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         passed+=1
-        p.input_image_checkbox=True
-        if p.translate_enabled:
-                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
-                  p.prompt = positive
-                  p.negative_prompt = negative        
+        p.input_image_checkbox=True       
         yield from generate_clicked(p)
         temp_ar=p.aspect_random
         temp_var=p.results
@@ -205,10 +198,6 @@ def pr_batch_start(p):
       else:
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
-        if p.translate_enabled:
-                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
-                  p.prompt = positive
-                  p.negative_prompt = negative
         yield from generate_clicked(p)
         temp_ar=p.aspect_random
         temp_var=p.results
