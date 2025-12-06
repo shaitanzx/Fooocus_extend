@@ -115,15 +115,6 @@ def civitai_helper_nsfw(black_out_nsfw):
   return
 civitai_helper_nsfw(modules.config.default_black_out_nsfw)
 def get_task(*args):
-    argsList = list(args)
-    toT = argsList.pop() 
-    srT = argsList.pop() 
-    trans_enable = argsList.pop() 
-    if trans_enable:      
-            positive, negative = translate(argsList[2], argsList[3], srT, toT)            
-            argsList[2] = positive
-            argsList[3] = negative          
-    args = tuple(argsList)
     args = list(args)
     args.pop(0)
     return worker.AsyncTask(args=args)
