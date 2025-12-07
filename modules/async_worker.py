@@ -348,6 +348,7 @@ def worker():
     from types import SimpleNamespace
     from pathlib import Path
     import re
+    from extentions.module_translate import translate
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -957,6 +958,10 @@ def worker():
     def process_prompt(async_task, prompt, negative_prompt, base_model_additional_loras, image_number, disable_seed_increment, use_expansion, use_style,
                        use_synthetic_refiner, current_progress, advance_progress=False):
         
+        if async_task.translate_enabled:
+            prompt, negative_prompt = translate(prompt, prompt_neg=negative_prompt, srcTrans=async_task.srcTrans, toTrans=async_task.toTrans)
+            async_task.negative_prompt = negative_prompt
+        
         prompts = remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')
         negative_prompts = remove_empty_str([safe_str(p) for p in negative_prompt.splitlines()], default='')
         prompt = prompts[0]
@@ -966,6 +971,8 @@ def worker():
             use_expansion = False
         extra_positive_prompts = prompts[1:] if len(prompts) > 1 else []
         extra_negative_prompts = negative_prompts[1:] if len(negative_prompts) > 1 else []
+        
+        
         if advance_progress:
             current_progress += 1
         progressbar(async_task, current_progress, 'Loading models ...')
@@ -1425,8 +1432,7 @@ def worker():
         initial_latent = None
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
-        print('[ADetailer] Positive prompt: ',prompt)
-        print('[ADetailer] Negative prompt: ',negative_prompt)
+
         if 'inpaint' in goals and inpaint_parameterized:
             progressbar(async_task, current_progress, 'Downloading inpainter ...')
             inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
@@ -1438,7 +1444,8 @@ def worker():
         tasks_enhance, use_expansion, loras, current_progress = process_prompt(
             async_task, prompt, negative_prompt, base_model_additional_loras, 1, True, 
             use_expansion, use_style, use_synthetic_refiner, current_progress, advance_progress=True)
-
+        print('[ADetailer] Positive prompt: ',prompt)
+        print('[ADetailer] Negative prompt: ',negative_prompt)
         task_enhance = tasks_enhance[0]
         # TODO could support vary, upscale and CN in the future
         # if 'cn' in goals:

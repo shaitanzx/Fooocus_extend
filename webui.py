@@ -96,10 +96,7 @@ def xyz_plot_ext(currentTask):
         print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if not finished_batch:
-            if currentTask.translate_enabled:
-                  positive, negative = translate(currentTask.prompt, currentTask.negative_prompt, currentTask.srcTrans, currentTask.toTrans)            
-                  currentTask.prompt = positive
-                  currentTask.negative_prompt = negative
+
             if currentTask.always_random:
                   currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
             yield from generate_clicked(currentTask)
@@ -115,15 +112,6 @@ def civitai_helper_nsfw(black_out_nsfw):
   return
 civitai_helper_nsfw(modules.config.default_black_out_nsfw)
 def get_task(*args):
-    argsList = list(args)
-    toT = argsList.pop() 
-    srT = argsList.pop() 
-    trans_enable = argsList.pop() 
-    if trans_enable:      
-            positive, negative = translate(argsList[2], argsList[3], srT, toT)            
-            argsList[2] = positive
-            argsList[3] = negative          
-    args = tuple(argsList)
     args = list(args)
     args.pop(0)
     return worker.AsyncTask(args=args)
@@ -166,11 +154,7 @@ def im_batch_run(p):
         print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         gr.Info(f"Image Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         passed+=1
-        p.input_image_checkbox=True
-        if p.translate_enabled:
-                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
-                  p.prompt = positive
-                  p.negative_prompt = negative        
+        p.input_image_checkbox=True       
         yield from generate_clicked(p)
         temp_ar=p.aspect_random
         temp_var=p.results
@@ -214,10 +198,6 @@ def pr_batch_start(p):
       else:
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
-        if p.translate_enabled:
-                  positive, negative = translate(p.prompt, p.negative_prompt, p.srcTrans, p.toTrans)
-                  p.prompt = positive
-                  p.negative_prompt = negative
         yield from generate_clicked(p)
         temp_ar=p.aspect_random
         temp_var=p.results
@@ -1937,7 +1917,6 @@ with shared.gradio_root:
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
             .then(fn=xyz_plot_ext, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
             .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[xyz_start,generate_button, stop_button, skip_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
@@ -1961,7 +1940,6 @@ with shared.gradio_root:
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
               .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
 
