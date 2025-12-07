@@ -959,7 +959,6 @@ def worker():
                        use_synthetic_refiner, current_progress, advance_progress=False):
         
         if async_task.translate_enabled:
-            print('---------------------------------------------------------')
             prompt, negative_prompt = translate(prompt, prompt_neg=negative_prompt, srcTrans=async_task.srcTrans, toTrans=async_task.toTrans)
             async_task.negative_prompt = negative_prompt
         
