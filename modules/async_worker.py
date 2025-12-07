@@ -960,7 +960,8 @@ def worker():
         
         if async_task.translate_enabled:
             print('---------------------------------------------------------')
-            prompt, negative_prompt = translate(prompt, negative_prompt, async_task.srcTrans, async_task.toTrans)
+            prompt, negative_prompt = translate(prompt, prompt_neg=negative_prompt, async_task.srcTrans, async_task.toTrans)
+            async_task.negative_prompt = negative_prompt
         
         prompts = remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')
         negative_prompts = remove_empty_str([safe_str(p) for p in negative_prompt.splitlines()], default='')
