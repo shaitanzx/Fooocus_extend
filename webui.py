@@ -1917,7 +1917,6 @@ with shared.gradio_root:
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
             .then(fn=xyz_plot_ext, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
             .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[xyz_start,generate_button, stop_button, skip_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
@@ -1941,7 +1940,6 @@ with shared.gradio_root:
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
               .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
 
