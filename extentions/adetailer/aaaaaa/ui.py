@@ -350,7 +350,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
             with gr.Column(variant="compact"):
                 w.ad_disable_latent = gr.Checkbox(
                     label="ADetailer Disable initial latent" + suffix(n),
-                    value=True,
+                    value=False,
                     visible=True,
                     elem_id=eid("ad_disable_latent"),
                 )
