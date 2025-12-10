@@ -1806,10 +1806,7 @@ def worker():
         exception_result = None
         if 'adetail' in goals or async_task.adetailer_checkbox:
             from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
-            if async_task.refiner_model_name == 'None':
-                        use_synthetic_refiner = True
-                        async_task.refiner_switch = 0.8
-                        _, switch, _, _ = apply_overrides(async_task, async_task.steps, height, width)
+
             
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
@@ -1838,7 +1835,7 @@ def worker():
                                 image=img if isinstance(img, Image.Image) else Image.fromarray(img),
                                 confidence=args.ad_confidence,
                                 classes=args.ad_model_classes,
-                                )
+                                device='cpu')
 
                     masks = adetailer.pred_preprocessing(pred, args)
                     if len(masks) == 0:
