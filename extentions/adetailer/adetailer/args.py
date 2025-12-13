@@ -233,11 +233,8 @@ _all_args = [
     
     #!("ad_mask_blur", "ADetailer mask blur"),
     ("ad_disable_latent", "ADetailer Disable initial latent"),
-    ("ad_use_inpaint_engine", "ADetailer use separate Inpaint Engine"),
     ("ad_inpaint_engine", "Inpaint Engine"),
-    ("ad_use_denoising_strength", "ADetailer use separate denoising strength"),
     ("ad_denoising_strength", "ADetailer denoising strength"),
-    ("ad_use_resp_field", "ADetailer use separate Respective Field"),
     ("ad_resp_field", "ADetailer Respective Field"),
     ("ad_use_cfg_scale", "ADetailer use separate CFG scale"),
     ("ad_cfg_scale", "ADetailer CFG scale"),

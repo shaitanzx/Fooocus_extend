@@ -1806,10 +1806,7 @@ def worker():
         exception_result = None
         if 'adetail' in goals or async_task.adetailer_checkbox:
             from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
-            if async_task.refiner_model_name == 'None':
-                        use_synthetic_refiner = True
-                        async_task.refiner_switch = 0.8
-                        _, switch, _, _ = apply_overrides(async_task, async_task.steps, height, width)
+
             
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
@@ -1838,7 +1835,7 @@ def worker():
                                 image=img if isinstance(img, Image.Image) else Image.fromarray(img),
                                 confidence=args.ad_confidence,
                                 classes=args.ad_model_classes,
-                                )
+                                device='cpu')
 
                     masks = adetailer.pred_preprocessing(pred, args)
                     if len(masks) == 0:
@@ -1862,12 +1859,9 @@ def worker():
                             async_task.sampler_name = args.ad_sampler
                         if args.ad_scheduler != "Use same scheduler":
                             async_task.scheduler_name = args.ad_scheduler
-                    if args.ad_use_denoising_strength :
-                        async_task.inpaint_strength  = args.ad_denoising_strength
-                    if args.ad_use_resp_field :
-                        async_task.inpaint_respective_field  = args.ad_resp_field
-                    if args.ad_use_inpaint_engine :
-                        async_task.inpaint_engine  = args.ad_inpaint_engine
+                    async_task.inpaint_strength  = args.ad_denoising_strength
+                    async_task.inpaint_respective_field  = args.ad_resp_field
+                    async_task.inpaint_engine  = args.ad_inpaint_engine
                     if args.ad_use_cfg_scale :
                         async_task.cfg_scale  = args.ad_cfg_scale
                     async_task.inpaint_disable_initial_latent = args.ad_disable_latent

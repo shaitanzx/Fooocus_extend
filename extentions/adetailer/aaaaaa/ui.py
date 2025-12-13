@@ -325,42 +325,32 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
 def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # noqa: PLR0915
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
     with gr.Group():
-        with gr.Row():
-            with gr.Column(variant="compact"):
-                w.ad_use_inpaint_engine = gr.Checkbox(
-                    label="ADetailer use separate Inpaint Engine" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_inpaint_engine"),
-                )
+        with gr.Column(variant="compact"):
+            with gr.Row():
+                w.inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options,
+                                    value=modules.config.default_inpaint_method,
+                                    label='Method'+ suffix(n), interactive=True)
+            with gr.Row():
+                w.ad_disable_latent = gr.Checkbox(
+                                    label="ADetailer Disable initial latent" + suffix(n),
+                                    value=False,
+                                    visible=True,
+                                    elem_id=eid("ad_disable_latent"))
+
+            with gr.Row():
+        
                 w.ad_inpaint_engine = gr.Dropdown(
                     label="Inpaint Engine" + suffix(n),
                     choices=modules.flags.inpaint_engine_versions,
                     value=modules.config.default_inpaint_engine_version,
                     visible=True,
-                    interactive=False,
+                    interactive=True,
                     elem_id=eid("ad_inpaint_engine"),
+                    info='Version of Fooocus inpaint model. If set, use performance Quality or Speed (no performance LoRAs) for best results.'
                 )
-                w.ad_use_inpaint_engine.change(
-                    lambda value: (gr_interactive(value)),
-                    inputs=w.ad_use_inpaint_engine,
-                    outputs=w.ad_inpaint_engine,
-                    queue=False,
-                )
-            with gr.Column(variant="compact"):
-                w.ad_disable_latent = gr.Checkbox(
-                    label="ADetailer Disable initial latent" + suffix(n),
-                    value=True,
-                    visible=True,
-                    elem_id=eid("ad_disable_latent"),
-                )
-                w.ad_use_denoising_strength = gr.Checkbox(
-                    label="ADetailer use separate denoising strength" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_denoising_strength"),
-                )
-                
+        
+            with gr.Row():
+
                 w.ad_denoising_strength = gr.Slider(
                     label="Inpaint denoising strength" + suffix(n),
                     minimum=0.0,
@@ -368,40 +358,53 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     step=0.01,
                     value=1,
                     visible=True,
-                    interactive=False,
+                    interactive=True,
                     elem_id=eid("ad_denoising_strength"),
+                    info='Same as the denoising strength in A1111 inpaint. '
+                         'Only used in inpaint, not used in outpaint. '
+                         '(Outpaint always use 1.0)'
                 )
-                w.ad_use_denoising_strength.change(
-                    lambda value: (gr_interactive(value)),
-                    inputs=w.ad_use_denoising_strength,
-                    outputs=w.ad_denoising_strength,
-                    queue=False,
-                )
-            with gr.Column(variant="compact"):
-                w.ad_use_resp_field = gr.Checkbox(
-                    label="ADetailer use separate Respective Field" + suffix(n),
-                    value=False,
-                    visible=True,
-                    elem_id=eid("ad_use_resp_field"),
-                )
+
+            with gr.Row():
+
+
                 w.ad_resp_field = gr.Slider(
                     label="Inpaint Respective Field" + suffix(n),
                     minimum=0.0,
                     maximum=1.0,
                     step=0.01,
-                    value=0,
+                    value=0.618,
                     visible=True,
-                    interactive=False,
+                    interactive=True,
                     elem_id=eid("ad_resp_field"),
-                )
-                w.ad_use_resp_field.change(
-                    lambda value: (gr_interactive(value)),
-                    inputs=w.ad_use_resp_field,
-                    outputs=w.ad_resp_field,
-                    queue=False,
+                    info='The area to inpaint. '
+                         'Value 0 is same as "Only Masked" in A1111. '
+                         'Value 1 is same as "Whole Image" in A1111. '
+                         'Only used in inpaint, not used in outpaint. '
+                         '(Outpaint always use 1.0)'
                 )
 
+    def inpaint_mode_change(mode, inpaint_engine_version):
 
+
+        if mode == modules.flags.inpaint_option_detail:
+            return [                
+                False, 'None', 0.5, 0.0
+            ]
+
+
+        if mode == modules.flags.inpaint_option_modify:
+            return [
+                True, inpaint_engine_version, 1.0, 0.0
+            ]
+
+        return [
+            False, inpaint_engine_version, 1.0, 0.618
+        ]
+    w.inpaint_mode.change(inpaint_mode_change, inputs=[w.inpaint_mode, w.ad_inpaint_engine], outputs=[
+                            w.ad_disable_latent, w.ad_inpaint_engine,
+                            w.ad_denoising_strength, w.ad_resp_field
+                        ], show_progress=False, queue=False)            
     with gr.Group():
         with gr.Row():
             with gr.Column(variant="compact"):
