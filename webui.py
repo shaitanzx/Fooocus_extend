@@ -172,7 +172,6 @@ def promt_test(p):
     yield from generate_clicked(currentTask)
     p.prompt='dog'
     currentTask=p
-    del p.prompt
     yield from generate_clicked(currentTask)
     return
 
