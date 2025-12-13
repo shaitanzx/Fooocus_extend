@@ -204,6 +204,8 @@ def pr_batch_start(p):
             model_management.interrupt_processing = False
         try:
             print('----------------------',p.last_stop)
+            print(p)
+            print(pc)
             yield from generate_clicked(p)
         except ldm_patched.modules.model_management.InterruptProcessingException:
             print('++++++++++++++++++++++++++++++',p.last_stop)
