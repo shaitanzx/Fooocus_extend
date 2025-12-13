@@ -172,6 +172,7 @@ def promt_test(p):
     yield from generate_clicked(currentTask)
     p.prompt='dog'
     currentTask=p
+    print ('aaaaaaaaaaaaaaa',currentTask.last_stop)
     yield from generate_clicked(currentTask)
     return
 
