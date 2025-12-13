@@ -338,12 +338,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                                     elem_id=eid("ad_disable_latent"))
 
             with gr.Row():
-                #!w.ad_use_inpaint_engine = gr.Checkbox(
-                #!    label="ADetailer use separate Inpaint Engine" + suffix(n),
-                #!    value=True,
-                #!    visible=False,
-                #!    elem_id=eid("ad_use_inpaint_engine"),
-                #!)
         
                 w.ad_inpaint_engine = gr.Dropdown(
                     label="Inpaint Engine" + suffix(n),
@@ -356,12 +350,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
         
             with gr.Row():
-                #!w.ad_use_denoising_strength = gr.Checkbox(
-                #!    label="ADetailer use separate denoising strength" + suffix(n),
-                #!    value=True,
-                #!    visible=False,
-                #!    elem_id=eid("ad_use_denoising_strength"),
-                #!)
+
                 w.ad_denoising_strength = gr.Slider(
                     label="Inpaint denoising strength" + suffix(n),
                     minimum=0.0,
@@ -377,12 +366,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
             with gr.Row():
-                #!w.ad_use_resp_field = gr.Checkbox(
-                #!    label="ADetailer use separate Respective Field" + suffix(n),
-                #!    value=True,
-                #!    visible=False,
-                #!    elem_id=eid("ad_use_resp_field"),
-                #!)
+
 
                 w.ad_resp_field = gr.Slider(
                     label="Inpaint Respective Field" + suffix(n),
@@ -401,19 +385,13 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 )
 
     def inpaint_mode_change(mode, inpaint_engine_version):
-        #!assert mode in modules.flags.inpaint_options
 
-        # inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
-        # inpaint_disable_initial_latent, inpaint_engine,
-        # inpaint_strength, inpaint_respective_field
 
         if mode == modules.flags.inpaint_option_detail:
             return [                
                 False, 'None', 0.5, 0.0
             ]
 
-        #!if inpaint_engine_version == 'empty':
-        #!    inpaint_engine_version = modules.config.default_inpaint_engine_version
 
         if mode == modules.flags.inpaint_option_modify:
             return [
