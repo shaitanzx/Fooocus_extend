@@ -171,50 +171,51 @@ def im_batch_run(p):
 
 
 	
-def pr_batch_start(async_task):
+def pr_batch_start(p):
   global finished_batch
   finished_batch=False
-  async_task.batch_prompt.reverse()
-  batch_prompt=async_task.batch_prompt
+  p.batch_prompt.reverse()
+  batch_prompt=p.batch_prompt
   batch_len=len(batch_prompt)
-  pc = copy.deepcopy(async_task)
+  pc = copy.deepcopy(p)
   passed=1
   temp_var=[]
   while batch_prompt and not finished_batch:
-      async_task.results=temp_var
+      p.results=temp_var
       print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
       gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
       one_batch_args=batch_prompt.pop()
-      if async_task.positive_batch=='Prefix':
-        async_task.prompt= async_task.original_prompt + one_batch_args[0]
-      elif async_task.positive_batch=='Suffix':
-        async_task.prompt= one_batch_args[0] + async_task.original_prompt
+      if p.positive_batch=='Prefix':
+        p.prompt= p.original_prompt + one_batch_args[0]
+      elif p.positive_batch=='Suffix':
+        p.prompt= one_batch_args[0] + p.original_prompt
       else:
-        async_task.prompt=one_batch_args[0]
-      if async_task.negative_batch=='Prefix':
-        async_task.negative_prompt= async_task.original_negative + one_batch_args[1]
-      elif async_task.negative_batch=='Suffix':
-        async_task.negative_prompt= one_batch_args[1] + async_task.original_negative
+        p.prompt=one_batch_args[0]
+      if p.negative_batch=='Prefix':
+        p.negative_prompt= p.original_negative + one_batch_args[1]
+      elif p.negative_batch=='Suffix':
+        p.negative_prompt= one_batch_args[1] + p.original_negative
       else:
-        async_task.negative_prompt=one_batch_args[1]
-      if len(async_task.prompt)>0:
+        p.negative_prompt=one_batch_args[1]
+      if len(p.prompt)>0:
         try:
-            yield from generate_clicked(async_task)
+            print(f"--------------------------------[DEBUG] Before generate: async_task.last_stop = {async_task.last_stop!r}")
+            yield from generate_clicked(p)
         except ldm_patched.modules.model_management.InterruptProcessingException:
-            if async_task.last_stop == 'skip':
+            if p.last_stop == 'skip':
                 print('User skipped')
-                async_task.last_stop = False
+                p.last_stop = False
                 continue
             else:
                 print('User stopped')
                 exception_result = 'break'
                 break
-        temp_ar=async_task.aspect_random
-        temp_var=async_task.results
-      async_task = copy.deepcopy(pc)
-      async_task.aspect_random=temp_ar
-      if async_task.seed_random:
-        async_task.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+        temp_ar=p.aspect_random
+        temp_var=p.results
+      p = copy.deepcopy(pc)
+      p.aspect_random=temp_ar
+      if p.seed_random:
+        p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
       passed+=1
   return 
 
