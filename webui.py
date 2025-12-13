@@ -114,7 +114,7 @@ civitai_helper_nsfw(modules.config.default_black_out_nsfw)
 def get_task(*args):
     args = list(args)
     args.pop(0)
-    return [worker.AsyncTask(args=args),worker.AsyncTask(args=args)]
+    return worker.AsyncTask(args=args)
      
 def im_batch_run(p):
     batch_path=modules.config.temp_path+os.path.sep+"batch_images"
@@ -225,8 +225,10 @@ def generate_clicked(task: worker.AsyncTask):
         gr.update(visible=True, value=None), \
         gr.update(visible=False, value=None), \
         gr.update(visible=False)
-
-    worker.async_tasks.append(task)
+    new_list=[]
+    new_list.append(task)
+    new_list.append(task)
+    worker.async_tasks=new_list
 
     while not finished:
         time.sleep(0.01)
