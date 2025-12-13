@@ -203,8 +203,10 @@ def pr_batch_start(p):
         with model_management.interrupt_processing_mutex:
             model_management.interrupt_processing = False
         try:
+            print('----------------------',p.last_stop)
             yield from generate_clicked(p)
         except ldm_patched.modules.model_management.InterruptProcessingException:
+            print('++++++++++++++++++++++++++++++',p.last_stop)
             if p.last_stop == 'skip':
                 print('User skipped')
                 temp_ar = p.aspect_random
