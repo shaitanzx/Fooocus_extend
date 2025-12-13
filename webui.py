@@ -198,8 +198,10 @@ def pr_batch_start(p):
       else:
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
+        import ldm_patched.modules.model_management as model_management
+        with model_management.interrupt_processing_mutex:
+            model_management.interrupt_processing = False
         try:
-            print(f"--------------------------------[DEBUG] Before generate: async_task.last_stop = {p.last_stop!r}")
             yield from generate_clicked(p)
         except ldm_patched.modules.model_management.InterruptProcessingException:
             if p.last_stop == 'skip':
