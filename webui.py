@@ -198,7 +198,8 @@ def pr_batch_start(p):
       else:
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
-        yield from generate_clicked(p)
+        try:
+            yield from generate_clicked(p)
         except ldm_patched.modules.model_management.InterruptProcessingException:
             if async_task.last_stop == 'skip':
                 print('User skipped')
