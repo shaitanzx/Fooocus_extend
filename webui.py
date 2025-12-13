@@ -201,9 +201,7 @@ def pr_batch_start(p):
 
         import ldm_patched.modules.model_management as model_management
         with model_management.interrupt_processing_mutex:
-            #!model_management.interrupt_processing = False
-            #!global model_management.interrupt_processing
-            print('------------------------',model_management.interrupt_processing)
+            model_management.interrupt_processing = False
         try:
             yield from generate_clicked(p)
         except ldm_patched.modules.model_management.InterruptProcessingException:
