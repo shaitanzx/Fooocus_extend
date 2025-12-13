@@ -207,8 +207,13 @@ def pr_batch_start(p):
         except ldm_patched.modules.model_management.InterruptProcessingException:
             if p.last_stop == 'skip':
                 print('User skipped')
-                p.last_stop = False
+                temp_ar = p.aspect_random
+                p = copy.deepcopy(pc)
+                p.aspect_random = temp_ar
+                p.last_stop = False  # Сбрасываем флаг skip
+                passed += 1
                 continue
+                
             else:
                 print('User stopped')
                 exception_result = 'break'
