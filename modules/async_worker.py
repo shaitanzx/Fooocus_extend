@@ -1859,12 +1859,9 @@ def worker():
                             async_task.sampler_name = args.ad_sampler
                         if args.ad_scheduler != "Use same scheduler":
                             async_task.scheduler_name = args.ad_scheduler
-                    if args.ad_use_denoising_strength :
-                        async_task.inpaint_strength  = args.ad_denoising_strength
-                    if args.ad_use_resp_field :
-                        async_task.inpaint_respective_field  = args.ad_resp_field
-                    if args.ad_use_inpaint_engine :
-                        async_task.inpaint_engine  = args.ad_inpaint_engine
+                    async_task.inpaint_strength  = args.ad_denoising_strength
+                    async_task.inpaint_respective_field  = args.ad_resp_field
+                    async_task.inpaint_engine  = args.ad_inpaint_engine
                     if args.ad_use_cfg_scale :
                         async_task.cfg_scale  = args.ad_cfg_scale
                     async_task.inpaint_disable_initial_latent = args.ad_disable_latent
