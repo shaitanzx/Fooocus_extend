@@ -180,6 +180,7 @@ def pr_batch_start(p):
   pc = copy.deepcopy(p)
   passed=1
   temp_var=[]
+  
   while batch_prompt and not finished_batch:
       p.results=temp_var
       print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
@@ -198,7 +199,7 @@ def pr_batch_start(p):
       else:
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
-
+        currentTask = p
         import ldm_patched.modules.model_management as model_management
         with model_management.interrupt_processing_mutex:
             model_management.interrupt_processing = False
