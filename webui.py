@@ -201,9 +201,9 @@ def pr_batch_start(p):
         try:
             yield from generate_clicked(p)
         except ldm_patched.modules.model_management.InterruptProcessingException:
-            if async_task.last_stop == 'skip':
+            if p.last_stop == 'skip':
                 print('User skipped')
-                async_task.last_stop = False
+                p.last_stop = False
                 continue
             else:
                 print('User stopped')
