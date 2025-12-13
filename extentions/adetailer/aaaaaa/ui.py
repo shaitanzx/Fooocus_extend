@@ -425,7 +425,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
         ]
     w.inpaint_mode.change(inpaint_mode_change, inputs=[w.inpaint_mode, w.ad_inpaint_engine], outputs=[
                             w.ad_disable_latent, w.ad_inpaint_engine,
-                            w.ad_use_denoising_strength, w.ad_resp_field
+                            w.ad_denoising_strength, w.ad_resp_field
                         ], show_progress=False, queue=False)            
     with gr.Group():
         with gr.Row():
