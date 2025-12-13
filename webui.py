@@ -199,6 +199,15 @@ def pr_batch_start(p):
         p.negative_prompt=one_batch_args[1]
       if len(p.prompt)>0:
         yield from generate_clicked(p)
+        except ldm_patched.modules.model_management.InterruptProcessingException:
+            if async_task.last_stop == 'skip':
+                print('User skipped')
+                async_task.last_stop = False
+                continue
+            else:
+                print('User stopped')
+                exception_result = 'break'
+                break
         temp_ar=p.aspect_random
         temp_var=p.results
       p = copy.deepcopy(pc)
@@ -225,10 +234,8 @@ def generate_clicked(task: worker.AsyncTask):
         gr.update(visible=True, value=None), \
         gr.update(visible=False, value=None), \
         gr.update(visible=False)
-    new_list=[]
-    new_list.append(task)
-    new_list.append(task)
-    worker.async_tasks=new_list
+
+    worker.async_tasks.append(task)
 
     while not finished:
         time.sleep(0.01)
