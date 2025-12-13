@@ -403,6 +403,7 @@ with shared.gradio_root:
 
                     def skip_clicked(currentTask):
                         print('zzzzzzzzzzzzzzzzzzzzzzzz',currentTask.last_stop)
+                        print('zzzzzzzzzzzzzzzzzzzzzzzz',currentTask.prompt)
                         import ldm_patched.modules.model_management as model_management
                         currentTask.last_stop = 'skip'
                         if (currentTask.processing):
