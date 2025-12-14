@@ -174,7 +174,7 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
     currentTask = copy.deepcopy(p)
     passed=1
     temp_var=[]
-    print('--------------------',p,seed_random)
+    print('--------------------',p.seed_random)
     while batch_prompt:
         
         currentTask.results=temp_var
