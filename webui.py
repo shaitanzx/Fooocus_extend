@@ -203,7 +203,7 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
         if p.seed_random:
             p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
         passed+=1
-  return 
+    return 
 
 
 	
