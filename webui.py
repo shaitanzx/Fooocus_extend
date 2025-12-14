@@ -171,7 +171,7 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
 
     batch_prompt.reverse()
     batch_len=len(batch_prompt)
-    
+    currentTask = copy.deepcopy(p)
     passed=1
     temp_var=[]
     print('--------------------',p,seed_random)
