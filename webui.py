@@ -171,12 +171,11 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
 
     batch_prompt.reverse()
     batch_len=len(batch_prompt)
-    currentTask = copy.deepcopy(p)
+    currentTask = p
     passed=1
     temp_var=[]
-    print('--------------------',p.seed_random)
     while batch_prompt:
-        
+        currentTask = p    
         currentTask.results=temp_var
         print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
         gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
@@ -193,6 +192,7 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
             currentTask.negative_prompt= one_batch_args[1] + p.negative_prompt
         else:
             currentTask.negative_prompt=one_batch_args[1]
+        print('------------------------',p.prompt)
         if len(currentTask.prompt)>0:
             yield from generate_clicked(currentTask)
             print('===================================',currentTask.last_stop)
