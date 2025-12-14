@@ -168,7 +168,6 @@ def im_batch_run(p):
     return
 
 def prompt_batch(currentTask,batch_prompt,positive_batch,negative_batch):
-
     batch_prompt.reverse()
     batch_len=len(batch_prompt)
     passed=1
@@ -191,12 +190,10 @@ def prompt_batch(currentTask,batch_prompt,positive_batch,negative_batch):
             currentTask.negative_prompt= one_batch_args[1] + ' ' + p.negative_prompt
         else:
             currentTask.negative_prompt=one_batch_args[1]
-        print('------------------------',p.prompt, currentTask.prompt)
         if len(currentTask.prompt)>0:
             yield from generate_clicked(currentTask)
-            print('===================================',currentTask.last_stop)
             if currentTask.last_stop == 'stop':
-                print('User skipped')
+                print('User stopped')
                 break        
         temp_var=currentTask.results
         if p.seed_random:
@@ -204,69 +201,6 @@ def prompt_batch(currentTask,batch_prompt,positive_batch,negative_batch):
         passed+=1
     return 
 
-
-	
-def pr_batch_start(p):
-  global finished_batch
-  finished_batch=False
-  p.batch_prompt.reverse()
-  batch_prompt=p.batch_prompt
-  batch_len=len(batch_prompt)
-  pc = copy.deepcopy(p)
-  passed=1
-  temp_var=[]
-  
-  while batch_prompt and not finished_batch:
-      p.results=temp_var
-      print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
-      gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
-      one_batch_args=batch_prompt.pop()
-      if p.positive_batch=='Prefix':
-        p.prompt= p.original_prompt + one_batch_args[0]
-      elif p.positive_batch=='Suffix':
-        p.prompt= one_batch_args[0] + p.original_prompt
-      else:
-        p.prompt=one_batch_args[0]
-      if p.negative_batch=='Prefix':
-        p.negative_prompt= p.original_negative + one_batch_args[1]
-      elif p.negative_batch=='Suffix':
-        p.negative_prompt= one_batch_args[1] + p.original_negative
-      else:
-        p.negative_prompt=one_batch_args[1]
-      if len(p.prompt)>0:
-        currentTask = p
-        import ldm_patched.modules.model_management as model_management
-        with model_management.interrupt_processing_mutex:
-            model_management.interrupt_processing = False
-        try:
-            print('----------------------',p.last_stop)
-            print(p)
-            print(pc)
-            print(currentTask)
-            yield from generate_clicked(p)
-        except ldm_patched.modules.model_management.InterruptProcessingException:
-            print('++++++++++++++++++++++++++++++',p.last_stop)
-            if p.last_stop == 'skip':
-                print('User skipped')
-                temp_ar = p.aspect_random
-                p = copy.deepcopy(pc)
-                p.aspect_random = temp_ar
-                p.last_stop = False  # Сбрасываем флаг skip
-                passed += 1
-                continue
-                
-            else:
-                print('User stopped')
-                exception_result = 'break'
-                break
-        temp_ar=p.aspect_random
-        temp_var=p.results
-      p = copy.deepcopy(pc)
-      p.aspect_random=temp_ar
-      if p.seed_random:
-        p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-      passed+=1
-  return 
 
 def generate_clicked(task: worker.AsyncTask):
     import ldm_patched.modules.model_management as model_management
