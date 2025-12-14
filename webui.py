@@ -167,14 +167,43 @@ def im_batch_run(p):
     del temp_var
     return
 
-def promt_test(p):
-    currentTask=p
-    yield from generate_clicked(currentTask)
-    p.prompt='dog'
-    currentTask=p
-    print ('aaaaaaaaaaaaaaa',currentTask.last_stop)
-    yield from generate_clicked(currentTask)
-    return
+def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
+
+    batch_prompt.reverse()
+    batch_len=len(batch_prompt)
+    
+    passed=1
+    temp_var=[]
+  
+    while batch_prompt:
+        currentTask = p
+        currentTask.results=temp_var
+        print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
+        gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
+        one_batch_args=batch_prompt.pop()
+        if positive_batch=='Prefix':
+            currentTask.prompt= p.prompt + one_batch_args[0]
+        elif positive_batch=='Suffix':
+            currentTask.prompt= one_batch_args[0] + p.prompt
+        else:
+            currentTask.prompt=one_batch_args[0]
+        if negative_batch=='Prefix':
+            currentTask.negative_prompt= p.negative_prompt + one_batch_args[1]
+        elif p.negative_batch=='Suffix':
+            currentTask.negative_prompt= one_batch_args[1] + p.negative_prompt
+        else:
+            currentTask.negative_prompt=one_batch_args[1]
+        if len(p.prompt)>0:
+            yield from generate_clicked(currentTask)
+            print('===================================',currentTask.last_stop)
+            if currentTask.last_stop == 'break':
+                print('User skipped')
+                break        
+        temp_var=currentTask.results
+        if p.seed_random:
+            p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+        passed+=1
+  return 
 
 
 	
@@ -1844,7 +1873,7 @@ with shared.gradio_root:
         ctrls += ad_component
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
         ctrls += [uov_model]
-        ctrls += [translate_enabled, srcTrans, toTrans]
+        #!ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
@@ -1981,7 +2010,7 @@ with shared.gradio_root:
                               outputs=[prompt_load,prompt_start,prompt_delete,prompt_clear,batch_prompt,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=promt_test,inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(fn=prompt_batch,inputs=[currentTask,batch_prompt,positive_batch,negative_batch], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[prompt_load,prompt_start,batch_prompt,prompt_delete,prompt_clear,generate_button, stop_button, skip_button, state_is_generating]) \
               .then(fn=update_history_link, outputs=history_link) \
