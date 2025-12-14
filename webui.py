@@ -195,7 +195,7 @@ def prompt_batch(currentTask,batch_prompt,positive_batch,negative_batch):
         if len(currentTask.prompt)>0:
             yield from generate_clicked(currentTask)
             print('===================================',currentTask.last_stop)
-            if currentTask.last_stop == 'break':
+            if currentTask.last_stop == 'stop':
                 print('User skipped')
                 break        
         temp_var=currentTask.results
