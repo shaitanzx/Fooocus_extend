@@ -167,32 +167,31 @@ def im_batch_run(p):
     del temp_var
     return
 
-def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
+def prompt_batch(currentTask,batch_prompt,positive_batch,negative_batch):
 
     batch_prompt.reverse()
     batch_len=len(batch_prompt)
-    currentTask = p
     passed=1
     temp_var=[]
-    while batch_prompt:
-        currentTask = p    
+    p = copy.deepcopy(currentTask)
+    while batch_prompt:    
         currentTask.results=temp_var
         print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
         gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
         one_batch_args=batch_prompt.pop()
         if positive_batch=='Prefix':
-            currentTask.prompt= p.prompt + one_batch_args[0]
+            currentTask.prompt= p.prompt + ' ' + one_batch_args[0]
         elif positive_batch=='Suffix':
-            currentTask.prompt= one_batch_args[0] + p.prompt
+            currentTask.prompt= one_batch_args[0] + ' ' + p.prompt
         else:
             currentTask.prompt=one_batch_args[0]
         if negative_batch=='Prefix':
-            currentTask.negative_prompt= p.negative_prompt + one_batch_args[1]
+            currentTask.negative_prompt= p.negative_prompt + ' ' + one_batch_args[1]
         elif negative_batch=='Suffix':
-            currentTask.negative_prompt= one_batch_args[1] + p.negative_prompt
+            currentTask.negative_prompt= one_batch_args[1] + ' ' + p.negative_prompt
         else:
             currentTask.negative_prompt=one_batch_args[1]
-        print('------------------------',p.prompt)
+        print('------------------------',p.prompt, currentTask.prompt)
         if len(currentTask.prompt)>0:
             yield from generate_clicked(currentTask)
             print('===================================',currentTask.last_stop)
@@ -201,7 +200,7 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
                 break        
         temp_var=currentTask.results
         if p.seed_random:
-            p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+            currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
         passed+=1
     return 
 
