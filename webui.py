@@ -189,7 +189,7 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
             currentTask.prompt=one_batch_args[0]
         if negative_batch=='Prefix':
             currentTask.negative_prompt= p.negative_prompt + one_batch_args[1]
-        elif p.negative_batch=='Suffix':
+        elif negative_batch=='Suffix':
             currentTask.negative_prompt= one_batch_args[1] + p.negative_prompt
         else:
             currentTask.negative_prompt=one_batch_args[1]
