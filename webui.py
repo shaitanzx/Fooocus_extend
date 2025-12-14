@@ -2010,7 +2010,7 @@ with shared.gradio_root:
                               outputs=[prompt_load,prompt_start,prompt_delete,prompt_clear,batch_prompt,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=prompt_batch,inputs=[currentTask,batch_prompt,positive_batch,negative_batch], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(fn=prompt_batch,inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[prompt_load,prompt_start,batch_prompt,prompt_delete,prompt_clear,generate_button, stop_button, skip_button, state_is_generating]) \
               .then(fn=update_history_link, outputs=history_link) \
