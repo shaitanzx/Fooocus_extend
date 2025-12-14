@@ -167,40 +167,38 @@ def im_batch_run(p):
     del temp_var
     return
 
-def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
+def prompt_batch(p):
 
-    batch_prompt.reverse()
+    p.batch_prompt.reverse()
+    batch_prompt=p.batch_prompt
     batch_len=len(batch_prompt)
-    currentTask = copy.deepcopy(p)
+    
     passed=1
     temp_var=[]
-    print('--------------------',p.seed_random)
     while batch_prompt:
-        
+        currentTask = copy.deepcopy(p)
         currentTask.results=temp_var
         print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
         gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
         one_batch_args=batch_prompt.pop()
-        if positive_batch=='Prefix':
-            currentTask.prompt= p.prompt + one_batch_args[0]
-        elif positive_batch=='Suffix':
-            currentTask.prompt= one_batch_args[0] + p.prompt
+        if p.positive_batch=='Prefix':
+            currentTask.prompt= currentTask.original_prompt + one_batch_args[0]
+        elif currentTask.positive_batch=='Suffix':
+            currentTask.prompt= one_batch_args[0] + currentTask.original_prompt
         else:
             currentTask.prompt=one_batch_args[0]
-        if negative_batch=='Prefix':
-            currentTask.negative_prompt= p.negative_prompt + one_batch_args[1]
-        elif negative_batch=='Suffix':
-            currentTask.negative_prompt= one_batch_args[1] + p.negative_prompt
+        if currentTask.negative_batch=='Prefix':
+            currentTask.negative_prompt= currentTask.original_negative + one_batch_args[1]
+        elif currentTask.negative_batch=='Suffix':
+            currentTask.negative_prompt= one_batch_args[1] + currentTask.original_negative
         else:
             currentTask.negative_prompt=one_batch_args[1]
-        if len(p.prompt)>0:
+        if len(currentTask.prompt)>0:
             yield from generate_clicked(currentTask)
-            print('===================================',currentTask.last_stop)
             if currentTask.last_stop == 'break':
-                print('User skipped')
-                break        
+                break                            
         temp_var=currentTask.results
-        if currentTask.seed_random:
+        if p.seed_random:
             p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
         passed+=1
     return 
