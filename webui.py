@@ -174,9 +174,9 @@ def prompt_batch(p,batch_prompt,positive_batch,negative_batch):
     
     passed=1
     temp_var=[]
-  
+    print('--------------------',p,seed_random)
     while batch_prompt:
-        currentTask = p
+        
         currentTask.results=temp_var
         print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
         gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
