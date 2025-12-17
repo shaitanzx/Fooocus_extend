@@ -100,6 +100,7 @@ def xyz_plot_gen(currentTask):
         if currentTask.always_random:
             currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
         yield from generate_clicked(currentTask)
+        print (currentTask.last_stop)
         if currentTask.last_stop == 'stop':
             print('User stopped')
             break
