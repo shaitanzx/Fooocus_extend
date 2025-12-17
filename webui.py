@@ -112,7 +112,7 @@ def xyz_plot_gen(currentTask):
     del temp_var
     if currentTask.last_stop != 'stop':     
         gr.Info(f"[X/Y/Z Plot] Grid generation") 
-        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,p,xyz_results)  
+        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
     return
 
 
