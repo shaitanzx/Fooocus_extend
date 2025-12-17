@@ -138,7 +138,7 @@ def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip
             currentTask.cn_tasks = {x: [] for x in flags.ip_list}
         if image_action == 'Upscale': 
             currentTask.uov_input_image=np.array(img)
-            currentTask.uov_method = p.upscale_mode
+            currentTask.uov_method = upscale_mode
             currentTask.current_tab = 'uov'
         else:
             currentTask.current_tab = 'ip'
