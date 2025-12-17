@@ -108,10 +108,11 @@ def xyz_plot_gen(currentTask):
         if currentTask.last_stop == 'stop':
             print('User stopped')
             break
-        temp_var=currentTask.results    
-    gr.Info(f"[X/Y/Z Plot] Grid generation") 
+        temp_var=currentTask.results
     del temp_var
-    xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,p,xyz_results)  
+    if currentTask.last_stop != 'stop':     
+        gr.Info(f"[X/Y/Z Plot] Grid generation") 
+        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,p,xyz_results)  
     return
 
 
