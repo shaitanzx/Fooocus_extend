@@ -108,7 +108,7 @@ def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_valu
     del temp_var
     if currentTask.last_stop != 'stop':     
         gr.Info(f"[X/Y/Z Plot] Grid generation") 
-        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size)  
+        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size,draw_legend)  
     return
 
 def civitai_helper_nsfw(black_out_nsfw):
@@ -396,7 +396,7 @@ with shared.gradio_root:
             with gr.Row(elem_classes='advanced_check_row'):
                 input_image_checkbox = gr.Checkbox(label='Input Image', value=modules.config.default_image_prompt_checkbox, container=False, elem_classes='min_check')
                 enhance_checkbox = gr.Checkbox(label='Enhance', value=modules.config.default_enhance_checkbox, container=False, elem_classes='min_check')
-                adetailer_checkbox = gr.Checkbox(label='Adetailer', value=modules.config.default_adetailer_checkbox, container=False, elem_classes='min_check',visible=False)
+                adetailer_checkbox = gr.Checkbox(label='Adetailer', value=modules.config.default_adetailer_checkbox, container=False, elem_classes='min_check')
                 advanced_checkbox = gr.Checkbox(label='Advanced', value=modules.config.default_advanced_checkbox, container=False, elem_classes='min_check')
             with gr.Row(visible=modules.config.default_image_prompt_checkbox) as image_input_panel:
                 with gr.Tabs(selected=modules.config.default_selected_image_input_tab_id):
