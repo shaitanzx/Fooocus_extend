@@ -386,25 +386,25 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
     y_coord=len(ys)
     z_coord=len(zs)
     for z in range(z_coord):
-        if currentTask.grid_theme:
+        if grid_theme:
             grid_color=(255,255,255)
-            wall = np.ones(shape=((H+currentTask.margin_size) * y_coord, (W+currentTask.margin_size) * x_coord, C), dtype=np.uint8)*255
+            wall = np.ones(shape=((H+margin_size) * y_coord, (W+margin_size) * x_coord, C), dtype=np.uint8)*255
             text_color=(0,0,0)
         else:
             grid_color=(0,0,0)
-            wall = np.zeros(shape=((H+currentTask.margin_size) * y_coord, (W+currentTask.margin_size) * x_coord, C), dtype=np.uint8)
+            wall = np.zeros(shape=((H+margin_size) * y_coord, (W+margin_size) * x_coord, C), dtype=np.uint8)
             text_color=(255,255,255)
         for y in range(y_coord):
             for x in range(x_coord):
                 index_list=[x,y,z]
                 index = xyz_results.index(index_list)
                 img = results[index]
-                wall[y * (H + currentTask.margin_size):y * (H + currentTask.margin_size) + H, x * (W + currentTask.margin_size):x * (W + currentTask.margin_size) + W, :] = img
+                wall[y * (H + margin_size):y * (H + margin_size) + H, x * (W + margin_size):x * (W + margin_size) + W, :] = img
         hor_text = [x.replace(".safetensor", "") for x in x_labels]
         vert_text = [y.replace(".safetensor", "") for y in y_labels]
         title_text = [z.replace(".safetensor", "") for z in z_labels]
         
-        if currentTask.draw_legend:
+        if draw_legend:
                 font=cv2.FONT_HERSHEY_COMPLEX
                 font_scale=1
                 thickness=3
@@ -415,7 +415,7 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
                   image_extended = np.full(new_shape, grid_color, dtype=wall.dtype)
                   image_extended[:wall.shape[0], :] = wall
                   for i in range(len(hor_text)):
-                      cv2.putText(image_extended, hor_text[i], (i*(W+currentTask.margin_size),wall.shape[0]+50), font,  font_scale, text_color, thickness)
+                      cv2.putText(image_extended, hor_text[i], (i*(W+margin_size),wall.shape[0]+50), font,  font_scale, text_color, thickness)
                   wall=image_extended
                 if vert_text[0]:
                   y_text_max = max(vert_text, key=len)
@@ -425,7 +425,7 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
                   image_extended = np.full(new_shape, grid_color, dtype=wall.dtype)
                   image_extended[:, y_text_width+100:] = wall
                   for i in range(len(vert_text)):
-                    cv2.putText(image_extended, vert_text[i], (50,int((H+currentTask.margin_size) * i + ((H+currentTask.margin_size)/2))), font, font_scale, text_color, thickness)
+                    cv2.putText(image_extended, vert_text[i], (50,int((H+margin_size) * i + ((H+margin_size)/2))), font, font_scale, text_color, thickness)
                   wall=image_extended
 
                 if title_text[z]:
