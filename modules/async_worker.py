@@ -198,14 +198,6 @@ class AsyncTask:
         self.toTrans = args.pop()
         self.original_prompt = args.pop()
         self.original_negative = args.pop()
-
-        #!self.ratio = args.pop()
-        #!self.image_action = args.pop()
-        #!self.image_mode = args.pop()
-        #!self.ip_stop_batch = args.pop()
-        #!self.ip_weight_batch = args.pop()
-        #!self.upscale_mode = args.pop()
-
         self.name_prefix = args.pop().strip().replace(" ", "_")
         self.inswapper_enabled = args.pop()
         self.inswapper_source_image_indicies = args.pop()

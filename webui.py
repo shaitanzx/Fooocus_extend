@@ -115,13 +115,6 @@ def get_task(*args):
     args = list(args)
     args.pop(0)
     return worker.AsyncTask(args=args)
-     
-
-
-
-
-
-
 def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode):
     batch_path=modules.config.temp_path+os.path.sep+"batch_images"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
@@ -160,71 +153,13 @@ def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip
         passed+=1
         currentTask.input_image_checkbox=True       
         yield from generate_clicked(currentTask)
-        #!temp_ar=p.aspect_random
         temp_var=currentTask.results
         currentTask.cn_tasks=p.cn_tasks
-        #!p = copy.deepcopy(pc)
-        #!p.aspect_random=temp_ar
         if p.seed_random:
           currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
     currentTask.input_image_checkbox=check
-    #!finished_batch=False
     del temp_var
     return
-
-
-
-def im_batch_run(p):
-    batch_path=modules.config.temp_path+os.path.sep+"batch_images"
-    global finished_batch
-    finished_batch=False
-    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
-    batch_all=len(batch_files)
-    check=p.input_image_checkbox
-    passed=1
-    temp_var=[]
-    for f_name in batch_files:
-      if not finished_batch:
-        p.results=temp_var
-        pc = copy.deepcopy(p)
-        img = Image.open(batch_path+os.path.sep+f_name)
-        if not p.input_image_checkbox:
-            p.cn_tasks = {x: [] for x in flags.ip_list}
-        if p.image_action == 'Upscale': 
-              p.uov_input_image=np.array(img)
-              p.uov_method = p.upscale_mode
-              p.current_tab = 'uov'
-        else:
-              p.current_tab = 'ip'
-              width, height = img.size
-              if p.ratio=="to ORIGINAL":
-                  aspect = math.gcd(width, height)
-                  p.aspect_ratios_selection = f'{width}×{height} <span style="color: grey;"> ∣ {width // aspect}:{height // aspect}</span>'
-              if p.ratio=="to OUTPUT":
-                  new_width, new_height = p.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
-                  new_width = int(new_width)
-                  new_height = int(new_height)
-                  ratio = min(float(new_width) / width, float(new_height) / height)
-                  w = int(width * ratio)
-                  h = int(height * ratio)
-                  img = img.resize((w, h), Image.LANCZOS)
-              p.cn_tasks[p.image_mode].append([np.array(img), p.ip_stop_batch, p.ip_weight_batch])
-        print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
-        gr.Info(f"Image Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
-        passed+=1
-        p.input_image_checkbox=True       
-        yield from generate_clicked(p)
-        temp_ar=p.aspect_random
-        temp_var=p.results
-        p = copy.deepcopy(pc)
-        p.aspect_random=temp_ar
-        if p.seed_random:
-          p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-    p.input_image_checkbox=check
-    finished_batch=False
-    del temp_var
-    return
-
 def prompt_batch(currentTask,batch_prompt,positive_batch,negative_batch):
     batch_prompt.reverse()
     batch_len=len(batch_prompt)
