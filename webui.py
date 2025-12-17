@@ -125,7 +125,6 @@ def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip
     check=currentTask.input_image_checkbox
     for f_name in batch_files:
         currentTask.results=temp_var
-        #!pc = copy.deepcopy(p)
         img = Image.open(batch_path+os.path.sep+f_name)
         if not currentTask.input_image_checkbox:
             currentTask.cn_tasks = {x: [] for x in flags.ip_list}
@@ -1778,7 +1777,6 @@ with shared.gradio_root:
         
         ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
-        #!ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [name_prefix]
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
         ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
@@ -1799,7 +1797,6 @@ with shared.gradio_root:
         ctrls += ad_component
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
         ctrls += [uov_model]
-        #!ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
