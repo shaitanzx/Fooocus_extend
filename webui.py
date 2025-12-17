@@ -85,29 +85,29 @@ def html_load(url,file):
 
 
 def xyz_plot_gen(currentTask):
-    currentTask.generate_image_grid=False
-    currentTask.image_number=1
-    currentTask.prompt=currentTask.original_prompt
-    currentTask.negative_prompt=currentTask.original_negative
-    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
+    p = copy.deepcopy(currentTask)
+    p.generate_image_grid=False
+    p.image_number=1
+    p.prompt=currentTask.original_prompt
+    p.negative_prompt=currentTask.original_negative
+    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(p) 
     temp_var=[]
     xyz_len = len(xyz_task)
     for i, p in enumerate(xyz_task):
         p.results+=temp_var
-        currentTask=p
         print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
-        if currentTask.always_random:
-            currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-        yield from generate_clicked(currentTask)
-        print (currentTask.last_stop)
+        if p.always_random:
+            p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+        yield from generate_clicked(p)
+        print ('-------------------------',currentTask.last_stop)
         if currentTask.last_stop == 'stop':
             print('User stopped')
             break
-        temp_var=currentTask.results    
+        temp_var=p.results    
     gr.Info(f"[X/Y/Z Plot] Grid generation") 
     del temp_var
-    xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
+    xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,p,xyz_results)  
     return
 
 
@@ -394,7 +394,6 @@ with shared.gradio_root:
                     def stop_clicked(currentTask):
                         import ldm_patched.modules.model_management as model_management
                         currentTask.last_stop = 'stop'
-                        print('------------------------------------------------')
                         global finished_batch
                         finished_batch=True
                         if (currentTask.processing):
