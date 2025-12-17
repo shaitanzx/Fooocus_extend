@@ -81,6 +81,35 @@ def html_load(url,file):
                                 src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
+
+
+
+def xyz_plot_gen(currentTask):
+    currentTask.generate_image_grid=False
+    currentTask.image_number=1
+    currentTask.prompt=currentTask.original_prompt
+    currentTask.negative_prompt=currentTask.original_negative
+    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
+    temp_var=[]
+    xyz_len = len(xyz_task)
+    for i, currentTask in enumerate(xyz_task):
+        currentTask.results+=temp_var
+        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
+        gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
+        if currentTask.always_random:
+            currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+        yield from generate_clicked(currentTask)
+        if currentTask.last_stop == 'stop':
+            print('User stopped')
+            break
+        temp_var=currentTask.results    
+    gr.Info(f"[X/Y/Z Plot] Grid generation") 
+    del temp_var
+    xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
+    return
+
+
+    
 def xyz_plot_ext(currentTask):
     global finished_batch
     finished_batch=False    
@@ -1898,13 +1927,13 @@ with shared.gradio_root:
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
 
-        xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[xyz_start, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
+        xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[xyz_start, stop_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=xyz_plot_ext, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[xyz_start,generate_button, stop_button, skip_button, state_is_generating]) \
+            .then(fn=xyz_plot_gen, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
+                  outputs=[xyz_start,generate_button, stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
  
