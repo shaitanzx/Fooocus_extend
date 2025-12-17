@@ -101,14 +101,14 @@ def xyz_plot_gen(currentTask):
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if p.always_random:
             p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-        currtentTask = p
+        currentTask = p
         print ('========================================',currentTask)
         yield from generate_clicked(currentTask)
         print ('-------------------------',currentTask.last_stop)
         if currentTask.last_stop == 'stop':
             print('User stopped')
             break
-        temp_var=p.results    
+        temp_var=currentTask.results    
     gr.Info(f"[X/Y/Z Plot] Grid generation") 
     del temp_var
     xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,p,xyz_results)  
