@@ -101,7 +101,7 @@ def xyz_plot_gen(currentTask):
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if p.always_random:
             p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-        currentTask = p
+        currentTask.__dict__ = p.__dict__.copy()
         print ('========================================',currentTask)
         yield from generate_clicked(currentTask)
         print ('-------------------------',currentTask.last_stop)
