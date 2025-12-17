@@ -538,6 +538,11 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 ***Change log***
 
 v9.2.5
+ 1. Fixed a bug in ADetailer after Inpaint.
+ 2. The Stop and Skip buttons now work correctly.
+ 3. Minor bugs fixed.
+
+v9.2.5
  1. Support external upscalers
 
 v9.2.4
