@@ -84,27 +84,23 @@ def html_load(url,file):
 
 
 
-def xyz_plot_gen(currentTask):
-    print ('-------------------------',currentTask)
+def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random):
     p = copy.deepcopy(currentTask)
-    print ('++++++++++++++++++++++++++',currentTask)
     p.generate_image_grid=False
     p.image_number=1
     p.prompt=currentTask.original_prompt
     p.negative_prompt=currentTask.original_negative
-    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(p) 
+    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(p,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme) 
     temp_var=[]
     xyz_len = len(xyz_task)
     for i, p in enumerate(xyz_task):
         p.results+=temp_var
         print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
-        if p.always_random:
+        if always_random:
             p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
         currentTask.__dict__ = p.__dict__.copy()
-        print ('========================================',currentTask)
         yield from generate_clicked(currentTask)
-        print ('-------------------------',currentTask.last_stop)
         if currentTask.last_stop == 'stop':
             print('User stopped')
             break
@@ -114,34 +110,6 @@ def xyz_plot_gen(currentTask):
         gr.Info(f"[X/Y/Z Plot] Grid generation") 
         xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
     return
-
-
-    
-def xyz_plot_ext(currentTask):
-    global finished_batch
-    finished_batch=False    
-    currentTask.generate_image_grid=False
-    currentTask.image_number=1
-    currentTask.prompt=currentTask.original_prompt
-    currentTask.negative_prompt=currentTask.original_negative
-    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
-    temp_var=[]
-    xyz_len = len(xyz_task)
-    for i, currentTask in enumerate(xyz_task):
-        currentTask.results+=temp_var
-        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
-        gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
-        if not finished_batch:
-
-            if currentTask.always_random:
-                  currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-            yield from generate_clicked(currentTask)
-            temp_var=currentTask.results    
-    gr.Info(f"[X/Y/Z Plot] Grid generation") 
-    del temp_var
-    xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
-    return
-
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
@@ -1811,7 +1779,7 @@ with shared.gradio_root:
         metadata_import_button.click(trigger_metadata_import, inputs=[metadata_input_image, state_is_generating], outputs=load_data_outputs, queue=False, show_progress=True) \
             .then(style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False)
         
-        ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
+        #!ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
         ctrls += [name_prefix]
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
@@ -1938,7 +1906,7 @@ with shared.gradio_root:
                               outputs=[xyz_start, stop_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=xyz_plot_gen, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(fn=xyz_plot_gen, inputs=[currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
             .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
                   outputs=[xyz_start,generate_button, stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \

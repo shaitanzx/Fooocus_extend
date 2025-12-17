@@ -578,27 +578,8 @@ def ui():
 
     return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
 
-def run(p):
-    grid_theme = p.grid_theme
-    csv_mode = p.csv_mode
-    margin_size = p.margin_size
-    vary_seeds_z = p.vary_seeds_z
-    vary_seeds_y = p.vary_seeds_y
-    vary_seeds_x = p.vary_seeds_x
-    no_fixed_seeds = p.no_fixed_seeds
-    include_sub_grids = p.include_sub_grids
-    include_lone_images = p.include_lone_images
-    draw_legend = p.draw_legend
-    z_values_dropdown = p.z_values_dropdown
-    z_values = p.z_values
-    z_type = p.z_type
-    y_values_dropdown = p.y_values_dropdown
-    y_values = p.y_values
-    y_type = p.y_type
-    x_values_dropdown = p.x_values_dropdown
-    x_values = p.x_values
-    x_type = p.x_type
-    
+def run(p,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme):
+
     x_type, y_type, z_type = x_type or 0, y_type or 0, z_type or 0  # if axle type is None set to 0
     current_axis_options = [x for x in axis_options if type(x) == AxisOption]
     def process_axis(opt, vals, vals_dropdown):
