@@ -397,6 +397,7 @@ with shared.gradio_root:
                 input_image_checkbox = gr.Checkbox(label='Input Image', value=modules.config.default_image_prompt_checkbox, container=False, elem_classes='min_check')
                 enhance_checkbox = gr.Checkbox(label='Enhance', value=modules.config.default_enhance_checkbox, container=False, elem_classes='min_check')
                 adetailer_checkbox = gr.Checkbox(label='Adetailer', value=modules.config.default_adetailer_checkbox, container=False, elem_classes='min_check')
+            with gr.Row(elem_classes='advanced_check_row'):
                 advanced_checkbox = gr.Checkbox(label='Advanced', value=modules.config.default_advanced_checkbox, container=False, elem_classes='min_check')
             with gr.Row(visible=modules.config.default_image_prompt_checkbox) as image_input_panel:
                 with gr.Tabs(selected=modules.config.default_selected_image_input_tab_id):
