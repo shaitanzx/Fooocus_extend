@@ -1989,7 +1989,7 @@ with shared.gradio_root:
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=image_batch, inputs=[currentTaskratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(fn=image_batch, inputs=[currentTask,ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
 
