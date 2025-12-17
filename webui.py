@@ -116,6 +116,63 @@ def get_task(*args):
     args.pop(0)
     return worker.AsyncTask(args=args)
      
+
+
+
+
+
+
+def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode):
+    batch_path=modules.config.temp_path+os.path.sep+"batch_images"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    passed=1
+    temp_var=[]
+    p = copy.deepcopy(currentTask)
+    check=currentTask.input_image_checkbox
+    for f_name in batch_files:
+        currentTask.results=temp_var
+        #!pc = copy.deepcopy(p)
+        img = Image.open(batch_path+os.path.sep+f_name)
+        if not currentTask.input_image_checkbox:
+            currentTask.cn_tasks = {x: [] for x in flags.ip_list}
+        if image_action == 'Upscale': 
+            currentTask.uov_input_image=np.array(img)
+            currentTask.uov_method = p.upscale_mode
+            currentTask.current_tab = 'uov'
+        else:
+            currentTask.current_tab = 'ip'
+            width, height = img.size
+            if ratio_scale=="to ORIGINAL":
+                aspect = math.gcd(width, height)
+                currentTask.aspect_ratios_selection = f'{width}×{height} <span style="color: grey;"> ∣ {width // aspect}:{height // aspect}</span>'
+            if ratio_scale=="to OUTPUT":
+                new_width, new_height = currentTask.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
+                new_width = int(new_width)
+                new_height = int(new_height)
+                ratio_scale = min(float(new_width) / width, float(new_height) / height)
+                w = int(width * ratio)
+                h = int(height * ratio)
+                img = img.resize((w, h), Image.LANCZOS)
+            currentTask.cn_tasks[image_mode].append([np.array(img), ip_stop_batch, ip_weight_batch])
+        print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"Image Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        passed+=1
+        currentTask.input_image_checkbox=True       
+        yield from generate_clicked(currentTask)
+        #!temp_ar=p.aspect_random
+        temp_var=currentTask.results
+        #!p = copy.deepcopy(pc)
+        #!p.aspect_random=temp_ar
+        if p.seed_random:
+          currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+    currentTask.input_image_checkbox=check
+    #!finished_batch=False
+    del temp_var
+    return
+
+
+
 def im_batch_run(p):
     batch_path=modules.config.temp_path+os.path.sep+"batch_images"
     global finished_batch
@@ -1782,8 +1839,7 @@ with shared.gradio_root:
         
         ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
-        ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
-        #!ctrls += [batch_prompt,positive_batch,negative_batch]
+        #!ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [name_prefix]
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
         ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
@@ -1933,7 +1989,7 @@ with shared.gradio_root:
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
               .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
               .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=im_batch_run, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+              .then(fn=image_batch, inputs=[currentTaskratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
                   outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
 
