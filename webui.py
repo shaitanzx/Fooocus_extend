@@ -108,7 +108,7 @@ def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_valu
     del temp_var
     if currentTask.last_stop != 'stop':     
         gr.Info(f"[X/Y/Z Plot] Grid generation") 
-        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
+        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size)  
     return
 
 def civitai_helper_nsfw(black_out_nsfw):
