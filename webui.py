@@ -153,6 +153,9 @@ def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip
         passed+=1
         currentTask.input_image_checkbox=True       
         yield from generate_clicked(currentTask)
+        if currentTask.last_stop == 'stop':
+            print('User stopped')
+            break
         temp_var=currentTask.results
         currentTask.cn_tasks=p.cn_tasks
         if p.seed_random:
