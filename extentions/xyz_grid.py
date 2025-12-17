@@ -359,7 +359,7 @@ axis_options.extend([
     AxisOption("Codeformer Fidelity", float, apply_field("codeformer_gen_fidelity"))
 ])
 
-def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size,,draw_legend):
+def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size,draw_legend):
     
     results = []
     for img in currentTask.results:
