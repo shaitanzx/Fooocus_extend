@@ -162,7 +162,7 @@ def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip
         yield from generate_clicked(currentTask)
         #!temp_ar=p.aspect_random
         temp_var=currentTask.results
-        currentTask.cn_task=p.cn_task
+        currentTask.cn_tasks=p.cn_tasks
         #!p = copy.deepcopy(pc)
         #!p.aspect_random=temp_ar
         if p.seed_random:
