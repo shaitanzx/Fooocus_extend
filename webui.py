@@ -87,7 +87,7 @@ def html_load(url,file):
 def xyz_plot_gen(currentTask):
     print ('-------------------------',currentTask)
     p = copy.deepcopy(currentTask)
-    print ('++++++++++++++++++++++++++',currentTask
+    print ('++++++++++++++++++++++++++',currentTask)
     p.generate_image_grid=False
     p.image_number=1
     p.prompt=currentTask.original_prompt
@@ -101,8 +101,9 @@ def xyz_plot_gen(currentTask):
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if p.always_random:
             p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-        print ('========================================',currentTask
-        yield from generate_clicked(p)
+        currtentTask = p
+        print ('========================================',currentTask)
+        yield from generate_clicked(currentTask)
         print ('-------------------------',currentTask.last_stop)
         if currentTask.last_stop == 'stop':
             print('User stopped')
