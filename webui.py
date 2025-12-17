@@ -393,6 +393,7 @@ with shared.gradio_root:
                     def stop_clicked(currentTask):
                         import ldm_patched.modules.model_management as model_management
                         currentTask.last_stop = 'stop'
+                        print('------------------------------------------------')
                         global finished_batch
                         finished_batch=True
                         if (currentTask.processing):
