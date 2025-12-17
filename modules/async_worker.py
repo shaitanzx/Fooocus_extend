@@ -173,26 +173,28 @@ class AsyncTask:
         self.should_enhance = self.enhance_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
         self.images_to_enhance_count = 0
         self.enhance_stats = {}
-        self.x_type = args.pop()
-        self.x_values = args.pop()
-        self.x_values_dropdown = args.pop()
-        self.y_type = args.pop()
-        self.y_values = args.pop()
-        self.y_values_dropdown = args.pop()
-        self.z_type = args.pop()
-        self.z_values = args.pop()
-        self.z_values_dropdown = args.pop()
-        self.draw_legend = args.pop()
-        self.include_lone_images = args.pop()
-        self.include_sub_grids = args.pop()
-        self.no_fixed_seeds = args.pop()
-        self.vary_seeds_x = args.pop()
-        self.vary_seeds_y = args.pop()
-        self.vary_seeds_z = args.pop()
-        self.margin_size = args.pop()
-        self.csv_mode = args.pop()
-        self.grid_theme = args.pop()
-        self.always_random = args.pop()
+
+        #!self.x_type = args.pop()
+        #!self.x_values = args.pop()
+        #!self.x_values_dropdown = args.pop()
+        #!self.y_type = args.pop()
+        #!self.y_values = args.pop()
+        #!self.y_values_dropdown = args.pop()
+        #!self.z_type = args.pop()
+        #!self.z_values = args.pop()
+        #!self.z_values_dropdown = args.pop()
+        #!self.draw_legend = args.pop()
+        #!self.include_lone_images = args.pop()
+        #!self.include_sub_grids = args.pop()
+        #!self.no_fixed_seeds = args.pop()
+        #!self.vary_seeds_x = args.pop()
+        #!self.vary_seeds_y = args.pop()
+        #!self.vary_seeds_z = args.pop()
+        #!self.margin_size = args.pop()
+        #!self.csv_mode = args.pop()
+        #!self.grid_theme = args.pop()
+        #!self.always_random = args.pop()
+
         self.translate_enabled = args.pop()
         self.srcTrans = args.pop()
         self.toTrans = args.pop()
@@ -1214,8 +1216,6 @@ def worker():
             inpaint_image = HWC3(inpaint_image)
             if isinstance(inpaint_image, np.ndarray) and isinstance(inpaint_mask, np.ndarray) \
                     and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
-                #!progressbar(async_task, 1, 'Downloading upscale models ...')
-                #!modules.config.downloading_upscale_model2(async_task.uov_model)
                 modules.config.downloading_upscale_model2(async_task.uov_model)
                 if inpaint_parameterized:
                     progressbar(async_task, 1, 'Downloading inpainter ...')
@@ -1282,8 +1282,6 @@ def worker():
 
             if advance_progress:
                 current_progress += 1
-            #!progressbar(async_task, current_progress, 'Downloading upscale models ...')
-            #!modules.config.downloading_upscale_model2(async_task.uov_model)
             modules.config.downloading_upscale_model2(async_task.uov_model)
         return uov_input_image, skip_prompt_processing, steps
 

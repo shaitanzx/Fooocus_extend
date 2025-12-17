@@ -359,7 +359,7 @@ axis_options.extend([
     AxisOption("Codeformer Fidelity", float, apply_field("codeformer_gen_fidelity"))
 ])
 
-def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results):
+def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size,draw_legend):
     
     results = []
     for img in currentTask.results:
@@ -386,25 +386,25 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
     y_coord=len(ys)
     z_coord=len(zs)
     for z in range(z_coord):
-        if currentTask.grid_theme:
+        if grid_theme:
             grid_color=(255,255,255)
-            wall = np.ones(shape=((H+currentTask.margin_size) * y_coord, (W+currentTask.margin_size) * x_coord, C), dtype=np.uint8)*255
+            wall = np.ones(shape=((H+margin_size) * y_coord, (W+margin_size) * x_coord, C), dtype=np.uint8)*255
             text_color=(0,0,0)
         else:
             grid_color=(0,0,0)
-            wall = np.zeros(shape=((H+currentTask.margin_size) * y_coord, (W+currentTask.margin_size) * x_coord, C), dtype=np.uint8)
+            wall = np.zeros(shape=((H+margin_size) * y_coord, (W+margin_size) * x_coord, C), dtype=np.uint8)
             text_color=(255,255,255)
         for y in range(y_coord):
             for x in range(x_coord):
                 index_list=[x,y,z]
                 index = xyz_results.index(index_list)
                 img = results[index]
-                wall[y * (H + currentTask.margin_size):y * (H + currentTask.margin_size) + H, x * (W + currentTask.margin_size):x * (W + currentTask.margin_size) + W, :] = img
+                wall[y * (H + margin_size):y * (H + margin_size) + H, x * (W + margin_size):x * (W + margin_size) + W, :] = img
         hor_text = [x.replace(".safetensor", "") for x in x_labels]
         vert_text = [y.replace(".safetensor", "") for y in y_labels]
         title_text = [z.replace(".safetensor", "") for z in z_labels]
         
-        if currentTask.draw_legend:
+        if draw_legend:
                 font=cv2.FONT_HERSHEY_COMPLEX
                 font_scale=1
                 thickness=3
@@ -415,7 +415,7 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
                   image_extended = np.full(new_shape, grid_color, dtype=wall.dtype)
                   image_extended[:wall.shape[0], :] = wall
                   for i in range(len(hor_text)):
-                      cv2.putText(image_extended, hor_text[i], (i*(W+currentTask.margin_size),wall.shape[0]+50), font,  font_scale, text_color, thickness)
+                      cv2.putText(image_extended, hor_text[i], (i*(W+margin_size),wall.shape[0]+50), font,  font_scale, text_color, thickness)
                   wall=image_extended
                 if vert_text[0]:
                   y_text_max = max(vert_text, key=len)
@@ -425,7 +425,7 @@ def draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask
                   image_extended = np.full(new_shape, grid_color, dtype=wall.dtype)
                   image_extended[:, y_text_width+100:] = wall
                   for i in range(len(vert_text)):
-                    cv2.putText(image_extended, vert_text[i], (50,int((H+currentTask.margin_size) * i + ((H+currentTask.margin_size)/2))), font, font_scale, text_color, thickness)
+                    cv2.putText(image_extended, vert_text[i], (50,int((H+margin_size) * i + ((H+margin_size)/2))), font, font_scale, text_color, thickness)
                   wall=image_extended
 
                 if title_text[z]:
@@ -578,27 +578,8 @@ def ui():
 
     return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
 
-def run(p):
-    grid_theme = p.grid_theme
-    csv_mode = p.csv_mode
-    margin_size = p.margin_size
-    vary_seeds_z = p.vary_seeds_z
-    vary_seeds_y = p.vary_seeds_y
-    vary_seeds_x = p.vary_seeds_x
-    no_fixed_seeds = p.no_fixed_seeds
-    include_sub_grids = p.include_sub_grids
-    include_lone_images = p.include_lone_images
-    draw_legend = p.draw_legend
-    z_values_dropdown = p.z_values_dropdown
-    z_values = p.z_values
-    z_type = p.z_type
-    y_values_dropdown = p.y_values_dropdown
-    y_values = p.y_values
-    y_type = p.y_type
-    x_values_dropdown = p.x_values_dropdown
-    x_values = p.x_values
-    x_type = p.x_type
-    
+def run(p,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme):
+
     x_type, y_type, z_type = x_type or 0, y_type or 0, z_type or 0  # if axle type is None set to 0
     current_axis_options = [x for x in axis_options if type(x) == AxisOption]
     def process_axis(opt, vals, vals_dropdown):

@@ -81,31 +81,35 @@ def html_load(url,file):
                                 src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
-def xyz_plot_ext(currentTask):
-    global finished_batch
-    finished_batch=False    
-    currentTask.generate_image_grid=False
-    currentTask.image_number=1
-    currentTask.prompt=currentTask.original_prompt
-    currentTask.negative_prompt=currentTask.original_negative
-    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
+
+
+
+def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random):
+    p = copy.deepcopy(currentTask)
+    p.generate_image_grid=False
+    p.image_number=1
+    p.prompt=currentTask.original_prompt
+    p.negative_prompt=currentTask.original_negative
+    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(p,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme) 
     temp_var=[]
     xyz_len = len(xyz_task)
-    for i, currentTask in enumerate(xyz_task):
-        currentTask.results+=temp_var
+    for i, p in enumerate(xyz_task):
+        p.results+=temp_var
         print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
-        if not finished_batch:
-
-            if currentTask.always_random:
-                  currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-            yield from generate_clicked(currentTask)
-            temp_var=currentTask.results    
-    gr.Info(f"[X/Y/Z Plot] Grid generation") 
+        if always_random:
+            p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
+        currentTask.__dict__ = p.__dict__.copy()
+        yield from generate_clicked(currentTask)
+        if currentTask.last_stop == 'stop':
+            print('User stopped')
+            break
+        temp_var=currentTask.results
     del temp_var
-    xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results)  
+    if currentTask.last_stop != 'stop':     
+        gr.Info(f"[X/Y/Z Plot] Grid generation") 
+        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size,draw_legend)  
     return
-
 
 def civitai_helper_nsfw(black_out_nsfw):
   md_config.ch_nsfw_threshold=black_out_nsfw
@@ -125,7 +129,6 @@ def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip
     check=currentTask.input_image_checkbox
     for f_name in batch_files:
         currentTask.results=temp_var
-        #!pc = copy.deepcopy(p)
         img = Image.open(batch_path+os.path.sep+f_name)
         if not currentTask.input_image_checkbox:
             currentTask.cn_tasks = {x: [] for x in flags.ip_list}
@@ -394,6 +397,7 @@ with shared.gradio_root:
                 input_image_checkbox = gr.Checkbox(label='Input Image', value=modules.config.default_image_prompt_checkbox, container=False, elem_classes='min_check')
                 enhance_checkbox = gr.Checkbox(label='Enhance', value=modules.config.default_enhance_checkbox, container=False, elem_classes='min_check')
                 adetailer_checkbox = gr.Checkbox(label='Adetailer', value=modules.config.default_adetailer_checkbox, container=False, elem_classes='min_check')
+            with gr.Row(elem_classes='advanced_check_row'):
                 advanced_checkbox = gr.Checkbox(label='Advanced', value=modules.config.default_advanced_checkbox, container=False, elem_classes='min_check')
             with gr.Row(visible=modules.config.default_image_prompt_checkbox) as image_input_panel:
                 with gr.Tabs(selected=modules.config.default_selected_image_input_tab_id):
@@ -1776,9 +1780,8 @@ with shared.gradio_root:
         metadata_import_button.click(trigger_metadata_import, inputs=[metadata_input_image, state_is_generating], outputs=load_data_outputs, queue=False, show_progress=True) \
             .then(style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False)
         
-        ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
+        #!ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
-        #!ctrls += [ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode]
         ctrls += [name_prefix]
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
         ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
@@ -1799,7 +1802,6 @@ with shared.gradio_root:
         ctrls += ad_component
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
         ctrls += [uov_model]
-        #!ctrls += [translate_enabled, srcTrans, toTrans]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
@@ -1901,13 +1903,13 @@ with shared.gradio_root:
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
 
-        xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[xyz_start, stop_button, skip_button, generate_button, gallery, state_is_generating]) \
+        xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[xyz_start, stop_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=xyz_plot_ext, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[xyz_start,generate_button, stop_button, skip_button, state_is_generating]) \
+            .then(fn=xyz_plot_gen, inputs=[currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
+                  outputs=[xyz_start,generate_button, stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
  
