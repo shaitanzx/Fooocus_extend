@@ -92,8 +92,9 @@ def xyz_plot_gen(currentTask):
     xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(currentTask) 
     temp_var=[]
     xyz_len = len(xyz_task)
-    for i, currentTask in enumerate(xyz_task):
-        currentTask.results+=temp_var
+    for i, p in enumerate(xyz_task):
+        p.results+=temp_var
+        currentTask=p
         print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
         gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
         if currentTask.always_random:
