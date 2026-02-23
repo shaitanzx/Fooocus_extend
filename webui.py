@@ -1672,7 +1672,7 @@ with shared.gradio_root:
         performance_selection.change(lambda x: [gr.update(interactive=not flags.Performance.has_restricted_features(x))] * 11 +
                                                [gr.update(visible=not flags.Performance.has_restricted_features(x))] * 1 +
                                                [gr.update(value=flags.Performance.has_restricted_features(x))] * 1 +
-                                               [gr.update(value=flags.Performance(x).steps()],
+                                               [gr.update(value=flags.Performance(x).steps())],
                                      inputs=performance_selection,
                                      outputs=[
                                          guidance_scale, sharpness, adm_scaler_end, adm_scaler_positive,
