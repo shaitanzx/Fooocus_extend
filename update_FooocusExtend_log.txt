@@ -1,3 +1,6 @@
+v9.2.8
+ 1. Сhanging the number of steps
+
 v9.2.7
  1. Add Watermark mode in Logo.
 
