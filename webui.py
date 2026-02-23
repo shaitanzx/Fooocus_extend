@@ -1075,6 +1075,8 @@ with shared.gradio_root:
                                                  value=modules.config.default_performance,
                                                  elem_classes=['performance_selection'])
                 default_perf = modules.config.default_performance
+                if isinstance(default_perf, str):
+                    default_perf = flags.Performance(default_perf)
                 print('--------------------',default_perf)
                 steps_slider = gr.Slider(minimum=1,maximum=100,step=1,value=default_perf.steps(),label='Steps', interactive=True)                                 
 
