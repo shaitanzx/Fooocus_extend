@@ -44,6 +44,7 @@ Let's look at everything in order.
 17. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
 18. Adetailer - extension for automatic masking and inpainting
 19. Support external upscalers
+20. Сhanging the number of steps
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -531,6 +532,11 @@ The YOLO and Mediapipe models are used as detection models. Additional models ca
 
 You can load external upscalers using civatai helper. The upscaler is based on the data the model was trained on.
 
+**Сhanging the number of steps**
+
+<img width="378" height="63" alt="image" src="https://github.com/user-attachments/assets/3b753d16-a39b-4c66-ad78-6818a99f48a1" />
+
+
 
 <table>
   <tr>
@@ -547,6 +553,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.8
+ 1. Сhanging the number of steps
 
 v9.2.7
  1. Add Watermark mode in Logo.
