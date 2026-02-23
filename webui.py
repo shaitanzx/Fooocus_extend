@@ -1074,7 +1074,9 @@ with shared.gradio_root:
                                                  choices=flags.Performance.values(),
                                                  value=modules.config.default_performance,
                                                  elem_classes=['performance_selection'])
-                steps_slider = gr.Slider(minimum=1,maximum=100,step=1,value=flags.Performance.steps(),label='Steps', interactive=True)                                 
+                default_perf = modules.config.default_performance
+
+                steps_slider = gr.Slider(minimum=1,maximum=100,step=1,value=default_perf.steps(),label='Steps', interactive=True)                                 
 
                 with gr.Accordion(label='Aspect Ratios', open=False, elem_id='aspect_ratios_accordion') as aspect_ratios_accordion:
                     aspect_ratios_selection = gr.Radio(label='Aspect Ratios', show_label=False,
