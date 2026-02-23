@@ -1721,7 +1721,7 @@ with shared.gradio_root:
         ctrls = [currentTask, generate_image_grid]
         ctrls += [
             prompt, negative_prompt, style_selections,
-            performance_selection, aspect_ratios_selection, image_number, output_format, image_seed,
+            performance_selection, steps_slider, aspect_ratios_selection, image_number, output_format, image_seed,
             read_wildcards_in_order, sharpness, guidance_scale
         ]
 

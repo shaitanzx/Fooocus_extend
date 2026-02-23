@@ -36,7 +36,7 @@ class AsyncTask:
         self.style_selections = args.pop()
 
         self.performance_selection = Performance(args.pop())
-        self.steps = self.performance_selection.steps()
+        self.steps = args.pop()
         self.original_steps = self.steps
 
         self.aspect_ratios_selection = args.pop()
