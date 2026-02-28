@@ -31,7 +31,7 @@ def ui():
 
         for tab_name in ["Clean up", "Clean up upload"]:
 
-            with gr.Tab(tab_name) as clean_up_tab #, ResizeHandleRow(equal_height=False):
+            with gr.Tab(tab_name) as clean_up_tab: #, ResizeHandleRow(equal_height=False):
 
                 init_img_with_mask = None
                 clean_up_init_img = None
