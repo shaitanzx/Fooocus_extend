@@ -55,19 +55,19 @@ def ui():
                         result_gallery = gr.Gallery(
                             label='Output', show_label=False, elem_id=f"cleanup_gallery", preview=True, height=512)
 
-                        with gr.Row(elem_id=f"image_buttons", elem_classes="image-buttons"):
+                        #with gr.Row(elem_id=f"image_buttons", elem_classes="image-buttons"):
 
-                            buttons = {
-                                'img2img': ToolButton('🖼️', elem_id=f'_send_to_img2img', tooltip="Send image and generation parameters to img2img tab."),
-                                'inpaint': ToolButton('🎨️', elem_id=f'_send_to_inpaint', tooltip="Send image and generation parameters to img2img inpaint tab."),
-                                'extras': ToolButton('📐', elem_id=f'_send_to_extras', tooltip="Send image and generation parameters to extras tab.")
-                            }
+                            #buttons = {
+                            #    'img2img': ToolButton('🖼️', elem_id=f'_send_to_img2img', tooltip="Send image and generation parameters to img2img tab."),
+                            #    'inpaint': ToolButton('🎨️', elem_id=f'_send_to_inpaint', tooltip="Send image and generation parameters to img2img inpaint tab."),
+                            #    'extras': ToolButton('📐', elem_id=f'_send_to_extras', tooltip="Send image and generation parameters to extras tab.")
+                            #}
 
-                            for paste_tabname, paste_button in buttons.items():
-                                parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                                    paste_button=paste_button, tabname=paste_tabname, source_tabname=None, source_image_component=result_gallery,
-                                    paste_field_names=[]
-                                ))
+                            #for paste_tabname, paste_button in buttons.items():
+                            #    parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
+                            #        paste_button=paste_button, tabname=paste_tabname, source_tabname=None, source_image_component=result_gallery,
+                            #        paste_field_names=[]
+                            #    ))
 
                         send_to_cleaner_button = gr.Button("Send back To clean up", height=100)
 
