@@ -8,7 +8,7 @@ import gradio as gr
 #import modules.generation_parameters_copypaste as parameters_copypaste
 #from modules.ui_common import save_files
 
-from extention.cleaner import lama
+from extentions.cleaner import lama
 from PIL import Image
 
 #def on_ui_settings():
