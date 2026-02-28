@@ -68,6 +68,7 @@ import extentions.batch as batch
 import extentions.watermark as watermark
 
 import extentions.adetailer.scripts.adetailer as adetailer
+import extentions.cleaner.clean_up_tab as cleaner
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -531,7 +532,8 @@ with shared.gradio_root:
                                                                    example_inpaint_mask_dino_prompt_text],
                                                           queue=False, show_progress=False)
 
-                            
+                    with gr.Tab(label='Cleaner', id='clean_tab') as clean_tab:
+                        cleaner.ui()                            
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
