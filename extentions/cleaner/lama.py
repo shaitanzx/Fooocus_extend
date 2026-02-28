@@ -8,7 +8,8 @@ import gradio as gr
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(EXTENSION_PATH, "models")
-
+print ('--------------------',EXTENSION_PATH)
+print ('--------------------',MODEL_PATH)
 
 def clean_object_init_img_with_mask(init_img_with_mask):
     return clean_object(init_img_with_mask['image'],init_img_with_mask['mask'])
@@ -24,11 +25,11 @@ def clean_object(image,mask):
     init_image = init_image.convert("RGB")
     mask_image = mask_image.convert("RGB")
 
-    device_used = opts.data.get("cleaner_use_gpu",True)
+    #device_used = opts.data.get("cleaner_use_gpu",True)
 
-    device = "cuda:0"
-    if not device_used:
-        device = "cpu"
+    device = "cuda"
+    #if not device_used:
+    #    device = "cpu"
 
     result = None
     try:
