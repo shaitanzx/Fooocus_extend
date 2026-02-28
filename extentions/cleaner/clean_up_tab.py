@@ -39,7 +39,7 @@ def ui():
 
                 if tab_name == "Clean up":
                     init_img_with_mask = gr.Image(label="Image for clean up with mask", show_label=False, elem_id="cleanup_img2maskimg", source="upload",
-                                                  interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=650, brush_color=opts.img2img_inpaint_mask_brush_color)
+                                                  interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=650, brush_color="#FFFFFF")
                 else:
                     with gr.Column(elem_id=f"cleanup_image_mask"):
                         clean_up_init_img = gr.Image(label="Image for cleanup", show_label=False, source="upload",
