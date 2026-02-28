@@ -7,7 +7,7 @@ import gradio as gr
 
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(EXTENSION_PATH, "models")
+MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","models")
 print ('--------------------',EXTENSION_PATH)
 print ('--------------------',MODEL_PATH)
 
@@ -58,7 +58,7 @@ class LiteLama2(LiteLama):
         self._model = None
         
         if self._checkpoint_path is None:
-            
+            os.makedirs(MODEL_PATH, exist_ok=True)
             checkpoint_path = os.path.join(MODEL_PATH, "big-lama.safetensors")
             if  os.path.exists(checkpoint_path) and os.path.isfile(checkpoint_path):
                 pass
