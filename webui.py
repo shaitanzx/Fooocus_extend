@@ -540,8 +540,12 @@ with shared.gradio_root:
                         with gr.Row():    
                             #result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"cleanup_gallery", preview=True, height=512,show_fullscreen_button=True)
                             result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
-                                 elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                                 elem_id='cleaner_gallery')
+                                 elem_classes=['resizable_area', 'main_view', 'image_gallery'],
+                                 elem_id='cleaner_gallery',
+                                 preview=True, 
+                                 show_fullscreen_button=True,
+                                 columns=1,
+                                 rows=1)
                         with gr.Row():
                             send_to_cleaner_button = gr.Button("Send back To clean up", height=100)
                         clean_button.click(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery])
