@@ -76,7 +76,7 @@ def ui(init_img_with_mask):
     with gr.Row():
         clean_button = gr.Button("Clean Up", height=100)
     with gr.Row():    
-        result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"cleanup_gallery", preview=False, height=512)
+        result_gallery = gr.Gallery(show_fullscreen_button=True, label='Output', show_label=False, elem_id=f"cleanup_gallery", preview=False, height=512)
     with gr.Row():
         send_to_cleaner_button = gr.Button("Send back To clean up", height=100)
 
