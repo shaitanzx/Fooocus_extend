@@ -533,8 +533,24 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
 
                     with gr.Tab(label='Cleaner', id='clean_tab') as clean_tab:
-                        init_img_with_mask = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
-                        cleaner.ui(init_img_with_mask)                            
+                        with gr.Row():
+                            init_img_with_mask = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
+                        with gr.Row():
+                            clean_button = gr.Button("Clean Up", height=100)
+                        with gr.Row():    
+                            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"cleanup_gallery", preview=True, height=512,show_fullscreen_button=True)
+                        with gr.Row():
+                            send_to_cleaner_button = gr.Button("Send back To clean up", height=100)
+                        clean_button.click(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery])
+
+                        send_to_cleaner_button.click(fn=cleaner.send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
+                        
+                        
+                        
+                        
+                        
+                        
+                        #cleaner.ui(init_img_with_mask)                            
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
                             with gr.Column():
