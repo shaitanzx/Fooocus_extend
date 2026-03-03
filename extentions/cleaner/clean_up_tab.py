@@ -1,5 +1,5 @@
 import gradio as gr
-from extentions.cleaner import lama
+#from extentions.cleaner import lama
 from PIL import Image
 from litelama import LiteLama
 from litelama.model import download_file
