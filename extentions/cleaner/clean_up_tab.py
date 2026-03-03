@@ -26,7 +26,7 @@ def send_to_cleaner(result):
 
 def ui(init_img_with_mask):
 
-    init_img_with_mask = None
+    #init_img_with_mask = None
     clean_up_init_img = None
     clean_up_init_mask = None
     #with gr.Row():
