@@ -1,5 +1,6 @@
 #import modules.scripts as scripts
 import gradio as gr
+import modules.gradio_hijack as grh
 
 #from modules.shared import opts,OptionInfo
 
@@ -29,8 +30,10 @@ def ui():
     clean_up_init_img = None
     clean_up_init_mask = None
     with gr.Row():
-        init_img_with_mask = gr.Image(label="Image for clean up with mask", show_label=False, elem_id="cleanup_img2maskimg", source="upload",
-                        interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=650, brush_color="#FFFFFF")
+        init_img_with_mask = grh.Image(label='Image', source='upload', type='pil', show_label=False)
+        
+        # gr.Image(label="Image for clean up with mask", show_label=False, elem_id="cleanup_img2maskimg", source="upload",
+        #                interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=650, brush_color="#FFFFFF")
     with gr.Row():
         clean_button = gr.Button("Clean Up", height=100)
     with gr.Row():    
