@@ -533,6 +533,7 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
 
                     with gr.Tab(label='Cleaner', id='clean_tab') as clean_tab:
+                        init_img_with_mask_1 = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
                         cleaner.ui()                            
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
