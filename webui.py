@@ -1568,7 +1568,7 @@ with shared.gradio_root:
                                                               'negative value will make white area smaller. '
                                                               '(default is 0, processed before SAM)')
 
-                        inpaint_mask_color = gr.ColorPicker(label='Inpaint brush color', value='#FFFFFF', elem_id='inpaint_brush_color')
+                        inpaint_mask_color = gr.ColorPicker(label='Inpaint/Clean brush color', value='#FFFFFF', elem_id='inpaint_brush_color')
 
                         inpaint_ctrls = [debugging_inpaint_preprocessor, inpaint_disable_initial_latent, inpaint_engine,
                                          inpaint_strength, inpaint_respective_field,
