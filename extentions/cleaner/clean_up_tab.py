@@ -1,5 +1,6 @@
 import gradio as gr
 #from extentions.cleaner import lama
+import modules.config
 from PIL import Image
 from litelama import LiteLama
 from litelama.model import download_file
@@ -58,13 +59,13 @@ class LiteLama2(LiteLama):
         
         if self._checkpoint_path is None:
             os.makedirs(MODEL_PATH, exist_ok=True)
-            checkpoint_path = os.path.join(MODEL_PATH, "big-lama.safetensors")
-            if  os.path.exists(checkpoint_path) and os.path.isfile(checkpoint_path):
-                pass
-            else:
-                download_file("https://huggingface.co/anyisalin/big-lama/resolve/main/big-lama.safetensors", checkpoint_path)
+            #checkpoint_path = os.path.join(MODEL_PATH, "big-lama.safetensors")
+            #if  os.path.exists(checkpoint_path) and os.path.isfile(checkpoint_path):
+            #    pass
+            #else:
+            #    download_file("https://huggingface.co/anyisalin/big-lama/resolve/main/big-lama.safetensors", checkpoint_path)
                 
-            self._checkpoint_path = checkpoint_path
+            self._checkpoint_path = modules.config.downloading_cleaner(MODEL_PATH)
         
         self.load(location="cpu")
 

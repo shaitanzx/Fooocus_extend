@@ -1106,3 +1106,10 @@ def downloading_inswapper():
         file_name='inswapper_128.onnx'
     )
     return
+def downloading_cleaner(model_dir):
+    load_file_from_url(
+        url='https://huggingface.co/anyisalin/big-lama/resolve/main/big-lama.safetensors',
+        model_dir=model_dir,
+        file_name='big-lama.safetensors'
+    )
+    return os.path.join(model_dir, 'big-lama.safetensors')
