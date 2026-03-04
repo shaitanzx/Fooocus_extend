@@ -9,8 +9,12 @@ MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","models")
 print ('--------------------',EXTENSION_PATH)
 print ('--------------------',MODEL_PATH)
 def clean_object_init_img_with_mask(init_img_with_mask):
-    return clean_object(init_img_with_mask['image'],init_img_with_mask['mask'])
-
+    if init_img_with_mask:
+        print('+++++++++++++++++++++++++++')
+        return clean_object(init_img_with_mask['image'],init_img_with_mask['mask']), gr.update(visible=True), gr.update(visible=True)
+    else:
+        print('-------------------------')
+        return clean_object(init_img_with_mask['image'],init_img_with_mask['mask']), gr.update(visible=False), gr.update(visible=False)
 
 def clean_object(image,mask):
     
@@ -70,18 +74,18 @@ def send_to_cleaner(result):
     image = Image.open(result[0]["name"])
     return image
 
-def ui(init_img_with_mask):
-    clean_up_init_img = None
-    clean_up_init_mask = None
-    with gr.Row():
-        clean_button = gr.Button("Clean Up", height=100)
-    with gr.Row():    
-        result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"cleanup_gallery", preview=True, height=512,show_fullscreen_button=True)
-    with gr.Row():
-        send_to_cleaner_button = gr.Button("Send back To clean up", height=100)
-
-    clean_button.click(fn=clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery])
-
-    send_to_cleaner_button.click(fn=send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
-    return
+#def ui(init_img_with_mask):
+#    clean_up_init_img = None
+#    clean_up_init_mask = None
+#    with gr.Row():
+#        clean_button = gr.Button("Clean Up", height=100)
+#    with gr.Row():    
+#        result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"cleanup_gallery", preview=True, height=512,show_fullscreen_button=True)
+#    with gr.Row():
+#        send_to_cleaner_button = gr.Button("Send back To clean up", height=100)#
+#
+#    clean_button.click(fn=clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery])#
+#
+#    send_to_cleaner_button.click(fn=send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
+#    return
 
