@@ -541,7 +541,7 @@ with shared.gradio_root:
                             with gr.Column():    
                                 clean_video = gr.Video(label="Video", source='upload',visible=True,interactive=True,height=500)
                             with gr.Column():
-                                clean_frame = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=False)
+                                clean_frame = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=False,interactive=True)
                         with gr.Row():
                             clean_button = gr.Button("Clean Up", height=100)
                         with gr.Row():    
