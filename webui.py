@@ -539,13 +539,13 @@ with shared.gradio_root:
                             clean_button = gr.Button("Clean Up", height=100)
                         with gr.Row():    
                             
-                            result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
+                            result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
                                  elem_classes=['resizable_area', 'main_view', 'image_gallery'],
                                  elem_id='cleaner_gallery',
                                  preview=True, 
                                  show_fullscreen_button=True,
                                  columns=1,
-                                 rows=1,visible=False)
+                                 rows=1)
                         with gr.Row():
                             send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
                         clean_button.click(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery,result_gallery,send_to_cleaner_button])
