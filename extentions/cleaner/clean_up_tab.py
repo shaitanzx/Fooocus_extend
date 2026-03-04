@@ -5,7 +5,7 @@ from litelama import LiteLama
 from litelama.model import download_file
 import os
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","models")
+MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
 def clean_object_init_img_with_mask(init_img_with_mask):
     if init_img_with_mask:
         return clean_object(init_img_with_mask['image'],init_img_with_mask['mask']), gr.update(visible=True), gr.update(visible=True)
