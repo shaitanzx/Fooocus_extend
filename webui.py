@@ -539,7 +539,7 @@ with shared.gradio_root:
                             init_img_with_mask = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
                         with gr.Row(visible=False)as video_clean:
                             with gr.Column():    
-                                clean_video = gr.Video(label="Video", source='upload',visible=False,interactive=True,height=500)
+                                clean_video = gr.Video(label="Video", source='upload',visible=True,interactive=True,height=500)
                             with gr.Column():
                                 clean_frame = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
                         with gr.Row():
@@ -557,7 +557,18 @@ with shared.gradio_root:
                             send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
                         def update_input_type(choice):
                             return gr.update(visible=choice == "Image"), gr.update(visible=choice == "Video")
+                        def get_first_frame(video_path):
+                            cap = cv2.VideoCapture(video_path)
+                            ret, frame = cap.read()
+                            cap.release()
+    
+                            if ret:
+                                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                                return frame_rgb
+                            else:
+                                return None
                         input_type.change(update_input_type, inputs=[input_type], outputs=[image_clean, video_clean])
+                        clean_video.upload(fn=get_first_frame, inputs=clean_video, outputs=clean_frame)
                         clean_button.click(lambda: (gr.update(interactive=False)),outputs=[clean_button]) \
                             .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery,result_gallery,send_to_cleaner_button]) \
                             .then(lambda: (gr.update(interactive=True)),outputs=[clean_button])
