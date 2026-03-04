@@ -1579,8 +1579,8 @@ with shared.gradio_root:
                                                                  outputs=[inpaint_mask_image, inpaint_mask_generation_col],
                                                                  queue=False, show_progress=False)
 
-                        inpaint_mask_color.change(lambda x: gr.update(brush_color=x), inputs=inpaint_mask_color,
-                                                  outputs=inpaint_input_image,
+                        inpaint_mask_color.change(lambda x: (gr.update(brush_color=x), gr.update(brush_color=x)), inputs=inpaint_mask_color,
+                                                  outputs=[inpaint_input_image,init_img_with_mask],
                                                   queue=False, show_progress=False)
 
                     with gr.Tab(label='FreeU'):
