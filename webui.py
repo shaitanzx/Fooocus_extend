@@ -548,7 +548,9 @@ with shared.gradio_root:
                                  rows=1)
                         with gr.Row():
                             send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
-                        clean_button.click(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery,result_gallery,send_to_cleaner_button])
+                        clean_button.click(lambda: (gr.update(interactive=False)),outputs=[send_to_cleaner_button]) \
+                            .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery,result_gallery,send_to_cleaner_button]) \
+                            .then(lambda: (gr.update(interactive=True)),outputs=[send_to_cleaner_button])
 
                         send_to_cleaner_button.click(fn=cleaner.send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
                         
