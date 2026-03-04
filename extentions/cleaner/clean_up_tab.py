@@ -10,10 +10,8 @@ print ('--------------------',EXTENSION_PATH)
 print ('--------------------',MODEL_PATH)
 def clean_object_init_img_with_mask(init_img_with_mask):
     if init_img_with_mask:
-        print('+++++++++++++++++++++++++++')
         return clean_object(init_img_with_mask['image'],init_img_with_mask['mask']), gr.update(visible=True), gr.update(visible=True)
     else:
-        print('-------------------------')
         return None, gr.update(visible=False), gr.update(visible=False)
 
 def clean_object(image,mask):
