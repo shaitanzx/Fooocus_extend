@@ -561,6 +561,7 @@ with shared.gradio_root:
                             return gr.update(visible=choice == "Image"), gr.update(visible=choice == "Video")
                         def video_clean_process(video,frame):
                             temp_dir_clean=modules.config.temp_path+os.path.sep
+                            print('================================',temp_dir_clean)
                             mask=frame['mask']
                             cap = cv2.VideoCapture(video)
                             fps = cap.get(cv2.CAP_PROP_FPS)
