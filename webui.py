@@ -538,7 +538,7 @@ with shared.gradio_root:
                         with gr.Row() as image_clean:
                             with gr.Column():
                                 init_img_with_mask = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
-                                clean_button = gr.Button("Clean Up", height=100)
+                                clean_button = gr.Button("Clean Up", height=100,visible=False)
                         with gr.Row(visible=False) as video_clean:
                             with gr.Column(): 
                                 with gr.Row():   
