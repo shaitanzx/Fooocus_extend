@@ -570,6 +570,7 @@ with shared.gradio_root:
                             else:
                                 return None
                         input_type.change(update_input_type, inputs=[input_type], outputs=[image_clean, video_clean])
+                        init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
                         clean_video.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[clean_frame,clean_button_video]) \
                             .then(fn=get_first_frame, inputs=clean_video, outputs=clean_frame)
                         clean_button.click(lambda: (gr.update(interactive=False)),outputs=[clean_button]) \
