@@ -559,6 +559,41 @@ with shared.gradio_root:
                             send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
                         def update_input_type(choice):
                             return gr.update(visible=choice == "Image"), gr.update(visible=choice == "Video")
+                        def video_clean_process(video,frame):
+                            temp_dir_clean=modules.config.temp_path+os.path.sep
+                            mask=frame['mask']
+                            cap = cv2.VideoCapture(video)
+                            fps = cap.get(cv2.CAP_PROP_FPS)
+                            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            batch_path_clean=f"{temp_dir}cleaner"+ os.path.sep
+                            for i in range(total_frames):
+                                ret, frame = cap.read()
+                                image=clean_object_video(frame,mask)
+                                cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', image, cv2.COLOR_BGR2RGB))
+                            cap.release()
+
+
+#    images = [img for img in os.listdir('frames') 
+#              if img.endswith(f".png")]
+#    images.sort()
+#    first_image = cv2.imread(os.path.join('frames', images[0]))    
+#    height, width = first_image.shape[:2]
+    
+#    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#    video_name=f"{output_path}/video_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+
+#    out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
+    
+#    for i, image_name in enumerate(images):
+#        image_path = os.path.join('frames', image_name)
+#        frame = cv2.imread(image_path)
+#        out.write(frame)
+#        yield f'Saved color frame number {i} of {total_frames} to videofile'
+#    out.release()
+#    yield 'Video colorization complete'
+#    delete_input('frames')
                         def get_first_frame(video_path):
                             cap = cv2.VideoCapture(video_path)
                             ret, frame = cap.read()
@@ -577,7 +612,7 @@ with shared.gradio_root:
                             .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery,result_gallery,send_to_cleaner_button]) \
                             .then(lambda: (gr.update(interactive=True)),outputs=[clean_button])
                         send_to_cleaner_button.click(fn=cleaner.send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
-                        
+                        clean_button_video.click(video_clean_process,inputs=[clean_video,clean_frame])
                         
                         
                         

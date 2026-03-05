@@ -11,6 +11,8 @@ def clean_object_init_img_with_mask(init_img_with_mask):
         return clean_object(init_img_with_mask['image'],init_img_with_mask['mask']), gr.update(visible=True), gr.update(visible=True)
     else:
         return None, gr.update(visible=False), gr.update(visible=False)
+def clean_object_video(frame,mask):
+        return clean_object(frame,mask)
 
 def clean_object(image,mask):
     
