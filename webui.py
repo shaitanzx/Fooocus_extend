@@ -571,7 +571,7 @@ with shared.gradio_root:
                             batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
                             for i in range(total_frames):
                                 ret, frame = cap.read()
-                                image=clean_object_video(frame,mask)
+                                image=cleaner.clean_object_video(frame,mask)
                                 cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', image, cv2.COLOR_BGR2RGB)
                             cap.release()
 
