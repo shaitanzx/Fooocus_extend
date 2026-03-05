@@ -573,7 +573,7 @@ with shared.gradio_root:
                                 ret, frame = cap.read()
                                 frame=Image.fromarray(frame)
                                 image=cleaner.clean_object_video(frame,mask)
-                                cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', image, cv2.COLOR_BGR2RGB)
+                                cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', np.array(image), cv2.COLOR_BGR2RGB)
                             cap.release()
 
 
