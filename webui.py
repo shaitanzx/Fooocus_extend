@@ -568,7 +568,7 @@ with shared.gradio_root:
                             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                            batch_path_clean=f"{temp_dir}cleaner"+ os.path.sep
+                            batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
                             for i in range(total_frames):
                                 ret, frame = cap.read()
                                 image=clean_object_video(frame,mask)
