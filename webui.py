@@ -574,13 +574,13 @@ with shared.gradio_root:
                         
                         
                         video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
-                            .then(fn=cleaner.get_first_frame, inputs=clean_video, outputs=[first_video,clean_frame])
+                            .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])
 
-                        clean_video.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[clean_frame,clean_button_video]) \
-                            .then(fn=cleaner.get_first_frame, inputs=clean_video, outputs=clean_frame)
+                        #clean_video.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[clean_frame,clean_button_video]) \
+                        #    .then(fn=cleaner.get_first_frame, inputs=clean_video, outputs=clean_frame)
                         
                         
-                        clean_button_video.click(cleaner.video_clean_process,inputs=[clean_video,clean_frame])
+                        #clean_button_video.click(cleaner.video_clean_process,inputs=[clean_video,clean_frame])
                         
                         
                         
