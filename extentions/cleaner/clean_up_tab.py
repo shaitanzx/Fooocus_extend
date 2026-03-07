@@ -31,7 +31,6 @@ def get_first_frame(video_path):
 
 def video_clean_process(video,frame):
     temp_dir_clean=modules.config.temp_path+os.path.sep
-    print('================================',temp_dir_clean)
     mask=frame['mask'].convert("RGB")
     cap = cv2.VideoCapture(video)
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -56,13 +55,8 @@ def video_clean_process(video,frame):
     images = [img for img in os.listdir(batch_path_clean) 
               if img.endswith(f".png")]
     images.sort()
-#    first_image = cv2.imread(os.path.join('frames', images[0]))    
-#    height, width = first_image.shape[:2]
-    
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video = os.path.splitext(os.path.basename(video))[0]
-    #video_name=f"{modules.config.path_outputs}/clean_video_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
-
 
     video_name=os.path.join(modules.config.path_outputs, f'{video}.mp4')
 
@@ -72,10 +66,7 @@ def video_clean_process(video,frame):
         image_path = os.path.join(batch_path_clean, image_name)
         frame = cv2.imread(image_path)
         out.write(frame)
-#        yield f'Saved color frame number {i} of {total_frames} to videofile'
     out.release()
-#    yield 'Video colorization complete'
-#    delete_input('frames')
     print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 def clean_object(image,mask):
     

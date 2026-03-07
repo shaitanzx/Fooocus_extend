@@ -533,42 +533,48 @@ with shared.gradio_root:
                                                           queue=False, show_progress=False)
 
                     with gr.Tab(label='Cleaner', id='clean_tab') as clean_tab:
-                        with gr.Row():
-                            input_type = gr.Radio(["Image", "Video"], label="Input Type", value="Image")
-                        with gr.Row() as image_clean:
-                            with gr.Column():
-                                init_img_with_mask = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
-                                clean_button = gr.Button("Clean Up", height=100,visible=False)
-                        with gr.Row(visible=False) as video_clean:
+                        import extentions.batch as batch
+                        with gr.Tab(label='Image'):
+                            #input_type = gr.Radio(["Image", "Video"], label="Input Type", value="Image")
+                            with gr.Row() as image_clean:
+                                with gr.Column():
+                                    init_img_with_mask = grh.Image(label='Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False)
+                                    clean_button = gr.Button("Clean Up", height=100,visible=False)
+                                with gr.Row():                                
+                                    result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
+                                    elem_classes=['resizable_area', 'main_view', 'image_gallery'],
+                                    elem_id='cleaner_gallery',
+                                    preview=True, 
+                                    show_fullscreen_button=True,
+                                    columns=1,
+                                    rows=1)
+                                with gr.Row():
+                                    send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
+                        with gr.Tab(label='Video'):
                             with gr.Column(): 
                                 with gr.Row():   
                                     clean_video = gr.Video(label="Video", source='upload',visible=True,interactive=True,height=500)
                                 with gr.Row(): 
-                                    clean_frame = grh.Image(label='Image',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=False,interactive=True)
+                                    clean_frame = grh.Image(label='First Frame',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=False,interactive=True)
                                 with gr.Row():
                                     clean_button_video = gr.Button("Clean Up", height=100,visible=False)
-                        with gr.Row():                                
-                            result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
-                                 elem_classes=['resizable_area', 'main_view', 'image_gallery'],
-                                 elem_id='cleaner_gallery',
-                                 preview=True, 
-                                 show_fullscreen_button=True,
-                                 columns=1,
-                                 rows=1)
-                        with gr.Row():
-                            send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
-                        def update_input_type(choice):
-                            return gr.update(visible=choice == "Image"), gr.update(visible=choice == "Video")
+                        
+                        #def update_input_type(choice):
+                        #    return gr.update(visible=choice == "Image"), gr.update(visible=choice == "Video")
 
 
-                        input_type.change(update_input_type, inputs=[input_type], outputs=[image_clean, video_clean])
+                        #input_type.change(update_input_type, inputs=[input_type], outputs=[image_clean, video_clean])
                         init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
-                        clean_video.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[clean_frame,clean_button_video]) \
-                            .then(fn=cleaner.get_first_frame, inputs=clean_video, outputs=clean_frame)
                         clean_button.click(lambda: (gr.update(interactive=False)),outputs=[clean_button]) \
                             .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery,result_gallery,send_to_cleaner_button]) \
                             .then(lambda: (gr.update(interactive=True)),outputs=[clean_button])
                         send_to_cleaner_button.click(fn=cleaner.send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
+
+                        
+                        clean_video.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[clean_frame,clean_button_video]) \
+                            .then(fn=cleaner.get_first_frame, inputs=clean_video, outputs=clean_frame)
+                        
+                        
                         clean_button_video.click(cleaner.video_clean_process,inputs=[clean_video,clean_frame])
                         
                         
