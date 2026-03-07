@@ -50,7 +50,8 @@ def video_clean_process(video,frame):
         frame=Lama.predict(frame, mask)
         #image=clean_object_video(frame,mask)
         print('333333333333333333333',frame)
-        cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', np.array(frame))
+        frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+        cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
     cap.release()
 
 
