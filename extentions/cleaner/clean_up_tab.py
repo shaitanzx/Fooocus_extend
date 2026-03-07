@@ -20,9 +20,6 @@ def clean_object_video(frame,mask):
         return clean_object(frame,mask)
 def get_first_frame(video_files):
     video_path = video_files[0].name
-
-    
-    print('aaaaaaaaaaa',video_path)
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
     cap.release()

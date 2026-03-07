@@ -551,11 +551,12 @@ with shared.gradio_root:
                             with gr.Row():
                                 send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
                         with gr.Tab(label='Video'):
-                            with gr.Column():
-                                video_files = gr.Files(label="Drag (Select) 1 or more video files",file_count="multiple",
+                            with gr.Row():
+                                with gr.Column():
+                                    video_files = gr.Files(label="Drag (Select) 1 or more video files",file_count="multiple",
                                             file_types=["video"],visible=True,interactive=True)
-                            with gr.Column():  
-                                first_video = gr.Video(label="Video", source='upload',visible=True,interactive=True)
+                                with gr.Column():  
+                                    first_video = gr.Video(label="Video", source='upload',visible=True,interactive=True)
                             with gr.Row(): 
                                 clean_frame = grh.Image(label='First Frame',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=False,interactive=True)
                             with gr.Row():
