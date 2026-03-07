@@ -30,24 +30,48 @@ def get_first_frame(video_path):
 def video_clean_process(video,frame):
     temp_dir_clean=modules.config.temp_path+os.path.sep
     print('================================',temp_dir_clean)
-    mask=frame['mask']
+    mask=frame['mask'].convert("RGB")
     cap = cv2.VideoCapture(video)
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
+    Lama = LiteLama2()
+    Lama.to(device)
+    device = "cuda"
     for i in range(total_frames):
         ret, frame = cap.read()
-        frame = cv2.cvtColor(framecv2.COLOR_BGR2RGB)
+        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
         print('111111111111111111111',frame)
         frame=Image.fromarray(frame)
         print('222222222222222222222',frame)
-        image=clean_object_video(frame,mask)
-        print('333333333333333333333',image[0])
-        cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', np.array(image[0]))
+        #frame = frmae.convert("RGB")
+        frame=Lama.predict(frame, mask)
+        #image=clean_object_video(frame,mask)
+        print('333333333333333333333',frame)
+        cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame))
     cap.release()
+    
+    
+    
+    init_image = image
 
+
+    
+
+
+    
+    result = None
+    try:
+        
+        
+    except:
+        pass
+    finally:
+        Lama.to("cpu")
+    
+    return [result]
 
 #    images = [img for img in os.listdir('frames') 
 #              if img.endswith(f".png")]
