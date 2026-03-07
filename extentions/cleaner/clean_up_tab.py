@@ -18,7 +18,8 @@ def clean_object_init_img_with_mask(init_img_with_mask):
         return None, gr.update(visible=False), gr.update(visible=False)
 def clean_object_video(frame,mask):
         return clean_object(frame,mask)
-def get_first_frame(video_path):
+def get_first_frame(video_files):
+    print('aaaaaaaaa',video_files)
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
     cap.release()
