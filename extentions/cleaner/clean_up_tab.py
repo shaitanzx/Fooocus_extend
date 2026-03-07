@@ -30,45 +30,54 @@ def get_first_frame(video_files):
         return None,None
 
 
-def video_clean_process(video,frame):
+def video_clean_process(video,mask):
     temp_dir_clean=modules.config.temp_path+os.path.sep
-    mask=frame['mask'].convert("RGB")
-    cap = cv2.VideoCapture(video)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
+    result=delete_folder_content(batch_path_clean, '')
+    os.makedirs(batch_path_clean, exist_ok=True)
+    mask=mask['mask'].convert("RGB")
+    video_files = [f.name for f in video]
     Lama = LiteLama2()
     device = "cuda"
     Lama.to(device)
-    for i in range(total_frames):
-        ret, frame = cap.read()
-        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        frame=Image.fromarray(frame)
-        frame=Lama.predict(frame, mask)
-        frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
-        print(f'Processed {i} of {total_frames}')
-        cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
-    cap.release()
+
+    for filename in video_files:
+        cap = cv2.VideoCapture(filename)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        for i in range(total_frames):
+            ret, frame = cap.read()
+            frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+            frame=Image.fromarray(frame)
+            frame=Lama.predict(frame, mask)
+            frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+            print(f'Processed {i} of {total_frames}')
+            cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
+        cap.release()
+        
 
 
-    images = [img for img in os.listdir(batch_path_clean) 
-              if img.endswith(f".png")]
-    images.sort()
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = os.path.splitext(os.path.basename(video))[0]
+        images = [img for img in os.listdir(batch_path_clean) 
+                    if img.endswith(f".png")]
+        images.sort()
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_base_name = os.path.splitext(os.path.basename(video))[0]
 
-    video_name=os.path.join(modules.config.path_outputs, f'{video}.mp4')
+        video_name=os.path.join(modules.config.path_outputs, f'{video_base_name}.mp4')
 
-    out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
+        out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
     
-    for i, image_name in enumerate(images):
-        image_path = os.path.join(batch_path_clean, image_name)
-        frame = cv2.imread(image_path)
-        out.write(frame)
-    out.release()
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        for i, image_name in enumerate(images):
+            image_path = os.path.join(batch_path_clean, image_name)
+            frame = cv2.imread(image_path)
+            out.write(frame)
+        out.release()
+        result=delete_folder_content(batch_path_clean, '')
+        os.makedirs(batch_path_clean, exist_ok=True)
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 def clean_object(image,mask):
     
     Lama = LiteLama2()

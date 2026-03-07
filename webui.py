@@ -561,12 +561,7 @@ with shared.gradio_root:
                                 clean_frame = grh.Image(label='First Frame',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=False,interactive=True)
                             with gr.Row():
                                 clean_button_video = gr.Button("Clean Up", height=100,visible=False)
-                        
-                        #def update_input_type(choice):
-                        #    return gr.update(visible=choice == "Image"), gr.update(visible=choice == "Video")
 
-
-                        #input_type.change(update_input_type, inputs=[input_type], outputs=[image_clean, video_clean])
                         init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
                         clean_button.click(lambda: (gr.update(interactive=False)),outputs=[clean_button]) \
                             .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[init_img_with_mask],outputs=[result_gallery,result_gallery,send_to_cleaner_button]) \
@@ -575,13 +570,8 @@ with shared.gradio_root:
                         
                         
                         video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
-                            .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])
-
-                        #clean_video.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[clean_frame,clean_button_video]) \
-                        #    .then(fn=cleaner.get_first_frame, inputs=clean_video, outputs=clean_frame)
-                        
-                        
-                        #clean_button_video.click(cleaner.video_clean_process,inputs=[clean_video,clean_frame])
+                            .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
+                        clean_button_video.click(cleaner.video_clean_process,inputs=[video_files,clean_frame])
                         
                         
                         
