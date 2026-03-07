@@ -56,7 +56,7 @@ def video_clean_process(video,mask):
             frame=Lama.predict(frame, mask)
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
             yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})'
-            print(f'Processed {i} of {total_frames}')
+            #print(f'Processed {i} of {total_frames}')
             cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
         cap.release()
         

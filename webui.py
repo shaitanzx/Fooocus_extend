@@ -1052,8 +1052,9 @@ with shared.gradio_root:
                         
                         video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
                             .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
-                        clean_button_video.click(lambda: (gr.update(visible=True)),outputs=[progress_video]) \
-                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame],outputs=[progress_video])
+                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False)),outputs=[progress_video,clean_button_video]) \
+                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame],outputs=[progress_video]) \
+                            .then(lambda: (gr.update(visible=False,gr.update(interactive=True)),outputs=[progress_video,clean_button_video])
 
                   with gr.TabItem(label='Vector'):
                             vector.ui_module()
