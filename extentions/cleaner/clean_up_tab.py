@@ -7,6 +7,7 @@ import os
 import cv2
 import numpy as np
 import time
+from modules.launch_util import delete_folder_content
 
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
