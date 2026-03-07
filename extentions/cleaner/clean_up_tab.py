@@ -39,7 +39,7 @@ def video_clean_process(video,frame):
     batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
     for i in range(total_frames):
         ret, frame = cap.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         frame=Image.fromarray(frame)
         image=clean_object_video(frame,mask)
         cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', np.array(image[0]))
