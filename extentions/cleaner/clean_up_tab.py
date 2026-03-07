@@ -38,8 +38,8 @@ def video_clean_process(video,frame):
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
     Lama = LiteLama2()
-    Lama.to(device)
     device = "cuda"
+    Lama.to(device)
     for i in range(total_frames):
         ret, frame = cap.read()
         frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
