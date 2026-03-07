@@ -79,6 +79,7 @@ def video_clean_process(video,mask):
         result=delete_folder_content(batch_path_clean, '')
         os.makedirs(batch_path_clean, exist_ok=True)
         print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    Lama.to("cpu")
 def clean_object(image,mask):
     
     Lama = LiteLama2()
