@@ -19,7 +19,7 @@ def clean_object_init_img_with_mask(init_img_with_mask):
 def clean_object_video(frame,mask):
         return clean_object(frame,mask)
 def get_first_frame(video_files):
-    video_path = video_files[0]['name']
+    video_path = video_files.name
 
     
     print('aaaaaaaaaaa',video_path)
@@ -30,7 +30,7 @@ def get_first_frame(video_files):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         return video_path,frame_rgb
     else:
-        return None,none
+        return None,None
 
 
 def video_clean_process(video,frame):
