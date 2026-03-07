@@ -42,7 +42,7 @@ def video_clean_process(video,frame):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame=Image.fromarray(frame)
         image=clean_object_video(frame,mask)
-        cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', np.array(image))
+        cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', np.array(image[0]))
     cap.release()
 
 
