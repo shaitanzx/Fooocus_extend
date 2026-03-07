@@ -65,7 +65,7 @@ def video_clean_process(video,mask):
                     if img.endswith(f".png")]
         images.sort()
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        video_base_name = os.path.splitext(os.path.basename(video))[0]
+        video_base_name = os.path.splitext(os.path.basename(filename))[0]
 
         video_name=os.path.join(modules.config.path_outputs, f'{video_base_name}.mp4')
 
