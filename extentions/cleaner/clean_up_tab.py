@@ -42,7 +42,7 @@ def video_clean_process(video,mask):
     device = "cuda"
     Lama.to(device)
 
-    for filename in video_files:
+    for file_index, filename in enumerate(video_files):
         cap = cv2.VideoCapture(filename)
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -55,6 +55,7 @@ def video_clean_process(video,mask):
             frame=Image.fromarray(frame)
             frame=Lama.predict(frame, mask)
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+            yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})'
             print(f'Processed {i} of {total_frames}')
             cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
         cap.release()

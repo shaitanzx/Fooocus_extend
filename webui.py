@@ -1035,6 +1035,7 @@ with shared.gradio_root:
                                 with gr.Column():
                                     video_files = gr.Files(label="Drag (Select) 1 or more video files",file_count="multiple",
                                             file_types=["video"],visible=True,interactive=True)
+                                    progress_video = gr.Textbox(label="Process",visible=False)
                                 with gr.Column():  
                                     first_video = gr.Video(label="Video", source='upload',visible=False,interactive=True)
                             with gr.Row(): 
@@ -1051,7 +1052,8 @@ with shared.gradio_root:
                         
                         video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
                             .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
-                        clean_button_video.click(cleaner.video_clean_process,inputs=[video_files,clean_frame])
+                        clean_button_video.click(lambda: (gr.update(visible=True)),outputs=[progress_video]) \
+                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame],outputs=[progress_video])
 
                   with gr.TabItem(label='Vector'):
                             vector.ui_module()
