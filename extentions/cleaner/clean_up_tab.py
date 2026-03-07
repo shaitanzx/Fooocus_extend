@@ -53,7 +53,7 @@ def video_clean_process(video,frame):
     cap.release()
 
 
-    images = [img for img in os.listdir('batch_path_clean') 
+    images = [img for img in os.listdir(batch_path_clean) 
               if img.endswith(f".png")]
     images.sort()
 #    first_image = cv2.imread(os.path.join('frames', images[0]))    
