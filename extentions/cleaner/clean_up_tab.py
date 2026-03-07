@@ -52,26 +52,7 @@ def video_clean_process(video,frame):
         print('333333333333333333333',frame)
         cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
     cap.release()
-    
-    
-    
-    init_image = image
 
-
-    
-
-
-    
-    result = None
-    try:
-        
-        
-    except:
-        pass
-    finally:
-        Lama.to("cpu")
-    
-    return [result]
 
 #    images = [img for img in os.listdir('frames') 
 #              if img.endswith(f".png")]
