@@ -24,9 +24,9 @@ def get_first_frame(video_path):
     cap.release()
     if ret:
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        return frame_rgb
+        return video_path,frame_rgb
     else:
-        return None
+        return None,none
 
 
 def video_clean_process(video,frame):
