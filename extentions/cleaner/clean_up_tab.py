@@ -7,6 +7,7 @@ import os
 import cv2
 import numpy as np
 
+
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
 def clean_object_init_img_with_mask(init_img_with_mask):
@@ -43,37 +44,34 @@ def video_clean_process(video,frame):
     for i in range(total_frames):
         ret, frame = cap.read()
         frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        print('111111111111111111111',frame)
         frame=Image.fromarray(frame)
-        print('222222222222222222222',frame)
-        #frame = frmae.convert("RGB")
         frame=Lama.predict(frame, mask)
-        #image=clean_object_video(frame,mask)
-        print('333333333333333333333',frame)
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+        print(f'Processed {i} of {total_frames}')
         cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
     cap.release()
 
 
-#    images = [img for img in os.listdir('frames') 
-#              if img.endswith(f".png")]
-#    images.sort()
-#    first_image = cv2.imread(os.path.join('frames', images[0]))    
+    images = [img for img in os.listdir('frames') 
+              if img.endswith(f".png")]
+    images.sort()
+    first_image = cv2.imread(os.path.join('frames', images[0]))    
 #    height, width = first_image.shape[:2]
     
-#    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-#    video_name=f"{output_path}/video_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_name=f"{output_path}/clean_video_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
 
-#    out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
+    out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
     
-#    for i, image_name in enumerate(images):
-#        image_path = os.path.join('frames', image_name)
-#        frame = cv2.imread(image_path)
-#        out.write(frame)
+    for i, image_name in enumerate(images):
+        image_path = os.path.join('frames', image_name)
+        frame = cv2.imread(image_path)
+        out.write(frame)
 #        yield f'Saved color frame number {i} of {total_frames} to videofile'
-#    out.release()
+    out.release()
 #    yield 'Video colorization complete'
 #    delete_input('frames')
+    print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 def clean_object(image,mask):
     
     Lama = LiteLama2()
