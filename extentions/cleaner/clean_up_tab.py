@@ -68,7 +68,7 @@ def video_clean_process(video,mask):
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         video_base_name = os.path.splitext(os.path.basename(filename))[0]
 
-        video_name=os.path.join(modules.config.path_outputs, f'{video_base_name}.mp4')
+        video_name=os.path.join(modules.config.path_outputs, f'{video_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4')
 
         out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
     
@@ -79,7 +79,6 @@ def video_clean_process(video,mask):
         out.release()
         result=delete_folder_content(batch_path_clean, '')
         os.makedirs(batch_path_clean, exist_ok=True)
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     Lama.to("cpu")
 def clean_object(image,mask):
     
