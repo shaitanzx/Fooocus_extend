@@ -64,7 +64,7 @@ def video_clean_process(video,frame):
     #video_name=f"{modules.config.path_outputs}/clean_video_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
 
 
-    video_name=os.path.join(modules.config.path_outputs, f'{image_name}.mp4')
+    video_name=os.path.join(modules.config.path_outputs, f'{video}.mp4')
 
     out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
     
