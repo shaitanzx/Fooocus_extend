@@ -6,6 +6,7 @@ from litelama.model import download_file
 import os
 import cv2
 import numpy as np
+import time
 
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -52,14 +53,18 @@ def video_clean_process(video,frame):
     cap.release()
 
 
-    images = [img for img in os.listdir('frames') 
+    images = [img for img in os.listdir('batch_path_clean') 
               if img.endswith(f".png")]
     images.sort()
-    first_image = cv2.imread(os.path.join('frames', images[0]))    
+#    first_image = cv2.imread(os.path.join('frames', images[0]))    
 #    height, width = first_image.shape[:2]
     
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_name=f"{output_path}/clean_video_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+    video = os.path.splitext(os.path.basename(video))[0]
+    #video_name=f"{modules.config.path_outputs}/clean_video_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+
+
+    video_name=os.path.join(modules.config.path_outputs, f'{image_name}.mp4')
 
     out = cv2.VideoWriter(video_name, fourcc, fps, (width, height))
     
