@@ -23,7 +23,7 @@ def clean_object_init_img_with_mask(image,init_img_with_mask,mask_check,mask_loa
     Lama = LiteLama2()
     device = "cuda"
     Lama.to(device)
-
+    gallery_names=[]
     for file_index, filename in enumerate(image_files):
         source_image=Image.open(filename)
         source_image=Lama.predict(source_image, mask)
@@ -32,16 +32,10 @@ def clean_object_init_img_with_mask(image,init_img_with_mask,mask_check,mask_loa
 
         image_name=os.path.join(modules.config.path_outputs, f'{image_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png')
         source_image.save(image_name)
+        gallery_names +=[image_name]
     Lama.to("cpu")
     yield "Processing complete. All files saved in OUTPUT path"
-
-
-
-
-
-
-    if init_img_with_mask:
-        return clean_object(init_img_with_mask['image'],init_img_with_mask['mask']), gr.update(visible=True), gr.update(visible=True)
+    return gallery_names,gr.update(visible=True), gr.update(visible=True)
     else:
         return None, gr.update(visible=False), gr.update(visible=False)
 def clean_object_video(frame,mask):
