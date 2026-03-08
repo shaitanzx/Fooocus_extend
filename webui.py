@@ -1037,17 +1037,18 @@ with shared.gradio_root:
                                             file_types=["video"],visible=True,interactive=True)
                                     progress_video = gr.Textbox(label="Process",visible=False)
                                 with gr.Column():  
-                                    first_video = gr.Video(label="Video", source='upload',visible=False,interactive=True)
+                                    first_video = gr.Video(label="First video", source='upload',visible=False,interactive=True)
                             with gr.Row(): 
                                 clean_frame = grh.Image(label='First Frame',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=True,interactive=True)
                             with gr.Row():
                                 mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
+                            with gr.Row():
                                 mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
                             with gr.Row():
                                 clean_button_video = gr.Button("Clean Up", height=100,visible=False)
                         
                         mask_check.change(lambda x: gr.update(visible=x), inputs=mask_check,
-                                        outputs=mask_load, queue=False, show_progress=False, _js=switch_js)
+                                        outputs=mask_load, queue=False, show_progress=False)
                         
                         init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
                         clean_button.click(lambda: (gr.update(interactive=False)),outputs=[clean_button]) \
