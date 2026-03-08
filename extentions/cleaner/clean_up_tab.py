@@ -36,10 +36,12 @@ def video_clean_process(video,mask,mask_check,mask_load):
     batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
     result=delete_folder_content(batch_path_clean, '')
     os.makedirs(batch_path_clean, exist_ok=True)
-    if mask_check:
-        mask=mask_load.convert("RGB")
+    if mask_check and mask_load is not None:
+        m1 = np.array(mask['mask'].convert("RGB"))
+        m2 = np.array(mask_load.convert("RGB"))
+        mask = Image.fromarray(np.maximum(m1, m2), mode="RGB")
     else:
-        mask=mask['mask'].convert("RGB")
+        mask = mask['mask'].convert("RGB")
     video_files = [f.name for f in video]
     Lama = LiteLama2()
     device = "cuda"
