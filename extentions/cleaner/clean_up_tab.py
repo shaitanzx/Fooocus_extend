@@ -55,7 +55,7 @@ def video_clean_process(video,mask):
             frame=Image.fromarray(frame)
             frame=Lama.predict(frame, mask)
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
-            yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})'
+            yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})',gallery_files
             #print(f'Processed {i} of {total_frames}')
             cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
         cap.release()
@@ -78,6 +78,7 @@ def video_clean_process(video,mask):
             out.write(frame)
         out.release()
         gallery_files += video_name
+        yield None,gallery_files
         result=delete_folder_content(batch_path_clean, '')
         os.makedirs(batch_path_clean, exist_ok=True)
     Lama.to("cpu")
