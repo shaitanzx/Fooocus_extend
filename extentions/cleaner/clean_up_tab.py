@@ -51,7 +51,7 @@ def get_first_frame(video_files):
         return None,None
 def get_first_image(image_files):
     image_path = image_files[0].name
-    return video_path,frame_rgb
+    return image_path
     
 def video_clean_process(video,mask,mask_check,mask_load):
     temp_dir_clean=modules.config.temp_path+os.path.sep
