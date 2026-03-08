@@ -41,7 +41,7 @@ def video_clean_process(video,mask):
     Lama = LiteLama2()
     device = "cuda"
     Lama.to(device)
-
+    gallery_files=[]
     for file_index, filename in enumerate(video_files):
         cap = cv2.VideoCapture(filename)
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -77,6 +77,7 @@ def video_clean_process(video,mask):
             frame = cv2.imread(image_path)
             out.write(frame)
         out.release()
+        gallery_files += video_name
         result=delete_folder_content(batch_path_clean, '')
         os.makedirs(batch_path_clean, exist_ok=True)
     Lama.to("cpu")

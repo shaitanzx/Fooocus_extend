@@ -1042,6 +1042,22 @@ with shared.gradio_root:
                                 clean_frame = grh.Image(label='First Frame',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=False,interactive=True)
                             with gr.Row():
                                 clean_button_video = gr.Button("Clean Up", height=100,visible=False)
+                            with gr.Row():
+                                with gr.Row():                                
+                                    video_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
+                                        elem_classes=['resizable_area', 'main_view', 'image_gallery'],
+                                        elem_id='cleaner_gallery',
+                                        preview=True, 
+                                        show_fullscreen_button=True,
+                                        columns=1,
+                                        rows=1)
+
+
+
+
+
+
+
 
                         init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
                         clean_button.click(lambda: (gr.update(interactive=False)),outputs=[clean_button]) \
@@ -1052,8 +1068,8 @@ with shared.gradio_root:
                         
                         video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
                             .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
-                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False)),outputs=[progress_video,clean_button_video]) \
-                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame],outputs=[progress_video]) \
+                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False),[],gr.update(visible=True)),outputs=[progress_video,clean_button_video,video_gallery,video_gallery]) \
+                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame],outputs=[progress_video,video_gallery]) \
                             .then(lambda: (gr.update(visible=False),gr.update(interactive=True)),outputs=[progress_video,clean_button_video])
 
                   with gr.TabItem(label='Vector'):
