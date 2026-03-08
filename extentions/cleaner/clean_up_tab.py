@@ -77,7 +77,7 @@ def video_clean_process(video,mask):
             frame = cv2.imread(image_path)
             out.write(frame)
         out.release()
-        gallery_files += video_name
+        gallery_files += [video_name]
         yield None,gallery_files
         result=delete_folder_content(batch_path_clean, '')
         os.makedirs(batch_path_clean, exist_ok=True)
