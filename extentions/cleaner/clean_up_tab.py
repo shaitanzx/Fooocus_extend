@@ -41,7 +41,7 @@ def video_clean_process(video,mask):
     Lama = LiteLama2()
     device = "cuda"
     Lama.to(device)
-    gallery_files=[]
+
     for file_index, filename in enumerate(video_files):
         cap = cv2.VideoCapture(filename)
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -55,7 +55,7 @@ def video_clean_process(video,mask):
             frame=Image.fromarray(frame)
             frame=Lama.predict(frame, mask)
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
-            yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})',gallery_files
+            yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})'
             #print(f'Processed {i} of {total_frames}')
             cv2.imwrite(f'{batch_path_clean}frame_{i:06d}.png', frame)
         cap.release()
@@ -77,11 +77,10 @@ def video_clean_process(video,mask):
             frame = cv2.imread(image_path)
             out.write(frame)
         out.release()
-        gallery_files += [video_name]
-        yield None,gallery_files
         result=delete_folder_content(batch_path_clean, '')
         os.makedirs(batch_path_clean, exist_ok=True)
     Lama.to("cpu")
+    yield "Processing complete. All files saved in OUTPUT path"
 def clean_object(image,mask):
     
     Lama = LiteLama2()
