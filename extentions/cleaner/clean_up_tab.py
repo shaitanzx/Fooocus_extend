@@ -31,12 +31,15 @@ def get_first_frame(video_files):
         return None,None
 
 
-def video_clean_process(video,mask):
+def video_clean_process(video,mask,mask_check,mask_load):
     temp_dir_clean=modules.config.temp_path+os.path.sep
     batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
     result=delete_folder_content(batch_path_clean, '')
     os.makedirs(batch_path_clean, exist_ok=True)
-    mask=mask['mask'].convert("RGB")
+    if mask_check:
+        mask=mask_load.convert("RGB")
+    else:
+        mask=mask['mask'].convert("RGB")
     video_files = [f.name for f in video]
     Lama = LiteLama2()
     device = "cuda"
