@@ -12,7 +12,7 @@ from modules.launch_util import delete_folder_content
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
-def clean_object_init_img_with_mask(image,init_img_with_mask,mask_check,mask_load):
+def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
     if mask_check and mask_load is not None:
         m1 = np.array(mask['mask'].convert("RGB"))
         m2 = np.array(mask_load.convert("RGB"))
