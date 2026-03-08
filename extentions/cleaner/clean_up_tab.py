@@ -12,7 +12,34 @@ from modules.launch_util import delete_folder_content
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
-def clean_object_init_img_with_mask(init_img_with_mask):
+def clean_object_init_img_with_mask(image,init_img_with_mask,mask_check,mask_load):
+    if mask_check and mask_load is not None:
+        m1 = np.array(mask['mask'].convert("RGB"))
+        m2 = np.array(mask_load.convert("RGB"))
+        mask = Image.fromarray(np.maximum(m1, m2), mode="RGB")
+    else:
+        mask = mask['mask'].convert("RGB")
+    image_files = [f.name for f in image]
+    Lama = LiteLama2()
+    device = "cuda"
+    Lama.to(device)
+
+    for file_index, filename in enumerate(image_files):
+        source_image=Image.open(filename)
+        source_image=Lama.predict(source_image, mask)
+        yield f'Processed {i} of {image_frames})'
+        image_base_name = os.path.splitext(os.path.basename(filename))
+
+        image_name=os.path.join(modules.config.path_outputs, f'{image_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png')
+        source_image.save(image_name)
+    Lama.to("cpu")
+    yield "Processing complete. All files saved in OUTPUT path"
+
+
+
+
+
+
     if init_img_with_mask:
         return clean_object(init_img_with_mask['image'],init_img_with_mask['mask']), gr.update(visible=True), gr.update(visible=True)
     else:
@@ -29,8 +56,10 @@ def get_first_frame(video_files):
         return video_path,frame_rgb
     else:
         return None,None
-
-
+def get_first_image(image_files):
+    image_path = image_files[0].name
+    return video_path,frame_rgb
+    
 def video_clean_process(video,mask,mask_check,mask_load):
     temp_dir_clean=modules.config.temp_path+os.path.sep
     batch_path_clean=f"{temp_dir_clean}cleaner"+ os.path.sep
