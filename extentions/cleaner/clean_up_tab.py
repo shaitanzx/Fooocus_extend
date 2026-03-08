@@ -27,7 +27,7 @@ def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
     for file_index, filename in enumerate(image_files):
         source_image=Image.open(filename)
         source_image=Lama.predict(source_image, mask)
-        yield f'Processed {i} of {image_frames})'
+        yield f'Processed {file_index} of {image_frames})'
         image_base_name = os.path.splitext(os.path.basename(filename))
 
         image_name=os.path.join(modules.config.path_outputs, f'{image_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png')
