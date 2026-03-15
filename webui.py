@@ -1036,20 +1036,15 @@ with shared.gradio_root:
                                     show_fullscreen_button=True,
                                     allow_preview=True,
                                     show_download_button=True)
-
-                                #columns=3,        # ✅ 3 колонки
-                                #rows=2,           # ✅ 2 ряда (6 изображений одновременно)
-                            with gr.Row():
-                                send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
                         image_mask_check.change(lambda x: gr.update(visible=x), inputs=image_mask_check,
                                         outputs=image_mask_load, queue=False, show_progress=False)
                         image_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
                             .then(fn=cleaner.get_first_image, inputs=image_files, outputs=[init_img_with_mask])  
                         #init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
                         clean_button.click(lambda: (gr.update(interactive=False),gr.update(visible=True)),outputs=[clean_button,progress_image]) \
-                            .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[image_files,init_img_with_mask,image_mask_check,image_mask_load],outputs=[progress_image,result_gallery,send_to_cleaner_button,result_gallery]) \
+                            .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[image_files,init_img_with_mask,image_mask_check,image_mask_load],outputs=[progress_image,result_gallery,result_gallery]) \
                             .then(lambda: (gr.update(interactive=True)),outputs=[clean_button])
-                        send_to_cleaner_button.click(fn=cleaner.send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
+                        
                         
                         with gr.Tab(label='Video'):
                             with gr.Row():
