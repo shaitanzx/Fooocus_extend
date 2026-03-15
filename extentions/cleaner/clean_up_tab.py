@@ -20,7 +20,7 @@ def clean_zip(filenames):
     zip_path = os.path.join(temp_dir, zip_filename)
     
     # Фильтруем существующие файлы
-    valid_files = [f for f in gallery_names]
+    valid_files = [f for f in filenames]
 
     print('aaaaaaa',zip_path)
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
