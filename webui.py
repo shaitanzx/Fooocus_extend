@@ -1029,13 +1029,9 @@ with shared.gradio_root:
                             with gr.Row():
                                 clean_button = gr.Button("Clean Up", height=100,visible=False)
                             with gr.Row():                                
-                                result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
-                                    elem_classes=['resizable_area', 'main_view', 'image_gallery'],
-                                    elem_id='cleaner_gallery',
-                                    preview=True,
-                                    show_fullscreen_button=True,
-                                    allow_preview=True,
-                                    show_download_button=True)
+                                result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
+                                 elem_classes=['image_gallery'],
+                                 elem_id='clean_gallery')
 
                                 #columns=3,        # ✅ 3 колонки
                                 #rows=2,           # ✅ 2 ряда (6 изображений одновременно)
