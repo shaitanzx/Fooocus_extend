@@ -14,13 +14,16 @@ import zipfile
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
 temp_dir=modules.config.temp_path+os.path.sep
+print('bbbbbbbbbbbbbbbb',zip_path)
 def clean_zip(filenames):
     timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
     zip_filename = f"cleaned_images_{timestamp}.zip"
     zip_path = os.path.join(temp_dir, zip_filename)
     
     # Фильтруем существующие файлы
-    valid_files = [f for f in filenames]
+    valid_files = []
+        
+    valid_files = [item.get('name') for item in gallery_names if item.get('name')]
 
     print('aaaaaaa',zip_path)
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
