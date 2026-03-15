@@ -1043,7 +1043,7 @@ with shared.gradio_root:
                         #init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
                         clean_button.click(lambda: (gr.update(interactive=False),gr.update(visible=True)),outputs=[clean_button,progress_image]) \
                             .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[image_files,init_img_with_mask,image_mask_check,image_mask_load],outputs=[progress_image,result_gallery,result_gallery]) \
-                            .then(fn=cleaner.clean_zip,inputs=[result_gallery],outputs=[clean_zip])
+                            .then(fn=cleaner.clean_zip,inputs=[result_gallery],outputs=[clean_zip]) \
                             .then(lambda: (gr.update(interactive=True),gr.update(visible=True)),outputs=[clean_button,clean_zip])
                         
                         
