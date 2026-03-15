@@ -24,7 +24,7 @@ def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
     device = "cuda"
     Lama.to(device)
     gallery_names=[]
-    for file_index in range(image_files):
+    for file_index in len(image_files):
         source_image=Image.open(image_files[file_index])
         source_image=Lama.predict(source_image, mask)
         yield f'Processed {file_index} of {len(image_files)})'
