@@ -1032,9 +1032,13 @@ with shared.gradio_root:
                                 result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
                                     elem_classes=['resizable_area', 'main_view', 'image_gallery'],
                                     elem_id='cleaner_gallery',
-                                    preview=True, 
+                                    preview=True,
                                     show_fullscreen_button=True,
-)
+                                    allow_preview=True,
+                                    show_download_button=True)
+
+                                #columns=3,        # ✅ 3 колонки
+                                #rows=2,           # ✅ 2 ряда (6 изображений одновременно)
                             with gr.Row():
                                 send_to_cleaner_button = gr.Button("Send back To clean up", height=100,visible=False)
                         image_mask_check.change(lambda x: gr.update(visible=x), inputs=image_mask_check,
