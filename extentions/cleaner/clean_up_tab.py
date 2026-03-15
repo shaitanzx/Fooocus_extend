@@ -24,11 +24,11 @@ def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
     device = "cuda"
     Lama.to(device)
     gallery_names=[]
-    for file_index, filename in enumerate(image_files):
-        source_image=Image.open(filename)
+    for file_index in range(image_files):
+        source_image=Image.open(image_files[file_index])
         source_image=Lama.predict(source_image, mask)
-        yield f'Processed {file_index} of {image_frames})'
-        image_base_name = os.path.splitext(os.path.basename(filename))
+        yield f'Processed {file_index} of {len(image_files)})'
+        image_base_name = os.path.splitext(os.path.basename(image_files[file_index]))
 
         image_name=os.path.join(modules.config.path_outputs, f'{image_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png')
         source_image.save(image_name)
