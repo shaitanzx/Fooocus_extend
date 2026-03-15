@@ -8,10 +8,27 @@ import cv2
 import numpy as np
 import time
 from modules.launch_util import delete_folder_content
+import zipfile
 
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
+temp_dir=modules.config.temp_path+os.path.sep
+def clean_zip(filenames):
+    timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
+    zip_filename = f"cleaned_images_{timestamp}.zip"
+    zip_path = os.path.join(temp_dir, zip_filename)
+    
+    # Фильтруем существующие файлы
+    valid_files = [f for f in gallery_names]
+
+    print('aaaaaaa',zip_path)
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for file_path in valid_files:
+            arcname = os.path.basename(file_path)
+            zipf.write(file_path, arcname=arcname)   
+    return zip_path
+
 def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
     if mask_check and mask_load is not None:
         m1 = np.array(mask['mask'].convert("RGB"))
