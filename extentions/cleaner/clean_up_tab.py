@@ -41,8 +41,8 @@ def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
     gallery_names=[]
     for file_index in range(len(image_files)):
         source_image=Image.open(image_files[file_index])
+        yield (f'Processed {file_index} of {len(image_files)}',None,gr.update(visible=False),gr.update(visible=True,value=source_image))        
         source_image=Lama.predict(source_image, mask)
-        yield (f'Processed {file_index} of {len(image_files)}',None,gr.update(visible=False),gr.update(visible=True,value=source_image))
         image_base_name = os.path.splitext(os.path.basename(image_files[file_index]))[0]
 
         image_name=os.path.join(modules.config.path_outputs, f'{image_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png')
