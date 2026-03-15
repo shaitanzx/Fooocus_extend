@@ -34,7 +34,7 @@ def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
         source_image.save(image_name)
         gallery_names +=[image_name]
     Lama.to("cpu")
-    
+    print ('aaaaaaaaaaaaaaa',gallery_names)
     yield "Processing complete. All files saved in OUTPUT path", gallery_names,gr.update(visible=True), gr.update(visible=True)
 
 def clean_object_video(frame,mask):
