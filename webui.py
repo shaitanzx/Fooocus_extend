@@ -1044,7 +1044,7 @@ with shared.gradio_root:
                             .then(fn=cleaner.get_first_image, inputs=image_files, outputs=[init_img_with_mask])  
                         #init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
                         clean_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False)),outputs=[clean_button,progress_image]) \
-                            .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[image_files,init_img_with_mask,image_mask_check,image_mask_load],outputs=[result_gallery,result_gallery,send_to_cleaner_button]) \
+                            .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[image_files,init_img_with_mask,image_mask_check,image_mask_load],outputs=[progress_image,result_gallery,result_gallery,send_to_cleaner_button]) \
                             .then(lambda: (gr.update(interactive=True)),outputs=[clean_button])
                         send_to_cleaner_button.click(fn=cleaner.send_to_cleaner,inputs=[result_gallery],outputs=[init_img_with_mask])
                         
