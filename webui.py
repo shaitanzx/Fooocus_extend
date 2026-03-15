@@ -1020,7 +1020,7 @@ with shared.gradio_root:
                                             file_types=["image"],visible=True,interactive=True)
                                     progress_image = gr.Textbox(label="Process",visible=False)
                                     clean_zip=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=False)
-                                    preview_clean=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
+                                    preview_clean=gr.Image(label="Process preview",visible=True,height=260,interactive=False)
                             with gr.Row():
                                 init_img_with_mask = grh.Image(label='First Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False,visible=False)
                             with gr.Row():
