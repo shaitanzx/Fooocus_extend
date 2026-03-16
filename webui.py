@@ -1021,9 +1021,9 @@ with shared.gradio_root:
                             with gr.Row():
                                 image_mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
                             with gr.Row():
-                                image_mask_load = grh.Image(label='Add mask',visible=True, source='upload', type='pil', height=500, show_label=True,interactive=True)
+                                image_mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
                             with gr.Row():
-                                clean_button = gr.Button("Clean Up", height=100,visible=True)
+                                clean_image_button = gr.Button("Clean Up", height=100,visible=True)
                             with gr.Row():                                
                                 result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
                                     elem_classes=['resizable_area', 'main_view', 'image_gallery'],
@@ -1033,11 +1033,20 @@ with shared.gradio_root:
                                     allow_preview=True,
                                     show_download_button=True)
                             with gr.Row(visible=False):
-                                ext_dir=gr.Textbox(value='batch_cleaner',visible=False) 
-                            files_single_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
+                                ext_dir_cl=gr.Textbox(value='batch_cleaner',visible=False) 
+                            files_single_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_image_button]) \
                                 .then(fn=cleaner.get_first_image, inputs=files_single_cl, outputs=init_img_with_mask) 
-                            file_in_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
+                            file_in_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_image_button]) \
                                 .then(fn=cleaner.get_first_image_zip, inputs=file_in_cl, outputs=init_img_with_mask)  
+                            image_mask_check.change(lambda x: gr.update(visible=x), inputs=image_mask_check,
+                                outputs=image_mask_load, queue=False, show_progress=False)
+                            clean_image_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[clean_image_button,file_out_cli,image_out_cli]) \
+                                .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
+                                .then(fn=batch.unzip_file,inputs=[file_in_cl,files_single_cl,enable_zip_cl,ext_dir_cl]) \
+                                .then(fn=cleaner.process_image, inputs=[init_img_with_mask,image_mask_check,image_mask_load],outputs=[preview_cl,result_gallery,file_out_cl],show_progress=False) \
+                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out_cl,preview_cl],show_progress=False) \
+                                .then(fn=batch.output_zip_image, outputs=[image_out_cl,file_out_cl]) \
+                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True)),outputs=[clean_image_button,result_gallery])  
                             #with gr.Row():
                             #    with gr.Column():
                             #        image_files = gr.Files(label="Drag (Select) 1 or more image files",file_count="multiple",

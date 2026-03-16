@@ -24,23 +24,40 @@ def get_first_image(image_files):
 def get_first_image_zip(zip_file):
     zip_path = zip_file.name
     with zipfile.ZipFile(zip_path, 'r') as z:
-        # Получаем список всех файлов в архиве
         file_list = z.namelist()
-        
-        if not file_list:
-            return None # Если архив пуст
-        
-        # Берем имя первого файла
         first_file_name = file_list[0]
-        
-        # Читаем содержимое первого файла в байты
         file_data = z.read(first_file_name)
-        
-        # Создаем объект изображения из байтов (используем io.BytesIO)
         image = Image.open(io.BytesIO(file_data))
-        
         return image
-
+def process_image(mask,mask_check,mask_load):
+    batch_path=f"{temp_dir}batch_cleaner"
+    batch_temp=f"{temp_dir}batch_temp"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    if mask_check and mask_load is not None:
+        m1 = np.array(mask['mask'].convert("RGB"))
+        m2 = np.array(mask_load.convert("RGB"))
+        mask = Image.fromarray(np.maximum(m1, m2), mode="RGB")
+    else:
+        mask = mask['mask'].convert("RGB")
+    Lama = LiteLama2()
+    device = "cuda"
+    Lama.to(device)
+    gallery_names=[]
+    passed=1
+    for f_name in batch_files:
+        print (f"\033[91m[Cleaner QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"Cleaner Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        img = Image.open(batch_path+os.path.sep+f_name)
+        yield gr.update(value=img,visible=True),gr.update(visible=False),gr.update(visible=False)
+        source_image=Lama.predict(img, mask)
+        name, ext = os.path.splitext(f_name)
+        filename =  batch_temp + os.path.sep + name +'_clean'+ext
+        source_image.save(filename)
+        passed+=1
+        gallery_names +=[image_name]
+    Lama.to("cpu")
+    return gr.update(value=None,visible=False),gr.update(visible=True,value=gallery_names),gr.update(visible=True)
 
 
 
@@ -54,37 +71,12 @@ def clean_zip(filenames):
     zip_filename = f"cleaned_images_{timestamp}.zip"
     zip_path = os.path.join(temp_dir, zip_filename)
     valid_files = [item.get('name') for item in filenames if item.get('name')]
-
-    print('aaaaaaa',zip_path)
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for file_path in valid_files:
             arcname = os.path.basename(file_path)
             zipf.write(file_path, arcname=arcname)   
     return zip_path
 
-def clean_object_init_img_with_mask(image,mask,mask_check,mask_load):
-    if mask_check and mask_load is not None:
-        m1 = np.array(mask['mask'].convert("RGB"))
-        m2 = np.array(mask_load.convert("RGB"))
-        mask = Image.fromarray(np.maximum(m1, m2), mode="RGB")
-    else:
-        mask = mask['mask'].convert("RGB")
-    image_files = [f.name for f in image]
-    Lama = LiteLama2()
-    device = "cuda"
-    Lama.to(device)
-    gallery_names=[]
-    for file_index in range(len(image_files)):
-        source_image=Image.open(image_files[file_index])
-        yield (f'Processed {file_index} of {len(image_files)}',None,gr.update(visible=False),gr.update(visible=True,value=source_image))        
-        source_image=Lama.predict(source_image, mask)
-        image_base_name = os.path.splitext(os.path.basename(image_files[file_index]))[0]
-
-        image_name=os.path.join(modules.config.path_outputs, f'{image_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.png')
-        source_image.save(image_name)
-        gallery_names +=[image_name]
-    Lama.to("cpu")
-    yield ("Processing complete. All files saved in OUTPUT path", gallery_names,gr.update(visible=True),gr.update(visible=False))
 
 def clean_object_video(frame,mask):
         return clean_object(frame,mask)
