@@ -1046,7 +1046,7 @@ with shared.gradio_root:
                                 .then(fn=cleaner.process_image, inputs=[init_img_with_mask,image_mask_check,image_mask_load],outputs=[preview_cl,result_gallery,file_out_cl],show_progress=False) \
                                 .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out_cl,preview_cl],show_progress=False) \
                                 .then(fn=batch.output_zip_image, outputs=[image_out_cl,file_out_cl]) \
-                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True)),outputs=[clean_image_button,result_gallery])  
+                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True)),outputs=[clean_image_button,result_gallery])  
                             #with gr.Row():
                             #    with gr.Column():
                             #        image_files = gr.Files(label="Drag (Select) 1 or more image files",file_count="multiple",

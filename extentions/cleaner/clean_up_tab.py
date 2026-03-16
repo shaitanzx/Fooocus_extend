@@ -55,7 +55,7 @@ def process_image(mask,mask_check,mask_load):
         filename =  batch_temp + os.path.sep + name +'_clean'+ext
         source_image.save(filename)
         passed+=1
-        gallery_names +=[image_name]
+        gallery_names +=[filename]
     Lama.to("cpu")
     return gr.update(value=None,visible=False),gr.update(visible=True,value=gallery_names),gr.update(visible=True)
 
