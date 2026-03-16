@@ -1032,6 +1032,10 @@ with shared.gradio_root:
                                     show_fullscreen_button=True,
                                     allow_preview=True,
                                     show_download_button=True)
+                            with gr.Row(visible=False):
+                                ext_dir=gr.Textbox(value='batch_cleaner',visible=False) 
+                            files_single_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
+                                .then(fn=cleaner.get_first_image, inputs=files_single, outputs=init_img_with_mask)  
                             #with gr.Row():
                             #    with gr.Column():
                             #        image_files = gr.Files(label="Drag (Select) 1 or more image files",file_count="multiple",

@@ -14,6 +14,21 @@ import zipfile
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
 temp_dir=modules.config.temp_path+os.path.sep
+
+def get_first_image(image_files):
+    image_path = image_files[0].name
+    return image_path
+
+
+
+
+
+
+
+
+
+
+
 def clean_zip(filenames):
     timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
     zip_filename = f"cleaned_images_{timestamp}.zip"
