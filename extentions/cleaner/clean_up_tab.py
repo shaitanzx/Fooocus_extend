@@ -16,6 +16,7 @@ MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
 temp_dir=modules.config.temp_path+os.path.sep
 
 def get_first_image(image_files):
+    print ('aaaaaaaaaaaaaaaaa',image_files)
     image_path = image_files[0].name
     return image_path
 
