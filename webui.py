@@ -1040,7 +1040,7 @@ with shared.gradio_root:
                                 .then(fn=cleaner.get_first_image_zip, inputs=file_in_cl, outputs=init_img_with_mask)  
                             image_mask_check.change(lambda x: gr.update(visible=x), inputs=image_mask_check,
                                 outputs=image_mask_load, queue=False, show_progress=False)
-                            clean_image_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[clean_image_button,file_out_cli,image_out_cli]) \
+                            clean_image_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[clean_image_button,file_out_cl,image_out_cl]) \
                                 .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
                                 .then(fn=batch.unzip_file,inputs=[file_in_cl,files_single_cl,enable_zip_cl,ext_dir_cl]) \
                                 .then(fn=cleaner.process_image, inputs=[init_img_with_mask,image_mask_check,image_mask_load],outputs=[preview_cl,result_gallery,file_out_cl],show_progress=False) \
