@@ -22,6 +22,7 @@ def get_first_image(image_files):
     image_path = image_files[0].name
     return image_path
 def get_first_image_zip(zip_path):
+    zip_path = zip_file.name
     with zipfile.ZipFile(zip_path, 'r') as z:
         # Получаем список всех файлов в архиве
         file_list = z.namelist()
