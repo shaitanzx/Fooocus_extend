@@ -9,6 +9,8 @@ import numpy as np
 import time
 from modules.launch_util import delete_folder_content
 import zipfile
+import io
+
 
 
 EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,8 +21,24 @@ def get_first_image(image_files):
     print ('aaaaaaaaaaaaaaaaa',image_files)
     image_path = image_files[0].name
     return image_path
-
-
+def get_first_image_zip(zip_path):
+    with zipfile.ZipFile(zip_path, 'r') as z:
+        # Получаем список всех файлов в архиве
+        file_list = z.namelist()
+        
+        if not file_list:
+            return None # Если архив пуст
+        
+        # Берем имя первого файла
+        first_file_name = file_list[0]
+        
+        # Читаем содержимое первого файла в байты
+        file_data = z.read(first_file_name)
+        
+        # Создаем объект изображения из байтов (используем io.BytesIO)
+        image = Image.open(io.BytesIO(file_data))
+        
+        return image
 
 
 

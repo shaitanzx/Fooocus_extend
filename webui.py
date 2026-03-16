@@ -1035,6 +1035,8 @@ with shared.gradio_root:
                             with gr.Row(visible=False):
                                 ext_dir=gr.Textbox(value='batch_cleaner',visible=False) 
                             files_single_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
+                                .then(fn=cleaner.get_first_image, inputs=files_single_cl, outputs=init_img_with_mask) 
+                            file_in_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
                                 .then(fn=cleaner.get_first_image, inputs=files_single_cl, outputs=init_img_with_mask)  
                             #with gr.Row():
                             #    with gr.Column():
