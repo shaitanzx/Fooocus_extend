@@ -1017,7 +1017,7 @@ with shared.gradio_root:
                             with gr.Row():
                                 file_in_cl,files_single_cl,image_single_cl,enable_zip_cl,file_out_cl,preview_cl,image_out_cl = batch.ui_batch()
                             with gr.Row():
-                                init_img_with_mask = grh.Image(label='First Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False,visible=False)
+                                init_img_with_mask = grh.Image(label='First Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False,visible=False,interactive=True)
                             with gr.Row():
                                 image_mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
                             with gr.Row():
