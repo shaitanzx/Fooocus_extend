@@ -57,6 +57,7 @@ def process_image(mask,mask_check,mask_load):
         passed+=1
         gallery_names +=[filename]
     Lama.to("cpu")
+    print('aaaaaaaaaaaaaa',gallery_names)
     return gr.update(value=None,visible=False),gallery_names,gr.update(visible=True)
 
 
