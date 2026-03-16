@@ -41,8 +41,7 @@ def process_image(mask,mask_check,mask_load):
     else:
         mask = mask['mask'].convert("RGB")
     Lama = LiteLama2()
-    device = "cuda"
-    Lama.to(device)
+    Lama.to("cuda")
     gallery_names=[]
     passed=1
     for f_name in batch_files:
@@ -57,7 +56,6 @@ def process_image(mask,mask_check,mask_load):
         passed+=1
         gallery_names +=[filename]
     Lama.to("cpu")
-    print('aaaaaaaaaaaaaa',gallery_names)
     yield gr.update(value=None,visible=False),gallery_names,gr.update(visible=True)
 
 
