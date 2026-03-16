@@ -1037,7 +1037,7 @@ with shared.gradio_root:
                             files_single_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
                                 .then(fn=cleaner.get_first_image, inputs=files_single_cl, outputs=init_img_with_mask) 
                             file_in_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
-                                .then(fn=cleaner.get_first_image_zip, inputs=files_in_cl, outputs=init_img_with_mask)  
+                                .then(fn=cleaner.get_first_image_zip, inputs=file_in_cl, outputs=init_img_with_mask)  
                             #with gr.Row():
                             #    with gr.Column():
                             #        image_files = gr.Files(label="Drag (Select) 1 or more image files",file_count="multiple",
