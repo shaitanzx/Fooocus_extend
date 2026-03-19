@@ -71,7 +71,7 @@ def video_clean_process(video,mask,mask_check,mask_load):
     Lama = LiteLama2()
     device = "cuda"
     Lama.to(device)
-    ouput_video_names=[]
+    output_video_names=[]
     for file_index, filename in enumerate(video_files):
         cap = cv2.VideoCapture(filename)
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -87,7 +87,7 @@ def video_clean_process(video,mask,mask_check,mask_load):
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
             yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})',None
             #print(f'Processed {i} of {total_frames}')
-            cv2.imwrite(f'{batch_temp}frame_{i:06d}.png', frame)
+            cv2.imwrite(f'{batch_temp}{os.path.sep}frame_{i:06d}.png', frame)
         cap.release()
         
 

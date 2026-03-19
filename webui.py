@@ -1073,7 +1073,7 @@ with shared.gradio_root:
                         
                         video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
                             .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
-                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False),gr.update(visible=True)),outputs=[progress_video,clean_button_video,download_video_cl]) \
+                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False),gr.update(visible=False)),outputs=[progress_video,clean_button_video,download_video_cl]) \
                             .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
                             .then(cleaner.video_clean_process,inputs=[video_files,clean_frame,mask_check,mask_load],outputs=[progress_video,download_video_cl]) \
                             .then(lambda: (gr.update(interactive=True),gr.update(visible=True)),outputs=[clean_button_video,download_video_cl])
