@@ -1,15 +1,20 @@
 window.main_viewer_height = 512;
 
 function refresh_grid() {
-    let gridContainer = document.querySelector('#final_gallery .grid-container');
-    let final_gallery = document.getElementById('final_gallery');
+    // Поддержка обеих галерей
+    let galleryIds = ['#final_gallery', '#cleaner_gallery'];
+    
+    galleryIds.forEach(function(galleryId) {
+        let gridContainer = document.querySelector(galleryId + ' .grid-container');
+        let gallery = document.getElementById(galleryId.replace('#', ''));
 
-    if (gridContainer) if (final_gallery) {
-        let rect = final_gallery.getBoundingClientRect();
-        let cols = Math.ceil((rect.width - 16.0) / rect.height);
-        if (cols < 2) cols = 2;
-        gridContainer.style.setProperty('--grid-cols', cols);
-    }
+        if (gridContainer && gallery) {
+            let rect = gallery.getBoundingClientRect();
+            let cols = Math.ceil((rect.width - 16.0) / rect.height);
+            if (cols < 2) cols = 2;
+            gridContainer.style.setProperty('--grid-cols', cols);
+        }
+    });
 }
 
 function refresh_grid_delayed() {

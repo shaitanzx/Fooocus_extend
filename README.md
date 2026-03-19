@@ -19,6 +19,7 @@ Let's look at everything in order.
    - Inswapper - face replacements in the generated image
    - CodeFormer - face enhancer
    - Remove Background
+   - Cleaner - removes small unnecessary objects from images and videos.
    - Vector - allows you to convert a raster image into a vector
 3. Tools
    - Civitai Helper - A module for working with models and downloading them from Civitai
@@ -283,6 +284,25 @@ Multi-threaded processing: Efficiently process large files with streaming and GP
 
 All processing results are automatically saved to the output folder without saving to History Log
 
+
+**Cleaner**
+
+The Cleaner module is designed for removing small, unwanted objects from images and videos.
+
+Image Mode
+
+Drag one or more images into the upload field. If you have many files, you can upload a ZIP archive by checking the appropriate box.
+After uploading, the first image will appear. Use the brush to paint over the object you want to remove.
+If you have a ready-made mask, check the Add mask and upload it. Note that the uploaded mask and the drawn mask are added together.
+After processing, the processed images will appear in the gallery. You can download them individually or as a single ZIP archive.
+
+Video Mode
+
+Drag one or more video files into the upload field.
+After uploading, two windows will appear: the first of the uploaded files and the first frame of the first uploaded file.
+Use the brush to paint over the object you want to remove.
+If you have a ready-made mask, check the Add mask box and upload it. Note that the uploaded mask and the drawn mask are added together. This mask will be applied to all frames of the video.
+Once processing is complete, you can download each video file separately.
 
 **Vector**
 
@@ -553,6 +573,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.9
+ 1. Add Cleaner module
 
 v9.2.8
  1. Сhanging the number of steps

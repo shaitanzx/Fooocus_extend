@@ -643,5 +643,7 @@ onUiLoaded(async() => {
 
     applyZoomAndPan("#inpaint_canvas");
     applyZoomAndPan("#inpaint_mask_canvas");
+    applyZoomAndPan("#cleaner_canvas");
+    applyZoomAndPan("#cleaner_video_canvas");
     
 });

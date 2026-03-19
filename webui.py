@@ -68,6 +68,7 @@ import extentions.batch as batch
 import extentions.watermark as watermark
 
 import extentions.adetailer.scripts.adetailer as adetailer
+import extentions.cleaner.clean_up_tab as cleaner
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -530,7 +531,6 @@ with shared.gradio_root:
                                                                    inpaint_mask_advanced_options,
                                                                    example_inpaint_mask_dino_prompt_text],
                                                           queue=False, show_progress=False)
-
                             
                     with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
                         with gr.Row():
@@ -1011,6 +1011,73 @@ with shared.gradio_root:
                     codeformer.codeformer_gui(False)
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
+
+                  with gr.Tab(label='Cleaner', id='clean_tab') as clean_tab:
+                        with gr.Tab(label='Image'):
+                            with gr.Row():
+                                file_in_cl,files_single_cl,image_single_cl,enable_zip_cl,file_out_cl,preview_cl,image_out_cl = batch.ui_batch()
+                            with gr.Row():
+                                init_img_with_mask = grh.Image(label='First Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False,visible=False,interactive=True)
+                            with gr.Row():
+                                image_mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
+                            with gr.Row():
+                                image_mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
+                            with gr.Row():
+                                clean_image_button = gr.Button("Clean Up", height=100,visible=True)
+                            with gr.Row():                                
+                                result_gallery = gr.Gallery(label='Clean result', show_label=True, object_fit='contain', visible=False, height=768,
+                                    elem_classes=['resizable_area', 'main_view', 'image_gallery'],
+                                    elem_id='cleaner_gallery',
+                                    preview=True,
+                                    show_fullscreen_button=True,
+                                    allow_preview=True,
+                                    show_download_button=True)
+                            with gr.Row(visible=False):
+                                ext_dir_cl=gr.Textbox(value='batch_cleaner',visible=False) 
+                            files_single_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_image_button]) \
+                                .then(fn=cleaner.get_first_image, inputs=files_single_cl, outputs=init_img_with_mask) 
+                            file_in_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_image_button]) \
+                                .then(fn=cleaner.get_first_image_zip, inputs=file_in_cl, outputs=init_img_with_mask)  
+                            image_mask_check.change(lambda x: gr.update(visible=x), inputs=image_mask_check,
+                                outputs=image_mask_load, queue=False, show_progress=False)
+                            clean_image_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[clean_image_button,file_out_cl,image_out_cl]) \
+                                .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
+                                .then(fn=batch.unzip_file,inputs=[file_in_cl,files_single_cl,enable_zip_cl,ext_dir_cl]) \
+                                .then(fn=cleaner.process_image, inputs=[init_img_with_mask,image_mask_check,image_mask_load],outputs=[preview_cl,result_gallery,file_out_cl],show_progress=False) \
+                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out_cl,preview_cl],show_progress=False) \
+                                .then(fn=batch.output_zip_image, outputs=[image_out_cl,file_out_cl]) \
+                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True)),outputs=[clean_image_button,result_gallery])  
+                        with gr.Tab(label='Video'):
+                            with gr.Row():
+                                with gr.Column():
+                                    video_files = gr.Files(label="Drag (Select) 1 or more video files",file_count="multiple",
+                                            file_types=["video"],visible=True,interactive=True)
+                                    progress_video = gr.Textbox(label="Process",visible=False)
+                                    download_video_cl=gr.File(label="Download a videofiles", file_count='multiple',height=260,visible=True)
+                                with gr.Column():  
+                                    first_video = gr.Video(label="First video", source='upload',visible=False,interactive=True)
+                            with gr.Row(): 
+                                clean_frame = grh.Image(label='First Frame',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=True,interactive=True)
+                            with gr.Row():
+                                mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
+                            with gr.Row():
+                                mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
+                            with gr.Row():
+                                clean_button_video = gr.Button("Clean Up", height=100,visible=False)
+                            with gr.Row(visible=False):
+                                ext_dir_video_cl=gr.Textbox(value='batch_cleaner_video',visible=False)
+                        mask_check.change(lambda x: gr.update(visible=x), inputs=mask_check,
+                                        outputs=mask_load, queue=False, show_progress=False)
+                        
+                        
+                        
+                        video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
+                            .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
+                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False),gr.update(visible=False)),outputs=[progress_video,clean_button_video,download_video_cl]) \
+                            .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
+                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame,mask_check,mask_load],outputs=[progress_video,download_video_cl]) \
+                            .then(lambda: (gr.update(interactive=True),gr.update(visible=True)),outputs=[clean_button_video,download_video_cl])
+
                   with gr.TabItem(label='Vector'):
                             vector.ui_module()
 
@@ -1540,7 +1607,7 @@ with shared.gradio_root:
                                                               'negative value will make white area smaller. '
                                                               '(default is 0, processed before SAM)')
 
-                        inpaint_mask_color = gr.ColorPicker(label='Inpaint brush color', value='#FFFFFF', elem_id='inpaint_brush_color')
+                        inpaint_mask_color = gr.ColorPicker(label='Inpaint/Clean brush color', value='#FFFFFF', elem_id='inpaint_brush_color')
 
                         inpaint_ctrls = [debugging_inpaint_preprocessor, inpaint_disable_initial_latent, inpaint_engine,
                                          inpaint_strength, inpaint_respective_field,
@@ -1551,8 +1618,8 @@ with shared.gradio_root:
                                                                  outputs=[inpaint_mask_image, inpaint_mask_generation_col],
                                                                  queue=False, show_progress=False)
 
-                        inpaint_mask_color.change(lambda x: gr.update(brush_color=x), inputs=inpaint_mask_color,
-                                                  outputs=inpaint_input_image,
+                        inpaint_mask_color.change(lambda x: (gr.update(brush_color=x), gr.update(brush_color=x), gr.update(brush_color=x)), inputs=inpaint_mask_color,
+                                                  outputs=[inpaint_input_image,init_img_with_mask,clean_frame],
                                                   queue=False, show_progress=False)
 
                     with gr.Tab(label='FreeU'):
