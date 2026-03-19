@@ -18,7 +18,6 @@ MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
 temp_dir=modules.config.temp_path+os.path.sep
 
 def get_first_image(image_files):
-    print ('aaaaaaaaaaaaaaaaa',image_files)
     image_path = image_files[0].name
     return image_path
 def get_first_image_zip(zip_file):
@@ -95,7 +94,10 @@ def video_clean_process(video,mask,mask_check,mask_load):
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 
         name, _ = os.path.splitext(filename)
-        filename =  batch_path + os.path.sep + name +'_clean.mp4'
+
+        filename = os.path.join(batch_path, f"{os.path.splitext(os.path.basename(filepath))[0]}_clean.mp4")
+
+        #filename =  batch_path + os.path.sep + name +'_clean.mp4'
         print('aaaaaaaaaaaaaaaaaaaaaaaaaaaa',filename)
         #video_base_name = os.path.splitext(os.path.basename(filename))[0]
 
