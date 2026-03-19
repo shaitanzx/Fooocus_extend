@@ -57,64 +57,58 @@ def process_image(mask,mask_check,mask_load):
     Lama.to("cpu")
     yield gr.update(value=None,visible=False),gallery_names,gr.update(visible=True)
 
-def video_clean_process(video,mask,mask_check,mask_load):
-    batch_path=f"{temp_dir}batch_cleaner_video"
-    batch_temp=f"{temp_dir}batch_temp"
+def video_clean_process(video, mask, mask_check, mask_load):
+    batch_path = f"{temp_dir}batch_cleaner_video"
+    os.makedirs(batch_path, exist_ok=True)
+    
+    # Обработка маски
     if mask_check and mask_load is not None:
         m1 = np.array(mask['mask'].convert("RGB"))
         m2 = np.array(mask_load.convert("RGB"))
-        mask = Image.fromarray(np.maximum(m1, m2), mode="RGB")
+        mask_combined = Image.fromarray(np.maximum(m1, m2), mode="RGB")
     else:
-        mask = mask['mask'].convert("RGB")
+        mask_combined = mask['mask'].convert("RGB")
+    
     video_files = [f.name for f in video]
     Lama = LiteLama2()
     device = "cuda"
     Lama.to(device)
-    output_video_names=[]
-    for file_index, filename in enumerate(video_files):
-        cap = cv2.VideoCapture(filename)
+    output_video_names = []
+    
+    for file_index, input_path in enumerate(video_files):
+        cap = cv2.VideoCapture(input_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+        # Подготовка имени выходного файла
+        base_name = os.path.splitext(os.path.basename(input_path))[0]
+        output_path = os.path.join(batch_path, f"{base_name}_clean.mp4")
+        
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
         for i in range(total_frames):
             ret, frame = cap.read()
-            frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-            frame=Image.fromarray(frame)
-            frame=Lama.predict(frame, mask)
+
+            # Обработка кадра
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = Image.fromarray(frame)
+            frame = Lama.predict(frame, mask_combined)
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
-            yield f'Processed {i} of {total_frames} ({file_index+1} of {len(video_files)})',None
-            #print(f'Processed {i} of {total_frames}')
-            cv2.imwrite(f'{batch_temp}{os.path.sep}frame_{i:06d}.png', frame)
-        cap.release()
-        images = [img for img in os.listdir(batch_temp) 
-                    if img.endswith(f".png")]
-        images.sort()
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-
-        name, _ = os.path.splitext(filename)
-
-        filename = os.path.join(batch_path, f"{os.path.splitext(os.path.basename(name))[0]}_clean.mp4")
-
-        #filename =  batch_path + os.path.sep + name +'_clean.mp4'
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaa',filename)
-        #video_base_name = os.path.splitext(os.path.basename(filename))[0]
-
-        #video_name=os.path.join(modules.config.path_outputs, f'{video_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4')
-
-        out = cv2.VideoWriter(filename, fourcc, fps, (width, height))
-    
-        for i, image_name in enumerate(images):
-            image_path = os.path.join(batch_temp, image_name)
-            frame = cv2.imread(image_path)
+            
+            # ПРЯМАЯ ЗАПИСЬ В ВИДЕО (без сохранения на диск)
             out.write(frame)
+            
+            yield f'Processed {i + 1} of {total_frames} ({file_index + 1} of {len(video_files)})', None
+            
+        cap.release()
         out.release()
-        output_video_names +=[filename]
-        result=delete_folder_content(batch_temp, '')
-        os.makedirs(batch_temp, exist_ok=True)
+        output_video_names.append(output_path)
+        
     Lama.to("cpu")
-    yield "Processing complete.",output_video_names
+    yield "Processing complete.", output_video_names
 
 
 
