@@ -95,7 +95,7 @@ def video_clean_process(video,mask,mask_check,mask_load):
 
         name, _ = os.path.splitext(filename)
 
-        filename = os.path.join(batch_path, f"{os.path.splitext(os.path.basename(filepath))[0]}_clean.mp4")
+        filename = os.path.join(batch_path, f"{os.path.splitext(os.path.basename(name))[0]}_clean.mp4")
 
         #filename =  batch_path + os.path.sep + name +'_clean.mp4'
         print('aaaaaaaaaaaaaaaaaaaaaaaaaaaa',filename)
