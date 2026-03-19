@@ -89,9 +89,6 @@ def video_clean_process(video,mask,mask_check,mask_load):
             #print(f'Processed {i} of {total_frames}')
             cv2.imwrite(f'{batch_temp}{os.path.sep}frame_{i:06d}.png', frame)
         cap.release()
-        
-
-
         images = [img for img in os.listdir(batch_temp) 
                     if img.endswith(f".png")]
         images.sort()
@@ -99,10 +96,7 @@ def video_clean_process(video,mask,mask_check,mask_load):
 
         name, _ = os.path.splitext(filename)
         filename =  batch_path + os.path.sep + name +'_clean.mp4'
-
-
-
-
+        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaa',filename)
         #video_base_name = os.path.splitext(os.path.basename(filename))[0]
 
         #video_name=os.path.join(modules.config.path_outputs, f'{video_base_name}_{time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4')
@@ -114,7 +108,7 @@ def video_clean_process(video,mask,mask_check,mask_load):
             frame = cv2.imread(image_path)
             out.write(frame)
         out.release()
-        output_video_names +=[out]
+        output_video_names +=[filename]
         result=delete_folder_content(batch_temp, '')
         os.makedirs(batch_temp, exist_ok=True)
     Lama.to("cpu")
