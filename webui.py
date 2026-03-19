@@ -1047,46 +1047,13 @@ with shared.gradio_root:
                                 .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out_cl,preview_cl],show_progress=False) \
                                 .then(fn=batch.output_zip_image, outputs=[image_out_cl,file_out_cl]) \
                                 .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True)),outputs=[clean_image_button,result_gallery])  
-                            #with gr.Row():
-                            #    with gr.Column():
-                            #        image_files = gr.Files(label="Drag (Select) 1 or more image files",file_count="multiple",
-                            #                file_types=["image"],visible=True,interactive=True)
-                            #        progress_image = gr.Textbox(label="Process",visible=False)
-                            #        clean_zip=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=False)
-                            #        preview_clean=gr.Image(label="Process preview",visible=True,height=260,interactive=False)
-                            #with gr.Row():
-                            #    init_img_with_mask = grh.Image(label='First Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False,visible=False)
-                            #with gr.Row():
-                            #    image_mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
-                            #with gr.Row():
-                            #    image_mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
-                            #with gr.Row():
-                            #    clean_button = gr.Button("Clean Up", height=100,visible=False)
-                            #with gr.Row():                                
-                            #    result_gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
-                            #        elem_classes=['resizable_area', 'main_view', 'image_gallery'],
-                            #        elem_id='cleaner_gallery',
-                            #        preview=True,
-                            #        show_fullscreen_button=True,
-                            #        allow_preview=True,
-                            #        show_download_button=True)
-                        #image_mask_check.change(lambda x: gr.update(visible=x), inputs=image_mask_check,
-                        #                outputs=image_mask_load, queue=False, show_progress=False)
-                        #image_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_button]) \
-                        #    .then(fn=cleaner.get_first_image, inputs=image_files, outputs=[init_img_with_mask])  
-                        ###########init_img_with_mask.upload(lambda: (gr.update(visible=True)),outputs=[clean_button])
-                        #clean_button.click(lambda: (gr.update(interactive=False),gr.update(visible=True),gr.update(visible=False)),outputs=[clean_button,progress_image,clean_zip]) \
-                        #    .then(fn=cleaner.clean_object_init_img_with_mask,inputs=[image_files,init_img_with_mask,image_mask_check,image_mask_load],outputs=[progress_image,result_gallery,result_gallery,preview_clean]) \
-                        #    .then(fn=cleaner.clean_zip,inputs=[result_gallery],outputs=[clean_zip]) \
-                        #    .then(lambda: (gr.update(interactive=True),gr.update(visible=True)),outputs=[clean_button,clean_zip])
-                        
-                        
                         with gr.Tab(label='Video'):
                             with gr.Row():
                                 with gr.Column():
                                     video_files = gr.Files(label="Drag (Select) 1 or more video files",file_count="multiple",
                                             file_types=["video"],visible=True,interactive=True)
                                     progress_video = gr.Textbox(label="Process",visible=False)
+                                    download_video_cl=gr.File(label="Download a videofiles", file_count='multiple',height=260,visible=True)
                                 with gr.Column():  
                                     first_video = gr.Video(label="First video", source='upload',visible=False,interactive=True)
                             with gr.Row(): 
@@ -1097,7 +1064,8 @@ with shared.gradio_root:
                                 mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
                             with gr.Row():
                                 clean_button_video = gr.Button("Clean Up", height=100,visible=False)
-                        
+                            with gr.Row(visible=False):
+                                ext_dir_video_cl=gr.Textbox(value='batch_cleaner_video',visible=False)
                         mask_check.change(lambda x: gr.update(visible=x), inputs=mask_check,
                                         outputs=mask_load, queue=False, show_progress=False)
                         
@@ -1105,9 +1073,10 @@ with shared.gradio_root:
                         
                         video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
                             .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
-                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False)),outputs=[progress_video,clean_button_video]) \
-                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame,mask_check,mask_load],outputs=[progress_video]) \
-                            .then(lambda: (gr.update(interactive=True)),outputs=[clean_button_video])
+                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False),gr.update(visible=True)),outputs=[progress_video,clean_button_video,download_video_cl]) \
+                            .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
+                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame,mask_check,mask_load],outputs=[progress_video,download_video_cl]) \
+                            .then(lambda: (gr.update(interactive=True),gr.update(visible=True)),outputs=[clean_button_video,download_video_cl])
 
                   with gr.TabItem(label='Vector'):
                             vector.ui_module()
