@@ -47,7 +47,9 @@ def process_image(mask,mask_check,mask_load):
         print (f"\033[91m[Cleaner QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         gr.Info(f"Cleaner Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
         img = Image.open(batch_path+os.path.sep+f_name)
+        
         yield gr.update(value=img,visible=True),gr.update(visible=False),gr.update(visible=False)
+        img = img.convert("RGB")
         source_image=Lama.predict(img, mask)
         name, ext = os.path.splitext(f_name)
         filename =  batch_temp + os.path.sep + name +'_clean'+ext
