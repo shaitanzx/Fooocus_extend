@@ -61,7 +61,6 @@ def video_clean_process(video, mask, mask_check, mask_load):
     batch_path = f"{temp_dir}batch_cleaner_video"
     os.makedirs(batch_path, exist_ok=True)
     
-    # Обработка маски
     if mask_check and mask_load is not None:
         m1 = np.array(mask['mask'].convert("RGB"))
         m2 = np.array(mask_load.convert("RGB"))
@@ -82,7 +81,6 @@ def video_clean_process(video, mask, mask_check, mask_load):
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        # Подготовка имени выходного файла
         base_name = os.path.splitext(os.path.basename(input_path))[0]
         output_path = os.path.join(batch_path, f"{base_name}_clean.mp4")
         
@@ -92,13 +90,11 @@ def video_clean_process(video, mask, mask_check, mask_load):
         for i in range(total_frames):
             ret, frame = cap.read()
 
-            # Обработка кадра
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = Image.fromarray(frame)
             frame = Lama.predict(frame, mask_combined)
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
             
-            # ПРЯМАЯ ЗАПИСЬ В ВИДЕО (без сохранения на диск)
             out.write(frame)
             
             yield f'Processed {i + 1} of {total_frames} ({file_index + 1} of {len(video_files)})', None
