@@ -110,7 +110,7 @@ def video_clean_process(video,mask,mask_check,mask_load):
         out = cv2.VideoWriter(filename, fourcc, fps, (width, height))
     
         for i, image_name in enumerate(images):
-            image_path = os.path.join(batch_path_clean, image_name)
+            image_path = os.path.join(batch_temp, image_name)
             frame = cv2.imread(image_path)
             out.write(frame)
         out.release()
