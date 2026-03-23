@@ -754,6 +754,7 @@ def on_ui_tabs():
                 if image_format != "PNG":
                     result = result.convert("RGB")
                 _, output_folder, _ = generate_temp_filename(folder=modules.config.path_outputs,extension=image_format.lower())
+                os.makedirs(os.path.dirname(output_folder), exist_ok=True)
                 result.save(output_folder, format=image_format, quality=95 if image_format == "JPEG" else None)
                 return output_folder, None
             elif input_type == "Video" and result_type == "Video":
@@ -766,6 +767,7 @@ def on_ui_tabs():
                 if video_format != "MP4":
                     temp_output = output_video
                     _, output_folder, _ = generate_temp_filename(folder=modules.config.path_outputs,extension=video_format.lower())
+                    os.makedirs(os.path.dirname(output_folder), exist_ok=True)
                     os.system(f'ffmpeg -i "{temp_output}" -c:v libx264 -crf {int(20 - (video_quality / 5))} "{output_folder}"')
                     os.remove(temp_output)
                     output_video=output_folder
@@ -773,6 +775,7 @@ def on_ui_tabs():
                 return None, output_video
             elif input_type == "Image" and result_type == "Video":
                 _, output_path, _ = generate_temp_filename(folder=modules.config.path_outputs,extension='mp4')
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 frame = cv2.cvtColor(np.array(foreground_input), cv2.COLOR_RGB2BGR)
                 height, width = frame.shape[:2]
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -791,6 +794,7 @@ def on_ui_tabs():
                     if image_format != "PNG":
                         result = result.convert("RGB")
                     _, output_folder, _ = generate_temp_filename(folder=modules.config.path_outputs,extension=image_format.lower())
+                    os.makedirs(os.path.dirname(output_folder), exist_ok=True)
                     result.save(output_folder, format=image_format, quality=95 if image_format == "JPEG" else None)
                     return output_folder, None
                 return None, None
