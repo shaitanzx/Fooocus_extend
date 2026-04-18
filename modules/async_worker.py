@@ -1786,7 +1786,7 @@ def worker():
             active_enhance_tabs += 1
             enhance_uov_before = async_task.enhance_uov_processing_order == flags.enhancement_uov_before
             enhance_uov_after = async_task.enhance_uov_processing_order == flags.enhancement_uov_after
-        if should_adetail_enhance_uov:
+        if should_process_adetail_uov:
             active_adetail_tabs += 1
             adetail_uov_before = async_task.adetail_uov_processing_order == flags.enhancement_uov_before
             adetail_uov_after = async_task.adetail_uov_processing_order == flags.enhancement_uov_after
