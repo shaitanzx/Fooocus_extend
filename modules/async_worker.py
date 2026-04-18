@@ -1715,7 +1715,7 @@ def worker():
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
 #######################################################################
-        if async_task.adetailer_checkbox and async_task.adetailer_uov_method != flags.disabled.casefold():
+        if async_task.adetailer_checkbox and async_task.adetail_uov_method != flags.disabled.casefold():
             adetailer_upscale_steps = async_task.performance_selection.steps()
             if 'upscale' in async_task.adetail_uov_method:
                 if 'final' in async_task.adetail_uov_method:
