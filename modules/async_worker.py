@@ -1272,7 +1272,6 @@ def worker():
     def prepare_upscale(async_task, goals, uov_input_image, uov_method, performance, steps, current_progress,
                         advance_progress=False, skip_prompt_processing=False):
         uov_input_image = HWC3(uov_input_image)
-        
         if 'vary' in uov_method:
             goals.append('vary')
         elif 'upscale' in uov_method:
@@ -1409,50 +1408,6 @@ def worker():
                 done_steps_upscaling += steps
         return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
 
-
-    def adetail_upscale(all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
-                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
-                        current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, enhance_steps,
-                        prompt, negative_prompt, final_scheduler_name, height, img, preparation_steps, switch, tiled,
-                        total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image=True):
-        # reset inpaint worker to prevent tensor size issues and not mix upscale and inpainting
-        inpaint_worker.current_task = None
-
-        current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_upscaling + done_steps_inpainting))
-        goals_enhance = []
-
-        print('-----------------------------',async_task.adetail_uov_method)
-        img, skip_prompt_processing, steps = prepare_upscale(
-            async_task, goals_enhance, img, async_task.adetail_uov_method, async_task.performance_selection,
-            enhance_steps, current_progress)
-        steps, _, _, _ = apply_overrides(async_task, steps, height, width)
-        exception_result = ''
-        print('-----------------------------',goals_enhance)
-        if len(goals_enhance) > 0:
-            try:
-                current_progress, img, prompt, negative_prompt = process_enhance(
-                    all_steps, async_task, callback, controlnet_canny_path,
-                    controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
-                    controlnet_manga_path,
-                    current_progress, current_task_id, denoising_strength, False,
-                    'None', 0.0, 0.0, prompt, negative_prompt, final_scheduler_name,
-                    goals_enhance, height, img, None, preparation_steps, steps, switch, tiled, total_count,
-                    use_expansion, use_style, use_synthetic_refiner, width, persist_image=persist_image)
-
-            except ldm_patched.modules.model_management.InterruptProcessingException:
-                if async_task.last_stop == 'skip':
-                    print('User skipped')
-                    async_task.last_stop = False
-                    # also skip all enhance steps for this image, but add the steps to the progress bar
-                    if async_task.enhance_uov_processing_order == flags.enhancement_uov_before:
-                        done_steps_inpainting += len(async_task.enhance_ctrls) * enhance_steps
-                    exception_result = 'continue'
-                else:
-                    print('User stopped')
-                    exception_result = 'break'
-            finally:
-                done_steps_upscaling += steps
-        return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
 
     def process_adetailer(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
                         controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
@@ -1831,7 +1786,7 @@ def worker():
             active_enhance_tabs += 1
             enhance_uov_before = async_task.enhance_uov_processing_order == flags.enhancement_uov_before
             enhance_uov_after = async_task.enhance_uov_processing_order == flags.enhancement_uov_after
-        if should_process_adetail_uov:
+        if should_adetail_enhance_uov:
             active_adetail_tabs += 1
             adetail_uov_before = async_task.adetail_uov_processing_order == flags.enhancement_uov_before
             adetail_uov_after = async_task.adetail_uov_processing_order == flags.enhancement_uov_after
@@ -1857,24 +1812,6 @@ def worker():
 
                 last_adetail_prompt = async_task.prompt
                 last_adetail_negative_prompt = async_task.negative_prompt
-
-                if adetail_uov_before:
-                    print('----------------------   upscale before begin')
-                    current_task_id += 1
-                    persist_image = not async_task.save_final_enhanced_image_only or active_adetail_tabs == 0
-                    current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result = adetail_upscale(
-                        all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path,
-                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
-                        current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, adetail_steps,
-                        async_task.prompt, async_task.negative_prompt, final_scheduler_name, height, img, preparation_steps,
-                        switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image)
-                    print('----------------------   upscale before end')
-                    async_task.adetailer_stats[index] += 1
-
-                    if exception_result == 'continue':
-                        continue
-                    elif exception_result == 'break':
-                        break
 
             # inpaint for all other tabs
                 for n, arg_s in enumerate(async_task.ad_component):
@@ -1981,8 +1918,39 @@ def worker():
                 del pred
                 if exception_result == 'break':
                     break
+
+
+
+
+                if adetail_uov_after:
+                    current_task_id += 1
+                # last step in enhance, always save
+                    persist_image = True
+                    current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result = enhance_upscale(
+                        all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
+                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                        current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, adetail_steps,
+                        last_adetail_prompt, last_adetail_negative_prompt, final_scheduler_name, height, img,
+                        preparation_steps, switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner,
+                        width, persist_image)
+                    async_task.adetailer_stats[index] += 1
+                
+                    if exception_result == 'continue':
+                        continue
+                    elif exception_result == 'break':
+                        break
+
+
                 adetail_image_time = time.perf_counter() - adetailer_image_start_time
                 print(f'Adetailer image time: {adetail_image_time:.2f} seconds')
+
+
+
+            enhancement_image_time = time.perf_counter() - enhancement_image_start_time
+            print(f'Enhancement image time: {enhancement_image_time:.2f} seconds')
+
+
+
         else:    
           for index, img in enumerate(images_to_enhance):
             async_task.enhance_stats[index] = 0
