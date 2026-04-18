@@ -1367,6 +1367,11 @@ def worker():
         del task_enhance['c'], task_enhance['uc']  # Save memory
         return current_progress, imgs[0], prompt, negative_prompt
 
+
+
+
+
+
     def enhance_upscale(all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
                         controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
                         current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, enhance_steps,
@@ -1423,6 +1428,28 @@ def worker():
         initial_latent = None
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
+
+
+        # === ДОБАВЛЕНО: обработка vary/upscale (аналогично process_enhance) ===
+        if 'vary' in goals:
+            img, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
+                async_task, async_task.adetail_uov_method, denoising_strength, img, switch, current_progress)
+        if 'upscale' in goals:
+            direct_return, img, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
+                async_task, img, async_task.adetail_uov_method, switch, current_progress)
+            if direct_return:
+                d = [('Final Upscale', 'upscale_fast', async_task.uov_model)]
+                if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
+                    progressbar(async_task, current_progress, 'Checking for NSFW content ...')
+                    img = default_censor(img)
+                progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
+                uov_image_path = log(img, d, output_format=async_task.output_format, persist_image=persist_image, name_prefix=async_task.name_prefix)
+                yield_result(async_task, uov_image_path, current_progress, async_task.black_out_nsfw, False,
+                             do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
+                return current_progress, img, prompt, negative_prompt
+
+
+
 
         if 'inpaint' in goals and inpaint_parameterized:
             progressbar(async_task, current_progress, 'Downloading inpainter ...')
@@ -1687,10 +1714,41 @@ def worker():
         if async_task.enhance_checkbox and len(async_task.enhance_ctrls) != 0:
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
-        
-        if ('adetail' in goals or async_task.adetailer_checkbox) and len(async_task.ad_component) != 0:
-            adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
+#######################################################################
+        if async_task.adetailer_checkbox and async_task.adetailer_uov_method != flags.disabled.casefold():
+            adetailer_upscale_steps = async_task.performance_selection.steps()
+            if 'upscale' in async_task.adetail_uov_method:
+                if 'final' in async_task.adetail_uov_method:
+                    adetail_upscale_steps = 0
+                else:
+                    adetail_upscale_steps = async_task.performance_selection.steps_uov()
+            adetail_upscale_steps, _, _, _ = apply_overrides(async_task, adetail_upscale_steps, height, width)
+            adetail_upscale_steps_total = async_task.image_number * adetail_upscale_steps
+            all_steps += adetail_upscale_steps_total
+
+        if async_task.adetail_checkbox and len(async_task.ad_component) != 0:
+            adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
+
+
+#        if ('adetail' in goals or async_task.adetailer_checkbox) and len(async_task.ad_component) != 0:
+#            adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)            
+#            all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps#
+#
+
+#            if async_task.adetailer_checkbox and async_task.adetail_uov_method != flags.disabled.casefold():
+#                adetail_upscale_steps = async_task.performance_selection.steps()
+#                if 'upscale' in async_task.adetail_uov_method:
+#                    if 'final' in async_task.adetail_uov_method:
+#                        adetail_upscale_steps = 0
+#                    else:
+#                        adetail_upscale_steps = async_task.performance_selection.steps_uov()
+#                adetail_upscale_steps, _, _, _ = apply_overrides(async_task, adetail_upscale_steps, height, width)
+                # Учитываем шаги только для режима "before"
+#                if async_task.adetail_uov_processing_order == flags.enhancement_uov_before:
+#                    all_steps += async_task.image_number * adetail_upscale_steps
+
+
 
         all_steps = max(all_steps, 1)
 
@@ -1865,7 +1923,12 @@ def worker():
 
                     if not async_task.only_detect:                    
                         goals_adetail = ['inpaint']
-                    
+
+                        # Добавляем upscale в цели, если включен режим "before"
+                        if (async_task.adetailer_checkbox and 
+                            async_task.adetail_uov_method != flags.disabled.casefold() and
+                            async_task.adetail_uov_processing_order == flags.enhancement_uov_before):
+                            goals_adetail.insert(0, 'upscale')
 
                         adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                         for n in range(len(masks)):
