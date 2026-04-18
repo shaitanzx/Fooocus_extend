@@ -1777,19 +1777,12 @@ def worker():
         active_enhance_tabs = len(async_task.enhance_ctrls)
         active_adetail_tabs = len(async_task.ad_component)
         should_process_enhance_uov = async_task.enhance_uov_method != flags.disabled.casefold()
-        should_process_adetail_uov = async_task.adetail_uov_method != flags.disabled.casefold()
         enhance_uov_before = False
         enhance_uov_after = False
-        adetail_uov_before = False
-        adetail_uov_after = False
         if should_process_enhance_uov:
             active_enhance_tabs += 1
             enhance_uov_before = async_task.enhance_uov_processing_order == flags.enhancement_uov_before
             enhance_uov_after = async_task.enhance_uov_processing_order == flags.enhancement_uov_after
-        if should_process_adetail_uov:
-            active_adetail_tabs += 1
-            adetail_uov_before = async_task.adetail_uov_processing_order == flags.enhancement_uov_before
-            adetail_uov_after = async_task.adetail_uov_processing_order == flags.enhancement_uov_after
         total_count = len(images_to_enhance) * active_enhance_tabs
         async_task.images_to_enhance_count = len(images_to_enhance)
         if 'adetail' in goals:
@@ -1809,9 +1802,6 @@ def worker():
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
-
-                last_adetail_prompt = async_task.prompt
-                last_adetail_negative_prompt = async_task.negative_prompt
 
             # inpaint for all other tabs
                 for n, arg_s in enumerate(async_task.ad_component):
@@ -1918,39 +1908,8 @@ def worker():
                 del pred
                 if exception_result == 'break':
                     break
-
-
-
-
-                if adetail_uov_after:
-                    current_task_id += 1
-                # last step in enhance, always save
-                    persist_image = True
-                    current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result = enhance_upscale(
-                        all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
-                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
-                        current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, adetail_steps,
-                        last_adetail_prompt, last_adetail_negative_prompt, final_scheduler_name, height, img,
-                        preparation_steps, switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner,
-                        width, persist_image)
-                    async_task.adetailer_stats[index] += 1
-                
-                    if exception_result == 'continue':
-                        continue
-                    elif exception_result == 'break':
-                        break
-
-
                 adetail_image_time = time.perf_counter() - adetailer_image_start_time
                 print(f'Adetailer image time: {adetail_image_time:.2f} seconds')
-
-
-
-            enhancement_image_time = time.perf_counter() - enhancement_image_start_time
-            print(f'Enhancement image time: {enhancement_image_time:.2f} seconds')
-
-
-
         else:    
           for index, img in enumerate(images_to_enhance):
             async_task.enhance_stats[index] = 0
