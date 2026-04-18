@@ -752,7 +752,7 @@ with shared.gradio_root:
                             queue=False, show_progress=False)
             with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
                 with gr.Tabs():
-                    only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
+                    adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
@@ -1867,7 +1867,7 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        ctrls += [only_detect]
+        ctrls += [adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect]
         ctrls += ad_component
         ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
         ctrls += [uov_model]

@@ -96,11 +96,10 @@ def adui(
         ad_ckpt_dropdown =[]
 
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
-        with gr.Row():
-            only_detect = gr.Checkbox(
-                    label=f"Only detect",
-                    value=False,
-                    visible=True),
+        only_detect = gr.Checkbox(
+                label=f"Only detect",
+                value=False,
+                visible=True),
 
         with gr.Group():
             with gr.Tabs():
@@ -123,14 +122,6 @@ def adui(
                                                                     inputs=adetail_uov_processing_order,
                                                                     outputs=adetail_uov_prompt_type,
                                                                     queue=False, show_progress=False)
-
-
-
-
-
-
-
-
                 for n in range(num_models):
                     with gr.Tab(ordinal(n + 1)):
                         state,ad_model_dd, ad_ckpt_dd = one_ui_group(
@@ -147,7 +138,7 @@ def adui(
         components = [*states]
         with gr.Row():
             gr.HTML('* \"ADetailer\" is powered by Bing-su. <a href="https://github.com/Bing-su/adetailer" target="_blank">\U0001F4D4 Document</a>')
-        return only_detect, components,ad_model_dropdowns,ad_ckpt_dropdown
+        return  adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, components,ad_model_dropdowns,ad_ckpt_dropdown
 
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):

@@ -277,7 +277,9 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
-
+        self.adetail_uov_method = args.pop()
+        self.adetail_uov_processing_order = args.pop()
+        self.adetail_uov_prompt_type = args.pop()
         self.only_detect = args.pop()
         self.ad_component = [args.pop() for _ in range(default_adetail_tab)]
         self.adetail_input_image = args.pop ()
@@ -1775,12 +1777,19 @@ def worker():
         active_enhance_tabs = len(async_task.enhance_ctrls)
         active_adetail_tabs = len(async_task.ad_component)
         should_process_enhance_uov = async_task.enhance_uov_method != flags.disabled.casefold()
+        should_process_adetail_uov = async_task.adetail_uov_method != flags.disabled.casefold()
         enhance_uov_before = False
         enhance_uov_after = False
+        adetail_uov_before = False
+        adetail_uov_after = False
         if should_process_enhance_uov:
             active_enhance_tabs += 1
             enhance_uov_before = async_task.enhance_uov_processing_order == flags.enhancement_uov_before
             enhance_uov_after = async_task.enhance_uov_processing_order == flags.enhancement_uov_after
+        if should_process_adetail_uov:
+            active_adetail_tabs += 1
+            adetail_uov_before = async_task.adetail_uov_processing_order == flags.enhancement_uov_before
+            adetail_uov_after = async_task.adetail_uov_processing_order == flags.enhancement_uov_after
         total_count = len(images_to_enhance) * active_enhance_tabs
         async_task.images_to_enhance_count = len(images_to_enhance)
         if 'adetail' in goals:
@@ -1800,6 +1809,25 @@ def worker():
             for index, img in enumerate(images_to_adetailer):
                 async_task.adetailer_stats[index] = 0
                 adetailer_image_start_time = time.perf_counter()
+
+                last_adetail_prompt = async_task.prompt
+                last_adetail_negative_prompt = async_task.negative_prompt
+
+                if adetail_uov_before:
+                    current_task_id += 1
+                    persist_image = not async_task.save_final_enhanced_image_only or active_enhance_tabs == 0
+                    current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result = enhance_upscale(
+                        all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path,
+                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
+                        current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, adetail_steps,
+                        async_task.prompt, async_task.negative_prompt, final_scheduler_name, height, img, preparation_steps,
+                        switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image)
+                    async_task.adetail_stats[index] += 1
+
+                    if exception_result == 'continue':
+                        continue
+                    elif exception_result == 'break':
+                        break
 
             # inpaint for all other tabs
                 for n, arg_s in enumerate(async_task.ad_component):
