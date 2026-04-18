@@ -1272,7 +1272,7 @@ def worker():
     def prepare_upscale(async_task, goals, uov_input_image, uov_method, performance, steps, current_progress,
                         advance_progress=False, skip_prompt_processing=False):
         uov_input_image = HWC3(uov_input_image)
-        print('-----------------------------',uov_method)
+        
         if 'vary' in uov_method:
             goals.append('vary')
         elif 'upscale' in uov_method:
@@ -1420,11 +1420,14 @@ def worker():
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_upscaling + done_steps_inpainting))
         goals_enhance = []
+
+        print('-----------------------------',async_task.adetail_uov_method)
         img, skip_prompt_processing, steps = prepare_upscale(
             async_task, goals_enhance, img, async_task.adetail_uov_method, async_task.performance_selection,
             enhance_steps, current_progress)
         steps, _, _, _ = apply_overrides(async_task, steps, height, width)
         exception_result = ''
+        print('-----------------------------',goals_enhance)
         if len(goals_enhance) > 0:
             try:
                 current_progress, img, prompt, negative_prompt = process_enhance(
