@@ -106,19 +106,19 @@ def adui(
                 with gr.Tab(label='Upscale or Variation'):
                     with gr.Row():
                         with gr.Column():
-                            adetail_uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list,
+                            adetail_uov_method = gr.Radio(label='Upscale or Variation:', choices=modules.flags.uov_list,
                                                               value=modules.config.default_enhance_uov_method)
                             adetail_uov_processing_order = gr.Radio(label='Order of Processing',
                                                                         info='Use before to enhance small details and after to enhance large areas.',
-                                                                        choices=flags.enhancement_uov_processing_order,
+                                                                        choices=modules.flags.enhancement_uov_processing_order,
                                                                         value=modules.config.default_enhance_uov_processing_order)
                             adetail_uov_prompt_type = gr.Radio(label='Prompt',
                                                                    info='Choose which prompt to use for Upscale or Variation.',
-                                                                   choices=flags.enhancement_uov_prompt_types,
+                                                                   choices=modules.flags.enhancement_uov_prompt_types,
                                                                    value=modules.config.default_enhance_uov_prompt_type,
-                                                                   visible=modules.config.default_enhance_uov_processing_order == flags.enhancement_uov_after)
+                                                                   visible=modules.config.default_enhance_uov_processing_order == modules.flags.enhancement_uov_after)
 
-                            adetail_uov_processing_order.change(lambda x: gr.update(visible=x == flags.enhancement_uov_after),
+                            adetail_uov_processing_order.change(lambda x: gr.update(visible=x == modules.flags.enhancement_uov_after),
                                                                     inputs=adetail_uov_processing_order,
                                                                     outputs=adetail_uov_prompt_type,
                                                                     queue=False, show_progress=False)
