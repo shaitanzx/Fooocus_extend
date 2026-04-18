@@ -1272,6 +1272,7 @@ def worker():
     def prepare_upscale(async_task, goals, uov_input_image, uov_method, performance, steps, current_progress,
                         advance_progress=False, skip_prompt_processing=False):
         uov_input_image = HWC3(uov_input_image)
+        print('-----------------------------',uov_method)
         if 'vary' in uov_method:
             goals.append('vary')
         elif 'upscale' in uov_method:
