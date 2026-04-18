@@ -1822,7 +1822,7 @@ def worker():
                         current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, adetail_steps,
                         async_task.prompt, async_task.negative_prompt, final_scheduler_name, height, img, preparation_steps,
                         switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image)
-                    async_task.adetail_stats[index] += 1
+                    async_task.adetailer_stats[index] += 1
 
                     if exception_result == 'continue':
                         continue
