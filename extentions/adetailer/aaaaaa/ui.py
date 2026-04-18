@@ -101,18 +101,46 @@ def adui(
                 value=False,
                 visible=True),
 
-        with gr.Group(), gr.Tabs():
-            for n in range(num_models):
-                with gr.Tab(ordinal(n + 1)):
-                    state,ad_model_dd, ad_ckpt_dd = one_ui_group(
-                        n=n,
-                        is_img2img=is_img2img,
-                        webui_info=webui_info,
-                    )
-                ad_model_dropdowns.append(ad_model_dd)
-                ad_ckpt_dropdown.append(ad_ckpt_dd)
-                states.append(state)
-                #!infotext_fields.extend(infofields)
+        with gr.Group():
+            with gr.Tabs():
+                with gr.Tab(label='Upscale or Variation'):
+                    with gr.Row():
+                        with gr.Column():
+                            adetail_uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list,
+                                                              value=modules.config.default_enhance_uov_method)
+                            adetail_uov_processing_order = gr.Radio(label='Order of Processing',
+                                                                        info='Use before to enhance small details and after to enhance large areas.',
+                                                                        choices=flags.enhancement_uov_processing_order,
+                                                                        value=modules.config.default_enhance_uov_processing_order)
+                            adetail_uov_prompt_type = gr.Radio(label='Prompt',
+                                                                   info='Choose which prompt to use for Upscale or Variation.',
+                                                                   choices=flags.enhancement_uov_prompt_types,
+                                                                   value=modules.config.default_enhance_uov_prompt_type,
+                                                                   visible=modules.config.default_enhance_uov_processing_order == flags.enhancement_uov_after)
+
+                            adetail_uov_processing_order.change(lambda x: gr.update(visible=x == flags.enhancement_uov_after),
+                                                                    inputs=adetail_uov_processing_order,
+                                                                    outputs=adetail_uov_prompt_type,
+                                                                    queue=False, show_progress=False)
+
+
+
+
+
+
+
+
+                for n in range(num_models):
+                    with gr.Tab(ordinal(n + 1)):
+                        state,ad_model_dd, ad_ckpt_dd = one_ui_group(
+                            n=n,
+                            is_img2img=is_img2img,
+                            webui_info=webui_info,
+                        )
+                    ad_model_dropdowns.append(ad_model_dd)
+                    ad_ckpt_dropdown.append(ad_ckpt_dd)
+                    states.append(state)
+                    #!infotext_fields.extend(infofields)
 
     # components: [bool, bool, dict, dict, ...]
         components = [*states]
