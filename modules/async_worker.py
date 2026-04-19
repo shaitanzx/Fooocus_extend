@@ -1726,7 +1726,7 @@ def worker():
             adetail_upscale_steps_total = async_task.image_number * adetailer_upscale_steps
             all_steps += adetail_upscale_steps_total
 
-        if async_task.adetail_checkbox and len(async_task.ad_component) != 0:
+        if async_task.adetailer_checkbox and len(async_task.ad_component) != 0:
             adetail_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.ad_component) * adetail_steps
 
