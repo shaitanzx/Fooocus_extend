@@ -1539,8 +1539,11 @@ def worker():
         if len(goals) > 0:
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
-                    
+
+        async_task.ad_component = adetailer.enabler(async_task.ad_component)           
+        
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
+        should_adetailer=async_task.should_adetail = ('adetail' in goals or async_task.adetailer_checkbox) and (len(async_task.ad_component) > 0)
 
         if 'vary' in goals:
             async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
@@ -1591,6 +1594,7 @@ def worker():
         steps, _, _, _ = apply_overrides(async_task, async_task.steps, height, width)
  
         images_to_enhance = []
+        images_to_adetailer = []
 
         if 'enhance' in goals:
             async_task.image_number = 1
@@ -1600,6 +1604,17 @@ def worker():
             steps = 0
             yield_result(async_task, async_task.enhance_input_image, current_progress, async_task.black_out_nsfw, False,
                          async_task.disable_intermediate_results)
+        if 'adetail' in goals:
+            async_task.image_number = 1
+            images_to_adetailer += [async_task.adetail_input_image]
+            height, width, _ = async_task.adetail_input_image.shape
+            # input image already provided, processing is skipped
+            steps = 0
+            yield_result(async_task, async_task.adetail_input_image, current_progress, async_task.black_out_nsfw, False,
+                         async_task.disable_intermediate_results)
+
+
+
 
         all_steps = steps * async_task.image_number
 
@@ -1617,6 +1632,23 @@ def worker():
         if async_task.enhance_checkbox and len(async_task.enhance_ctrls) != 0:
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
+
+        if async_task.adetailer_checkbox and async_task.adetail_uov_method != flags.disabled.casefold():
+            adetailer_upscale_steps = async_task.performance_selection.steps()
+            if 'upscale' in async_task.adetail_uov_method:
+                if 'final' in async_task.adetail_uov_method:
+                    adetailer_upscale_steps = 0
+                else:
+                    adetailer_upscale_steps = async_task.performance_selection.steps_uov()
+            enhance_upscale_steps, _, _, _ = apply_overrides(async_task, enhance_upscale_steps, height, width)
+            enhance_upscale_steps_total = async_task.image_number * enhance_upscale_steps
+            all_steps += enhance_upscale_steps_total
+
+        if async_task.enhance_checkbox and len(async_task.enhance_ctrls) != 0:
+            enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
+            all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
+
+
 
 
 
