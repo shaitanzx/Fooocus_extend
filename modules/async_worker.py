@@ -1494,7 +1494,7 @@ def worker():
         goals_adetailer = []
         img, skip_prompt_processing, steps = prepare_upscale(
             async_task, goals_adetailer, img, async_task.adetail_uov_method, async_task.performance_selection,
-            enhance_steps, current_progress)
+            adetailer_steps, current_progress)
         steps, _, _, _ = apply_overrides(async_task, steps, height, width)
         exception_result = ''
         print('-------------------------', goals_adetailer)
