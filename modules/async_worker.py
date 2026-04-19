@@ -1719,11 +1719,11 @@ def worker():
             adetailer_upscale_steps = async_task.performance_selection.steps()
             if 'upscale' in async_task.adetail_uov_method:
                 if 'final' in async_task.adetail_uov_method:
-                    adetail_upscale_steps = 0
+                    adetailer_upscale_steps = 0
                 else:
-                    adetail_upscale_steps = async_task.performance_selection.steps_uov()
-            adetail_upscale_steps, _, _, _ = apply_overrides(async_task, adetail_upscale_steps, height, width)
-            adetail_upscale_steps_total = async_task.image_number * adetail_upscale_steps
+                    adetailer_upscale_steps = async_task.performance_selection.steps_uov()
+            adetailer_upscale_steps, _, _, _ = apply_overrides(async_task, adetailer_upscale_steps, height, width)
+            adetail_upscale_steps_total = async_task.image_number * adetailer_upscale_steps
             all_steps += adetail_upscale_steps_total
 
         if async_task.adetail_checkbox and len(async_task.ad_component) != 0:
