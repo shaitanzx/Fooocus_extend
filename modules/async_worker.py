@@ -1836,7 +1836,7 @@ def worker():
             execution_time = time.perf_counter() - execution_start_time
             print(f'Generating and saving time: {execution_time:.2f} seconds')
 
-        if not async_task.should_enhance and not async_task.should_adetail:
+        if not async_task.should_enhance and not async_task.should_adetailer:
 
             stop_processing(async_task, processing_start_time)
             return
