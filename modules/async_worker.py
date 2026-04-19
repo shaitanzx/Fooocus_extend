@@ -2027,7 +2027,7 @@ def worker():
                 if adetailer_uov_before:
                     current_task_id += 1
                     persist_image = not async_task.save_final_enhanced_image_only or active_adetailer_tabs == 0
-                    
+                    print('-----------------  begin upscale')
                     current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result = adetailer_upscale(
                         all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path,
                         controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
@@ -2035,7 +2035,7 @@ def worker():
                         async_task.prompt, async_task.negative_prompt, final_scheduler_name, height, img, preparation_steps,
                         switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image)
                     async_task.adetailer_stats[index] += 1
-
+                    print('-----------------  end upscale')
                     if exception_result == 'continue':
                         continue
                     elif exception_result == 'break':
