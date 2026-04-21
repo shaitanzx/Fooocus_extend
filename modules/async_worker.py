@@ -138,7 +138,7 @@ class AsyncTask:
         self.adetail_uov_processing_order = args.pop()
         self.adetail_uov_prompt_type = args.pop()
         self.ad_component = [args.pop() for _ in range(default_adetail_tab)]
-        if adetailer_checkbox:
+        if self.adetailer_checkbox:
             self.enhance_input_image = self.adetail_input_image
             self.enhance_uov_method = self.adetail_uov_method
             self.enhance_uov_processing_order = self.adetail_uov_processing_order
