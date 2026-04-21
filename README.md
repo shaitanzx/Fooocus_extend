@@ -574,6 +574,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.2.10
+ 1. Add Upscale Mode in ADetailer
+
 v9.2.9
  1. Add Cleaner module
 
