@@ -1743,92 +1743,94 @@ def worker():
                     continue
                 elif exception_result == 'break':
                     break
+            if async_task.adetailer_checkbox:
+                pass
+            else:
+                # inpaint for all other tabs
+                for enhance_mask_dino_prompt_text, enhance_prompt, enhance_negative_prompt, enhance_mask_model, enhance_mask_cloth_category, enhance_mask_sam_model, enhance_mask_text_threshold, enhance_mask_box_threshold, enhance_mask_sam_max_detections, enhance_inpaint_disable_initial_latent, enhance_inpaint_engine, enhance_inpaint_strength, enhance_inpaint_respective_field, enhance_inpaint_erode_or_dilate, enhance_mask_invert in async_task.enhance_ctrls:
+                    current_task_id += 1
+                    current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_upscaling + done_steps_inpainting))
+                    progressbar(async_task, current_progress, f'Preparing enhancement {current_task_id + 1}/{total_count} ...')
+                    enhancement_task_start_time = time.perf_counter()
+                    is_last_enhance_for_image = (current_task_id + 1) % active_enhance_tabs == 0 and not enhance_uov_after
+                    persist_image = not async_task.save_final_enhanced_image_only or is_last_enhance_for_image
 
-            # inpaint for all other tabs
-            for enhance_mask_dino_prompt_text, enhance_prompt, enhance_negative_prompt, enhance_mask_model, enhance_mask_cloth_category, enhance_mask_sam_model, enhance_mask_text_threshold, enhance_mask_box_threshold, enhance_mask_sam_max_detections, enhance_inpaint_disable_initial_latent, enhance_inpaint_engine, enhance_inpaint_strength, enhance_inpaint_respective_field, enhance_inpaint_erode_or_dilate, enhance_mask_invert in async_task.enhance_ctrls:
-                current_task_id += 1
-                current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_upscaling + done_steps_inpainting))
-                progressbar(async_task, current_progress, f'Preparing enhancement {current_task_id + 1}/{total_count} ...')
-                enhancement_task_start_time = time.perf_counter()
-                is_last_enhance_for_image = (current_task_id + 1) % active_enhance_tabs == 0 and not enhance_uov_after
-                persist_image = not async_task.save_final_enhanced_image_only or is_last_enhance_for_image
+                    extras = {}
+                    if enhance_mask_model == 'sam':
+                        print(f'[Enhance] Searching for "{enhance_mask_dino_prompt_text}"')
+                    elif enhance_mask_model == 'u2net_cloth_seg':
+                        extras['cloth_category'] = enhance_mask_cloth_category
 
-                extras = {}
-                if enhance_mask_model == 'sam':
-                    print(f'[Enhance] Searching for "{enhance_mask_dino_prompt_text}"')
-                elif enhance_mask_model == 'u2net_cloth_seg':
-                    extras['cloth_category'] = enhance_mask_cloth_category
+                    mask, dino_detection_count, sam_detection_count, sam_detection_on_mask_count = generate_mask_from_image(
+                        img, mask_model=enhance_mask_model, extras=extras, sam_options=SAMOptions(
+                            dino_prompt=enhance_mask_dino_prompt_text,
+                            dino_box_threshold=enhance_mask_box_threshold,
+                            dino_text_threshold=enhance_mask_text_threshold,
+                            dino_erode_or_dilate=async_task.dino_erode_or_dilate,
+                            dino_debug=async_task.debugging_dino,
+                            max_detections=enhance_mask_sam_max_detections,
+                            model_type=enhance_mask_sam_model,
+                        ))
+                    if len(mask.shape) == 3:
+                        mask = mask[:, :, 0]
 
-                mask, dino_detection_count, sam_detection_count, sam_detection_on_mask_count = generate_mask_from_image(
-                    img, mask_model=enhance_mask_model, extras=extras, sam_options=SAMOptions(
-                        dino_prompt=enhance_mask_dino_prompt_text,
-                        dino_box_threshold=enhance_mask_box_threshold,
-                        dino_text_threshold=enhance_mask_text_threshold,
-                        dino_erode_or_dilate=async_task.dino_erode_or_dilate,
-                        dino_debug=async_task.debugging_dino,
-                        max_detections=enhance_mask_sam_max_detections,
-                        model_type=enhance_mask_sam_model,
-                    ))
-                if len(mask.shape) == 3:
-                    mask = mask[:, :, 0]
+                    if int(enhance_inpaint_erode_or_dilate) != 0:
+                        mask = erode_or_dilate(mask, enhance_inpaint_erode_or_dilate)
 
-                if int(enhance_inpaint_erode_or_dilate) != 0:
-                    mask = erode_or_dilate(mask, enhance_inpaint_erode_or_dilate)
+                    if enhance_mask_invert:
+                        mask = 255 - mask
 
-                if enhance_mask_invert:
-                    mask = 255 - mask
+                    if async_task.debugging_enhance_masks_checkbox:
+                        async_task.yields.append(['preview', (current_progress, 'Loading ...', mask)])
+                        yield_result(async_task, mask, current_progress, async_task.black_out_nsfw, False,
+                                     async_task.disable_intermediate_results)
+                        async_task.enhance_stats[index] += 1
 
-                if async_task.debugging_enhance_masks_checkbox:
-                    async_task.yields.append(['preview', (current_progress, 'Loading ...', mask)])
-                    yield_result(async_task, mask, current_progress, async_task.black_out_nsfw, False,
-                                 async_task.disable_intermediate_results)
-                    async_task.enhance_stats[index] += 1
+                    print(f'[Enhance] {dino_detection_count} boxes detected')
+                    print(f'[Enhance] {sam_detection_count} segments detected in boxes')
+                    print(f'[Enhance] {sam_detection_on_mask_count} segments applied to mask')
 
-                print(f'[Enhance] {dino_detection_count} boxes detected')
-                print(f'[Enhance] {sam_detection_count} segments detected in boxes')
-                print(f'[Enhance] {sam_detection_on_mask_count} segments applied to mask')
-
-                if enhance_mask_model == 'sam' and (dino_detection_count == 0 or not async_task.debugging_dino and sam_detection_on_mask_count == 0):
-                    print(f'[Enhance] No "{enhance_mask_dino_prompt_text}" detected, skipping')
-                    continue
-
-                goals_enhance = ['inpaint']
-
-                try:
-                    current_progress, img, enhance_prompt_processed, enhance_negative_prompt_processed = process_enhance(
-                        all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
-                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
-                        current_progress, current_task_id, denoising_strength, enhance_inpaint_disable_initial_latent,
-                        enhance_inpaint_engine, enhance_inpaint_respective_field, enhance_inpaint_strength,
-                        enhance_prompt, enhance_negative_prompt, final_scheduler_name, goals_enhance, height, img, mask,
-                        preparation_steps, enhance_steps, switch, tiled, total_count, use_expansion, use_style,
-                        use_synthetic_refiner, width, persist_image=persist_image)
-                    async_task.enhance_stats[index] += 1
-
-                    if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
-                            and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
-                        if enhance_prompt_processed != '':
-                            last_enhance_prompt = enhance_prompt_processed
-                        if enhance_negative_prompt_processed != '':
-                            last_enhance_negative_prompt = enhance_negative_prompt_processed
-
-                except ldm_patched.modules.model_management.InterruptProcessingException:
-                    if async_task.last_stop == 'skip':
-                        print('User skipped')
-                        async_task.last_stop = False
+                    if enhance_mask_model == 'sam' and (dino_detection_count == 0 or not async_task.debugging_dino and sam_detection_on_mask_count == 0):
+                        print(f'[Enhance] No "{enhance_mask_dino_prompt_text}" detected, skipping')
                         continue
-                    else:
-                        print('User stopped')
-                        exception_result = 'break'
-                        break
-                finally:
-                    done_steps_inpainting += enhance_steps
 
-                enhancement_task_time = time.perf_counter() - enhancement_task_start_time
-                print(f'Enhancement time: {enhancement_task_time:.2f} seconds')
+                    goals_enhance = ['inpaint']
 
-            if exception_result == 'break':
-                break
+                    try:
+                        current_progress, img, enhance_prompt_processed, enhance_negative_prompt_processed = process_enhance(
+                            all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                            controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                            current_progress, current_task_id, denoising_strength, enhance_inpaint_disable_initial_latent,
+                            enhance_inpaint_engine, enhance_inpaint_respective_field, enhance_inpaint_strength,
+                            enhance_prompt, enhance_negative_prompt, final_scheduler_name, goals_enhance, height, img, mask,
+                            preparation_steps, enhance_steps, switch, tiled, total_count, use_expansion, use_style,
+                            use_synthetic_refiner, width, persist_image=persist_image)
+                        async_task.enhance_stats[index] += 1
+
+                        if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
+                                and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
+                            if enhance_prompt_processed != '':
+                                last_enhance_prompt = enhance_prompt_processed
+                            if enhance_negative_prompt_processed != '':
+                                last_enhance_negative_prompt = enhance_negative_prompt_processed
+
+                    except ldm_patched.modules.model_management.InterruptProcessingException:
+                        if async_task.last_stop == 'skip':
+                            print('User skipped')
+                            async_task.last_stop = False
+                            continue
+                        else:
+                            print('User stopped')
+                            exception_result = 'break'
+                            break
+                    finally:
+                        done_steps_inpainting += enhance_steps
+
+                    enhancement_task_time = time.perf_counter() - enhancement_task_start_time
+                    print(f'Enhancement time: {enhancement_task_time:.2f} seconds')
+
+                if exception_result == 'break':
+                    break
 
             if enhance_uov_after:
                 current_task_id += 1
