@@ -1763,7 +1763,7 @@ def worker():
                 from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
 
                 for index, img in enumerate(images_to_enhance):
-                    async_task.adetailer_stats[index] = 0
+                    ######async_task.adetailer_stats[index] = 0
                     adetailer_image_start_time = time.perf_counter()
 
                 # inpaint for all other tabs
@@ -1823,7 +1823,7 @@ def worker():
                             async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
                             yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
                                          async_task.disable_intermediate_results)
-                            async_task.adetailer_stats[index] += 1
+                            async_task.enhance_stats[index] += 1
 
 
                         if not async_task.only_detect:                    
@@ -1852,7 +1852,7 @@ def worker():
                                         prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), mask_binary,
                                         preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
                                         use_synthetic_refiner, width, persist_image=persist_image)
-                                    async_task.adetailer_stats[index] += 1
+                                    async_task.enhance_stats[index] += 1
                                 except ldm_patched.modules.model_management.InterruptProcessingException:
                                     if async_task.last_stop == 'skip':
                                         print('User skipped')
