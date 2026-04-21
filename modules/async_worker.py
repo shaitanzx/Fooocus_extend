@@ -141,10 +141,12 @@ class AsyncTask:
         self.enhance_uov_processing_order = args.pop()
         self.enhance_uov_prompt_type = args.pop()
         if self.adetailer_checkbox:
+            print('-----------------------------')
             self.enhance_ctrls = [args.pop() for _ in range(default_adetail_tab)]
             self.should_enhance = self.adetailer_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
             self.enhance_checkbox = self.adetailer_checkbox
         else:
+            print('======================================')
             self.enhance_ctrls = []
             for _ in range(modules.config.default_enhance_tabs):
                 enhance_enabled = args.pop()
