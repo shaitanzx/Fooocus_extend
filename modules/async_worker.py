@@ -1555,7 +1555,8 @@ def worker():
         if len(goals) > 0:
             current_progress += 1
             progressbar(async_task, current_progress, 'Image processing ...')
-                    
+        if async_task.adetailer_checkbox:
+            async_task.enhance_ctrls = adetailer.enabler(async_task.enhance_ctrls)            
         should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
 
         if 'vary' in goals:
@@ -1712,8 +1713,10 @@ def worker():
 
             stop_processing(async_task, processing_start_time)
             return
-
-        progressbar(async_task, current_progress, 'Processing enhance ...')
+        if async_task.adetailer_checkbox:
+            progressbar(async_task, current_progress, 'Processing ADetailer ...')
+        else:
+            progressbar(async_task, current_progress, 'Processing enhance ...')
 
 
         active_enhance_tabs = len(async_task.enhance_ctrls)
@@ -1757,7 +1760,132 @@ def worker():
                 elif exception_result == 'break':
                     break
             if async_task.adetailer_checkbox:
-                pass
+                from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
+
+                for index, img in enumerate(images_to_enhance):
+                    async_task.adetailer_stats[index] = 0
+                    adetailer_image_start_time = time.perf_counter()
+
+                # inpaint for all other tabs
+                    for n, arg_s in enumerate(async_task.enhance_ctrls):
+                        current_task_id += 1
+                        current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_inpainting))
+                        progressbar(async_task, current_progress, f'Preparing ADetailer {current_task_id + 1}/{total_count} ...')
+                        adetailer_task_start_time = time.perf_counter()
+                        is_last_adetailer_for_image = (current_task_id + 1) % active_adetail_tabs == 0
+                        persist_image = not async_task.save_final_adetail_image_only or is_last_adetailer_for_image  
+                        args = SimpleNamespace(**arg_s)
+
+                        def is_mediapipe_model(args):
+                            return args.ad_model.lower().removesuffix('.pt').startswith('mediapipe')
+                        is_mediapipe = is_mediapipe_model(args)
+                        if is_mediapipe:
+                            pred = adetailer.mediapipe_predict(args.ad_model.removesuffix('.pt'), img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
+                        else:
+                            ad_model = adetailer.download_yola(args.ad_model)
+                            with disable_safe_unpickle():
+                                pred = adetailer.ultralytics_predict(
+                                    ad_model,
+                                    image=img if isinstance(img, Image.Image) else Image.fromarray(img),
+                                    confidence=args.ad_confidence,
+                                    classes=args.ad_model_classes,
+                                    device='cpu')
+
+                        masks = adetailer.pred_preprocessing(pred, args)
+                        if len(masks) == 0:
+                            print(f'[ADetailer] No detected, skipping')
+                            continue
+                        aditail_copy = (
+                            async_task.base_model_name,
+                            async_task.sampler_name,
+                            async_task.scheduler_name,
+                            async_task.inpaint_strength,
+                            async_task.inpaint_respective_field,
+                            async_task.inpaint_engine,
+                            async_task.cfg_scale,
+                            async_task.clip_skip,
+                            async_task.inpaint_disable_initial_latent 
+                            )
+                        if args.ad_use_checkpoint and args.ad_checkpoint != "Use same checkpoint":
+                            async_task.base_model_name = args.ad_checkpoint
+                        if args.ad_use_sampler:
+                            if args.ad_sampler != "Use same sampler":
+                                async_task.sampler_name = args.ad_sampler
+                            if args.ad_scheduler != "Use same scheduler":
+                                async_task.scheduler_name = args.ad_scheduler
+                        async_task.inpaint_strength  = args.ad_denoising_strength
+                        async_task.inpaint_respective_field  = args.ad_resp_field
+                        async_task.inpaint_engine  = args.ad_inpaint_engine
+                        if args.ad_use_cfg_scale :
+                            async_task.cfg_scale  = args.ad_cfg_scale
+                        async_task.inpaint_disable_initial_latent = args.ad_disable_latent
+                        if async_task.debugging_adetailer_masks_checkbox or async_task.only_detect:
+                            async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
+                            yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
+                                         async_task.disable_intermediate_results)
+                            async_task.adetailer_stats[index] += 1
+
+
+                        if not async_task.only_detect:                    
+                            goals_adetail = ['inpaint']
+                    
+
+                            adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
+                            for n in range(len(masks)):
+                                prompt=adetail_prompt[n]
+                                negative=adetail_negative_prompt[n]
+                                if re.match(r"^\s*\[SKIP\]\s*$", prompt):
+                                    continue
+                                prompt = prompt.replace("[PROMPT]", async_task.prompt)
+                                negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
+                                mask_binary = np.array(masks[n])
+                                mask_binary = (mask_binary > 0.5).astype(np.uint8) * 255
+
+
+
+                                try:
+                                    current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
+                                        all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                                        current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
+                                        async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
+                                        prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), mask_binary,
+                                        preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
+                                        use_synthetic_refiner, width, persist_image=persist_image)
+                                    async_task.adetailer_stats[index] += 1
+                                except ldm_patched.modules.model_management.InterruptProcessingException:
+                                    if async_task.last_stop == 'skip':
+                                        print('User skipped')
+                                        async_task.last_stop = False
+                                        continue
+                                    else:
+                                        print('User stopped')
+                                        exception_result = 'break'
+                                        break
+                                finally:
+                                    done_steps_inpainting += adetail_steps
+
+                        async_task.base_model_name, async_task.sampler_name, async_task.scheduler_name,async_task.inpaint_strength,async_task.inpaint_respective_field,async_task.inpaint_engine,async_task.cfg_scale,async_task.clip_skip,async_task.inpaint_disable_initial_latent = aditail_copy
+                        adetail_task_time = time.perf_counter() - adetailer_task_start_time
+                        print(f'ADetailer time: {adetail_task_time:.2f} seconds')
+                    del pred
+
+                    adetail_image_time = time.perf_counter() - adetailer_image_start_time
+                    print(f'Adetailer image time: {adetail_image_time:.2f} seconds')
+
+                    if exception_result == 'break':
+                        break
+
+
+
+
+
+
+
+
+
+
+
             else:
                 # inpaint for all other tabs
                 for enhance_mask_dino_prompt_text, enhance_prompt, enhance_negative_prompt, enhance_mask_model, enhance_mask_cloth_category, enhance_mask_sam_model, enhance_mask_text_threshold, enhance_mask_box_threshold, enhance_mask_sam_max_detections, enhance_inpaint_disable_initial_latent, enhance_inpaint_engine, enhance_inpaint_strength, enhance_inpaint_respective_field, enhance_inpaint_erode_or_dilate, enhance_mask_invert in async_task.enhance_ctrls:
