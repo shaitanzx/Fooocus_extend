@@ -1760,9 +1760,9 @@ def worker():
                 elif exception_result == 'break':
                     break
             if async_task.adetailer_checkbox:
-                from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
+                    from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
 
-                for index, img in enumerate(images_to_enhance):
+                    ##for index, img in enumerate(images_to_enhance):
                     ######async_task.adetailer_stats[index] = 0
                     adetailer_image_start_time = time.perf_counter()
 
