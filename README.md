@@ -510,7 +510,7 @@ CFG Mimicking from TSNR -  adaptively adjusts guidance strength based on the noi
 
 **ADetailer**
 
-<img width="830" height="965" alt="image" src="https://github.com/user-attachments/assets/30c8ea16-5c00-46f1-8d3e-740338ea1705" />
+<img width="830" height="916" alt="image" src="https://github.com/user-attachments/assets/395cc8f0-721f-4177-9b16-b284a527dfec" />
 <img width="344" height="286" alt="image" src="https://github.com/user-attachments/assets/0fd1ecc4-b9e7-4670-bbca-f9c1b34dd4e3" />
 
 
@@ -573,6 +573,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.2.10
+ 1. Add Upscale Mode in ADetailer
 
 v9.2.9
  1. Add Cleaner module

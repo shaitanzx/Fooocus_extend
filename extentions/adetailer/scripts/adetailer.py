@@ -82,10 +82,10 @@ def ui(is_img2img):
             vae_list=vae_list,
         )
 
-        only_detect_tur, components,ad_model_dropdowns,ad_ckpt_dropdowns = adui(num_models, is_img2img, webui_info)
+        adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect_tur, components,ad_model_dropdowns,ad_ckpt_dropdowns = adui(num_models, is_img2img, webui_info)
         only_detect = only_detect_tur[0]
 
-        return only_detect, components,ad_model_dropdowns,ad_ckpt_dropdowns
+        return adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, components,ad_model_dropdowns,ad_ckpt_dropdowns
 def sort_bboxes_from_class(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[1]
         sortby_idx = BBOX_SORTBY.index(sortby)

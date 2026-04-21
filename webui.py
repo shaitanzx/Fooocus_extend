@@ -599,7 +599,7 @@ with shared.gradio_root:
                         with gr.Row():
                             with gr.Column():
                                 enhance_uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list,
-                                                              value=modules.config.default_enhance_uov_method)
+                                                              value=modules.config.default_enhance_uov_method,interactive=True)
                                 enhance_uov_processing_order = gr.Radio(label='Order of Processing',
                                                                         info='Use before to enhance small details and after to enhance large areas.',
                                                                         choices=flags.enhancement_uov_processing_order,
@@ -608,7 +608,8 @@ with shared.gradio_root:
                                                                    info='Choose which prompt to use for Upscale or Variation.',
                                                                    choices=flags.enhancement_uov_prompt_types,
                                                                    value=modules.config.default_enhance_uov_prompt_type,
-                                                                   visible=modules.config.default_enhance_uov_processing_order == flags.enhancement_uov_after)
+                                                                   visible=modules.config.default_enhance_uov_processing_order == flags.enhancement_uov_after,
+                                                                   interactive=True)
 
                                 enhance_uov_processing_order.change(lambda x: gr.update(visible=x == flags.enhancement_uov_after),
                                                                     inputs=enhance_uov_processing_order,
@@ -752,7 +753,7 @@ with shared.gradio_root:
                             queue=False, show_progress=False)
             with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
                 with gr.Tabs():
-                    only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
+                    adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
@@ -1124,10 +1125,10 @@ with shared.gradio_root:
             text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            enhance_checkbox.change(lambda x: gr.update(visible=x), inputs=enhance_checkbox,
-                                        outputs=enhance_input_panel, queue=False, show_progress=False, _js=switch_js)
-            adetailer_checkbox.change(lambda x: gr.update(visible=x), inputs=adetailer_checkbox,
-                                        outputs=adetailer_input_panel, queue=False, show_progress=False, _js=switch_js)
+            enhance_checkbox.change(lambda x: (gr.update(visible=x), gr.update(value=False) if x else gr.update()),
+                        inputs=enhance_checkbox,outputs=[enhance_input_panel, adetailer_checkbox],queue=False, show_progress=False)
+            adetailer_checkbox.change(lambda x: (gr.update(visible=x), gr.update(value=False) if x else gr.update()),
+                        inputs=adetailer_checkbox,outputs=[adetailer_input_panel, enhance_checkbox],queue=False, show_progress=False)
 
         with gr.Column(scale=1, visible=modules.config.default_advanced_checkbox) as advanced_column:
             with gr.Tab(label='Settings'):
@@ -1813,10 +1814,19 @@ with shared.gradio_root:
             ctrls += [save_metadata_to_images, metadata_scheme]
 
         ctrls += ip_ctrls
-        ctrls += [debugging_dino, dino_erode_or_dilate, debugging_enhance_masks_checkbox,
-                  enhance_input_image, enhance_checkbox, enhance_uov_method, enhance_uov_processing_order,
-                  enhance_uov_prompt_type]
+        ctrls += [debugging_dino, dino_erode_or_dilate, debugging_enhance_masks_checkbox]
+
+        ctrls += [adetailer_checkbox,enhance_checkbox]
+        ctrls += [adetail_input_image, adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type]
+        ctrls += ad_component
+        ctrls += [enhance_input_image, enhance_uov_method, enhance_uov_processing_order, enhance_uov_prompt_type]
         ctrls += enhance_ctrls
+
+        ctrls += [only_detect,debugging_adetailer_masks_checkbox]
+
+        
+        
+        
 
         def parse_meta(raw_prompt_txt, is_generating):
             loaded_json = None
@@ -1867,9 +1877,7 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        ctrls += [only_detect]
-        ctrls += ad_component
-        ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
+
         ctrls += [uov_model]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
