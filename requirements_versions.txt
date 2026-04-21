@@ -41,3 +41,4 @@ ultralytics==8.3.227
 mediapipe==0.10.13
 transformers==4.42.4
 litelama==0.1.7
+ftfy==6.3.1
