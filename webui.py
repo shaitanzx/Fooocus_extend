@@ -1818,9 +1818,11 @@ with shared.gradio_root:
         ctrls += [adetailer_checkbox,enhance_checkbox]
         
         if adetailer_checkbox:
+            print('11111111111111111111111111111111111')
             ctrls += [adetail_input_image, adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type]
             ctrls += ad_component
         else:
+            print('222222222222222222222222222222222222')
             ctrls += [enhance_input_image, enhance_uov_method, enhance_uov_processing_order, enhance_uov_prompt_type]
             ctrls += enhance_ctrls
 
