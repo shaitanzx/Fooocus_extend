@@ -1850,7 +1850,7 @@ def worker():
                                         current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
                                         async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
                                         prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), mask_binary,
-                                        preparation_steps, adetail_steps, switch, tiled, total_count, use_expansion, use_style,
+                                        preparation_steps, enhance_steps, switch, tiled, total_count, use_expansion, use_style,
                                         use_synthetic_refiner, width, persist_image=persist_image)
                                     async_task.enhance_stats[index] += 1
                                 except ldm_patched.modules.model_management.InterruptProcessingException:
@@ -1863,7 +1863,7 @@ def worker():
                                         exception_result = 'break'
                                         break
                                 finally:
-                                    done_steps_inpainting += adetail_steps
+                                    done_steps_inpainting += enhance_steps
 
                         async_task.base_model_name, async_task.sampler_name, async_task.scheduler_name,async_task.inpaint_strength,async_task.inpaint_respective_field,async_task.inpaint_engine,async_task.cfg_scale,async_task.clip_skip,async_task.inpaint_disable_initial_latent = aditail_copy
                         adetail_task_time = time.perf_counter() - adetailer_task_start_time
