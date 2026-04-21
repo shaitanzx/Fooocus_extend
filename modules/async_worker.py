@@ -131,10 +131,6 @@ class AsyncTask:
 
 
 
-        ctrls += [enhance_input_image, enhance_uov_method, enhance_uov_processing_order, enhance_uov_prompt_type]
-        ctrls += enhance_ctrls
-
-
         self.adetailer_checkbox = args.pop() 
         self.enhance_checkbox = args.pop()
         self.adetail_input_image = args.pop()
