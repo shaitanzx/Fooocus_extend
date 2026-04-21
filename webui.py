@@ -608,7 +608,8 @@ with shared.gradio_root:
                                                                    info='Choose which prompt to use for Upscale or Variation.',
                                                                    choices=flags.enhancement_uov_prompt_types,
                                                                    value=modules.config.default_enhance_uov_prompt_type,
-                                                                   visible=modules.config.default_enhance_uov_processing_order == flags.enhancement_uov_after)
+                                                                   visible=modules.config.default_enhance_uov_processing_order == flags.enhancement_uov_after,
+                                                                   interactive=True)
 
                                 enhance_uov_processing_order.change(lambda x: gr.update(visible=x == flags.enhancement_uov_after),
                                                                     inputs=enhance_uov_processing_order,
@@ -1816,15 +1817,10 @@ with shared.gradio_root:
         ctrls += [debugging_dino, dino_erode_or_dilate, debugging_enhance_masks_checkbox]
 
         ctrls += [adetailer_checkbox,enhance_checkbox]
-        
-        if adetailer_checkbox:
-            print('11111111111111111111111111111111111')
-            ctrls += [adetail_input_image, adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type]
-            ctrls += ad_component
-        else:
-            print('222222222222222222222222222222222222')
-            ctrls += [enhance_input_image, enhance_uov_method, enhance_uov_processing_order, enhance_uov_prompt_type]
-            ctrls += enhance_ctrls
+        ctrls += [adetail_input_image, adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type]
+        ctrls += ad_component
+        ctrls += [enhance_input_image, enhance_uov_method, enhance_uov_processing_order, enhance_uov_prompt_type]
+        ctrls += enhance_ctrls
 
         ctrls += [only_detect,debugging_adetailer_masks_checkbox]
 
