@@ -198,6 +198,8 @@ class AsyncTask:
         self.images_to_enhance_count = 0
         self.enhance_stats = {}
         self.only_detect = args.pop()
+        if self.adetailer_checkbox and self.only_detect:
+            self.enhance_uov_method = disabled.casefold()
         self.debugging_adetailer_masks_checkbox=args.pop()
         self.save_final_adetail_image_only = self.save_final_enhanced_image_only 
         #!self.x_type = args.pop()
@@ -1761,9 +1763,6 @@ def worker():
                     break
             if async_task.adetailer_checkbox:
                     from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
-
-                    ##for index, img in enumerate(images_to_enhance):
-                    ######async_task.adetailer_stats[index] = 0
                     adetailer_image_start_time = time.perf_counter()
 
                 # inpaint for all other tabs
