@@ -132,14 +132,18 @@ class AsyncTask:
 
         self.adetailer_checkbox = args.pop() 
         self.enhance_checkbox = args.pop()
-
-
-
         self.enhance_input_image = args.pop()
         
         self.enhance_uov_method = args.pop()
         self.enhance_uov_processing_order = args.pop()
         self.enhance_uov_prompt_type = args.pop()
+
+
+        print('----',self.adetailer_checkbox,self.enhance_checkbox,self.enhance_input_image,self.enhance_uov_method,self.enhance_uov_processing_order,self.enhance_uov_prompt_type)
+
+
+
+
         if self.adetailer_checkbox:
             print('-----------------------------')
             self.enhance_ctrls = [args.pop() for _ in range(default_adetail_tab)]
