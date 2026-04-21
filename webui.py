@@ -1813,10 +1813,22 @@ with shared.gradio_root:
             ctrls += [save_metadata_to_images, metadata_scheme]
 
         ctrls += ip_ctrls
-        ctrls += [debugging_dino, dino_erode_or_dilate, debugging_enhance_masks_checkbox,
-                  enhance_input_image, enhance_checkbox, enhance_uov_method, enhance_uov_processing_order,
-                  enhance_uov_prompt_type]
-        ctrls += enhance_ctrls
+        ctrls += [debugging_dino, dino_erode_or_dilate, debugging_enhance_masks_checkbox]
+
+        ctrls += [adetailer_checkbox,enhance_checkbox]
+        
+        if adetailer_checkbox:
+            ctrls += [adetail_input_image, adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type]
+            ctrls += ad_component
+        else:
+            ctrls += [enhance_input_image, enhance_uov_method, enhance_uov_processing_order, enhance_uov_prompt_type]
+            ctrls += enhance_ctrls
+
+        ctrls += [only_detect,debugging_adetailer_masks_checkbox]
+
+        
+        
+        
 
         def parse_meta(raw_prompt_txt, is_generating):
             loaded_json = None
@@ -1867,9 +1879,7 @@ with shared.gradio_root:
         ctrls += [tile_x,tile_y]
         ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
         ctrls += [transper]
-        ctrls += [adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect]
-        ctrls += ad_component
-        ctrls += [adetail_input_image,debugging_adetailer_masks_checkbox,adetailer_checkbox]
+
         ctrls += [uov_model]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:

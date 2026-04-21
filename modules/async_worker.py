@@ -129,51 +129,64 @@ class AsyncTask:
         self.dino_erode_or_dilate = args.pop()
         self.debugging_enhance_masks_checkbox = args.pop()
 
-        self.enhance_input_image = args.pop()
+
+        self.adetailer_checkbox = args.pop() 
         self.enhance_checkbox = args.pop()
+
+
+
+        self.enhance_input_image = args.pop()
+        
         self.enhance_uov_method = args.pop()
         self.enhance_uov_processing_order = args.pop()
         self.enhance_uov_prompt_type = args.pop()
-        self.enhance_ctrls = []
-        for _ in range(modules.config.default_enhance_tabs):
-            enhance_enabled = args.pop()
-            enhance_mask_dino_prompt_text = args.pop()
-            enhance_prompt = args.pop()
-            enhance_negative_prompt = args.pop()
-            enhance_mask_model = args.pop()
-            enhance_mask_cloth_category = args.pop()
-            enhance_mask_sam_model = args.pop()
-            enhance_mask_text_threshold = args.pop()
-            enhance_mask_box_threshold = args.pop()
-            enhance_mask_sam_max_detections = args.pop()
-            enhance_inpaint_disable_initial_latent = args.pop()
-            enhance_inpaint_engine = args.pop()
-            enhance_inpaint_strength = args.pop()
-            enhance_inpaint_respective_field = args.pop()
-            enhance_inpaint_erode_or_dilate = args.pop()
-            enhance_mask_invert = args.pop()
-            if enhance_enabled:
-                self.enhance_ctrls.append([
-                    enhance_mask_dino_prompt_text,
-                    enhance_prompt,
-                    enhance_negative_prompt,
-                    enhance_mask_model,
-                    enhance_mask_cloth_category,
-                    enhance_mask_sam_model,
-                    enhance_mask_text_threshold,
-                    enhance_mask_box_threshold,
-                    enhance_mask_sam_max_detections,
-                    enhance_inpaint_disable_initial_latent,
-                    enhance_inpaint_engine,
-                    enhance_inpaint_strength,
-                    enhance_inpaint_respective_field,
-                    enhance_inpaint_erode_or_dilate,
-                    enhance_mask_invert
-                ])
-        self.should_enhance = self.enhance_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
+        if self.adetailer_checkbox:
+            self.enhance_ctrls = [args.pop() for _ in range(default_adetail_tab)]
+            self.should_enhance = self.adetailer_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
+            self.enhance_checkbox = self.adetailer_checkbox
+        else:
+            self.enhance_ctrls = []
+            for _ in range(modules.config.default_enhance_tabs):
+                enhance_enabled = args.pop()
+                enhance_mask_dino_prompt_text = args.pop()
+                enhance_prompt = args.pop()
+                enhance_negative_prompt = args.pop()
+                enhance_mask_model = args.pop()
+                enhance_mask_cloth_category = args.pop()
+                enhance_mask_sam_model = args.pop()
+                enhance_mask_text_threshold = args.pop()
+                enhance_mask_box_threshold = args.pop()
+                enhance_mask_sam_max_detections = args.pop()
+                enhance_inpaint_disable_initial_latent = args.pop()
+                enhance_inpaint_engine = args.pop()
+                enhance_inpaint_strength = args.pop()
+                enhance_inpaint_respective_field = args.pop()
+                enhance_inpaint_erode_or_dilate = args.pop()
+                enhance_mask_invert = args.pop()
+                if enhance_enabled:
+                    self.enhance_ctrls.append([
+                        enhance_mask_dino_prompt_text,
+                        enhance_prompt,
+                        enhance_negative_prompt,
+                        enhance_mask_model,
+                        enhance_mask_cloth_category,
+                        enhance_mask_sam_model,
+                        enhance_mask_text_threshold,
+                        enhance_mask_box_threshold,
+                        enhance_mask_sam_max_detections,
+                        enhance_inpaint_disable_initial_latent,
+                        enhance_inpaint_engine,
+                        enhance_inpaint_strength,
+                        enhance_inpaint_respective_field,
+                        enhance_inpaint_erode_or_dilate,
+                        enhance_mask_invert
+                    ])
+            self.should_enhance = self.enhance_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
         self.images_to_enhance_count = 0
         self.enhance_stats = {}
-
+        self.only_detect = args.pop()
+        self.debugging_adetailer_masks_checkbox=args.pop()
+        self.save_final_adetail_image_only = self.save_final_enhanced_image_only 
         #!self.x_type = args.pop()
         #!self.x_values = args.pop()
         #!self.x_values_dropdown = args.pop()
@@ -277,16 +290,6 @@ class AsyncTask:
         self.poDoVector = args.pop()
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
-        self.adetail_uov_method = args.pop()
-        self.adetail_uov_processing_order = args.pop()
-        self.adetail_uov_prompt_type = args.pop()
-        self.only_detect = args.pop()
-        self.ad_component = [args.pop() for _ in range(default_adetail_tab)]
-        self.adetail_input_image = args.pop ()
-        self.debugging_adetailer_masks_checkbox=args.pop()
-        self.save_final_adetail_image_only = self.save_final_enhanced_image_only 
-        self.adetailer_checkbox = args.pop()      
-        self.adetailer_stats = {}
         self.uov_model = args.pop()
         
 
@@ -1263,8 +1266,8 @@ def worker():
             goals.append('enhance')
             skip_prompt_processing = True
             async_task.enhance_input_image = HWC3(async_task.enhance_input_image)
-        if async_task.current_tab == 'adetail' and async_task.adetail_input_image is not None:
-            goals.append('adetail')
+        if async_task.current_tab == 'adetail' and async_task.enhance_input_image is not None:
+            goals.append('enhance')
             skip_prompt_processing = True
 
         return base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner
