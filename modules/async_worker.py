@@ -1679,7 +1679,7 @@ def worker():
         for current_task_id, task in enumerate(tasks):
             if async_task.aspect_random==True:
                 async_task.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
-                width, height = async_task.aspect_ratios_selection.replace('?', ' ').split(' ')[:2]
+                width, height = async_task.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
                 width, height = int(width), int(height)
             progressbar(async_task, current_progress, f'Preparing task {current_task_id + 1}/{async_task.image_number} ...')
             execution_start_time = time.perf_counter()
