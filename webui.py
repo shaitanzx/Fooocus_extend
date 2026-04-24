@@ -383,6 +383,36 @@ with shared.gradio_root:
 
                     stop_button.click(stop_clicked, inputs=currentTask, outputs=currentTask, queue=False, show_progress=False, _js='cancelGenerateForever')
                     skip_button.click(skip_clicked, inputs=currentTask, outputs=currentTask, queue=False, show_progress=False)
+
+
+            with gr.Accordion(label="🎭 LoRA Style Control (TE)", open=False):
+                gr.Markdown("Управление влиянием лоры на **стиль и промпт**. Не влияет на композицию.")
+    
+                te_bw = gr.Textbox(
+                    label="TE Block Weight (16 значений)",
+                    value="1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0",
+                    placeholder="1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0",
+                    info="1.0 = полная сила, 0.0 = отключить слой. Пример: 0.5,0.5,0.5,0.5,1.0,1.0..."
+                )
+    
+            with gr.Row():
+                gr.Button("🎨 Мягкий стиль").click(
+                    fn=lambda: "0.6,0.6,0.6,0.6,0.8,0.8,0.8,0.8,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0",
+                    inputs=[], outputs=[te_bw]
+                )
+                gr.Button("🔇 Только промпт").click(
+                    fn=lambda: "0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0",
+                    inputs=[], outputs=[te_bw]
+                )
+                gr.Button("↺ Сброс").click(
+                    fn=lambda: "1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0",
+                    inputs=[], outputs=[te_bw]
+                )
+
+
+
+
+
             with gr.Accordion(label='Wildcards', visible=True, open=False) as prompt_wildcards:
                 wildcards_list = gr.Dataset(components=[prompt], label='Wildcards:', samples=wildcards.get_wildcards_samples(), visible=True, samples_per_page=14)
                 with gr.Accordion(label='Words/phrases of wildcard', visible=True, open=False) as words_in_wildcard:
@@ -1879,6 +1909,7 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
+        ctrls += [te_bw]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
