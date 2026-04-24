@@ -142,8 +142,10 @@ def synthesize_refiner_model():
 
 @torch.no_grad()
 @torch.inference_mode()
-def refresh_loras(loras, base_model_additional_loras=None):
+def refresh_loras(loras, base_model_additional_loras=None, te_bw="1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0"):
     global model_base, model_refiner
+
+    print(f"[DEBUG 3] refresh_loras получил: te_bw = {te_bw}")
 
     if not isinstance(base_model_additional_loras, list):
         base_model_additional_loras = []
@@ -244,8 +246,9 @@ def prepare_text_encoder(async_call=True):
 @torch.no_grad()
 @torch.inference_mode()
 def refresh_everything(refiner_model_name, base_model_name, loras,
-                       base_model_additional_loras=None, use_synthetic_refiner=False, vae_name=None):
+                       base_model_additional_loras=None, use_synthetic_refiner=False, vae_name=None, te_bw=None):
     global final_unet, final_clip, final_vae, final_refiner_unet, final_refiner_vae, final_expansion
+    print(f"[DEBUG 2] refresh_everything получил: te_bw = {te_bw}")
 
     final_unet = None
     final_clip = None

@@ -75,6 +75,7 @@ class StableDiffusionModel:
         loras_to_load = []
 
         for filename, weight in loras:
+            print(f"[DEBUG 4] Цикл: загружаем {lora_filename}, передаём ему te_bw = {te_bw}")
             if filename == 'None':
                 continue
 
