@@ -27,15 +27,6 @@ import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 
 
-
-
-
-
-
-
-
-
-
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -253,7 +244,7 @@ def prepare_text_encoder(async_call=True):
 @torch.no_grad()
 @torch.inference_mode()
 def refresh_everything(refiner_model_name, base_model_name, loras,
-                       base_model_additional_loras=None, use_synthetic_refiner=False, vae_name=None, te_bw=None):
+                       base_model_additional_loras=None, use_synthetic_refiner=False, vae_name=None):
     global final_unet, final_clip, final_vae, final_refiner_unet, final_refiner_vae, final_expansion
 
     final_unet = None
@@ -269,8 +260,8 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
     else:
         refresh_refiner_model(refiner_model_name)
         refresh_base_model(base_model_name, vae_name)
-    print('222222222222222222222222222222222222222222222222222222')
-    refresh_loras(loras, te_bw=te_bw, base_model_additional_loras=base_model_additional_loras)
+
+    refresh_loras(loras, base_model_additional_loras=base_model_additional_loras)
     assert_model_integrity()
 
     final_unet = model_base.unet_with_lora

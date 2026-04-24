@@ -996,12 +996,10 @@ def worker():
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
         loras += async_task.performance_loras
-        print('111111111111111111111111111111111111111111111111')
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,
-                                    use_synthetic_refiner=use_synthetic_refiner, vae_name=async_task.vae_name,
-                                    te_bw=async_task.te_bw)
+                                    use_synthetic_refiner=use_synthetic_refiner, vae_name=async_task.vae_name)
         pipeline.set_clip_skip(async_task.clip_skip)
         if advance_progress:
             current_progress += 1
