@@ -99,8 +99,8 @@ class StableDiffusionModel:
     def refresh_loras(self, loras, te_bw=None):
         assert isinstance(loras, list)
 
-        if self.visited_loras == str(loras):
-            return
+        #if self.visited_loras == str(loras):
+        #    return
 
         self.visited_loras = str(loras)
 
