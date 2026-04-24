@@ -142,7 +142,10 @@ def synthesize_refiner_model():
 
 @torch.no_grad()
 @torch.inference_mode()
-def refresh_loras(loras, base_model_additional_loras=None, te_bw="1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0"):
+def refresh_loras(loras, base_model_additional_loras=None, te_bw=None):
+
+
+    
     global model_base, model_refiner
 
     print(f"[DEBUG 3] refresh_loras получил: te_bw = {te_bw}")
@@ -150,8 +153,8 @@ def refresh_loras(loras, base_model_additional_loras=None, te_bw="1.0,1.0,1.0,1.
     if not isinstance(base_model_additional_loras, list):
         base_model_additional_loras = []
 
-    model_base.refresh_loras(loras + base_model_additional_loras)
-    model_refiner.refresh_loras(loras)
+    model_base.refresh_loras(loras + base_model_additional_loras, te_bw=te_bw)
+    model_refiner.refresh_loras(loras, te_bw=te_bw)
 
     return
 

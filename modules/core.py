@@ -59,7 +59,7 @@ class StableDiffusionModel:
 
     @torch.no_grad()
     @torch.inference_mode()
-    def refresh_loras(self, loras):
+    def refresh_loras(self, loras, te_bw=None):
         assert isinstance(loras, list)
 
         if self.visited_loras == str(loras):
