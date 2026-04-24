@@ -95,6 +95,7 @@ class StableDiffusionModel:
 
         for lora_filename, weight in loras_to_load:
             print(f"[DEBUG 4] Цикл: загружаем {lora_filename}, передаём ему te_bw = {te_bw}")
+            print('----------------- in core')
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)

@@ -149,7 +149,7 @@ def refresh_loras(loras, base_model_additional_loras=None, te_bw=None):
     global model_base, model_refiner
 
     print(f"[DEBUG 3] refresh_loras получил: te_bw = {te_bw}")
-
+    print('----------------- in default_pipeline')
     if not isinstance(base_model_additional_loras, list):
         base_model_additional_loras = []
 
@@ -266,8 +266,8 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
     else:
         refresh_refiner_model(refiner_model_name)
         refresh_base_model(base_model_name, vae_name)
-
-    refresh_loras(loras, base_model_additional_loras=base_model_additional_loras)
+    
+    refresh_loras(loras, base_model_additional_loras=base_model_additional_loras,te_bw=te_bw)
     assert_model_integrity()
 
     final_unet = model_base.unet_with_lora
