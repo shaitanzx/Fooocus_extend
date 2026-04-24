@@ -75,7 +75,7 @@ class StableDiffusionModel:
         loras_to_load = []
 
         for filename, weight in loras:
-            print(f"[DEBUG 4] Цикл: загружаем {lora_filename}, передаём ему te_bw = {te_bw}")
+            
             if filename == 'None':
                 continue
 
@@ -94,6 +94,7 @@ class StableDiffusionModel:
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
         for lora_filename, weight in loras_to_load:
+            print(f"[DEBUG 4] Цикл: загружаем {lora_filename}, передаём ему te_bw = {te_bw}")
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
