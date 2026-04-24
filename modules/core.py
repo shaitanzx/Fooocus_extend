@@ -101,7 +101,7 @@ class StableDiffusionModel:
 
         #if self.visited_loras == str(loras):
         #    return
-
+        
         self.visited_loras = str(loras)
 
         if self.unet is None:
@@ -110,7 +110,7 @@ class StableDiffusionModel:
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
 
         loras_to_load = []
-
+        print ('-----------------------  load lora')
         for filename, weight in loras:
             
             if filename == 'None':
