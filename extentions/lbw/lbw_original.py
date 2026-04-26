@@ -89,7 +89,7 @@ except:
 
 loopstopper = True
 
-ATYPES =["none","Block ID","values","seed","Original Weights","elements"]
+# ATYPES =["none","Block ID","values","seed","Original Weights","elements"]
 
 # DEF_WEIGHT_PRESET = f"\
 # NONE:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\n\
@@ -105,10 +105,10 @@ ATYPES =["none","Block ID","values","seed","Original Weights","elements"]
 # FLUXALL:{','.join(['1']*61)}"
 
 
-scriptpath = os.path.dirname(os.path.abspath(__file__))
+# scriptpath = os.path.dirname(os.path.abspath(__file__))
 
-USE_OLD_ACTIVE = "old_active_check_lbw"
-use_old_active = getattr(shared.opts,USE_OLD_ACTIVE, False)
+# USE_OLD_ACTIVE = "old_active_check_lbw"
+# use_old_active = getattr(shared.opts,USE_OLD_ACTIVE, False)
 
 class Script(modules.scripts.Script):
     # def __init__(self):

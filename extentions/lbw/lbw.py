@@ -56,6 +56,9 @@ ATTNDEEPON:IN05-OUT05:attn:1\n\n\
 ATTNDEEPOFF:IN05-OUT05:attn:0\n\n\
 PROJDEEPOFF:IN05-OUT05:proj:0\n\n\
 XYZ:::1"
+
+ATYPES =["none","Block ID","values","seed","Original Weights","elements"]
+
 def checkloadcond(line: str) -> bool:
     """Возвращает True, если строку нужно пропустить."""
     stripped = line.strip()
