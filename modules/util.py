@@ -463,7 +463,7 @@ def _resolve_lbw_markers(lbw_str: str, x_base: float) -> Optional[str]:
     return ",".join(resolved)
 
 
-def parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
+def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
                                       lora_filenames=None, lbw_presets_path: Optional[str] = None,
                                       lbwe_presets_path: Optional[str] = None) -> tuple:
@@ -599,56 +599,56 @@ def parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: List
 
 
 
-# def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
-#                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
-#                                       lora_filenames=None) -> tuple[List[Tuple[AnyStr, float]], str]:
-#     # prevent unintended side effects when returning without detection
-#     loras = loras.copy()
+def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
+                                      skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
+                                      lora_filenames=None) -> tuple[List[Tuple[AnyStr, float]], str]:
+    # prevent unintended side effects when returning without detection
+    loras = loras.copy()
 
-#     if lora_filenames is None:
-#         lora_filenames = []
+    if lora_filenames is None:
+        lora_filenames = []
 
-#     found_loras = []
-#     prompt_without_loras = ''
-#     cleaned_prompt = ''
+    found_loras = []
+    prompt_without_loras = ''
+    cleaned_prompt = ''
 
-#     for token in prompt.split(','):
-#         matches = LORAS_PROMPT_PATTERN.findall(token)
+    for token in prompt.split(','):
+        matches = LORAS_PROMPT_PATTERN.findall(token)
 
-#         if len(matches) == 0:
-#             prompt_without_loras += token + ', '
-#             continue
-#         for match in matches:
-#             lora_name = match[1] + '.safetensors'
-#             if not skip_file_check:
-#                 lora_name = get_filname_by_stem(match[1], lora_filenames)
-#             if lora_name is not None:
-#                 found_loras.append((lora_name, float(match[2])))
-#             token = token.replace(match[0], '')
-#         prompt_without_loras += token + ', '
+        if len(matches) == 0:
+            prompt_without_loras += token + ', '
+            continue
+        for match in matches:
+            lora_name = match[1] + '.safetensors'
+            if not skip_file_check:
+                lora_name = get_filname_by_stem(match[1], lora_filenames)
+            if lora_name is not None:
+                found_loras.append((lora_name, float(match[2])))
+            token = token.replace(match[0], '')
+        prompt_without_loras += token + ', '
 
-#     if prompt_without_loras != '':
-#         cleaned_prompt = prompt_without_loras[:-2]
+    if prompt_without_loras != '':
+        cleaned_prompt = prompt_without_loras[:-2]
 
-#     if prompt_cleanup:
-#         cleaned_prompt = cleanup_prompt(prompt_without_loras)
+    if prompt_cleanup:
+        cleaned_prompt = cleanup_prompt(prompt_without_loras)
 
-#     new_loras = []
-#     lora_names = [lora[0] for lora in loras]
-#     for found_lora in found_loras:
-#         if deduplicate_loras and (found_lora[0] in lora_names or found_lora in new_loras):
-#             continue
-#         new_loras.append(found_lora)
+    new_loras = []
+    lora_names = [lora[0] for lora in loras]
+    for found_lora in found_loras:
+        if deduplicate_loras and (found_lora[0] in lora_names or found_lora in new_loras):
+            continue
+        new_loras.append(found_lora)
 
-#     if len(new_loras) == 0:
-#         return loras, cleaned_prompt
+    if len(new_loras) == 0:
+        return loras, cleaned_prompt
 
-#     updated_loras = []
-#     for lora in loras + new_loras:
-#         if lora[0] != "None":
-#             updated_loras.append(lora)
+    updated_loras = []
+    for lora in loras + new_loras:
+        if lora[0] != "None":
+            updated_loras.append(lora)
 
-#     return updated_loras[:loras_limit], cleaned_prompt
+    return updated_loras[:loras_limit], cleaned_prompt
 
 
 def remove_performance_lora(filenames: list, performance: Performance | None):
