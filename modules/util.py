@@ -25,6 +25,21 @@ LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.L
 # <lora:aNotherLora:-1.6>
 LORAS_PROMPT_PATTERN = re.compile(r"(<lora:([^:]+):([+-]?(?:\d+(?:\.\d*)?|\.\d+))>)", re.X)
 
+#################
+# 🔑 Индексы выходного списка
+IDX_FILENAME = 0
+IDX_WEIGHT   = 1
+IDX_TE       = 2
+IDX_UNET     = 3
+IDX_LBW      = 4
+IDX_LBWE     = 5
+IDX_START    = 6
+IDX_STOP     = 7
+IDX_X        = 8
+IDX_EXTRA    = 9
+##################
+
+
 HASH_SHA256_LENGTH = 10
 
 
@@ -385,6 +400,130 @@ def get_file_from_folder_list(name, folders):
 
 def get_enabled_loras(loras: list, remove_none=True) -> list:
     return [(lora[1], lora[2]) for lora in loras if lora[0] and (lora[1] != 'None' if remove_none else True)]
+
+#формат списка на выходе
+#<lora:cyberpunk_style:0.85:1.2:0.9:lbw=INS:lbwe=ATTN_BOOST:step=5-25:x=0.7:custom_tag=v2>
+#[
+#    'cyberpunk_style.safetensors',            # [0] IDX_FILENAME
+#    0.85,                                     # [1] IDX_WEIGHT
+#    1.2,                                      # [2] IDX_TE
+#    0.9,                                      # [3] IDX_UNET
+#    '1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0',      # [4] IDX_LBW  ← пресет INS развернут
+#    'IN04-OUT04:attn:1.5',                    # [5] IDX_LBWE ← пресет ATTN_BOOST развернут
+#    5,                                        # [6] IDX_START
+#    25,                                       # [7] IDX_STOP
+#    0.7,                                      # [8] IDX_X
+#    {'custom_tag': 'v2'}                      # [9] IDX_EXTRA
+#]
+#######################
+def _resolve_lbw_markers(lbw_str: str, x_base: float) -> Optional[str]:
+    """Заменяет R/r и U/u на float. X/x, смещения и пресеты оставляет сырыми строками."""
+    if not lbw_str:
+        return None
+    
+    resolved = []
+    for p in lbw_str.split(','):
+        p = p.strip()
+        if not p: continue
+            
+        lower_p = p.lower()
+        
+        # R/r -> случайное [0.0, 1.0]
+        if lower_p == 'r':
+            resolved.append(f"{random.uniform(0.0, 1.0):.4f}")
+            continue
+        # U/u -> случайное [-0.5, 1.5]
+        if lower_p == 'u':
+            resolved.append(f"{random.uniform(-0.5, 1.5):.4f}")
+            continue
+            
+        # Обычное число
+        try:
+            resolved.append(f"{float(p):.4f}")
+            continue
+        except ValueError:
+            pass
+            
+        # Всё остальное (X, X+0.3, x-0.2, имена пресетов) оставляем без изменений
+        resolved.append(p)
+        
+    return ",".join(resolved)
+
+
+def _parse_lora_to_list(total_steps: int, content: str, total_steps: Optional[int] = None) -> List[Any]:
+    start, stop = 0, total_steps
+    parsed_start = parsed_stop = parsed_step = None
+    x_base = 0.0          # 🔹 Дефолт 0, если не задан
+    lbw_raw = None
+
+    # 🔹 Инициализация с финальными дефолтами
+    params = [None, 1.0, 1.0, 1.0, None, None, 0, total_steps, 0.0, {}]
+    parts = content.split(':')
+    
+    if not parts or not parts[0].strip():
+        return params
+
+    params[IDX_FILENAME] = parts[0].strip()
+    if len(parts) > 1:
+        try: params[IDX_WEIGHT] = float(parts[1])
+        except: pass
+
+    next_pos = IDX_TE
+    for i in range(2, len(parts)):
+        p = parts[i].strip()
+        if not p:
+            if next_pos == IDX_TE: next_pos = IDX_UNET
+            elif next_pos == IDX_UNET: next_pos = None
+            continue
+
+        if '=' in p:
+            k, v = p.split('=', 1)
+            k, v = k.strip().lower(), v.strip()
+            
+            if k in ('lbw', 'w'): lbw_raw = v
+            elif k in ('lbwe', 'element', 'lbwelem'): params[IDX_LBWE] = v
+            elif k == 'start':
+                try: parsed_start = int(v)
+                except: pass
+            elif k == 'stop':
+                try: parsed_stop = int(v)
+                except: pass
+            elif k == 'step' and '-' in v:
+                try:
+                    s, e = v.split('-', 1)
+                    parsed_step = (int(s.strip()), int(e.strip()))
+                except: pass
+            elif k == 'x':
+                try: x_base = float(v)
+                except: pass
+            else:
+                params[IDX_EXTRA][k] = v
+        else:
+            try:
+                val = float(p)
+                if next_pos == IDX_TE: params[IDX_TE] = val; next_pos = IDX_UNET
+                elif next_pos == IDX_UNET: params[IDX_UNET] = val; next_pos = None
+            except: pass
+
+    # Приоритет: step > явные start/stop > дефолты
+    if parsed_step: start, stop = parsed_step
+    else:
+        if parsed_start is not None: start = parsed_start
+        if parsed_stop is not None: stop = parsed_stop
+
+    # Разрешаем только R/U и чистые числа. X остаётся сырым.
+    if lbw_raw:
+        params[IDX_LBW] = _resolve_lbw_markers(lbw_raw, x_base)
+
+    params[IDX_START] = start
+    params[IDX_STOP] = stop
+    params[IDX_X] = x_base
+    return params
+##########################
+
+
+
+
 
 
 def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,

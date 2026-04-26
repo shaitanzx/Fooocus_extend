@@ -349,7 +349,7 @@ def worker():
     from extras.expansion import safe_str
     from modules.util import (remove_empty_str, HWC3, resize_image, get_image_shape_ceil, set_image_shape_ceil,
                               get_shape_ceil, resample_image, erode_or_dilate, parse_lora_references_from_prompt,
-                              apply_wildcards)
+                              apply_wildcards,_parse_lora_references_from_prompt)
     from modules.upscaler import perform_upscale
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
@@ -992,9 +992,10 @@ def worker():
         progressbar(async_task, current_progress, 'Loading models ...')
         lora_filenames = modules.util.remove_performance_lora(modules.config.lora_filenames,
                                                               async_task.performance_selection)
-        loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
+        loras, prompt = _parse_lora_references_from_prompt(async_task.step,prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
+        print('---------------------------', loras)
         loras += async_task.performance_loras
         print(f"[DEBUG 1] async_worker -> pipeline: te_bw = {async_task.te_bw}")
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
