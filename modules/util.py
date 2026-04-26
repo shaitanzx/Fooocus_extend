@@ -7,7 +7,7 @@ import math
 import os
 import cv2
 import re
-from typing import List, Tuple, AnyStr, NamedTuple, Dict
+from typing import List, Tuple, AnyStr, NamedTuple, Dict, Optional
 
 import json
 import hashlib
