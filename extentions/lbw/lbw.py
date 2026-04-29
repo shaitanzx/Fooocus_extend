@@ -58,7 +58,7 @@ PROJDEEPOFF:IN05-OUT05:proj:0\n\n\
 XYZ:::1"
 
 ATYPES =["none","Block ID","values","seed","Original Weights","elements"]
-def _load_presets(filepath: str) -> Dict[str, str]:
+def _load_presets(filepath: str):
     """Загружает пресеты из файла в словарь {ИМЯ: ЗНАЧЕНИЕ}"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     filepath = os.path.join(script_dir, filepath)
@@ -76,6 +76,7 @@ def _load_presets(filepath: str) -> Dict[str, str]:
                 presets[name.strip()] = val.strip().replace('\n', '')
     except Exception:
         pass
+    print('--------preset',presets)
     return presets
 def checkloadcond(line: str) -> bool:
     """Возвращает True, если строку нужно пропустить."""
