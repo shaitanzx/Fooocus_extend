@@ -72,7 +72,7 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 
 
-def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
+def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
     """
     Применяет блочные веса (строго 12 индексов) к патчам ldm_patched для SDXL.
     При debug=True выводит подробную таблицу маппинга.
