@@ -17,6 +17,7 @@ from PIL import Image
 import modules.config
 import modules.sdxl_styles
 from modules.flags import Performance
+import extentions.lbw.lbw as lbw
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -416,23 +417,7 @@ def get_enabled_loras(loras: list, remove_none=True) -> list:
 #    {'custom_tag': 'v2'}                      # [9] IDX_EXTRA
 #]
 #######################
-def _load_presets(filepath: str) -> Dict[str, str]:
-    """Загружает пресеты из файла в словарь {ИМЯ: ЗНАЧЕНИЕ}"""
-    presets = {}
-    if not filepath or not os.path.exists(filepath):
-        return presets
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-        for block in content.replace('\r\n', '\n').split('\n\n'):
-            block = block.strip()
-            if not block or block.startswith('#'): continue
-            if ':' in block:
-                name, val = block.split(':', 1)
-                presets[name.strip()] = val.strip().replace('\n', '')
-    except Exception:
-        pass
-    return presets
+
 
 def _resolve_lbw_markers(lbw_str: str, x_base: float) -> Optional[str]:
     """Заменяет ТОЛЬКО R/r и U/u на числа. X/x, смещения и пресеты оставляет сырыми."""
@@ -465,8 +450,7 @@ def _resolve_lbw_markers(lbw_str: str, x_base: float) -> Optional[str]:
 
 def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
-                                      lora_filenames=None, lbw_presets_path: Optional[str] = None,
-                                      lbwe_presets_path: Optional[str] = None) -> tuple:
+                                      lora_filenames=None) -> tuple:
     """
     DROP-IN REPLACEMENT. Сохраняет 100% оригинальной логики + поддерживает расширенный формат.
     Возвращаемый тип: ([список_лор], очищенный_промпт)
@@ -485,9 +469,12 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
     lora_pattern = re.compile(r'<lora:\s*([^>]+?)\s*>', re.IGNORECASE)
 
     # Загрузка пресетов (автопоиск в папке скрипта, если пути не переданы)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    lbw_dict = _load_presets(lbw_presets_path or os.path.join(script_dir, "lbwpresets.txt"))
-    lbwe_dict = _load_presets(lbwe_presets_path or os.path.join(script_dir, "elempresets.txt"))
+    
+    lbw_dict = lbw._load_presets("lbwpresets.txt")
+    lbwe_dict = lbw._load_presets("elempresets.txt")
+
+    print('========================',lbw_dict)
+    print('========================',lbwe_dict)
 
     for match in lora_pattern.finditer(prompt):
         content = match.group(1)
