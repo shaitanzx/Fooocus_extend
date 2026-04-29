@@ -29,35 +29,35 @@ from ldm_patched.contrib.external_model_advanced import ModelSamplingDiscrete, M
 import re
 from typing import List, Dict, Any, Tuple
 
-def parse_te_bw(bw_str: str) -> List[float]:
-    try:
-        if not bw_str:
-            return [1.0] * 16
-        weights = [float(x.strip()) for x in bw_str.split(',') if x.strip()]
-        return (weights + [1.0] * 16)[:16]
-    except Exception:
-        return [1.0] * 16
+# def parse_te_bw(bw_str: str) -> List[float]:
+#     try:
+#         if not bw_str:
+#             return [1.0] * 16
+#         weights = [float(x.strip()) for x in bw_str.split(',') if x.strip()]
+#         return (weights + [1.0] * 16)[:16]
+#     except Exception:
+#         return [1.0] * 16
 
-def apply_te_block_weights(patch_dict: Dict[str, Any], te_bw: List[float]) -> Dict[str, Any]:
-    for key, (lora_type, data) in patch_dict.items():
-        if not re.search(r'(?:clip_l|clip_g|text_model)\.transformer\.(?:text_model\.)?encoder\.layers\.(\d+)', key):
-            continue
-        match = re.search(r'encoder\.layers\.(\d+)', key)
-        if not match:
-            continue
-        layer_idx = int(match.group(1))
-        bw_index = min(layer_idx // 2, 15) if 'clip_g' in key else min(layer_idx, 15)
-        coeff = te_bw[bw_index]
-        if lora_type == 'lora':
-            A, B, alpha, mid = data
-            patch_dict[key] = ('lora', (A, B, alpha * coeff, mid))
-        elif lora_type == 'loha':
-            w1a, w1b, alpha, w2a, w2b, t1, t2 = data
-            patch_dict[key] = ('loha', (w1a, w1b, alpha * coeff, w2a, w2b, t1, t2))
-        elif lora_type == 'lokr':
-            w1, w2, alpha, w1a, w1b, w2a, w2b, t2 = data
-            patch_dict[key] = ('lokr', (w1, w2, alpha * coeff, w1a, w1b, w2a, w2b, t2))
-    return patch_dict
+# def apply_te_block_weights(patch_dict: Dict[str, Any], te_bw: List[float]) -> Dict[str, Any]:
+#     for key, (lora_type, data) in patch_dict.items():
+#         if not re.search(r'(?:clip_l|clip_g|text_model)\.transformer\.(?:text_model\.)?encoder\.layers\.(\d+)', key):
+#             continue
+#         match = re.search(r'encoder\.layers\.(\d+)', key)
+#         if not match:
+#             continue
+#         layer_idx = int(match.group(1))
+#         bw_index = min(layer_idx // 2, 15) if 'clip_g' in key else min(layer_idx, 15)
+#         coeff = te_bw[bw_index]
+#         if lora_type == 'lora':
+#             A, B, alpha, mid = data
+#             patch_dict[key] = ('lora', (A, B, alpha * coeff, mid))
+#         elif lora_type == 'loha':
+#             w1a, w1b, alpha, w2a, w2b, t1, t2 = data
+#             patch_dict[key] = ('loha', (w1a, w1b, alpha * coeff, w2a, w2b, t1, t2))
+#         elif lora_type == 'lokr':
+#             w1, w2, alpha, w1a, w1b, w2a, w2b, t2 = data
+#             patch_dict[key] = ('lokr', (w1, w2, alpha * coeff, w1a, w1b, w2a, w2b, t2))
+#     return patch_dict
 # ================= END =================
 
 opEmptyLatentImage = EmptyLatentImage()
