@@ -70,6 +70,67 @@ opFreeU = FreeU_V2()
 opModelSamplingDiscrete = ModelSamplingDiscrete()
 opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
+def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
+    """
+    Применяет блочные веса (строго 12 индексов) к патчам ldm_patched для SDXL.
+    При debug=True выводит подробную таблицу маппинга ключей и коэффициентов.
+    """
+    if not lbw_str:
+        return lora_dict
+
+    ratios = [float(x.strip()) for x in lbw_str.split(",")]
+    if len(ratios) != 12:
+        print(f"[LBW Warning] Ожидалось 12 значений для SDXL, получено {len(ratios)}. Пропускаю патчинг.")
+        return lora_dict
+
+    modified = {}
+    
+    # 🔹 Подготовка структур для логирования
+    block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00", 
+                   "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
+    block_stats = {i: {"name": block_names[i], "ratio": ratios[i], "count": 0, "examples": []} for i in range(12)}
+
+    for k, v in lora_dict.items():
+        # 🔍 Маппинг ключей ldm_patched → 12 индексов SDXL
+        if "input_blocks.4" in k: idx = 1
+        elif "input_blocks.5" in k: idx = 2
+        elif "input_blocks.7" in k: idx = 3
+        elif "input_blocks.8" in k: idx = 4
+        elif "middle_block" in k: idx = 5
+        elif "output_blocks.0" in k: idx = 6
+        elif "output_blocks.1" in k: idx = 7
+        elif "output_blocks.2" in k: idx = 8
+        elif "output_blocks.3" in k: idx = 9
+        elif "output_blocks.4" in k: idx = 10
+        elif "output_blocks.5" in k: idx = 11
+        else: idx = 0  # BASE / CLIP / embedder / unused blocks
+
+        ratio = ratios[idx]
+        block_stats[idx]["count"] += 1
+        # Сохраняем примеры ключей (макс 2 на блок) для отладки
+        if len(block_stats[idx]["examples"]) < 2:
+            block_stats[idx]["examples"].append(k.split(".")[-1])  # Берём только имя слоя (up, down, alpha)
+
+        # Применяем вес
+        if isinstance(v, tuple):
+            modified[k] = (v[0] * ratio, v[1])
+        else:
+            modified[k] = v * ratio
+
+    # 🔹 Вывод лога в консоль
+    if debug:
+        print(f"\n{'='*70}")
+        print(f"[LBW DEBUG] Блочные веса применены к {len(lora_dict)} тензорам:")
+        print(f"{'Блок':<8} | {'Коэфф.':>6} | {'Тензоры':>8} | {'Примеры слоёв'}")
+        print("-" * 70)
+        for i in range(12):
+            s = block_stats[i]
+            ex_str = ", ".join(s["examples"]) if s["examples"] else "-"
+            print(f"{s['name']:<8} | {s['ratio']:.4f}   | {s['count']:>8} | {ex_str}")
+        print(f"{'='*70}\n")
+
+    return modified
+
 
 class StableDiffusionModel:
     def __init__(self, unet=None, vae=None, clip=None, clip_vision=None, filename=None, vae_filename=None):
@@ -185,6 +246,11 @@ class StableDiffusionModel:
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
 
+
+
+            if cfg['lbw_str']:
+                # ✅ Патчим ТОЛЬКО UNet
+                lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
             # --- 🔹 4. Обработка Block Weights (LBW) ---
             # Если заданы локальные lbw/lbwe, здесь можно вызвать функцию применения весов
             # Пример (псевдокод):
