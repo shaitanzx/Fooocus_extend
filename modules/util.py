@@ -420,9 +420,8 @@ def get_enabled_loras(loras: list, remove_none=True) -> list:
 
 
 def _resolve_lbw_markers(lbw_str: str, x_base: float) -> Optional[str]:
-    """Заменяет ТОЛЬКО R/r и U/u на числа. X/x, смещения и пресеты оставляет сырыми."""
-    if not lbw_str:
-        return None
+    """Заменяет R/r и U/u на числа. X/x и пресеты оставляет как есть."""
+    if not lbw_str: return None
     
     resolved = []
     for p in lbw_str.split(','):
@@ -440,23 +439,24 @@ def _resolve_lbw_markers(lbw_str: str, x_base: float) -> Optional[str]:
         try:
             resolved.append(f"{float(p):.4f}")
             continue
-        except ValueError:
-            pass
+        except ValueError: pass
             
-        resolved.append(p)  # X, X+0.3, имена пресетов и т.д.
+        resolved.append(p)
         
     return ",".join(resolved)
+
 
 
 def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
                                       lora_filenames=None) -> tuple:
     """
-    DROP-IN REPLACEMENT. Сохраняет 100% оригинальной логики + поддерживает расширенный формат.
-    Возвращаемый тип: ([список_лор], очищенный_промпт)
-    Индексы [0] и [1] работают точно как в оригинале.
+    DROP-IN REPLACEMENT. 
+    ✅ Параметры берутся из промпта (если тег указан).
+    ✅ Если тег простой (<lora:n:w>), применяются дефолты (te=1, unet=1, start=0, stop=total_steps).
+    ✅ Старые LoRA из списка loras расширяются до тех же дефолтов.
+    ✅ Порядок LoRA сохраняется.
     """
-    # === ОРИГИНАЛЬНАЯ ЛОГИКА (СОХРАНЕНА) ===
     loras = loras.copy()
     if lora_filenames is None:
         lora_filenames = []
@@ -465,27 +465,27 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
     prompt_without_loras = ''
     cleaned_prompt = ''
 
-    # === УЛУЧШЕННЫЙ ПАРСИНГ (безопасен для запятых внутри тегов) ===
     lora_pattern = re.compile(r'<lora:\s*([^>]+?)\s*>', re.IGNORECASE)
 
-    # Загрузка пресетов (автопоиск в папке скрипта, если пути не переданы)
-    
+    # Загрузка пресетов (предполагаем, что модуль lbw доступен в контексте)
     lbw_dict = lbw._load_presets("lbwpresets.txt")
     lbwe_dict = lbw._load_presets("elempresets.txt")
 
+    # 1. ПАРСИНГ ПРОМПТА
     for match in lora_pattern.finditer(prompt):
         content = match.group(1)
         parts = content.split(':')
         if not parts or not parts[0].strip():
             continue
 
-        # Парсинг параметров (позиционные + ключевые)
-        start, stop = 0, total_steps
+        # Инициализация None
+        start, stop = None, None
         parsed_start = parsed_stop = parsed_step = None
-        x_base = 0.0
+        x_base = None
         lbw_raw, lbwe_raw = None, None
-        te, unet = 1.0, 1.0
-        next_pos = 2  # Ожидаем te, unet на позициях 2 и 3
+        te, unet = None, None
+        extra = {}
+        next_pos = 2
 
         for i in range(2, len(parts)):
             p = parts[i].strip()
@@ -513,6 +513,8 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
                 elif k == 'x':
                     try: x_base = float(v)
                     except: pass
+                else:
+                    extra[k] = v
             else:
                 try:
                     val = float(p)
@@ -520,60 +522,69 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
                     elif next_pos == 3: unet = val; next_pos = 4
                 except: pass
 
-        # Приоритеты тайминга
+        # Логика тайминга
         if parsed_step: start, stop = parsed_step
         else:
-            if parsed_start is not None: start = parsed_start
-            if parsed_stop is not None: stop = parsed_stop
+            start = parsed_start
+            stop = parsed_stop
 
-        # Разрешение пресетов -> реальные строки
+        # 🔑 ПРИМЕНЕНИЕ ДЕФОЛТОВ ДЛЯ ПРОМПТА (если параметры не были заданы явно)
+        if te is None: te = 1.0
+        if unet is None: unet = 1.0
+        if start is None: start = 0
+        if stop is None: stop = total_steps
+        if x_base is None: x_base = 0.0
+
+        # Разрешение пресетов
         if lbw_raw and lbw_raw in lbw_dict: lbw_raw = lbw_dict[lbw_raw]
         if lbwe_raw and lbwe_raw in lbwe_dict: lbwe_raw = lbwe_dict[lbwe_raw]
 
-        # Разрешение маркеров R/U (X остаётся сырым)
+        # Разрешение маркеров R/U
         lbw_resolved = _resolve_lbw_markers(lbw_raw, x_base)
 
-        # Вес (совпадает с оригинальным float(match[2]))
+        # Вес
         try: weight = float(parts[1]) if len(parts) > 1 else 1.0
         except: weight = 1.0
 
-        # Проверка файла (точный вызов как в оригинале)
+        # Проверка файла
         lora_name = parts[0].strip() + '.safetensors'
         if not skip_file_check:
             lora_name = get_filname_by_stem(parts[0].strip(), lora_filenames)
 
         if lora_name is not None:
-            # Расширенный список, но [0] и [1] работают идентично оригинальному Tuple
-            found_loras.append([lora_name, weight, te, unet, lbw_resolved, lbwe_raw, start, stop, x_base, {}])
+            found_loras.append([lora_name, weight, te, unet, lbw_resolved, lbwe_raw, start, stop, x_base, extra])
 
-    # Удаление тегов из промпта (оригинальная логика)
     prompt_without_loras = lora_pattern.sub('', prompt)
-
-    # Очистка промпта (сохранён оригинальный вызов cleanup_prompt)
     if prompt_without_loras != '':
         cleaned_prompt = prompt_without_loras[:-2]
     if prompt_cleanup:
         try:
             cleaned_prompt = cleanup_prompt(prompt_without_loras)
         except NameError:
-            # Фоллбэк если cleanup_prompt не импортирован в вашем файле
             cleaned_prompt = re.sub(r',\s*,', ',', prompt_without_loras).strip(', ')
 
-    # 🔑 === ЛОГИКА СЛИЯНИЯ: ПОРЯДОК СТАРЫЙ, ПАРАМЕТРЫ ИЗ ПРОМПТА ===
-    prompt_dict = {fl[0]: fl for fl in found_loras}  # Маппинг имя -> полный список параметров
+    # 2. СЛИЯНИЕ И НОРМАЛИЗАЦИЯ
+    prompt_dict = {fl[0]: fl for fl in found_loras}
     loras_names = {l[0] for l in loras}
     updated_loras = []
 
-    # 1. Идём по исходному списку (сохраняем точный порядок)
     for l in loras:
         if l[0] != "None":
+            # 🔧 НОРМАЛИЗАЦИЯ СТАРОГО ФОРМАТА:
+            # Если LoRA пришла из старого списка (кортеж из 2 элементов), 
+            # мы расширяем её до полного формата с теми же ДЕФОЛТАМИ, что и у промпта.
+            if len(l) == 2:
+                l = [l[0], l[1], 1.0, 1.0, None, None, 0, total_steps, 0.0, {}]
+            else:
+                l = list(l)
+                
             if deduplicate_loras and l[0] in prompt_dict:
-                # 🔥 Если LoRA есть в промпте -> берём ВЕСЬ список параметров из промпта
+                # Если есть в промпте -> берем параметры из промпта
                 updated_loras.append(prompt_dict[l[0]])
             else:
+                # Иначе берем нормализованную LoRA из старого списка
                 updated_loras.append(l)
 
-    # 2. Добавляем новые LoRA из промпта (которых не было в исходном списке)
     if not deduplicate_loras:
         updated_loras.extend(found_loras)
     else:

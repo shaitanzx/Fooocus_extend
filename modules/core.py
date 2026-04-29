@@ -108,10 +108,21 @@ class StableDiffusionModel:
             return
 
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
-
+#[
+#    'cyberpunk_style.safetensors',            # [0] IDX_FILENAME
+#    0.85,                                     # [1] IDX_WEIGHT
+#    1.2,                                      # [2] IDX_TE
+#    0.9,                                      # [3] IDX_UNET
+#    '1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0',      # [4] IDX_LBW  ← пресет INS развернут
+#    'IN04-OUT04:attn:1.5',                    # [5] IDX_LBWE ← пресет ATTN_BOOST развернут
+#    5,                                        # [6] IDX_START
+#    25,                                       # [7] IDX_STOP
+#    0.7,                                      # [8] IDX_X
+#    {'custom_tag': 'v2'}                      # [9] IDX_EXTRA
+#]
         loras_to_load = []
         print ('-----------------------  load lora')
-        for filename, weight in loras:
+        for filename, weight, te_weights, unet_weight, lbw_weight, lbwe_weight, start_lbw, stop_lbw, x_lbw, extra_lbw in loras:
             
             if filename == 'None':
                 continue
