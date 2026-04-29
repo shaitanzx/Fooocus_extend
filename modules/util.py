@@ -559,22 +559,30 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
             # Фоллбэк если cleanup_prompt не импортирован в вашем файле
             cleaned_prompt = re.sub(r',\s*,', ',', prompt_without_loras).strip(', ')
 
-    # === Дедупликация и слияние (ТОЧНО КАК В ОРИГИНАЛЕ) ===
-    new_loras = []
-    lora_names = [l[0] for l in loras]
-    for found_lora in found_loras:
-        if deduplicate_loras and (found_lora[0] in lora_names or found_lora in new_loras):
-            continue
-        new_loras.append(found_lora)
-
-    if len(new_loras) == 0:
-        return loras, cleaned_prompt
-
+# 🔽 === НОВАЯ ЛОГИКА СЛИЯНИЯ (СТАРЫЙ ПОРЯДОК + ПРИОРИТЕТ ПРОМПТА) ===
+    prompt_loras_dict = {fl[0]: fl for fl in found_loras}  # Быстрый поиск по имени
+    loras_names = {l[0] for l in loras}
+    
     updated_loras = []
-    for lora in loras + new_loras:
-        if lora[0] != "None":
-            updated_loras.append(lora)
-
+    
+    # 1. Проходим по ИСХОДНОМУ списку loras (сохраняем оригинальный порядок)
+    for l in loras:
+        if l[0] != "None":
+            if deduplicate_loras and l[0] in prompt_loras_dict:
+                updated_loras.append(prompt_loras_dict[l[0]])  # 🔑 Подставляем параметры из промпта
+            else:
+                updated_loras.append(l)
+                
+    # 2. Добавляем LoRA из промпта, которых НЕ было в исходном списке (как в старой версии: loras + new)
+    if not deduplicate_loras:
+        updated_loras.extend(found_loras)
+    else:
+        for fl in found_loras:
+            if fl[0] not in loras_names:
+                updated_loras.append(fl)
+                
+    # Финальная фильтрация "None" и применение лимита (точно как в оригинале)
+    updated_loras = [l for l in updated_loras if l[0] != "None"]
     return updated_loras[:loras_limit], cleaned_prompt
 ##########################
 
