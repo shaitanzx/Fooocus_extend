@@ -70,10 +70,12 @@ opFreeU = FreeU_V2()
 opModelSamplingDiscrete = ModelSamplingDiscrete()
 opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
+
+
 def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
     """
-    Применяет блочные веса (12 индексов) к патчам ldm_patched.
-    Безопасно обрабатывает тензоры, списки кортежей и другие форматы.
+    Применяет блочные веса (строго 12 индексов) к патчам ldm_patched для SDXL.
+    При debug=True выводит подробную таблицу маппинга.
     """
     if not lbw_str:
         return lora_dict
@@ -83,63 +85,76 @@ def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
         print(f"[LBW Warning] Ожидалось 12 значений для SDXL, получено {len(ratios)}. Пропускаю патчинг.")
         return lora_dict
 
-    modified = {}
+    block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00", 
+                   "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
     
-    # Маппинг ключей → индексы SDXL (12 блоков)
-    def get_sdxl_block_idx(key):
-        if "input_blocks.4" in key: return 1
-        if "input_blocks.5" in key: return 2
-        if "input_blocks.7" in key: return 3
-        if "input_blocks.8" in key: return 4
-        if "middle_block" in key: return 5
-        if "output_blocks.0" in key: return 6
-        if "output_blocks.1" in key: return 7
-        if "output_blocks.2" in key: return 8
-        if "output_blocks.3" in key: return 9
-        if "output_blocks.4" in key: return 10
-        if "output_blocks.5" in key: return 11
+    # Структура для сбора статистики: {index: {"count": 0, "examples": []}}
+    stats = {i: {"count": 0, "examples": []} for i in range(12)}
+    modified = {}
+
+    # Маппинг ключей → индексы SDXL
+    def get_idx(k):
+        if "input_blocks.4" in k: return 1
+        if "input_blocks.5" in k: return 2
+        if "input_blocks.7" in k: return 3
+        if "input_blocks.8" in k: return 4
+        if "middle_block" in k: return 5
+        if "output_blocks.0" in k: return 6
+        if "output_blocks.1" in k: return 7
+        if "output_blocks.2" in k: return 8
+        if "output_blocks.3" in k: return 9
+        if "output_blocks.4" in k: return 10
+        if "output_blocks.5" in k: return 11
         return 0  # BASE / CLIP / fallback
 
     for k, v in lora_dict.items():
-        idx = get_sdxl_block_idx(k)
+        idx = get_idx(k)
         ratio = ratios[idx]
 
-        # 🔹 Безопасная обработка разных форматов патчей
+        # 🔹 Сбор статистики для лога
+        stats[idx]["count"] += 1
+        if len(stats[idx]["examples"]) < 3:
+            # Берём последний компонент ключа (обычно up, down, alpha)
+            layer = k.split(".")[-1]
+            if layer not in stats[idx]["examples"]:
+                stats[idx]["examples"].append(layer)
+
+        # 🔹 Безопасное применение веса (поддержка формата Fooocus/ComfyUI)
         if isinstance(v, list):
-            # Формат ComfyUI/Fooocus: [(strength, up_key/tensor, down_key/tensor, ...), ...]
             new_list = []
             for patch in v:
                 if isinstance(patch, tuple) and len(patch) > 0:
                     strength = patch[0]
                     if isinstance(strength, (int, float)):
-                        # Масштабируем силу патча на коэффициент блока
                         new_list.append((strength * ratio, *patch[1:]))
                     else:
-                        new_list.append(patch)  # Если структура нестандартная, оставляем как есть
+                        new_list.append(patch)
                 else:
                     new_list.append(patch)
             modified[k] = new_list
-            
         elif isinstance(v, tuple):
-            # Прямой формат тензоров: (up_tensor, down_tensor)
             if isinstance(v[0], torch.Tensor):
                 modified[k] = (v[0] * ratio, v[1])
             else:
-                modified[k] = v  # Fallback
-                
+                modified[k] = v
         elif isinstance(v, torch.Tensor):
             modified[k] = v * ratio
-            
         else:
-            if debug:
-                print(f"[LBW Debug] Неизвестный тип для ключа {k}: {type(v)} | Значение: {v}")
             modified[k] = v
 
+    # 🔹 Вывод таблицы в консоль
     if debug:
-        applied_blocks = {i: ratios[i] for i in range(12) if ratios[i] != 1.0}
-        if applied_blocks:
-            print(f"[LBW Applied] Масштабированы блоки: {applied_blocks}")
-            
+        total = sum(s["count"] for s in stats.values())
+        print("\n" + "="*70)
+        print(f"[LBW DEBUG] Блочные веса применены к {total} тензорам:")
+        print(f"{'Блок':<8} | {'Коэфф.':>6} | {'Тензоры':>8} | {'Примеры слоёв'}")
+        print("-" * 70)
+        for i in range(12):
+            s = stats[i]
+            ex_str = ", ".join(s["examples"]) if s["examples"] else "-"
+            print(f"{block_names[i]:<8} | {ratios[i]:<6.4f} | {s['count']:>8} | {ex_str}")
+        print("="*70 + "\n")
+
     return modified
 
 
