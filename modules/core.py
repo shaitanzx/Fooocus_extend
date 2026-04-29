@@ -93,14 +93,29 @@ class StableDiffusionModel:
         if self.clip is not None:
             self.lora_key_map_clip = model_lora_keys_clip(self.clip.cond_stage_model, self.lora_key_map_clip)
             self.lora_key_map_clip.update({x: x for x in self.clip.cond_stage_model.state_dict().keys()})
+        # 🔹 НОВОЕ: Индексы для расширенного формата (для читаемости кода)
+        self.IDX_FILENAME = 0
+        self.IDX_WEIGHT   = 1
+        self.IDX_TE       = 2
+        self.IDX_UNET     = 3
+        self.IDX_LBW      = 4
+        self.IDX_LBWE     = 5
+        self.IDX_START    = 6
+        self.IDX_STOP     = 7
+        self.IDX_X        = 8
+        self.IDX_EXTRA    = 9
+
+        # 🔹 НОВОЕ: Хранилище полных конфигов для доступа извне (например, из ksampler)
+        self.loras_config = [] 
 
     @torch.no_grad()
     @torch.inference_mode()
-    def refresh_loras(self, loras, te_bw=None):
+    def refresh_loras(self, loras):
         assert isinstance(loras, list)
 
-        #if self.visited_loras == str(loras):
-        #    return
+        # Проверка кэша (оптимизация, чтобы не перегружать одно и то же)
+        if self.visited_loras == str(loras):
+            return
         
         self.visited_loras = str(loras)
 
@@ -109,59 +124,99 @@ class StableDiffusionModel:
 
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
 
+        # 🔹 1. Подготовка: очищаем старое хранилище конфигов
+        self.loras_config = []
         loras_to_load = []
-        print ('-----------------------  load lora')
-        for filename, weight in loras:
-            
-            if filename == 'None':
+
+        for item in loras:
+            # 🔹 2. Универсальный парсинг: определяем формат (2 элемента или 10)
+            cfg = {
+                'filename': None, 'weight': 1.0,
+                'te_mult': 1.0, 'unet_mult': 1.0,
+                'lbw_str': None, 'lbwe_str': None,
+                'start': None, 'stop': None, 'x': 0.0, 'extra': {}
+            }
+
+            if len(item) == 2:
+                # 📦 Старый формат: (filename, weight)
+                cfg['filename'], cfg['weight'] = item
+            else:
+                # 📦 Расширенный формат: [name, w, te, unet, lbw, lbwe, start, stop, x, extra]
+                # Используем проверки на None, чтобы код не падал, если список неполный
+                cfg['filename'] = item[self.IDX_FILENAME]
+                cfg['weight']   = item[self.IDX_WEIGHT] if item[self.IDX_WEIGHT] is not None else 1.0
+                cfg['te_mult']  = item[self.IDX_TE]     if len(item) > self.IDX_TE and item[self.IDX_TE] is not None else 1.0
+                cfg['unet_mult']= item[self.IDX_UNET]   if len(item) > self.IDX_UNET and item[self.IDX_UNET] is not None else 1.0
+                cfg['lbw_str']  = item[self.IDX_LBW]    if len(item) > self.IDX_LBW else None
+                cfg['lbwe_str'] = item[self.IDX_LBWE]   if len(item) > self.IDX_LBWE else None
+                cfg['start']    = item[self.IDX_START]  if len(item) > self.IDX_START else None
+                cfg['stop']     = item[self.IDX_STOP]   if len(item) > self.IDX_STOP else None
+                cfg['x']        = item[self.IDX_X]      if len(item) > self.IDX_X else 0.0
+                cfg['extra']    = item[self.IDX_EXTRA]  if len(item) > self.IDX_EXTRA else {}
+
+            if cfg['filename'] == 'None' or not cfg['filename']:
                 continue
 
-            if os.path.exists(filename):
-                lora_filename = filename
+            # Разрешение пути к файлу (ваша оригинальная логика)
+            if os.path.exists(cfg['filename']):
+                lora_filename = cfg['filename']
             else:
-                lora_filename = get_file_from_folder_list(filename, modules.config.paths_loras)
+                lora_filename = get_file_from_folder_list(cfg['filename'], modules.config.paths_loras)
 
             if not os.path.exists(lora_filename):
                 print(f'Lora file not found: {lora_filename}')
                 continue
 
-            loras_to_load.append((lora_filename, weight))
+            # Сохраняем полный конфиг и путь для загрузки
+            cfg['filepath'] = lora_filename
+            self.loras_config.append(cfg)
+            loras_to_load.append(cfg)
 
+        # Клонирование моделей (подготовка к применению патчей)
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
-        for lora_filename, weight in loras_to_load:
-            print(f"[DEBUG 4] Цикл: загружаем {lora_filename}, передаём ему te_bw = {te_bw}")
-            print('----------------- in core')
-            lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
+        # 🔹 3. Цикл загрузки и применения
+        for cfg in loras_to_load:
+            print(f"[LBW] Loading {cfg['filename']}: w={cfg['weight']}, te={cfg['te_mult']}, unet={cfg['unet_mult']}, start={cfg['start']}, stop={cfg['stop']}")
+            
+            # Загрузка файла и матчинг ключей (ваша оригинальная логика)
+            lora_unmatch = ldm_patched.modules.utils.load_torch_file(cfg['filepath'], safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
-            # --- LoRA Block Weight (TE) ---
-            if te_bw is not None:
-                te_weights = parse_te_bw(te_bw)
-                lora_clip = apply_te_block_weights(lora_clip, te_weights)
-            # ------------------------------
 
+            # --- 🔹 4. Обработка Block Weights (LBW) ---
+            # Если заданы локальные lbw/lbwe, здесь можно вызвать функцию применения весов
+            # Пример (псевдокод):
+            # if cfg['lbw_str'] or cfg['lbwe_str']:
+            #     lora_unet = apply_lbw_to_unet(lora_unet, cfg['lbw_str'], cfg['lbwe_str'])
+            #     lora_clip = apply_lbw_to_clip(lora_clip, cfg['lbw_str'], cfg['lbwe_str'])
+            # -------------------------------------------
+
+            # Проверка на несовпадение модели
             if len(lora_unmatch) > 12:
-                # model mismatch
                 continue
 
             if len(lora_unmatch) > 0:
-                print(f'Loaded LoRA [{lora_filename}] for model [{self.filename}] '
+                print(f'Loaded LoRA [{cfg["filename"]}] for model [{self.filename}] '
                       f'with unmatched keys {list(lora_unmatch.keys())}')
 
+            # 🟦 Применение к UNet с учетом множителя unet_mult
             if self.unet_with_lora is not None and len(lora_unet) > 0:
-                loaded_keys = self.unet_with_lora.add_patches(lora_unet, weight)
-                print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
-                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                final_unet_weight = cfg['weight'] * cfg['unet_mult']
+                loaded_keys = self.unet_with_lora.add_patches(lora_unet, final_unet_weight)
+                print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
+                      f'with {len(loaded_keys)} keys at weight {final_unet_weight:.4f}.')
                 for item in lora_unet:
                     if item not in loaded_keys:
                         print("UNet LoRA key skipped: ", item)
 
+            # 🟥 Применение к CLIP с учетом множителя te_mult
             if self.clip_with_lora is not None and len(lora_clip) > 0:
-                loaded_keys = self.clip_with_lora.add_patches(lora_clip, weight)
-                print(f'Loaded LoRA [{lora_filename}] for CLIP [{self.filename}] '
-                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                final_te_weight = cfg['weight'] * cfg['te_mult']
+                loaded_keys = self.clip_with_lora.add_patches(lora_clip, final_te_weight)
+                print(f'Loaded LoRA [{cfg["filename"]}] for CLIP [{self.filename}] '
+                      f'with {len(loaded_keys)} keys at weight {final_te_weight:.4f}.')
                 for item in lora_clip:
                     if item not in loaded_keys:
                         print("CLIP LoRA key skipped: ", item)
