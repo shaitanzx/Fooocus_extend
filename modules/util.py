@@ -452,10 +452,9 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
                                       lora_filenames=None) -> tuple:
     """
     DROP-IN REPLACEMENT. 
-    ✅ Параметры берутся из промпта (если тег указан).
-    ✅ Если тег простой (<lora:n:w>), применяются дефолты (te=1, unet=1, start=0, stop=total_steps).
-    ✅ Старые LoRA из списка loras расширяются до тех же дефолтов.
-    ✅ Порядок LoRA сохраняется.
+    ✅ Простой формат (<lora:name:weight>) -> сохраняется как [name, weight]
+    ✅ Расширенный формат -> сохраняется полный список [name, weight, te, unet, lbw, lbwe, start, stop, x, extra]
+    ✅ Порядок LoRA и приоритет промпта сохранены.
     """
     loras = loras.copy()
     if lora_filenames is None:
@@ -466,26 +465,24 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
     cleaned_prompt = ''
 
     lora_pattern = re.compile(r'<lora:\s*([^>]+?)\s*>', re.IGNORECASE)
-
-    # Загрузка пресетов (предполагаем, что модуль lbw доступен в контексте)
     lbw_dict = lbw._load_presets("lbwpresets.txt")
     lbwe_dict = lbw._load_presets("elempresets.txt")
 
-    # 1. ПАРСИНГ ПРОМПТА
     for match in lora_pattern.finditer(prompt):
         content = match.group(1)
         parts = content.split(':')
         if not parts or not parts[0].strip():
             continue
 
-        # Инициализация None
+        # Дефолты для расширенного формата
+        te, unet = None, None
         start, stop = None, None
         parsed_start = parsed_stop = parsed_step = None
         x_base = None
         lbw_raw, lbwe_raw = None, None
-        te, unet = None, None
         extra = {}
         next_pos = 2
+        is_extended = False
 
         for i in range(2, len(parts)):
             p = parts[i].strip()
@@ -495,6 +492,7 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
                 continue
 
             if '=' in p:
+                is_extended = True
                 k, v = p.split('=', 1)
                 k, v = k.strip().lower(), v.strip()
                 if k in ('lbw', 'w'): lbw_raw = v
@@ -518,42 +516,41 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
             else:
                 try:
                     val = float(p)
-                    if next_pos == 2: te = val; next_pos = 3
-                    elif next_pos == 3: unet = val; next_pos = 4
+                    if next_pos == 2:
+                        te = val; next_pos = 3; is_extended = True
+                    elif next_pos == 3:
+                        unet = val; next_pos = 4; is_extended = True
                 except: pass
 
-        # Логика тайминга
+        # Приоритет step над start/stop
         if parsed_step: start, stop = parsed_step
         else:
-            start = parsed_start
-            stop = parsed_stop
+            if parsed_start is not None: start = parsed_start
+            if parsed_stop is not None: stop = parsed_stop
 
-        # 🔑 ПРИМЕНЕНИЕ ДЕФОЛТОВ ДЛЯ ПРОМПТА (если параметры не были заданы явно)
-        if te is None: te = 1.0
-        if unet is None: unet = 1.0
-        if start is None: start = 0
-        if stop is None: stop = total_steps
-        if x_base is None: x_base = 0.0
+        # Разрешение пресетов и маркеров (только для расширенного формата)
+        if is_extended:
+            if lbw_raw and lbw_raw in lbw_dict: lbw_raw = lbw_dict[lbw_raw]
+            if lbwe_raw and lbwe_raw in lbwe_dict: lbwe_raw = lbwe_dict[lbwe_raw]
+            lbw_resolved = _resolve_lbw_markers(lbw_raw, x_base)
+        else:
+            lbw_resolved = None
 
-        # Разрешение пресетов
-        if lbw_raw and lbw_raw in lbw_dict: lbw_raw = lbw_dict[lbw_raw]
-        if lbwe_raw and lbwe_raw in lbwe_dict: lbwe_raw = lbwe_dict[lbwe_raw]
-
-        # Разрешение маркеров R/U
-        lbw_resolved = _resolve_lbw_markers(lbw_raw, x_base)
-
-        # Вес
         try: weight = float(parts[1]) if len(parts) > 1 else 1.0
         except: weight = 1.0
 
-        # Проверка файла
         lora_name = parts[0].strip() + '.safetensors'
         if not skip_file_check:
             lora_name = get_filname_by_stem(parts[0].strip(), lora_filenames)
 
         if lora_name is not None:
-            found_loras.append([lora_name, weight, te, unet, lbw_resolved, lbwe_raw, start, stop, x_base, extra])
+            # 🔑 ФОРМИРОВАНИЕ ВЫХОДА В ЗАВИСИМОСТИ ОТ ФОРМАТА
+            if is_extended:
+                found_loras.append([lora_name, weight, te, unet, lbw_resolved, lbwe_raw, start, stop, x_base, extra])
+            else:
+                found_loras.append([lora_name, weight])
 
+    # Очистка промпта
     prompt_without_loras = lora_pattern.sub('', prompt)
     if prompt_without_loras != '':
         cleaned_prompt = prompt_without_loras[:-2]
@@ -563,27 +560,17 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
         except NameError:
             cleaned_prompt = re.sub(r',\s*,', ',', prompt_without_loras).strip(', ')
 
-    # 2. СЛИЯНИЕ И НОРМАЛИЗАЦИЯ
+    # 🔑 СЛИЯНИЕ С СОХРАНЕНИЕМ ПОРЯДКА И ФОРМАТА
     prompt_dict = {fl[0]: fl for fl in found_loras}
     loras_names = {l[0] for l in loras}
     updated_loras = []
 
     for l in loras:
         if l[0] != "None":
-            # 🔧 НОРМАЛИЗАЦИЯ СТАРОГО ФОРМАТА:
-            # Если LoRA пришла из старого списка (кортеж из 2 элементов), 
-            # мы расширяем её до полного формата с теми же ДЕФОЛТАМИ, что и у промпта.
-            if len(l) == 2:
-                l = [l[0], l[1], 1.0, 1.0, None, None, 0, total_steps, 0.0, {}]
-            else:
-                l = list(l)
-                
             if deduplicate_loras and l[0] in prompt_dict:
-                # Если есть в промпте -> берем параметры из промпта
-                updated_loras.append(prompt_dict[l[0]])
+                updated_loras.append(prompt_dict[l[0]])  # Заменяем на версию из промпта (любой длины)
             else:
-                # Иначе берем нормализованную LoRA из старого списка
-                updated_loras.append(l)
+                updated_loras.append(l)  # Оставляем старую версию как есть
 
     if not deduplicate_loras:
         updated_loras.extend(found_loras)
