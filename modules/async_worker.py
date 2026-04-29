@@ -605,7 +605,48 @@ def worker():
             async_task.type_cfg,
             async_task.rescale_cfg
         )
-
+    def _format_lora_for_log(item, total_steps=30):
+        """
+        Универсально форматирует LoRA для логов.
+        Поддерживает старый формат (2 элемента) и расширенный (10 элементов).
+        """
+        if len(item) == 2:
+            # Старый формат: (filename, weight)
+            name, weight = item
+            return f"{name} : {weight}"
+    
+        # Расширенный формат: [name, w, te, unet, lbw, lbwe, start, stop, x, extra]
+        name = item[0]
+        weight = item[1]
+        te = item[2] if len(item) > 2 and item[2] is not None else 1.0
+        unet = item[3] if len(item) > 3 and item[3] is not None else 1.0
+        lbw_teg = item[4] if len(item) > 4 else None
+        lbwe = item[5] if len(item) > 5 else None
+        start = item[6] if len(item) > 6 else None
+        stop = item[7] if len(item) > 7 else None
+    
+        # Базовая строка
+        parts = [f"{name} : {weight}"]
+    
+        # Добавляем te/unet только если они отличаются от дефолта 1.0
+        if te != 1.0 or unet != 1.0:
+            if te != 1.0: parts.append(f"te={te}")
+            if unet != 1.0: parts.append(f"unet={unet}")
+    
+        # Добавляем lbw/lbwe если заданы (показываем имя пресета или первые 30 символов весов)
+        if lbw_teg:
+            lbw_display = lbw_teg if len(lbw_teg) < 30 else lbw_teg[:27] + "..."
+            parts.append(f"lbw={lbw_display}")
+        if lbwe:
+            parts.append(f"lbwe={lbwe}")
+    
+        # Добавляем тайминг если задан
+        if start is not None or stop is not None:
+            s = start if start is not None else 0
+            e = stop if stop is not None else total_steps
+            parts.append(f"steps={s}-{e}")
+    
+        return " | ".join(parts)
     def save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image=True) -> list:
         img_paths = []
         for x in imgs:
@@ -651,9 +692,14 @@ def worker():
                 d.append(('FreeU', 'freeu',
                           str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
 
-            for li, (n, w) in enumerate(loras):
-                if n != 'None':
-                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+            for li, lora_item in enumerate(loras):
+            # Безопасное извлечение имени для проверки
+                lora_name = lora_item[0] if len(lora_item) > 0 else 'None'
+    
+                if lora_name != 'None':
+                # 🔹 Используем универсальный форматтер
+                    lora_log_str = _format_lora_for_log(lora_item, total_steps=async_task.steps)
+                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', lora_log_str))
             if async_task.codeformer_gen_enabled:
                 d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
                 d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
