@@ -993,6 +993,7 @@ def worker():
         lora_filenames = modules.util.remove_performance_lora(modules.config.lora_filenames,
                                                               async_task.performance_selection)
         print('---------------------------', lora_filenames)
+        print('---------------------------', loras)
         loras, prompt = _parse_lora_references_from_prompt(async_task.steps,prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
