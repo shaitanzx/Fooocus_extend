@@ -473,9 +473,6 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
     lbw_dict = lbw._load_presets("lbwpresets.txt")
     lbwe_dict = lbw._load_presets("elempresets.txt")
 
-    print('========================',lbw_dict)
-    print('========================',lbwe_dict)
-
     for match in lora_pattern.finditer(prompt):
         content = match.group(1)
         parts = content.split(':')

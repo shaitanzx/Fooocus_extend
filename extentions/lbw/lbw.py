@@ -76,7 +76,6 @@ def _load_presets(filepath: str):
                 presets[name.strip()] = val.strip().replace('\n', '')
     except Exception:
         pass
-    print('--------preset',presets)
     return presets
 def checkloadcond(line: str) -> bool:
     """Возвращает True, если строку нужно пропустить."""
