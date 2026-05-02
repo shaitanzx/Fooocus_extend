@@ -277,6 +277,29 @@ class StableDiffusionModel:
             if cfg['lbw_str']:
                 # ✅ Патчим ТОЛЬКО UNet
                 lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
+
+                # 🔹 ДИАГНОСТИКА: Выводим реальные значения патчей перед add_patches
+                print("\n🔍 [LBW VERIFY] Проверка значений патчей:")
+                # Берём по 1 ключу из IN04, M00, OUT05 для сравнения
+                test_keys = []
+                for k in lora_unet.keys():
+                    if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
+                    if "middle_block" in k: test_keys.append(("M00", k)); continue
+                    if "output_blocks.5" in k: test_keys.append(("OUT05", k)); continue
+                if len(test_keys) >= 3: break  # Берём только первые найденные
+
+                for name, k in test_keys:
+                    val = lora_unet[k]
+                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], tuple):
+                        print(f"  {name:<6} | strength={val[0][0]:.4f} | ключ={k.split('.')[-1]}")
+                    elif isinstance(val, torch.Tensor):
+                        print(f"  {name:<6} | tensor_mean={val.abs().mean().item():.4f} | ключ={k.split('.')[-1]}")
+                print("="*50 + "\n")
+
+
+
+
+
             # --- 🔹 4. Обработка Block Weights (LBW) ---
             # Если заданы локальные lbw/lbwe, здесь можно вызвать функцию применения весов
             # Пример (псевдокод):
