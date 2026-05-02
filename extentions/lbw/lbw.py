@@ -1,8 +1,5 @@
 import gradio as gr
 import os
-import modules.config
-import torch
-from safetensors.torch import load_file
 
 BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
@@ -90,107 +87,6 @@ def checkloadcond(line: str) -> bool:
     # Прямая проверка: количество запятых должно быть на 1 меньше числа блоков
     return not any(stripped.count(",") == x - 1 for x in BLOCKNUMS)
 
-def analyze_lora_simple(filename, threshold=0.001):
-    """
-    Анализирует LoRA для SDXL и выводит готовый тег lbw=.
-    threshold=0.001 -> порог активности (меньше = пустой блок, больше = активный)
-    """
-    
-    filename = os.path.join(modules.config.paths_loras[0], filename)
-    clean_name = os.path.splitext(filename)[0]
-    if not os.path.exists(filename):
-        print(f"❌ Файл не найден: {filename}")
-        return
-    print(f'Analized {filename}')
-    #filename = os.path.basename(filepath)
-    
-    sd = load_file(filename)
-
-    # Маппинг ключей → индексы 12 блоков SDXL (совпадает с вашим кодом)
-    # 🔑 УНИВЕРСАЛЬНЫЙ ПАРСЕР: работает с точками, подчёркиваниями и любыми префиксами
-    def get_block_idx(k):
-        k_n = k.replace('.', '_').lower()
-        if 'input_blocks_4_' in k_n: return 1
-        if 'input_blocks_5_' in k_n: return 2
-        if 'input_blocks_7_' in k_n: return 3
-        if 'input_blocks_8_' in k_n: return 4
-        if 'middle_block_' in k_n: return 5
-        if 'output_blocks_0_' in k_n: return 6
-        if 'output_blocks_1_' in k_n: return 7
-        if 'output_blocks_2_' in k_n: return 8
-        if 'output_blocks_3_' in k_n: return 9
-        if 'output_blocks_4_' in k_n: return 10
-        if 'output_blocks_5_' in k_n: return 11
-        return 0  # fallback
-
-    block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
-                   "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
-    block_max_vals = [0.0] * 12
-    block_counts = [0] * 12
-    base_sample_keys = []  # Для отладки: что попадает в BASE?
-
-    lora_keywords = ["lora_down", "lora_up", "lora_a", "lora_b", "_lora.", ".up.", ".down."]
-
-    for k, v in sd.items():
-        if not isinstance(v, torch.Tensor): continue
-        k_lower = k.lower()
-        if "alpha" in k_lower or "scale" in k_lower: continue
-        if not any(kw in k_lower for kw in lora_keywords): continue
-
-        idx = get_block_idx(k)
-        max_val = v.abs().max().item()
-        block_max_vals[idx] = max(block_max_vals[idx], max_val)
-        block_counts[idx] += 1
-        
-        if idx == 0 and len(base_sample_keys) < 3:
-            base_sample_keys.append(k)
-
-    # Вывод таблицы
-    print(f"📊 Анализ LoRA: {filename}")
-    print("="*62)
-    print(f"{'Блок':<8} | {'Макс |Δ|':>8} | {'Тензоров':>8} | {'Статус':<10}")
-    print("-"*62)
-
-    active_blocks = []
-    lbw_values = []
-
-    for i in range(12):
-        max_val = block_max_vals[i]
-        # Порог 0.00005: SDXL чувствительна к дельтам даже в 1e-4
-        is_active = max_val > 0.00005 
-        lbw_values.append(1 if is_active else 0)
-        status = "✅ Вкл" if is_active else "⚪ Выкл"
-        print(f"{block_names[i]:<8} | {max_val:>8.5f} | {block_counts[i]:>8} | {status}")
-        if is_active: active_blocks.append(block_names[i])
-
-    # 🔍 ДИАГНОСТИКА: Если в BASE попало >50% весов, скорее всего, ключи не распознаны
-    total_lora_keys = sum(block_counts)
-    base_keys = block_counts[0]
-    if base_keys > total_lora_keys * 0.5:
-        print("\n⚠️ ВНИМАНИЕ: Более 50% весов попали в BASE.")
-        print("   Вероятно, ключи используют нестандартный префикс.")
-        print("   Примеры ключей из BASE:")
-        for k in base_sample_keys:
-            print(f"     - {k}")
-
-    # Генерация тега
-    lbw_str = ",".join(map(str, lbw_values))
-    tag = f"<lora:{clean_name}:1.0:::lbw={lbw_str}>"
-
-    print("\n" + "="*62)
-    print(f"🎯 ГОТОВЫЙ ТЕГ:")
-    print(f"\n{tag}\n")
-    
-    if len(active_blocks) == 12:
-        print("💡 Все блоки активны. LoRA полноформатная, lbw работает как эквалайзер.")
-    else:
-        print(f"💡 Активные: {', '.join(active_blocks) if active_blocks else 'Нет (веса очень слабые)'}")
-        print("📝 Если визуально разница есть, но скрипт показывает 0 →")
-        print("   замените `lbw=...` на `lbw=1,1,1,1,1,1,1,1,1,1,1,1` и крутите коэффициенты вручную.")
-    return tag
-# === КАК ИСПОЛЬЗОВАТЬ ===
-# Замените путь на свой файл и запустите:
-# analyze_lora_simple("/path/to/your/SDXL_FILM_PHOTOGRAPHY_STYLE_V1.safetensors")
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -225,11 +121,6 @@ def ui():
 
 
     with gr.Row():
-        with gr.Row():
-            lora_analize = gr.Dropdown(label='LoRA',choices=modules.config.lora_filenames, value=modules.config.lora_filenames[0])
-            analize = gr.Button (value='analize lora')
-            teg_analize = gr.Textbox(value='', interactive='False')
-            analize.click(analyze_lora_simple,inputs=lora_analize,outputs=teg_analize)
         with gr.Column(min_width = 50, scale=1):
             
             lbw_useblocks = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="lbw_active")
