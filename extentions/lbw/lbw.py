@@ -209,7 +209,7 @@ def ui():
             lora_analize = gr.Dropdown(label='LoRA',choices=modules.config.lora_filenames, value=modules.config.lora_filenames[0])
             analize = gr.Button (value='analize lora')
             teg_analize = gr.Textbox(value='', interactive='False')
-            analize.click(analyze_lora_simple,input=lora_analize,output=teg_analize)
+            analize.click(analyze_lora_simple,inputs=lora_analize,outputs=teg_analize)
         with gr.Column(min_width = 50, scale=1):
             
             lbw_useblocks = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="lbw_active")
