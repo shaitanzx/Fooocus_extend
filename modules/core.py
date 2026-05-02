@@ -72,7 +72,8 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 
 
-def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
+def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
+    """Применяет LBW к патчам формата ldm_patched: {key: [(strength, up, down, ...), ...]}"""
     if not lbw_str:
         return lora_dict
 
@@ -107,26 +108,30 @@ def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
         if len(stats[idx]["examples"]) < 3:
             stats[idx]["examples"].append(k.split(".")[-1])
 
-        # 🔹 ИЗМЕНЕНО: Корректная работа с форматом Fooocus/LDM-patched (up, down, [alpha])
-        if isinstance(v, (list, tuple)) and len(v) >= 2:
-            up_tensor = v[0]
-            if isinstance(up_tensor, torch.Tensor):
-                new_up = up_tensor * ratio
-                # Сохраняем тип исходной коллекции (tuple или list)
-                modified[k] = type(v)((new_up, *v[1:]))
-                continue
-        elif isinstance(v, torch.Tensor):
-            modified[k] = v * ratio
-            continue
-
-        # Fallback: если тип не распознан, оставляем как есть
-        modified[k] = v
+        # ✅ Правильная работа с форматом ldm_patched
+        if isinstance(v, list):
+            new_patches = []
+            for patch in v:
+                if isinstance(patch, (list, tuple)) and len(patch) > 0:
+                    strength = patch[0]
+                    # Масштабируем ТОЛЬКО силу патча (первый элемент кортежа)
+                    new_strength = strength * ratio
+                    new_patches.append((new_strength, *patch[1:]))
+                else:
+                    new_patches.append(patch)
+            modified[k] = new_patches
+        elif isinstance(v, tuple) and len(v) > 0:
+            # Fallback на случай единичного кортежа
+            new_strength = v[0] * ratio
+            modified[k] = (new_strength, *v[1:])
+        else:
+            modified[k] = v
 
     if debug:
         total = sum(s["count"] for s in stats.values())
         print("\n" + "="*70)
-        print(f"[LBW DEBUG] Блочные веса применены к {total} тензорам:")
-        print(f"{'Блок':<8} | {'Коэфф.':>6} | {'Тензоры':>8} | {'Примеры слоёв'}")
+        print(f"[LBW DEBUG] Блочные веса применены к {total} патчам:")
+        print(f"{'Блок':<8} | {'Коэфф.':>6} | {'Патчи':>8} | {'Примеры слоёв'}")
         print("-" * 70)
         for i in range(12):
             s = stats[i]
@@ -258,7 +263,7 @@ class StableDiffusionModel:
                 lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
 
                 # 🔹 УЛУЧШЕННАЯ ДИАГНОСТИКА: показывает точный тип и shape
-                print("\n🔍 [LBW VERIFY] Проверка структуры патчей:")
+                print("\n🔍 [LBW VERIFY] Проверка силы патчей перед add_patches:")
                 test_keys = []
                 for k in lora_unet.keys():
                     if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
@@ -268,14 +273,12 @@ class StableDiffusionModel:
 
                 for name, k in test_keys:
                     val = lora_unet[k]
-                    if isinstance(val, (list, tuple)) and len(val) > 0:
-                        up = val[0]
-                        shape_str = up.shape if isinstance(up, torch.Tensor) else "N/A"
-                        print(f"  {name:<6} | type={type(val).__name__} | up_tensor shape={shape_str}")
-                    elif isinstance(val, torch.Tensor):
-                        print(f"  {name:<6} | type=Tensor | shape={val.shape}")
+                    if isinstance(val, list) and len(val) > 0 and len(val[0]) > 0:
+                        strength = val[0][0]  # strength хранится в val[0][0]
+                        tensor_shape = val[0][1].shape if isinstance(val[0][1], torch.Tensor) else "N/A"
+                        print(f"  {name:<6} | strength={strength:.4f} | tensor_shape={tensor_shape}")
                     else:
-                        print(f"  {name:<6} | type={type(val)} | ⚠️ Неизвестный формат")
+                        print(f"  {name:<6} | type={type(val)} | ⚠️ Структура не распознана")
                 print("="*60 + "\n")
 
 
