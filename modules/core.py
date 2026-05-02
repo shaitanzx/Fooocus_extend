@@ -73,6 +73,7 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 
 def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
+    """Применяет блочные веса к патчам Fooocus: {key: ('lora', (up, down, ...))}"""
     if not lbw_str:
         return lora_dict
 
@@ -107,24 +108,21 @@ def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
         if len(stats[idx]["examples"]) < 3:
             stats[idx]["examples"].append(k.split(".")[-1])
 
-        # 🔹 Безопасное применение коэффициента к первому элементу патча
-        def apply_ratio(val, r):
-            if isinstance(val, (int, float)): return val * r
-            if isinstance(val, torch.Tensor): return val * r
-            return val
-
-        if isinstance(v, list):
-            modified[k] = [
-                tuple(apply_ratio(x, ratio) if i == 0 else x for i, x in enumerate(p)) 
-                if isinstance(p, (list, tuple)) else p 
-                for p in v
-            ]
-        elif isinstance(v, tuple):
-            modified[k] = tuple(apply_ratio(x, ratio) if i == 0 else x for i, x in enumerate(v))
+        # 🔹 ОБРАБОТКА ФОРМАТА: ('lora', (up, down, ...))
+        if isinstance(v, tuple) and len(v) >= 2 and v[0] == 'lora':
+            inner = v[1]
+            if isinstance(inner, (list, tuple)):
+                # Умножаем все тензоры внутри вложенного кортежа
+                new_inner = tuple(x * ratio if isinstance(x, torch.Tensor) else x for x in inner)
+                modified[k] = ('lora', new_inner)
+            elif isinstance(inner, torch.Tensor):
+                modified[k] = ('lora', inner * ratio)
+            else:
+                modified[k] = v  # fallback
         elif isinstance(v, torch.Tensor):
             modified[k] = v * ratio
         else:
-            modified[k] = v
+            modified[k] = v  # fallback для неизвестных форматов
 
     if debug:
         total = sum(s["count"] for s in stats.values())
@@ -263,30 +261,28 @@ class StableDiffusionModel:
 
                 # 🔹 УЛУЧШЕННАЯ ДИАГНОСТИКА: показывает точный тип и shape
 
-                print("\n🔍 [LBW VERIFY] ПОДРОБНЫЙ РАЗБОР СТРУКТУРЫ ПАТЧЕЙ:")
+                print("\n🔍 [LBW VERIFY] РАСКРЫТИЕ ВЛОЖЕННОЙ СТРУКТУРЫ:")
                 test_keys = []
                 for k in lora_unet.keys():
                     if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
                     if "middle_block" in k: test_keys.append(("M00", k)); continue
-                    if "output_blocks.5" in k: test_keys.append(("OUT05", k)); continue
-                    if len(test_keys) >= 3: break
+                    if len(test_keys) >= 2: break
 
                 for name, k in test_keys:
                     val = lora_unet[k]
-                    print(f"\n  📍 Ключ модели: {k}")
-                    print(f"  📦 Тип значения: {type(val).__name__}, длина: {len(val)}")
+                    print(f"\n  📍 Ключ: {k}")
+                    print(f"  📦 Внешний кортеж: длина={len(val)}, [0]='{val[0]}'")
                     
-                    for i, item in enumerate(val):
-                        t = type(item).__name__
-                        if isinstance(item, str):
-                            print(f"    [{i}] 📝 [str] '{item}'")
-                        elif isinstance(item, torch.Tensor):
-                            print(f"    [{i}] 🔷 [Tensor] shape={item.shape}, dtype={item.dtype}")
-                        elif isinstance(item, (int, float)):
-                            print(f"    [{i}] 🔢 [{t}] {item}")
-                        else:
-                            print(f"    [{i}] ❓ [{t}] (прочее)")
-                    print("  " + "-"*50)
+                    inner = val[1] if len(val) > 1 else None
+                    if isinstance(inner, (list, tuple)):
+                        print(f"  🔹 Внутренний кортеж: длина={len(inner)}")
+                        for i, item in enumerate(inner):
+                            if isinstance(item, torch.Tensor):
+                                print(f"      [{i}] 🔷 Tensor shape={item.shape}, mean={item.abs().mean().item():.4f}")
+                            else:
+                                print(f"      [{i}] {type(item).__name__} = {item}")
+                    elif isinstance(inner, torch.Tensor):
+                        print(f"  🔹 Внутренний элемент: Tensor shape={inner.shape}")
                 print("="*60 + "\n")
 
 
