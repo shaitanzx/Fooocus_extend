@@ -261,30 +261,36 @@ class StableDiffusionModel:
 
                 # 🔹 УЛУЧШЕННАЯ ДИАГНОСТИКА: показывает точный тип и shape
 
-                print("\n🔍 [LBW VERIFY] РАСКРЫТИЕ ВЛОЖЕННОЙ СТРУКТУРЫ:")
-                test_keys = []
-                for k in lora_unet.keys():
-                    if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
-                    if "middle_block" in k: test_keys.append(("M00", k)); continue
-                    if len(test_keys) >= 2: break
+                def get_block_name(k):
+                    if "input_blocks.4" in k: return "IN04"
+                    if "input_blocks.5" in k: return "IN05"
+                    if "input_blocks.7" in k: return "IN07"
+                    if "input_blocks.8" in k: return "IN08"
+                    if "middle_block" in k: return "M00"
+                    if "output_blocks.0" in k: return "OUT00"
+                    if "output_blocks.1" in k: return "OUT01"
+                    if "output_blocks.2" in k: return "OUT02"
+                    if "output_blocks.3" in k: return "OUT03"
+                    if "output_blocks.4" in k: return "OUT04"
+                    if "output_blocks.5" in k: return "OUT05"
+                    return "BASE/OTHER"
 
-                for name, k in test_keys:
-                    val = lora_unet[k]
-                    print(f"\n  📍 Ключ: {k}")
-                    print(f"  📦 Внешний кортеж: длина={len(val)}, [0]='{val[0]}'")
-                    
-                    inner = val[1] if len(val) > 1 else None
-                    if isinstance(inner, (list, tuple)):
-                        print(f"  🔹 Внутренний кортеж: длина={len(inner)}")
-                        for i, item in enumerate(inner):
-                            if isinstance(item, torch.Tensor):
-                                print(f"      [{i}] 🔷 Tensor shape={item.shape}, mean={item.abs().mean().item():.4f}")
-                            else:
-                                print(f"      [{i}] {type(item).__name__} = {item}")
-                    elif isinstance(inner, torch.Tensor):
-                        print(f"  🔹 Внутренний элемент: Tensor shape={inner.shape}")
-                print("="*60 + "\n")
-
+                print("\n🔍 [LBW VERIFY] Ключи с именами блоков:")
+                # Показываем по 1 ключу на каждый блок для наглядности
+                shown = {}
+                for k in list(lora_unet.keys())[:30]:  # Первые 30 ключей
+                    block = get_block_name(k)
+                    if block not in shown:
+                        shown[block] = True
+                        val = lora_unet[k]
+                        if isinstance(val, tuple) and len(val) >= 2 and val[0] == 'lora':
+                            inner = val[1]
+                            if isinstance(inner, (list, tuple)) and len(inner) >= 2:
+                                up = inner[0]
+                                if isinstance(up, torch.Tensor):
+                                    mean = up.abs().mean().item()
+                                    print(f"  {block:<8} | {k[-40:]:<40} | mean={mean:.8f}")
+                print("="*80 + "\n")
 
 
 
