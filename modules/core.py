@@ -72,7 +72,7 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 
 
-def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
+def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
     if not lbw_str:
         return lora_dict
 
