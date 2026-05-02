@@ -107,87 +107,86 @@ def analyze_lora_simple(filename, threshold=0.001):
     sd = load_file(filename)
 
     # Маппинг ключей → индексы 12 блоков SDXL (совпадает с вашим кодом)
+    # 🔑 УНИВЕРСАЛЬНЫЙ ПАРСЕР: работает с точками, подчёркиваниями и любыми префиксами
     def get_block_idx(k):
-        k = k.lower()
-        if "input_blocks.4" in k: return 1
-        if "input_blocks.5" in k: return 2
-        if "input_blocks.7" in k: return 3
-        if "input_blocks.8" in k: return 4
-        if "middle_block" in k: return 5
-        if "output_blocks.0" in k: return 6
-        if "output_blocks.1" in k: return 7
-        if "output_blocks.2" in k: return 8
-        if "output_blocks.3" in k: return 9
-        if "output_blocks.4" in k: return 10
-        if "output_blocks.5" in k: return 11
-        return 0  # BASE, CLIP, time_embed и прочее
+        k_n = k.replace('.', '_').lower()
+        if 'input_blocks_4_' in k_n: return 1
+        if 'input_blocks_5_' in k_n: return 2
+        if 'input_blocks_7_' in k_n: return 3
+        if 'input_blocks_8_' in k_n: return 4
+        if 'middle_block_' in k_n: return 5
+        if 'output_blocks_0_' in k_n: return 6
+        if 'output_blocks_1_' in k_n: return 7
+        if 'output_blocks_2_' in k_n: return 8
+        if 'output_blocks_3_' in k_n: return 9
+        if 'output_blocks_4_' in k_n: return 10
+        if 'output_blocks_5_' in k_n: return 11
+        return 0  # fallback
 
-    # Ловим все варианты именования весов LoRA
-    lora_keywords = ["lora_down", "lora_up", "lora_a", "lora_b", 
-                     "_lora.", ".up.", ".down.", "lora_unet", "lora_te"]
-       
     block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
                    "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
     block_max_vals = [0.0] * 12
     block_counts = [0] * 12
+    base_sample_keys = []  # Для отладки: что попадает в BASE?
+
+    lora_keywords = ["lora_down", "lora_up", "lora_a", "lora_b", "_lora.", ".up.", ".down."]
 
     for k, v in sd.items():
         if not isinstance(v, torch.Tensor): continue
-        
         k_lower = k.lower()
-        # Пропускаем alpha/scale и не-LoRA ключи
         if "alpha" in k_lower or "scale" in k_lower: continue
         if not any(kw in k_lower for kw in lora_keywords): continue
 
         idx = get_block_idx(k)
-        # 🔑 Используем MAX вместо MEAN: LoRA матрицы разреженные, mean обнуляет результат
         max_val = v.abs().max().item()
         block_max_vals[idx] = max(block_max_vals[idx], max_val)
         block_counts[idx] += 1
+        
+        if idx == 0 and len(base_sample_keys) < 3:
+            base_sample_keys.append(k)
 
     # Вывод таблицы
     print(f"📊 Анализ LoRA: {filename}")
-    print("="*60)
-    print(f"{'Блок':<8} | {'Макс |Δ|':>8} | {'Статус':<10} | {'Что влияет'}")
-    print("-"*60)
+    print("="*62)
+    print(f"{'Блок':<8} | {'Макс |Δ|':>8} | {'Тензоров':>8} | {'Статус':<10}")
+    print("-"*62)
 
     active_blocks = []
     lbw_values = []
 
     for i in range(12):
         max_val = block_max_vals[i]
-        is_active = max_val > threshold
+        # Порог 0.00005: SDXL чувствительна к дельтам даже в 1e-4
+        is_active = max_val > 0.00005 
         lbw_values.append(1 if is_active else 0)
-
         status = "✅ Вкл" if is_active else "⚪ Выкл"
-        
-        if i == 0: role = "Общий стиль, атмосфера, цвета"
-        elif i in (1, 2): role = "Композиция, позы, крупные объекты"
-        elif i in (3, 4): role = "Средние детали, взаимное расположение"
-        elif i == 5: role = "Связность, логика сцены"
-        else: role = "Текстуры, резкость, мелкие детали"
-
-        print(f"{block_names[i]:<8} | {max_val:>8.5f} | {status:<10} | {role}")
+        print(f"{block_names[i]:<8} | {max_val:>8.5f} | {block_counts[i]:>8} | {status}")
         if is_active: active_blocks.append(block_names[i])
+
+    # 🔍 ДИАГНОСТИКА: Если в BASE попало >50% весов, скорее всего, ключи не распознаны
+    total_lora_keys = sum(block_counts)
+    base_keys = block_counts[0]
+    if base_keys > total_lora_keys * 0.5:
+        print("\n⚠️ ВНИМАНИЕ: Более 50% весов попали в BASE.")
+        print("   Вероятно, ключи используют нестандартный префикс.")
+        print("   Примеры ключей из BASE:")
+        for k in base_sample_keys:
+            print(f"     - {k}")
 
     # Генерация тега
     lbw_str = ",".join(map(str, lbw_values))
     tag = f"<lora:{clean_name}:1.0:::lbw={lbw_str}>"
 
-    print("="*60)
-    print(f"🎯 ГОТОВЫЙ ТЕГ (скопируйте целиком):")
+    print("\n" + "="*62)
+    print(f"🎯 ГОТОВЫЙ ТЕГ:")
     print(f"\n{tag}\n")
     
-    if not active_blocks:
-        print("⚠️ Все блоки ниже порога. LoRA очень лёгкая или использует нестандартный формат.")
-        print("   Попробуйте запустить с threshold=0.00001")
-    elif len(active_blocks) == 12:
-        print("💡 Все 12 блоков активны! Это полноформатная LoRA.")
-        print("   lbw работает как эквалайзер: можете крутить любой блок для тонкой настройки.")
+    if len(active_blocks) == 12:
+        print("💡 Все блоки активны. LoRA полноформатная, lbw работает как эквалайзер.")
     else:
-        print(f"💡 Активные блоки: {', '.join(active_blocks)}")
-        print(f"📝 Блоки со статусом ⚪ можно ставить в 0, они не содержат обученных весов.")
-        print(f"   Если хотите полный эффект, замените `lbw=...` на `lbw=1,1,1,1,1,1,1,1,1,1,1,1`")
+        print(f"💡 Активные: {', '.join(active_blocks) if active_blocks else 'Нет (веса очень слабые)'}")
+        print("📝 Если визуально разница есть, но скрипт показывает 0 →")
+        print("   замените `lbw=...` на `lbw=1,1,1,1,1,1,1,1,1,1,1,1` и крутите коэффициенты вручную.")
     return tag
 # === КАК ИСПОЛЬЗОВАТЬ ===
 # Замените путь на свой файл и запустите:
