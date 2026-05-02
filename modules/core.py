@@ -73,7 +73,6 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 
 def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
-    """Применяет LBW к патчам формата ldm_patched: {key: [(strength, up, down, ...), ...]}"""
     if not lbw_str:
         return lora_dict
 
@@ -108,22 +107,22 @@ def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
         if len(stats[idx]["examples"]) < 3:
             stats[idx]["examples"].append(k.split(".")[-1])
 
-        # ✅ Правильная работа с форматом ldm_patched
+        # 🔹 Безопасное применение коэффициента к первому элементу патча
+        def apply_ratio(val, r):
+            if isinstance(val, (int, float)): return val * r
+            if isinstance(val, torch.Tensor): return val * r
+            return val
+
         if isinstance(v, list):
-            new_patches = []
-            for patch in v:
-                if isinstance(patch, (list, tuple)) and len(patch) > 0:
-                    strength = patch[0]
-                    # Масштабируем ТОЛЬКО силу патча (первый элемент кортежа)
-                    new_strength = strength * ratio
-                    new_patches.append((new_strength, *patch[1:]))
-                else:
-                    new_patches.append(patch)
-            modified[k] = new_patches
-        elif isinstance(v, tuple) and len(v) > 0:
-            # Fallback на случай единичного кортежа
-            new_strength = v[0] * ratio
-            modified[k] = (new_strength, *v[1:])
+            modified[k] = [
+                tuple(apply_ratio(x, ratio) if i == 0 else x for i, x in enumerate(p)) 
+                if isinstance(p, (list, tuple)) else p 
+                for p in v
+            ]
+        elif isinstance(v, tuple):
+            modified[k] = tuple(apply_ratio(x, ratio) if i == 0 else x for i, x in enumerate(v))
+        elif isinstance(v, torch.Tensor):
+            modified[k] = v * ratio
         else:
             modified[k] = v
 
@@ -263,7 +262,7 @@ class StableDiffusionModel:
                 lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
 
                 # 🔹 УЛУЧШЕННАЯ ДИАГНОСТИКА: показывает точный тип и shape
-                print("\n🔍 [LBW VERIFY] Проверка силы патчей перед add_patches:")
+                print("\n🔍 [LBW VERIFY] Проверка структуры патчей перед add_patches:")
                 test_keys = []
                 for k in lora_unet.keys():
                     if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
@@ -273,12 +272,13 @@ class StableDiffusionModel:
 
                 for name, k in test_keys:
                     val = lora_unet[k]
-                    if isinstance(val, list) and len(val) > 0 and len(val[0]) > 0:
-                        strength = val[0][0]  # strength хранится в val[0][0]
-                        tensor_shape = val[0][1].shape if isinstance(val[0][1], torch.Tensor) else "N/A"
-                        print(f"  {name:<6} | strength={strength:.4f} | tensor_shape={tensor_shape}")
+                    if isinstance(val, list) and len(val) > 0:
+                        first = val[0][0] if isinstance(val[0], (list, tuple)) and len(val[0]) > 0 else val[0]
+                        print(f"  {name:<6} | type={type(val).__name__} | strength/val={type(first).__name__}")
+                    elif isinstance(val, tuple):
+                        print(f"  {name:<6} | type=tuple | первый_эл={type(val[0]).__name__}")
                     else:
-                        print(f"  {name:<6} | type={type(val)} | ⚠️ Структура не распознана")
+                        print(f"  {name:<6} | type={type(val).__name__}")
                 print("="*60 + "\n")
 
 
