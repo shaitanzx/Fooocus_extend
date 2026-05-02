@@ -106,8 +106,9 @@ def analyze_lora_simple(filename, threshold=0.001):
     
     sd = load_file(filename)
 
-    # Маппинг ключей → индексы 12 блоков SDXL
+    # Маппинг ключей → индексы 12 блоков SDXL (совпадает с вашим кодом)
     def get_block_idx(k):
+        k = k.lower()
         if "input_blocks.4" in k: return 1
         if "input_blocks.5" in k: return 2
         if "input_blocks.7" in k: return 3
@@ -119,56 +120,74 @@ def analyze_lora_simple(filename, threshold=0.001):
         if "output_blocks.3" in k: return 9
         if "output_blocks.4" in k: return 10
         if "output_blocks.5" in k: return 11
-        return 0  # BASE, CLIP, time_embed, прочее
+        return 0  # BASE, CLIP, time_embed и прочее
 
+    # Ловим все варианты именования весов LoRA
+    lora_keywords = ["lora_down", "lora_up", "lora_a", "lora_b", 
+                     "_lora.", ".up.", ".down.", "lora_unet", "lora_te"]
+       
     block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
                    "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
-    block_scores = [0.0] * 12
+    block_max_vals = [0.0] * 12
     block_counts = [0] * 12
 
-    # 1. Считаем "активность" весов в каждом блоке
     for k, v in sd.items():
         if not isinstance(v, torch.Tensor): continue
-        if "lora_down" in k or "lora_up" in k:
-            idx = get_block_idx(k)
-            block_scores[idx] += v.abs().mean().item()
-            block_counts[idx] += 1
+        
+        k_lower = k.lower()
+        # Пропускаем alpha/scale и не-LoRA ключи
+        if "alpha" in k_lower or "scale" in k_lower: continue
+        if not any(kw in k_lower for kw in lora_keywords): continue
 
-    # 2. Определяем, какие блоки стоит включать
+        idx = get_block_idx(k)
+        # 🔑 Используем MAX вместо MEAN: LoRA матрицы разреженные, mean обнуляет результат
+        max_val = v.abs().max().item()
+        block_max_vals[idx] = max(block_max_vals[idx], max_val)
+        block_counts[idx] += 1
+
+    # Вывод таблицы
+    print(f"📊 Анализ LoRA: {filename}")
+    print("="*60)
+    print(f"{'Блок':<8} | {'Макс |Δ|':>8} | {'Статус':<10} | {'Что влияет'}")
+    print("-"*60)
+
     active_blocks = []
     lbw_values = []
-    print(f"📊 Анализ LoRA: {filename}")
-    print("="*52)
-    print(f"{'Блок':<8} | {'Статус':<10} | {'Что влияет'}")
-    print("-"*52)
 
     for i in range(12):
-        avg = block_scores[i] / block_counts[i] if block_counts[i] > 0 else 0.0
-        is_active = avg > threshold
+        max_val = block_max_vals[i]
+        is_active = max_val > threshold
         lbw_values.append(1 if is_active else 0)
 
         status = "✅ Вкл" if is_active else "⚪ Выкл"
         
-        # Простое описание роли блока для пользователя
         if i == 0: role = "Общий стиль, атмосфера, цвета"
         elif i in (1, 2): role = "Композиция, позы, крупные объекты"
         elif i in (3, 4): role = "Средние детали, взаимное расположение"
         elif i == 5: role = "Связность, логика сцены"
         else: role = "Текстуры, резкость, мелкие детали"
 
-        print(f"{block_names[i]:<8} | {status:<10} | {role}")
+        print(f"{block_names[i]:<8} | {max_val:>8.5f} | {status:<10} | {role}")
         if is_active: active_blocks.append(block_names[i])
 
-    # 3. Генерация готового тега
+    # Генерация тега
     lbw_str = ",".join(map(str, lbw_values))
     tag = f"<lora:{clean_name}:1.0:::lbw={lbw_str}>"
 
-    print("="*52)
+    print("="*60)
     print(f"🎯 ГОТОВЫЙ ТЕГ (скопируйте целиком):")
     print(f"\n{tag}\n")
-    print(f"💡 Активные блоки: {', '.join(active_blocks) if active_blocks else 'Нет'}")
-    print(f"📝 Совет: замените `1.0` в теге на `0.6`-`0.8`, если эффект слишком сильный.")
-    print(f"⚙️ Если нужно включить все блоки, замените `lbw=...` на `lbw=1,1,1,1,1,1,1,1,1,1,1,1`")
+    
+    if not active_blocks:
+        print("⚠️ Все блоки ниже порога. LoRA очень лёгкая или использует нестандартный формат.")
+        print("   Попробуйте запустить с threshold=0.00001")
+    elif len(active_blocks) == 12:
+        print("💡 Все 12 блоков активны! Это полноформатная LoRA.")
+        print("   lbw работает как эквалайзер: можете крутить любой блок для тонкой настройки.")
+    else:
+        print(f"💡 Активные блоки: {', '.join(active_blocks)}")
+        print(f"📝 Блоки со статусом ⚪ можно ставить в 0, они не содержат обученных весов.")
+        print(f"   Если хотите полный эффект, замените `lbw=...` на `lbw=1,1,1,1,1,1,1,1,1,1,1,1`")
     return tag
 # === КАК ИСПОЛЬЗОВАТЬ ===
 # Замените путь на свой файл и запустите:
