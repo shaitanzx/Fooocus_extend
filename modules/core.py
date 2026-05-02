@@ -73,26 +73,19 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 
 def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
-    """
-    Применяет блочные веса (строго 12 индексов) к патчам ldm_patched для SDXL.
-    При debug=True выводит подробную таблицу маппинга.
-    """
     if not lbw_str:
         return lora_dict
 
     ratios = [float(x.strip()) for x in lbw_str.split(",")]
     if len(ratios) != 12:
-        print(f"[LBW Warning] Ожидалось 12 значений для SDXL, получено {len(ratios)}. Пропускаю патчинг.")
+        print(f"[LBW Warning] Ожидалось 12 значений для SDXL, получено {len(ratios)}.")
         return lora_dict
 
     block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00", 
                    "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
-    
-    # Структура для сбора статистики: {index: {"count": 0, "examples": []}}
     stats = {i: {"count": 0, "examples": []} for i in range(12)}
     modified = {}
 
-    # Маппинг ключей → индексы SDXL
     def get_idx(k):
         if "input_blocks.4" in k: return 1
         if "input_blocks.5" in k: return 2
@@ -105,44 +98,30 @@ def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
         if "output_blocks.3" in k: return 9
         if "output_blocks.4" in k: return 10
         if "output_blocks.5" in k: return 11
-        return 0  # BASE / CLIP / fallback
+        return 0
 
     for k, v in lora_dict.items():
         idx = get_idx(k)
         ratio = ratios[idx]
-
-        # 🔹 Сбор статистики для лога
         stats[idx]["count"] += 1
         if len(stats[idx]["examples"]) < 3:
-            # Берём последний компонент ключа (обычно up, down, alpha)
-            layer = k.split(".")[-1]
-            if layer not in stats[idx]["examples"]:
-                stats[idx]["examples"].append(layer)
+            stats[idx]["examples"].append(k.split(".")[-1])
 
-        # 🔹 Безопасное применение веса (поддержка формата Fooocus/ComfyUI)
-        if isinstance(v, list):
-            new_list = []
-            for patch in v:
-                if isinstance(patch, tuple) and len(patch) > 0:
-                    strength = patch[0]
-                    if isinstance(strength, (int, float)):
-                        new_list.append((strength * ratio, *patch[1:]))
-                    else:
-                        new_list.append(patch)
-                else:
-                    new_list.append(patch)
-            modified[k] = new_list
-        elif isinstance(v, tuple):
-            if isinstance(v[0], torch.Tensor):
-                modified[k] = (v[0] * ratio, v[1])
-            else:
-                modified[k] = v
+        # 🔹 ИЗМЕНЕНО: Корректная работа с форматом Fooocus/LDM-patched (up, down, [alpha])
+        if isinstance(v, (list, tuple)) and len(v) >= 2:
+            up_tensor = v[0]
+            if isinstance(up_tensor, torch.Tensor):
+                new_up = up_tensor * ratio
+                # Сохраняем тип исходной коллекции (tuple или list)
+                modified[k] = type(v)((new_up, *v[1:]))
+                continue
         elif isinstance(v, torch.Tensor):
             modified[k] = v * ratio
-        else:
-            modified[k] = v
+            continue
 
-    # 🔹 Вывод таблицы в консоль
+        # Fallback: если тип не распознан, оставляем как есть
+        modified[k] = v
+
     if debug:
         total = sum(s["count"] for s in stats.values())
         print("\n" + "="*70)
@@ -278,40 +257,25 @@ class StableDiffusionModel:
                 # ✅ Патчим ТОЛЬКО UNet
                 lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
 
-                print("\n🔍 [LBW VERIFY] Диагностика словаря патчей:")
-                print(f"  Всего ключей в lora_unet: {len(lora_unet)}")
-                
-                if len(lora_unet) > 0:
-                    # 1. Показываем первые 3 ключа и их тип
-                    print("  Примеры ключей:")
-                    for i, k in enumerate(list(lora_unet.keys())[:3]):
-                        val = lora_unet[k]
-                        v_type = type(val).__name__
-                        v_info = ""
-                        if isinstance(val, list) and val:
-                            v_info = f"list[0] type={type(val[0]).__name__}"
-                            if isinstance(val[0], tuple):
-                                v_info += f", strength={val[0][0]}"
-                        elif isinstance(val, torch.Tensor):
-                            v_info = f"tensor shape={val.shape}"
-                        print(f"    [{i}] {k}")
-                        print(f"        -> {v_info}")
+                # 🔹 УЛУЧШЕННАЯ ДИАГНОСТИКА: показывает точный тип и shape
+                print("\n🔍 [LBW VERIFY] Проверка структуры патчей:")
+                test_keys = []
+                for k in lora_unet.keys():
+                    if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
+                    if "middle_block" in k: test_keys.append(("M00", k)); continue
+                    if "output_blocks.5" in k: test_keys.append(("OUT05", k)); continue
+                    if len(test_keys) >= 3: break
 
-                    # 2. Считаем, сколько ключей попало в каждый блок
-                    blocks_found = {"BASE":0, "IN04":0, "IN05":0, "IN07":0, "IN08":0, "M00":0, "OUT":0, "CLIP/EMBED":0}
-                    for k in lora_unet.keys():
-                        if "input_blocks.4" in k: blocks_found["IN04"] += 1
-                        elif "input_blocks.5" in k: blocks_found["IN05"] += 1
-                        elif "input_blocks.7" in k: blocks_found["IN07"] += 1
-                        elif "input_blocks.8" in k: blocks_found["IN08"] += 1
-                        elif "middle_block" in k: blocks_found["M00"] += 1
-                        elif "output_blocks" in k: blocks_found["OUT"] += 1
-                        elif "text_model" in k or "transformer" in k: blocks_found["CLIP/EMBED"] += 1
-                        else: blocks_found["BASE"] += 1
-
-                    print("\n  Распределение ключей по блокам:")
-                    for b, c in blocks_found.items():
-                        print(f"    {b}: {c} тензоров")
+                for name, k in test_keys:
+                    val = lora_unet[k]
+                    if isinstance(val, (list, tuple)) and len(val) > 0:
+                        up = val[0]
+                        shape_str = up.shape if isinstance(up, torch.Tensor) else "N/A"
+                        print(f"  {name:<6} | type={type(val).__name__} | up_tensor shape={shape_str}")
+                    elif isinstance(val, torch.Tensor):
+                        print(f"  {name:<6} | type=Tensor | shape={val.shape}")
+                    else:
+                        print(f"  {name:<6} | type={type(val)} | ⚠️ Неизвестный формат")
                 print("="*60 + "\n")
 
 
