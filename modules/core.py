@@ -72,7 +72,7 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 
 
-def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
+def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
     """
     Применяет блочные веса (строго 12 индексов) к патчам ldm_patched для SDXL.
     При debug=True выводит подробную таблицу маппинга.
@@ -278,23 +278,41 @@ class StableDiffusionModel:
                 # ✅ Патчим ТОЛЬКО UNet
                 lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
 
-                # 🔹 ДИАГНОСТИКА: Выводим реальные значения патчей перед add_patches
-                print("\n🔍 [LBW VERIFY] Проверка значений патчей:")
-                # Берём по 1 ключу из IN04, M00, OUT05 для сравнения
-                test_keys = []
-                for k in lora_unet.keys():
-                    if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
-                    if "middle_block" in k: test_keys.append(("M00", k)); continue
-                    if "output_blocks.5" in k: test_keys.append(("OUT05", k)); continue
-                if len(test_keys) >= 3: break  # Берём только первые найденные
+                print("\n🔍 [LBW VERIFY] Диагностика словаря патчей:")
+                print(f"  Всего ключей в lora_unet: {len(lora_unet)}")
+                
+                if len(lora_unet) > 0:
+                    # 1. Показываем первые 3 ключа и их тип
+                    print("  Примеры ключей:")
+                    for i, k in enumerate(list(lora_unet.keys())[:3]):
+                        val = lora_unet[k]
+                        v_type = type(val).__name__
+                        v_info = ""
+                        if isinstance(val, list) and val:
+                            v_info = f"list[0] type={type(val[0]).__name__}"
+                            if isinstance(val[0], tuple):
+                                v_info += f", strength={val[0][0]}"
+                        elif isinstance(val, torch.Tensor):
+                            v_info = f"tensor shape={val.shape}"
+                        print(f"    [{i}] {k}")
+                        print(f"        -> {v_info}")
 
-                for name, k in test_keys:
-                    val = lora_unet[k]
-                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], tuple):
-                        print(f"  {name:<6} | strength={val[0][0]:.4f} | ключ={k.split('.')[-1]}")
-                    elif isinstance(val, torch.Tensor):
-                        print(f"  {name:<6} | tensor_mean={val.abs().mean().item():.4f} | ключ={k.split('.')[-1]}")
-                print("="*50 + "\n")
+                    # 2. Считаем, сколько ключей попало в каждый блок
+                    blocks_found = {"BASE":0, "IN04":0, "IN05":0, "IN07":0, "IN08":0, "M00":0, "OUT":0, "CLIP/EMBED":0}
+                    for k in lora_unet.keys():
+                        if "input_blocks.4" in k: blocks_found["IN04"] += 1
+                        elif "input_blocks.5" in k: blocks_found["IN05"] += 1
+                        elif "input_blocks.7" in k: blocks_found["IN07"] += 1
+                        elif "input_blocks.8" in k: blocks_found["IN08"] += 1
+                        elif "middle_block" in k: blocks_found["M00"] += 1
+                        elif "output_blocks" in k: blocks_found["OUT"] += 1
+                        elif "text_model" in k or "transformer" in k: blocks_found["CLIP/EMBED"] += 1
+                        else: blocks_found["BASE"] += 1
+
+                    print("\n  Распределение ключей по блокам:")
+                    for b, c in blocks_found.items():
+                        print(f"    {b}: {c} тензоров")
+                print("="*60 + "\n")
 
 
 
