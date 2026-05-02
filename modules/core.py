@@ -262,7 +262,8 @@ class StableDiffusionModel:
                 lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
 
                 # 🔹 УЛУЧШЕННАЯ ДИАГНОСТИКА: показывает точный тип и shape
-                print("\n🔍 [LBW VERIFY] Проверка структуры патчей перед add_patches:")
+
+                print("\n🔍 [LBW VERIFY] ПОДРОБНЫЙ РАЗБОР СТРУКТУРЫ ПАТЧЕЙ:")
                 test_keys = []
                 for k in lora_unet.keys():
                     if "input_blocks.4" in k: test_keys.append(("IN04", k)); continue
@@ -272,13 +273,20 @@ class StableDiffusionModel:
 
                 for name, k in test_keys:
                     val = lora_unet[k]
-                    if isinstance(val, list) and len(val) > 0:
-                        first = val[0][0] if isinstance(val[0], (list, tuple)) and len(val[0]) > 0 else val[0]
-                        print(f"  {name:<6} | type={type(val).__name__} | strength/val={type(first).__name__}")
-                    elif isinstance(val, tuple):
-                        print(f"  {name:<6} | type=tuple | первый_эл={type(val[0]).__name__}")
-                    else:
-                        print(f"  {name:<6} | type={type(val).__name__}")
+                    print(f"\n  📍 Ключ модели: {k}")
+                    print(f"  📦 Тип значения: {type(val).__name__}, длина: {len(val)}")
+                    
+                    for i, item in enumerate(val):
+                        t = type(item).__name__
+                        if isinstance(item, str):
+                            print(f"    [{i}] 📝 [str] '{item}'")
+                        elif isinstance(item, torch.Tensor):
+                            print(f"    [{i}] 🔷 [Tensor] shape={item.shape}, dtype={item.dtype}")
+                        elif isinstance(item, (int, float)):
+                            print(f"    [{i}] 🔢 [{t}] {item}")
+                        else:
+                            print(f"    [{i}] ❓ [{t}] (прочее)")
+                    print("  " + "-"*50)
                 print("="*60 + "\n")
 
 
