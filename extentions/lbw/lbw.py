@@ -1,5 +1,8 @@
 import gradio as gr
 import os
+import modules.config
+import torch
+from safetensors.torch import load_file
 
 BLOCKID26=["BASE","IN00","IN01","IN02","IN03","IN04","IN05","IN06","IN07","IN08","IN09","IN10","IN11","M00","OUT00","OUT01","OUT02","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
 BLOCKID17=["BASE","IN01","IN02","IN04","IN05","IN07","IN08","M00","OUT03","OUT04","OUT05","OUT06","OUT07","OUT08","OUT09","OUT10","OUT11"]
@@ -87,6 +90,87 @@ def checkloadcond(line: str) -> bool:
     # Прямая проверка: количество запятых должно быть на 1 меньше числа блоков
     return not any(stripped.count(",") == x - 1 for x in BLOCKNUMS)
 
+def analyze_lora_simple(filename, threshold=0.001):
+    """
+    Анализирует LoRA для SDXL и выводит готовый тег lbw=.
+    threshold=0.001 -> порог активности (меньше = пустой блок, больше = активный)
+    """
+    filename = os.path.join(modules.config.paths_loras[0], filename)
+    if not os.path.exists(filename):
+        print(f"❌ Файл не найден: {filename}")
+        return
+    print(f'Analized {filename}')
+    #filename = os.path.basename(filepath)
+    #clean_name = os.path.splitext(filename)[0]
+    sd = load_file(filename)
+
+    # Маппинг ключей → индексы 12 блоков SDXL
+    def get_block_idx(k):
+        if "input_blocks.4" in k: return 1
+        if "input_blocks.5" in k: return 2
+        if "input_blocks.7" in k: return 3
+        if "input_blocks.8" in k: return 4
+        if "middle_block" in k: return 5
+        if "output_blocks.0" in k: return 6
+        if "output_blocks.1" in k: return 7
+        if "output_blocks.2" in k: return 8
+        if "output_blocks.3" in k: return 9
+        if "output_blocks.4" in k: return 10
+        if "output_blocks.5" in k: return 11
+        return 0  # BASE, CLIP, time_embed, прочее
+
+    block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
+                   "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
+    block_scores = [0.0] * 12
+    block_counts = [0] * 12
+
+    # 1. Считаем "активность" весов в каждом блоке
+    for k, v in sd.items():
+        if not isinstance(v, torch.Tensor): continue
+        if "lora_down" in k or "lora_up" in k:
+            idx = get_block_idx(k)
+            block_scores[idx] += v.abs().mean().item()
+            block_counts[idx] += 1
+
+    # 2. Определяем, какие блоки стоит включать
+    active_blocks = []
+    lbw_values = []
+    print(f"📊 Анализ LoRA: {filename}")
+    print("="*52)
+    print(f"{'Блок':<8} | {'Статус':<10} | {'Что влияет'}")
+    print("-"*52)
+
+    for i in range(12):
+        avg = block_scores[i] / block_counts[i] if block_counts[i] > 0 else 0.0
+        is_active = avg > threshold
+        lbw_values.append(1 if is_active else 0)
+
+        status = "✅ Вкл" if is_active else "⚪ Выкл"
+        
+        # Простое описание роли блока для пользователя
+        if i == 0: role = "Общий стиль, атмосфера, цвета"
+        elif i in (1, 2): role = "Композиция, позы, крупные объекты"
+        elif i in (3, 4): role = "Средние детали, взаимное расположение"
+        elif i == 5: role = "Связность, логика сцены"
+        else: role = "Текстуры, резкость, мелкие детали"
+
+        print(f"{block_names[i]:<8} | {status:<10} | {role}")
+        if is_active: active_blocks.append(block_names[i])
+
+    # 3. Генерация готового тега
+    lbw_str = ",".join(map(str, lbw_values))
+    tag = f"<lora:{clean_name}:1.0:::lbw={lbw_str}>"
+
+    print("="*52)
+    print(f"🎯 ГОТОВЫЙ ТЕГ (скопируйте целиком):")
+    print(f"\n{tag}\n")
+    print(f"💡 Активные блоки: {', '.join(active_blocks) if active_blocks else 'Нет'}")
+    print(f"📝 Совет: замените `1.0` в теге на `0.6`-`0.8`, если эффект слишком сильный.")
+    print(f"⚙️ Если нужно включить все блоки, замените `lbw=...` на `lbw=1,1,1,1,1,1,1,1,1,1,1,1`")
+    return tag
+# === КАК ИСПОЛЬЗОВАТЬ ===
+# Замените путь на свой файл и запустите:
+# analyze_lora_simple("/path/to/your/SDXL_FILM_PHOTOGRAPHY_STYLE_V1.safetensors")
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -121,6 +205,11 @@ def ui():
 
 
     with gr.Row():
+        with gr.Row():
+            lora_analize = gr.Dropdown(label='LoRA',choices=modules.config.lora_filenames, value=modules.config.lora_filenames[0])
+            analize = gr.Button (value='analize lora')
+            teg_analize = gr.Textbox(value='', interactive='False')
+            analize.click(analyze_lora_simple,input=lora_analize,output=teg_analize)
         with gr.Column(min_width = 50, scale=1):
             
             lbw_useblocks = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="lbw_active")
