@@ -95,13 +95,15 @@ def analyze_lora_simple(filename, threshold=0.001):
     Анализирует LoRA для SDXL и выводит готовый тег lbw=.
     threshold=0.001 -> порог активности (меньше = пустой блок, больше = активный)
     """
+    
     filename = os.path.join(modules.config.paths_loras[0], filename)
+    clean_name = os.path.splitext(filename)[0]
     if not os.path.exists(filename):
         print(f"❌ Файл не найден: {filename}")
         return
     print(f'Analized {filename}')
     #filename = os.path.basename(filepath)
-    #clean_name = os.path.splitext(filename)[0]
+    
     sd = load_file(filename)
 
     # Маппинг ключей → индексы 12 блоков SDXL
