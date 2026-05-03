@@ -85,7 +85,8 @@ def _load_elemental_presets():
     return structured_presets
 
 def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=False):
-    if not lbwe_str: return lora_dict
+    if not lbwe_str: 
+        return lora_dict
     
     rules = []
     
@@ -97,7 +98,8 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Fal
         # 2. Парсим inline-правила (поддержка нескольких через ;)
         for rule in lbwe_str.split(';'):
             rule = rule.strip()
-            if not rule: continue
+            if not rule: 
+                continue
             parts = rule.split(':')
             if len(parts) == 3:
                 blocks, layers, ratio = parts
@@ -107,9 +109,13 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Fal
                         [l.strip().lower() for l in layers.split(',')],
                         float(ratio.strip())
                     ))
-    if not rules: return lora_dict
+                except Exception:
+                    pass  # 🔑 ДОБАВЛЕНО: корректно закрываем try-блок
 
-    # 2. Вспомогательный маппинг ключ → индекс блока
+    if not rules: 
+        return lora_dict
+
+    # 3. Вспомогательный маппинг ключ → индекс блока
     def get_block_idx(k):
         k_n = k.replace('.', '_').lower()
         if 'input_blocks_4_' in k_n: return 1
@@ -140,7 +146,7 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Fal
                     if debug: 
                         matched_log.append((BLOCK_NAMES[idx] if idx < 12 else "BASE", k.split('.')[-1], ratio))
 
-        # 3. Применяем накопленный коэффициент к патчу
+        # 4. Применяем накопленный коэффициент к патчу
         if applied_ratio != 1.0:
             if isinstance(v, tuple) and len(v) >= 2 and v[0] == 'lora':
                 inner = v[1]
@@ -150,12 +156,15 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Fal
                         # Умножаем только up/down тензоры (индексы 0 и 1)
                         if isinstance(item, torch.Tensor) and i < 2:
                             new_inner.append(item * applied_ratio)
-                        else: new_inner.append(item)
+                        else: 
+                            new_inner.append(item)
                     modified[k] = ('lora', tuple(new_inner))
-                else: modified[k] = v
+                else: 
+                    modified[k] = v
             elif isinstance(v, torch.Tensor):
                 modified[k] = v * applied_ratio
-            else: modified[k] = v
+            else: 
+                modified[k] = v
         else:
             modified[k] = v
 
@@ -166,6 +175,40 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Fal
         print("="*60)
 
     return modified
+
+    
+def _print_lbw_debug(lora_unet, lbw_str):
+    """Быстрая диагностика применённых LBW/LBWE"""
+    def get_block_name(k):
+        if "input_blocks.4" in k: return "IN04"
+        if "input_blocks.5" in k: return "IN05"
+        if "input_blocks.7" in k: return "IN07"
+        if "input_blocks.8" in k: return "IN08"
+        if "middle_block" in k: return "M00"
+        if "output_blocks.0" in k: return "OUT00"
+        if "output_blocks.1" in k: return "OUT01"
+        if "output_blocks.2" in k: return "OUT02"
+        if "output_blocks.3" in k: return "OUT03"
+        if "output_blocks.4" in k: return "OUT04"
+        if "output_blocks.5" in k: return "OUT05"
+        return "BASE/OTHER"
+
+    print("\n🔍 [LBW VERIFY] Ключи с именами блоков:")
+    shown = {}
+    for k in list(lora_unet.keys())[:30]:
+        block = get_block_name(k)
+        if block not in shown:
+            shown[block] = True
+            val = lora_unet[k]
+            if isinstance(val, tuple) and len(val) >= 2 and val[0] == 'lora':
+                inner = val[1]
+                if isinstance(inner, (list, tuple)) and len(inner) >= 2:
+                    up = inner[0]
+                    if isinstance(up, torch.Tensor):
+                        mean = up.abs().mean().item()
+                        print(f"  {block:<8} | {k[-40:]:<40} | mean={mean:.8f}")
+    print("="*80 + "\n")
+
 
 def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
     """Применяет блочные веса к патчам Fooocus: {key: ('lora', (up, down, ...))}"""
