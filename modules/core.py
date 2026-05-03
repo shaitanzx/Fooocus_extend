@@ -98,8 +98,7 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
         # 2. Парсим inline-правила (поддержка нескольких через ;)
         for rule in lbwe_str.split(';'):
             rule = rule.strip()
-            if not rule: 
-                continue
+            if not rule: continue
             parts = rule.split(':')
             if len(parts) == 3:
                 blocks, layers, ratio = parts
@@ -110,12 +109,12 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                         float(ratio.strip())
                     ))
                 except Exception:
-                    pass  # 🔑 ДОБАВЛЕНО: корректно закрываем try-блок
+                    pass
 
     if not rules: 
         return lora_dict
 
-    # 3. Вспомогательный маппинг ключ → индекс блока
+    # 3. Маппинг ключ → индекс блока
     def get_block_idx(k):
         k_n = k.replace('.', '_').lower()
         if 'input_blocks_4_' in k_n: return 1
@@ -144,7 +143,10 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                 if any(kw in k_lower for kw in layer_keywords):
                     applied_ratio *= ratio
                     if debug: 
-                        matched_log.append((BLOCK_NAMES[idx] if idx < 12 else "BASE", k.split('.')[-1], ratio))
+                        # 🔧 ИСПРАВЛЕНИЕ: берём последние 3 части ключа (напр. "attn1.to_q.weight")
+                        parts = k.split('.')
+                        layer_name = '.'.join(parts[-3:]) if len(parts) >= 3 else k
+                        matched_log.append((BLOCK_NAMES[idx] if idx < 12 else "BASE", layer_name, ratio))
 
         # 4. Применяем накопленный коэффициент к патчу
         if applied_ratio != 1.0:
@@ -153,7 +155,6 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                 if isinstance(inner, (list, tuple)):
                     new_inner = []
                     for i, item in enumerate(inner):
-                        # Умножаем только up/down тензоры (индексы 0 и 1)
                         if isinstance(item, torch.Tensor) and i < 2:
                             new_inner.append(item * applied_ratio)
                         else: 
