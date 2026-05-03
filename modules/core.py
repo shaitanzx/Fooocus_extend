@@ -84,7 +84,7 @@ def _load_elemental_presets():
             
     return structured_presets
 
-def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=False):
+def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=True):
     if not lbwe_str: 
         return lora_dict
     
@@ -176,7 +176,7 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Fal
 
     return modified
 
-    
+
 def _print_lbw_debug(lora_unet, lbw_str):
     """Быстрая диагностика применённых LBW/LBWE"""
     def get_block_name(k):
@@ -210,7 +210,7 @@ def _print_lbw_debug(lora_unet, lbw_str):
     print("="*80 + "\n")
 
 
-def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
+def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
     """Применяет блочные веса к патчам Fooocus: {key: ('lora', (up, down, ...))}"""
     if not lbw_str:
         return lora_dict
@@ -380,7 +380,7 @@ class StableDiffusionModel:
         elemental_presets = _load_elemental_presets()
 
         # 🔧 Включите True для подробного логирования патчей
-        DEBUG_LBW_VERBOSE = False  
+        DEBUG_LBW_VERBOSE = True  
 
         # 🔹 3. Цикл загрузки и применения
         for cfg in loras_to_load:
