@@ -28,6 +28,7 @@ from ldm_patched.contrib.external_model_advanced import ModelSamplingDiscrete, M
 # ================= LoRA Block Weight (TE only) =================
 import re
 from typing import List, Dict, Any, Tuple
+import extentions.lbw.lbw as lbw
 
 opEmptyLatentImage = EmptyLatentImage()
 opVAEDecode = VAEDecode()
@@ -56,25 +57,32 @@ def _parse_block_range_to_indices(range_str: str) -> set:
             indices.add(BLOCK_NAMES.index(part))
     return indices
 
-def _load_elemental_presets(filepath: str) -> dict:
-    """Загружает elempresets.txt в словарь {NAME: {'blocks': set, 'layers': [str], 'ratio': float}}"""
-    presets = {}
-    if not os.path.exists(filepath): return presets
-    with open(filepath, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'): continue
-            parts = line.split(':')
-            if len(parts) == 4:
-                name, blocks, layers, ratio = parts
-                try:
-                    presets[name.strip()] = {
-                        'blocks': _parse_block_range_to_indices(blocks),
-                        'layers': [l.strip().lower() for l in layers.split(',')],
-                        'ratio': float(ratio.strip())
-                    }
-                except: pass
-    return presets
+def _load_elemental_presets():
+    """
+    Загружает elempresets.txt через lbw._load_presets и парсит в структуру:
+    {NAME: {'blocks': set[int], 'layers': [str], 'ratio': float}}
+    """
+    # 1. Используем готовый парсер файлов (убираем дублирование кода чтения)
+    raw_presets = lbw._load_presets("elempresets.txt")
+    
+    structured_presets = {}
+    
+    # 2. Преобразуем сырые строки "BLOCKS:LAYERS:RATIO" в словарь
+    for name, raw_val in raw_presets.items():
+        try:
+            parts = raw_val.split(':')
+            if len(parts) == 3:
+                blocks_str, layers_str, ratio_str = parts
+                structured_presets[name] = {
+                    'blocks': _parse_block_range_to_indices(blocks_str.strip()),
+                    'layers': [l.strip().lower() for l in layers_str.split(',')],
+                    'ratio': float(ratio_str.strip())
+                }
+        except Exception:
+            # Пропускаем некорректные строки, не ломая загрузку остальных
+            pass
+            
+    return structured_presets
 
 def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=False):
     if not lbwe_str: return lora_dict
@@ -268,23 +276,21 @@ class StableDiffusionModel:
     def refresh_loras(self, loras, te_bw=None):
         assert isinstance(loras, list)
 
-        # Проверка кэша (оптимизация, чтобы не перегружать одно и то же)
+        # 🔒 Кэш: не перегружаем, если список не изменился
         if self.visited_loras == str(loras):
             return
         
         self.visited_loras = str(loras)
-
         if self.unet is None:
             return
 
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
 
-        # 🔹 1. Подготовка: очищаем старое хранилище конфигов
+        # 🔹 1. Подготовка конфигов
         self.loras_config = []
         loras_to_load = []
 
         for item in loras:
-            # 🔹 2. Универсальный парсинг: определяем формат (2 элемента или 10)
             cfg = {
                 'filename': None, 'weight': 1.0,
                 'te_mult': 1.0, 'unet_mult': 1.0,
@@ -293,26 +299,23 @@ class StableDiffusionModel:
             }
 
             if len(item) == 2:
-                # 📦 Старый формат: (filename, weight)
                 cfg['filename'], cfg['weight'] = item
             else:
-                # 📦 Расширенный формат: [name, w, te, unet, lbw, lbwe, start, stop, x, extra]
-                # Используем проверки на None, чтобы код не падал, если список неполный
-                cfg['filename'] = item[self.IDX_FILENAME]
-                cfg['weight']   = item[self.IDX_WEIGHT] if item[self.IDX_WEIGHT] is not None else 1.0
-                cfg['te_mult']  = item[self.IDX_TE]     if len(item) > self.IDX_TE and item[self.IDX_TE] is not None else 1.0
-                cfg['unet_mult']= item[self.IDX_UNET]   if len(item) > self.IDX_UNET and item[self.IDX_UNET] is not None else 1.0
-                cfg['lbw_str']  = item[self.IDX_LBW]    if len(item) > self.IDX_LBW else None
-                cfg['lbwe_str'] = item[self.IDX_LBWE]   if len(item) > self.IDX_LBWE else None
-                cfg['start']    = item[self.IDX_START]  if len(item) > self.IDX_START else None
-                cfg['stop']     = item[self.IDX_STOP]   if len(item) > self.IDX_STOP else None
-                cfg['x']        = item[self.IDX_X]      if len(item) > self.IDX_X else 0.0
-                cfg['extra']    = item[self.IDX_EXTRA]  if len(item) > self.IDX_EXTRA else {}
+                cfg['filename'] = item[0]
+                cfg['weight']   = item[1] if len(item) > 1 and item[1] is not None else 1.0
+                cfg['te_mult']  = item[2] if len(item) > 2 and item[2] is not None else 1.0
+                cfg['unet_mult']= item[3] if len(item) > 3 and item[3] is not None else 1.0
+                cfg['lbw_str']  = item[4] if len(item) > 4 else None
+                cfg['lbwe_str'] = item[5] if len(item) > 5 else None
+                cfg['start']    = item[6] if len(item) > 6 else None
+                cfg['stop']     = item[7] if len(item) > 7 else None
+                cfg['x']        = item[8] if len(item) > 8 else 0.0
+                cfg['extra']    = item[9] if len(item) > 9 else {}
 
-            if cfg['filename'] == 'None' or not cfg['filename']:
+            if not cfg['filename'] or cfg['filename'] == 'None':
                 continue
 
-            # Разрешение пути к файлу (ваша оригинальная логика)
+            # Разрешение пути
             if os.path.exists(cfg['filename']):
                 lora_filename = cfg['filename']
             else:
@@ -322,77 +325,48 @@ class StableDiffusionModel:
                 print(f'Lora file not found: {lora_filename}')
                 continue
 
-            # Сохраняем полный конфиг и путь для загрузки
             cfg['filepath'] = lora_filename
             self.loras_config.append(cfg)
             loras_to_load.append(cfg)
 
-        # Клонирование моделей (подготовка к применению патчей)
+        # 🔹 2. Клонирование моделей & Загрузка пресетов
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
-        elemental_presets = _load_elemental_presets("elempresets.txt")
+        # Загружаем элементарные пресеты ОДИН РАЗ на все LoRA
+        elemental_presets = _load_elemental_presets()
+
+        # 🔧 Включите True для подробного логирования патчей
+        DEBUG_LBW_VERBOSE = False  
 
         # 🔹 3. Цикл загрузки и применения
         for cfg in loras_to_load:
             print(f"[LBW] Loading {cfg['filename']}: w={cfg['weight']}, te={cfg['te_mult']}, unet={cfg['unet_mult']}, start={cfg['start']}, stop={cfg['stop']}")
             
-            # Загрузка файла и матчинг ключей (ваша оригинальная логика)
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(cfg['filepath'], safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
 
-
-
+            # ✅ 3.1 Применяем блочные веса (LBW)
             if cfg['lbw_str']:
-                # ✅ Патчим ТОЛЬКО UNet
                 lora_unet = _apply_block_weights_sdxl(lora_unet, cfg['lbw_str'])
 
-                # 🔹 УЛУЧШЕННАЯ ДИАГНОСТИКА: показывает точный тип и shape
-
-                def get_block_name(k):
-                    if "input_blocks.4" in k: return "IN04"
-                    if "input_blocks.5" in k: return "IN05"
-                    if "input_blocks.7" in k: return "IN07"
-                    if "input_blocks.8" in k: return "IN08"
-                    if "middle_block" in k: return "M00"
-                    if "output_blocks.0" in k: return "OUT00"
-                    if "output_blocks.1" in k: return "OUT01"
-                    if "output_blocks.2" in k: return "OUT02"
-                    if "output_blocks.3" in k: return "OUT03"
-                    if "output_blocks.4" in k: return "OUT04"
-                    if "output_blocks.5" in k: return "OUT05"
-                    return "BASE/OTHER"
-
-                print("\n🔍 [LBW VERIFY] Ключи с именами блоков:")
-                # Показываем по 1 ключу на каждый блок для наглядности
-                shown = {}
-                for k in list(lora_unet.keys())[:30]:  # Первые 30 ключей
-                    block = get_block_name(k)
-                    if block not in shown:
-                        shown[block] = True
-                        val = lora_unet[k]
-                        if isinstance(val, tuple) and len(val) >= 2 and val[0] == 'lora':
-                            inner = val[1]
-                            if isinstance(inner, (list, tuple)) and len(inner) >= 2:
-                                up = inner[0]
-                                if isinstance(up, torch.Tensor):
-                                    mean = up.abs().mean().item()
-                                    print(f"  {block:<8} | {k[-40:]:<40} | mean={mean:.8f}")
-                print("="*80 + "\n")
-
+            # ✅ 3.2 Применяем послойные веса (LBWE)
             if cfg['lbwe_str']:
-                lora_unet = _apply_elemental_sdxl(lora_unet, cfg['lbwe_str'], elemental_presets, debug=True)
+                lora_unet = _apply_elemental_sdxl(lora_unet, cfg['lbwe_str'], elemental_presets)
+
+            # 🔍 Отладочный вывод (включается через DEBUG_LBW_VERBOSE)
+            if DEBUG_LBW_VERBOSE and cfg['lbw_str']:
+                _print_lbw_debug(lora_unet, cfg['lbw_str'])
 
             # Проверка на несовпадение модели
             if len(lora_unmatch) > 12:
                 continue
-
             if len(lora_unmatch) > 0:
                 print(f'Loaded LoRA [{cfg["filename"]}] for model [{self.filename}] '
                       f'with unmatched keys {list(lora_unmatch.keys())}')
 
-            # 🟦 Применение к UNet с учетом множителя unet_mult
+            # 🟦 Применение к UNet
             if self.unet_with_lora is not None and len(lora_unet) > 0:
                 final_unet_weight = cfg['weight'] * cfg['unet_mult']
                 loaded_keys = self.unet_with_lora.add_patches(lora_unet, final_unet_weight)
@@ -402,8 +376,9 @@ class StableDiffusionModel:
                     if item not in loaded_keys:
                         print("UNet LoRA key skipped: ", item)
 
-            # 🟥 Применение к CLIP с учетом множителя te_mult
+            # 🟥 Применение к CLIP (сохранена оригинальная логика te_bw)
             if self.clip_with_lora is not None and len(lora_clip) > 0:
+                # Если задан глобальный te_bw, применяем его к CLIP-патчам                
                 final_te_weight = cfg['weight'] * cfg['te_mult']
                 loaded_keys = self.clip_with_lora.add_patches(lora_clip, final_te_weight)
                 print(f'Loaded LoRA [{cfg["filename"]}] for CLIP [{self.filename}] '

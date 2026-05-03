@@ -454,6 +454,7 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
     DROP-IN REPLACEMENT. 
     ✅ Простой формат (<lora:name:weight>) -> сохраняется как [name, weight]
     ✅ Расширенный формат -> сохраняется полный список [name, weight, te, unet, lbw, lbwe, start, stop, x, extra]
+    ✅ Поддержка lbwe: пресеты из файла И inline-синтаксис (BLOCKS:LAYERS:RATIO)
     ✅ Порядок LoRA и приоритет промпта сохранены.
     """
     loras = loras.copy()
@@ -465,7 +466,9 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
     cleaned_prompt = ''
 
     lora_pattern = re.compile(r'<lora:\s*([^>]+?)\s*>', re.IGNORECASE)
-    lbw_dict = lbw._load_presets("lbwpresets.txt")
+    
+    # Загрузка пресетов (один раз на весь промпт)
+    lbw_dict  = lbw._load_presets("lbwpresets.txt")
     lbwe_dict = lbw._load_presets("elempresets.txt")
 
     for match in lora_pattern.finditer(prompt):
@@ -474,7 +477,6 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
         if not parts or not parts[0].strip():
             continue
 
-        # Дефолты для расширенного формата
         te, unet = None, None
         start, stop = None, None
         parsed_start = parsed_stop = parsed_step = None
@@ -484,17 +486,27 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
         next_pos = 2
         is_extended = False
 
-        for i in range(2, len(parts)):
+        # 🔹 УЛУЧШЕННЫЙ ПАРСИНГ: безопасно обрабатывает ':' внутри lbw/lbwe
+        i = 2
+        while i < len(parts):
             p = parts[i].strip()
             if not p:
                 if next_pos == 2: next_pos = 3
                 elif next_pos == 3: next_pos = 4
+                i += 1
                 continue
 
             if '=' in p:
-                is_extended = True
                 k, v = p.split('=', 1)
                 k, v = k.strip().lower(), v.strip()
+                is_extended = True
+
+                # 🔧 Если это lbw/lbwe, собираем значение до следующего 'key=' или конца строки
+                if k in ('lbw', 'w', 'lbwe', 'element', 'lbwelem'):
+                    while i + 1 < len(parts) and '=' not in parts[i+1]:
+                        v += ':' + parts[i+1].strip()
+                        i += 1
+
                 if k in ('lbw', 'w'): lbw_raw = v
                 elif k in ('lbwe', 'element', 'lbwelem'): lbwe_raw = v
                 elif k == 'start':
@@ -516,11 +528,10 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
             else:
                 try:
                     val = float(p)
-                    if next_pos == 2:
-                        te = val; next_pos = 3; is_extended = True
-                    elif next_pos == 3:
-                        unet = val; next_pos = 4; is_extended = True
+                    if next_pos == 2: te = val; next_pos = 3; is_extended = True
+                    elif next_pos == 3: unet = val; next_pos = 4; is_extended = True
                 except: pass
+            i += 1
 
         # Приоритет step над start/stop
         if parsed_step: start, stop = parsed_step
@@ -528,10 +539,16 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
             if parsed_start is not None: start = parsed_start
             if parsed_stop is not None: stop = parsed_stop
 
-        # Разрешение пресетов и маркеров (только для расширенного формата)
+        # 🔹 РАЗРЕШЕНИЕ ПРЕСЕТОВ + INLINE ПОДДЕРЖКА
         if is_extended:
-            if lbw_raw and lbw_raw in lbw_dict: lbw_raw = lbw_dict[lbw_raw]
-            if lbwe_raw and lbwe_raw in lbwe_dict: lbwe_raw = lbwe_dict[lbwe_raw]
+            if lbw_raw and lbw_raw in lbw_dict: 
+                lbw_raw = lbw_dict[lbw_raw]
+            
+            # 🔑 LBWE: Если строка точно совпадает с именем пресета -> подставляем его содержимое
+            #         Иначе -> оставляем как есть (поддержка inline: BLOCKS:LAYERS:RATIO)
+            if lbwe_raw and lbwe_raw in lbwe_dict: 
+                lbwe_raw = lbwe_dict[lbwe_raw]
+                
             lbw_resolved = _resolve_lbw_markers(lbw_raw, x_base)
         else:
             lbw_resolved = None
@@ -544,7 +561,6 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
             lora_name = get_filname_by_stem(parts[0].strip(), lora_filenames)
 
         if lora_name is not None:
-            # 🔑 ФОРМИРОВАНИЕ ВЫХОДА В ЗАВИСИМОСТИ ОТ ФОРМАТА
             if is_extended:
                 found_loras.append([lora_name, weight, te, unet, lbw_resolved, lbwe_raw, start, stop, x_base, extra])
             else:
@@ -568,9 +584,9 @@ def _parse_lora_references_from_prompt(total_steps: int, prompt: str, loras: Lis
     for l in loras:
         if l[0] != "None":
             if deduplicate_loras and l[0] in prompt_dict:
-                updated_loras.append(prompt_dict[l[0]])  # Заменяем на версию из промпта (любой длины)
+                updated_loras.append(prompt_dict[l[0]])
             else:
-                updated_loras.append(l)  # Оставляем старую версию как есть
+                updated_loras.append(l)
 
     if not deduplicate_loras:
         updated_loras.extend(found_loras)
