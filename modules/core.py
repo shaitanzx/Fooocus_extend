@@ -29,37 +29,6 @@ from ldm_patched.contrib.external_model_advanced import ModelSamplingDiscrete, M
 import re
 from typing import List, Dict, Any, Tuple
 
-# def parse_te_bw(bw_str: str) -> List[float]:
-#     try:
-#         if not bw_str:
-#             return [1.0] * 16
-#         weights = [float(x.strip()) for x in bw_str.split(',') if x.strip()]
-#         return (weights + [1.0] * 16)[:16]
-#     except Exception:
-#         return [1.0] * 16
-
-# def apply_te_block_weights(patch_dict: Dict[str, Any], te_bw: List[float]) -> Dict[str, Any]:
-#     for key, (lora_type, data) in patch_dict.items():
-#         if not re.search(r'(?:clip_l|clip_g|text_model)\.transformer\.(?:text_model\.)?encoder\.layers\.(\d+)', key):
-#             continue
-#         match = re.search(r'encoder\.layers\.(\d+)', key)
-#         if not match:
-#             continue
-#         layer_idx = int(match.group(1))
-#         bw_index = min(layer_idx // 2, 15) if 'clip_g' in key else min(layer_idx, 15)
-#         coeff = te_bw[bw_index]
-#         if lora_type == 'lora':
-#             A, B, alpha, mid = data
-#             patch_dict[key] = ('lora', (A, B, alpha * coeff, mid))
-#         elif lora_type == 'loha':
-#             w1a, w1b, alpha, w2a, w2b, t1, t2 = data
-#             patch_dict[key] = ('loha', (w1a, w1b, alpha * coeff, w2a, w2b, t1, t2))
-#         elif lora_type == 'lokr':
-#             w1, w2, alpha, w1a, w1b, w2a, w2b, t2 = data
-#             patch_dict[key] = ('lokr', (w1, w2, alpha * coeff, w1a, w1b, w2a, w2b, t2))
-#     return patch_dict
-# ================= END =================
-
 opEmptyLatentImage = EmptyLatentImage()
 opVAEDecode = VAEDecode()
 opVAEEncode = VAEEncode()
@@ -70,7 +39,125 @@ opFreeU = FreeU_V2()
 opModelSamplingDiscrete = ModelSamplingDiscrete()
 opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
+BLOCK_NAMES = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00", 
+               "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
+def _parse_block_range_to_indices(range_str: str) -> set:
+    """Превращает 'IN05-OUT05' или 'M00,BASE' в set индексов [0..11]"""
+    indices = set()
+    parts = [p.strip() for p in range_str.split(',')]
+    for part in parts:
+        if '-' in part:
+            start, end = [p.strip() for p in part.split('-', 1)]
+            if start in BLOCK_NAMES and end in BLOCK_NAMES:
+                s, e = BLOCK_NAMES.index(start), BLOCK_NAMES.index(end)
+                step = 1 if e >= s else -1
+                for i in range(s, e + step, step): indices.add(i)
+        elif part in BLOCK_NAMES:
+            indices.add(BLOCK_NAMES.index(part))
+    return indices
 
+def _load_elemental_presets(filepath: str) -> dict:
+    """Загружает elempresets.txt в словарь {NAME: {'blocks': set, 'layers': [str], 'ratio': float}}"""
+    presets = {}
+    if not os.path.exists(filepath): return presets
+    with open(filepath, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'): continue
+            parts = line.split(':')
+            if len(parts) == 4:
+                name, blocks, layers, ratio = parts
+                try:
+                    presets[name.strip()] = {
+                        'blocks': _parse_block_range_to_indices(blocks),
+                        'layers': [l.strip().lower() for l in layers.split(',')],
+                        'ratio': float(ratio.strip())
+                    }
+                except: pass
+    return presets
+
+def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=False):
+    if not lbwe_str: return lora_dict
+    
+    rules = []
+    
+    # 1. Если строка совпадает с именем пресета → используем файл
+    if elemental_presets and lbwe_str in elemental_presets:
+        p = elemental_presets[lbwe_str]
+        rules.append((p['blocks'], p['layers'], p['ratio']))
+    else:
+        # 2. Парсим inline-правила (поддержка нескольких через ;)
+        for rule in lbwe_str.split(';'):
+            rule = rule.strip()
+            if not rule: continue
+            parts = rule.split(':')
+            if len(parts) == 3:
+                blocks, layers, ratio = parts
+                try:
+                    rules.append((
+                        _parse_block_range_to_indices(blocks.strip()),
+                        [l.strip().lower() for l in layers.split(',')],
+                        float(ratio.strip())
+                    ))
+    if not rules: return lora_dict
+
+    # 2. Вспомогательный маппинг ключ → индекс блока
+    def get_block_idx(k):
+        k_n = k.replace('.', '_').lower()
+        if 'input_blocks_4_' in k_n: return 1
+        if 'input_blocks_5_' in k_n: return 2
+        if 'input_blocks_7_' in k_n: return 3
+        if 'input_blocks_8_' in k_n: return 4
+        if 'middle_block_' in k_n: return 5
+        if 'output_blocks_0_' in k_n: return 6
+        if 'output_blocks_1_' in k_n: return 7
+        if 'output_blocks_2_' in k_n: return 8
+        if 'output_blocks_3_' in k_n: return 9
+        if 'output_blocks_4_' in k_n: return 10
+        if 'output_blocks_5_' in k_n: return 11
+        return 0
+
+    modified = {}
+    matched_log = []
+
+    for k, v in lora_dict.items():
+        idx = get_block_idx(k)
+        applied_ratio = 1.0
+
+        for block_set, layer_keywords, ratio in rules:
+            if idx in block_set:
+                k_lower = k.lower()
+                if any(kw in k_lower for kw in layer_keywords):
+                    applied_ratio *= ratio
+                    if debug: 
+                        matched_log.append((BLOCK_NAMES[idx] if idx < 12 else "BASE", k.split('.')[-1], ratio))
+
+        # 3. Применяем накопленный коэффициент к патчу
+        if applied_ratio != 1.0:
+            if isinstance(v, tuple) and len(v) >= 2 and v[0] == 'lora':
+                inner = v[1]
+                if isinstance(inner, (list, tuple)):
+                    new_inner = []
+                    for i, item in enumerate(inner):
+                        # Умножаем только up/down тензоры (индексы 0 и 1)
+                        if isinstance(item, torch.Tensor) and i < 2:
+                            new_inner.append(item * applied_ratio)
+                        else: new_inner.append(item)
+                    modified[k] = ('lora', tuple(new_inner))
+                else: modified[k] = v
+            elif isinstance(v, torch.Tensor):
+                modified[k] = v * applied_ratio
+            else: modified[k] = v
+        else:
+            modified[k] = v
+
+    if debug and matched_log:
+        print(f"\n🔍 [ELEMENTAL DEBUG] lbwe='{lbwe_str}' применился к {len(matched_log)} ключам:")
+        for block, layer, r in matched_log[:8]:  # Показываем первые 8
+            print(f"  {block:<8} | {layer:<25} | x{r}")
+        print("="*60)
+
+    return modified
 
 def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=False):
     """Применяет блочные веса к патчам Fooocus: {key: ('lora', (up, down, ...))}"""
@@ -244,6 +331,8 @@ class StableDiffusionModel:
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
+        elemental_presets = _load_elemental_presets("elempresets.txt")
+
         # 🔹 3. Цикл загрузки и применения
         for cfg in loras_to_load:
             print(f"[LBW] Loading {cfg['filename']}: w={cfg['weight']}, te={cfg['te_mult']}, unet={cfg['unet_mult']}, start={cfg['start']}, stop={cfg['stop']}")
@@ -292,16 +381,8 @@ class StableDiffusionModel:
                                     print(f"  {block:<8} | {k[-40:]:<40} | mean={mean:.8f}")
                 print("="*80 + "\n")
 
-
-
-
-            # --- 🔹 4. Обработка Block Weights (LBW) ---
-            # Если заданы локальные lbw/lbwe, здесь можно вызвать функцию применения весов
-            # Пример (псевдокод):
-            # if cfg['lbw_str'] or cfg['lbwe_str']:
-            #     lora_unet = apply_lbw_to_unet(lora_unet, cfg['lbw_str'], cfg['lbwe_str'])
-            #     lora_clip = apply_lbw_to_clip(lora_clip, cfg['lbw_str'], cfg['lbwe_str'])
-            # -------------------------------------------
+            if cfg['lbwe_str']:
+                lora_unet = _apply_elemental_sdxl(lora_unet, cfg['lbwe_str'], elemental_presets, debug=True)
 
             # Проверка на несовпадение модели
             if len(lora_unmatch) > 12:
