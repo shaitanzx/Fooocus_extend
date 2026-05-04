@@ -42,10 +42,11 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 
 BLOCK_NAMES = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00", 
                "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
+
 def _parse_block_range_to_indices(range_str: str) -> set:
     """Превращает 'IN05-OUT05' или 'M00,BASE' в set индексов [0..11]"""
     indices = set()
-    parts = [p.strip() for p in range_str.split(',')]
+    parts = [p.strip() for p in range_str.split(',') if p.strip()]
     for part in parts:
         if '-' in part:
             start, end = [p.strip() for p in part.split('-', 1)]
@@ -105,7 +106,7 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                 try:
                     rules.append((
                         _parse_block_range_to_indices(blocks.strip()),
-                        [l.strip().lower() for l in layers.split(',')],
+                        [l.strip().lower() for l in layers.split(',') if l.strip()],
                         float(ratio.strip())
                     ))
                 except Exception:
