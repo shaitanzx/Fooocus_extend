@@ -443,6 +443,9 @@ class StableDiffusionModel:
             if self.unet_with_lora is not None and len(lora_unet) > 0:
                 final_unet_weight = cfg['weight'] * cfg['unet_mult']
                 loaded_keys = self.unet_with_lora.add_patches(lora_unet, final_unet_weight)
+
+                cfg['_loaded_keys'] = loaded_keys
+                
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
                       f'with {len(loaded_keys)} keys at weight {final_unet_weight:.4f}.')
                 for item in lora_unet:
@@ -598,6 +601,25 @@ def get_previewer(model):
 
     return preview_function
 
+def get_lora_step_multiplier(start: int, stop: int, step: int, total_steps: int) -> float:
+    """Возвращает коэффициент активации LoRA на текущем шаге (0.0 - 1.0)"""
+    if start is None and stop is None:
+        return 1.0
+    
+    s = start if start is not None else 0
+    e = stop if stop is not None else total_steps - 1
+    
+    # За пределами диапазона → отключаем
+    if step < s or step > e:
+        return 0.0
+    
+    # Опционально: плавное включение/выключение (раскомментируйте, если нужно)
+    # fade_in = min(1.0, (step - s) / 2.0)
+    # fade_out = min(1.0, (e - step) / 2.0)
+    # return fade_in * fade_out
+    
+    return 1.0
+
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -634,6 +656,24 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
 
     def callback(step, x0, x, total_steps):
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
+        
+        # 🔹 НОВОЕ: Динамическое управление start/stop для LoRA
+        if hasattr(model, 'patches') and model.patches:
+            for cfg in getattr(model, 'loras_config', []):
+                if cfg.get('start') is not None or cfg.get('stop') is not None:
+                    multiplier = get_lora_step_multiplier(cfg['start'], cfg['stop'], step, total_steps)
+                    base_weight = cfg['weight'] * cfg.get('unet_mult', 1.0)
+                    target_strength = base_weight * multiplier
+                    
+                    # Применяем новый коэффициент к уже загруженным патчам
+                    for key in cfg.get('_loaded_keys', []):
+                        if key in model.patches:
+                            # Патчи хранятся как список кортежей: [(strength, weight, ...), ...]
+                            model.patches[key] = [
+                                (target_strength, *patch[1:]) for patch in model.patches[key]
+                            ]
+                            
+        # Оригинальная логика preview/callback
         y = None
         if previewer is not None and not disable_preview:
             y = previewer(x0, previewer_start + step, previewer_end)
