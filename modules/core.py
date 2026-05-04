@@ -655,11 +655,12 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         previewer_end = steps
 
     def callback(step, x0, x, total_steps):
-        print('zzzzzzzzzzzzzzzzzzzzzz')
+
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
         
         # 🔹 НОВОЕ: Динамическое управление start/stop для LoRA
         if hasattr(model, 'patches') and model.patches:
+            print('zzzzzzzzzzzzzzzzzzzzzz')
             for cfg in getattr(model, 'loras_config', []):
                 if cfg.get('start') is not None or cfg.get('stop') is not None:
                     multiplier = get_lora_step_multiplier(cfg['start'], cfg['stop'], step, total_steps)
