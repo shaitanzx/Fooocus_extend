@@ -119,7 +119,6 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
 
     if not rules: 
         return lora_dict
-    print('000000', rules)
     # 2. Маппинг ключ → индекс блока
     def get_block_idx(k):
         k_n = k.replace('.', '_').lower()
@@ -153,7 +152,10 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                 # Проверяем вхождение ключевого слова (например, 'attn' в 'attn1.to_q')
                 if any(kw in k_lower for kw in layer_keywords):
                     applied_ratio *= ratio
-                    break # Применяем первое совпавшее правило для этого ключа
+                    if debug:
+                        parts = k.split('.')
+                        layer_name = '.'.join(parts[-3:]) if len(parts) >= 3 else k
+                        print(f"  ✅ {layer_name:<35} | matched '{next(kw for kw in layer_keywords if kw in clean_k)}'")
 
         # Если коэффициент изменился (не 1.0), модифицируем тензор
         if applied_ratio != 1.0:
