@@ -106,7 +106,7 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                 try:
                     rules.append((
                         _parse_block_range_to_indices(blocks.strip()),
-                        [l.strip().lower() for l in layers.split(',') if l.strip()],
+                        [l.strip().lower() for l in layers.split(',') if l.strip()],  # 🔑 ФИЛЬТР ПУСТЫХ СТРОК
                         float(ratio.strip())
                     ))
                 except Exception:
@@ -132,7 +132,7 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
         return 0
 
     modified = {}
-    matched_log = []
+    applied_count = 0
 
     for k, v in lora_dict.items():
         idx = get_block_idx(k)
@@ -143,11 +143,13 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                 k_lower = k.lower()
                 if any(kw in k_lower for kw in layer_keywords):
                     applied_ratio *= ratio
-                    if debug: 
-                        # 🔧 ИСПРАВЛЕНИЕ: берём последние 3 части ключа (напр. "attn1.to_q.weight")
+                    # 🔥 ПРЯМОЙ ВЫВОД ПРИ ПРИМЕНЕНИИ ПРАВИЛА
+                    if debug:
                         parts = k.split('.')
                         layer_name = '.'.join(parts[-3:]) if len(parts) >= 3 else k
-                        matched_log.append((BLOCK_NAMES[idx] if idx < 12 else "BASE", layer_name, ratio))
+                        block_name = BLOCK_NAMES[idx] if idx < 12 else "BASE"
+                        print(f"  {block_name:<8} | {layer_name:<30} | x{ratio}")
+                    applied_count += 1
 
         # 4. Применяем накопленный коэффициент к патчу
         if applied_ratio != 1.0:
@@ -170,63 +172,9 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
         else:
             modified[k] = v
 
-    if debug:
-        print("\n" + "="*70)
-        print(f"🔍 [LBWE DEBUG] Elemental Rule Parser: '{lbwe_str}'")
-        print("="*70)
-        
-        # 1. Вывод правил
-        print("📜 Разобранные правила:")
-        for r_idx, (blocks, layers, ratio) in enumerate(rules, 1):
-            b_names = [BLOCK_NAMES[b] for b in sorted(blocks)]
-            print(f"  {r_idx}. Блоки: {b_names}")
-            print(f"     Слои : {layers}")
-            print(f"     Коэфф: ×{ratio}")
-            
-        print(f"\n📊 Сканирование UNet патчей (всего {len(lora_dict)} ключа):")
-        print("-"*70)
-        print(f"{'БЛОК':<6} | {'Ключ':<35} | {'Тип':<6} | {'Правило':<8} | {'Итоговый Δ'}")
-        print("-"*70)
-        
-        # 2. Таблица обработки
-        matched_count = 0
-        rule_hits = {i+1: 0 for i in range(len(rules))}
-        
-        for k, v in lora_dict.items():
-            idx = get_block_idx(k)
-            block_name = BLOCK_NAMES[idx] if idx < 12 else "BASE"
-            layer_type = "other"
-            matched_rule = "-"
-            final_ratio = 1.0
-            
-            k_lower = k.lower()
-            if 'attn' in k_lower: layer_type = "attn"
-            elif 'ff' in k_lower or 'net' in k_lower: layer_type = "ff"
-            elif 'proj' in k_lower or 'conv' in k_lower: layer_type = "proj"
-            
-            for r_idx, (block_set, keywords, ratio) in enumerate(rules, 1):
-                if idx in block_set and any(kw in k_lower for kw in keywords):
-                    final_ratio *= ratio
-                    matched_rule = f"Rule {r_idx}"
-                    rule_hits[r_idx] += 1
-                    matched_count += 1
-                    
-            # Показываем только первые 30 ключей для читаемости, но считаем все
-            if len(matched_log) < 30 or matched_rule != "-":
-                key_short = k.split('_')[-1][:25] + '...'
-                print(f"{block_name:<6} | {key_short:<35} | {layer_type:<6} | {matched_rule:<8} | ×{final_ratio:.3f}")
-                
-        print("="*70)
-        
-        # 3. Сводка
-        print(f"\n📈 Итоговая статистика LBWE:")
-        print(f"  • Всего ключей просканировано : {len(lora_dict)}")
-        print(f"  • Ключей изменено (ratio≠1.0)  : {matched_count}")
-        print(f"  • Ключей оставлено без изменений: {len(lora_dict) - matched_count}")
-        for r_idx, hits in rule_hits.items():
-            print(f"  • Правило {r_idx} сработало на: {hits} ключей")
-        print("  ✅ Патчи готовы к передаче в add_patches()")
-        print("="*70 + "\n")
+    # 🔥 Итоговая сводка
+    if debug and applied_count > 0:
+        print(f"\n🔍 [LBWE] Применилось к {applied_count} ключам (правило: '{lbwe_str}')\n")
 
     return modified
 
