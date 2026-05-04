@@ -148,15 +148,15 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
         # Проверка правил
         for block_set, layer_keywords, ratio in rules:
             if idx in block_set:
-                k_lower = k.lower()
-                # Проверяем вхождение ключевого слова (например, 'attn' в 'attn1.to_q')
-                if any(kw in k_lower for kw in layer_keywords):
+                # 🔑 Убираем префиксы, чтобы избежать ложных срабатываний (напр. "ff" в "diffusion")
+                clean_k = k.lower().replace('diffusion_model.', '').replace('lora_unet_', '')
+                
+                if any(kw in clean_k for kw in layer_keywords):
                     applied_ratio *= ratio
                     if debug:
                         parts = k.split('.')
                         layer_name = '.'.join(parts[-3:]) if len(parts) >= 3 else k
                         print(f"  ✅ {layer_name:<35} | matched '{next(kw for kw in layer_keywords if kw in clean_k)}'")
-
         # Если коэффициент изменился (не 1.0), модифицируем тензор
         if applied_ratio != 1.0:
             if isinstance(v, tuple) and len(v) >= 2 and v[0] == 'lora':
