@@ -86,17 +86,20 @@ def _load_elemental_presets():
     return structured_presets
 
 def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=True):
+    """
+    Применяет послойные веса (lbwe) к патчам UNet.
+    При debug=True выводит полную таблицу с именами всех измененных ключей.
+    """
     if not lbwe_str: 
         return lora_dict
     
     rules = []
     
-    # 1. Если строка совпадает с именем пресета → используем файл
+    # 1. Загрузка пресета или парсинг inline
     if elemental_presets and lbwe_str in elemental_presets:
         p = elemental_presets[lbwe_str]
         rules.append((p['blocks'], p['layers'], p['ratio']))
     else:
-        # 2. Парсим inline-правила (поддержка нескольких через ;)
         for rule in lbwe_str.split(';'):
             rule = rule.strip()
             if not rule: continue
@@ -104,9 +107,11 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
             if len(parts) == 3:
                 blocks, layers, ratio = parts
                 try:
+                    # Убираем пустые строки из списка слоев
+                    clean_layers = [l.strip().lower() for l in layers.split(',') if l.strip()]
                     rules.append((
                         _parse_block_range_to_indices(blocks.strip()),
-                        [l.strip().lower() for l in layers.split(',') if l.strip()],  # 🔑 ФИЛЬТР ПУСТЫХ СТРОК
+                        clean_layers,
                         float(ratio.strip())
                     ))
                 except Exception:
@@ -114,8 +119,8 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
 
     if not rules: 
         return lora_dict
-
-    # 3. Маппинг ключ → индекс блока
+    print('000000', rules)
+    # 2. Маппинг ключ → индекс блока
     def get_block_idx(k):
         k_n = k.replace('.', '_').lower()
         if 'input_blocks_4_' in k_n: return 1
@@ -131,37 +136,32 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
         if 'output_blocks_5_' in k_n: return 11
         return 0
 
+    block_names = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
+                   "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
+
     modified = {}
-    applied_count = 0
+    debug_log = []
 
     for k, v in lora_dict.items():
         idx = get_block_idx(k)
         applied_ratio = 1.0
 
+        # Проверка правил
         for block_set, layer_keywords, ratio in rules:
             if idx in block_set:
                 k_lower = k.lower()
+                # Проверяем вхождение ключевого слова (например, 'attn' в 'attn1.to_q')
                 if any(kw in k_lower for kw in layer_keywords):
                     applied_ratio *= ratio
-                    # 🔥 ПРЯМОЙ ВЫВОД ПРИ ПРИМЕНЕНИИ ПРАВИЛА
-                    if debug:
-                        parts = k.split('.')
-                        layer_name = '.'.join(parts[-3:]) if len(parts) >= 3 else k
-                        block_name = BLOCK_NAMES[idx] if idx < 12 else "BASE"
-                        print(f"  {block_name:<8} | {layer_name:<30} | x{ratio}")
-                    applied_count += 1
+                    break # Применяем первое совпавшее правило для этого ключа
 
-        # 4. Применяем накопленный коэффициент к патчу
+        # Если коэффициент изменился (не 1.0), модифицируем тензор
         if applied_ratio != 1.0:
             if isinstance(v, tuple) and len(v) >= 2 and v[0] == 'lora':
                 inner = v[1]
                 if isinstance(inner, (list, tuple)):
-                    new_inner = []
-                    for i, item in enumerate(inner):
-                        if isinstance(item, torch.Tensor) and i < 2:
-                            new_inner.append(item * applied_ratio)
-                        else: 
-                            new_inner.append(item)
+                    # Умножаем тензоры (обычно 0 и 1 индексы - это веса LoRA)
+                    new_inner = [t * applied_ratio if isinstance(t, torch.Tensor) else t for t in inner]
                     modified[k] = ('lora', tuple(new_inner))
                 else: 
                     modified[k] = v
@@ -169,12 +169,24 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
                 modified[k] = v * applied_ratio
             else: 
                 modified[k] = v
+            
+            # Сохраняем в лог для вывода
+            if debug:
+                b_name = block_names[idx] if idx < 12 else "BASE"
+                debug_log.append((b_name, k, applied_ratio))
         else:
             modified[k] = v
 
-    # 🔥 Итоговая сводка
-    if debug and applied_count > 0:
-        print(f"\n🔍 [LBWE] Применилось к {applied_count} ключам (правило: '{lbwe_str}')\n")
+    # 🔹 Вывод таблицы (как просили: полный ключ и каждая строка)
+    if debug and debug_log:
+        print("\n" + "="*105)
+        print(f"🔍 [LBWE] Изменено {len(debug_log)} слоёв (правило: '{lbwe_str}')")
+        print(f"{'Блок':<8} | {'Полное имя ключа':<85} | {'Множитель'}")
+        print("-"*105)
+        for b_name, key_name, ratio in debug_log:
+            # key_name выводится полностью
+            print(f"{b_name:<8} | {key_name:<85} | x{ratio}")
+        print("="*105 + "\n")
 
     return modified
 
