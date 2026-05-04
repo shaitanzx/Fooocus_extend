@@ -655,6 +655,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         previewer_end = steps
 
     def callback(step, x0, x, total_steps):
+        print('zzzzzzzzzzzzzzzzzzzzzz')
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
         
         # 🔹 НОВОЕ: Динамическое управление start/stop для LoRA
