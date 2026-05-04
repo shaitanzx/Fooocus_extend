@@ -662,6 +662,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         if hasattr(model, 'patches') and model.patches:
             print('zzzzzzzzzzzzzzzzzzzzzz')
             for cfg in getattr(model, 'loras_config', []):
+                print('xxxxxxxxxxxx',cfg.get('start'),cfg.get('stop'))
                 if cfg.get('start') is not None or cfg.get('stop') is not None:
                     multiplier = get_lora_step_multiplier(cfg['start'], cfg['stop'], step, total_steps)
                     base_weight = cfg['weight'] * cfg.get('unet_mult', 1.0)
