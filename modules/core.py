@@ -445,7 +445,7 @@ class StableDiffusionModel:
                 loaded_keys = self.unet_with_lora.add_patches(lora_unet, final_unet_weight)
 
                 cfg['_loaded_keys'] = loaded_keys
-                
+
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
                       f'with {len(loaded_keys)} keys at weight {final_unet_weight:.4f}.')
                 for item in lora_unet:
@@ -664,7 +664,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
                     multiplier = get_lora_step_multiplier(cfg['start'], cfg['stop'], step, total_steps)
                     base_weight = cfg['weight'] * cfg.get('unet_mult', 1.0)
                     target_strength = base_weight * multiplier
-                    
+                    print(f"ШАГ {step} Вес {target_strength:.4f} | {cfg['filename']}")
                     # Применяем новый коэффициент к уже загруженным патчам
                     for key in cfg.get('_loaded_keys', []):
                         if key in model.patches:
