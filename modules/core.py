@@ -179,36 +179,50 @@ def _apply_elemental_sdxl(lora_dict, lbwe_str, elemental_presets=None, debug=Tru
 
 
 def _print_lbw_debug(lora_unet, lbw_str):
-    """Быстрая диагностика применённых LBW/LBWE"""
-    def get_block_name(k):
-        if "input_blocks.4" in k: return "IN04"
-        if "input_blocks.5" in k: return "IN05"
-        if "input_blocks.7" in k: return "IN07"
-        if "input_blocks.8" in k: return "IN08"
-        if "middle_block" in k: return "M00"
-        if "output_blocks.0" in k: return "OUT00"
-        if "output_blocks.1" in k: return "OUT01"
-        if "output_blocks.2" in k: return "OUT02"
-        if "output_blocks.3" in k: return "OUT03"
-        if "output_blocks.4" in k: return "OUT04"
-        if "output_blocks.5" in k: return "OUT05"
-        return "BASE/OTHER"
+    block_means = {i: [] for i in range(12)}
+    block_examples = {i: "" for i in range(12)}
 
-    print("\n🔍 [LBW VERIFY] Ключи с именами блоков:")
-    shown = {}
-    for k in list(lora_unet.keys())[:30]:
-        block = get_block_name(k)
-        if block not in shown:
-            shown[block] = True
-            val = lora_unet[k]
-            if isinstance(val, tuple) and len(val) >= 2 and val[0] == 'lora':
-                inner = val[1]
-                if isinstance(inner, (list, tuple)) and len(inner) >= 2:
-                    up = inner[0]
-                    if isinstance(up, torch.Tensor):
-                        mean = up.abs().mean().item()
-                        print(f"  {block:<8} | {k[-40:]:<40} | mean={mean:.8f}")
-    print("="*80 + "\n")
+    def get_idx(k):
+        k_n = k.replace('.', '_').lower()
+        if 'input_blocks_4_' in k_n: return 1
+        if 'input_blocks_5_' in k_n: return 2
+        if 'input_blocks_7_' in k_n: return 3
+        if 'input_blocks_8_' in k_n: return 4
+        if 'middle_block_' in k_n: return 5
+        if 'output_blocks_0_' in k_n: return 6
+        if 'output_blocks_1_' in k_n: return 7
+        if 'output_blocks_2_' in k_n: return 8
+        if 'output_blocks_3_' in k_n: return 9
+        if 'output_blocks_4_' in k_n: return 10
+        if 'output_blocks_5_' in k_n: return 11
+        return 0
+
+    for k, v in lora_unet.items():
+        idx = get_idx(k)
+        if not block_examples[idx]:
+            block_examples[idx] = k[-50:]  # Сохраняем пример ключа для лога
+
+        # 🔹 Извлекаем тензоры из формата Fooocus: ('lora', (up, down, alpha, None))
+        tensors = []
+        if isinstance(v, tuple) and len(v) >= 2 and v[0] == 'lora':
+            tensors = [t for t in v[1] if isinstance(t, torch.Tensor)]
+        elif isinstance(v, torch.Tensor):
+            tensors = [v]
+
+        for t in tensors:
+            block_means[idx].append(t.abs().mean().item())
+
+    # 🔹 Вывод полной таблицы по всем 12 блокам
+    print("\n" + "="*75)
+    print(f"[LBW VERIFY] Состояние весов после lbw='{lbw_str}':")
+    print(f"{'Блок':<8} | {'Найдено':>8} | {'Ср. |Δ| (mean)':>15} | Пример ключа")
+    print("-"*75)
+    for i in range(12):
+        count = len(block_means[i])
+        mean_val = sum(block_means[i]) / count if count > 0 else 0.0
+        status = "✅" if count > 0 else "⚪"
+        print(f"{BLOCK_NAMES[i]:<8} | {count:>6} патч. | {mean_val:>15.8f} | {block_examples[i]}")
+    print("="*75 + "\n")
 
 
 def _apply_block_weights_sdxl(lora_dict, lbw_str, debug=True):
