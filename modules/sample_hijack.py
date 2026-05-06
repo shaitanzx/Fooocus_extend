@@ -139,28 +139,36 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         print('Refiner Swapped')
         return
 
-    # 🔹 ХЕЛПЕР: обновляет strength в model_wrap.patches (правильный объект для патчей)
-    def _update_lora_weights_for_step(patcher, step_idx: int, total_steps: int, cfgs):
-        if not hasattr(patcher, 'patches') or not patcher.patches or not cfgs:
-            return
-        for cfg in cfgs:
-            start, stop = cfg.get('start'), cfg.get('stop')
-            if start is None and stop is None: continue
-            s = start if start is not None else 0
-            e = stop if stop is not None else total_steps - 1
-            is_active = s <= step_idx <= e
-            base_weight = cfg['weight'] * cfg.get('unet_mult', 1.0)
-            target_strength = base_weight if is_active else 0.0
-            
-            for key in cfg.get('_loaded_keys', []):
-                if key in patcher.patches and patcher.patches[key]:
-                    patcher.patches[key] = [(target_strength, *patch[1:]) for patch in patcher.patches[key]]
+    # 🔽 ВСТАВИТЬ ВНУТРИ sample_hacked, ПЕРЕД `samples = sampler.sample(...)` 🔽
 
-    # 🔹 ИНИЦИАЛИЗАЦИЯ: настраиваем веса для ШАГА 0 до начала цикла
-    _update_lora_weights_for_step(model_wrap, 0, len(sigmas) - 1, _temp_lora_configs)
+    # 1️⃣ ХУК: Срабатывает ВНУТРИ каждого шага сэмплера
+    def lora_step_hook(model_obj, args):
+        step = args.get("step", 0)
+        total_steps = len(sigmas) - 1
+        
+        if _temp_lora_configs:
+            for cfg in _temp_lora_configs:
+                s, e = cfg.get('start'), cfg.get('stop')
+                if s is None and e is None: continue
+                
+                start = s if s is not None else 0
+                stop  = e if e is not None else total_steps - 1
+                is_active = start <= step <= stop
+                
+                base_w = cfg['weight'] * cfg.get('unet_mult', 1.0)
+                target_w = base_w if is_active else 0.0
+                
+                for key in cfg.get('_loaded_keys', []):
+                    if key in model_obj.patches and model_obj.patches[key]:
+                        # Модифицируем strength напрямую в объекте, который сейчас вычисляется
+                        model_obj.patches[key] = [(target_w, *patch[1:]) for patch in model_obj.patches[key]]
+        return args
 
+    # 2️⃣ Регистрируем хук. ldm_patched вызовет его автоматически на КАЖДОМ шаге
+    model_wrap.set_model_forward_before_process(lora_step_hook)
+
+    # 3️⃣ Логирование (теперь точное, так как хук уже применил вес)
     def callback_wrap(step, x0, x, total_steps):
-        # 🔹 ЛОГИРОВАНИЕ (всегда включено)
         if _temp_lora_configs:
             for cfg in _temp_lora_configs:
                 if cfg.get('start') is not None or cfg.get('stop') is not None:
@@ -172,16 +180,12 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     name = cfg.get('filename', 'unknown').split('/')[-1]
                     print(f"ШАГ {step:02d}/{total_steps} | {name:<35} | Вес {w:.4f}")
 
-        # Оригинальное переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
-            
-        # 🔹 Подготовка весов для СЛЕДУЮЩЕГО шага
-        if step + 1 < total_steps:
-            _update_lora_weights_for_step(model_wrap, step + 1, total_steps, _temp_lora_configs)
-
         if callback is not None:
             callback(step, x0, x, total_steps)
+    
+    # 🔼 КОНЕЦ ВСТАВКИ 🔼
 
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
     return model.process_latent_out(samples.to(torch.float32))
