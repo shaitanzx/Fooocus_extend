@@ -449,6 +449,9 @@ class StableDiffusionModel:
 
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
                       f'with {len(loaded_keys)} keys at weight {final_unet_weight:.4f}.')
+                self.unet_with_lora.loras_config = self.loras_config
+                if hasattr(self.unet_with_lora, 'model'):
+                    self.unet_with_lora.model.loras_config = self.loras_config
                 for item in lora_unet:
                     if item not in loaded_keys:
                         print("UNet LoRA key skipped: ", item)
