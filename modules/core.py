@@ -447,7 +447,7 @@ class StableDiffusionModel:
                 # 🔽 🔽 🔽 ДОБАВИТЬ ЗДЕСЬ 🔽 🔽 🔽
                 cfg['_loaded_keys'] = loaded_keys
                 # Привязываем конфиг к модели для доступа из sample_hacked
-                modules.sample_hijack._temp_lora_configs = self.loras_config
+                
                 # 🔼 🔼 🔼 КОНЕЦ ВСТАВКИ 🔼 🔼 🔼
 
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
@@ -466,7 +466,7 @@ class StableDiffusionModel:
                 for item in lora_clip:
                     if item not in loaded_keys:
                         print("CLIP LoRA key skipped: ", item)
-
+        modules.sample_hijack._temp_lora_configs = self.loras_config
 
 @torch.no_grad()
 @torch.inference_mode()

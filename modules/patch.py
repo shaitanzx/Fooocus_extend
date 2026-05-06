@@ -26,7 +26,8 @@ from ldm_patched.k_diffusion.sampling import BatchedBrownianTree
 from ldm_patched.ldm.modules.diffusionmodules.openaimodel import forward_timestep_embed, apply_control
 from modules.patch_precision import patch_all_precision
 from modules.patch_clip import patch_all_clip
-
+# 🔽 ДОБАВИТЬ В НАЧАЛО ФАЙЛА (после импортов)
+_DYNAMIC_LORA_MULTIPLIERS = {}  # {key: multiplier}
 
 class PatchSettings:
     def __init__(self,
@@ -61,6 +62,10 @@ def calculate_weight_patched(self, patches, weight, key):
         alpha = p[0]
         v = p[1]
         strength_model = p[2]
+
+        # 🔑 НОВОЕ: Применяем динамический множитель для start/stop
+        if key in _DYNAMIC_LORA_MULTIPLIERS:
+            alpha *= _DYNAMIC_LORA_MULTIPLIERS[key]
 
         if strength_model != 1.0:
             weight *= strength_model
