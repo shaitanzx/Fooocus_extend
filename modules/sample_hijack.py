@@ -173,7 +173,13 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     ]
     # 🔼 🔼 🔼 КОНЕЦ ВСТАВКИ 🔼 🔼 🔼
     def callback_wrap(step, x0, x, total_steps):
-
+        # 🔹 ЖЕСТКАЯ ОТЛАДКА: увидим, доходит ли код сюда
+        print(f"[DEBUG CALLBACK] Вызов: step={step}, total_steps={total_steps}")
+        
+        # Проверяем, есть ли у model атрибут loras_config
+        lora_cfgs = getattr(model, 'loras_config', None)
+        print(f"[DEBUG CALLBACK] lora_cfgs type: {type(lora_cfgs)}, len: {len(lora_cfgs) if lora_cfgs else 'N/A'}")
+        
         # 🔹 ЛОГИРОВАНИЕ: шаг и вес для каждой LoRA с start/stop (всегда включено)
         lora_cfgs = getattr(model, 'loras_config', [])
         for cfg in lora_cfgs:
@@ -186,7 +192,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                 name = cfg.get('filename', 'unknown').split('/')[-1]
                 print(f"ШАГ {step:02d}/{total_steps} | {name:<35} | Вес {w:.4f}")
 
-                
+
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
         if callback is not None:
