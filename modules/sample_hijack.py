@@ -147,6 +147,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         return
 
     def callback_wrap(step, x0, x, total_steps):
+        print('-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a')
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
         if callback is not None:
