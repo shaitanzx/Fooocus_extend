@@ -12,7 +12,8 @@ from ldm_patched.modules.conds import CONDRegular
 from ldm_patched.modules.sample import get_additional_models, get_models_from_cond, cleanup_additional_models
 from ldm_patched.modules.samplers import resolve_areas_and_cond_masks, wrap_model, calculate_start_end_timesteps, \
     create_cond_with_same_area_if_none, pre_run_control, apply_empty_x_to_equal_area, encode_model_conds
-from modules.patch import _DYNAMIC_LORA_MULTIPLIERS
+_DYNAMIC_LORA_MULTIPLIERS = {}
+_temp_lora_configs = None
 
 current_refiner = None
 refiner_switch_step = -1
@@ -147,6 +148,22 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         return
     def callback_wrap(step, x0, x, total_steps):
         # 🔹 1. Обновляем множители для следующего шага
+    # 🔹 Инициализация для ШАГА 0 (внутри sample_hacked, перед sampler.sample)
+    global _temp_lora_configs, _DYNAMIC_LORA_MULTIPLIERS
+    if _temp_lora_configs:
+        for cfg in _temp_lora_configs:
+            s, e = cfg.get('start'), cfg.get('stop')
+            if s is None and e is None: continue
+            start = s if s is not None else 0
+            stop  = e if e is not None else len(sigmas) - 2
+            is_active = start <= 0 <= stop
+            base_w = cfg['weight'] * cfg.get('unet_mult', 1.0)
+            mult = base_w if is_active else 0.0
+            for key in cfg.get('_loaded_keys', []):
+                _DYNAMIC_LORA_MULTIPLIERS[key] = mult
+
+    def callback_wrap(step, x0, x, total_steps):
+        # 🔹 1. Обновляем множители для следующего шага
         if _temp_lora_configs:
             for cfg in _temp_lora_configs:
                 s, e = cfg.get('start'), cfg.get('stop')
@@ -162,7 +179,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                 for key in cfg.get('_loaded_keys', []):
                     _DYNAMIC_LORA_MULTIPLIERS[key] = multiplier
 
-        # 🔹 2. Логирование (всегда включено)
+        # 🔹 2. Логирование
         if _temp_lora_configs:
             for cfg in _temp_lora_configs:
                 if cfg.get('start') is not None or cfg.get('stop') is not None:
@@ -174,28 +191,14 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     name = cfg.get('filename', 'unknown').split('/')[-1]
                     print(f"ШАГ {step:02d}/{total_steps} | {name:<35} | Вес {w:.4f}")
 
-        # Оригинальное переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
-            
         if callback is not None:
             callback(step, x0, x, total_steps)
 
-    # 🔹 3. Инициализация для шага 0 (вызывается ДО первого forward-pass)
-    if _temp_lora_configs:
-        for cfg in _temp_lora_configs:
-            s, e = cfg.get('start'), cfg.get('stop')
-            if s is None and e is None: continue
-            start = s if s is not None else 0
-            is_active = start <= 0 <= (e if e is not None else len(sigmas) - 2)
-            base_w = cfg['weight'] * cfg.get('unet_mult', 1.0)
-            mult = base_w if is_active else 0.0
-            for key in cfg.get('_loaded_keys', []):
-                _DYNAMIC_LORA_MULTIPLIERS[key] = mult
-
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
     
-    # 🔹 Очистка после генерации, чтобы не влиять на следующие промпты
+    # Очистка после генерации
     _DYNAMIC_LORA_MULTIPLIERS.clear()
     return model.process_latent_out(samples.to(torch.float32))
 

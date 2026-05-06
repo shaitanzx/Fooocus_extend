@@ -63,9 +63,11 @@ def calculate_weight_patched(self, patches, weight, key):
         v = p[1]
         strength_model = p[2]
 
-        # 🔑 НОВОЕ: Применяем динамический множитель для start/stop
-        if key in _DYNAMIC_LORA_MULTIPLIERS:
-            alpha *= _DYNAMIC_LORA_MULTIPLIERS[key]
+        # 🔑 ЛЕНИВЫЙ ИМПОРТ: разрываем цикл загрузки
+        import modules.sample_hijack as hijack
+        dynamic_mult = hijack._DYNAMIC_LORA_MULTIPLIERS.get(key, 1.0)
+        if dynamic_mult != 1.0:
+            alpha *= dynamic_mult  # Масштабируем влияние LoRA
 
         if strength_model != 1.0:
             weight *= strength_model
