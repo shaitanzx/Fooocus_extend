@@ -782,7 +782,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         # Проверяем, есть ли LoRA с ограничениями по шагам или fade
         has_step_controls = any(
             cfg.get('start') is not None or 
-            cfg.get('stop') is not None or
+            cfg.get('stop') is not None 
             for cfg in model.loras_config
         )
         if has_step_controls:
@@ -794,17 +794,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
 
     def callback(step, x0, x, total_steps):
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
-        # ========= НОВЫЙ КОД: Обновляем веса LoRA на каждом шаге =========
-        if lora_weight_controller is not None:
-            try:
-                lora_weight_controller.update_weights_for_step(step, total_steps)
-                
-                # Обновляем модель в sample_hijack если нужно
-                if hasattr(modules.sample_hijack, 'current_model'):
-                    modules.sample_hijack.current_model = model
-            except Exception as e:
-                print(f"[LoRA Weight Error] {e}")
-        # ============================================================
+
         y = None
         if previewer is not None and not disable_preview:
             y = previewer(x0, previewer_start + step, previewer_end)
