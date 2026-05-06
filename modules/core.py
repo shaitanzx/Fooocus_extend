@@ -602,24 +602,24 @@ def get_previewer(model):
 
     return preview_function
 
-def get_lora_step_multiplier(start: int, stop: int, step: int, total_steps: int) -> float:
-    """Возвращает коэффициент активации LoRA на текущем шаге (0.0 - 1.0)"""
-    if start is None and stop is None:
-        return 1.0
+# def get_lora_step_multiplier(start: int, stop: int, step: int, total_steps: int) -> float:
+#     """Возвращает коэффициент активации LoRA на текущем шаге (0.0 - 1.0)"""
+#     if start is None and stop is None:
+#         return 1.0
     
-    s = start if start is not None else 0
-    e = stop if stop is not None else total_steps - 1
+#     s = start if start is not None else 0
+#     e = stop if stop is not None else total_steps - 1
     
-    # За пределами диапазона → отключаем
-    if step < s or step > e:
-        return 0.0
+#     # За пределами диапазона → отключаем
+#     if step < s or step > e:
+#         return 0.0
     
-    # Опционально: плавное включение/выключение (раскомментируйте, если нужно)
-    # fade_in = min(1.0, (step - s) / 2.0)
-    # fade_out = min(1.0, (e - step) / 2.0)
-    # return fade_in * fade_out
+#     # Опционально: плавное включение/выключение (раскомментируйте, если нужно)
+#     # fade_in = min(1.0, (step - s) / 2.0)
+#     # fade_out = min(1.0, (e - step) / 2.0)
+#     # return fade_in * fade_out
     
-    return 1.0
+#     return 1.0
 
 
 @torch.no_grad()
@@ -657,28 +657,11 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
 
     def callback(step, x0, x, total_steps):
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
-        
-        # 🔹 Динамическое управление start/stop
-        # Проверяем, есть ли у модели конфиги (привязали в refresh_loras)
-        lora_cfgs = getattr(model, 'loras_config', None)
-        if lora_cfgs and hasattr(model, 'patches'):
-            for cfg in lora_cfgs:
-                # Пропускаем, если start/stop не заданы
-                if cfg.get('start') is None and cfg.get('stop') is None:
-                    continue
-                    
-                multiplier = get_lora_step_multiplier(cfg.get('start'), cfg.get('stop'), step, total_steps)
-                base_weight = cfg['weight'] * cfg.get('unet_mult', 1.0)
-                target_strength = base_weight * multiplier
-                
-                # Логируем (опционально, можно убрать после теста)
-                print(f"ШАГ {step} | Вес {target_strength:.4f} | {cfg['filename'].split('/')[-1]}")
-                
-                # Применяем к патчам
-                for key in cfg.get('_loaded_keys', []):
-                    if key in model.patches:
-                        model.patches[key] = [
-                            (target_strength, *patch[1:]) for patch in model.patches[key]
+        y = None
+        if previewer is not None and not disable_preview:
+            y = previewer(x0, previewer_start + step, previewer_end)
+        if callback_function is not None:
+            callback_function(previewer_start + step, x0, x, previewer_end, y)
                         ]
                             
         # Оригинальная логика preview/callback
