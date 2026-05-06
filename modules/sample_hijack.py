@@ -146,8 +146,6 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         model_wrap.inner_model = current_refiner.model
         print('Refiner Swapped')
         return
-    def callback_wrap(step, x0, x, total_steps):
-        # 🔹 1. Обновляем множители для следующего шага
     # 🔹 Инициализация для ШАГА 0 (внутри sample_hacked, перед sampler.sample)
     global _temp_lora_configs, _DYNAMIC_LORA_MULTIPLIERS
     if _temp_lora_configs:
