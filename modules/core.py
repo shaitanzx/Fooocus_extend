@@ -447,7 +447,7 @@ class StableDiffusionModel:
                 # 🔽 🔽 🔽 ДОБАВИТЬ ЗДЕСЬ 🔽 🔽 🔽
                 cfg['_loaded_keys'] = loaded_keys
                 # Привязываем конфиг к модели для доступа из sample_hacked
-                setattr(self.unet_with_lora, 'loras_config', self.loras_config)
+                modules.sample_hijack._temp_lora_configs = self.loras_config
                 # 🔼 🔼 🔼 КОНЕЦ ВСТАВКИ 🔼 🔼 🔼
 
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
