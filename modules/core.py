@@ -85,7 +85,7 @@ class LoRAWeightController:
                     'stop': lora_cfg.get('stop')
                 })
         
-        # Логируем на каждом шаге
+        # Логируем только изменения или каждый 5-й шаг
         self._log_step_status(step, total_steps, weight_changes, needs_reload)
         
         if needs_reload:
@@ -109,56 +109,56 @@ class LoRAWeightController:
         if step < effective_start or step > effective_stop:
             return 0.0
         
-        # Полный вес в середине диапазона
         return base_weight * unet_mult * te_mult
     
     def _log_step_status(self, step, total_steps, weight_changes, needs_reload):
-        """Логирует статус LoRA на текущем шаге (всегда включено)"""
-        print(f"\n{'='*80}")
-        print(f"[LoRA STEP {step}/{total_steps-1}]")
+        """Компактное логирование статуса LoRA"""
+        # Логируем только при изменениях или важных шагах
+        log_this_step = (
+            weight_changes or 
+            needs_reload or 
+            step == 0 or 
+            step == total_steps - 1 or
+            step % 10 == 0
+        )
         
-        # Показываем текущие веса всех LoRA
-        print(f"  Текущие веса:")
-        has_active = False
-        for idx, lora_cfg in enumerate(self.model.loras_config):
-            current_weight = self.current_weights.get(idx, 0)
-            start = lora_cfg.get('start')
-            stop = lora_cfg.get('stop')
-            range_str = f"[{start if start is not None else 0}-{stop if stop is not None else total_steps-1}]"
-            
-            if current_weight > 0:
-                has_active = True
-                print(f"    ✅ {os.path.basename(lora_cfg['filename'])}: {current_weight:.4f} {range_str}")
-            else:
-                print(f"    ⚪ {os.path.basename(lora_cfg['filename'])}: {current_weight:.4f} {range_str}")
+        if not log_this_step:
+            return
         
-        if not has_active:
-            print(f"    Нет активных LoRA")
-        
-        # Показываем изменения на этом шаге
         if weight_changes:
-            print(f"\n  Изменения на этом шаге:")
+            changes_str = []
             for change in weight_changes:
                 if change['new'] > 0 and change['old'] == 0:
-                    print(f"    🔵 ВКЛЮЧЕНА: {os.path.basename(change['name'])} (вес={change['new']:.4f}) [шаги {change['start']}-{change['stop']}]")
+                    changes_str.append(f"+{os.path.basename(change['name'])[:30]}")
                 elif change['new'] == 0 and change['old'] > 0:
-                    print(f"    🔴 ВЫКЛЮЧЕНА: {os.path.basename(change['name'])} (был вес={change['old']:.4f})")
-                elif change['new'] != change['old']:
-                    print(f"    🟡 ИЗМЕНЕНА: {os.path.basename(change['name'])}: {change['old']:.4f} → {change['new']:.4f}")
+                    changes_str.append(f"-{os.path.basename(change['name'])[:30]}")
+            changes_info = f" | Changes: {', '.join(changes_str)}" if changes_str else ""
+        else:
+            changes_info = ""
         
-        if needs_reload:
-            print(f"\n  🔄 ПЕРЕЗАГРУЗКА LoRA с новыми весами...")
+        # Собираем активные LoRA
+        active_loras = []
+        for idx, lora_cfg in enumerate(self.model.loras_config):
+            current_weight = self.current_weights.get(idx, 0)
+            if current_weight > 0:
+                active_loras.append(f"{os.path.basename(lora_cfg['filename'])[:20]}:{current_weight:.1f}")
         
-        print(f"{'='*80}")
+        active_info = f" | Active: {', '.join(active_loras)}" if active_loras else " | No active LoRA"
+        reload_info = " [RELOAD]" if needs_reload else ""
+        
+        print(f"[LoRA {step:3d}/{total_steps-1}]{reload_info}{changes_info}{active_info}")
     
     def _reload_loras_with_weights(self, total_steps):
         """Перезагружает LoRA с применением текущих весов"""
         if not hasattr(self.model, 'loras_config'):
             return
         
-        print(f"\n[LoRA RELOAD] Перезагрузка на шаге {self.current_step}/{total_steps-1}")
+        # ИСПРАВЛЕНО: используем unet_with_lora и clip_with_lora которые уже есть в модели
+        # Сохраняем ссылки на текущие модели с LoRA
+        current_unet = self.model.unet_with_lora if hasattr(self.model, 'unet_with_lora') else None
+        current_clip = self.model.clip_with_lora if hasattr(self.model, 'clip_with_lora') else None
         
-        # Клонируем модели
+        # Клонируем базовые модели (оригиналы без LoRA)
         if self.model.unet is not None:
             self.model.unet_with_lora = self.model.unet.clone()
         if self.model.clip is not None:
@@ -172,7 +172,6 @@ class LoRAWeightController:
             current_weight = self.current_weights.get(idx, 0)
             
             if current_weight <= 0:
-                print(f"  ⚪ Пропущена (вес=0): {os.path.basename(lora_cfg['filepath'])}")
                 continue
             
             try:
@@ -199,12 +198,12 @@ class LoRAWeightController:
                     self.model.clip_with_lora.add_patches(lora_clip, te_weight)
                 
                 loaded_count += 1
-                print(f"  ✅ Загружена: {os.path.basename(lora_cfg['filepath'])} (вес={current_weight:.4f})")
                 
             except Exception as e:
-                print(f"  ❌ Ошибка: {os.path.basename(lora_cfg['filepath'])} - {e}")
+                print(f"  [LoRA Error] {os.path.basename(lora_cfg['filepath'])}: {e}")
         
-        print(f"  Итого загружено: {loaded_count} LoRA\n")
+        if loaded_count > 0:
+            print(f"  [LoRA] Reloaded {loaded_count} LoRAs at step {self.current_step}")
 
 
 def _parse_block_range_to_indices(range_str: str) -> set:
