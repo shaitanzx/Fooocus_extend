@@ -449,9 +449,6 @@ class StableDiffusionModel:
 
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
                       f'with {len(loaded_keys)} keys at weight {final_unet_weight:.4f}.')
-                self.unet_with_lora.loras_config = self.loras_config
-                if hasattr(self.unet_with_lora, 'model'):
-                    self.unet_with_lora.model.loras_config = self.loras_config
                 for item in lora_unet:
                     if item not in loaded_keys:
                         print("UNet LoRA key skipped: ", item)
@@ -605,24 +602,24 @@ def get_previewer(model):
 
     return preview_function
 
-# def get_lora_step_multiplier(start: int, stop: int, step: int, total_steps: int) -> float:
-#     """Возвращает коэффициент активации LoRA на текущем шаге (0.0 - 1.0)"""
-#     if start is None and stop is None:
-#         return 1.0
+def get_lora_step_multiplier(start: int, stop: int, step: int, total_steps: int) -> float:
+    """Возвращает коэффициент активации LoRA на текущем шаге (0.0 - 1.0)"""
+    if start is None and stop is None:
+        return 1.0
     
-#     s = start if start is not None else 0
-#     e = stop if stop is not None else total_steps - 1
+    s = start if start is not None else 0
+    e = stop if stop is not None else total_steps - 1
     
-#     # За пределами диапазона → отключаем
-#     if step < s or step > e:
-#         return 0.0
+    # За пределами диапазона → отключаем
+    if step < s or step > e:
+        return 0.0
     
-#     # Опционально: плавное включение/выключение (раскомментируйте, если нужно)
-#     # fade_in = min(1.0, (step - s) / 2.0)
-#     # fade_out = min(1.0, (e - step) / 2.0)
-#     # return fade_in * fade_out
+    # Опционально: плавное включение/выключение (раскомментируйте, если нужно)
+    # fade_in = min(1.0, (step - s) / 2.0)
+    # fade_out = min(1.0, (e - step) / 2.0)
+    # return fade_in * fade_out
     
-#     return 1.0
+    return 1.0
 
 
 @torch.no_grad()
@@ -665,15 +662,6 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
             y = previewer(x0, previewer_start + step, previewer_end)
         if callback_function is not None:
             callback_function(previewer_start + step, x0, x, previewer_end, y)
-                        
-                            
-        # Оригинальная логика preview/callback
-        y = None
-        if previewer is not None and not disable_preview:
-            y = previewer(x0, previewer_start + step, previewer_end)
-        if callback_function is not None:
-            callback_function(previewer_start + step, x0, x, previewer_end, y)
-
     disable_pbar = False
     modules.sample_hijack.current_refiner = refiner
     modules.sample_hijack.refiner_switch_step = refiner_switch

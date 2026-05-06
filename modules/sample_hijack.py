@@ -145,70 +145,14 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         model_wrap.inner_model = current_refiner.model
         print('Refiner Swapped')
         return
-# 1️⃣ ХЕЛПЕР: Управление весом по шагам (работает точно как refiner_switch)
-    def toggle_lora_steps(step_idx: int, total_steps: int):
-        for cfg in getattr(model, 'loras_config', []):
-            s, e = cfg.get('start'), cfg.get('stop')
-            if s is None and e is None: continue  # Пропускаем LoRA без start/stop
-
-            start = s if s is not None else 0
-            stop  = e if e is not None else total_steps - 1
-            active = start <= step_idx <= stop
-            
-            # Целевая сила: либо базовая, либо 0.0 (полное отключение)
-            target_w = (cfg['weight'] * cfg.get('unet_mult', 1.0)) if active else 0.0
-            
-            for key in cfg.get('_loaded_keys', []):
-                if key in model.patches and model.patches[key]:
-                    # Меняем ТОЛЬКО силу (первый элемент кортежа). Тензоры up/down/alpha не трогаем.
-                    model.patches[key] = [(target_w, *patch[1:]) for patch in model.patches[key]]
-
-
-    # 2️⃣ ИНИЦИАЛИЗАЦИЯ ДО ЦИКЛА: Применяем корректное состояние для ШАГА 0
-    total_steps_count = len(sigmas) - 1
-    toggle_lora_steps(0, total_steps_count)
-
-
-# 🔽 🔽 🔽 ЗАМЕНИТЬ СУЩЕСТВУЮЩИЙ callback_wrap НА ЭТОТ 🔽 🔽 🔽
-    loras_cfg = getattr(model, 'loras_config', None)
-    if loras_cfg is None and hasattr(model, 'model'):
-        loras_cfg = getattr(model.model, 'loras_config', None)
-    if not loras_cfg:
-        loras_cfg = []
-
-    def toggle_lora_steps(step_idx: int, total_steps: int, cfgs):
-        for cfg in cfgs:
-            s, e = cfg.get('start'), cfg.get('stop')
-            start = s if s is not None else 0
-            stop  = e if e is not None else total_steps - 1
-            is_active = start <= step_idx <= stop
-            target_w = (cfg['weight'] * cfg.get('unet_mult', 1.0)) if is_active else 0.0
-            
-            for key in cfg.get('_loaded_keys', []):
-                if key in model.patches and model.patches[key]:
-                    model.patches[key] = [(target_w, *patch[1:]) for patch in model.patches[key]]
 
     def callback_wrap(step, x0, x, total_steps):
-        # 🔹 Логирование на каждом шаге
-        for cfg in loras_cfg:
-            s, e = cfg.get('start'), cfg.get('stop')
-            start = s if s is not None else 0
-            stop  = e if e is not None else total_steps - 1
-            active = start <= step <= stop
-            base_w = cfg['weight'] * cfg.get('unet_mult', 1.0)
-            current_w = base_w if active else 0.0
-            name = cfg.get('filename', 'unknown').split('/')[-1]
-            print(f"ШАГ {step:02d}/{total_steps} | {name:<35} | Вес {current_w:.4f}")
-
-        # 🔄 Оригинальное переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
-            
-        # 🔹 Подготовка весов для следующего шага
-        if step + 1 < total_steps:
-            toggle_lora_steps(step + 1, total_steps, loras_cfg)
-
         if callback is not None:
+            # residual_noise_preview = x - x0
+            # residual_noise_preview /= residual_noise_preview.std()
+            # residual_noise_preview *= x0.std()
             callback(step, x0, x, total_steps)
 
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
