@@ -163,7 +163,6 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     # Меняем ТОЛЬКО силу (первый элемент кортежа). Тензоры up/down/alpha не трогаем.
                     model.patches[key] = [(target_w, *patch[1:]) for patch in model.patches[key]]
 
-            print(f"ШАГ {step} | Вес {target_w:.4f}")
 
     # 2️⃣ ИНИЦИАЛИЗАЦИЯ ДО ЦИКЛА: Применяем корректное состояние для ШАГА 0
     total_steps_count = len(sigmas) - 1
@@ -173,6 +172,16 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
 # 🔽 🔽 🔽 ЗАМЕНИТЬ СУЩЕСТВУЮЩИЙ callback_wrap НА ЭТОТ 🔽 🔽 🔽
     def callback_wrap(step, x0, x, total_steps):
         # Оригинальное переключение рефайнера
+        if hasattr(model, 'loras_config') and model.loras_config:
+            for cfg in model.loras_config:
+                s, e = cfg.get('start'), cfg.get('stop')
+                start = s if s is not None else 0
+                stop  = e if e is not None else total_steps - 1
+                active = start <= step <= stop
+                base_w = cfg['weight'] * cfg.get('unet_mult', 1.0)
+                current_w = base_w if active else 0.0
+                name = cfg.get('filename', 'unknown').split('/')[-1]
+                print(f"ШАГ {step:02d}/{total_steps} | {name:<35} | Вес {current_w:.4f}")
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
             
