@@ -16,7 +16,7 @@ from ldm_patched.modules.samplers import resolve_areas_and_cond_masks, wrap_mode
 
 current_refiner = None
 refiner_switch_step = -1
-_temp_lora_configs = None
+
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -145,53 +145,8 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         model_wrap.inner_model = current_refiner.model
         print('Refiner Swapped')
         return
-    def _update_lora_weights_for_step(model_obj, step_idx: int, total_steps: int, cfgs):
-        """Обновляет strength патчей для указанного шага"""
-        # Используем переданные конфиги, а не ищем в model
-        for cfg in cfgs:
-            start, stop = cfg.get('start'), cfg.get('stop')
-            if start is None and stop is None:
-                continue
-            s = start if start is not None else 0
-            e = stop if stop is not None else total_steps - 1
-            is_active = s <= step_idx <= e
-            base_weight = cfg['weight'] * cfg.get('unet_mult', 1.0)
-            target_strength = base_weight if is_active else 0.0
-            
-            for key in cfg.get('_loaded_keys', []):
-                if key in model_obj.patches and model_obj.patches[key]:
-                    model_obj.patches[key] = [
-                        (target_strength, *patch[1:]) for patch in model_obj.patches[key]
-                    ]
-    # 🔼 🔼 🔼 КОНЕЦ ВСТАВКИ 🔼 🔼 🔼
+
     def callback_wrap(step, x0, x, total_steps):
-        # 🔹 Чтение конфигов из надёжного источника (глобал хайджека)
-        lora_cfgs = _temp_lora_configs
-        
-        # 🔹 ЛОГИРОВАНИЕ (всегда включено)
-        if lora_cfgs:
-            for cfg in lora_cfgs:
-                if cfg.get('start') is not None or cfg.get('stop') is not None:
-                    s = cfg.get('start', 0)
-                    e = cfg.get('stop', total_steps - 1)
-                    active = s <= step <= e
-                    base_w = cfg['weight'] * cfg.get('unet_mult', 1.0)
-                    w = base_w if active else 0.0
-                    name = cfg.get('filename', 'unknown').split('/')[-1]
-                    print(f"ШАГ {step:02d}/{total_steps} | {name:<35} | Вес {w:.4f}")
-        
-        # Оригинальное переключение рефайнера
-        if step == refiner_switch_step and current_refiner is not None:
-            refiner_switch()
-            
-        # 🔹 Подготовка весов для СЛЕДУЮЩЕГО шага
-        if step + 1 < total_steps and lora_cfgs:
-            _update_lora_weights_for_step(model, step + 1, total_steps, lora_cfgs)
-
-        if callback is not None:
-            callback(step, x0, x, total_steps)
-
-
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
         if callback is not None:
@@ -199,12 +154,6 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
             # residual_noise_preview /= residual_noise_preview.std()
             # residual_noise_preview *= x0.std()
             callback(step, x0, x, total_steps)
-    
-    
-    
-    if _temp_lora_configs:
-        _update_lora_weights_for_step(model, 0, len(sigmas) - 1, _temp_lora_configs)
-
 
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
     return model.process_latent_out(samples.to(torch.float32))
@@ -236,5 +185,4 @@ def calculate_sigmas_scheduler_hacked(model, scheduler_name, steps):
 
 
 ldm_patched.modules.samplers.calculate_sigmas_scheduler = calculate_sigmas_scheduler_hacked
-print('++++++++++++++++++++++++++++++++++++++++++++++++')
 ldm_patched.modules.samplers.sample = sample_hacked
