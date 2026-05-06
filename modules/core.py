@@ -67,7 +67,7 @@ class LoRAWeightController:
         # Вычисляем новые веса для каждой LoRA
         new_weights = {}
         needs_reload = False
-        print('ssssssssssssss',self.loras_config)
+        print('ssssssssssssss',self.model.loras_config)
         for idx, lora_cfg in enumerate(self.model.loras_config):
             new_weight = self._calculate_weight(lora_cfg, step, total_steps)
             new_weights[idx] = new_weight
