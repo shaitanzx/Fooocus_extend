@@ -444,8 +444,11 @@ class StableDiffusionModel:
                 final_unet_weight = cfg['weight'] * cfg['unet_mult']
                 loaded_keys = self.unet_with_lora.add_patches(lora_unet, final_unet_weight)
 
+                # 🔽 🔽 🔽 ДОБАВИТЬ ЗДЕСЬ 🔽 🔽 🔽
                 cfg['_loaded_keys'] = loaded_keys
-                self.unet_with_lora.loras_config = self.loras_config
+                # Привязываем конфиг к модели для доступа из sample_hacked
+                setattr(self.unet_with_lora, 'loras_config', self.loras_config)
+                # 🔼 🔼 🔼 КОНЕЦ ВСТАВКИ 🔼 🔼 🔼
 
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
                       f'with {len(loaded_keys)} keys at weight {final_unet_weight:.4f}.')
