@@ -50,7 +50,7 @@ BLOCK_NAMES = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
 class LoRAWeightController:
     """Контроллер для динамического изменения весов LoRA на разных шагах"""
     def __init__(self, model):
-        self.model = model
+        self.model = model  # это StableDiffusionModel
         self.current_step = -1
         self.current_weights = {}
         
@@ -149,19 +149,12 @@ class LoRAWeightController:
         if not hasattr(self.model, 'loras_config'):
             return
         
-        # ИСПРАВЛЕНО: используем правильные атрибуты
-        # Сохраняем ссылки на оригинальные модели (без LoRA)
-        original_unet = self.model.unet  # это base unet без LoRA
-        original_clip = self.model.clip  # это base clip без LoRA
-        
-        if original_unet is None:
-            print("[LoRA Error] No base UNet model")
-            return
-        
-        # Клонируем базовые модели
-        self.model.unet_with_lora = original_unet.clone()
-        if original_clip is not None:
-            self.model.clip_with_lora = original_clip.clone()
+        # ИСПРАВЛЕНО: используем правильные атрибуты StableDiffusionModel
+        # Клонируем базовые модели (оригиналы без LoRA)
+        if self.model.unet is not None:
+            self.model.unet_with_lora = self.model.unet.clone()
+        if self.model.clip is not None:
+            self.model.clip_with_lora = self.model.clip.clone()
         
         # Загружаем все LoRA с их текущими весами
         elemental_presets = _load_elemental_presets()
