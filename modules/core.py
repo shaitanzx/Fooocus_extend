@@ -836,7 +836,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
                 if hasattr(modules.sample_hijack, 'current_model'):
                     modules.sample_hijack.current_model = model
             except Exception as e:
-                print(f"[LoRA Error] {e}")
+                print(f"[LoRA-Error] {e}")
         # ============================================================
         y = None
         if previewer is not None and not disable_preview:
