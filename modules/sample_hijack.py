@@ -185,4 +185,5 @@ def calculate_sigmas_scheduler_hacked(model, scheduler_name, steps):
 
 
 ldm_patched.modules.samplers.calculate_sigmas_scheduler = calculate_sigmas_scheduler_hacked
+print('++++++++++++++++++++++++++++++++++++++++++++++++')
 ldm_patched.modules.samplers.sample = sample_hacked

@@ -665,6 +665,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
     disable_pbar = False
     modules.sample_hijack.current_refiner = refiner
     modules.sample_hijack.refiner_switch_step = refiner_switch
+    print('****************************************************************')
     ldm_patched.modules.samplers.sample = modules.sample_hijack.sample_hacked
 
     try:
