@@ -444,11 +444,8 @@ class StableDiffusionModel:
                 final_unet_weight = cfg['weight'] * cfg['unet_mult']
                 loaded_keys = self.unet_with_lora.add_patches(lora_unet, final_unet_weight)
 
-                # 🔽 🔽 🔽 ДОБАВИТЬ ЗДЕСЬ 🔽 🔽 🔽
                 cfg['_loaded_keys'] = loaded_keys
-                # Привязываем конфиг к модели для доступа из sample_hacked
-                
-                # 🔼 🔼 🔼 КОНЕЦ ВСТАВКИ 🔼 🔼 🔼
+                self.unet_with_lora.loras_config = self.loras_config
 
                 print(f'Loaded LoRA [{cfg["filename"]}] for UNet [{self.filename}] '
                       f'with {len(loaded_keys)} keys at weight {final_unet_weight:.4f}.')
@@ -466,7 +463,7 @@ class StableDiffusionModel:
                 for item in lora_clip:
                     if item not in loaded_keys:
                         print("CLIP LoRA key skipped: ", item)
-        modules.sample_hijack._temp_lora_configs = self.loras_config
+
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -668,7 +665,6 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
     disable_pbar = False
     modules.sample_hijack.current_refiner = refiner
     modules.sample_hijack.refiner_switch_step = refiner_switch
-    print('****************************************************************')
     ldm_patched.modules.samplers.sample = modules.sample_hijack.sample_hacked
 
     try:

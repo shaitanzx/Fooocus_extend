@@ -26,8 +26,7 @@ from ldm_patched.k_diffusion.sampling import BatchedBrownianTree
 from ldm_patched.ldm.modules.diffusionmodules.openaimodel import forward_timestep_embed, apply_control
 from modules.patch_precision import patch_all_precision
 from modules.patch_clip import patch_all_clip
-# 🔽 ДОБАВИТЬ В НАЧАЛО ФАЙЛА (после импортов)
-_DYNAMIC_LORA_MULTIPLIERS = {}  # {key: multiplier}
+
 
 class PatchSettings:
     def __init__(self,
@@ -55,19 +54,10 @@ patch_settings = {}
 
 
 def calculate_weight_patched(self, patches, weight, key):
-    print('zzzzzzzzzzzz',patches)
-    print('xxxxxxxxxxxx',weight)
-    print('cccccccccccc',key)    
     for p in patches:
         alpha = p[0]
         v = p[1]
         strength_model = p[2]
-
-        # 🔑 ЛЕНИВЫЙ ИМПОРТ: разрываем цикл загрузки
-        import modules.sample_hijack as hijack
-        dynamic_mult = hijack._DYNAMIC_LORA_MULTIPLIERS.get(key, 1.0)
-        if dynamic_mult != 1.0:
-            alpha *= dynamic_mult  # Масштабируем влияние LoRA
 
         if strength_model != 1.0:
             weight *= strength_model
