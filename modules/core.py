@@ -50,7 +50,17 @@ BLOCK_NAMES = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
 class LoRAWeightController:
     """Контроллер для динамического изменения весов LoRA на разных шагах"""
     def __init__(self, model):
-        self.model = model  # это StableDiffusionModel
+        # Проверяем тип модели
+        if hasattr(model, 'unet') and hasattr(model, 'clip'):
+            # Это StableDiffusionModel
+            self.model = model
+            self.is_stable_diffusion_model = True
+        else:
+            # Это ModelPatcher или что-то ещё
+            self.model = model
+            self.is_stable_diffusion_model = False
+            print("[LoRA] Warning: Model is not StableDiffusionModel, step control disabled")
+        #self.model = model  # это StableDiffusionModel
         self.current_step = -1
         self.current_weights = {}
         
