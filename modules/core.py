@@ -43,6 +43,128 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 BLOCK_NAMES = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00", 
                "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05"]
 
+
+
+# Добавьте после импортов, перед классом StableDiffusionModel
+
+class LoRAWeightController:
+    """Контроллер для динамического изменения весов LoRA на разных шагах"""
+    def __init__(self, model):
+        self.model = model
+        self.current_step = -1
+        self.current_weights = {}
+        
+    def update_weights_for_step(self, step, total_steps):
+        """Обновляет веса LoRA для текущего шага"""
+        if step == self.current_step:
+            return
+        
+        self.current_step = step
+        
+        if not hasattr(self.model, 'loras_config'):
+            return
+        
+        # Вычисляем новые веса для каждой LoRA
+        new_weights = {}
+        needs_reload = False
+        
+        for idx, lora_cfg in enumerate(self.model.loras_config):
+            new_weight = self._calculate_weight(lora_cfg, step, total_steps)
+            new_weights[idx] = new_weight
+            
+            # Проверяем, изменился ли вес
+            old_weight = self.current_weights.get(idx, 0)
+            if abs(new_weight - old_weight) > 0.001:
+                needs_reload = True
+        
+        if needs_reload:
+            self.current_weights = new_weights
+            self._reload_loras_with_weights(total_steps)
+    
+    def _calculate_weight(self, lora_cfg, step, total_steps):
+        """Вычисляет вес LoRA для текущего шага"""
+        base_weight = lora_cfg.get('weight', 1.0)
+        unet_mult = lora_cfg.get('unet_mult', 1.0)
+        te_mult = lora_cfg.get('te_mult', 1.0)
+        
+        start = lora_cfg.get('start')
+        stop = lora_cfg.get('stop')
+        fade_in = lora_cfg.get('fade_in', 0)
+        fade_out = lora_cfg.get('fade_out', 0)
+        
+        # Преобразуем None в границы
+        effective_start = start if start is not None else 0
+        effective_stop = stop if stop is not None else total_steps - 1
+        
+        # За пределами диапазона
+        if step < effective_start or step > effective_stop:
+            return 0.0
+        
+        # Плавное включение
+        if fade_in > 0 and step < effective_start + fade_in:
+            ratio = (step - effective_start) / fade_in
+            return base_weight * unet_mult * te_mult * ratio
+        
+        # Плавное выключение
+        if fade_out > 0 and step > effective_stop - fade_out:
+            ratio = (effective_stop - step) / fade_out
+            return base_weight * unet_mult * te_mult * ratio
+        
+        # Полный вес в середине диапазона
+        return base_weight * unet_mult * te_mult
+    
+    def _reload_loras_with_weights(self, total_steps):
+        """Перезагружает LoRA с применением текущих весов"""
+        if not hasattr(self.model, 'loras_config'):
+            return
+        
+        # Клонируем модели
+        if self.model.unet is not None:
+            self.model.unet_with_lora = self.model.unet.clone()
+        if self.model.clip is not None:
+            self.model.clip_with_lora = self.model.clip.clone()
+        
+        # Загружаем все LoRA с их текущими весами
+        elemental_presets = _load_elemental_presets()
+        
+        for idx, lora_cfg in enumerate(self.model.loras_config):
+            current_weight = self.current_weights.get(idx, 0)
+            
+            if current_weight <= 0:
+                continue
+            
+            try:
+                # Загружаем файл LoRA
+                lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_cfg['filepath'], safe_load=False)
+                lora_unet, lora_unmatch = match_lora(lora_unmatch, self.model.lora_key_map_unet)
+                lora_clip, lora_unmatch = match_lora(lora_unmatch, self.model.lora_key_map_clip)
+                
+                # Применяем блочные веса
+                if lora_cfg.get('lbw_str'):
+                    lora_unet = _apply_block_weights_sdxl(lora_unet, lora_cfg['lbw_str'], debug=False)
+                
+                # Применяем послойные веса
+                if lora_cfg.get('lbwe_str'):
+                    lora_unet = _apply_elemental_sdxl(lora_unet, lora_cfg['lbwe_str'], elemental_presets, debug=False)
+                
+                # Применяем к UNet с текущим весом
+                if self.model.unet_with_lora is not None and lora_unet:
+                    self.model.unet_with_lora.add_patches(lora_unet, current_weight)
+                
+                # Применяем к CLIP
+                if self.model.clip_with_lora is not None and lora_clip:
+                    # Для CLIP используем te_mult
+                    te_weight = current_weight * lora_cfg.get('te_mult', 1.0)
+                    self.model.clip_with_lora.add_patches(lora_clip, te_weight)
+                
+                print(f"[LoRA] {lora_cfg['filename']}: вес={current_weight:.4f} на шаге {self.current_step}")
+                
+            except Exception as e:
+                print(f"[LoRA Error] {lora_cfg['filename']}: {e}")
+
+
+
+
 def _parse_block_range_to_indices(range_str: str) -> set:
     """Превращает 'IN05-OUT05' или 'M00,BASE' в set индексов [0..11]"""
     indices = set()
@@ -654,9 +776,35 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
 
     if previewer_end is None:
         previewer_end = steps
+    # ========= НОВЫЙ КОД: Инициализация контроллера LoRA =========
+    lora_weight_controller = None
+    if hasattr(model, 'loras_config') and model.loras_config:
+        # Проверяем, есть ли LoRA с ограничениями по шагам или fade
+        has_step_controls = any(
+            cfg.get('start') is not None or 
+            cfg.get('stop') is not None or
+            for cfg in model.loras_config
+        )
+        if has_step_controls:
+            lora_weight_controller = LoRAWeightController(model)
+            print(f"[LoRA] Включен динамический контроль весов для {len(model.loras_config)} LoRA")
+            # Инициализируем для шага 0
+            lora_weight_controller.update_weights_for_step(0, steps)
+    # ============================================================
 
     def callback(step, x0, x, total_steps):
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
+        # ========= НОВЫЙ КОД: Обновляем веса LoRA на каждом шаге =========
+        if lora_weight_controller is not None:
+            try:
+                lora_weight_controller.update_weights_for_step(step, total_steps)
+                
+                # Обновляем модель в sample_hijack если нужно
+                if hasattr(modules.sample_hijack, 'current_model'):
+                    modules.sample_hijack.current_model = model
+            except Exception as e:
+                print(f"[LoRA Weight Error] {e}")
+        # ============================================================
         y = None
         if previewer is not None and not disable_preview:
             y = previewer(x0, previewer_start + step, previewer_end)

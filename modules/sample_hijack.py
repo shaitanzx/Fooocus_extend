@@ -16,6 +16,7 @@ from ldm_patched.modules.samplers import resolve_areas_and_cond_masks, wrap_mode
 
 current_refiner = None
 refiner_switch_step = -1
+current_model = None
 
 
 @torch.no_grad()
@@ -147,6 +148,12 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         return
 
     def callback_wrap(step, x0, x, total_steps):
+
+        # Обновляем глобальную модель для доступа из callback
+        global current_model
+        current_model = model_wrap.inner_model if hasattr(model_wrap, 'inner_model') else model
+
+        
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
         if callback is not None:
