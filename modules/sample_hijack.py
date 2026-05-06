@@ -165,7 +165,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         return args
 
     # 2️⃣ Регистрируем хук. ldm_patched вызовет его автоматически на КАЖДОМ шаге
-    model_wrap.set_model_forward_before_process(lora_step_hook)
+    model.set_model_forward_before_process(lora_step_hook)
 
     # 3️⃣ Логирование (теперь точное, так как хук уже применил вес)
     def callback_wrap(step, x0, x, total_steps):
