@@ -107,14 +107,12 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         positive = encode_model_conds(model.extra_conds, positive, noise, device, "positive", latent_image=latent_image, denoise_mask=denoise_mask)
         negative = encode_model_conds(model.extra_conds, negative, noise, device, "negative", latent_image=latent_image, denoise_mask=denoise_mask)
 
-    #make sure each cond area has an opposite one with the same area
     for c in positive:
         create_cond_with_same_area_if_none(negative, c)
     for c in negative:
         create_cond_with_same_area_if_none(positive, c)
 
-    # pre_run_control(model, negative + positive)
-    pre_run_control(model, positive)  # negative is not necessary in Fooocus, 0.5s faster.
+    pre_run_control(model, positive)
 
     apply_empty_x_to_equal_area(list(filter(lambda c: c.get('control_apply_to_uncond', False) == True, positive)), negative, 'control', lambda cond_cnets, x: cond_cnets[x])
     apply_empty_x_to_equal_area(positive, negative, 'gligen', lambda cond_cnets, x: cond_cnets[x])
@@ -130,28 +128,24 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
 
     def refiner_switch():
         cleanup_additional_models(set(get_models_from_cond(positive, "control") + get_models_from_cond(negative, "control")))
-
         extra_args["cond"] = positive_refiner
         extra_args["uncond"] = negative_refiner
-
-        # clear ip-adapter for refiner
         extra_args['model_options'] = {k: {} if k == 'transformer_options' else v for k, v in extra_args['model_options'].items()}
-
         models, inference_memory = get_additional_models(positive_refiner, negative_refiner, current_refiner.model_dtype())
         ldm_patched.modules.model_management.load_models_gpu(
             [current_refiner] + models,
             model.memory_required([noise.shape[0] * 2] + list(noise.shape[1:])) + inference_memory)
-
         model_wrap.inner_model = current_refiner.model
         print('Refiner Swapped')
         return
-    def _update_lora_weights_for_step(model_obj, step_idx: int, total_steps: int, cfgs):
-        """Обновляет strength патчей для указанного шага"""
-        # Используем переданные конфиги, а не ищем в model
+
+    # 🔹 ХЕЛПЕР: обновляет strength в model_wrap.patches (правильный объект для патчей)
+    def _update_lora_weights_for_step(patcher, step_idx: int, total_steps: int, cfgs):
+        if not hasattr(patcher, 'patches') or not patcher.patches or not cfgs:
+            return
         for cfg in cfgs:
             start, stop = cfg.get('start'), cfg.get('stop')
-            if start is None and stop is None:
-                continue
+            if start is None and stop is None: continue
             s = start if start is not None else 0
             e = stop if stop is not None else total_steps - 1
             is_active = s <= step_idx <= e
@@ -159,18 +153,16 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
             target_strength = base_weight if is_active else 0.0
             
             for key in cfg.get('_loaded_keys', []):
-                if key in model_obj.patches and model_obj.patches[key]:
-                    model_obj.patches[key] = [
-                        (target_strength, *patch[1:]) for patch in model_obj.patches[key]
-                    ]
-    # 🔼 🔼 🔼 КОНЕЦ ВСТАВКИ 🔼 🔼 🔼
+                if key in patcher.patches and patcher.patches[key]:
+                    patcher.patches[key] = [(target_strength, *patch[1:]) for patch in patcher.patches[key]]
+
+    # 🔹 ИНИЦИАЛИЗАЦИЯ: настраиваем веса для ШАГА 0 до начала цикла
+    _update_lora_weights_for_step(model_wrap, 0, len(sigmas) - 1, _temp_lora_configs)
+
     def callback_wrap(step, x0, x, total_steps):
-        # 🔹 Чтение конфигов из надёжного источника (глобал хайджека)
-        lora_cfgs = _temp_lora_configs
-        
         # 🔹 ЛОГИРОВАНИЕ (всегда включено)
-        if lora_cfgs:
-            for cfg in lora_cfgs:
+        if _temp_lora_configs:
+            for cfg in _temp_lora_configs:
                 if cfg.get('start') is not None or cfg.get('stop') is not None:
                     s = cfg.get('start', 0)
                     e = cfg.get('stop', total_steps - 1)
@@ -179,32 +171,17 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     w = base_w if active else 0.0
                     name = cfg.get('filename', 'unknown').split('/')[-1]
                     print(f"ШАГ {step:02d}/{total_steps} | {name:<35} | Вес {w:.4f}")
-        
+
         # Оригинальное переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
             
         # 🔹 Подготовка весов для СЛЕДУЮЩЕГО шага
-        if step + 1 < total_steps and lora_cfgs:
-            _update_lora_weights_for_step(model, step + 1, total_steps, lora_cfgs)
+        if step + 1 < total_steps:
+            _update_lora_weights_for_step(model_wrap, step + 1, total_steps, _temp_lora_configs)
 
         if callback is not None:
             callback(step, x0, x, total_steps)
-
-
-        if step == refiner_switch_step and current_refiner is not None:
-            refiner_switch()
-        if callback is not None:
-            # residual_noise_preview = x - x0
-            # residual_noise_preview /= residual_noise_preview.std()
-            # residual_noise_preview *= x0.std()
-            callback(step, x0, x, total_steps)
-    
-    
-    
-    if _temp_lora_configs:
-        _update_lora_weights_for_step(model, 0, len(sigmas) - 1, _temp_lora_configs)
-
 
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
     return model.process_latent_out(samples.to(torch.float32))
