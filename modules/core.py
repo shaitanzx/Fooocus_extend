@@ -48,7 +48,7 @@ BLOCK_NAMES = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
 # Добавьте после импортов, перед классом StableDiffusionModel
 
 class LoRAWeightController:
-    """Контроллер для динамического изменения весов LoRA на разных шагах"""
+    """Контроллер для динамического изменения весов LoRA на разных шагах (без fade)"""
     def __init__(self, model):
         self.model = model
         self.current_step = -1
@@ -82,15 +82,13 @@ class LoRAWeightController:
             self._reload_loras_with_weights(total_steps)
     
     def _calculate_weight(self, lora_cfg, step, total_steps):
-        """Вычисляет вес LoRA для текущего шага"""
+        """Вычисляет вес LoRA для текущего шага (без fade)"""
         base_weight = lora_cfg.get('weight', 1.0)
         unet_mult = lora_cfg.get('unet_mult', 1.0)
         te_mult = lora_cfg.get('te_mult', 1.0)
         
         start = lora_cfg.get('start')
         stop = lora_cfg.get('stop')
-        fade_in = lora_cfg.get('fade_in', 0)
-        fade_out = lora_cfg.get('fade_out', 0)
         
         # Преобразуем None в границы
         effective_start = start if start is not None else 0
@@ -99,16 +97,6 @@ class LoRAWeightController:
         # За пределами диапазона
         if step < effective_start or step > effective_stop:
             return 0.0
-        
-        # Плавное включение
-        if fade_in > 0 and step < effective_start + fade_in:
-            ratio = (step - effective_start) / fade_in
-            return base_weight * unet_mult * te_mult * ratio
-        
-        # Плавное выключение
-        if fade_out > 0 and step > effective_stop - fade_out:
-            ratio = (effective_stop - step) / fade_out
-            return base_weight * unet_mult * te_mult * ratio
         
         # Полный вес в середине диапазона
         return base_weight * unet_mult * te_mult
@@ -161,7 +149,6 @@ class LoRAWeightController:
                 
             except Exception as e:
                 print(f"[LoRA Error] {lora_cfg['filename']}: {e}")
-
 
 
 
