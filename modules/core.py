@@ -785,6 +785,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
             cfg.get('stop') is not None 
             for cfg in model.loras_config
         )
+        print('aaaaaaaaaaaaaa', has_step_controls)
         if has_step_controls:
             lora_weight_controller = LoRAWeightController(model)
             print(f"[LoRA] Включен динамический контроль весов для {len(model.loras_config)} LoRA")
