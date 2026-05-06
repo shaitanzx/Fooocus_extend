@@ -54,6 +54,7 @@ patch_settings = {}
 
 
 def calculate_weight_patched(self, patches, weight, key):
+    print(patches, weight, key)
     for p in patches:
         alpha = p[0]
         v = p[1]
