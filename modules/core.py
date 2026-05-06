@@ -85,7 +85,7 @@ class LoRAWeightController:
                     'stop': lora_cfg.get('stop')
                 })
         
-        # Логируем только изменения или каждый 5-й шаг
+        # Логируем
         self._log_step_status(step, total_steps, weight_changes, needs_reload)
         
         if needs_reload:
@@ -101,19 +101,16 @@ class LoRAWeightController:
         start = lora_cfg.get('start')
         stop = lora_cfg.get('stop')
         
-        # Преобразуем None в границы
         effective_start = start if start is not None else 0
         effective_stop = stop if stop is not None else total_steps - 1
         
-        # За пределами диапазона
         if step < effective_start or step > effective_stop:
             return 0.0
         
         return base_weight * unet_mult * te_mult
     
     def _log_step_status(self, step, total_steps, weight_changes, needs_reload):
-        """Компактное логирование статуса LoRA"""
-        # Логируем только при изменениях или важных шагах
+        """Компактное логирование"""
         log_this_step = (
             weight_changes or 
             needs_reload or 
@@ -136,7 +133,6 @@ class LoRAWeightController:
         else:
             changes_info = ""
         
-        # Собираем активные LoRA
         active_loras = []
         for idx, lora_cfg in enumerate(self.model.loras_config):
             current_weight = self.current_weights.get(idx, 0)
@@ -153,16 +149,19 @@ class LoRAWeightController:
         if not hasattr(self.model, 'loras_config'):
             return
         
-        # ИСПРАВЛЕНО: используем unet_with_lora и clip_with_lora которые уже есть в модели
-        # Сохраняем ссылки на текущие модели с LoRA
-        current_unet = self.model.unet_with_lora if hasattr(self.model, 'unet_with_lora') else None
-        current_clip = self.model.clip_with_lora if hasattr(self.model, 'clip_with_lora') else None
+        # ИСПРАВЛЕНО: используем правильные атрибуты
+        # Сохраняем ссылки на оригинальные модели (без LoRA)
+        original_unet = self.model.unet  # это base unet без LoRA
+        original_clip = self.model.clip  # это base clip без LoRA
         
-        # Клонируем базовые модели (оригиналы без LoRA)
-        if self.model.unet is not None:
-            self.model.unet_with_lora = self.model.unet.clone()
-        if self.model.clip is not None:
-            self.model.clip_with_lora = self.model.clip.clone()
+        if original_unet is None:
+            print("[LoRA Error] No base UNet model")
+            return
+        
+        # Клонируем базовые модели
+        self.model.unet_with_lora = original_unet.clone()
+        if original_clip is not None:
+            self.model.clip_with_lora = original_clip.clone()
         
         # Загружаем все LoRA с их текущими весами
         elemental_presets = _load_elemental_presets()
