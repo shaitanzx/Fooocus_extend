@@ -662,7 +662,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
             y = previewer(x0, previewer_start + step, previewer_end)
         if callback_function is not None:
             callback_function(previewer_start + step, x0, x, previewer_end, y)
-                        ]
+                        
                             
         # Оригинальная логика preview/callback
         y = None
