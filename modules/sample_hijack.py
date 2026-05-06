@@ -145,16 +145,45 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         model_wrap.inner_model = current_refiner.model
         print('Refiner Swapped')
         return
+# 1️⃣ ХЕЛПЕР: Управление весом по шагам (работает точно как refiner_switch)
+    def toggle_lora_steps(step_idx: int, total_steps: int):
+        for cfg in getattr(model, 'loras_config', []):
+            s, e = cfg.get('start'), cfg.get('stop')
+            if s is None and e is None: continue  # Пропускаем LoRA без start/stop
 
+            start = s if s is not None else 0
+            stop  = e if e is not None else total_steps - 1
+            active = start <= step_idx <= stop
+            
+            # Целевая сила: либо базовая, либо 0.0 (полное отключение)
+            target_w = (cfg['weight'] * cfg.get('unet_mult', 1.0)) if active else 0.0
+            
+            for key in cfg.get('_loaded_keys', []):
+                if key in model.patches and model.patches[key]:
+                    # Меняем ТОЛЬКО силу (первый элемент кортежа). Тензоры up/down/alpha не трогаем.
+                    model.patches[key] = [(target_w, *patch[1:]) for patch in model.patches[key]]
+
+            print(f"ШАГ {step} | Вес {target_w:.4f}")
+
+    # 2️⃣ ИНИЦИАЛИЗАЦИЯ ДО ЦИКЛА: Применяем корректное состояние для ШАГА 0
+    total_steps_count = len(sigmas) - 1
+    toggle_lora_steps(0, total_steps_count)
+
+
+# 🔽 🔽 🔽 ЗАМЕНИТЬ СУЩЕСТВУЮЩИЙ callback_wrap НА ЭТОТ 🔽 🔽 🔽
     def callback_wrap(step, x0, x, total_steps):
-        print('-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a')
+        # Оригинальное переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
             refiner_switch()
+            
+        # 🔹 ЛОГИКА START/STOP: Готовим веса для СЛЕДУЮЩЕГО шага (step + 1)
+        # Callback вызывается ПОСЛЕ завершения шага `step`, поэтому настраиваем `step + 1`
+        if step + 1 < total_steps:
+            toggle_lora_steps(step + 1, total_steps)
+
         if callback is not None:
-            # residual_noise_preview = x - x0
-            # residual_noise_preview /= residual_noise_preview.std()
-            # residual_noise_preview *= x0.std()
             callback(step, x0, x, total_steps)
+    # 🔼 🔼 🔼 КОНЕЦ ЗАМЕНЫ callback_wrap 🔼 🔼 🔼
 
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
     return model.process_latent_out(samples.to(torch.float32))
