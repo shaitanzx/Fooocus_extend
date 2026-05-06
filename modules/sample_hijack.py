@@ -172,6 +172,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
 # 🔽 🔽 🔽 ЗАМЕНИТЬ СУЩЕСТВУЮЩИЙ callback_wrap НА ЭТОТ 🔽 🔽 🔽
     def callback_wrap(step, x0, x, total_steps):
         # Оригинальное переключение рефайнера
+        print('---------------', model.loras_config)
         if hasattr(model, 'loras_config') and model.loras_config:
             for cfg in model.loras_config:
                 s, e = cfg.get('start'), cfg.get('stop')
