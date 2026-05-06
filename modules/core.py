@@ -48,7 +48,7 @@ BLOCK_NAMES = ["BASE", "IN04", "IN05", "IN07", "IN08", "M00",
 # Добавьте после импортов, перед классом StableDiffusionModel
 
 class LoRAWeightController:
-    """Контроллер для динамического изменения весов LoRA на разных шагах (без fade)"""
+    """Контроллер для динамического изменения весов LoRA на разных шагах"""
     def __init__(self, model):
         self.model = model
         self.current_step = -1
@@ -67,6 +67,7 @@ class LoRAWeightController:
         # Вычисляем новые веса для каждой LoRA
         new_weights = {}
         needs_reload = False
+        weight_changes = []
         
         for idx, lora_cfg in enumerate(self.model.loras_config):
             new_weight = self._calculate_weight(lora_cfg, step, total_steps)
@@ -76,13 +77,23 @@ class LoRAWeightController:
             old_weight = self.current_weights.get(idx, 0)
             if abs(new_weight - old_weight) > 0.001:
                 needs_reload = True
+                weight_changes.append({
+                    'name': lora_cfg.get('filename', 'unknown'),
+                    'old': old_weight,
+                    'new': new_weight,
+                    'start': lora_cfg.get('start'),
+                    'stop': lora_cfg.get('stop')
+                })
+        
+        # Логируем на каждом шаге
+        self._log_step_status(step, total_steps, weight_changes, needs_reload)
         
         if needs_reload:
             self.current_weights = new_weights
             self._reload_loras_with_weights(total_steps)
     
     def _calculate_weight(self, lora_cfg, step, total_steps):
-        """Вычисляет вес LoRA для текущего шага (без fade)"""
+        """Вычисляет вес LoRA для текущего шага"""
         base_weight = lora_cfg.get('weight', 1.0)
         unet_mult = lora_cfg.get('unet_mult', 1.0)
         te_mult = lora_cfg.get('te_mult', 1.0)
@@ -101,10 +112,51 @@ class LoRAWeightController:
         # Полный вес в середине диапазона
         return base_weight * unet_mult * te_mult
     
+    def _log_step_status(self, step, total_steps, weight_changes, needs_reload):
+        """Логирует статус LoRA на текущем шаге (всегда включено)"""
+        print(f"\n{'='*80}")
+        print(f"[LoRA STEP {step}/{total_steps-1}]")
+        
+        # Показываем текущие веса всех LoRA
+        print(f"  Текущие веса:")
+        has_active = False
+        for idx, lora_cfg in enumerate(self.model.loras_config):
+            current_weight = self.current_weights.get(idx, 0)
+            start = lora_cfg.get('start')
+            stop = lora_cfg.get('stop')
+            range_str = f"[{start if start is not None else 0}-{stop if stop is not None else total_steps-1}]"
+            
+            if current_weight > 0:
+                has_active = True
+                print(f"    ✅ {os.path.basename(lora_cfg['filename'])}: {current_weight:.4f} {range_str}")
+            else:
+                print(f"    ⚪ {os.path.basename(lora_cfg['filename'])}: {current_weight:.4f} {range_str}")
+        
+        if not has_active:
+            print(f"    Нет активных LoRA")
+        
+        # Показываем изменения на этом шаге
+        if weight_changes:
+            print(f"\n  Изменения на этом шаге:")
+            for change in weight_changes:
+                if change['new'] > 0 and change['old'] == 0:
+                    print(f"    🔵 ВКЛЮЧЕНА: {os.path.basename(change['name'])} (вес={change['new']:.4f}) [шаги {change['start']}-{change['stop']}]")
+                elif change['new'] == 0 and change['old'] > 0:
+                    print(f"    🔴 ВЫКЛЮЧЕНА: {os.path.basename(change['name'])} (был вес={change['old']:.4f})")
+                elif change['new'] != change['old']:
+                    print(f"    🟡 ИЗМЕНЕНА: {os.path.basename(change['name'])}: {change['old']:.4f} → {change['new']:.4f}")
+        
+        if needs_reload:
+            print(f"\n  🔄 ПЕРЕЗАГРУЗКА LoRA с новыми весами...")
+        
+        print(f"{'='*80}")
+    
     def _reload_loras_with_weights(self, total_steps):
         """Перезагружает LoRA с применением текущих весов"""
         if not hasattr(self.model, 'loras_config'):
             return
+        
+        print(f"\n[LoRA RELOAD] Перезагрузка на шаге {self.current_step}/{total_steps-1}")
         
         # Клонируем модели
         if self.model.unet is not None:
@@ -115,10 +167,12 @@ class LoRAWeightController:
         # Загружаем все LoRA с их текущими весами
         elemental_presets = _load_elemental_presets()
         
+        loaded_count = 0
         for idx, lora_cfg in enumerate(self.model.loras_config):
             current_weight = self.current_weights.get(idx, 0)
             
             if current_weight <= 0:
+                print(f"  ⚪ Пропущена (вес=0): {os.path.basename(lora_cfg['filepath'])}")
                 continue
             
             try:
@@ -141,15 +195,16 @@ class LoRAWeightController:
                 
                 # Применяем к CLIP
                 if self.model.clip_with_lora is not None and lora_clip:
-                    # Для CLIP используем te_mult
                     te_weight = current_weight * lora_cfg.get('te_mult', 1.0)
                     self.model.clip_with_lora.add_patches(lora_clip, te_weight)
                 
-                print(f"[LoRA] {lora_cfg['filename']}: вес={current_weight:.4f} на шаге {self.current_step}")
+                loaded_count += 1
+                print(f"  ✅ Загружена: {os.path.basename(lora_cfg['filepath'])} (вес={current_weight:.4f})")
                 
             except Exception as e:
-                print(f"[LoRA Error] {lora_cfg['filename']}: {e}")
-
+                print(f"  ❌ Ошибка: {os.path.basename(lora_cfg['filepath'])} - {e}")
+        
+        print(f"  Итого загружено: {loaded_count} LoRA\n")
 
 
 def _parse_block_range_to_indices(range_str: str) -> set:
@@ -763,26 +818,35 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
 
     if previewer_end is None:
         previewer_end = steps
-    # ========= НОВЫЙ КОД: Инициализация контроллера LoRA =========
+    # ========= Инициализация контроллера LoRA (всегда с логированием) =========
     lora_weight_controller = None
     if hasattr(model, 'loras_config') and model.loras_config:
-        # Проверяем, есть ли LoRA с ограничениями по шагам или fade
+        # Проверяем, есть ли LoRA с ограничениями по шагам
         has_step_controls = any(
             cfg.get('start') is not None or 
-            cfg.get('stop') is not None 
+            cfg.get('stop') is not None
             for cfg in model.loras_config
         )
-        print('aaaaaaaaaaaaaa', has_step_controls)
         if has_step_controls:
             lora_weight_controller = LoRAWeightController(model)
-            print(f"[LoRA] Включен динамический контроль весов для {len(model.loras_config)} LoRA")
-            # Инициализируем для шага 0
+            print(f"\n[LoRA] Включен динамический контроль весов для {len(model.loras_config)} LoRA")
+            print(f"[LoRA] Детальное логирование: ВКЛЮЧЕНО\n")
             lora_weight_controller.update_weights_for_step(0, steps)
     # ============================================================
 
     def callback(step, x0, x, total_steps):
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
-
+        # ========= Обновляем веса LoRA на каждом шаге =========
+        if lora_weight_controller is not None:
+            try:
+                lora_weight_controller.update_weights_for_step(step, total_steps)
+                
+                # Обновляем модель в sample_hijack если нужно
+                if hasattr(modules.sample_hijack, 'current_model'):
+                    modules.sample_hijack.current_model = model
+            except Exception as e:
+                print(f"[LoRA Error] {e}")
+        # ============================================================
         y = None
         if previewer is not None and not disable_preview:
             y = previewer(x0, previewer_start + step, previewer_end)
