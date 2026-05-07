@@ -157,25 +157,30 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         return
 
     # ========= ИЗМЕНЕНО: callback_wrap с логированием LoRA =========
+    # ========= ИСПРАВЛЕННЫЙ callback_wrap =========
+    # ВАЖНО: сигнатура callback должна быть (step, x0, x, total_steps)
     def callback_wrap(step, x0, x, total_steps):
         global current_refiner, current_lora_manager, callback_call_count
         
         # Счетчик вызовов
         callback_call_count += 1
         
-        # Определяем фазу
+        # Определяем фазу (по наличию x0/x)
         phase = "PREP" if x0 is None else "MAIN"
         
-        # Логируем каждый вызов
-        print(f"\n[CB #{callback_call_count:4d}] Step {step:2d}/{total_steps-1} [{phase}]", end="")
+        # Логируем каждый вызов (только для отладки, можно убрать)
+        if callback_call_count <= 10 or callback_call_count % 20 == 0:
+            print(f"\n[CB #{callback_call_count:4d}] Step {step:2d}/{total_steps-1} [{phase}]", end="")
+        else:
+            print(f".", end="")  # Компактный вывод
         
         # Обновляем LoRA на каждом вызове
         if current_lora_manager is not None:
             try:
                 changed = current_lora_manager.update_at_step(step, total_steps)
-                if changed:
+                if changed and (callback_call_count <= 10 or callback_call_count % 20 == 0):
                     print(f" → LoRA WEIGHTS CHANGED")
-                else:
+                elif not changed and (callback_call_count <= 10 or callback_call_count % 20 == 0):
                     print(f" → LoRA unchanged")
             except Exception as e:
                 print(f" → ERROR: {e}")
@@ -183,7 +188,8 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     print(f"[LoRA] Disabling dynamic control due to error")
                     current_lora_manager = None
         else:
-            print()
+            if callback_call_count <= 10 or callback_call_count % 20 == 0:
+                print()
         
         # Переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
@@ -193,6 +199,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         # Пользовательский callback
         if callback is not None:
             callback(step, x0, x, total_steps)
+    # ================================================
     # ============================================================
 
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
