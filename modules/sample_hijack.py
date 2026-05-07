@@ -128,7 +128,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
     else:
         print("❌ No loras_config found")
     
-    print(f"{'='=60}\n")
+     print(f"{'='*60}\n") 
 
     global current_refiner
 
