@@ -629,7 +629,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
              force_full_denoise=False, callback_function=None, refiner=None, refiner_switch=-1,
              previewer_start=None, previewer_end=None, sigmas=None, noise_mean=None, disable_preview=False):
 # ========= ДИАГНОСТИКА ТИПА МОДЕЛИ =========
-"""Быстрая диагностика - основные признаки"""
+    """Быстрая диагностика - основные признаки"""
     print(f"\n{'='*60}")
     print(f"Type: {type(model).__name__}")
     print(f"Module: {type(model).__module__}")
