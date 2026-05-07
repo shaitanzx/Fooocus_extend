@@ -87,6 +87,57 @@ def clip_separate_after_preparation(cond, target_model=None, target_clip=None):
 @torch.no_grad()
 @torch.inference_mode()
 def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas, model_options={}, latent_image=None, denoise_mask=None, callback=None, disable_pbar=False, seed=None):
+# ========= ДИАГНОСТИКА ТИПА МОДЕЛИ =========
+    """Быстрая диагностика - основные признаки"""
+    print(f"\n{'='*60}", 'вход simple_hacked')
+    print(f"Type: {type(model).__name__}")
+    print(f"Module: {type(model).__module__}")
+    
+    # Основные признаки
+    signs = []
+    if hasattr(model, 'unet'):
+        signs.append("has unet")
+    if hasattr(model, 'clip'):
+        signs.append("has clip")
+    if hasattr(model, 'patches'):
+        signs.append("has patches")
+    if hasattr(model, 'add_patches'):
+        signs.append("has add_patches")
+    if hasattr(model, 'loras_config'):
+        signs.append("has loras_config")
+    if hasattr(model, 'parent'):
+        signs.append(f"has parent ({type(model.parent).__name__})")
+    if hasattr(model, 'unet_with_lora'):
+        signs.append("has unet_with_lora")
+    
+    print(f"Signs: {', '.join(signs)}")
+    #print('patches', model.patches)
+    #print('add_patches', model.add_patches)
+    print('loras_config', model.loras_config)
+    # Определение
+    if hasattr(model, 'unet') and hasattr(model, 'clip'):
+        print("✅ This is StableDiffusionModel")
+    elif hasattr(model, 'patches') and hasattr(model, 'add_patches'):
+        print("✅ This is ModelPatcher")
+    else:
+        print("⚠️ Unknown model type")
+    
+    # loras_config
+    if hasattr(model, 'loras_config') and model.loras_config:
+        print(f"✅ loras_config found: {len(model.loras_config)} LoRAs")
+    elif hasattr(model, 'parent') and hasattr(model.parent, 'loras_config'):
+        print(f"✅ loras_config in parent: {len(model.parent.loras_config)} LoRAs")
+    else:
+        print("❌ No loras_config found")
+    
+    print(f"{'='*60}\n") 
+    # ============================================
+
+
+
+
+
+
     global current_refiner
 
     positive = positive[:]
@@ -196,7 +247,51 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     ]
             print ('ddddddddddddddddddddddddd')
     total_steps = len(sigmas) - 1
+# ========= ДИАГНОСТИКА ТИПА МОДЕЛИ =========
+    """Быстрая диагностика - основные признаки"""
+    print(f"\n{'='*60}, model_warp")
+    print(f"Type: {type(model).__name__}")
+    print(f"Module: {type(model).__module__}")
     
+    # Основные признаки
+    signs = []
+    if hasattr(model, 'unet'):
+        signs.append("has unet")
+    if hasattr(model, 'clip'):
+        signs.append("has clip")
+    if hasattr(model, 'patches'):
+        signs.append("has patches")
+    if hasattr(model, 'add_patches'):
+        signs.append("has add_patches")
+    if hasattr(model, 'loras_config'):
+        signs.append("has loras_config")
+    if hasattr(model, 'parent'):
+        signs.append(f"has parent ({type(model.parent).__name__})")
+    if hasattr(model, 'unet_with_lora'):
+        signs.append("has unet_with_lora")
+    
+    print(f"Signs: {', '.join(signs)}")
+    #print('patches', model.patches)
+    #print('add_patches', model.add_patches)
+    print('loras_config', model.loras_config)
+    # Определение
+    if hasattr(model, 'unet') and hasattr(model, 'clip'):
+        print("✅ This is StableDiffusionModel")
+    elif hasattr(model, 'patches') and hasattr(model, 'add_patches'):
+        print("✅ This is ModelPatcher")
+    else:
+        print("⚠️ Unknown model type")
+    
+    # loras_config
+    if hasattr(model, 'loras_config') and model.loras_config:
+        print(f"✅ loras_config found: {len(model.loras_config)} LoRAs")
+    elif hasattr(model, 'parent') and hasattr(model.parent, 'loras_config'):
+        print(f"✅ loras_config in parent: {len(model.parent.loras_config)} LoRAs")
+    else:
+        print("❌ No loras_config found")
+    
+    print(f"{'='*60}\n") 
+    # ============================================    
     # 🔹 2.1 Применяем веса для ШАГА 0 ДО запуска цикла сэмплинга
     _apply_lora_weights_for_step(model_wrap, 0, total_steps)
 

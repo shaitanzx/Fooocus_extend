@@ -628,51 +628,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
              scheduler='karras', denoise=1.0, disable_noise=False, start_step=None, last_step=None,
              force_full_denoise=False, callback_function=None, refiner=None, refiner_switch=-1,
              previewer_start=None, previewer_end=None, sigmas=None, noise_mean=None, disable_preview=False):
-# ========= ДИАГНОСТИКА ТИПА МОДЕЛИ =========
-    """Быстрая диагностика - основные признаки"""
-    print(f"\n{'='*60}")
-    print(f"Type: {type(model).__name__}")
-    print(f"Module: {type(model).__module__}")
-    
-    # Основные признаки
-    signs = []
-    if hasattr(model, 'unet'):
-        signs.append("has unet")
-    if hasattr(model, 'clip'):
-        signs.append("has clip")
-    if hasattr(model, 'patches'):
-        signs.append("has patches")
-    if hasattr(model, 'add_patches'):
-        signs.append("has add_patches")
-    if hasattr(model, 'loras_config'):
-        signs.append("has loras_config")
-    if hasattr(model, 'parent'):
-        signs.append(f"has parent ({type(model.parent).__name__})")
-    if hasattr(model, 'unet_with_lora'):
-        signs.append("has unet_with_lora")
-    
-    print(f"Signs: {', '.join(signs)}")
-    #print('patches', model.patches)
-    #print('add_patches', model.add_patches)
-    print('loras_config', model.loras_config)
-    # Определение
-    if hasattr(model, 'unet') and hasattr(model, 'clip'):
-        print("✅ This is StableDiffusionModel")
-    elif hasattr(model, 'patches') and hasattr(model, 'add_patches'):
-        print("✅ This is ModelPatcher")
-    else:
-        print("⚠️ Unknown model type")
-    
-    # loras_config
-    if hasattr(model, 'loras_config') and model.loras_config:
-        print(f"✅ loras_config found: {len(model.loras_config)} LoRAs")
-    elif hasattr(model, 'parent') and hasattr(model.parent, 'loras_config'):
-        print(f"✅ loras_config in parent: {len(model.parent.loras_config)} LoRAs")
-    else:
-        print("❌ No loras_config found")
-    
-    print(f"{'='*60}\n") 
-    # ============================================
+
     if sigmas is not None:
         sigmas = sigmas.clone().to(ldm_patched.modules.model_management.get_torch_device())
 
