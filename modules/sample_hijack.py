@@ -147,6 +147,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         return
     def _apply_lora_weights_for_step(patcher, target_step: int, total_steps: int):
         """Обновляет strength патчей для указанного шага генерации"""
+        print ('zzzzzzzzzzzzzzzzzzzzzz')
         cfgs = getattr(patcher, 'loras_config', [])
         if not cfgs or not hasattr(patcher, 'patches') or not patcher.patches:
             return
