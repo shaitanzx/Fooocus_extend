@@ -87,57 +87,6 @@ def clip_separate_after_preparation(cond, target_model=None, target_clip=None):
 @torch.no_grad()
 @torch.inference_mode()
 def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas, model_options={}, latent_image=None, denoise_mask=None, callback=None, disable_pbar=False, seed=None):
-# ========= ДИАГНОСТИКА ТИПА МОДЕЛИ =========
-    """Быстрая диагностика - основные признаки"""
-    print(f"\n{'='*60}", 'вход simple_hacked')
-    print(f"Type: {type(model).__name__}")
-    print(f"Module: {type(model).__module__}")
-    
-    # Основные признаки
-    signs = []
-    if hasattr(model, 'unet'):
-        signs.append("has unet")
-    if hasattr(model, 'clip'):
-        signs.append("has clip")
-    if hasattr(model, 'patches'):
-        signs.append("has patches")
-    if hasattr(model, 'add_patches'):
-        signs.append("has add_patches")
-    if hasattr(model, 'loras_config'):
-        signs.append("has loras_config")
-    if hasattr(model, 'parent'):
-        signs.append(f"has parent ({type(model.parent).__name__})")
-    if hasattr(model, 'unet_with_lora'):
-        signs.append("has unet_with_lora")
-    
-    print(f"Signs: {', '.join(signs)}")
-    #print('patches', model.patches)
-    #print('add_patches', model.add_patches)
-    #print('loras_config', model.loras_config)
-    # Определение
-    if hasattr(model, 'unet') and hasattr(model, 'clip'):
-        print("✅ This is StableDiffusionModel")
-    elif hasattr(model, 'patches') and hasattr(model, 'add_patches'):
-        print("✅ This is ModelPatcher")
-    else:
-        print("⚠️ Unknown model type")
-    
-    # loras_config
-    if hasattr(model, 'loras_config') and model.loras_config:
-        print(f"✅ loras_config found: {len(model.loras_config)} LoRAs")
-    elif hasattr(model, 'parent') and hasattr(model.parent, 'loras_config'):
-        print(f"✅ loras_config in parent: {len(model.parent.loras_config)} LoRAs")
-    else:
-        print("❌ No loras_config found")
-    
-    print(f"{'='*60}\n") 
-    # ============================================
-
-
-
-
-
-
     global current_refiner
 
     positive = positive[:]
@@ -271,9 +220,33 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         signs.append("has unet_with_lora")
     
     print(f"Signs: {', '.join(signs)}")
+    # 🔍 ПОИСК patches: проверяем все возможные места
+    print(f"\n[PATCHES DEBUG] Поиск словаря 'patches':")
+    candidates = [
+        ('model', model),
+        ('model_wrap', model_wrap),
+        ('model.model', getattr(model, 'model', None)),
+        ('model_wrap.model', getattr(model_wrap, 'model', None)),
+        ('model.parent', getattr(model, 'parent', None)),
+    ]
+    
+    for name, obj in candidates:
+        if obj is None:
+            print(f"  {name:<20} → None")
+            continue
+        has_patches = hasattr(obj, 'patches')
+        patches_count = len(obj.patches) if has_patches and obj.patches else 0
+        print(f"  {name:<20} → has_patches={has_patches}, count={patches_count}")
+        if has_patches and obj.patches:
+            print(f"    🔑 Пример ключа: {list(obj.patches.keys())[0][:80]}...")
+    
+    # 🔍 Проверка model_options (иногда patches там)
+    if 'patches' in model_options:
+        print(f"  model_options['patches'] → found, count={len(model_options['patches'])}")
+    print(f"{'='*60}\n")
     #print('patches', model.patches)
     #print('add_patches', model.add_patches)
-    print('loras_config', model.loras_config)
+    #print('loras_config', model.loras_config)
     # Определение
     if hasattr(model, 'unet') and hasattr(model, 'clip'):
         print("✅ This is StableDiffusionModel")
