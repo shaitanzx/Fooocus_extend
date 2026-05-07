@@ -652,7 +652,9 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         signs.append("has unet_with_lora")
     
     print(f"Signs: {', '.join(signs)}")
-    
+    print('patches', model.patches)
+    print('add_patches', model.add_patches)
+    print('loras_config', model.loras_config)
     # Определение
     if hasattr(model, 'unet') and hasattr(model, 'clip'):
         print("✅ This is StableDiffusionModel")
@@ -705,7 +707,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         if callback_function is not None:
             callback_function(previewer_start + step, x0, x, previewer_end, y)
 
-            
+
     disable_pbar = False
     modules.sample_hijack.current_refiner = refiner
     modules.sample_hijack.refiner_switch_step = refiner_switch
