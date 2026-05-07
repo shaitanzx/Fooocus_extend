@@ -629,37 +629,47 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
              force_full_denoise=False, callback_function=None, refiner=None, refiner_switch=-1,
              previewer_start=None, previewer_end=None, sigmas=None, noise_mean=None, disable_preview=False):
 # ========= ДИАГНОСТИКА ТИПА МОДЕЛИ =========
-    print("\n" + "="*60)
-    print("DIAGNOSTICS: What is 'model' in ksampler?")
-    print(f"Type: {type(model)}")
-    print(f"Type name: {type(model).__name__}")
+"""Быстрая диагностика - основные признаки"""
+    print(f"\n{'='*60}")
+    print(f"Type: {type(model).__name__}")
     print(f"Module: {type(model).__module__}")
     
-    # Проверяем наличие атрибутов
-    attributes = dir(model)
-    
-    # Атрибуты StableDiffusionModel
-    sdm_attrs = ['unet', 'clip', 'vae', 'unet_with_lora', 'clip_with_lora', 'loras_config', 'filename']
-    found_sdm = [attr for attr in sdm_attrs if hasattr(model, attr)]
-    
-    # Атрибуты ModelPatcher
-    mp_attrs = ['patches', 'model', 'load_model', 'add_patches', 'clone', 'model_dtype', 'memory_required']
-    found_mp = [attr for attr in mp_attrs if hasattr(model, attr)]
-    
-    print(f"\nStableDiffusionModel attributes found: {found_sdm}")
-    print(f"ModelPatcher attributes found: {found_mp}")
-    
-    # Проверяем конкретные атрибуты
+    # Основные признаки
+    signs = []
     if hasattr(model, 'unet'):
-        print("✅ Has 'unet' -> Likely StableDiffusionModel")
+        signs.append("has unet")
+    if hasattr(model, 'clip'):
+        signs.append("has clip")
     if hasattr(model, 'patches'):
-        print("✅ Has 'patches' -> Likely ModelPatcher")
+        signs.append("has patches")
+    if hasattr(model, 'add_patches'):
+        signs.append("has add_patches")
+    if hasattr(model, 'loras_config'):
+        signs.append("has loras_config")
+    if hasattr(model, 'parent'):
+        signs.append(f"has parent ({type(model.parent).__name__})")
     if hasattr(model, 'unet_with_lora'):
-        print("✅ Has 'unet_with_lora' -> Definitely StableDiffusionModel")
-    if hasattr(model, 'model') and hasattr(model, 'add_patches'):
-        print("✅ Has 'model' and 'add_patches' -> Likely ModelPatcher")
+        signs.append("has unet_with_lora")
     
-    print("="*60 + "\n")
+    print(f"Signs: {', '.join(signs)}")
+    
+    # Определение
+    if hasattr(model, 'unet') and hasattr(model, 'clip'):
+        print("✅ This is StableDiffusionModel")
+    elif hasattr(model, 'patches') and hasattr(model, 'add_patches'):
+        print("✅ This is ModelPatcher")
+    else:
+        print("⚠️ Unknown model type")
+    
+    # loras_config
+    if hasattr(model, 'loras_config') and model.loras_config:
+        print(f"✅ loras_config found: {len(model.loras_config)} LoRAs")
+    elif hasattr(model, 'parent') and hasattr(model.parent, 'loras_config'):
+        print(f"✅ loras_config in parent: {len(model.parent.loras_config)} LoRAs")
+    else:
+        print("❌ No loras_config found")
+    
+    print(f"{'='*60}\n") 
     # ============================================
     if sigmas is not None:
         sigmas = sigmas.clone().to(ldm_patched.modules.model_management.get_torch_device())
