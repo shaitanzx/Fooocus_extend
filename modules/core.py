@@ -835,7 +835,6 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
             print(f"{'='*60}\n")
             
             # Устанавливаем глобальный менеджер для доступа из sample_hijack
-            import modules.sample_hijack
             modules.sample_hijack.set_lora_manager(lora_manager)
             
             # Инициализируем для шага 0
