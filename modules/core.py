@@ -654,7 +654,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
     print(f"Signs: {', '.join(signs)}")
     #print('patches', model.patches)
     #print('add_patches', model.add_patches)
-    #print('loras_config', model.loras_config)
+    print('loras_config', model.loras_config)
     # Определение
     if hasattr(model, 'unet') and hasattr(model, 'clip'):
         print("✅ This is StableDiffusionModel")
