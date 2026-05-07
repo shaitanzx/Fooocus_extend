@@ -89,7 +89,6 @@ def clip_separate_after_preparation(cond, target_model=None, target_clip=None):
 def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas, model_options={}, latent_image=None, denoise_mask=None, callback=None, disable_pbar=False, seed=None):
 # ========= ДИАГНОСТИКА ТИПА МОДЕЛИ =========
     """Быстрая диагностика - основные признаки"""
-    print('model_options',model_options)
     print(f"\n{'='*60}", 'вход simple_hacked')
     print(f"Type: {type(model).__name__}")
     print(f"Module: {type(model).__module__}")
@@ -114,7 +113,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
     print(f"Signs: {', '.join(signs)}")
     #print('patches', model.patches)
     #print('add_patches', model.add_patches)
-    print('loras_config', model.loras_config)
+    #print('loras_config', model.loras_config)
     # Определение
     if hasattr(model, 'unet') and hasattr(model, 'clip'):
         print("✅ This is StableDiffusionModel")
