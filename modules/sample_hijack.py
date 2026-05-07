@@ -148,10 +148,33 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
     def _apply_lora_weights_for_step(patcher, target_step: int, total_steps: int):
         """Обновляет strength патчей для указанного шага генерации"""
         
-        cfgs = getattr(patcher, 'loras_config', [])
+        # 🔍 ДИАГНОСТИКА: увидим, что именно не так
+        cfgs = getattr(patcher, 'loras_config', None)
+        has_patches_attr = hasattr(patcher, 'patches')
+        patches_empty = not patcher.patches if has_patches_attr else True
+        
+        print(f"[DEBUG] cfgs: {type(cfgs).__name__} (len={len(cfgs) if cfgs else 0})")
+        print(f"[DEBUG] has 'patches' attr: {has_patches_attr}")
+        print(f"[DEBUG] patches empty: {patches_empty}")
+        if has_patches_attr and patcher.patches:
+            print(f"[DEBUG] patches keys count: {len(patcher.patches)}")
+            # Покажем первые 3 ключа для проверки
+            sample_keys = list(patcher.patches.keys())[:3]
+            print(f"[DEBUG] sample keys: {sample_keys}")
+        
+        if not cfgs:
+            print("[DEBUG] ❌ EARLY RETURN: cfgs is empty/None")
+            return
+        if not has_patches_attr:
+            print("[DEBUG] ❌ EARLY RETURN: no 'patches' attribute")
+            return
+        if not patcher.patches:
+            print("[DEBUG] ❌ EARLY RETURN: patches dict is empty")
+            return
+
+            
         if not cfgs or not hasattr(patcher, 'patches') or not patcher.patches:
             return
-        print ('zzzzzzzzzzzzzzzzzzzzzz')
         for cfg in cfgs:
             start, stop = cfg.get('start'), cfg.get('stop')
             if start is None and stop is None:
