@@ -172,7 +172,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
             print("[DEBUG] ❌ EARLY RETURN: patches dict is empty")
             return
 
-            
+
         if not cfgs or not hasattr(patcher, 'patches') or not patcher.patches:
             return
         for cfg in cfgs:
@@ -198,12 +198,12 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
     total_steps = len(sigmas) - 1
     
     # 🔹 2.1 Применяем веса для ШАГА 0 ДО запуска цикла сэмплинга
-    _apply_lora_weights_for_step(model, 0, total_steps)
+    _apply_lora_weights_for_step(model_wrap, 0, total_steps)
 
     def callback_wrap(step, x0, x, total_steps):
         print('ssssssssssss')
         # 🔹 2.2 ЛОГИРОВАНИЕ (выводит вес, который использовался на шаге `step`)
-        cfgs = getattr(model, 'loras_config', [])
+        cfgs = getattr(model_wrap, 'loras_config', [])
         for cfg in cfgs:
             if cfg.get('start') is not None or cfg.get('stop') is not None:
                 s = cfg.get('start', 0)
@@ -217,7 +217,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         # 🔹 2.3 Готовим веса для СЛЕДУЮЩЕГО шага (step + 1)
         # callback вызывается ПОСЛЕ завершения шага `step`, поэтому настраиваем `step + 1`
         if step + 1 < total_steps:
-            _apply_lora_weights_for_step(model, step + 1, total_steps)
+            _apply_lora_weights_for_step(model_wrap, step + 1, total_steps)
 
         # Оригинальное переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
