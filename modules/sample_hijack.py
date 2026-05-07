@@ -16,7 +16,17 @@ from ldm_patched.modules.samplers import resolve_areas_and_cond_masks, wrap_mode
 
 current_refiner = None
 refiner_switch_step = -1
+# ========= ДОБАВЛЕНО: Глобальные переменные для LoRA =========
+current_lora_manager = None
+callback_call_count = 0
 
+def set_lora_manager(manager):
+    global current_lora_manager
+    current_lora_manager = manager
+
+def get_lora_manager():
+    return current_lora_manager
+# ===========================================================
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -146,16 +156,55 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         print('Refiner Swapped')
         return
 
+    # ========= ИЗМЕНЕНО: callback_wrap с логированием LoRA =========
     def callback_wrap(step, x0, x, total_steps):
+        global current_refiner, current_lora_manager, callback_call_count
+        
+        # Счетчик вызовов
+        callback_call_count += 1
+        
+        # Определяем фазу
+        phase = "PREP" if x0 is None else "MAIN"
+        
+        # Логируем каждый вызов
+        print(f"\n[CB #{callback_call_count:4d}] Step {step:2d}/{total_steps-1} [{phase}]", end="")
+        
+        # Обновляем LoRA на каждом вызове
+        if current_lora_manager is not None:
+            try:
+                changed = current_lora_manager.update_at_step(step, total_steps)
+                if changed:
+                    print(f" → LoRA WEIGHTS CHANGED")
+                else:
+                    print(f" → LoRA unchanged")
+            except Exception as e:
+                print(f" → ERROR: {e}")
+                if step == 0:
+                    print(f"[LoRA] Disabling dynamic control due to error")
+                    current_lora_manager = None
+        else:
+            print()
+        
+        # Переключение рефайнера
         if step == refiner_switch_step and current_refiner is not None:
+            print(f"  [Refiner] Switching at step {step}")
             refiner_switch()
+        
+        # Пользовательский callback
         if callback is not None:
-            # residual_noise_preview = x - x0
-            # residual_noise_preview /= residual_noise_preview.std()
-            # residual_noise_preview *= x0.std()
             callback(step, x0, x, total_steps)
+    # ============================================================
 
     samples = sampler.sample(model_wrap, sigmas, extra_args, callback_wrap, noise, latent_image, denoise_mask, disable_pbar)
+    # ========= ДОБАВЛЕНО: Статистика вызовов =========
+    print(f"\n{'='*60}")
+    print(f"[STATS] Total callback_wrap calls: {callback_call_count}")
+    print(f"[STATS] Total steps: {len(sigmas) - 1 if sigmas is not None else 'unknown'}")
+    if sigmas is not None:
+        print(f"[STATS] Average calls per step: {callback_call_count / (len(sigmas) - 1):.1f}")
+    print(f"{'='*60}\n")
+    # =================================================
+
     return model.process_latent_out(samples.to(torch.float32))
 
 

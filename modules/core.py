@@ -620,7 +620,125 @@ def get_lora_step_multiplier(start: int, stop: int, step: int, total_steps: int)
     # return fade_in * fade_out
     
     return 1.0
-
+class DynamicLoRAManager:
+    """Динамический менеджер LoRA для ModelPatcher"""
+    
+    def __init__(self, model_patcher, loras_config):
+        self.model_patcher = model_patcher
+        self.loras_config = loras_config
+        self.current_step = -1
+        self.current_weights = {}
+        self.update_call_count = 0
+        
+    def update_at_step(self, step, total_steps):
+        """Обновляет веса LoRA для текущего шага. Возвращает True если были изменения"""
+        self.update_call_count += 1
+        
+        # Вычисляем новые веса для текущего шага
+        new_weights = {}
+        for idx, cfg in enumerate(self.loras_config):
+            new_weights[idx] = self._calculate_weight(cfg, step, total_steps)
+        
+        # Проверяем, изменились ли веса
+        changed = False
+        for idx, new_w in new_weights.items():
+            old_w = self.current_weights.get(idx, 0)
+            if abs(new_w - old_w) > 0.001:
+                changed = True
+                break
+        
+        # Если веса изменились - обновляем патчи
+        if changed:
+            old_weights = self.current_weights.copy()
+            self.current_weights = new_weights
+            self._apply_weights_to_patches()
+            self._log_change(step, total_steps, old_weights, new_weights)
+        
+        self.current_step = step
+        return changed
+    
+    def _calculate_weight(self, cfg, step, total_steps):
+        """Вычисляет вес LoRA для текущего шага"""
+        weight = cfg.get('weight', 1.0)
+        unet_mult = cfg.get('unet_mult', 1.0)
+        
+        start = cfg.get('start')
+        stop = cfg.get('stop')
+        
+        # Преобразуем None в границы
+        effective_start = start if start is not None else 0
+        effective_stop = stop if stop is not None else total_steps - 1
+        
+        # За пределами диапазона - выключено
+        if step < effective_start or step > effective_stop:
+            return 0.0
+        
+        # Внутри диапазона - полный вес
+        return weight * unet_mult
+    
+    def _apply_weights_to_patches(self):
+        """Применяет текущие веса к патчам ModelPatcher"""
+        if not hasattr(self.model_patcher, 'patches'):
+            return
+        
+        patches = self.model_patcher.patches
+        updated_count = 0
+        
+        for patch_key, patch_list in patches.items():
+            for i, patch in enumerate(patch_list):
+                if len(patch) >= 2:
+                    patch_info = patch[1]
+                    lora_name = None
+                    
+                    if isinstance(patch_info, (list, tuple)) and len(patch_info) > 0:
+                        lora_name = patch_info[0]
+                    elif isinstance(patch_info, str):
+                        lora_name = patch_info
+                    
+                    if lora_name:
+                        for idx, cfg in enumerate(self.loras_config):
+                            cfg_name = os.path.basename(cfg['filename'])
+                            if cfg_name in lora_name or lora_name in cfg_name:
+                                new_weight = self.current_weights.get(idx, 0)
+                                if new_weight != patch[0]:
+                                    patch_list[i] = (new_weight,) + patch[1:]
+                                    updated_count += 1
+                                break
+        
+        if updated_count > 0:
+            print(f"    [LoRA] Updated {updated_count} patches")
+    
+    def _log_change(self, step, total_steps, old_weights, new_weights):
+        """Логирует изменения весов"""
+        print(f"\n  {'='*50}")
+        print(f"  📊 LoRA WEIGHT CHANGE at step {step}/{total_steps-1}")
+        
+        for idx, cfg in enumerate(self.loras_config):
+            old_w = old_weights.get(idx, 0)
+            new_w = new_weights.get(idx, 0)
+            
+            if abs(new_w - old_w) > 0.001:
+                name = os.path.basename(cfg['filename'])
+                if old_w == 0 and new_w > 0:
+                    print(f"    ✅ + {name}: weight={new_w:.2f}")
+                elif old_w > 0 and new_w == 0:
+                    print(f"    ❌ - {name}: was {old_w:.2f}")
+                else:
+                    print(f"    🔄 ~ {name}: {old_w:.2f} → {new_w:.2f}")
+        
+        # Показываем все активные LoRA
+        active = []
+        for idx, cfg in enumerate(self.loras_config):
+            w = new_weights.get(idx, 0)
+            if w > 0:
+                active.append(f"{os.path.basename(cfg['filename'])}:{w:.2f}")
+        
+        if active:
+            print(f"    Active: {', '.join(active)}")
+        else:
+            print(f"    Active: None")
+        
+        print(f"  {'='*50}")
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -696,6 +814,33 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
 
     if previewer_end is None:
         previewer_end = steps
+    # ========= НОВЫЙ КОД: Инициализация менеджера LoRA =========
+    lora_manager = None
+    
+    # Проверяем наличие loras_config у ModelPatcher
+    if hasattr(model, 'loras_config') and model.loras_config:
+        has_step_limits = any(
+            cfg.get('start') is not None or cfg.get('stop') is not None
+            for cfg in model.loras_config
+        )
+        if has_step_limits:
+            lora_manager = DynamicLoRAManager(model, model.loras_config)
+            print(f"\n{'='*60}")
+            print(f"[LoRA] Dynamic weight control ENABLED")
+            print(f"[LoRA] Total LoRAs with step control: {len(model.loras_config)}")
+            for cfg in model.loras_config:
+                start = cfg.get('start', 0)
+                stop = cfg.get('stop', steps-1)
+                print(f"  • {os.path.basename(cfg['filename'])}: active on steps {start}-{stop}")
+            print(f"{'='*60}\n")
+            
+            # Устанавливаем глобальный менеджер для доступа из sample_hijack
+            import modules.sample_hijack
+            modules.sample_hijack.set_lora_manager(lora_manager)
+            
+            # Инициализируем для шага 0
+            lora_manager.update_at_step(0, steps)
+    # =========================================================
 
     def callback(step, x0, x, total_steps):
         ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
@@ -723,6 +868,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         out = latent.copy()
         out["samples"] = samples
     finally:
+        modules.sample_hijack.set_lora_manager(None)
         modules.sample_hijack.current_refiner = None
 
     return out
