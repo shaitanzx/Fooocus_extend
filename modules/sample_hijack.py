@@ -170,6 +170,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
                     patcher.patches[key] = [
                         (target_str, *p[1:]) for p in patcher.patches[key]
                     ]
+            print ('ddddddddddddddddddddddddd')
     total_steps = len(sigmas) - 1
     
     # 🔹 2.1 Применяем веса для ШАГА 0 ДО запуска цикла сэмплинга
