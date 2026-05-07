@@ -176,6 +176,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
     _apply_lora_weights_for_step(model, 0, total_steps)
 
     def callback_wrap(step, x0, x, total_steps):
+        print('ssssssssssss')
         # 🔹 2.2 ЛОГИРОВАНИЕ (выводит вес, который использовался на шаге `step`)
         cfgs = getattr(model, 'loras_config', [])
         for cfg in cfgs:
