@@ -36,7 +36,7 @@ def load_or_init_preset(file_path, default_content):
         print(f"⚠️ Ошибка чтения {file_path}: {e}")
         return default_content
 
-def ui(self, is_img2img):
+def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
     script_dir = os.path.dirname(os.path.abspath(__file__))
     lbw_path = os.path.join(script_dir, "lbwpresets.txt")
