@@ -158,18 +158,6 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
         print('lratios',lratios)
         print('elementals',elementals)
         print('===========')
-        #    if not hasattr(self,"lbt_dr_callbacks"):
-        #        self.lbt_dr_callbacks = on_cfg_denoiser(self.denoiser_callback)
-
-
-
-
-
-
-
-        
-        #if "<lora" in prompt:
-        #        o_prompts = prompt.copy()
         prompt, extra_network_data = parse_extra_tag(prompt)
         print(prompt)
         print(extra_network_data)
