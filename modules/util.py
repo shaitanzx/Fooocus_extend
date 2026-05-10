@@ -420,22 +420,33 @@ def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, flo
 
     if prompt_cleanup:
         cleaned_prompt = cleanup_prompt(prompt_without_loras)
+    # ==========================================
+    # 🔽 ИЗМЕНЕНИЕ: Приоритет лор из промпта
+    # ==========================================
+    
+    # 1. Убираем дубликаты внутри самого промпта (сохраняем порядок появления)
+    if deduplicate_loras:
+        seen = set()
+        deduped_found = []
+        for l in found_loras:
+            if l[0] not in seen:
+                seen.add(l[0])
+                deduped_found.append(l)
+        found_loras = deduped_found
 
-    new_loras = []
-    lora_names = [lora[0] for lora in loras]
-    for found_lora in found_loras:
-        if deduplicate_loras and (found_lora[0] in lora_names or found_lora in new_loras):
-            continue
-        new_loras.append(found_lora)
+    # 2. Формируем итоговый список с приоритетом промпта
+    if deduplicate_loras:
+        # Имена лор, которые уже есть в промпте
+        prompt_lora_names = {l[0] for l in found_loras}
+        # Из исходного списка оставляем только те, которых НЕТ в промпте
+        existing_loras_filtered = [l for l in loras if l[0] not in prompt_lora_names and l[0] != "None"]
+        # Сначала лоры из промпта, затем остальные
+        updated_loras = found_loras + existing_loras_filtered
+    else:
+        # Если дедупликация отключена, просто ставим промпт в начало
+        updated_loras = found_loras + [l for l in loras if l[0] != "None"]
 
-    if len(new_loras) == 0:
-        return loras, cleaned_prompt
-
-    updated_loras = []
-    for lora in loras + new_loras:
-        if lora[0] != "None":
-            updated_loras.append(lora)
-
+    # 3. Применяем лимит (обрежем хвост, но промпт-лоры останутся)
     return updated_loras[:loras_limit], cleaned_prompt
 
 
