@@ -1479,11 +1479,11 @@ def worker():
             if xyzsetting and "XYZ" in p.prompt:
                 lratios["XYZ"] = lxyz
                 lratios["ZYX"] = lzyx
-            if xyelem != "":
-                if "XYZ" in elementals.keys():
-                    elementals["XYZ"] = elementals["XYZ"] + ","+ xyelem
-                else:
-                    elementals["XYZ"] = xyelem
+            #if xyelem != "":
+            #    if "XYZ" in elementals.keys():
+            #        elementals["XYZ"] = elementals["XYZ"] + ","+ xyelem
+            #    else:
+            #        elementals["XYZ"] = xyelem
             #self.lratios = lratios
             #self.elementals = elementals
             #global princ
