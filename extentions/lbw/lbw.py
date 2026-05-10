@@ -250,7 +250,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
             print(f"  {l[0]} | te={l[1]}, unet={l[2]} | lbw={l[3]} | lbwe={l[4]} | steps={l[5]}→{l[6]}")
 
         # Меняем return, чтобы передать новый список наружу
-        return prompt, loras
+    return prompt, loras
 ############################################   
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
