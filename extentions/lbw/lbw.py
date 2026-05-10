@@ -53,6 +53,36 @@ def load_or_init_preset(file_path, default_content):
         print(f"⚠️ Ошибка чтения {file_path}: {e}")
         return default_content
 
+
+def lorachecker():
+    try:
+        import networks
+        isnet = True
+        layer_name = "network_layer_name"
+    except:
+        isnet = False
+        layer_name = "lora_layer_name"  
+    try:
+        import lora
+        islora = True
+    except:
+        pass
+    try:
+        import lycoris
+        islyco = True
+    except:
+        pass
+    onlyco = (not islora) and islyco
+    #model = shared.sd_model
+    #self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
+    #self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
+    #self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
+    #self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
+    
+    log["isnet"] = isnet 
+    log["isxl"] = 'SDXL'
+    log["islora"] = islora
+
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
     script_dir = os.path.dirname(os.path.abspath(__file__))
