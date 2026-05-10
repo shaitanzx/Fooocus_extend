@@ -52,37 +52,205 @@ def load_or_init_preset(file_path, default_content):
     except Exception as e:
         print(f"⚠️ Ошибка чтения {file_path}: {e}")
         return default_content
+##############################################
+def parse_extra_tag(prompt):
+    """
+    Однопроходный парсер тегов Extra Networks.
+    Возвращает: (очищенный_промпт, {тип_сети: [{"items": [...], "positional": [...], "named": {...}}, ...]})
+    """
+    RE_EXTRA_NET = re.compile(r"<(\w+):([^>]+)>")
+    extra_network_data = defaultdict(list)
+
+    def _process_match(m: re.Match) -> str:
+        tag_type = m.group(1)
+        raw_args = m.group(2)
+        items = raw_args.split(":")
+        
+        positional = []
+        named = {}
+        for item in items:
+            if isinstance(item, str) and "=" in item:
+                k, _, v = item.partition("=")
+                named[k] = v
+            else:
+                positional.append(item)
+                
+        extra_network_data[tag_type].append({
+            "items": items,
+            "positional": positional,
+            "named": named
+        })
+        return ""
+
+    cleaned_prompt = RE_EXTRA_NET.sub(_process_match, prompt)
+    return cleaned_prompt, dict(extra_network_data)
+def stepsdealer(step, start, stop):
+    if step is None or "-" not in step:
+        return start, stop
+    return step.split("-")
+def syntaxdealer(items,target,index): #type "unet=", "x=", "lwbe=" 
+    for item in items:
+        if target in item:
+            return item.replace(target,"")
+    if index is None or index + 1> len(items): return None
+    if "=" in items[index]:return None
+    return items[index] if "@" not in items[index] else 1
+def multidealer(t, u):
+    if t is None and u is None:
+        return 1,1
+    elif t is None:
+        return float(u),float(u)
+    elif u is None:
+        return float(t), float(t)
+    else:
+        return float(t),float(u)
+def to26(ratios):
+    ids = BLOCKIDS[BLOCKNUMS.index(len(ratios))]
+    output = [0]*26
+    for i, id in enumerate(ids):
+        output[BLOCKID26.index(id)] = ratios[i]
+    return output
+
+def getinheritedweight(weight, offset):
+    re_inherited_weight = re.compile(r"X([+-])?([\d.]+)?")
+    match = re_inherited_weight.search(offset)
+    if match.group(1) == "+":
+        return float(weight) + float(match.group(2))
+    elif match.group(1) == "-":
+        return float(weight) - float(match.group(2))  
+    else:
+        return float(weight) 
+
+def settolist(ls,vs):
+    for l, v in zip(ls,vs):
+        l.append(v)
+def lbw_parsing(loraratios,useblocks,elemental):
+    lratios={}
+    elementals={}
+    if useblocks:
+        if(loraratios == None):
+            loraratios = lbw.DEF_WEIGHT_PRESET
+        loraratios=loraratios.splitlines()
+           
+        for l in loraratios:
+            if lbw.checkloadcond(l) : continue
+            l0=l.split(":",1)[0]
+            lratios[l0.strip()]=l.split(":",1)[1]
+
+        if(elemental == None):
+            elemental = lbw.ELEMPRESETS
+        elemental = elemental.split("\n\n")
+            
+        for e in elemental:
+            if ":" not in e: continue
+            e0=e.split(":",1)[0]
+            elementals[e0.strip()]=e.split(":",1)[1]
+        print('===========')
+        print('LBW Presets')
+        print('lratios',lratios)
+        print('elementals',elementals)
+        print('===========')
+        #    if not hasattr(self,"lbt_dr_callbacks"):
+        #        self.lbt_dr_callbacks = on_cfg_denoiser(self.denoiser_callback)
 
 
-def lorachecker(self):
-    try:
-        import networks
-        self.isnet = True
-        self.layer_name = "network_layer_name"
-    except:
-        self.isnet = False
-        self.layer_name = "lora_layer_name"  
-    try:
-        import lora
-        self.islora = True
-    except:
-        pass
-    try:
-        import lycoris
-        self.islyco = True
-    except:
-        pass
-    self.onlyco = (not self.islora) and self.islyco
-    model = shared.sd_model
-    self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
-    self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
-    self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
-    self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
-    
-    self.log["isnet"] = self.isnet 
-    self.log["isxl"] = self.is_sdxl
-    self.log["islora"] = self.islora
 
+
+
+
+
+        
+        if "<lora" in prompt:
+                o_prompts = prompt.copy()
+        extra_network_data = parse_extra_tag(prompt)
+        moduletypes = extra_network_data.keys()
+
+        for ltype in moduletypes:
+            lorans = []
+            lorars = []
+            te_multipliers = []
+            unet_multipliers = []
+            elements = []
+            starts = []
+            stops = []
+            fparams = []
+            load = False
+            go_lbw = False
+        
+            if not (ltype == "lora") : continue
+            for called in extra_network_data[ltype]:
+                items = called.items
+                setnow = False
+                name = items[0]
+                te = syntaxdealer(items,"te=",1)
+                unet = syntaxdealer(items,"unet=",2)
+                te,unet = multidealer(te,unet)
+
+                weights = syntaxdealer(items,"lbw=",2) if syntaxdealer(items,"lbw=",2) is not None else syntaxdealer(items,"w=",2)
+                elem = syntaxdealer(items, "lbwe=",3)
+                start = syntaxdealer(items,"start=",None)
+                stop = syntaxdealer(items,"stop=",None)
+                start, stop = stepsdealer(syntaxdealer(items,"step=",None), start, stop)
+           
+                if weights is not None and (weights in lratios or any(weights.count(",") == x - 1 for x in BLOCKNUMS)):
+                    wei = lratios[weights] if weights in lratios else weights
+                    ratios = [w.strip() for w in wei.split(",")]
+                    for i,r in enumerate(ratios):
+                        if r =="R":
+                            ratios[i] = round(random.random(),3)
+                        elif r == "U":
+                            ratios[i] = round(random.uniform(-0.5,1.5),3)
+                        elif r[0] == "X":
+                            base = syntaxdealer(items,"x=", 3) if len(items) >= 4 else 1
+                            ratios[i] = getinheritedweight(base, r)
+                        else:
+                            ratios[i] = float(r)
+                        
+                    if not (len(ratios) == 26 or len(ratios) == 61):
+                        ratios = to26(ratios)
+                    setnow = True
+                else:
+                    ratios = [1] * 61 if self.is_flux else [1] * 26
+
+                if elem in elementals:
+                    setnow = True
+                    elem = elementals[elem]
+                else:
+                    elem = ""
+
+                if setnow:
+                    print(f"LoRA Block weight ({ltype}): {name}: (Te:{te},Unet:{unet}) x {ratios}")
+                    go_lbw = True
+                fparams.append([unet,ratios,elem])
+
+                if start is not None:
+                    start = int(start)
+                    starts[name] = [start,te,unet]
+                    log["starts"] = load = True
+
+                if stop is not None:
+                    stop = int(stop)
+                    stops[name] = int(stop)
+                    log["stops"] = load = True
+
+                settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
+                log[name] = [te,unet,ratios,elem,start,stop]
+
+
+        
+            startsf = [int(s) if s is not None else None for s in starts]
+            stopsf = [int(s) if s is not None else None for s in stops]
+            uf = unet_multipliers
+            lf = lorars
+            ef = elements
+            print ('--------',log)
+                #if self.isnet: ltype = "nets"
+                #if forge: ltype = "forge"
+                #if reforge: ltype = "reforge"
+                #if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
+
+        return lratios,elementals
+############################################   
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
     script_dir = os.path.dirname(os.path.abspath(__file__))

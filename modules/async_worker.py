@@ -1449,56 +1449,8 @@ def worker():
             finally:
                 done_steps_upscaling += steps
         return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
-    def lbw_process(loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug):
-        #print("self =",self,"p =",p,"presets =",loraratios,"useblocks =",useblocks,"xyzsettings =",xyzsetting,"xtype =",xtype,"xmen =",xmen,"ytype =",ytype,"ymen =",ymen,"ztype =",ztype,"zmen =",zmen)
-        #Note that this does not use the default arg syntax because the default args are supposed to be at the end of the function
-        if(loraratios == None):
-            loraratios = lbw.DEF_WEIGHT_PRESET
-        #if(useblocks == None):
-        #    useblocks = True
 
-        #lbw.lorachecker()
-        #log["enable LBW"] = useblocks
-        #log["registerd"] = registerd
-            
-        if useblocks:
-            active = True
-            loraratios=loraratios.splitlines()
-            elemental = elemental.split("\n\n") if elemental is not None else []
-            lratios={}
-            elementals={}
-            for l in loraratios:
-                if lbw.checkloadcond(l) : continue
-                l0=l.split(":",1)[0]
-                lratios[l0.strip()]=l.split(":",1)[1]
-            for e in elemental:
-                if ":" not in e: continue
-                e0=e.split(":",1)[0]
-                elementals[e0.strip()]=e.split(":",1)[1]
-            if elemsets : print(xyelem)
-            if xyzsetting and "XYZ" in p.prompt:
-                lratios["XYZ"] = lxyz
-                lratios["ZYX"] = lzyx
-            #if xyelem != "":
-            #    if "XYZ" in elementals.keys():
-            #        elementals["XYZ"] = elementals["XYZ"] + ","+ xyelem
-            #    else:
-            #        elementals["XYZ"] = xyelem
-            #self.lratios = lratios
-            #self.elementals = elementals
-            #global princ
-            princ = elemsets
-        print('===========')
-        print(log)
-        print(loraratios)
-        print(elemental)
-        print(lratios)
-        print(elementals)
-        print(elemsets)
-        print('===========')
-        #    if not hasattr(self,"lbt_dr_callbacks"):
-        #        self.lbt_dr_callbacks = on_cfg_denoiser(self.denoiser_callback)
-
+     
     @torch.no_grad()
     @torch.inference_mode()
     def handler(async_task: AsyncTask):
@@ -1580,11 +1532,7 @@ def worker():
         current_progress = 1
 
 
-        lbw_process(async_task.lbw_loraratios,async_task.lbw_useblocks,async_task.xyzsetting,
-                    async_task.xtype,async_task.xmen,async_task.ytype,async_task.ymen,async_task.ztype,
-                    async_task.zmen,async_task.exmen,async_task.eymen,async_task.ecount,async_task.diffcol,
-                    async_task.lbw_thresh,async_task.revxy,async_task.elemental,async_task.elemsets,
-                    async_task.lbw_debug)
+        lratios, elementals = lbw_parsing(async_task.lbw_loraratios,async_task.lbw_useblocks,async_task.elemental)
 
         if async_task.input_image_checkbox:
             base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner = apply_image_input(
