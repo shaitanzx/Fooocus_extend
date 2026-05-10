@@ -135,6 +135,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
     stopsf = []
     startsf = []
     log = {}
+    loras = []
     if useblocks:
         if(loraratios == None):
             loraratios = DEF_WEIGHT_PRESET
@@ -233,12 +234,22 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
 
                 settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
                 log[name] = [te,unet,ratios,elem,start,stop]
+
             startsf = [int(s) if s is not None else None for s in starts]
             stopsf = [int(s) if s is not None else None for s in stops]
             uf = unet_multipliers
             lf = lorars
             ef = elements
             print ('--------',log)
+            loras.append((name, te, unet, ratios, elem, start, stop))
+
+        # Опционально: вывод для отладки
+        print("\n[LBW] Итоговый список LoRA (с общим весом):")
+        for l in loras:
+            print(f"  {l[0]} | te={l[1]}, unet={l[3]} | lbw={l[4]} | lbwe={l[5]} | steps={l[6]}→{l[7]}")
+
+        # Меняем return, чтобы передать новый список наружу
+        return prompt, loras
                 #if self.isnet: ltype = "nets"
                 #if forge: ltype = "forge"
                 #if reforge: ltype = "reforge"
