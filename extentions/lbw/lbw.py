@@ -160,8 +160,8 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
 
 
         
-        if "<lora" in prompt:
-                o_prompts = prompt.copy()
+        #if "<lora" in prompt:
+        #        o_prompts = prompt.copy()
         extra_network_data = parse_extra_tag(prompt)
         moduletypes = extra_network_data.keys()
 
