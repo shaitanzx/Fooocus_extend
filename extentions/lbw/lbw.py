@@ -134,6 +134,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
     lbw_starts = {}
     stopsf = []
     startsf = []
+    log = {}
     if useblocks:
         if(loraratios == None):
             loraratios = DEF_WEIGHT_PRESET
