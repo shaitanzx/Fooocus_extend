@@ -129,16 +129,16 @@ def lbw_parsing(loraratios,useblocks,elemental):
     elementals={}
     if useblocks:
         if(loraratios == None):
-            loraratios = lbw.DEF_WEIGHT_PRESET
+            loraratios = DEF_WEIGHT_PRESET
         loraratios=loraratios.splitlines()
            
         for l in loraratios:
-            if lbw.checkloadcond(l) : continue
+            if checkloadcond(l) : continue
             l0=l.split(":",1)[0]
             lratios[l0.strip()]=l.split(":",1)[1]
 
         if(elemental == None):
-            elemental = lbw.ELEMPRESETS
+            elemental = ELEMPRESETS
         elemental = elemental.split("\n\n")
             
         for e in elemental:
