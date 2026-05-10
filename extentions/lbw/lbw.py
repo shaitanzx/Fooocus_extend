@@ -54,34 +54,34 @@ def load_or_init_preset(file_path, default_content):
         return default_content
 
 
-def lorachecker():
+def lorachecker(self):
     try:
         import networks
-        isnet = True
-        layer_name = "network_layer_name"
+        self.isnet = True
+        self.layer_name = "network_layer_name"
     except:
-        isnet = False
-        layer_name = "lora_layer_name"  
+        self.isnet = False
+        self.layer_name = "lora_layer_name"  
     try:
         import lora
-        islora = True
+        self.islora = True
     except:
         pass
     try:
         import lycoris
-        islyco = True
+        self.islyco = True
     except:
         pass
-    onlyco = (not islora) and islyco
-    #model = shared.sd_model
-    #self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
-    #self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
-    #self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
-    #self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
+    self.onlyco = (not self.islora) and self.islyco
+    model = shared.sd_model
+    self.is_sdxl = type(model).__name__ == "StableDiffusionXL" or getattr(model,'is_sdxl', False)
+    self.is_sd2 = type(model).__name__ == "StableDiffusion2" or getattr(model,'is_sd2', False)
+    self.is_sd1 = type(model).__name__ == "StableDiffusion" or getattr(model,'is_sd1', False)
+    self.is_flux = type(model).__name__ == "Flux" or getattr(model,'is_flux', False)
     
-    log["isnet"] = isnet 
-    log["isxl"] = 'SDXL'
-    log["islora"] = islora
+    self.log["isnet"] = self.isnet 
+    self.log["isxl"] = self.is_sdxl
+    self.log["islora"] = self.islora
 
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET

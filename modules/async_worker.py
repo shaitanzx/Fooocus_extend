@@ -1457,7 +1457,7 @@ def worker():
         #if(useblocks == None):
         #    useblocks = True
 
-        lbw.lorachecker()
+        #lbw.lorachecker()
         log["enable LBW"] = useblocks
         log["registerd"] = registerd
             
