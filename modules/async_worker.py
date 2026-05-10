@@ -1580,7 +1580,7 @@ def worker():
         current_progress = 1
 
 
-        lbw_process(loraratios,useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug)
+        lbw_process(lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,lbw_thresh,revxy,elemental,elemsets,lbw_debug)
 
         if async_task.input_image_checkbox:
             base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner = apply_image_input(

@@ -108,8 +108,8 @@ def ui():
 
     with gr.Row():
         with gr.Column(min_width = 50, scale=1):
-            lbw_useblocks = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="lbw_active")
-            debug =  gr.Checkbox(value = False,label="Debug",interactive =True,elem_id="lbw_debug")
+            lbw_useblocks = gr.Checkbox(value=True, label="Active",interactive=True,elem_id="lbw_active")
+            debug =  gr.Checkbox(value = True,label="Debug",interactive =True,elem_id="lbw_debug")
         with gr.Column(scale=5):
             bw_ratiotags= gr.TextArea(label="",value=ratiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
     with gr.Accordion("XYZ plot",open = False):
