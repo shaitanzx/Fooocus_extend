@@ -26,7 +26,19 @@ OUTS:1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1\n\
 OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5\n\
 FLUXALL:{','.join(['1']*61)}"
+def checkloadcond(l:str)->bool:
+    # ここの条件分岐は読み込んだ行がBlock Waightの書式にあっているかを確認している。
+    # [:]が含まれ、16個(LoRa)か25個(LyCORIS),11,19(XL),のカンマが含まれる形式であるうえ、
+    # それがコメントアウト行(# foobar)でないことが求められている。
+    # 逆に言うとコメントアウトしたいなら絶対"# "から始めることを要求している。
 
+    # This conditional branch is checking whether the loaded line conforms to the Block Weight format.
+    # It is required that "[:]" is included, and the format contains either 16 commas (for LoRa) or 25 commas (for LyCORIS),
+    # and it's not a comment line (e.g., "# foobar").
+    # Conversely, if you want to comment out, it requires that it absolutely starts with "# ".
+    res=(":" not in l) or (not any(l.count(",") == x - 1  for x in BLOCKNUMS)) or ("#" in l)
+    #print("[debug]", res,repr(l))
+    return res
 def load_or_init_preset(file_path, default_content):
     if not os.path.isfile(file_path):
         try:
