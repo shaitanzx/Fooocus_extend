@@ -184,7 +184,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
         
             if not (ltype == "lora") : continue
             for called in extra_network_data[ltype]:
-                items = called.[items]
+                items = called[items]
                 setnow = False
                 name = items[0]
                 te = syntaxdealer(items,"te=",1)
