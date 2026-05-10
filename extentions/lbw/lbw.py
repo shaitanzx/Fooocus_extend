@@ -136,7 +136,9 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
     startsf = []
     log = {}
     loras = []
-    if useblocks:
+    if not useblocks:
+        return prompt, loras
+    else:
         if(loraratios == None):
             loraratios = DEF_WEIGHT_PRESET
         loraratios=loraratios.splitlines()
