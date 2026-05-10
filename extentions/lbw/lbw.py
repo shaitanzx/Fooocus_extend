@@ -233,7 +233,17 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
 
                 settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
                 log[name] = [te,unet,ratios,elem,start,stop]
-                print('aaaaa',log[name])
+                print('aaaaa')
+                if go_lbw or load:
+                    print('lorans',lorans)
+                    print('lorars',lorars)
+                    print('te_multipliers',te_multipliers)
+                    print('unet_multipliers',unet_multipliers)
+                    print('elements',elements)
+                    print('ltype',ltype)
+                    print('starts',starts) 
+
+
 
 
         
