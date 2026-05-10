@@ -61,8 +61,7 @@ def ui(self, is_img2img):
 
     with gr.Row():
         with gr.Column(min_width = 50, scale=1):
-            if use_old_active:
-                lbw_useblocks = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="lbw_active")
+            lbw_useblocks = gr.Checkbox(value=False, label="Active",interactive=True,elem_id="lbw_active")
             debug =  gr.Checkbox(value = False,label="Debug",interactive =True,elem_id="lbw_debug")
         with gr.Column(scale=5):
             bw_ratiotags= gr.TextArea(label="",value=ratiostags,visible =True,interactive =True,elem_id="lbw_ratios") 
