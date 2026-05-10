@@ -175,6 +175,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
             fparams = []
             load = False
             go_lbw = False
+            loras=[]
         
             if not (ltype == "lora") : continue
             for called in extra_network_data[ltype]:
@@ -249,12 +250,6 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
             print(f"  {l[0]} | te={l[1]}, unet={l[2]} | lbw={l[3]} | lbwe={l[4]} | steps={l[5]}→{l[6]}")
 
         # Меняем return, чтобы передать новый список наружу
-        return prompt, loras
-                #if self.isnet: ltype = "nets"
-                #if forge: ltype = "forge"
-                #if reforge: ltype = "reforge"
-                #if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
-
         return prompt, loras
 ############################################   
 def ui():
