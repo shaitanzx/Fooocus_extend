@@ -130,8 +130,8 @@ def settolist(ls,vs):
 def lbw_parsing(prompt,loraratios,useblocks,elemental):
     lratios={}
     elementals={}
-    stops = {}
-    starts = {}
+    lbw_stops = {}
+    lbw_starts = {}
     stopsf = []
     startsf = []
     if useblocks:
