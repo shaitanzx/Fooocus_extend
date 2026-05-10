@@ -1018,6 +1018,7 @@ def worker():
                                                           lora_filenames=lora_filenames)
         print('33333',loras)
         loras += async_task.performance_loras
+        loras = lora_normalize(lbw_log,loras)
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,

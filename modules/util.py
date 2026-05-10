@@ -407,7 +407,7 @@ def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, flo
             prompt_without_loras += token + ', '
             continue
         for match in matches:
-            lora_name = match[1] + '.safetensors'
+            lora_name = match[1]
             if not skip_file_check:
                 lora_name = get_filname_by_stem(match[1], lora_filenames)
             if lora_name is not None:
