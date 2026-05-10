@@ -9,6 +9,11 @@ BLOCKIDFLUX = ["CLIP", "T5", "IN"] + ["D{:002}".format(x) for x in range(19)] + 
 BLOCKNUMS = [12,17,20,26, len(BLOCKIDFLUX)]
 BLOCKIDS=[BLOCKID12,BLOCKID17,BLOCKID20,BLOCKID26,BLOCKIDFLUX]
 ATYPES =["none","Block ID","values","seed","Original Weights","elements"]
+ELEMPRESETS="\
+ATTNDEEPON:IN05-OUT05:attn:1\n\n\
+ATTNDEEPOFF:IN05-OUT05:attn:0\n\n\
+PROJDEEPOFF:IN05-OUT05:proj:0\n\n\
+XYZ:::1"
 DEF_WEIGHT_PRESET = f"\
 NONE:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\n\
 ALL:1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1\n\
