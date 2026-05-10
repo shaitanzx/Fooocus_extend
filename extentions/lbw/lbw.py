@@ -220,7 +220,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
                         ratios = to26(ratios)
                     setnow = True
                 else:
-                    ratios = [1] * 61 if self.is_flux else [1] * 26
+                    ratios = [1] * 26
 
                 if elem in elementals:
                     setnow = True
