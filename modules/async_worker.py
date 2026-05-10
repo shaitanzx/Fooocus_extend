@@ -1009,17 +1009,19 @@ def worker():
             current_progress += 1
         progressbar(async_task, current_progress, 'Loading models ...')
         ####################
-        
-        lora_filenames = modules.util.remove_performance_lora(modules.config.lora_filenames,
+        if not async_task.lbw_useblocks:
+            lora_filenames = modules.util.remove_performance_lora(modules.config.lora_filenames,
                                                               async_task.performance_selection)
-        loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
+            loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
-        loras += async_task.performance_loras
-        pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
+            loras += async_task.performance_loras
+            pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,
                                     use_synthetic_refiner=use_synthetic_refiner, vae_name=async_task.vae_name)
+        else:
+
         pipeline.set_clip_skip(async_task.clip_skip)
         if advance_progress:
             current_progress += 1
@@ -1534,7 +1536,7 @@ def worker():
         current_progress = 1
 
 
-        lbw_log = lbw.lbw_parsing(async_task.prompt,async_task.lbw_loraratios,async_task.lbw_useblocks,async_task.elemental)
+        async_task.prompt, lbw_log = lbw.lbw_parsing(async_task.prompt,async_task.lbw_loraratios,async_task.lbw_useblocks,async_task.elemental)
 
         if async_task.input_image_checkbox:
             base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner = apply_image_input(

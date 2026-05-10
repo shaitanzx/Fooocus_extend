@@ -233,20 +233,6 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
 
                 settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
                 log[name] = [te,unet,ratios,elem,start,stop]
-                print('aaaaa')
-                if go_lbw or load:
-                    print('lorans',lorans)
-                    print('lorars',lorars)
-                    print('te_multipliers',te_multipliers)
-                    print('unet_multipliers',unet_multipliers)
-                    print('elements',elements)
-                    print('ltype',ltype)
-                    print('starts',starts) 
-
-
-
-
-        
             startsf = [int(s) if s is not None else None for s in starts]
             stopsf = [int(s) if s is not None else None for s in stops]
             uf = unet_multipliers
@@ -258,7 +244,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
                 #if reforge: ltype = "reforge"
                 #if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
 
-        return log
+        return prompt, log
 ############################################   
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
