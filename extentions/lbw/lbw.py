@@ -255,7 +255,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
                 #if reforge: ltype = "reforge"
                 #if go_lbw or load: load_loras_blocks(self, lorans,lorars,te_multipliers,unet_multipliers,elements,ltype, starts=starts)
 
-        return prompt, log
+        return prompt, loras
 ############################################   
 def ui():
     LWEIGHTSPRESETS = DEF_WEIGHT_PRESET
