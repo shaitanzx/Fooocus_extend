@@ -130,6 +130,10 @@ def settolist(ls,vs):
 def lbw_parsing(prompt,loraratios,useblocks,elemental):
     lratios={}
     elementals={}
+    stops = {}
+    starts = {}
+    stopsf = []
+    startsf = []
     if useblocks:
         if(loraratios == None):
             loraratios = DEF_WEIGHT_PRESET
@@ -230,16 +234,17 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
 
                 if start is not None:
                     start = int(start)
-                    starts[name] = [start,te,unet]
+                    lbw_starts[name] = [start,te,unet]
                     log["starts"] = load = True
 
                 if stop is not None:
                     stop = int(stop)
-                    stops[name] = int(stop)
+                    lbw_stops[name] = int(stop)
                     log["stops"] = load = True
 
                 settolist([lorans,te_multipliers,unet_multipliers,lorars,elements,starts,stops],[name,te,unet,ratios,elem,start,stop])
                 log[name] = [te,unet,ratios,elem,start,stop]
+                print('aaaaa',log[name])
 
 
         
