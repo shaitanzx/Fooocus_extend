@@ -124,7 +124,7 @@ def getinheritedweight(weight, offset):
 def settolist(ls,vs):
     for l, v in zip(ls,vs):
         l.append(v)
-def lbw_parsing(loraratios,useblocks,elemental):
+def lbw_parsing(prompt,loraratios,useblocks,elemental):
     lratios={}
     elementals={}
     if useblocks:
