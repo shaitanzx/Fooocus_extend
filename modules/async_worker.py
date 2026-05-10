@@ -1458,8 +1458,8 @@ def worker():
         #    useblocks = True
 
         #lbw.lorachecker()
-        log["enable LBW"] = useblocks
-        log["registerd"] = registerd
+        #log["enable LBW"] = useblocks
+        #log["registerd"] = registerd
             
         if useblocks:
             active = True
