@@ -74,7 +74,23 @@ class StableDiffusionModel:
 
         loras_to_load = []
 
-        for filename, weight in loras:
+        for item in loras:
+            # 🔽 Адаптация под оба формата списка
+            if len(item) == 2:
+                # Формат 1: (filename, overall_weight)
+                filename, overall = item
+                te_weight = float(overall)
+                unet_weight = float(overall)
+            elif len(item) >= 3:
+                # Формат 2: (filename, te_weight, unet_weight, ratios, elem, start, stop)
+                filename = item[0]
+                te_weight = float(item[1])
+                unet_weight = float(item[2])
+                # ratios, elem, start, stop игнорируются здесь, 
+                # т.к. применяются динамически в denoiser_callback на каждом шаге
+            else:
+                continue
+
             if filename == 'None':
                 continue
 
@@ -87,12 +103,12 @@ class StableDiffusionModel:
                 print(f'Lora file not found: {lora_filename}')
                 continue
 
-            loras_to_load.append((lora_filename, weight))
+            loras_to_load.append((lora_filename, te_weight, unet_weight))
 
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
-        for lora_filename, weight in loras_to_load:
+        for lora_filename, te_weight, unet_weight in loras_to_load:
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
@@ -105,18 +121,19 @@ class StableDiffusionModel:
                 print(f'Loaded LoRA [{lora_filename}] for model [{self.filename}] '
                       f'with unmatched keys {list(lora_unmatch.keys())}')
 
+            # 🔽 Применяем раздельные веса для UNet и CLIP
             if self.unet_with_lora is not None and len(lora_unet) > 0:
-                loaded_keys = self.unet_with_lora.add_patches(lora_unet, weight)
+                loaded_keys = self.unet_with_lora.add_patches(lora_unet, unet_weight)
                 print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
-                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                      f'with {len(loaded_keys)} keys at weight {unet_weight}.')
                 for item in lora_unet:
                     if item not in loaded_keys:
                         print("UNet LoRA key skipped: ", item)
 
             if self.clip_with_lora is not None and len(lora_clip) > 0:
-                loaded_keys = self.clip_with_lora.add_patches(lora_clip, weight)
+                loaded_keys = self.clip_with_lora.add_patches(lora_clip, te_weight)
                 print(f'Loaded LoRA [{lora_filename}] for CLIP [{self.filename}] '
-                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                      f'with {len(loaded_keys)} keys at weight {te_weight}.')
                 for item in lora_clip:
                     if item not in loaded_keys:
                         print("CLIP LoRA key skipped: ", item)
