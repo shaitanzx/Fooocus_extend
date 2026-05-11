@@ -1008,17 +1008,20 @@ def worker():
         if advance_progress:
             current_progress += 1
         progressbar(async_task, current_progress, 'Loading models ...')
-        ####################
-        print('11111',modules.config.lora_filenames)
+        
+        if async_task.lbw_useblocks:
+            prompt, lbw_loras = lbw.lbw_parsing(prompt,async_task.lbw_loraratios,lbw_useblocks,elemental)
+
         lora_filenames = modules.util.remove_performance_lora(modules.config.lora_filenames,
                                                               async_task.performance_selection)
-        print('22222',lora_filenames)
         loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
-        print('33333',loras)
         loras += async_task.performance_loras
-        loras = lora_normalize(lbw_log,loras)
+        if async_task.lbw_useblocks and len(lbw_loras)>0:
+            loras = lbw.normalization_lbw(loras,lbw_loras)
+        else:
+            async_task.lbw_useblocks = False   
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,
@@ -1455,7 +1458,7 @@ def worker():
                 done_steps_upscaling += steps
         return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
 
-     
+
     @torch.no_grad()
     @torch.inference_mode()
     def handler(async_task: AsyncTask):
@@ -1536,8 +1539,6 @@ def worker():
         tasks = []
         current_progress = 1
 
-
-        async_task.prompt, lbw_log = lbw.lbw_parsing(async_task.prompt,async_task.lbw_loraratios,async_task.lbw_useblocks,async_task.elemental)
 
         if async_task.input_image_checkbox:
             base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner = apply_image_input(
@@ -2054,6 +2055,5 @@ def worker():
 
 
 threading.Thread(target=worker, daemon=True).start()
-
 
 

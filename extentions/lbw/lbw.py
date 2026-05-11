@@ -29,6 +29,15 @@ OUTS:1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1\n\
 OUTALL:1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1\n\
 ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5\n\
 FLUXALL:{','.join(['1']*61)}"
+
+
+def normalization_lbw(loras,lbw_loras):
+    print ('loras',loras)
+    print ('lbw_loras',lbw_loras)
+    return loras
+
+
+
 def checkloadcond(l:str)->bool:
     # ここの条件分岐は読み込んだ行がBlock Waightの書式にあっているかを確認している。
     # [:]が含まれ、16個(LoRa)か25個(LyCORIS),11,19(XL),のカンマが含まれる形式であるうえ、
