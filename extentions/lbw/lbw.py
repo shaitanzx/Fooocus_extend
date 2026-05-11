@@ -31,10 +31,23 @@ ALL0.5:0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5\n\
 FLUXALL:{','.join(['1']*61)}"
 
 
-def normalization_lbw(loras,lbw_loras):
-    print ('loras',loras)
-    print ('lbw_loras',lbw_loras)
-    return loras
+def normalization_lbw(loras,lbw_loras,default_len=26):
+    result = []
+    lbw_names = set()
+
+    # 1. Сохраняем ВСЕ записи из lbw_loras (они главный источник истины)
+    for name, te, unet, ratios, elem, start, stop in lbw_loras:
+        full_name = name if name.endswith(".safetensors") else name + ".safetensors"
+        lbw_names.add(full_name)
+        result.append((full_name, te, unet, ratios, elem, start, stop))
+
+    # 2. Добавляем записи из loras ТОЛЬКО если их нет в lbw_loras
+    for name, weight in loras:
+        full_name = name if name.endswith(".safetensors") else name + ".safetensors"
+        if full_name not in lbw_names:
+            result.append((full_name, weight, weight, [1.0] * default_len, "", None, None))
+
+    return result
 
 
 

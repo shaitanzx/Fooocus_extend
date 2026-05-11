@@ -1018,10 +1018,13 @@ def worker():
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
         loras += async_task.performance_loras
+        print('loras',loras)
         if async_task.lbw_useblocks and len(lbw_loras)>0:
+            print('lbw_loras',lbw_loras)
             loras = lbw.normalization_lbw(loras,lbw_loras)
         else:
-            async_task.lbw_useblocks = False   
+            async_task.lbw_useblocks = False  
+        print('new_loras') 
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,
