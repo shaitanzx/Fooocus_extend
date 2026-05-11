@@ -1010,7 +1010,7 @@ def worker():
         progressbar(async_task, current_progress, 'Loading models ...')
         
         if async_task.lbw_useblocks:
-            prompt, lbw_loras = lbw.lbw_parsing(prompt,async_task.lbw_loraratios,lbw_useblocks,elemental)
+            prompt, lbw_loras = lbw.lbw_parsing(prompt,async_task.lbw_loraratios,async_task.lbw_useblocks,async_task.elemental)
 
         lora_filenames = modules.util.remove_performance_lora(modules.config.lora_filenames,
                                                               async_task.performance_selection)
