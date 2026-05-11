@@ -669,9 +669,21 @@ def worker():
                 d.append(('FreeU', 'freeu',
                           str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
 
-            for li, (n, w) in enumerate(loras):
+
+            # for li, (n, w) in enumerate(loras):
+            #     if n != 'None':
+            #         d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+            for li, item in enumerate(loras):
+                n = item[0]
                 if n != 'None':
-                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+                    if len(item) == 2:
+                        # Формат 1: (filename, overall_weight)
+                        display_str = f'{n} : {item[1]}'
+                    else:
+                        # Формат 2: (filename, te, unet, ratios, elem, start, stop)
+                        te, unet = item[1], item[2]
+                        display_str = f'{n} : TE={te}, UNET={unet}'
+                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', display_str))
             if async_task.codeformer_gen_enabled:
                 d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
                 d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
