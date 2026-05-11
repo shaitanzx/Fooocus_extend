@@ -1024,7 +1024,7 @@ def worker():
             loras = lbw.normalization_lbw(loras,lbw_loras)
         else:
             async_task.lbw_useblocks = False  
-        print('new_loras') 
+        print('new_loras',loras) 
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,
