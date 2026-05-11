@@ -1029,6 +1029,7 @@ def worker():
         loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
+        print('-----',prompt)
         loras += async_task.performance_loras
         print('loras',loras)
         if async_task.lbw_useblocks and len(lbw_loras)>0:

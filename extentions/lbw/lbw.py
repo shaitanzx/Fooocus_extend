@@ -176,14 +176,7 @@ def lbw_parsing(prompt,loraratios,useblocks,elemental):
             if ":" not in e: continue
             e0=e.split(":",1)[0]
             elementals[e0.strip()]=e.split(":",1)[1]
-        print('===========')
-        print('LBW Presets')
-        print('lratios',lratios)
-        print('elementals',elementals)
-        print('===========')
         prompt, extra_network_data = parse_extra_tag(prompt)
-        print(prompt)
-        print(extra_network_data)
         moduletypes = extra_network_data.keys()
 
         for ltype in moduletypes:
