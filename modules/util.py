@@ -24,6 +24,7 @@ LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.L
 # <lora:some_lora:1>
 # <lora:aNotherLora:-1.6>
 LORAS_PROMPT_PATTERN = re.compile(r"(<lora:([^:]+):([+-]?(?:\d+(?:\.\d*)?|\.\d+))>)", re.X)
+LORAS_PROMPT_LBW = re.compile(r"<lora:[^:]+:[^:]+(?::[^>]+)+>", re.X)
 
 HASH_SHA256_LENGTH = 10
 
@@ -397,6 +398,7 @@ def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, flo
         lora_filenames = []
 
     found_loras = []
+    prompt = LORA_EXTENDED.sub('', prompt)
     prompt_without_loras = ''
     cleaned_prompt = ''
 
