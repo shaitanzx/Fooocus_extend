@@ -388,11 +388,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     # [+] ВСТАВИТЬ ЗДЕСЬ: Регистрация динамического переключателя LoRA
     if hasattr(target_unet, 'lbw_config') and target_unet.lbw_config:
+        print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         total_steps = len(minmax_sigmas) - 1
         # Кэшируем numpy-массив для быстрого поиска шага (обратный порядок: от шума к чистому)
         sigmas_np = minmax_sigmas.cpu().numpy()
 
         def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            print('=============================================================================')
             sigma_val = timestep[0].item()
             # Точный расчёт текущего шага по позиции sigma в расписании
             current_step = total_steps - 1 - int(np.searchsorted(sigmas_np[::-1], sigma_val))
