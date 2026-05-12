@@ -355,18 +355,18 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     # [+] НАЧАЛО: Чтение и вывод lbw_config (вставить СРАЗУ после распаковки)
     print("\n" + "="*60)
     print("[DEBUG] Диагностика lbw_config в process_diffusion")
-    print(f"  Тип target_unet: {type(final_unet).__name__}")
+    print(f"  Тип target_unet: {type(target_unet).__name__}")
     
     # [+] Безопасное чтение атрибута
-    lbw_data = getattr(final_unet, 'lbw_config', None)
+    lbw_data = getattr(target_unet, 'lbw_config', None)
     if lbw_data is None:
         print("  ⚠️ Атрибут 'lbw_config' НЕ НАЙДЕН в target_unet")
         # Проверяем, не перенесён ли он внутрь ModelPatcher
-        if hasattr(final_unet, 'unet') and hasattr(final_unet.unet, 'lbw_config'):
-            lbw_data = final_unet.unet.lbw_config
-            print("  ✅ Найден в final_unet.unet.lbw_config")
+        if hasattr(target_unet, 'unet') and hasattr(target_unet.unet, 'lbw_config'):
+            lbw_data = target_unet.unet.lbw_config
+            print("  ✅ Найден в target_unet.unet.lbw_config")
     else:
-        print("  ✅ Атрибут 'lbw_config' найден напрямую в final_unet")
+        print("  ✅ Атрибут 'lbw_config' найден напрямую в target_unet")
 
     if lbw_data:
         print(f"  📦 Содержимое ({len(lbw_data)} записей):")

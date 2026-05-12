@@ -150,7 +150,9 @@ class StableDiffusionModel:
                 for item in lora_clip:
                     if item not in loaded_keys:
                         print("CLIP LoRA key skipped: ", item)
-
+        
+        if self.unet_with_lora is not None:
+            self.unet_with_lora.model_options["lbw_config"] = self.lbw_config.copy()
 
 @torch.no_grad()
 @torch.inference_mode()
