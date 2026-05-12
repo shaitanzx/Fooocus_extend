@@ -116,6 +116,7 @@ class StableDiffusionModel:
                 "base_te": te_weight,
                 "base_unet": unet_weight
             }
+            print('======', filename, self.lbw_config)
             print(f"------------------[DEBUG] LoRA: {lora_filename} | te={te_weight:.6f} | unet={unet_weight:.6f} | diff={abs(te_weight-unet_weight):.2e}")
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
