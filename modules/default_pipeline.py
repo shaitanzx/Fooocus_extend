@@ -352,30 +352,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
-    # [+] НАЧАЛО: Чтение и вывод lbw_config (вставить СРАЗУ после распаковки)
-    print("\n" + "="*60)
-    print("[DEBUG] Диагностика lbw_config в process_diffusion")
-    print(f"  Тип target_unet: {type(target_unet).__name__}")
-    
-    # [+] Безопасное чтение атрибута
-    lbw_data = getattr(target_unet, 'lbw_config', None)
-    if lbw_data is None:
-        print("  ⚠️ Атрибут 'lbw_config' НЕ НАЙДЕН в target_unet")
-        # Проверяем, не перенесён ли он внутрь ModelPatcher
-        if hasattr(target_unet, 'unet') and hasattr(target_unet.unet, 'lbw_config'):
-            lbw_data = target_unet.unet.lbw_config
-            print("  ✅ Найден в target_unet.unet.lbw_config")
-    else:
-        print("  ✅ Атрибут 'lbw_config' найден напрямую в target_unet")
-
-    if lbw_data:
-        print(f"  📦 Содержимое ({len(lbw_data)} записей):")
-        for fname, cfg in lbw_data.items():
-            print(f"     📁 {fname} → {cfg}")
-    else:
-        print("  📭 lbw_config пуст или отсутствует. Проверьте, вызывался ли refresh_loras ДО process_diffusion")
-    print("="*60 + "\n")
-    # [+] КОНЕЦ диагностики
+    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
+    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
+    if 'lbw_config' in target_unet.model_options:
+        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
     assert refiner_swap_method in ['joint', 'separate', 'vae']
 
     if final_refiner_vae is not None and final_refiner_unet is not None:
