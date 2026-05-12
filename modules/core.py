@@ -56,6 +56,7 @@ class StableDiffusionModel:
         if self.clip is not None:
             self.lora_key_map_clip = model_lora_keys_clip(self.clip.cond_stage_model, self.lora_key_map_clip)
             self.lora_key_map_clip.update({x: x for x in self.clip.cond_stage_model.state_dict().keys()})
+        self.lbw_config = {}
 
     @torch.no_grad()
     @torch.inference_mode()
@@ -71,7 +72,7 @@ class StableDiffusionModel:
             return
 
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
-
+        self.lbw_config.clear()
         loras_to_load = []
 
         for item in loras:
@@ -81,11 +82,15 @@ class StableDiffusionModel:
                 filename, overall = item
                 te_weight = float(overall)
                 unet_weight = float(overall)
+                start, stop = 0, None
             elif len(item) >= 3:
                 # Формат 2: (filename, te_weight, unet_weight, ratios, elem, start, stop)
                 filename = item[0]
                 te_weight = float(item[1])
                 unet_weight = float(item[2])
+                # [+] Извлекаем шаги из реального списка (элементы 5 и 6)
+                start = int(item[5]) if item[5] is not None else 0
+                stop = int(item[6]) if item[6] is not None else None
                 # ratios, elem, start, stop игнорируются здесь, 
                 # т.к. применяются динамически в denoiser_callback на каждом шаге
             else:
@@ -104,6 +109,13 @@ class StableDiffusionModel:
                 continue
 
             loras_to_load.append((lora_filename, te_weight, unet_weight))
+            # [+] Сохраняем конфигурацию для conditioning_modifier
+            self.lbw_config[filename] = {
+                "start": start,
+                "stop": stop,
+                "base_te": te_weight,
+                "base_unet": unet_weight
+            }
             print(f"------------------[DEBUG] LoRA: {lora_filename} | te={te_weight:.6f} | unet={unet_weight:.6f} | diff={abs(te_weight-unet_weight):.2e}")
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
