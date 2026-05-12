@@ -398,7 +398,7 @@ def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, flo
         lora_filenames = []
 
     found_loras = []
-    prompt = LORA_EXTENDED.sub('', prompt)
+    prompt = LORAS_PROMPT_LBW.sub('', prompt)
     prompt_without_loras = ''
     cleaned_prompt = ''
 
