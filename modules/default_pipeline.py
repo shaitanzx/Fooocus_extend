@@ -386,48 +386,48 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
 
 
-    # [+] ВСТАВИТЬ ЗДЕСЬ: Регистрация динамического переключателя LoRA
-    if hasattr(target_unet, 'lbw_config') and target_unet.lbw_config:
-        print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-        total_steps = len(minmax_sigmas) - 1
-        # Кэшируем numpy-массив для быстрого поиска шага (обратный порядок: от шума к чистому)
-        sigmas_np = minmax_sigmas.cpu().numpy()
+    # # [+] ВСТАВИТЬ ЗДЕСЬ: Регистрация динамического переключателя LoRA
+    # if hasattr(target_unet, 'lbw_config') and target_unet.lbw_config:
+    #     print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+    #     total_steps = len(minmax_sigmas) - 1
+    #     # Кэшируем numpy-массив для быстрого поиска шага (обратный порядок: от шума к чистому)
+    #     sigmas_np = minmax_sigmas.cpu().numpy()
 
-        def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            print('=============================================================================')
-            sigma_val = timestep[0].item()
-            # Точный расчёт текущего шага по позиции sigma в расписании
-            current_step = total_steps - 1 - int(np.searchsorted(sigmas_np[::-1], sigma_val))
-            current_step = max(0, min(total_steps, current_step))
+    #     def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    #         print('=============================================================================')
+    #         sigma_val = timestep[0].item()
+    #         # Точный расчёт текущего шага по позиции sigma в расписании
+    #         current_step = total_steps - 1 - int(np.searchsorted(sigmas_np[::-1], sigma_val))
+    #         current_step = max(0, min(total_steps, current_step))
 
-            for lora_file, cfg in target_unet.lbw_config.items():
-                # lora_file здесь = исходное filename из вашего refresh_loras
-                s = cfg["start"]
-                e = cfg["stop"]
-                # ✅ БИНАРНОЕ ПРАВИЛО: ВКЛ только если start <= step < stop
-                is_active = (current_step >= s) and (e is None or current_step < e)
+    #         for lora_file, cfg in target_unet.lbw_config.items():
+    #             # lora_file здесь = исходное filename из вашего refresh_loras
+    #             s = cfg["start"]
+    #             e = cfg["stop"]
+    #             # ✅ БИНАРНОЕ ПРАВИЛО: ВКЛ только если start <= step < stop
+    #             is_active = (current_step >= s) and (e is None or current_step < e)
 
-                target_alpha = cfg["base_unet"] if is_active else 0.0
+    #             target_alpha = cfg["base_unet"] if is_active else 0.0
 
-                if hasattr(model, 'patches'):
-                    for key, patches in model.patches.items():
-                        # Совпадение по исходному имени файла (как сохранено в lbw_config)
-                        if lora_file in key:
-                            for i, p in enumerate(patches):
-                                if len(p) == 3:  # (alpha, patch_data, strength_model)
-                                    # Меняем только множитель, данные патча не трогаем
-                                    if not weight_found:
-                                        actual_current_weight = p[0]
-                                        weight_found = True
-                                    # [+] Применяем новый множитель (вкл/выкл)
-                                    model.patches[key][i] = (target_alpha, p[1], p[2])
+    #             if hasattr(model, 'patches'):
+    #                 for key, patches in model.patches.items():
+    #                     # Совпадение по исходному имени файла (как сохранено в lbw_config)
+    #                     if lora_file in key:
+    #                         for i, p in enumerate(patches):
+    #                             if len(p) == 3:  # (alpha, patch_data, strength_model)
+    #                                 # Меняем только множитель, данные патча не трогаем
+    #                                 if not weight_found:
+    #                                     actual_current_weight = p[0]
+    #                                     weight_found = True
+    #                                 # [+] Применяем новый множитель (вкл/выкл)
+    #                                 model.patches[key][i] = (target_alpha, p[1], p[2])
 
-                # [+] Логирование: шаг, активность, модель, реальный вес ДО изменения, вес ПОСЛЕ
-                print(f"[LBW LOG] Шаг: {current_step:02d} | Активность: {str(is_active):<5} | Модель: {lora_file:<35} | Вес внутри лоры (до): {actual_current_weight:.3f} | Вес после патчинга: {target_alpha:.3f}")
+    #             # [+] Логирование: шаг, активность, модель, реальный вес ДО изменения, вес ПОСЛЕ
+    #             print(f"[LBW LOG] Шаг: {current_step:02d} | Активность: {str(is_active):<5} | Модель: {lora_file:<35} | Вес внутри лоры (до): {actual_current_weight:.3f} | Вес после патчинга: {target_alpha:.3f}")
                 
-            return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    #         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
-        target_unet.add_conditioning_modifier(lbw_step_modifier)
+    #     target_unet.add_conditioning_modifier(lbw_step_modifier)
 
 
 
