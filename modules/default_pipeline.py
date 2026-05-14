@@ -26,6 +26,7 @@ from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import numpy as np
+import sys
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -390,51 +391,45 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     lbw_cfg = target_unet.model_options.get("lbw_config", {})
-    print('ssssssssss',lbw_cfg)
     if lbw_cfg:
         total_steps = len(minmax_sigmas) - 1
-        # [+] Кэшируем сигмы в обратном порядке для быстрого поиска шага
         sigmas_np = minmax_sigmas.cpu().numpy()[::-1]
 
+        # [+] Проверка регистрации (выведется в консоль сразу)
+        modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
+        print(f"[LBW] Зарегистрировано модификаторов: {modifier_count} | Целевых LoRA: {len(lbw_cfg)}", flush=True)
+
         def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            print('aaaaaaaaaaaaaaaaaaaaaaaa')
             sigma_val = timestep[0].item()
-            # [+] Точный расчёт текущего шага по позиции сигмы в расписании
             step_idx = int(np.searchsorted(sigmas_np, sigma_val))
             current_step = max(0, min(total_steps, total_steps - 1 - step_idx))
 
             for lora_file, cfg in lbw_cfg.items():
                 s = cfg["start"]
                 e = cfg["stop"]
-                # [+] БИНАРНОЕ ПРАВИЛО: активна ТОЛЬКО если start <= step < stop
                 is_active = (current_step >= s) and (e is None or current_step < e)
+                target_alpha = cfg["base_unet"] if is_active else 0.0
 
-                base_weight = cfg["base_unet"]
-                target_alpha = base_weight if is_active else 0.0
-
-                # [+] Переменные для логирования реального веса ДО изменения
                 actual_current_weight = 0.0
                 weight_found = False
 
-                # [+] Применяем новый множитель к патчам модели
                 if hasattr(model, 'patches'):
                     for key, patches in model.patches.items():
-                        if lora_file in key:  # совпадение по имени файла
+                        if lora_file in key:
                             for i, p in enumerate(patches):
-                                if len(p) == 3:  # структура: (alpha, patch_data, strength_model)
-                                    # [+] Считываем текущий вес из памяти патча ПЕРЕД изменением
+                                if len(p) == 3:
                                     if not weight_found:
                                         actual_current_weight = p[0]
                                         weight_found = True
-                                    # [+] Записываем новый множитель
                                     model.patches[key][i] = (target_alpha, p[1], p[2])
 
-                # [+] Логирование ровно по твоему списку: шаг, активность, модель, вес ДО, вес ПОСЛЕ
-                print(f"[LBW LOG] Шаг: {current_step:02d} | Активность: {str(is_active):<5} | Модель: {lora_file:<35} | Вес внутри лоры (до): {actual_current_weight:.3f} | Вес после патчинга: {target_alpha:.3f}")
+                # [+] Используем stderr + flush для мгновенного вывода в консоль
+                log_msg = f"[LBW LOG] Шаг: {current_step:02d} | Активность: {str(is_active):<5} | Модель: {lora_file:<35} | Вес до: {actual_current_weight:.3f} | Вес после: {target_alpha:.3f}\n"
+                sys.stderr.write(log_msg)
+                sys.stderr.flush()
 
             return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
-        # [+] Регистрируем модификатор в цепочке сэмплинга
         target_unet.add_conditioning_modifier(lbw_step_modifier)
 
 
@@ -485,7 +480,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return cond
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            print('zzzzzzzzzzzzzzzzzzz')
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
                 cond = remove_concat(cond)
