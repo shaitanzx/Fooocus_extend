@@ -409,14 +409,14 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     lbw.init_lbw_state(original_unet, target_clip, lbw_config, lbw_buffer)
 
     def test_mod(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-    DEBUG_FILE = os.path.join(os.path.dirname(__file__), 'lbw_debug.log')
-    with open(DEBUG_FILE, 'a') as f:
-        f.write(f'=== LBW Modifier called ===\n')
-        f.write(f'step from options: {model_options.get("step")}\n')
-        f.write(f'_last_step: {_last_step}\n')
-        f.write(f'_last_active: {_last_active}\n')
-        f.write(f'_lbw_config keys: {list(_lbw_config.keys()) if _lbw_config else None}\n')
-        f.flush()
+        DEBUG_FILE = os.path.join(os.path.dirname(__file__), 'lbw_debug.log')
+        with open(DEBUG_FILE, 'a') as f:
+            f.write(f'=== LBW Modifier called ===\n')
+            f.write(f'step from options: {model_options.get("step")}\n')
+            f.write(f'_last_step: {_last_step}\n')
+            f.write(f'_last_active: {_last_active}\n')
+            f.write(f'_lbw_config keys: {list(_lbw_config.keys()) if _lbw_config else None}\n')
+            f.flush()
 
     unet.add_conditioning_modifier(test_mod)
     target_unet = unet
