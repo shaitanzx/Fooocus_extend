@@ -462,9 +462,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
             import sys
-                # [+] Гарантированный вывод
-                sys.stderr.write(f"[LBW] Шаг: {timestep[0].item():.4f} | sigma_end: {sigma_end:.4f}\n")
-                sys.stderr.flush()
+            # [+] Гарантированный вывод
+            sys.stderr.write(f"[LBW] Шаг: {timestep[0].item():.4f} | sigma_end: {sigma_end:.4f}\n")
+            sys.stderr.flush()
 
             
             
