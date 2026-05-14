@@ -463,21 +463,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
             import sys
             # [+] Гарантированный вывод
-            log_path = "/content/lbw_hook.log"
-            with open(log_path, "a") as f:
-                f.write(f"[LBW] Шаг: {timestep[0].item():.4f} | sigma_end: {sigma_end:.4f}\n")
-
-            try:
-                with open('/dev/tty', 'w') as tty:
-                    tty.write(f"[LBW] Шаг: {timestep[0].item():.4f}\n")
-                    tty.flush()
-            except:
-                pass
-
-            try:
-                os.write(sys.__stderr__.fileno(), b"[LBW] stderr write\n")
-            except:
-                pass            
+            log_line = f"[LBW] sigma={timestep[0].item():.4f} | end={sigma_end:.4f}\n"
+            with open("/content/lbw_hook.log", "a") as f:
+                f.write(log_line)
+                f.flush()
+                os.fsync(f.fileno())          
             
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
