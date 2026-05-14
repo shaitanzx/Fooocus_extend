@@ -487,82 +487,99 @@ def ui():
     xyzsetting.change(fn=urawaza,inputs=[xyzsetting],outputs =[xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,esets])
 
     return lbw_loraratios,lbw_useblocks,xyzsetting,xtype,xmen,ytype,ymen,ztype,zmen,exmen,eymen,ecount,diffcol,thresh,revxy,elemental,elemsets,debug
-def create_lbw_modifier(model, original_unet, original_clip, lbw_config, lbw_buffer):
-    """
-    Создает conditioning modifier для динамического переключения LoRA
-    """
-    last_step = -1
-    last_active_loras = None
-    current_unet = original_unet.clone() if original_unet is not None else None
-    current_clip = original_clip.clone() if original_clip is not None else None
-    
-    def get_active_loras(step):
-        """Возвращает список LoRA, активных на данном шаге"""
-        active = []
-        for lora_name, cfg in lbw_config.items():
-            start = cfg.get('start', 0)
-            stop = cfg.get('stop', None)
-            
-            # Permanent LoRA (без start/stop) - уже в базовой модели
-            if start == 0 and stop is None:
-                continue
-            
-            if step >= start and (stop is None or step < stop):
-                active.append({
-                    'name': lora_name,
-                    'te': cfg.get('base_te', 1.0),
-                    'unet': cfg.get('base_unet', 1.0)
-                })
-        return active
-    
-    def apply_loras(unet_model, clip_model, active_loras):
-        """Применяет указанные LoRA к моделям"""
-        unet_model = original_unet.clone()
-        clip_model = original_clip.clone()
-        
-        for lora in active_loras:
-            lora_data = next((x for x in lbw_buffer if x['lora_name'] == lora['name']), None)
-            if lora_data is None:
-                continue
-            
-            if lora_data['unet_patches']:
-                unet_model.add_patches(lora_data['unet_patches'], lora['unet'])
-            if lora_data['clip_patches']:
-                clip_model.add_patches(lora_data['clip_patches'], lora['te'])
-        
-        return unet_model, clip_model
-    
-    def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        nonlocal last_step, last_active_loras, current_unet, current_clip
-        
-        step = model_options.get('step', last_step + 1)
-        
-        if step == last_step:
-            return current_unet, x, timestep, uncond, cond, cond_scale, model_options, seed
-        
-        last_step = step
-        
-        active_loras = get_active_loras(step)
-        active_key = tuple(sorted([l['name'] for l in active_loras]))
-        
-        if active_key != last_active_loras:
-            current_unet, current_clip = apply_loras(current_unet, current_clip, active_loras)
-            last_active_loras = active_key
-            if active_key:
-                print(f'[LBW] Step {step}: Active LoRAs: {active_key}')
-        
-        return current_unet, x, timestep, uncond, cond, cond_scale, model_options, seed
-    
-    return conditioning_modifier
+# Глобальное состояние для хука
+_last_step = -1
+_last_active = None
+_current_unet = None
+_current_clip = None
+_original_unet = None
+_original_clip = None
+_lbw_config = None
+_lbw_buffer = None
 
 
-def register_lbw_hook(model, unet, lbw_config, lbw_buffer, original_unet, original_clip):
-    """Регистрирует LBW хук в UNET"""
-    # Всегда регистрируем, если есть конфигурация
-    if not lbw_config:
-        return False
+def init_lbw_state(original_unet, original_clip, lbw_config, lbw_buffer):
+    """Инициализирует глобальное состояние для хука"""
+    global _original_unet, _original_clip, _lbw_config, _lbw_buffer, _current_unet, _current_clip
+    _original_unet = original_unet
+    _original_clip = original_clip
+    _lbw_config = lbw_config
+    _lbw_buffer = lbw_buffer
+    _current_unet = original_unet.clone() if original_unet is not None else None
+    _current_clip = original_clip.clone() if original_clip is not None else None
+    print(f'[LBW] Initialized with {len(lbw_config)} LoRAs, buffer size: {len(lbw_buffer)}')
+
+
+def get_active_loras(step):
+    """Возвращает список LoRA, активных на данном шаге"""
+    if not _lbw_config:
+        return []
     
-    modifier = create_lbw_modifier(model, original_unet, original_clip, lbw_config, lbw_buffer)
-    unet.add_conditioning_modifier(modifier)
-    print('[LBW] Conditioning modifier registered')
-    return True
+    active = []
+    for lora_name, cfg in _lbw_config.items():
+        start = cfg.get('start', 0)
+        stop = cfg.get('stop', None)
+        
+        # Permanent LoRA (без start/stop) - уже в базовой модели
+        if start == 0 and stop is None:
+            continue
+        
+        if step >= start and (stop is None or step < stop):
+            active.append({
+                'name': lora_name,
+                'te': cfg.get('base_te', 1.0),
+                'unet': cfg.get('base_unet', 1.0)
+            })
+    return active
+
+
+def apply_loras(active_loras):
+    """Применяет указанные LoRA к моделям и возвращает новую модель"""
+    global _original_unet, _original_clip, _lbw_buffer
+    
+    # Начинаем с чистой базы (permanent LoRA)
+    unet_model = _original_unet.clone()
+    clip_model = _original_clip.clone()
+    
+    # Добавляем активные dynamic LoRA
+    for lora in active_loras:
+        lora_data = next((x for x in _lbw_buffer if x['lora_name'] == lora['name']), None)
+        if lora_data is None:
+            continue
+        
+        if lora_data['unet_patches']:
+            unet_model.add_patches(lora_data['unet_patches'], lora['unet'])
+        if lora_data['clip_patches']:
+            clip_model.add_patches(lora_data['clip_patches'], lora['te'])
+    
+    return unet_model, clip_model
+
+
+def lbw_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    """
+    Conditioning modifier для динамического переключения LoRA
+    Регистрируется через unet.add_conditioning_modifier()
+    """
+    global _last_step, _last_active, _current_unet, _current_clip
+    
+    # Получаем текущий шаг
+    step = model_options.get('step', _last_step + 1)
+    
+    # Шаг не изменился - возвращаем текущую модель
+    if step == _last_step:
+        return _current_unet, x, timestep, uncond, cond, cond_scale, model_options, seed
+    
+    _last_step = step
+    
+    # Определяем активные LoRA на этом шаге
+    active_loras = get_active_loras(step)
+    active_key = tuple(sorted([l['name'] for l in active_loras]))
+    
+    # Если набор изменился - пересобираем
+    if active_key != _last_active:
+        _current_unet, _current_clip = apply_loras(active_loras)
+        _last_active = active_key
+        if active_key:
+            print(f'[LBW] Step {step}: Active LoRAs: {active_key}')
+    
+    return _current_unet, x, timestep, uncond, cond, cond_scale, model_options, seed

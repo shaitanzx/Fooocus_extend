@@ -372,7 +372,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     print('--------',lbw_buffer)
 
     # Регистрируем хук (внутри сам проверит, есть ли конфигурация)
-
+    lbw.init_lbw_state(original_unet, target_clip, lbw_config, lbw_buffer)
 
 
 
