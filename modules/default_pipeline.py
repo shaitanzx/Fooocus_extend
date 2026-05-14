@@ -411,12 +411,14 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     unet.add_conditioning_modifier(lbw.lbw_modifier)
+    print('[LBW] Hook registered, modifier =', lbw.lbw_modifier)
+    print('[LBW] Unet conditioning modifiers:', unet.conditioning_modifiers if hasattr(unet, 'conditioning_modifiers') else 'no attribute')
     target_unet = unet
     modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
     print(f"[LBW] Зарегистрировано модификаторов: {modifier_count}", flush=True)
 
-    
-        
+
+
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
