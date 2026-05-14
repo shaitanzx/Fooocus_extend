@@ -389,62 +389,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
 
-
-    lbw_cfg = target_unet.model_options.get("lbw_config", {})
-    if lbw_cfg:
-        original_unet = target_unet
-        unet = target_unet.clone()
-        total_steps = len(minmax_sigmas) - 1
-        sigmas_np = minmax_sigmas.cpu().numpy()[::-1]
-
-        modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
-        print(f"[LBW] Зарегистрировано модификаторов: {modifier_count} | Целевых LoRA: {len(lbw_cfg)}", flush=True)
-
-
-
-        def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            log_msg = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-            sys.stderr.write(log_msg)
-            sys.stderr.flush()
-            sigma_val = timestep[0].item()
-            step_idx = int(np.searchsorted(sigmas_np, sigma_val))
-            current_step = max(0, min(total_steps, total_steps - 1 - step_idx))
-
-            for lora_file, cfg in lbw_cfg.items():
-                s = cfg["start"]
-                e = cfg["stop"]
-                is_active = (current_step >= s) and (e is None or current_step < e)
-                target_alpha = cfg["base_unet"] if is_active else 0.0
-
-                actual_current_weight = 0.0
-                weight_found = False
-
-                if hasattr(model, 'patches'):
-                    for key, patches in model.patches.items():
-                        if lora_file in key:
-                            for i, p in enumerate(patches):
-                                if len(p) == 3:
-                                    if not weight_found:
-                                        actual_current_weight = p[0]
-                                        weight_found = True
-                                    model.patches[key][i] = (target_alpha, p[1], p[2])
-
-                # [+] Используем stderr + flush для мгновенного вывода в консоль
-                log_msg = f"[LBW LOG] Шаг: {current_step:02d} | Активность: {str(is_active):<5} | Модель: {lora_file:<35} | Вес до: {actual_current_weight:.3f} | Вес после: {target_alpha:.3f}\n"
-                sys.stderr.write(log_msg)
-                sys.stderr.flush()
-
-            return model, x, timestep, uncond, cond, cond_scale, model_options, seed
-
-        unet.add_conditioning_modifier(lbw_step_modifier)
-        target_unet = unet
-
-        # [+] Проверка регистрации (выведется в консоль сразу)
-        modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
-        print(f"[LBW] Зарегистрировано модификаторов: {modifier_count} | Целевых LoRA: {len(lbw_cfg)}", flush=True)
-
-
-
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
