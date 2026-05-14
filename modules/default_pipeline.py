@@ -381,7 +381,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     unet.add_conditioning_modifier(lbw.lbw_modifier)
     target_unet = unet
     modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
-        print(f"[LBW] Зарегистрировано модификаторов: {modifier_count}", flush=True)
+    print(f"[LBW] Зарегистрировано модификаторов: {modifier_count}", flush=True)
     assert refiner_swap_method in ['joint', 'separate', 'vae']
 
     if final_refiner_vae is not None and final_refiner_unet is not None:
