@@ -395,9 +395,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         total_steps = len(minmax_sigmas) - 1
         sigmas_np = minmax_sigmas.cpu().numpy()[::-1]
 
-        # [+] Проверка регистрации (выведется в консоль сразу)
-        modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
-        print(f"[LBW] Зарегистрировано модификаторов: {modifier_count} | Целевых LoRA: {len(lbw_cfg)}", flush=True)
+
 
         def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
             sigma_val = timestep[0].item()
@@ -431,6 +429,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
         target_unet.add_conditioning_modifier(lbw_step_modifier)
+        # [+] Проверка регистрации (выведется в консоль сразу)
+        modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
+        print(f"[LBW] Зарегистрировано модификаторов: {modifier_count} | Целевых LoRA: {len(lbw_cfg)}", flush=True)
 
 
 
