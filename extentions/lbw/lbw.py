@@ -556,6 +556,12 @@ def apply_loras(active_loras):
 
 
 def lbw_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+
+    """
+    Conditioning modifier для динамического переключения LoRA
+    Регистрируется через unet.add_conditioning_modifier()
+    """
+    global _last_step, _last_active, _current_unet, _current_clip
     DEBUG_FILE = os.path.join(os.path.dirname(__file__), 'lbw_debug.log')
     with open(DEBUG_FILE, 'a') as f:
         f.write(f'=== LBW Modifier called ===\n')
@@ -564,12 +570,6 @@ def lbw_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, se
         f.write(f'_last_active: {_last_active}\n')
         f.write(f'_lbw_config keys: {list(_lbw_config.keys()) if _lbw_config else None}\n')
         f.flush()
-    """
-    Conditioning modifier для динамического переключения LoRA
-    Регистрируется через unet.add_conditioning_modifier()
-    """
-    global _last_step, _last_active, _current_unet, _current_clip
-    
     # Получаем текущий шаг
     step = model_options.get('step', _last_step + 1)
     
