@@ -397,6 +397,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigmas_np = minmax_sigmas.cpu().numpy()[::-1]
 
         def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            print('aaaaaaaaaaaaaaaaaaaaaaaa')
             sigma_val = timestep[0].item()
             # [+] Точный расчёт текущего шага по позиции сигмы в расписании
             step_idx = int(np.searchsorted(sigmas_np, sigma_val))
