@@ -354,10 +354,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
-    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
-    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
-    if 'lbw_config' in target_unet.model_options:
-        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
+
     #if '_lbw_loaded_loras' in target_unet.model_options:
     #    print(f"[DEBUG] _lbw_loaded_loras content: {target_unet.model_options['_lbw_loaded_loras']}")    
 
@@ -411,6 +408,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     unet.add_conditioning_modifier(lbw.lbw_modifier)
+    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
+    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
+    if 'lbw_config' in target_unet.model_options:
+        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
     print('[LBW] Hook registered, modifier =', lbw.lbw_modifier)
     print('[LBW] Unet conditioning modifiers:', unet.conditioning_modifiers if hasattr(unet, 'conditioning_modifiers') else 'no attribute')
     target_unet = unet
