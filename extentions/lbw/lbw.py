@@ -563,7 +563,7 @@ def lbw_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, se
         f.write(f'_last_step: {_last_step}\n')
         f.write(f'_last_active: {_last_active}\n')
         f.write(f'_lbw_config keys: {list(_lbw_config.keys()) if _lbw_config else None}\n')
-        f.flush(
+        f.flush()
     """
     Conditioning modifier для динамического переключения LoRA
     Регистрируется через unet.add_conditioning_modifier()
