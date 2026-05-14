@@ -478,6 +478,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         unet.add_conditioning_modifier(conditioning_modifier)
         modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
         print(f"[LBW2] Зарегистрировано модификаторов: {modifier_count}", flush=True)
+        print('[LBW2] Hook registered, modifier =', lbw.lbw_modifier)
+        print('[LBW2] Unet conditioning modifiers:', unet.conditioning_modifiers if hasattr(unet, 'conditioning_modifiers') else 'no attribute')
         target_unet = unet
 
 
