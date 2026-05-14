@@ -476,7 +476,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
         
         unet.add_conditioning_modifier(conditioning_modifier)
-
+        modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
+        print(f"[LBW2] Зарегистрировано модификаторов: {modifier_count}", flush=True)
         target_unet = unet
 
 
