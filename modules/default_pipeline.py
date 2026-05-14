@@ -398,6 +398,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
         def lbw_step_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            log_msg = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+            sys.stderr.write(log_msg)
+            sys.stderr.flush()
             sigma_val = timestep[0].item()
             step_idx = int(np.searchsorted(sigmas_np, sigma_val))
             current_step = max(0, min(total_steps, total_steps - 1 - step_idx))
