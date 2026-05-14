@@ -396,28 +396,24 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-    original_unet = target_unet
-    unet = target_unet.clone()
+    # original_unet = target_unet
+    # unet = target_unet.clone()
 
-    lbw_config = target_unet.model_options['lbw_config']
-    lbw_buffer = target_unet.model_options['_lbw_loaded_loras']
+    # lbw_config = target_unet.model_options['lbw_config']
+    # lbw_buffer = target_unet.model_options['_lbw_loaded_loras']
 
-    #print('--------',lbw_config)
-    #print('--------',lbw_buffer)
+    # #print('--------',lbw_config)
+    # #print('--------',lbw_buffer)
 
-    # Регистрируем хук (внутри сам проверит, есть ли конфигурация)
-    lbw.init_lbw_state(original_unet, target_clip, lbw_config, lbw_buffer)
+    # # Регистрируем хук (внутри сам проверит, есть ли конфигурация)
+    # lbw.init_lbw_state(original_unet, target_clip, lbw_config, lbw_buffer)
 
-    def test_mod(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        DEBUG_FILE = os.path.join(os.path.dirname(__file__), 'lbw_debug.log')
-        with open(DEBUG_FILE, 'a') as f:
-            f.write(f'=== LBW Modifier called ===\n')
+    # def test_mod(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
 
-            f.flush()
-        return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
-    unet.add_conditioning_modifier(test_mod)
-    target_unet = unet
-    modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
+    #     return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    # unet.add_conditioning_modifier(test_mod)
+    # target_unet = unet
+    # modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
     print(f"[LBW] Зарегистрировано модификаторов: {modifier_count}", flush=True)    
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
@@ -465,6 +461,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return cond
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            DEBUG_FILE = os.path.join(os.path.dirname(__file__), 'lbw_debug.log')
+            with open(DEBUG_FILE, 'a') as f:
+                f.write(f'=== LBW Modifier called ===\n')
+
+                f.flush()
+            
+            
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
                 cond = remove_concat(cond)
