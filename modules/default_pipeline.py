@@ -368,8 +368,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     lbw_config = target_unet.model_options['lbw_config']
     lbw_buffer = target_unet.model_options['_lbw_loaded_loras']
 
-    print('--------',lbw_config)
-    print('--------',lbw_buffer)
+    #print('--------',lbw_config)
+    #print('--------',lbw_buffer)
 
     # Регистрируем хук (внутри сам проверит, есть ли конфигурация)
     lbw.init_lbw_state(original_unet, target_clip, lbw_config, lbw_buffer)
