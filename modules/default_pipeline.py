@@ -392,6 +392,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     lbw_cfg = target_unet.model_options.get("lbw_config", {})
     if lbw_cfg:
+        original_unet = target_unet
+        unet = target_unet.clone()
         total_steps = len(minmax_sigmas) - 1
         sigmas_np = minmax_sigmas.cpu().numpy()[::-1]
 
