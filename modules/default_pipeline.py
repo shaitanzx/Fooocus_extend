@@ -463,7 +463,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
             import sys
             # [+] Гарантированный вывод
-            log_path = "/content/lbw_hook.log")
+            log_path = "/content/lbw_hook.log"
             with open(log_path, "a") as f:
                 f.write(f"[LBW] Шаг: {timestep[0].item():.4f} | sigma_end: {sigma_end:.4f}\n")
 
