@@ -556,6 +556,7 @@ def apply_loras(active_loras):
 
 
 def lbw_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    print('________________________________________________________________________________________')
     """
     Conditioning modifier для динамического переключения LoRA
     Регистрируется через unet.add_conditioning_modifier()
