@@ -358,6 +358,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
     if 'lbw_config' in target_unet.model_options:
         print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
+    if '_lbw_loaded_loras' in target_unet.model_options:
+        print(f"[DEBUG] _lbw_loaded_loras content: {target_unet.model_options['_lbw_loaded_loras']}")    
 
 
 
