@@ -390,7 +390,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     lbw_cfg = target_unet.model_options.get("lbw_config", {})
-
+    print('ssssssssss',lbw_cfg)
     if lbw_cfg:
         total_steps = len(minmax_sigmas) - 1
         # [+] Кэшируем сигмы в обратном порядке для быстрого поиска шага
