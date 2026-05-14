@@ -451,33 +451,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         step_index = int((len(minmax_sigmas) - 1))
         sigma_end = minmax_sigmas[step_index].item()
         
-        def remove_concat(cond):
-            cond = copy.deepcopy(cond)
-            for i in range(len(cond)):
-                try:
-                    del cond[i]['model_conds']['c_concat']
-                except:
-                    pass
-            return cond
 
-        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            import warnings
-            warnings.warn('[LBW] Step:')
-
-            
-            
-            if timestep[0].item() < sigma_end:
-                target_model = original_unet.model
-                cond = remove_concat(cond)
-                uncond = remove_concat(uncond)
-            else:
-                target_model = model
-
-            return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
-        
-        unet.add_conditioning_modifier(conditioning_modifier)
-
-        target_unet = unet
 
 
 
