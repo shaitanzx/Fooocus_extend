@@ -417,7 +417,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             f.write(f'_last_active: {_last_active}\n')
             f.write(f'_lbw_config keys: {list(_lbw_config.keys()) if _lbw_config else None}\n')
             f.flush()
-
+        return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
     unet.add_conditioning_modifier(test_mod)
     target_unet = unet
     modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
