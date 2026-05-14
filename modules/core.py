@@ -182,8 +182,8 @@ class StableDiffusionModel:
         
             if self.unet_with_lora is not None:
                 self.unet_with_lora.model_options["lbw_config"] = self.lbw_config.copy()
-            print('--------',self.lbw_config)
-            print('--------',self._lbw_loaded_loras)
+            #print('--------',self.lbw_config)
+            #print('--------',self._lbw_loaded_loras)
 @torch.no_grad()
 @torch.inference_mode()
 def apply_freeu(model, b1, b2, s1, s2):
