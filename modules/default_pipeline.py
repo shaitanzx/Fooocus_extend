@@ -461,14 +461,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return cond
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            test_path = os.path.join(os.path.dirname(__file__), 'test_write.txt')
-            try:
-                with open(test_path, 'w') as f:
-                    f.write('test')
-                print(f'[LBW] Write test SUCCESS: {test_path}')
-                #os.remove(test_path)
-            except Exception as e:
-                print(f'[LBW] Write test FAILED: {e}')
+            import warnings
+            warnings.warn('[LBW] Step:')
+
             
             
             if timestep[0].item() < sigma_end:
