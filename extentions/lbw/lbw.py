@@ -556,6 +556,7 @@ def apply_loras(active_loras):
 
 
 def lbw_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    DEBUG_FILE = os.path.join(os.path.dirname(__file__), 'lbw_debug.log')
     with open(DEBUG_FILE, 'a') as f:
         f.write(f'=== LBW Modifier called ===\n')
         f.write(f'step from options: {model_options.get("step")}\n')
