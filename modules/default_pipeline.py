@@ -354,7 +354,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
-
+    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
+    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
+    if 'lbw_config' in target_unet.model_options:
+        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
     #if '_lbw_loaded_loras' in target_unet.model_options:
     #    print(f"[DEBUG] _lbw_loaded_loras content: {target_unet.model_options['_lbw_loaded_loras']}")    
 
@@ -408,18 +411,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     unet.add_conditioning_modifier(lbw.lbw_modifier)
-    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
-    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
-    if 'lbw_config' in target_unet.model_options:
-        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
-    print('[LBW] Hook registered, modifier =', lbw.lbw_modifier)
-    print('[LBW] Unet conditioning modifiers:', unet.conditioning_modifiers if hasattr(unet, 'conditioning_modifiers') else 'no attribute')
     target_unet = unet
     modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
-    print(f"[LBW] Зарегистрировано модификаторов: {modifier_count}", flush=True)
-
-
-
+    print(f"[LBW] Зарегистрировано модификаторов: {modifier_count}", flush=True)    
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
@@ -476,10 +470,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
         
         unet.add_conditioning_modifier(conditioning_modifier)
-        modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
-        print(f"[LBW2] Зарегистрировано модификаторов: {modifier_count}", flush=True)
-        print('[LBW2] Hook registered, modifier =', lbw.lbw_modifier)
-        print('[LBW2] Unet conditioning modifiers:', unet.conditioning_modifiers if hasattr(unet, 'conditioning_modifiers') else 'no attribute')
+
         target_unet = unet
 
 
