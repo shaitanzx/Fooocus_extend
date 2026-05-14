@@ -25,6 +25,7 @@ from torch.nn.modules.utils import _pair
 from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
+import extentions.lbw.lbw as lbw
 import numpy as np
 import sys
 
@@ -357,6 +358,27 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
     if 'lbw_config' in target_unet.model_options:
         print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
+
+
+
+
+    original_unet = target_unet
+    unet = target_unet.clone()
+
+    lbw_config = target_unet.model_options['lbw_config']
+    lbw_buffer = target_unet.model_options['_lbw_loaded_loras']
+
+    print('--------',lbw_config)
+    print('--------',lbw_buffer)
+
+    # Регистрируем хук (внутри сам проверит, есть ли конфигурация)
+
+
+
+
+    unet.add_conditioning_modifier(lbw.lbw_modifier)
+    target_unet = unet
+    
     assert refiner_swap_method in ['joint', 'separate', 'vae']
 
     if final_refiner_vae is not None and final_refiner_unet is not None:
@@ -388,7 +410,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-
+    
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
