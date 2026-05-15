@@ -502,7 +502,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     print(f"\n{'='*60}")
     print(f"[LBW TEST] Test complete")
     #print(f"[LBW TEST] Total rebuilds: {rebuild_count} out of {steps} steps")
-    print(f"[LBW TEST] Final active set: {last_active_names}")
+    print(f"\n  >>> Result: Active LoRAs = {active_names if active_names else 'none'}")
     print(f"{'='*60}\n")
     
     #return rebuild_count        
