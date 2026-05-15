@@ -414,6 +414,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     vae = target_vae
     clip = target_clip
     steps_lbw=2
+    steps = 0
     """
     Тестовая процедура: на каждом шаге восстанавливает чистую модель и применяет патчи
     
@@ -507,11 +508,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
     print(f"\n{'='*60}")
     print(f"[LBW TEST] Test complete")
-    print(f"[LBW TEST] Total rebuilds: {rebuild_count} out of {steps} steps")
+    #print(f"[LBW TEST] Total rebuilds: {rebuild_count} out of {steps} steps")
     print(f"[LBW TEST] Final active set: {last_active_names}")
     print(f"{'='*60}\n")
     
-    return rebuild_count        
+    #return rebuild_count        
     def remove_concat(cond):
         cond = copy.deepcopy(cond)
         for i in range(len(cond)):
