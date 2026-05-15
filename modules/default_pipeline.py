@@ -465,8 +465,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         
         # ШАГ 2: Восстанавливаем чистую модель (с permanent LoRA, без dynamic)
         print(f"\n  >>> Restoring clean base model...")
-        test_unet = target_unet.unet_with_lora.clone()
-        test_clip = target.clip_with_lora.clone()
+        test_unet = target_unet.clone()
+        test_clip = target_clip.clone()
         
         # ШАГ 3: Применяем активные LoRA
         if active_loras:
