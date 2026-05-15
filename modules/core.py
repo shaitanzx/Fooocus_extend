@@ -149,7 +149,7 @@ class StableDiffusionModel:
                 loaded_keys = self.unet_with_lora.add_patches(lora_unet, unet_weight)
                 #print(f'[LBW] Applied permanent LoRA {filename} to UNET (weight={unet_weight})')
                 print(f'[LBW] Applied permanent LoRA {filename} to UNET (weight={unet_weight}) '
-                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                      f'with {len(loaded_keys)} keys at weight {unet_weight}.')
                 for item in lora_unet:
                     if item not in loaded_keys:
                         print("UNet LoRA key skipped: ", item)
@@ -166,7 +166,7 @@ class StableDiffusionModel:
             if self.clip_with_lora is not None and len(lora_clip) > 0:
                 loaded_keys = self.clip_with_lora.add_patches(lora_clip, te_weight)
                 print(f'[LBW] Applied permanent LoRA {filename} to CLIP (weight={te_weight}) '
-                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                      f'with {len(loaded_keys)} keys at weight {te_weight}.')
                 for item in lora_clip:
                     if item not in loaded_keys:
                         print("CLIP LoRA key skipped: ", item)
