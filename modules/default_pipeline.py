@@ -414,15 +414,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     vae = target_vae
     clip = target_clip
     step_lbw=2
-    """
-    Тестовая процедура: на каждом шаге восстанавливает чистую модель и применяет патчи
-    
-    Args:
-        model: объект модели с полями:
-            - unet_with_lora (базовая модель с permanent LoRA)
-            - _lbw_loaded_loras (буфер с dynamic LoRA)
-        steps: количество шагов для тестирования
-    """
+
     
     """
     Тестовая процедура для одного конкретного шага
@@ -447,7 +439,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         start = lora.get('start', 0)
         stop = lora.get('stop', None)
         
-        if step >= start and (stop is None or step < stop):
+        if step_lbw >= start and (stop is None or step_lbw < stop):
             active_names.append(lora_name)
             active_loras.append({
                 'name': lora_name,
@@ -456,10 +448,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             })
             print(f"  ACTIVE: {lora_name} (te={lora.get('default_te', 1.0)}, unet={lora.get('default_unet', 1.0)})")
         else:
-            if step < start:
-                print(f"  INACTIVE: {lora_name} (step {step} < start {start})")
-            elif stop is not None and step >= stop:
-                print(f"  INACTIVE: {lora_name} (step {step} >= stop {stop})")
+            if step_lbw < start:
+                print(f"  INACTIVE: {lora_name} (step {step_lbw} < start {start})")
+            elif stop is not None and step_lbw >= stop:
+                print(f"  INACTIVE: {lora_name} (step {step_lbw} >= stop {stop})")
     
     active_names.sort()
     
@@ -504,7 +496,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         # Здесь можно добавить реальный сэмплинг
         # result = sampler.sample(test_unet, ...)
         
-        print(f"[STEP {step}] Complete")
+        print(f"[STEP {step_lbw}] Complete")
     target_unet = test_unet
     target_clip = test_clip
     print(f"\n{'='*60}")
