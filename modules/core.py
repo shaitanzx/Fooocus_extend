@@ -141,13 +141,43 @@ class StableDiffusionModel:
             if len(lora_unmatch) > 12:
                 continue
 
+            if len(lora_unmatch) > 0:
+                print(f'Loaded LoRA [{lora_filename}] for model [{self.filename}] '
+                      f'with unmatched keys {list(lora_unmatch.keys())}')
+
             if self.unet_with_lora is not None and len(lora_unet) > 0:
-                self.unet_with_lora.add_patches(lora_unet, unet_weight)
-                print(f'[LBW] Applied permanent LoRA {filename} to UNET (weight={unet_weight})')
+                loaded_keys = self.unet_with_lora.add_patches(lora_unet, unet_weight)
+                #print(f'[LBW] Applied permanent LoRA {filename} to UNET (weight={unet_weight})')
+                print(f'[LBW] Applied permanent LoRA {filename} to UNET (weight={unet_weight}) '
+                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                for item in lora_unet:
+                    if item not in loaded_keys:
+                        print("UNet LoRA key skipped: ", item)
+            # if self.unet_with_lora is not None and len(lora_unet) > 0:
+            #     loaded_keys = self.unet_with_lora.add_patches(lora_unet, weight)
+            #     print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
+            #           f'with {len(loaded_keys)} keys at weight {weight}.')
+            #     for item in lora_unet:
+            #         if item not in loaded_keys:
+            #             print("UNet LoRA key skipped: ", item)
+
+
 
             if self.clip_with_lora is not None and len(lora_clip) > 0:
-                self.clip_with_lora.add_patches(lora_clip, te_weight)
-                print(f'[LBW] Applied permanent LoRA {filename} to CLIP (weight={te_weight})')
+                loaded_keys = self.clip_with_lora.add_patches(lora_clip, te_weight)
+                print(f'[LBW] Applied permanent LoRA {filename} to CLIP (weight={te_weight}) '
+                      f'with {len(loaded_keys)} keys at weight {weight}.')
+                for item in lora_clip:
+                    if item not in loaded_keys:
+                        print("CLIP LoRA key skipped: ", item)
+
+            # if self.clip_with_lora is not None and len(lora_clip) > 0:
+            #     loaded_keys = self.clip_with_lora.add_patches(lora_clip, weight)
+            #     print(f'[LBW] Applied permanent LoRA {filename} to CLIP (weight={te_weight}) '
+            #           f'with {len(loaded_keys)} keys at weight {weight}.')
+            #     for item in lora_clip:
+            #         if item not in loaded_keys:
+            #             print("CLIP LoRA key skipped: ", item)
 
     # 2. Загружаем DYNAMIC LoRA (с start/stop) в буфер (НЕ применяем)
         for lora_filename, te_weight, unet_weight, filename, start, stop in dynamic_loras:
