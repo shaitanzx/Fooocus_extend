@@ -413,7 +413,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     unet = target_unet.clone()
     vae = target_vae
     clip = target_clip
-    steps_lbw=2
+    step_lbw=2
     """
     Тестовая процедура: на каждом шаге восстанавливает чистую модель и применяет патчи
     
@@ -424,69 +424,70 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         steps: количество шагов для тестирования
     """
     
+    """
+    Тестовая процедура для одного конкретного шага
+    
+    Args:
+        target_unet: UNET модель с модель_options
+        target_clip: CLIP модель
+        step: номер шага для тестирования
+    """
+    
     print(f"\n{'='*60}")
-    print(f"[LBW TEST] Starting test with {steps_lbw} steps")
+    print(f"[LBW TEST] Testing step {step_lbw}")
     print(f"[LBW TEST] Buffer contains {len(target_unet.model_options['_lbw_loaded_loras'])} dynamic LoRAs")
     print(f"{'='*60}\n")
     
-    # Счетчик перестроений модели
-    rebuild_count = 0
-    last_active_names = None
+    # ШАГ 1: Определяем активные LoRA для указанного шага
+    active_loras = []
+    active_names = []
     
-    for step in range(steps_lbw):
-        print(f"\n{'─'*50}")
-        print(f"[STEP {steps_lbw}]")
+    for lora in target_unet.model_options['_lbw_loaded_loras']:
+        lora_name = lora.get('lora_name')
+        start = lora.get('start', 0)
+        stop = lora.get('stop', None)
         
-        # ШАГ 1: Определяем активные LoRA для текущего шага
-        active_loras = []
-        active_names = []
-        
-        for lora in target_unet.model_options['_lbw_loaded_loras']:
-            lora_name = lora.get('lora_name')
-            start = lora.get('start', 0)
-            stop = lora.get('stop', None)
-            
-            if step >= start and (stop is None or step < stop):
-                active_names.append(lora_name)
-                active_loras.append({
-                    'name': lora_name,
-                    'te': lora.get('default_te', 1.0),
-                    'unet': lora.get('default_unet', 1.0)
-                })
-                print(f"  ACTIVE: {lora_name} (te={lora.get('default_te', 1.0)}, unet={lora.get('default_unet', 1.0)})")
-            else:
-                if step_lbw < start:
-                    print(f"  INACTIVE: {lora_name} (step {step} < start {start})")
-                elif stop is not None and step >= stop:
-                    print(f"  INACTIVE: {lora_name} (step {step} >= stop {stop})")
-        
-        active_names.sort()
-        
-        # ШАГ 2: Восстанавливаем чистую модель (с permanent LoRA, без dynamic)
-        print(f"\n  >>> Restoring clean base model...")
-        test_unet = target_unet.clone()
-        test_clip = target_clip.clone()
-        
-        # ШАГ 3: Применяем активные LoRA
-        if active_loras:
-            print(f"  >>> Applying {len(active_loras)} LoRAs to clean model...")
-            for lora in active_loras:
-                # Ищем данные LoRA в буфере
-                lora_data = None
-                for buffered in target_unet.model_options['_lbw_loaded_loras']:
-                    if buffered.get('lora_name') == lora['name']:
-                        lora_data = buffered
-                        break
-                
-                if lora_data:
-                    if lora_data.get('unet_patches'):
-                        test_unet.add_patches(lora_data['unet_patches'], lora['unet'])
-                        print(f"    - Applied {lora['name']} to UNET (weight={lora['unet']})")
-                    if lora_data.get('clip_patches'):
-                        test_clip.add_patches(lora_data['clip_patches'], lora['te'])
-                        print(f"    - Applied {lora['name']} to CLIP (weight={lora['te']})")
+        if step >= start and (stop is None or step < stop):
+            active_names.append(lora_name)
+            active_loras.append({
+                'name': lora_name,
+                'te': lora.get('default_te', 1.0),
+                'unet': lora.get('default_unet', 1.0)
+            })
+            print(f"  ACTIVE: {lora_name} (te={lora.get('default_te', 1.0)}, unet={lora.get('default_unet', 1.0)})")
         else:
-            print(f"  >>> No LoRAs to apply (using clean model)")
+            if step < start:
+                print(f"  INACTIVE: {lora_name} (step {step} < start {start})")
+            elif stop is not None and step >= stop:
+                print(f"  INACTIVE: {lora_name} (step {step} >= stop {stop})")
+    
+    active_names.sort()
+    
+    # ШАГ 2: Восстанавливаем чистую модель (с permanent LoRA, без dynamic)
+    print(f"\n  >>> Restoring clean base model...")
+    test_unet = target_unet.clone()
+    test_clip = target_clip.clone()
+    
+    # ШАГ 3: Применяем активные LoRA
+    if active_loras:
+        print(f"  >>> Applying {len(active_loras)} LoRAs to clean model...")
+        for lora in active_loras:
+            # Ищем данные LoRA в буфере
+            lora_data = None
+            for buffered in target_unet.model_options['_lbw_loaded_loras']:
+                if buffered.get('lora_name') == lora['name']:
+                    lora_data = buffered
+                    break
+            
+            if lora_data:
+                if lora_data.get('unet_patches'):
+                    test_unet.add_patches(lora_data['unet_patches'], lora['unet'])
+                    print(f"    - Applied {lora['name']} to UNET (weight={lora['unet']})")
+                if lora_data.get('clip_patches'):
+                    test_clip.add_patches(lora_data['clip_patches'], lora['te'])
+                    print(f"    - Applied {lora['name']} to CLIP (weight={lora['te']})")
+    else:
+        print(f"  >>> No LoRAs to apply (using clean model)")
         
         # ШАГ 4: Проверяем, изменился ли набор активных LoRA
         # if active_names != last_active_names:
