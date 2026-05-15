@@ -409,25 +409,109 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     height = H * 8
     width = W * 8
     batch_size = 1
-    print(f'[Transparency] {transper}')
-
     original_unet = target_unet
     unet = target_unet.clone()
     vae = target_vae
     clip = target_clip
-
+    steps_lbw=2
+    """
+    Тестовая процедура: на каждом шаге восстанавливает чистую модель и применяет патчи
     
-    model_path = load_file_from_url(
-        url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
-        model_dir=layer_model_root,
-        file_name='layer_xl_transparent_conv.safetensors'
-        )
-    layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
-    unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
-
-    step_index = int((len(minmax_sigmas) - 1))
-    sigma_end = minmax_sigmas[step_index].item()
+    Args:
+        model: объект модели с полями:
+            - unet_with_lora (базовая модель с permanent LoRA)
+            - _lbw_loaded_loras (буфер с dynamic LoRA)
+        steps: количество шагов для тестирования
+    """
+    
+    print(f"\n{'='*60}")
+    print(f"[LBW TEST] Starting test with {steps_lbw} steps")
+    print(f"[LBW TEST] Buffer contains {len(target_unet.model_options['_lbw_loaded_loras'])} dynamic LoRAs")
+    print(f"{'='*60}\n")
+    
+    # Счетчик перестроений модели
+    rebuild_count = 0
+    last_active_names = None
+    
+    for step in range(steps_lbw):
+        print(f"\n{'─'*50}")
+        print(f"[STEP {step_lbw}]")
         
+        # ШАГ 1: Определяем активные LoRA для текущего шага
+        active_loras = []
+        active_names = []
+        
+        for lora in target_unet.model_options['_lbw_loaded_loras']:
+            lora_name = lora.get('lora_name')
+            start = lora.get('start', 0)
+            stop = lora.get('stop', None)
+            
+            if step >= start and (stop is None or step < stop):
+                active_names.append(lora_name)
+                active_loras.append({
+                    'name': lora_name,
+                    'te': lora.get('default_te', 1.0),
+                    'unet': lora.get('default_unet', 1.0)
+                })
+                print(f"  ACTIVE: {lora_name} (te={lora.get('default_te', 1.0)}, unet={lora.get('default_unet', 1.0)})")
+            else:
+                if step_lbw < start:
+                    print(f"  INACTIVE: {lora_name} (step {step} < start {start})")
+                elif stop is not None and step >= stop:
+                    print(f"  INACTIVE: {lora_name} (step {step} >= stop {stop})")
+        
+        active_names.sort()
+        
+        # ШАГ 2: Восстанавливаем чистую модель (с permanent LoRA, без dynamic)
+        print(f"\n  >>> Restoring clean base model...")
+        test_unet = target_unet.unet_with_lora.clone()
+        test_clip = target.clip_with_lora.clone()
+        
+        # ШАГ 3: Применяем активные LoRA
+        if active_loras:
+            print(f"  >>> Applying {len(active_loras)} LoRAs to clean model...")
+            for lora in active_loras:
+                # Ищем данные LoRA в буфере
+                lora_data = None
+                for buffered in target_unet.model_options['_lbw_loaded_loras']:
+                    if buffered.get('lora_name') == lora['name']:
+                        lora_data = buffered
+                        break
+                
+                if lora_data:
+                    if lora_data.get('unet_patches'):
+                        test_unet.add_patches(lora_data['unet_patches'], lora['unet'])
+                        print(f"    - Applied {lora['name']} to UNET (weight={lora['unet']})")
+                    if lora_data.get('clip_patches'):
+                        test_clip.add_patches(lora_data['clip_patches'], lora['te'])
+                        print(f"    - Applied {lora['name']} to CLIP (weight={lora['te']})")
+        else:
+            print(f"  >>> No LoRAs to apply (using clean model)")
+        
+        # ШАГ 4: Проверяем, изменился ли набор активных LoRA
+        # if active_names != last_active_names:
+        #     rebuild_count += 1
+        #     print(f"\n  >>> SET CHANGED: {last_active_names} -> {active_names}")
+        #     print(f"  >>> REBUILD COUNT: {rebuild_count}")
+        #     last_active_names = active_names.copy()
+        # else:
+        #     print(f"\n  >>> SET UNCHANGED: {active_names}")
+        
+        # ШАГ 5: Эмуляция сэмплинга с полученной моделью
+        print(f"\n  >>> Sampling with model (active: {active_names if active_names else 'none'})")
+        
+        # Здесь можно добавить реальный сэмплинг
+        # result = sampler.sample(test_unet, ...)
+        
+        print(f"[STEP {step}] Complete")
+    
+    print(f"\n{'='*60}")
+    print(f"[LBW TEST] Test complete")
+    print(f"[LBW TEST] Total rebuilds: {rebuild_count} out of {steps} steps")
+    print(f"[LBW TEST] Final active set: {last_active_names}")
+    print(f"{'='*60}\n")
+    
+    return rebuild_count        
     def remove_concat(cond):
         cond = copy.deepcopy(cond)
         for i in range(len(cond)):
@@ -448,9 +532,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
         
-    unet.add_conditioning_modifier(conditioning_modifier)
+    # unet.add_conditioning_modifier(conditioning_modifier)
 
-    target_unet = unet
+    # target_unet = unet
 
 ###############################################
     if transper != "None":
