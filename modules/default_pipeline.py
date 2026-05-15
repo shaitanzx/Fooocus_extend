@@ -436,7 +436,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
     for step in range(steps_lbw):
         print(f"\n{'─'*50}")
-        print(f"[STEP {step_lbw}]")
+        print(f"[STEP {stepы_lbw}]")
         
         # ШАГ 1: Определяем активные LoRA для текущего шага
         active_loras = []
