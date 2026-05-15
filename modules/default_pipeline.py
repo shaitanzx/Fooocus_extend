@@ -414,7 +414,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     vae = target_vae
     clip = target_clip
     steps_lbw=2
-    steps = 0
     """
     Тестовая процедура: на каждом шаге восстанавливает чистую модель и применяет патчи
     
@@ -577,15 +576,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     pass
             return cond
 
-        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            import sys
-            # [+] Гарантированный вывод
-            log_line = f"[LBW] sigma={timestep[0].item():.4f} | end={sigma_end:.4f}\n"
-            with open("/content/lbw_hook.log", "a") as f:
-                f.write(log_line)
-                f.flush()
-                os.fsync(f.fileno())          
-            
+        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):        
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
                 cond = remove_concat(cond)
