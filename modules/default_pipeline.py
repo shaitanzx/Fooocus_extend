@@ -504,7 +504,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         # result = sampler.sample(test_unet, ...)
         
         print(f"[STEP {step}] Complete")
-    
+    target_unet = test_unet
+    target_clip = test_clip
     print(f"\n{'='*60}")
     print(f"[LBW TEST] Test complete")
     #print(f"[LBW TEST] Total rebuilds: {rebuild_count} out of {steps} steps")
