@@ -396,31 +396,63 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-    # original_unet = target_unet
-    # unet = target_unet.clone()
-
-    # lbw_config = target_unet.model_options['lbw_config']
-    # lbw_buffer = target_unet.model_options['_lbw_loaded_loras']
-
-    # #print('--------',lbw_config)
-    # #print('--------',lbw_buffer)
-
-    # # Регистрируем хук (внутри сам проверит, есть ли конфигурация)
-    # lbw.init_lbw_state(original_unet, target_clip, lbw_config, lbw_buffer)
-
-    # def test_mod(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-
-    #     return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
-    # unet.add_conditioning_modifier(test_mod)
-    # target_unet = unet
-    # modifier_count = len(target_unet.model_options.get("conditioning_modifiers", []))
-    #print(f"[LBW] Зарегистрировано модификаторов: {modifier_count}", flush=True)    
+  
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
+###############################################
 
+    
+    B, C, H, W = initial_latent['samples'].shape  # latent_shape
+    height = H * 8
+    width = W * 8
+    batch_size = 1
+    print(f'[Transparency] {transper}')
+
+    original_unet = target_unet
+    unet = target_unet.clone()
+    vae = target_vae
+    clip = target_clip
+
+    
+    model_path = load_file_from_url(
+        url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
+        model_dir=layer_model_root,
+        file_name='layer_xl_transparent_conv.safetensors'
+        )
+    layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
+    unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
+
+    step_index = int((len(minmax_sigmas) - 1))
+    sigma_end = minmax_sigmas[step_index].item()
+        
+    def remove_concat(cond):
+        cond = copy.deepcopy(cond)
+        for i in range(len(cond)):
+            try:
+                del cond[i]['model_conds']['c_concat']
+            except:
+                pass
+        return cond
+
+    def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+
+        if timestep[0].item() < sigma_end:
+            target_model = original_unet.model
+            cond = remove_concat(cond)
+            uncond = remove_concat(uncond)
+        else:
+            target_model = model
+
+        return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        
+    unet.add_conditioning_modifier(conditioning_modifier)
+
+    target_unet = unet
+
+###############################################
     if transper != "None":
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
         height = H * 8
