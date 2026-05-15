@@ -476,7 +476,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     test_unet.add_patches(lora_data['unet_patches'], lora['unet'])
                     print(f"    - Applied {lora['name']} to UNET (weight={lora['unet']})")
                 if lora_data.get('clip_patches'):
+
                     test_clip.add_patches(lora_data['clip_patches'], lora['te'])
+                    positive_cond = clip_separate(positive_cond, target_model=test_unet.model, target_clip=test_clip)
+                    negative_cond = clip_separate(negative_cond, target_model=test_unet.model, target_clip=test_clip)
+
                     print(f"    - Applied {lora['name']} to CLIP (weight={lora['te']})")
     else:
         print(f"  >>> No LoRAs to apply (using clean model)")
@@ -497,6 +501,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         # result = sampler.sample(test_unet, ...)
         
         print(f"[STEP {step_lbw}] Complete")
+
+    
     target_unet = test_unet
     target_clip = test_clip
     print(f"\n{'='*60}")
