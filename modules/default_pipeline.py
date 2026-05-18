@@ -421,7 +421,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     prev_loras = []
 
 
-    def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    def conditioning_modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
         def lora_step(step):
             lora_list = {}
             for lora in loaded_loras:
@@ -531,7 +531,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
     # [+] Регистрация хука в цепочке сэмплинга
-    target_unet.add_conditioning_modifier(conditioning_modifier)
+    target_unet.add_conditioning_modifier(conditioning_modifier_lbw)
 
 ###############################################
 
