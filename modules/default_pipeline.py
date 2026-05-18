@@ -444,12 +444,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         #             })
         #     return lora_list
 
-        current_sigma = timestep[0].item()
-        current_step = 0
-        for i, s in enumerate(minmax_sigmas):
-            if s.item() <= current_sigma + 1e-5:
-                current_step = i
-                break
+        # current_sigma = timestep[0].item()
+        # current_step = 0
+        # for i, s in enumerate(minmax_sigmas):
+        #     if s.item() <= current_sigma + 1e-5:
+        #         current_step = i
+        #         break
 
         # current_lora = lora_step(current_step)      # [+] Исправлено: step -> current_step (step не определён в этом скоупе)
         # if current_step == 0:
