@@ -1708,7 +1708,7 @@ def worker():
 
         def callback(step, x0, x, total_steps, y):
 
-            print('zzzzzzzzzzzzzzzzzzzzz',pipeline.LBW_LOG)
+            print('zzzzzzzzzzzzzzzzzzzzz',lbw.LBW_LOG)
             
        
 
