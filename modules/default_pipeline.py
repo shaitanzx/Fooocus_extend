@@ -419,7 +419,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     base_patches = copy.deepcopy(target_unet.patches)
 
     def conditioning_modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        x = x * 0
+        cond_scale = cond_scale * 10
         # def lora_step(step_lbw):
         #     lora_list = []
         #     for lora in loaded_loras:
