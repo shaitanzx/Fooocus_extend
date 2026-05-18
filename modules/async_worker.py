@@ -1708,9 +1708,8 @@ def worker():
 
         def callback(step, x0, x, total_steps, y):
 
-            s = int(step)  # Гарантируем тип int для поиска в set/dict
-            if hasattr(callback, 'lbw_steps') and s in callback.lbw_steps:
-                print(f"[LBW VERIFY] ✅ Шаг {s:02d} | {callback.lbw_info.get(s, '')}", flush=True)
+            print('zzzzzzzzzzzzzzzzzzzzz',callback.lbw_steps)
+            
        
 
             if step == 0:
