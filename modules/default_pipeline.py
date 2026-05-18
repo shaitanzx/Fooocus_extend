@@ -422,21 +422,21 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     callback.lbw_info = {}
 
     def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        def lora_step(step_idx):  # [+] Исправлено имя параметра (step конфликтует с callback)
-            lora_list = []        # [+] Исправлено: {} -> [] (у dict нет .append)
-            for lora in loaded_loras:
-                lora_name = lora.get('lora_name')
-                start = lora.get('start', 0)
-                stop = lora.get('stop', None)
+        # def lora_step(step_idx):  # [+] Исправлено имя параметра (step конфликтует с callback)
+        #     lora_list = []        # [+] Исправлено: {} -> [] (у dict нет .append)
+        #     for lora in loaded_loras:
+        #         lora_name = lora.get('lora_name')
+        #         start = lora.get('start', 0)
+        #         stop = lora.get('stop', None)
         
-                if step_idx >= start and (stop is None or step_idx < stop):
-                    lora_list.append(lora_name)
-                    lora_list.append({
-                        'name': lora_name,
-                        'te': lora.get('default_te', 1.0),
-                        'unet': lora.get('default_unet', 1.0)
-                    })
-            return lora_list
+        #         if step_idx >= start and (stop is None or step_idx < stop):
+        #             lora_list.append(lora_name)
+        #             lora_list.append({
+        #                 'name': lora_name,
+        #                 'te': lora.get('default_te', 1.0),
+        #                 'unet': lora.get('default_unet', 1.0)
+        #             })
+        #     return lora_list
 
         current_sigma = timestep[0].item()
         current_step = 0
@@ -445,13 +445,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 current_step = i
                 break
 
-        current_lora = lora_step(current_step)      # [+] Исправлено: step -> current_step (step не определён в этом скоупе)
-        if current_step == 0:
-            prev_lora = []                          # [+] Исправлено: {} -> []
-        else:
-            prev_lora = lora_step(current_step - 1) # [+] Исправлено: step-1 -> current_step-1
+        # current_lora = lora_step(current_step)      # [+] Исправлено: step -> current_step (step не определён в этом скоупе)
+        # if current_step == 0:
+        #     prev_lora = []                          # [+] Исправлено: {} -> []
+        # else:
+        #     prev_lora = lora_step(current_step - 1) # [+] Исправлено: step-1 -> current_step-1
 
-        # [+] Вывод на каждом шаге (убрано условие if current_lora != prev_lora)
+        # # [+] Вывод на каждом шаге (убрано условие if current_lora != prev_lora)
         callback.lbw_steps.add(current_step)
         callback.lbw_info[current_step] = f"Шаг: {current_step}"  # [+] Исправлено: сохранение в dict по ключу шага, а не перезапись кортежем
 
