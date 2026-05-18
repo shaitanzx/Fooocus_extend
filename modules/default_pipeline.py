@@ -26,8 +26,8 @@ from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.lbw.lbw as lbw
-import numpy as np
-import sys
+# import numpy as np
+# import sys
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -396,141 +396,237 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-  
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
+
+
+
+
+    lbw_cfg = target_unet.model_options['lbw_config']
+    loaded_loras = target_unet.model_options['_lbw_loaded_loras']
+    clean_weights = {}
+        if target_unet.backup:
+            clean_weights = {k: v.clone() for k, v in target_unet.backup.items()}
+        else:
+            # Fallback: если backup ещё не создан, берём текущие веса как базу
+            clean_weights = {k: v.clone() for k, v in target_unet.model.state_dict().items()}
+
+    # Эталон permanent-патчей (только те, что уже в model.patches после refresh_loras)
+    base_patches = copy.deepcopy(target_unet.patches)
+
+    # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
+    active_names = []
+
+
+    def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        # =================================================================
+        # [+] 2. РАСЧЁТ ТЕКУЩЕГО ШАГА
+        # =================================================================
+        current_sigma = timestep[0].item()
+        current_step = 0
+        for i, s in enumerate(minmax_sigmas):
+            if s.item() <= current_sigma + 1e-5:
+                current_step = i
+                break
+
+        # =================================================================
+        # [+] 3. ОПРЕДЕЛЕНИЕ НУЖНОГО НАБОРА LO RA
+        # =================================================================
+        desired = set()
+        for lora in loaded_loras:
+            start = lora.get('start', 0)
+            stop = lora.get('stop', None)
+            if current_step >= start and (stop is None or current_step < stop):
+                desired.add(lora['lora_name'])
+
+        # =================================================================
+        # [+] 4. ПЕРЕКЛЮЧЕНИЕ ТОЛЬКО ПРИ СМЕНЕ СОСТОЯНИЯ
+        # =================================================================
+        if desired != set(active_names):
+            active_names[:] = list(desired)
+
+            # 🔍 Ключ для лог-верификации
+            test_key = next(iter(clean_weights.keys()), None)
+            mean_before = 0.0
+            if test_key:
+                try: mean_before = model.model.state_dict()[test_key].float().mean().item()
+                except: pass
+
+            # А. Физический сброс тензоров к чистому эталону
+            if clean_weights:
+                dev = getattr(model, 'current_device', None)
+                for k, v in clean_weights.items():
+                    try: ldm_patched.modules.utils.set_attr(model.model, k, v.to(dev) if dev else v)
+                    except: pass
+
+            mean_after_reset = 0.0
+            if test_key:
+                try: mean_after_reset = model.model.state_dict()[test_key].float().mean().item()
+                except: pass
+
+            # Б. Сброс списка патчей к permanent-состоянию (удаляет старые dynamic)
+            model.patches = copy.deepcopy(base_patches)
+
+            # В. Добавление ТОЛЬКО активных динамических LoRA
+            for lora in loaded_loras:
+                if lora['lora_name'] in desired and lora.get('unet_patches'):
+                    model.add_patches(lora['unet_patches'], lora['default_unet'])
+
+            # Г. Синхронизация словаря патчей с GPU-тензорами
+            try:
+                model.patch_model(device_to=getattr(model, 'current_device', None))
+            except Exception:
+                pass  # Безопасный фоллбэк
+
+            mean_after_patch = 0.0
+            if test_key:
+                try: mean_after_patch = model.model.state_dict()[test_key].float().mean().item()
+                except: pass
+
+            # Д. Лог-верификатор (выводится ТОЛЬКО при переключении)
+            print(f"[LBW VERIFY] Шаг {current_step:02d} | Активные: {list(desired) if desired else 'None'} | "
+                  f"До: {mean_before: .5f} → Сброс: {mean_after_reset: .5f} → Патч: {mean_after_patch: .5f}", flush=True)
+
+        # =================================================================
+        # [+] 5. ВОЗВРАТ БЕЗ ИЗМЕНЕНИЙ СТРУКТУРЫ
+        # =================================================================
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+
+    # [+] Регистрация хука в цепочке сэмплинга
+    target_unet.add_conditioning_modifier(conditioning_modifier)
+
 ###############################################
 
     
-    B, C, H, W = initial_latent['samples'].shape  # latent_shape
-    height = H * 8
-    width = W * 8
-    batch_size = 1
-    original_unet = target_unet
-    unet = target_unet.clone()
-    vae = target_vae
-    clip = target_clip
-    step_lbw=2
+    # B, C, H, W = initial_latent['samples'].shape  # latent_shape
+    # height = H * 8
+    # width = W * 8
+    # batch_size = 1
+    # original_unet = target_unet
+    # unet = target_unet.clone()
+    # vae = target_vae
+    # clip = target_clip
+    # step_lbw=2
 
     
-    """
-    Тестовая процедура для одного конкретного шага
+    # """
+    # Тестовая процедура для одного конкретного шага
     
-    Args:
-        target_unet: UNET модель с модель_options
-        target_clip: CLIP модель
-        step: номер шага для тестирования
-    """
+    # Args:
+    #     target_unet: UNET модель с модель_options
+    #     target_clip: CLIP модель
+    #     step: номер шага для тестирования
+    # """
     
-    print(f"\n{'='*60}")
-    print(f"[LBW TEST] Testing step {step_lbw}")
-    print(f"[LBW TEST] Buffer contains {len(target_unet.model_options['_lbw_loaded_loras'])} dynamic LoRAs")
-    print(f"{'='*60}\n")
+    # print(f"\n{'='*60}")
+    # print(f"[LBW TEST] Testing step {step_lbw}")
+    # print(f"[LBW TEST] Buffer contains {len(target_unet.model_options['_lbw_loaded_loras'])} dynamic LoRAs")
+    # print(f"{'='*60}\n")
     
-    # ШАГ 1: Определяем активные LoRA для указанного шага
-    active_loras = []
-    active_names = []
+    # # ШАГ 1: Определяем активные LoRA для указанного шага
+    # active_loras = []
+    # active_names = []
     
-    for lora in target_unet.model_options['_lbw_loaded_loras']:
-        lora_name = lora.get('lora_name')
-        start = lora.get('start', 0)
-        stop = lora.get('stop', None)
+    # for lora in target_unet.model_options['_lbw_loaded_loras']:
+    #     lora_name = lora.get('lora_name')
+    #     start = lora.get('start', 0)
+    #     stop = lora.get('stop', None)
         
-        if step_lbw >= start and (stop is None or step_lbw < stop):
-            active_names.append(lora_name)
-            active_loras.append({
-                'name': lora_name,
-                'te': lora.get('default_te', 1.0),
-                'unet': lora.get('default_unet', 1.0)
-            })
-            print(f"  ACTIVE: {lora_name} (te={lora.get('default_te', 1.0)}, unet={lora.get('default_unet', 1.0)})")
-        else:
-            if step_lbw < start:
-                print(f"  INACTIVE: {lora_name} (step {step_lbw} < start {start})")
-            elif stop is not None and step_lbw >= stop:
-                print(f"  INACTIVE: {lora_name} (step {step_lbw} >= stop {stop})")
+    #     if step_lbw >= start and (stop is None or step_lbw < stop):
+    #         active_names.append(lora_name)
+    #         active_loras.append({
+    #             'name': lora_name,
+    #             'te': lora.get('default_te', 1.0),
+    #             'unet': lora.get('default_unet', 1.0)
+    #         })
+    #         print(f"  ACTIVE: {lora_name} (te={lora.get('default_te', 1.0)}, unet={lora.get('default_unet', 1.0)})")
+    #     else:
+    #         if step_lbw < start:
+    #             print(f"  INACTIVE: {lora_name} (step {step_lbw} < start {start})")
+    #         elif stop is not None and step_lbw >= stop:
+    #             print(f"  INACTIVE: {lora_name} (step {step_lbw} >= stop {stop})")
     
-    active_names.sort()
+    # active_names.sort()
     
-    # ШАГ 2: Восстанавливаем чистую модель (с permanent LoRA, без dynamic)
-    print(f"\n  >>> Restoring clean base model...")
-    test_unet = target_unet.clone()
-    test_clip = target_clip.clone()
+    # # ШАГ 2: Восстанавливаем чистую модель (с permanent LoRA, без dynamic)
+    # print(f"\n  >>> Restoring clean base model...")
+    # test_unet = target_unet.clone()
+    # test_clip = target_clip.clone()
     
-    # ШАГ 3: Применяем активные LoRA
-    if active_loras:
-        print(f"  >>> Applying {len(active_loras)} LoRAs to clean model...")
-        for lora in active_loras:
-            # Ищем данные LoRA в буфере
-            lora_data = None
-            for buffered in target_unet.model_options['_lbw_loaded_loras']:
-                if buffered.get('lora_name') == lora['name']:
-                    lora_data = buffered
-                    break
+    # # ШАГ 3: Применяем активные LoRA
+    # if active_loras:
+    #     print(f"  >>> Applying {len(active_loras)} LoRAs to clean model...")
+    #     for lora in active_loras:
+    #         # Ищем данные LoRA в буфере
+    #         lora_data = None
+    #         for buffered in target_unet.model_options['_lbw_loaded_loras']:
+    #             if buffered.get('lora_name') == lora['name']:
+    #                 lora_data = buffered
+    #                 break
             
-            if lora_data:
-                if lora_data.get('unet_patches'):
-                    test_unet.add_patches(lora_data['unet_patches'], lora['unet'])
-                    print(f"    - Applied {lora['name']} to UNET (weight={lora['unet']})")
-                if lora_data.get('clip_patches'):
+    #         if lora_data:
+    #             if lora_data.get('unet_patches'):
+    #                 test_unet.add_patches(lora_data['unet_patches'], lora['unet'])
+    #                 print(f"    - Applied {lora['name']} to UNET (weight={lora['unet']})")
+    #             if lora_data.get('clip_patches'):
 
-                    test_clip.add_patches(lora_data['clip_patches'], lora['te'])
-                    positive_cond = clip_separate(positive_cond, target_model=test_unet.model, target_clip=test_clip)
-                    negative_cond = clip_separate(negative_cond, target_model=test_unet.model, target_clip=test_clip)
+    #                 test_clip.add_patches(lora_data['clip_patches'], lora['te'])
+    #                 positive_cond = clip_separate(positive_cond, target_model=test_unet.model, target_clip=test_clip)
+    #                 negative_cond = clip_separate(negative_cond, target_model=test_unet.model, target_clip=test_clip)
 
-                    print(f"    - Applied {lora['name']} to CLIP (weight={lora['te']})")
-    else:
-        print(f"  >>> No LoRAs to apply (using clean model)")
+    #                 print(f"    - Applied {lora['name']} to CLIP (weight={lora['te']})")
+    # else:
+    #     print(f"  >>> No LoRAs to apply (using clean model)")
         
-        # ШАГ 4: Проверяем, изменился ли набор активных LoRA
-        # if active_names != last_active_names:
-        #     rebuild_count += 1
-        #     print(f"\n  >>> SET CHANGED: {last_active_names} -> {active_names}")
-        #     print(f"  >>> REBUILD COUNT: {rebuild_count}")
-        #     last_active_names = active_names.copy()
-        # else:
-        #     print(f"\n  >>> SET UNCHANGED: {active_names}")
+    #     # ШАГ 4: Проверяем, изменился ли набор активных LoRA
+    #     # if active_names != last_active_names:
+    #     #     rebuild_count += 1
+    #     #     print(f"\n  >>> SET CHANGED: {last_active_names} -> {active_names}")
+    #     #     print(f"  >>> REBUILD COUNT: {rebuild_count}")
+    #     #     last_active_names = active_names.copy()
+    #     # else:
+    #     #     print(f"\n  >>> SET UNCHANGED: {active_names}")
         
-        # ШАГ 5: Эмуляция сэмплинга с полученной моделью
-        print(f"\n  >>> Sampling with model (active: {active_names if active_names else 'none'})")
+    #     # ШАГ 5: Эмуляция сэмплинга с полученной моделью
+    #     print(f"\n  >>> Sampling with model (active: {active_names if active_names else 'none'})")
         
-        # Здесь можно добавить реальный сэмплинг
-        # result = sampler.sample(test_unet, ...)
+    #     # Здесь можно добавить реальный сэмплинг
+    #     # result = sampler.sample(test_unet, ...)
         
-        print(f"[STEP {step_lbw}] Complete")
+    #     print(f"[STEP {step_lbw}] Complete")
 
     
-    target_unet = test_unet
-    target_clip = test_clip
-    print(f"\n{'='*60}")
-    print(f"[LBW TEST] Test complete")
-    #print(f"[LBW TEST] Total rebuilds: {rebuild_count} out of {steps} steps")
-    print(f"\n  >>> Result: Active LoRAs = {active_names if active_names else 'none'}")
-    print(f"{'='*60}\n")
+    # target_unet = test_unet
+    # target_clip = test_clip
+    # print(f"\n{'='*60}")
+    # print(f"[LBW TEST] Test complete")
+    # #print(f"[LBW TEST] Total rebuilds: {rebuild_count} out of {steps} steps")
+    # print(f"\n  >>> Result: Active LoRAs = {active_names if active_names else 'none'}")
+    # print(f"{'='*60}\n")
     
-    #return rebuild_count        
-    def remove_concat(cond):
-        cond = copy.deepcopy(cond)
-        for i in range(len(cond)):
-            try:
-                del cond[i]['model_conds']['c_concat']
-            except:
-                pass
-        return cond
+    # #return rebuild_count        
+    # def remove_concat(cond):
+    #     cond = copy.deepcopy(cond)
+    #     for i in range(len(cond)):
+    #         try:
+    #             del cond[i]['model_conds']['c_concat']
+    #         except:
+    #             pass
+    #     return cond
 
-    def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    # def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
 
-        if timestep[0].item() < sigma_end:
-            target_model = original_unet.model
-            cond = remove_concat(cond)
-            uncond = remove_concat(uncond)
-        else:
-            target_model = model
+    #     if timestep[0].item() < sigma_end:
+    #         target_model = original_unet.model
+    #         cond = remove_concat(cond)
+    #         uncond = remove_concat(uncond)
+    #     else:
+    #         target_model = model
 
-        return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    #     return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
         
     # unet.add_conditioning_modifier(conditioning_modifier)
 
