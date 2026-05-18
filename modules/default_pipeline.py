@@ -418,43 +418,47 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     base_patches = copy.deepcopy(target_unet.patches)
 
     # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
-    callback.lbw_steps = set()  # [+] Исправлено: было lbw_step (без s)
+    callback.lbw_steps = set()
     callback.lbw_info = {}
 
     def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        # def lora_step(step_idx):  # [+] Исправлено имя параметра (step конфликтует с callback)
-        #     lora_list = []        # [+] Исправлено: {} -> [] (у dict нет .append)
-        #     for lora in loaded_loras:
-        #         lora_name = lora.get('lora_name')
-        #         start = lora.get('start', 0)
-        #         stop = lora.get('stop', None)
-        
-        #         if step_idx >= start and (stop is None or step_idx < stop):
-        #             lora_list.append(lora_name)
-        #             lora_list.append({
-        #                 'name': lora_name,
-        #                 'te': lora.get('default_te', 1.0),
-        #                 'unet': lora.get('default_unet', 1.0)
-        #             })
-        #     return lora_list
+        try:  # 🔽 Ловит скрытый краш, чтобы он не глотался ядром
+            def lora_step(step_idx):
+                lora_list = []
+                for lora in loaded_loras:
+                    lora_name = lora.get('lora_name')
+                    start = lora.get('start', 0)
+                    stop = lora.get('stop', None)
+            
+                    if step_idx >= start and (stop is None or step_idx < stop):
+                        lora_list.append(lora_name)
+                        lora_list.append({
+                            'name': lora_name,
+                            'te': lora.get('default_te', 1.0),
+                            'unet': lora.get('default_unet', 1.0)
+                        })
+                return lora_list
 
-        current_sigma = timestep[0].item()
-        current_step = 0
-        for i, s in enumerate(minmax_sigmas):
-            if s.item() <= current_sigma + 1e-5:
-                current_step = i
-                break
+            current_sigma = timestep[0].item()
+            current_step = 0
+            for i, s in enumerate(minmax_sigmas):
+                if s.item() <= current_sigma + 1e-5:
+                    current_step = i
+                    break
 
-        # current_lora = lora_step(current_step)      # [+] Исправлено: step -> current_step (step не определён в этом скоупе)
-        # if current_step == 0:
-        #     prev_lora = []                          # [+] Исправлено: {} -> []
-        # else:
-        #     prev_lora = lora_step(current_step - 1) # [+] Исправлено: step-1 -> current_step-1
+            current_lora = lora_step(current_step)
+            if current_step == 0:
+                prev_lora = []
+            else:
+                prev_lora = lora_step(current_step - 1)
 
-        # # [+] Вывод на каждом шаге (убрано условие if current_lora != prev_lora)
-        callback.lbw_steps.add(current_step)
-        callback.lbw_info[current_step] = f"Шаг: {current_step}"  # [+] Исправлено: сохранение в dict по ключу шага, а не перезапись кортежем
-
+            callback.lbw_steps.add(current_step)
+            callback.lbw_info[current_step] = f"LoRA cur: {current_lora} | prev: {prev_lora}"
+        except Exception as e:
+            # 🔽 Если краш случился, всё равно отмечаем шаг и выводим причину ошибки
+            cs = current_step if 'current_step' in locals() else 0
+            callback.lbw_steps.add(cs)
+            callback.lbw_info[cs] = f"CRASH: {type(e).__name__} | {str(e)}"
 
 
 
