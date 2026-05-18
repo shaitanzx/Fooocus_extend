@@ -423,8 +423,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        def lora_step(step_idx):
-            lora_list = []
+        def lora_step(step_idx):  # [+] переименовал параметр, чтобы не конфликтовал с callback.step
+            lora_list = []        # [+] ИСПРАВЛЕНО: было {} (dict не имеет .append)
             for lora in loaded_loras:
                 lora_name = lora.get('lora_name')
                 start = lora.get('start', 0)
@@ -438,20 +438,26 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                         'unet': lora.get('default_unet', 1.0)
                     })
             return lora_list        
+            
         current_sigma = timestep[0].item()
         current_step = 0
         for i, s in enumerate(minmax_sigmas):
             if s.item() <= current_sigma + 1e-5:
                 current_step = i
                 break
-        current_lora = lora_step(current_step)
+                
+        current_lora = lora_step(current_step)      # [+] ИСПРАВЛЕНО: step -> current_step (step не существует в этом скоупе)
         if current_step == 0:
-            prev_lora = {}
+            prev_lora = []
         else:
-            prev_lora = lora_step(current_step-1)
-        callback.lbw_steps.add(current_step)
-        callback.lbw_info[current_step] = f"LoRA cur: {list(current_lora)}", f"LoRA prev: {list(prev_lora)}"
-
+            prev_lora = lora_step(current_step - 1) # [+] ИСПРАВЛЕНО: step-1 -> current_step-1
+            
+        # [+] ИСПРАВЛЕНО: Было без условия → добавляло ВСЕ шаги. Теперь только при смене набора
+        if current_lora != prev_lora:
+            callback.lbw_steps.add(current_step)
+            # [+] ИСПРАВЛЕНО: Было кортежем (callback.lbw_info = "x", "y"), что ломало .get(step)
+            # Теперь словарь {номер_шага: строка_лога}
+            callback.lbw_info[current_step] = f"LoRA cur: {current_lora} | prev: {prev_lora}"
 
 
 
