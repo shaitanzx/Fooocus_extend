@@ -29,6 +29,9 @@ import extentions.lbw.lbw as lbw
 # import numpy as np
 # import sys
 
+LBW_LOG=""
+
+
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -418,7 +421,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     base_patches = copy.deepcopy(target_unet.patches)
 
     # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
-    callback.lbw_steps = 'input'
+    LBW_LOG = 'input'
 
     def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
         # def lora_step(step_idx):  # [+] Исправлено имя параметра (step конфликтует с callback)
@@ -451,9 +454,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         #     prev_lora = lora_step(current_step - 1) # [+] Исправлено: step-1 -> current_step-1
 
         # # [+] Вывод на каждом шаге (убрано условие if current_lora != prev_lora)
-        callback.lbw_steps = 'output'
+        #callback.lbw_steps = 'output'
         # callback.lbw_info[current_step] = f"Шаг: {current_step}"  # [+] Исправлено: сохранение в dict по ключу шага, а не перезапись кортежем
-
+        LBW_LOG = 'output'
 
 
 
