@@ -1707,12 +1707,11 @@ def worker():
         total_count = async_task.image_number
 
         def callback(step, x0, x, total_steps, y):
-            s = int(step)
 
-        # 🔽 2. Безопасная проверка и вывод LBW-логов
+            s = int(step)  # Гарантируем тип int для поиска в set/dict
             if hasattr(callback, 'lbw_steps') and s in callback.lbw_steps:
-                msg = callback.lbw_info.get(s, '')
-                print(f"[LBW VERIFY] ✅ Шаг {s:02d} | {msg}", flush=True)
+                print(f"[LBW VERIFY] ✅ Шаг {s:02d} | {callback.lbw_info.get(s, '')}", flush=True)
+       
 
             if step == 0:
                 async_task.callback_steps = 0
