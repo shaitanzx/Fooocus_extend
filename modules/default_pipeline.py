@@ -27,7 +27,7 @@ import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.lbw.lbw as lbw
 # import numpy as np
-# import sys
+import sys
 
 LBW_LOG = {"step": -1, "status": "init"}
 
@@ -720,7 +720,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed): 
             global LBW_LOG  
-            LBW_LOG["status"] = "output"     
+            LBW_LOG["status"] = "output"    
+            sys.stderr.write(f"[LBW] Modifier called, timestep={timestep}\n")
+            sys.stderr.flush() 
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
                 cond = remove_concat(cond)
