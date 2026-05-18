@@ -419,8 +419,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
     callback.lbw_step = set()
-    callback.lbw_cur = {}
-    callback.lbw_prev = {}
+    callback.lbw_info = {}
 
 
     def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
