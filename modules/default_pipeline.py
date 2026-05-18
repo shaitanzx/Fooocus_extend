@@ -453,11 +453,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             prev_lora = lora_step(current_step - 1) # [+] ИСПРАВЛЕНО: step-1 -> current_step-1
             
         # [+] ИСПРАВЛЕНО: Было без условия → добавляло ВСЕ шаги. Теперь только при смене набора
-        if current_lora != prev_lora:
-            callback.lbw_steps.add(current_step)
-            # [+] ИСПРАВЛЕНО: Было кортежем (callback.lbw_info = "x", "y"), что ломало .get(step)
-            # Теперь словарь {номер_шага: строка_лога}
-            callback.lbw_info[current_step] = f"LoRA cur: {current_lora} | prev: {prev_lora}"
+        
+        callback.lbw_steps.add(current_step)
+        # [+] ИСПРАВЛЕНО: Было кортежем (callback.lbw_info = "x", "y"), что ломало .get(step)
+        # Теперь словарь {номер_шага: строка_лога}
+        callback.lbw_info[current_step] = f"LoRA cur: {current_lora} | prev: {prev_lora}"
 
 
 
