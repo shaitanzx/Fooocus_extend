@@ -718,7 +718,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     pass
             return cond
 
-        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):   
+        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed): 
+            global LBW_LOG  
             LBW_LOG["status"] = "output"     
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
