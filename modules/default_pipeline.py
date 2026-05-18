@@ -408,11 +408,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     lbw_cfg = target_unet.model_options['lbw_config']
     loaded_loras = target_unet.model_options['_lbw_loaded_loras']
     clean_weights = {}
-        if target_unet.backup:
-            clean_weights = {k: v.clone() for k, v in target_unet.backup.items()}
-        else:
-            # Fallback: если backup ещё не создан, берём текущие веса как базу
-            clean_weights = {k: v.clone() for k, v in target_unet.model.state_dict().items()}
+    if target_unet.backup:
+        clean_weights = {k: v.clone() for k, v in target_unet.backup.items()}
+    else:
+        # Fallback: если backup ещё не создан, берём текущие веса как базу
+        clean_weights = {k: v.clone() for k, v in target_unet.model.state_dict().items()}
 
     # Эталон permanent-патчей (только те, что уже в model.patches после refresh_loras)
     base_patches = copy.deepcopy(target_unet.patches)
