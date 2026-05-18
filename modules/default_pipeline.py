@@ -418,19 +418,19 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     base_patches = copy.deepcopy(target_unet.patches)
 
     # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
-    callback.lbw_step = set()
+    callback.lbw_steps = set()
     callback.lbw_info = {}
 
 
     def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        def lora_step(step):
-            lora_list = {}
+        def lora_step(step_idx):
+            lora_list = []
             for lora in loaded_loras:
                 lora_name = lora.get('lora_name')
                 start = lora.get('start', 0)
                 stop = lora.get('stop', None)
         
-                if step >= start and (stop is None or step < stop):
+                if step_idx >= start and (stop is None or step_idx < stop):
                     lora_list.append(lora_name)
                     lora_list.append({
                         'name': lora_name,
@@ -444,13 +444,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             if s.item() <= current_sigma + 1e-5:
                 current_step = i
                 break
-        current_lora = lora_step(step)
+        current_lora = lora_step(current_step)
         if current_step == 0:
             prev_lora = {}
         else:
-            prev_lora = lora_step(step-1)
+            prev_lora = lora_step(current_step-1)
         callback.lbw_steps.add(current_step)
-        callback.lbw_info = f"LoRA cur: {list(current_lora)}", f"LoRA prev: {list(prev_lora)}"
+        callback.lbw_info[current_step] = f"LoRA cur: {list(current_lora)}", f"LoRA prev: {list(prev_lora)}"
 
 
 

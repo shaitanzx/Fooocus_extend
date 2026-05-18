@@ -1708,8 +1708,8 @@ def worker():
 
         def callback(step, x0, x, total_steps, y):
             if hasattr(callback, 'lbw_steps'):
-                print(f"[LBW VERIFY] ✅ Шаг {step:02d} | {callback.lbw_info}", flush=True)
-            print (step)
+                print(f"[LBW VERIFY] ✅ Шаг {step:02d} | {callback.lbw_info.get(step, '')}", flush=True)
+            #print (step)
             if step == 0:
                 async_task.callback_steps = 0
             async_task.callback_steps += (100 - preparation_steps) / float(all_steps)
