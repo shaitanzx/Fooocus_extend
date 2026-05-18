@@ -1707,11 +1707,6 @@ def worker():
         total_count = async_task.image_number
 
         def callback(step, x0, x, total_steps, y):
-
-            print('zzzzzzzzzzzzzzzzzzzzz',lbw.LBW_LOG)
-            
-       
-
             if step == 0:
                 async_task.callback_steps = 0
             async_task.callback_steps += (100 - preparation_steps) / float(all_steps)

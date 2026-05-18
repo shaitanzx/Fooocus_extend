@@ -26,6 +26,9 @@ from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.lbw.lbw as lbw
+# import numpy as np
+# import sys
+
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -415,128 +418,120 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     base_patches = copy.deepcopy(target_unet.patches)
 
     # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
-    lbw.LBW_LOG["status"] = "input"
-    # original_unet = target_unet
-    # unet = target_unet.clone()
-    # vae = target_vae
-    # clip = target_clip
+    prev_loras = []
 
-    # def conditioning_modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-    #     # def lora_step(step_idx):  # [+] Исправлено имя параметра (step конфликтует с callback)
-    #     #     lora_list = []        # [+] Исправлено: {} -> [] (у dict нет .append)
-    #     #     for lora in loaded_loras:
-    #     #         lora_name = lora.get('lora_name')
-    #     #         start = lora.get('start', 0)
-    #     #         stop = lora.get('stop', None)
+
+    def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        def lora_step(step):
+            lora_list = {}
+            for lora in loaded_loras:
+                lora_name = lora.get('lora_name')
+                start = lora.get('start', 0)
+                stop = lora.get('stop', None)
         
-    #     #         if step_idx >= start and (stop is None or step_idx < stop):
-    #     #             lora_list.append(lora_name)
-    #     #             lora_list.append({
-    #     #                 'name': lora_name,
-    #     #                 'te': lora.get('default_te', 1.0),
-    #     #                 'unet': lora.get('default_unet', 1.0)
-    #     #             })
-    #     #     return lora_list
-
-    #     # current_sigma = timestep[0].item()
-    #     # current_step = 0
-    #     # for i, s in enumerate(minmax_sigmas):
-    #     #     if s.item() <= current_sigma + 1e-5:
-    #     #         current_step = i
-    #     #         break
-
-    #     # current_lora = lora_step(current_step)      # [+] Исправлено: step -> current_step (step не определён в этом скоупе)
-    #     # if current_step == 0:
-    #     #     prev_lora = []                          # [+] Исправлено: {} -> []
-    #     # else:
-    #     #     prev_lora = lora_step(current_step - 1) # [+] Исправлено: step-1 -> current_step-1
-
-    #     # # [+] Вывод на каждом шаге (убрано условие if current_lora != prev_lora)
-    #     #callback.lbw_steps = 'output'
-    #     # callback.lbw_info[current_step] = f"Шаг: {current_step}"  # [+] Исправлено: сохранение в dict по ключу шага, а не перезапись кортежем
-    #     LBW_LOG["status"] = "output"
+                if step >= start and (stop is None or step < stop):
+                    lora_list.append(lora_name)
+                    lora_list.append({
+                        'name': lora_name,
+                        'te': lora.get('default_te', 1.0),
+                        'unet': lora.get('default_unet', 1.0)
+                    })
+            return lora_list        
+        current_sigma = timestep[0].item()
+        current_step = 0
+        for i, s in enumerate(minmax_sigmas):
+            if s.item() <= current_sigma + 1e-5:
+                current_step = i
+                break
+        current_lora = lora_step(step)
+        if current_step == 0:
+            prev_loras = {}
+        else:
+            prev_lora = lora_step(step-1)
 
 
 
 
 
-    #     # # =================================================================
-    #     # # [+] 2. РАСЧЁТ ТЕКУЩЕГО ШАГА
-    #     # # =================================================================
-    #     # current_sigma = timestep[0].item()
-    #     # current_step = 0
-    #     # for i, s in enumerate(minmax_sigmas):
-    #     #     if s.item() <= current_sigma + 1e-5:
-    #     #         current_step = i
-    #     #         break
 
-    #     # # =================================================================
-    #     # # [+] 3. ОПРЕДЕЛЕНИЕ НУЖНОГО НАБОРА LO RA
-    #     # # =================================================================
-    #     # desired = set()
-    #     # for lora in loaded_loras:
-    #     #     start = lora.get('start', 0)
-    #     #     stop = lora.get('stop', None)
-    #     #     if current_step >= start and (stop is None or current_step < stop):
-    #     #         desired.add(lora['lora_name'])
 
-    #     # # =================================================================
-    #     # # [+] 4. ПЕРЕКЛЮЧЕНИЕ ТОЛЬКО ПРИ СМЕНЕ СОСТОЯНИЯ
-    #     # # =================================================================
-    #     # if desired != set(active_names):
-    #     #     active_names[:] = list(desired)
 
-    #     #     # 🔍 Ключ для лог-верификации
-    #     #     test_key = next(iter(clean_weights.keys()), None)
-    #     #     mean_before = 0.0
-    #     #     if test_key:
-    #     #         try: mean_before = model.model.state_dict()[test_key].float().mean().item()
-    #     #         except: pass
 
-    #     #     # А. Физический сброс тензоров к чистому эталону
-    #     #     if clean_weights:
-    #     #         dev = getattr(model, 'current_device', None)
-    #     #         for k, v in clean_weights.items():
-    #     #             try: ldm_patched.modules.utils.set_attr(model.model, k, v.to(dev) if dev else v)
-    #     #             except: pass
+        # # =================================================================
+        # # [+] 2. РАСЧЁТ ТЕКУЩЕГО ШАГА
+        # # =================================================================
+        # current_sigma = timestep[0].item()
+        # current_step = 0
+        # for i, s in enumerate(minmax_sigmas):
+        #     if s.item() <= current_sigma + 1e-5:
+        #         current_step = i
+        #         break
 
-    #     #     mean_after_reset = 0.0
-    #     #     if test_key:
-    #     #         try: mean_after_reset = model.model.state_dict()[test_key].float().mean().item()
-    #     #         except: pass
+        # # =================================================================
+        # # [+] 3. ОПРЕДЕЛЕНИЕ НУЖНОГО НАБОРА LO RA
+        # # =================================================================
+        # desired = set()
+        # for lora in loaded_loras:
+        #     start = lora.get('start', 0)
+        #     stop = lora.get('stop', None)
+        #     if current_step >= start and (stop is None or current_step < stop):
+        #         desired.add(lora['lora_name'])
 
-    #     #     # Б. Сброс списка патчей к permanent-состоянию (удаляет старые dynamic)
-    #     #     model.patches = copy.deepcopy(base_patches)
+        # # =================================================================
+        # # [+] 4. ПЕРЕКЛЮЧЕНИЕ ТОЛЬКО ПРИ СМЕНЕ СОСТОЯНИЯ
+        # # =================================================================
+        # if desired != set(active_names):
+        #     active_names[:] = list(desired)
 
-    #     #     # В. Добавление ТОЛЬКО активных динамических LoRA
-    #     #     for lora in loaded_loras:
-    #     #         if lora['lora_name'] in desired and lora.get('unet_patches'):
-    #     #             model.add_patches(lora['unet_patches'], lora['default_unet'])
+        #     # 🔍 Ключ для лог-верификации
+        #     test_key = next(iter(clean_weights.keys()), None)
+        #     mean_before = 0.0
+        #     if test_key:
+        #         try: mean_before = model.model.state_dict()[test_key].float().mean().item()
+        #         except: pass
 
-    #     #     # Г. Синхронизация словаря патчей с GPU-тензорами
-    #     #     try:
-    #     #         model.patch_model(device_to=getattr(model, 'current_device', None))
-    #     #     except Exception:
-    #     #         pass  # Безопасный фоллбэк
+        #     # А. Физический сброс тензоров к чистому эталону
+        #     if clean_weights:
+        #         dev = getattr(model, 'current_device', None)
+        #         for k, v in clean_weights.items():
+        #             try: ldm_patched.modules.utils.set_attr(model.model, k, v.to(dev) if dev else v)
+        #             except: pass
 
-    #     #     mean_after_patch = 0.0
-    #     #     if test_key:
-    #     #         try: mean_after_patch = model.model.state_dict()[test_key].float().mean().item()
-    #     #         except: pass
+        #     mean_after_reset = 0.0
+        #     if test_key:
+        #         try: mean_after_reset = model.model.state_dict()[test_key].float().mean().item()
+        #         except: pass
 
-    #     #     # Д. Лог-верификатор (выводится ТОЛЬКО при переключении)
-    #     #     print(f"[LBW VERIFY] Шаг {current_step:02d} | Активные: {list(desired) if desired else 'None'} | "
-    #     #           f"До: {mean_before: .5f} → Сброс: {mean_after_reset: .5f} → Патч: {mean_after_patch: .5f}", flush=True)
+        #     # Б. Сброс списка патчей к permanent-состоянию (удаляет старые dynamic)
+        #     model.patches = copy.deepcopy(base_patches)
 
-    #     # # =================================================================
-    #     # # [+] 5. ВОЗВРАТ БЕЗ ИЗМЕНЕНИЙ СТРУКТУРЫ
-    #     # # =================================================================
-    #     return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        #     # В. Добавление ТОЛЬКО активных динамических LoRA
+        #     for lora in loaded_loras:
+        #         if lora['lora_name'] in desired and lora.get('unet_patches'):
+        #             model.add_patches(lora['unet_patches'], lora['default_unet'])
 
-    # # [+] Регистрация хука в цепочке сэмплинга
-    # unet.add_conditioning_modifier(conditioning_modifier_lbw)
+        #     # Г. Синхронизация словаря патчей с GPU-тензорами
+        #     try:
+        #         model.patch_model(device_to=getattr(model, 'current_device', None))
+        #     except Exception:
+        #         pass  # Безопасный фоллбэк
 
-    # target_unet = unet
+        #     mean_after_patch = 0.0
+        #     if test_key:
+        #         try: mean_after_patch = model.model.state_dict()[test_key].float().mean().item()
+        #         except: pass
+
+        #     # Д. Лог-верификатор (выводится ТОЛЬКО при переключении)
+        #     print(f"[LBW VERIFY] Шаг {current_step:02d} | Активные: {list(desired) if desired else 'None'} | "
+        #           f"До: {mean_before: .5f} → Сброс: {mean_after_reset: .5f} → Патч: {mean_after_patch: .5f}", flush=True)
+
+        # # =================================================================
+        # # [+] 5. ВОЗВРАТ БЕЗ ИЗМЕНЕНИЙ СТРУКТУРЫ
+        # # =================================================================
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+
+    # [+] Регистрация хука в цепочке сэмплинга
+    target_unet.add_conditioning_modifier(conditioning_modifier)
 
 ###############################################
 
@@ -712,9 +707,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     pass
             return cond
 
-        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):  
-            lbw.LBW_LOG["status"] = "output"    
-            
+        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):        
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
                 cond = remove_concat(cond)
