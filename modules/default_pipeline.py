@@ -422,8 +422,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
     LBW_LOG["status"] = "input"
+    original_unet = target_unet
+    unet = target_unet.clone()
+    vae = target_vae
+    clip = target_clip
 
-    def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    def conditioning_modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
         # def lora_step(step_idx):  # [+] Исправлено имя параметра (step конфликтует с callback)
         #     lora_list = []        # [+] Исправлено: {} -> [] (у dict нет .append)
         #     for lora in loaded_loras:
@@ -536,7 +540,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
     # [+] Регистрация хука в цепочке сэмплинга
-    target_unet.add_conditioning_modifier(conditioning_modifier)
+    unet.add_conditioning_modifier(conditioning_modifier_lbw)
+
+    target_unet = unet
 
 ###############################################
 
