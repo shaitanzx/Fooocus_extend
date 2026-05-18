@@ -453,7 +453,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         # [+] Вывод на каждом шаге (убрано условие if current_lora != prev_lora)
         callback.lbw_steps.add(current_step)
-        callback.lbw_info[current_step] = f"LoRA cur: {current_lora} | prev: {prev_lora}"  # [+] Исправлено: сохранение в dict по ключу шага, а не перезапись кортежем
+        callback.lbw_info[current_step] = f"Шаг: {current_step}"  # [+] Исправлено: сохранение в dict по ключу шага, а не перезапись кортежем
 
 
 
