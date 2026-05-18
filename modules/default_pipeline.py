@@ -418,81 +418,119 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     base_patches = copy.deepcopy(target_unet.patches)
 
     # Отслеживаем текущий набор активных динамических LoRA (изменяемый список для замыкания)
-    active_names = []
+    callback.lbw_step = set()
+    callback.lbw_cur = {}
+    callback.lbw_prev = {}
 
 
     def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        # =================================================================
-        # [+] 2. РАСЧЁТ ТЕКУЩЕГО ШАГА
-        # =================================================================
+        def lora_step(step):
+            lora_list = {}
+            for lora in loaded_loras:
+                lora_name = lora.get('lora_name')
+                start = lora.get('start', 0)
+                stop = lora.get('stop', None)
+        
+                if step >= start and (stop is None or step < stop):
+                    lora_list.append(lora_name)
+                    lora_list.append({
+                        'name': lora_name,
+                        'te': lora.get('default_te', 1.0),
+                        'unet': lora.get('default_unet', 1.0)
+                    })
+            return lora_list        
         current_sigma = timestep[0].item()
         current_step = 0
         for i, s in enumerate(minmax_sigmas):
             if s.item() <= current_sigma + 1e-5:
                 current_step = i
                 break
+        current_lora = lora_step(step)
+        if current_step == 0:
+            prev_lora = {}
+        else:
+            prev_lora = lora_step(step-1)
+        callback.lbw_steps.add(current_step)
+        callback.lbw_info = f"LoRA cur: {list(current_lora)}", f"LoRA prev: {list(prev_lora)}"
 
-        # =================================================================
-        # [+] 3. ОПРЕДЕЛЕНИЕ НУЖНОГО НАБОРА LO RA
-        # =================================================================
-        desired = set()
-        for lora in loaded_loras:
-            start = lora.get('start', 0)
-            stop = lora.get('stop', None)
-            if current_step >= start and (stop is None or current_step < stop):
-                desired.add(lora['lora_name'])
 
-        # =================================================================
-        # [+] 4. ПЕРЕКЛЮЧЕНИЕ ТОЛЬКО ПРИ СМЕНЕ СОСТОЯНИЯ
-        # =================================================================
-        if desired != set(active_names):
-            active_names[:] = list(desired)
 
-            # 🔍 Ключ для лог-верификации
-            test_key = next(iter(clean_weights.keys()), None)
-            mean_before = 0.0
-            if test_key:
-                try: mean_before = model.model.state_dict()[test_key].float().mean().item()
-                except: pass
 
-            # А. Физический сброс тензоров к чистому эталону
-            if clean_weights:
-                dev = getattr(model, 'current_device', None)
-                for k, v in clean_weights.items():
-                    try: ldm_patched.modules.utils.set_attr(model.model, k, v.to(dev) if dev else v)
-                    except: pass
 
-            mean_after_reset = 0.0
-            if test_key:
-                try: mean_after_reset = model.model.state_dict()[test_key].float().mean().item()
-                except: pass
 
-            # Б. Сброс списка патчей к permanent-состоянию (удаляет старые dynamic)
-            model.patches = copy.deepcopy(base_patches)
 
-            # В. Добавление ТОЛЬКО активных динамических LoRA
-            for lora in loaded_loras:
-                if lora['lora_name'] in desired and lora.get('unet_patches'):
-                    model.add_patches(lora['unet_patches'], lora['default_unet'])
 
-            # Г. Синхронизация словаря патчей с GPU-тензорами
-            try:
-                model.patch_model(device_to=getattr(model, 'current_device', None))
-            except Exception:
-                pass  # Безопасный фоллбэк
+        # # =================================================================
+        # # [+] 2. РАСЧЁТ ТЕКУЩЕГО ШАГА
+        # # =================================================================
+        # current_sigma = timestep[0].item()
+        # current_step = 0
+        # for i, s in enumerate(minmax_sigmas):
+        #     if s.item() <= current_sigma + 1e-5:
+        #         current_step = i
+        #         break
 
-            mean_after_patch = 0.0
-            if test_key:
-                try: mean_after_patch = model.model.state_dict()[test_key].float().mean().item()
-                except: pass
+        # # =================================================================
+        # # [+] 3. ОПРЕДЕЛЕНИЕ НУЖНОГО НАБОРА LO RA
+        # # =================================================================
+        # desired = set()
+        # for lora in loaded_loras:
+        #     start = lora.get('start', 0)
+        #     stop = lora.get('stop', None)
+        #     if current_step >= start and (stop is None or current_step < stop):
+        #         desired.add(lora['lora_name'])
 
-            # Д. Лог-верификатор (выводится ТОЛЬКО при переключении)
-            print(f"[LBW VERIFY] Шаг {current_step:02d} | Активные: {list(desired) if desired else 'None'} | "
-                  f"До: {mean_before: .5f} → Сброс: {mean_after_reset: .5f} → Патч: {mean_after_patch: .5f}", flush=True)
+        # # =================================================================
+        # # [+] 4. ПЕРЕКЛЮЧЕНИЕ ТОЛЬКО ПРИ СМЕНЕ СОСТОЯНИЯ
+        # # =================================================================
+        # if desired != set(active_names):
+        #     active_names[:] = list(desired)
 
-        # =================================================================
-        # [+] 5. ВОЗВРАТ БЕЗ ИЗМЕНЕНИЙ СТРУКТУРЫ
-        # =================================================================
+        #     # 🔍 Ключ для лог-верификации
+        #     test_key = next(iter(clean_weights.keys()), None)
+        #     mean_before = 0.0
+        #     if test_key:
+        #         try: mean_before = model.model.state_dict()[test_key].float().mean().item()
+        #         except: pass
+
+        #     # А. Физический сброс тензоров к чистому эталону
+        #     if clean_weights:
+        #         dev = getattr(model, 'current_device', None)
+        #         for k, v in clean_weights.items():
+        #             try: ldm_patched.modules.utils.set_attr(model.model, k, v.to(dev) if dev else v)
+        #             except: pass
+
+        #     mean_after_reset = 0.0
+        #     if test_key:
+        #         try: mean_after_reset = model.model.state_dict()[test_key].float().mean().item()
+        #         except: pass
+
+        #     # Б. Сброс списка патчей к permanent-состоянию (удаляет старые dynamic)
+        #     model.patches = copy.deepcopy(base_patches)
+
+        #     # В. Добавление ТОЛЬКО активных динамических LoRA
+        #     for lora in loaded_loras:
+        #         if lora['lora_name'] in desired and lora.get('unet_patches'):
+        #             model.add_patches(lora['unet_patches'], lora['default_unet'])
+
+        #     # Г. Синхронизация словаря патчей с GPU-тензорами
+        #     try:
+        #         model.patch_model(device_to=getattr(model, 'current_device', None))
+        #     except Exception:
+        #         pass  # Безопасный фоллбэк
+
+        #     mean_after_patch = 0.0
+        #     if test_key:
+        #         try: mean_after_patch = model.model.state_dict()[test_key].float().mean().item()
+        #         except: pass
+
+        #     # Д. Лог-верификатор (выводится ТОЛЬКО при переключении)
+        #     print(f"[LBW VERIFY] Шаг {current_step:02d} | Активные: {list(desired) if desired else 'None'} | "
+        #           f"До: {mean_before: .5f} → Сброс: {mean_after_reset: .5f} → Патч: {mean_after_patch: .5f}", flush=True)
+
+        # # =================================================================
+        # # [+] 5. ВОЗВРАТ БЕЗ ИЗМЕНЕНИЙ СТРУКТУРЫ
+        # # =================================================================
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
     # [+] Регистрация хука в цепочке сэмплинга

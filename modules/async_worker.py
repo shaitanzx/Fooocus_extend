@@ -1707,6 +1707,9 @@ def worker():
         total_count = async_task.image_number
 
         def callback(step, x0, x, total_steps, y):
+            if hasattr(callback, 'lbw_steps'):
+                print(f"[LBW VERIFY] ✅ Шаг {step:02d} | {callback.lbw_info}", flush=True)
+
             if step == 0:
                 async_task.callback_steps = 0
             async_task.callback_steps += (100 - preparation_steps) / float(all_steps)
