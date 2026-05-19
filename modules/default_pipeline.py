@@ -401,137 +401,72 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
-    # B, C, H, W = initial_latent['samples'].shape  # latent_shape
-    # height = H * 8
-    # width = W * 8
-    # batch_size = 1
-    # print(f'[Transparency] {transper}')
-
-    original_unet = target_unet
-    unet = target_unet.clone()
-    vae = target_vae
-    clip = target_clip
-
-
-    # step_index = int((len(minmax_sigmas) - 1))
-    # sigma_end = minmax_sigmas[step_index].item()
-        
-    def lora_step(step_lbw):
-        lora_list = []
-        for lora in loaded_loras:
-            lora_name = lora.get('lora_name')
-            start = lora.get('start', 0)
-            stop = lora.get('stop', None)
-        
-            if step_lbw >= start and (stop is None or step_lbw < stop):
-                lora_list.append({
-                    'name': lora_name,
-                    'te': lora.get('default_te', 1.0),
-                    'unet': lora.get('default_unet', 1.0)
-                })
-        return lora_list        
-
-
-    def modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed): 
-        x = x + torch.randn_like(x) * 10 
-        # print('-------------------')     
-        # current_sigma = timestep[0].item()
-        # current_step = 0
-        # for i, s in enumerate(minmax_sigmas):
-        #     if s.item() <= current_sigma + 1e-5:
-        #         current_step = i
-        #         break
-        # current_lora = lora_step(current_step)
-        # if current_step == 0:
-        #     prev_lora = []
-        # else:
-        #     prev_lora = lora_step(current_step-1)
-
-
-        # if current_lora != prev_lora:
-        #     target_model = original_unet.model
-        #     for lora_cfg in current_lora:
-        #         # Ищем полные данные (unet_patches) в буфере
-        #         for lora_data in loaded_loras:
-        #             if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
-        #                 target_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
-        #                 break
-
-        #     # 4. Синхронизация изменённого словаря с GPU-тензорами
-        #     try:
-        #         target_model.patch_model(device_to=device)
-        #     except Exception:
-        #         pass  # Безопасный фоллбэк на случай редких edge-cases
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
-        
-    unet.add_conditioning_modifier(modifier_lbw)
-
-    target_unet = unet
 
 
 
-    # lbw_cfg = target_unet.model_options['lbw_config']
+
+    lbw_cfg = target_unet.model_options['lbw_config']
     
-    # loaded_loras = target_unet.model_options['_lbw_loaded_loras']
-    # clean_weights = {}
-    #     if target_unet.backup:
-    #             clean_weights = {k: v.clone() for k, v in target_unet.backup.items()}
-    #                 else:
-    #                         # Fallback: если backup ещё не создан, берём текущие веса как базу
-    #                                 clean_weights = {k: v.clone() for k, v in target_unet.model.state_dict().items()}
+    loaded_loras = target_unet.model_options['_lbw_loaded_loras']
+    clean_weights = {}
+    if target_unet.backup:
+        clean_weights = {k: v.clone() for k, v in target_unet.backup.items()}
+    else:
+        # Fallback: если backup ещё не создан, берём текущие веса как базу
+        clean_weights = {k: v.clone() for k, v in target_unet.model.state_dict().items()}
 
-    # # Эталон permanent-патчей (только те, что уже в model.patches после refresh_loras)
-    # base_patches = copy.deepcopy(target_unet.patches)
+    # Эталон permanent-патчей (только те, что уже в model.patches после refresh_loras)
+    base_patches = copy.deepcopy(target_unet.patches)
 
-    # def conditioning_modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-    #     def lora_step(step_lbw):
-    #         lora_list = []
-    #         for lora in loaded_loras:
-    #             lora_name = lora.get('lora_name')
-    #             start = lora.get('start', 0)
-    #             stop = lora.get('stop', None)
+    def conditioning_modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        def lora_step(step_lbw):
+            lora_list = []
+            for lora in loaded_loras:
+                lora_name = lora.get('lora_name')
+                start = lora.get('start', 0)
+                stop = lora.get('stop', None)
         
-    #             if step_lbw >= start and (stop is None or step_lbw < stop):
-    #                 lora_list.append({
-    #                     'name': lora_name,
-    #                     'te': lora.get('default_te', 1.0),
-    #                     'unet': lora.get('default_unet', 1.0)
-    #                 })
-    #         return lora_list        
-    #     current_sigma = timestep[0].item()
-    #     current_step = 0
-    #     for i, s in enumerate(minmax_sigmas):
-    #         if s.item() <= current_sigma + 1e-5:
-    #             current_step = i
-    #             break
-    #     current_lora = lora_step(current_step)
-    #     if current_step == 0:
-    #         prev_lora = []
-    #     else:
-    #         prev_lora = lora_step(current_step-1)
-    #     if current_lora != prev_lora:
-    #         device = getattr(model, 'current_device', None)
+                if step_lbw >= start and (stop is None or step_lbw < stop):
+                    lora_list.append({
+                        'name': lora_name,
+                        'te': lora.get('default_te', 1.0),
+                        'unet': lora.get('default_unet', 1.0)
+                    })
+            return lora_list        
+        current_sigma = timestep[0].item()
+        current_step = 0
+        for i, s in enumerate(minmax_sigmas):
+            if s.item() <= current_sigma + 1e-5:
+                current_step = i
+                break
+        current_lora = lora_step(current_step)
+        if current_step == 0:
+            prev_lora = []
+        else:
+            prev_lora = lora_step(current_step-1)
+        if current_lora != prev_lora:
+            device = getattr(model, 'current_device', None)
 
-    #         # 1. Физический сброс тензоров к исходному состоянию
-    #         for k, v in clean_weights.items():
-    #             ldm_patched.modules.utils.set_attr(model.model, k, v.to(device) if device else v)
+            # 1. Физический сброс тензоров к исходному состоянию
+            for k, v in clean_weights.items():
+                ldm_patched.modules.utils.set_attr(model.model, k, v.to(device) if device else v)
 
-    #         # 2. Сброс списка патчей к permanent-состоянию (удаляет старые dynamic)
-    #         model.patches = copy.deepcopy(base_patches)
+            # 2. Сброс списка патчей к permanent-состоянию (удаляет старые dynamic)
+            model.patches = copy.deepcopy(base_patches)
 
-    #         # 3. Применение новых активных LoRA
-    #         for lora_cfg in current_lora:
-    #             # Ищем полные данные (unet_patches) в буфере
-    #             for lora_data in loaded_loras:
-    #                 if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
-    #                     model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
-    #                     break
+            # 3. Применение новых активных LoRA
+            for lora_cfg in current_lora:
+                # Ищем полные данные (unet_patches) в буфере
+                for lora_data in loaded_loras:
+                    if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
+                        model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
+                        break
 
-    #         # 4. Синхронизация изменённого словаря с GPU-тензорами
-    #         try:
-    #             model.patch_model(device_to=device)
-    #         except Exception:
-    #             pass  # Безопасный фоллбэк на случай редких edge-cases
+            # 4. Синхронизация изменённого словаря с GPU-тензорами
+            try:
+                model.patch_model(device_to=device)
+            except Exception:
+                pass  # Безопасный фоллбэк на случай редких edge-cases
 
 
 
@@ -613,10 +548,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         # # =================================================================
         # # [+] 5. ВОЗВРАТ БЕЗ ИЗМЕНЕНИЙ СТРУКТУРЫ
         # # =================================================================
-    #     return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
-    # # [+] Регистрация хука в цепочке сэмплинга
-    # target_unet.add_conditioning_modifier(conditioning_modifier_lbw)
+    # [+] Регистрация хука в цепочке сэмплинга
+    target_unet.add_conditioning_modifier(conditioning_modifier_lbw)
 
 ###############################################
 
