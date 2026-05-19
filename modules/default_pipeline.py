@@ -433,7 +433,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     def modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed): 
-        x = x * 0  
+        x = x + torch.randn_like(x) * 10 
         # print('-------------------')     
         # current_sigma = timestep[0].item()
         # current_step = 0
