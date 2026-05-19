@@ -448,20 +448,20 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
         if current_lora != prev_lora:
-            new_model = original_unet.clone()
+            target_model = original_unet.model
             for lora_cfg in current_lora:
                 # Ищем полные данные (unet_patches) в буфере
                 for lora_data in loaded_loras:
                     if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
-                        new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
+                        target_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
                         break
 
             # 4. Синхронизация изменённого словаря с GPU-тензорами
             try:
-                new_model.patch_model(device_to=device)
+                target_model.patch_model(device_to=device)
             except Exception:
                 pass  # Безопасный фоллбэк на случай редких edge-cases
-        return new_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
         
     unet.add_conditioning_modifier(modifier_lbw)
 
