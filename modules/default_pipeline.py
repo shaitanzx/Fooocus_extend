@@ -421,26 +421,53 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
     unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
-    step_index = int((len(minmax_sigmas) - 1))
-    sigma_end = minmax_sigmas[step_index].item()
+    # step_index = int((len(minmax_sigmas) - 1))
+    # sigma_end = minmax_sigmas[step_index].item()
         
-    def remove_concat_lbw(cond):
-        cond = copy.deepcopy(cond)
-        for i in range(len(cond)):
-            try:
-                del cond[i]['model_conds']['c_concat']
-            except:
-                pass
-        return cond
+    def lora_step(step_lbw):
+        lora_list = []
+        for lora in loaded_loras:
+            lora_name = lora.get('lora_name')
+            start = lora.get('start', 0)
+            stop = lora.get('stop', None)
+        
+            if step_lbw >= start and (stop is None or step_lbw < stop):
+                lora_list.append({
+                    'name': lora_name,
+                    'te': lora.get('default_te', 1.0),
+                    'unet': lora.get('default_unet', 1.0)
+                })
+        return lora_list        
+
 
     def modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):        
-        if timestep[0].item() < sigma_end:
-            target_model = original_unet.model
-            cond = remove_concat(cond)
-            uncond = remove_concat_lbw(uncond)
+        current_sigma = timestep[0].item()
+        current_step = 0
+        for i, s in enumerate(minmax_sigmas):
+            if s.item() <= current_sigma + 1e-5:
+                current_step = i
+                break
+        current_lora = lora_step(current_step)
+        if current_step == 0:
+            prev_lora = []
         else:
-            target_model = model
+            prev_lora = lora_step(current_step-1)
 
+
+        if current_lora != prev_lora:
+            new_model = original_unet.clone()
+            for lora_cfg in current_lora:
+                # Ищем полные данные (unet_patches) в буфере
+                for lora_data in loaded_loras:
+                    if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
+                        model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
+                        break
+
+            # 4. Синхронизация изменённого словаря с GPU-тензорами
+            try:
+                model.patch_model(device_to=device)
+            except Exception:
+                pass  # Безопасный фоллбэк на случай редких edge-cases
         return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
         
     unet.add_conditioning_modifier(modifier_lbw)
