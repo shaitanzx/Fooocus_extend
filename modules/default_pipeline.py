@@ -432,36 +432,37 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         return lora_list        
 
 
-    def modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed):   
-        print('-------------------')     
-        current_sigma = timestep[0].item()
-        current_step = 0
-        for i, s in enumerate(minmax_sigmas):
-            if s.item() <= current_sigma + 1e-5:
-                current_step = i
-                break
-        current_lora = lora_step(current_step)
-        if current_step == 0:
-            prev_lora = []
-        else:
-            prev_lora = lora_step(current_step-1)
+    def modifier_lbw(model, x, timestep, uncond, cond, cond_scale, model_options, seed): 
+        x = x * 0  
+        # print('-------------------')     
+        # current_sigma = timestep[0].item()
+        # current_step = 0
+        # for i, s in enumerate(minmax_sigmas):
+        #     if s.item() <= current_sigma + 1e-5:
+        #         current_step = i
+        #         break
+        # current_lora = lora_step(current_step)
+        # if current_step == 0:
+        #     prev_lora = []
+        # else:
+        #     prev_lora = lora_step(current_step-1)
 
 
-        if current_lora != prev_lora:
-            target_model = original_unet.model
-            for lora_cfg in current_lora:
-                # Ищем полные данные (unet_patches) в буфере
-                for lora_data in loaded_loras:
-                    if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
-                        target_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
-                        break
+        # if current_lora != prev_lora:
+        #     target_model = original_unet.model
+        #     for lora_cfg in current_lora:
+        #         # Ищем полные данные (unet_patches) в буфере
+        #         for lora_data in loaded_loras:
+        #             if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
+        #                 target_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
+        #                 break
 
-            # 4. Синхронизация изменённого словаря с GPU-тензорами
-            try:
-                target_model.patch_model(device_to=device)
-            except Exception:
-                pass  # Безопасный фоллбэк на случай редких edge-cases
-        return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        #     # 4. Синхронизация изменённого словаря с GPU-тензорами
+        #     try:
+        #         target_model.patch_model(device_to=device)
+        #     except Exception:
+        #         pass  # Безопасный фоллбэк на случай редких edge-cases
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
         
     unet.add_conditioning_modifier(modifier_lbw)
 
