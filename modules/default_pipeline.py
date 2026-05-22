@@ -456,7 +456,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         return _lbw_cached_model.apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
 
 
-    unet.set_model_unet_function_wrapper(lbw_conditioning_modifier)
+    unet.set_model_unet_function_wrapper(lbw_unet_wrapper)
 
     target_unet = unet
 
