@@ -354,10 +354,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
-    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
-    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
-    if 'lbw_config' in target_unet.model_options:
-        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
+
     #if '_lbw_loaded_loras' in target_unet.model_options:
     #    print(f"[DEBUG] _lbw_loaded_loras content: {target_unet.model_options['_lbw_loaded_loras']}")    
 
@@ -407,6 +404,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
     _lbw_cached_model = {"cached_model": None}
+    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
+    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
+    if 'lbw_config' in target_unet.model_options:
+        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
     # 📦 Состояние кэширования (объявляются ОДИН раз перед обёрткой)
     def calc_loras(step_idx):
         lora_list = []
@@ -445,6 +446,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
                         new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
                         break
+            new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
             _lbw_cached_model["cached_model"] = new_model.model
             print('====Restore, Patched')
         else:
