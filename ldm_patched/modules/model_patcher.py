@@ -380,6 +380,7 @@ class ModelPatcher:
                 patch_flat[model_key] = (patch_type, weight_list)
 
         self.add_patches(patches=patch_flat, strength_patch=float(strength), strength_model=1.0)
+        print('asasasasasasasasasas')
         return
     def add_conditioning_modifier(self, modifier, ensure_uniqueness=False):
         self.append_model_option('conditioning_modifiers', modifier, ensure_uniqueness)
