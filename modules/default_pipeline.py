@@ -727,17 +727,37 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     pass
             return cond
 
-        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):        
-            if timestep[0].item() < sigma_end:
-                target_model = original_unet.model
-                cond = remove_concat(cond)
-                uncond = remove_concat(uncond)
-            else:
-                target_model = model
-
-            return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        def transparency_wrapper(unet_function, args_dict):
+            """
+            Адаптация твоего conditioning_modifier под модельную обёртку.
+            Вызывается вместо model.apply_model на каждом шаге.
+            """
+            # Извлекаем параметры из args_dict
+            input_x = args_dict['input']
+            timestep = args_dict['timestep']  # Tensor (B,) или (1,)
+            cond_dict = args_dict['c']
+            cond_or_uncond = args_dict.get('cond_or_uncond', [])
         
-        unet.add_conditioning_modifier(conditioning_modifier)
+            # 🔹 1. Логика переключения по sigma (твоя, адаптированная)
+            current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+        
+            if current_sigma < sigma_end:
+                # 🔹 Ветвь "поздние шаги": чистая модель + удаление c_concat
+                target_model = original_unet.model
+            
+            # Удаляем c_concat из conditioning (deepcopy чтобы не сломать граф)
+                if 'model_conds' in cond_dict and 'c_concat' in cond_dict['model_conds']:
+                    cond_dict = copy.deepcopy(cond_dict)
+                    del cond_dict['model_conds']['c_concat']
+            else:
+                # 🔹 Ветвь "ранние шаги": текущая модель без изменений
+                target_model = target_unet.model  # или model, если передаётся в замыкании
+
+        # 🔹 2. Вызов apply_model с правильными параметрами
+        # target_model.apply_model ожидает: (x, timestep, **cond_dict)
+            return target_model.apply_model(input_x, timestep, **cond_dict)
+        
+        unet.set_model_unet_function_wrapper(transparency_wrapper)
 
         target_unet = unet
 
