@@ -741,10 +741,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         target_unet = unet
 
-
-
-
-
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
         for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
@@ -762,6 +758,15 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     if tile_x or tile_y:
         make_circular_asymm(target_unet.model, tile_x, tile_y)
         make_circular_asymm(target_vae.first_stage_model, tile_x, tile_y)
+
+
+    modifiers = target_unet.model_options.get('conditioning_modifiers', [])
+    print(f"[LBW REG] В model_options['conditioning_modifiers'] записано: {len(modifiers)} хуков", flush=True)
+    print(f"[LBW REG] ID зарегистрированного хука: {id(modifiers[-1]) if modifiers else 'None'}", flush=True)
+    print(f"[LBW REG] ID твоей функции: {id(conditioning_modifier)}", flush=True)
+
+
+
 
     if refiner_swap_method == 'joint':
         sampled_latent = core.ksampler(
