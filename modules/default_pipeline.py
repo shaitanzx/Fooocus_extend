@@ -706,14 +706,17 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         
         target_unet = original_unet
-    target_unet.model_options.pop('model_function_wrapper', None)
-    _lbw_cached_model["cached_model"] = None
 
-    # 🔽 ВОССТАНОВЛЕНИЕ БАЗЫ (без аллокаций, без утечек)
     dev = getattr(original_unet, 'current_device', None)
     with torch.no_grad():  # Запрещаем Autograd создавать лишние графы
         for k, v in original_unet.backup.items():
             ldm_patched.modules.utils.set_attr(original_unet.model, k, v.to(dev) if dev else v)
+
+    target_unet = original_unet    
+    target_unet.model_options.pop('model_function_wrapper', None)
+    _lbw_cached_model["cached_model"] = None
+
+    # 🔽 ВОССТАНОВЛЕНИЕ БАЗЫ (без аллокаций, без утечек)
 
     import gc
     gc.collect()
