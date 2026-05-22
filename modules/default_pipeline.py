@@ -409,6 +409,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     if 'lbw_config' in target_unet.model_options:
         print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
     # 📦 Состояние кэширования (объявляются ОДИН раз перед обёрткой)
+
+
+
+    
     def calc_loras(step_idx):
         lora_list = []
         if step_idx >= 0:
@@ -701,5 +705,5 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         
         target_unet = original_unet
-
+    target_unet = original_unet
     return images
