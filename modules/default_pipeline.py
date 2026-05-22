@@ -428,39 +428,60 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     def lbw_unet_wrapper(unet_function, args_dict):
-        test_key = list(original_unet.model.state_dict().keys())[0]
-        mean_val = original_unet.model.state_dict()[test_key].mean().item()
-        print(f"[LBW] original_unet mean: {mean_val}")
         timestep = args_dict['timestep']
         current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
     
-        # Расчёт текущего шага диффузии
         current_step = 0
         for i, s in enumerate(minmax_sigmas):
             if s.item() <= current_sigma + 1e-5:
                 current_step = i
                 break
 
-        # Определение активных LoRA для этого шага
         current_loras = calc_loras(current_step)
         prev_loras = calc_loras(current_step - 1)
     
-        print('-----')
-        print('prev_lora', prev_loras)
-        print('cur_lora', current_loras)
+        # Диагностика в консоль
+        print(f"\n{'='*50}")
+        print(f"[LBW] STEP: {current_step}")
+        print(f"[LBW] sigma: {current_sigma:.3f}")
+        print(f"[LBW] prev_loras: {[l['name'] for l in prev_loras]}")
+        print(f"[LBW] current_loras: {[l['name'] for l in current_loras]}")
     
-        # Всегда создаем свежую модель на каждом шаге
+        # Проверяем состояние original_unet
+        test_key = list(original_unet.model.state_dict().keys())[0]
+        mean_val = original_unet.model.state_dict()[test_key].mean().item()
+        print(f"[LBW] original_unet first weight mean: {mean_val:.6f}")
+    
+        if original_unet.patches:
+            print(f"[LBW] WARNING: original_unet.patches has {len(original_unet.patches)} keys!")
+            print(f"[LBW]   Keys: {list(original_unet.patches.keys())[:3]}...")
+        else:
+            print(f"[LBW] original_unet.patches is EMPTY (good)")
+    
+        # Создаем свежую модель
         new_model = original_unet.clone()
+        print(f"[LBW] new_model created (clone)")
     
+        # Применяем LoRA
         for lora_cfg in current_loras:
             for lora_data in lbw_loaded_loras:
                 if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
                     new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
+                    print(f"[LBW]   Applied {lora_cfg['name']} with weight {lora_cfg['unet']}")
                     break
     
         new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
-
-        # Вызов apply_model и возврат тензора
+        print(f"[LBW] patch_model done")
+    
+        # Проверяем, не изменился ли original_unet после patch_model
+        mean_val_after = original_unet.model.state_dict()[test_key].mean().item()
+        print(f"[LBW] original_unet weight after: {mean_val_after:.6f}")
+    
+        if mean_val != mean_val_after:
+            print(f"[LBW] ⚠️ CRITICAL: original_unet CHANGED! diff={mean_val_after - mean_val:.6f}")
+    
+        print(f"{'='*50}")
+    
         return new_model.model.apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
 
     unet.set_model_unet_function_wrapper(lbw_unet_wrapper)
