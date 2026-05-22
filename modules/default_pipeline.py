@@ -401,69 +401,60 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
-    _lbw_baseline_patches = copy.deepcopy(target_unet.patches)
+
+    # 🔹 Безопасное состояние (избегает nonlocal-ошибок в разных скоупах)
+    _lbw_state = {
+        "baseline_patches": copy.deepcopy(target_unet.patches),
+        "active_names": set(),
+        "logged_steps": set()
+    }
 #    original_unet = target_unet
 #    unet = target_unet.clone()
-    def calc_loras(step_idx):
-        lora_list = []
-        if step_idx >= 0:
-            for lora in lbw_loaded_loras:
-                start = lora.get('start', 0)
-                stop = lora.get('stop', None)
-                if step_idx >= start and (stop is None or step_idx < stop):
-                    lora_list.append({
-                        'name': lora.get('lora_name'),
-                        'unet': lora.get('default_unet', 1.0)
-                    })
-        return lora_list
-
-
     def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        current_sigma = timestep[0].item()
-    
-        current_step = 0
-        for i, s in enumerate(minmax_sigmas):
-            if s.item() <= current_sigma + 1e-5:
-                current_step = i
-                break
+        current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+        current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
 
-        current_loras = calc_loras(current_step)
-        prev_loras = calc_loras(current_step - 1)
-    
-        # Диагностика в консоль
-        print(f"\n{'='*50}")
-        print(f"[LBW] STEP: {current_step}")
-        print(f"[LBW] sigma: {current_sigma:.3f}")
-        print(f"[LBW] prev_loras: {[l['name'] for l in prev_loras]}")
-        print(f"[LBW] current_loras: {[l['name'] for l in current_loras]}")
-    
-        if current_loras != prev_loras:
-            print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-       # А. Откатываем физические веса к базовым (Permanent LoRA + чистая база)
+        desired_names = set()
+        desired_loras = []
+        for lora in lbw_loaded_loras:
+            start = lora.get('start', 0)
+            stop = lora.get('stop', None)
+            if current_step >= start and (stop is None or current_step < stop):
+                desired_names.add(lora.get('lora_name'))
+                desired_loras.append(lora)
+
+        action = "CACHED"
+        if desired_names != _lbw_state["active_names"]:
+            _lbw_state["active_names"] = desired_names
+            action = "SWITCHED"
+
+            # 1. Откат к baseline (Permanent LoRA)
             if hasattr(model, 'unpatch_model'):
-                print('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')
                 model.unpatch_model()
 
-            # Б. Сбрасываем словарь патчей к эталону (удаляет старые Dynamic)
-            model.patches = copy.deepcopy(_lbw_baseline_patches)
+            # 2. Сброс словаря патчей
+            model.patches = copy.deepcopy(_lbw_state["baseline_patches"])
 
-            # В. Добавляем только активные Dynamic LoRA
+            # 3. Добавление только активных Dynamic LoRA
             for lora_data in desired_loras:
                 if lora_data.get('unet_patches'):
                     model.add_patches(lora_data['unet_patches'], lora_data.get('default_unet', 1.0))
 
-            # Г. Применяем к GPU
+            # 4. Запекание в GPU
             try:
                 model.patch_model(device_to=getattr(model, 'current_device', None))
-            except Exception:
-                pass
-            print(f"[LBW] patch_model done")
+            except Exception as e:
+                action = f"PATCH_ERR: {str(e)[:30]}"
 
+    # 🔹 Логирование ровно 1 раз на шаг диффузии (избегает дублей от CFG pos/neg)
+        if current_step not in _lbw_state["logged_steps"]:
+            _lbw_state["logged_steps"].add(current_step)
+            log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
+            print(log_line, flush=True)
+            sys.stderr.write(log_line + "\n")
+            sys.stderr.flush()
 
-    
-        print(f"{'='*50}")
-    
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
 
     target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
