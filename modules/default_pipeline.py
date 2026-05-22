@@ -548,7 +548,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         # # =================================================================
         # # [+] 5. ВОЗВРАТ БЕЗ ИЗМЕНЕНИЙ СТРУКТУРЫ
         # # =================================================================
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    #    return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
     # [+] Регистрация хука в цепочке сэмплинга
     target_unet.add_conditioning_modifier(conditioning_modifier_lbw)
