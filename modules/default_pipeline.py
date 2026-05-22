@@ -437,6 +437,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         print(f"[LBW] current_loras: {[l['name'] for l in current_loras]}")
     
         if current_loras != prev_loras:
+            print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
             # ✅ ТОЛЬКО ЭТО! Никаких сбросов не нужно
             new_model = original_unet.clone()
             
@@ -459,10 +460,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
         print(f"{'='*50}")
     
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        return new_model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
 
-    target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
+    unet.add_conditioning_modifier(lbw_conditioning_modifier)
+    target_unet = unet
     # # ✅ ВАЖНО: Берем СВЕЖУЮ КОПИЮ, а не ссылку!
     # base_unet = target_unet.clone()  # ← clone() создает копию
     
