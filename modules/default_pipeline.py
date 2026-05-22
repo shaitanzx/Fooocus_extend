@@ -399,13 +399,67 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
     #original_unet = target_unet
+        lbw_config = target_unet.model_options.get('lbw_config', {})
+    lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
+
+    def calc_loras(step_idx):
+        lora_list = []
+        if step_idx >= 0:
+            for lora in lbw_loaded_loras:
+                start = lora.get('start', 0)
+                stop = lora.get('stop', None)
+                if step_idx >= start and (stop is None or step_idx < stop):
+                    lora_list.append({
+                        'name': lora.get('lora_name'),
+                        'unet': lora.get('default_unet', 1.0)
+                    })
+        return lora_list
+
 
     def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        current_sigma = timestep[0].item()
+    
+        current_step = 0
+        for i, s in enumerate(minmax_sigmas):
+            if s.item() <= current_sigma + 1e-5:
+                current_step = i
+                break
 
-        print('---------',timestep[0].item())
+        current_loras = calc_loras(current_step)
+        prev_loras = calc_loras(current_step - 1)
+    
+        # Диагностика в консоль
+        print(f"\n{'='*50}")
+        print(f"[LBW] STEP: {current_step}")
+        print(f"[LBW] sigma: {current_sigma:.3f}")
+        print(f"[LBW] prev_loras: {[l['name'] for l in prev_loras]}")
+        print(f"[LBW] current_loras: {[l['name'] for l in current_loras]}")
+    
+        if current_loras != prev_loras:
+            # ✅ ТОЛЬКО ЭТО! Никаких сбросов не нужно
+            new_model = original_unet.clone()
+            
+            # Применяем активные LoRA
+            for lora_cfg in current_loras:
+                for lora_data in lbw_loaded_loras:
+                    if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
+                        new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
+                        break
+            
+            # Синхронизация
+            try:
+                new_model.patch_model()
+            except Exception:
+                pass
+            new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
+            print(f"[LBW] patch_model done")
 
 
+    
+        print(f"{'='*50}")
+    
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+
 
     target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
     # # ✅ ВАЖНО: Берем СВЕЖУЮ КОПИЮ, а не ссылку!
