@@ -402,14 +402,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
 
-    # 🔹 Безопасное состояние (избегает nonlocal-ошибок в разных скоупах)
+    # 🔹 Состояние хука (безопасно для разных скоупов)
     _lbw_state = {
         "baseline_patches": copy.deepcopy(target_unet.patches),
         "active_names": set(),
         "logged_steps": set()
     }
-#    original_unet = target_unet
-#    unet = target_unet.clone()
+
     def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
         current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
         current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
@@ -428,11 +427,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             _lbw_state["active_names"] = desired_names
             action = "SWITCHED"
 
-            # 1. Откат к baseline (Permanent LoRA)
+            # 1. Откат к baseline (Permanent LoRA + чистая база)
             if hasattr(model, 'unpatch_model'):
                 model.unpatch_model()
 
-            # 2. Сброс словаря патчей
+            # 2. Сброс словаря патчей к эталону
             model.patches = copy.deepcopy(_lbw_state["baseline_patches"])
 
             # 3. Добавление только активных Dynamic LoRA
@@ -446,7 +445,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             except Exception as e:
                 action = f"PATCH_ERR: {str(e)[:30]}"
 
-    # 🔹 Логирование ровно 1 раз на шаг диффузии (избегает дублей от CFG pos/neg)
+        # 🔹 Логирование ровно 1 раз на шаг диффузии (избегает дублей от CFG pos/neg)
         if current_step not in _lbw_state["logged_steps"]:
             _lbw_state["logged_steps"].add(current_step)
             log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
@@ -454,9 +453,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             sys.stderr.write(log_line + "\n")
             sys.stderr.flush()
 
-    return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        # ✅ return СТРОГО внутри функции
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
-
+    # 🔌 Регистрация
     target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
     #target_unet = unet
     # # ✅ ВАЖНО: Берем СВЕЖУЮ КОПИЮ, а не ссылку!
