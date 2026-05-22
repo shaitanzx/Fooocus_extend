@@ -438,22 +438,23 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
         if current_loras != prev_loras:
             print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-            # ✅ ТОЛЬКО ЭТО! Никаких сбросов не нужно
-            new_model = original_unet.clone()
-            
-            # Применяем активные LoRA
-            for lora_cfg in current_loras:
-                for lora_data in lbw_loaded_loras:
-                    if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
-                        new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
-                        break
-            
-            # Синхронизация
+       # А. Откатываем физические веса к базовым (Permanent LoRA + чистая база)
+            if hasattr(model, 'unpatch_model'):
+                model.unpatch_model()
+
+            # Б. Сбрасываем словарь патчей к эталону (удаляет старые Dynamic)
+            model.patches = copy.deepcopy(_lbw_baseline_patches)
+
+            # В. Добавляем только активные Dynamic LoRA
+            for lora_data in desired_loras:
+                if lora_data.get('unet_patches'):
+                    model.add_patches(lora_data['unet_patches'], lora_data.get('default_unet', 1.0))
+
+            # Г. Применяем к GPU
             try:
-                new_model.patch_model()
+                model.patch_model(device_to=getattr(model, 'current_device', None))
             except Exception:
                 pass
-            new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
             print(f"[LBW] patch_model done")
 
 
