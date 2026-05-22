@@ -401,6 +401,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
+    _lbw_baseline_patches = copy.deepcopy(target_unet.patches)
 #    original_unet = target_unet
 #    unet = target_unet.clone()
     def calc_loras(step_idx):
