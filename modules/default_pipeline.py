@@ -400,7 +400,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
     original_unet = target_unet
-    #unet = target_unet.clone()
+    unet = target_unet.clone()
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
     _lbw_cached_model = {"cached_model": None}
@@ -463,9 +463,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         return _lbw_cached_model["cached_model"].apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
 
 
-    target_unet.set_model_unet_function_wrapper(lbw_unet_wrapper)
+    unet.set_model_unet_function_wrapper(lbw_unet_wrapper)
 
-    #target_unet = unet
+    target_unet = unet
     
 ###############################################
     if transper != "None":
@@ -705,8 +705,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         
         target_unet = original_unet
-
-    target_unet = original_unet
     target_unet.model_options.pop('model_function_wrapper', None)
     _lbw_cached_model["cached_model"] = None
     return images
