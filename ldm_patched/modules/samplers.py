@@ -127,6 +127,16 @@ def cond_cat(c_list):
     return out
 
 def calc_cond_uncond_batch(model, cond, uncond, x_in, timestep, model_options):
+
+    # 🔽 НАТИВНАЯ ПОДДЕРЖКА CONDITIONING_MODIFIERS
+    cond_scale = model_options.get("cond_scale", 7.0)
+    seed = model_options.get("seed", 0)
+    for modifier in model_options.get("conditioning_modifiers", []):
+        model, x_in, timestep, uncond, cond, cond_scale, model_options, seed = \
+            modifier(model, x_in, timestep, uncond, cond, cond_scale, model_options, seed)
+    # 🔼 КОНЕЦ ВСТАВКИ
+    
+        
     out_cond = torch.zeros_like(x_in)
     out_count = torch.ones_like(x_in) * 1e-37
 
