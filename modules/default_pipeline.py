@@ -441,6 +441,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
        # А. Откатываем физические веса к базовым (Permanent LoRA + чистая база)
             if hasattr(model, 'unpatch_model'):
+                print('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')
                 model.unpatch_model()
 
             # Б. Сбрасываем словарь патчей к эталону (удаляет старые Dynamic)
