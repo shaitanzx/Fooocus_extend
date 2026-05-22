@@ -456,7 +456,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     break
     
         new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
-    
+        del new_model
         # Вызов apply_model и возврат тензора
         return new_model.model.apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
 
