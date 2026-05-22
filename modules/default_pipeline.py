@@ -728,11 +728,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return cond
 
         def transparency_wrapper(unet_function, args_dict):
-            print('qwqwqwqwqwqwqwqwqwqwqwqwqwqwq')
-            """
-            Адаптация твоего conditioning_modifier под модельную обёртку.
-            Вызывается вместо model.apply_model на каждом шаге.
-            """
+
             # Извлекаем параметры из args_dict
             input_x = args_dict['input']
             timestep = args_dict['timestep']  # Tensor (B,) или (1,)
@@ -741,7 +737,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         
             # 🔹 1. Логика переключения по sigma (твоя, адаптированная)
             current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
-        
+            print('asasasas',current_sigma,sigma_end)
             if current_sigma < sigma_end:
                 # 🔹 Ветвь "поздние шаги": чистая модель + удаление c_concat
                 target_model = original_unet.model
