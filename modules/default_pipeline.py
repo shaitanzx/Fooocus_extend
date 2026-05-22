@@ -399,24 +399,20 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-    # ✅ 1. Всегда берем СВЕЖУЮ копию оригинальной модели
-    #    Не используем target_unet напрямую!
-    base_unet = target_unet.clone()
-    
-    # ✅ 2. Для LBW используем base_unet как оригинал
-    original_unet = base_unet.clone()
-    unet = base_unet.clone()
-    
-    lbw_config = base_unet.model_options.get('lbw_config', {})
-    lbw_loaded_loras = base_unet.model_options.get('_lbw_loaded_loras', [])
-    
-    # ✅ 3. Свежий кэш для каждой генерации
-    _lbw_cached_model = {"cached_model": None}
-    
-    # Убеждаемся, что base_unet в чистом состоянии
-    if not base_unet.backup:
-        base_unet.patch_model(device_to=base_unet.current_device)
-    
+    original_unet = target_unet
+    unet = target_unet.clone()
+    lbw_config = target_unet.model_options.get('lbw_config', {})
+    lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
+
+    print(f"[DEBUG] target_unet.model_options keys: {list(target_unet.model_options.keys())}")
+    print(f"[DEBUG] lbw_config found: {'lbw_config' in target_unet.model_options}")
+    if 'lbw_config' in target_unet.model_options:
+        print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
+
+    if not original_unet.backup:
+        original_unet.patch_model(device_to=original_unet.current_device)
+
+
     def calc_loras(step_idx):
         lora_list = []
         if step_idx >= 0:
@@ -429,43 +425,44 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                         'unet': lora.get('default_unet', 1.0)
                     })
         return lora_list
-    
+
+
     def lbw_unet_wrapper(unet_function, args_dict):
-        nonlocal _lbw_cached_model  # ← важно для обновления
-        
         timestep = args_dict['timestep']
         current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
-        
+    
+        # Расчёт текущего шага диффузии
         current_step = 0
         for i, s in enumerate(minmax_sigmas):
             if s.item() <= current_sigma + 1e-5:
                 current_step = i
                 break
-        
+
+        # Определение активных LoRA для этого шага
         current_loras = calc_loras(current_step)
         prev_loras = calc_loras(current_step - 1)
-        
-        if current_loras != prev_loras:
-            # ✅ Всегда берем СВЕЖУЮ копию base_unet (не original_unet!)
-            new_model = base_unet.clone()
-            for lora_cfg in current_loras:
-                for lora_data in lbw_loaded_loras:
-                    if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
-                        new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
-                        break
-            new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
-            _lbw_cached_model["cached_model"] = new_model.model
-        else:
-            if _lbw_cached_model["cached_model"] is None:
-                # ✅ Первый вызов - используем base_unet
-                _lbw_cached_model["cached_model"] = base_unet.model
-        
-        return _lbw_cached_model["cached_model"].apply_model(
-            args_dict['input'], args_dict['timestep'], **args_dict['c']
-        )
     
+        print('-----')
+        print('prev_lora', prev_loras)
+        print('cur_lora', current_loras)
+    
+        # Всегда создаем свежую модель на каждом шаге
+        new_model = original_unet.clone()
+    
+        for lora_cfg in current_loras:
+            for lora_data in lbw_loaded_loras:
+                if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
+                    new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
+                    break
+    
+        new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
+    
+        # Вызов apply_model и возврат тензора
+        return new_model.model.apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
+
     unet.set_model_unet_function_wrapper(lbw_unet_wrapper)
     target_unet = unet
+
 
 ###############################################
     if transper != "None":
@@ -706,18 +703,5 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         
         target_unet = original_unet
 
-    dev = getattr(original_unet, 'current_device', None)
-    with torch.no_grad():  # Запрещаем Autograd создавать лишние графы
-        for k, v in original_unet.backup.items():
-            ldm_patched.modules.utils.set_attr(original_unet.model, k, v.to(dev) if dev else v)
-
-    target_unet = original_unet    
-    target_unet.model_options.pop('model_function_wrapper', None)
-    _lbw_cached_model["cached_model"] = None
-
-    # 🔽 ВОССТАНОВЛЕНИЕ БАЗЫ (без аллокаций, без утечек)
-
-    import gc
-    gc.collect()
-    torch.cuda.empty_cache()
+    target_unet = original_unet
     return images
