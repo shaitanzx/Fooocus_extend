@@ -705,5 +705,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         
         target_unet = original_unet
-    target_unet = original_unet
+    target_unet.model_options.pop('model_function_wrapper', None)
+    _lbw_cached_model["cached_model"] = None
     return images
