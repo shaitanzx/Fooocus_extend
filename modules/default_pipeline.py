@@ -406,7 +406,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     unet = target_unet.clone()
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
-    _lbw_cached_model = None
+    _lbw_state = {"cached_model": None}
     # 📦 Состояние кэширования (объявляются ОДИН раз перед обёрткой)
     def calc_loras(step_idx):
         lora_list = []
@@ -445,16 +445,16 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
                         new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
                         break
-            _lbw_cached_model = new_model.model
+            _lbw_cached_model["cached_model"] = new_model.model
             print('====Restore, Patched')
         else:
             # Используем кэшированную модель (избегаем двойного билда на positive/negative)
-            if _lbw_cached_model is None:
-                _lbw_cached_model = original_unet.model
+            if _lbw_cached_model["cached_model"] is None:
+                _lbw_cached_model["cached_model"] = original_unet.model
             print('====From Cache')
 
         # 4️⃣ Вызов apply_model на подготовленной модели и возврат тензора
-        return _lbw_cached_model.apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
+        return _lbw_cached_model["cached_model"].apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
 
 
     unet.set_model_unet_function_wrapper(lbw_unet_wrapper)
