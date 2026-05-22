@@ -399,8 +399,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     decoded_latent = None
 
-    original_unet = target_unet
-    unet = target_unet.clone()
+    # ✅ ВАЖНО: Берем СВЕЖУЮ КОПИЮ, а не ссылку!
+    base_unet = target_unet.clone()  # ← clone() создает копию
+    
+    original_unet = base_unet  # ← теперь это свежая копия
+    unet = base_unet.clone()
+    
+    lbw_loaded_loras = base_unet.model_options.get('_lbw_loaded_loras', [])
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
 
