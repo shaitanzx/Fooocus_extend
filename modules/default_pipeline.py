@@ -410,7 +410,18 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
     # 📦 Состояние кэширования (объявляются ОДИН раз перед обёрткой)
 
+    dynamic_keys = set()
+    for lora in lbw_loaded_loras:
+        if lora.get('unet_patches'):
+            dynamic_keys.update(lora['unet_patches'].keys())
 
+    _lbw_state_backup = {}
+    if dynamic_keys:
+        sd = original_unet.model.state_dict()
+        for k in dynamic_keys:
+            if k in sd:
+                # Клонируем только нужные тензоры (отвязываем от графа)
+                _lbw_state_backup[k] = sd[k].clone()
 
     
     def calc_loras(step_idx):
@@ -705,6 +716,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         
         target_unet = original_unet
+    if _lbw_state_backup:
+        device = getattr(original_unet, 'current_device', None)
+        for k, v in _lbw_state_backup.items():
+            ldm_patched.modules.utils.set_attr(original_unet.model, k, v.to(device) if device else v)
+
+    # Очистка хука и кэша
     target_unet.model_options.pop('model_function_wrapper', None)
     _lbw_cached_model["cached_model"] = None
     return images
