@@ -428,6 +428,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 
     def lbw_unet_wrapper(unet_function, args_dict):
+        test_key = list(original_unet.model.state_dict().keys())[0]
+        mean_val = original_unet.model.state_dict()[test_key].mean().item()
+        print(f"[LBW] original_unet mean: {mean_val}")
         timestep = args_dict['timestep']
         current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
     
@@ -456,7 +459,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     break
     
         new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
-        del new_model
+
         # Вызов apply_model и возврат тензора
         return new_model.model.apply_model(args_dict['input'], args_dict['timestep'], **args_dict['c'])
 
