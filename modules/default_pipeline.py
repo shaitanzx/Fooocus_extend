@@ -728,6 +728,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return cond
 
         def transparency_wrapper(unet_function, args_dict):
+            print('qwqwqwqwqwqwqwqwqwqwqwqwqwqwq')
             """
             Адаптация твоего conditioning_modifier под модельную обёртку.
             Вызывается вместо model.apply_model на каждом шаге.
