@@ -403,6 +403,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
     original_unet = target_unet
+    unet = target_unet.clone()
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
     _lbw_cached_model = None
