@@ -715,8 +715,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
         unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
-        step_index = int((len(minmax_sigmas) - 1))
-        sigma_end = minmax_sigmas[step_index].item()
+        #step_index = int((len(minmax_sigmas) - 1))
+        #sigma_end = minmax_sigmas[step_index].item()
         
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
@@ -737,8 +737,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         
             # 🔹 1. Логика переключения по sigma (твоя, адаптированная)
             current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
-            print('asasasas',current_sigma,sigma_end)
-            if current_sigma < sigma_end:
+            print('asasasas',current_sigma,sigma_min)
+            if current_sigma < sigma_min:
                 # 🔹 Ветвь "поздние шаги": чистая модель + удаление c_concat
                 target_model = original_unet.model
             
