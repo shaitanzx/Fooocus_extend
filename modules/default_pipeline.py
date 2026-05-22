@@ -27,7 +27,7 @@ import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.lbw.lbw as lbw
 # import numpy as np
-# import sys
+import sys
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
