@@ -410,7 +410,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         print(f"[DEBUG] lbw_config content: {target_unet.model_options['lbw_config']}")
     # 📦 Состояние кэширования (объявляются ОДИН раз перед обёрткой)
 
-
+    if not original_unet.backup:
+        original_unet.patch_model(device_to=original_unet.current_device)
 
     
     def calc_loras(step_idx):
@@ -452,7 +453,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                         break
             new_model.patch_model(device_to=getattr(new_model, 'current_device', None))
             _lbw_cached_model["cached_model"] = new_model.model
-            del new_model
             print('====Restore, Patched')
         else:
             # Используем кэшированную модель (избегаем двойного билда на positive/negative)
@@ -708,8 +708,14 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         target_unet = original_unet
     target_unet.model_options.pop('model_function_wrapper', None)
     _lbw_cached_model["cached_model"] = None
-    if hasattr(original_unet, 'backup') and original_unet.backup:
-        dev = getattr(original_unet, 'current_device', None)
+
+    # 🔽 ВОССТАНОВЛЕНИЕ БАЗЫ (без аллокаций, без утечек)
+    dev = getattr(original_unet, 'current_device', None)
+    with torch.no_grad():  # Запрещаем Autograd создавать лишние графы
         for k, v in original_unet.backup.items():
-            ldm_patched.modules.utils.set_attr(original_unet.model, k, v.to(dev) if dev else v)    
+            ldm_patched.modules.utils.set_attr(original_unet.model, k, v.to(dev) if dev else v)
+
+    import gc
+    gc.collect()
+    torch.cuda.empty_cache()
     return images
