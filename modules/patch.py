@@ -214,6 +214,7 @@ class BrownianTreeNoiseSamplerPatched:
 
 
 def compute_cfg(uncond, cond, cfg_scale, t):
+    print('zxzxzxzxzxzxzxzxzxzxzxzxxzx')
     pid = os.getpid()
     base_eps = uncond + cfg_scale * (cond - uncond)
     if patch_settings[pid].type_cfg == 'CFG rescale':
