@@ -445,6 +445,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     if lora_data.get('lora_name') == lora_cfg['name'] and lora_data.get('unet_patches'):
                         new_model.add_patches(lora_data['unet_patches'], lora_cfg['unet'])
                         break
+            _lbw_cached_model = new_model
             print('====Restore, Patched')
         else:
             # Используем кэшированную модель (избегаем двойного билда на positive/negative)
