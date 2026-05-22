@@ -466,7 +466,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     unet.set_model_unet_function_wrapper(lbw_unet_wrapper)
 
     target_unet = unet
-
+    _lbw_orig_state = {k: v.clone() for k, v in original_unet.model.state_dict().items()}
 ###############################################
     if transper != "None":
         B, C, H, W = initial_latent['samples'].shape  # latent_shape
@@ -705,6 +705,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         
         target_unet = original_unet
+    for k, v in _lbw_orig_state.items():
+        ldm_patched.modules.utils.set_attr(original_unet.model, k, v.to(original_unet.current_device))
     target_unet.model_options.pop('model_function_wrapper', None)
     _lbw_cached_model["cached_model"] = None
     return images
