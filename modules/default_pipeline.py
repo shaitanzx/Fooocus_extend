@@ -583,7 +583,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
         target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
-
+        step_index = int((len(minmax_sigmas) - 1))
+        sigma_end = minmax_sigmas[step_index].item()
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
             for i in range(len(cond)):
