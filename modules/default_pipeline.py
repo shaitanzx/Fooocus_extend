@@ -558,16 +558,16 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
 ###############################################
     if transper != "None":
-        B, C, H, W = initial_latent['samples'].shape  # latent_shape
-        height = H * 8
-        width = W * 8
-        batch_size = 1
+#        B, C, H, W = initial_latent['samples'].shape  # latent_shape
+#        height = H * 8
+#        width = W * 8
+#        batch_size = 1
         print(f'[Transparency] {transper}')
 
         original_unet = target_unet
-        unet = target_unet.clone()
-        vae = target_vae
-        clip = target_clip
+#        unet = target_unet.clone()
+#        vae = target_vae
+#        clip = target_clip
 
         if transper == 'Attention Injection':
             model_path = load_file_from_url(
@@ -584,24 +584,43 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
         unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
-        def transparency_wrapper(unet_function, args_dict):
-            input_x = args_dict['input']
-            timestep = args_dict['timestep']
-            cond_dict = args_dict['c']
-            cond_or_uncond = args_dict.get('cond_or_uncond', [])
-            current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
-            if current_sigma < sigma_min:
-                target_model = original_unet.model
-                if 'model_conds' in cond_dict and 'c_concat' in cond_dict['model_conds']:
-                    cond_dict = copy.deepcopy(cond_dict)
-                    del cond_dict['model_conds']['c_concat']
-            else:
-                target_model = target_unet.model
-            return target_model.apply_model(input_x, timestep, **cond_dict)
-        
-        unet.set_model_unet_function_wrapper(transparency_wrapper)
+        def remove_concat(cond):
+            cond = copy.deepcopy(cond)
+            for i in range(len(cond)):
+                try:
+                    del cond[i]['model_conds']['c_concat']
+                except:
+                    pass
+            return cond
 
-        target_unet = unet
+        def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+            print('----- transper')
+            if timestep[0].item() < sigma_end:
+                target_model = original_unet.model
+                cond = remove_concat(cond)
+                uncond = remove_concat(uncond)
+            else:
+                target_model = model
+
+            return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
+        # def transparency_wrapper(unet_function, args_dict):
+        #     input_x = args_dict['input']
+        #     timestep = args_dict['timestep']
+        #     cond_dict = args_dict['c']
+        #     cond_or_uncond = args_dict.get('cond_or_uncond', [])
+        #     current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+        #     if current_sigma < sigma_min:
+        #         target_model = original_unet.model
+        #         if 'model_conds' in cond_dict and 'c_concat' in cond_dict['model_conds']:
+        #             cond_dict = copy.deepcopy(cond_dict)
+        #             del cond_dict['model_conds']['c_concat']
+        #     else:
+        #         target_model = target_unet.model
+        #     return target_model.apply_model(input_x, timestep, **cond_dict)
+        
+#        unet.set_model_unet_function_wrapper(transparency_wrapper)
+        target_unet.add_conditioning_modifier(conditioning_modifier)
+#        target_unet = unet
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
@@ -793,7 +812,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         images.append(maska)
 
         
-        target_unet = original_unet
+        #target_unet = original_unet
 
     
     return images
