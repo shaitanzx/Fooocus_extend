@@ -402,7 +402,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     lbw_config = target_unet.model_options.get('lbw_config', {})
     lbw_loaded_loras = target_unet.model_options.get('_lbw_loaded_loras', [])
 
-    # 🔹 Состояние хука (безопасно для разных скоупов)
+# 🔹 Состояние хука
     _lbw_state = {
         "baseline_patches": copy.deepcopy(target_unet.patches),
         "active_names": set(),
@@ -410,6 +410,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     }
 
     def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        # 🛡️ АВТО-ОПРЕДЕЛЕНИЕ: если пришёл сырой UNet, берём target_unet (ModelPatcher)
+        patcher = model if hasattr(model, 'add_patches') else target_unet
+
         current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
         current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
 
@@ -428,24 +431,24 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             action = "SWITCHED"
 
             # 1. Откат к baseline (Permanent LoRA + чистая база)
-            if hasattr(model, 'unpatch_model'):
-                model.unpatch_model()
+            if hasattr(patcher, 'unpatch_model'):
+                patcher.unpatch_model()
 
             # 2. Сброс словаря патчей к эталону
-            model.patches = copy.deepcopy(_lbw_state["baseline_patches"])
+            patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
 
             # 3. Добавление только активных Dynamic LoRA
             for lora_data in desired_loras:
                 if lora_data.get('unet_patches'):
-                    model.add_patches(lora_data['unet_patches'], lora_data.get('default_unet', 1.0))
+                    patcher.add_patches(lora_data['unet_patches'], lora_data.get('default_unet', 1.0))
 
             # 4. Запекание в GPU
             try:
-                model.patch_model(device_to=getattr(model, 'current_device', None))
+                patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
             except Exception as e:
                 action = f"PATCH_ERR: {str(e)[:30]}"
 
-        # 🔹 Логирование ровно 1 раз на шаг диффузии (избегает дублей от CFG pos/neg)
+    # 🔹 Логирование 1 раз на шаг диффузии
         if current_step not in _lbw_state["logged_steps"]:
             _lbw_state["logged_steps"].add(current_step)
             log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
@@ -453,7 +456,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             sys.stderr.write(log_line + "\n")
             sys.stderr.flush()
 
-        # ✅ return СТРОГО внутри функции
+    # Возвращаем исходный model (как ожидает ядро), но веса уже обновлены в patcher
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
     # 🔌 Регистрация
