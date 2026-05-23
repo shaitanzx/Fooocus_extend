@@ -794,5 +794,5 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         
         #target_unet = original_unet
 
-    
+    target_unet.model_options.get('conditioning_modifiers', [])
     return images
