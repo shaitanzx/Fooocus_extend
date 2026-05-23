@@ -393,6 +393,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
+    target_unet.model_options.get('conditioning_modifiers', [])
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
@@ -794,5 +795,5 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         
         #target_unet = original_unet
 
-    target_unet.model_options.get('conditioning_modifiers', [])
+    
     return images
