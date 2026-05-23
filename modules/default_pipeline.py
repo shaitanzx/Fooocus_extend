@@ -582,7 +582,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 file_name='layer_xl_transparent_conv.safetensors'
             )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
-        unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
+        target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
