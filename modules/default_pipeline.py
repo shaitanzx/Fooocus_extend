@@ -393,7 +393,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-    target_unet.model_options.get('conditioning_modifiers', [])
+    target_unet.model_options['conditioning_modifiers'] = []
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
@@ -454,8 +454,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             _lbw_state["logged_steps"].add(current_step)
             log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
             print(log_line, flush=True)
-            sys.stderr.write(log_line + "\n")
-            sys.stderr.flush()
+            #sys.stderr.write(log_line + "\n")
+            #sys.stderr.flush()
 
     # Возвращаем исходный model (как ожидает ядро), но веса уже обновлены в patcher
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
