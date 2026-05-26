@@ -997,7 +997,7 @@ def worker():
         loras += async_task.performance_loras
         extend_loras, prompt = parse_extend_loras(prompt, lora_filenames=lora_filenames)
         print ('loras = ',loras)
-        print ('dloras = ',dloras)
+        print ('extend_loras = ',extend_loras)
         print ('ploras = ',ploras)
         print ('prompt = ',prompt)
         loras=loras + extend_loras
