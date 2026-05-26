@@ -434,10 +434,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         target_unet.add_conditioning_modifier(conditioning_modifier)
 
-
-
-
-
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
         for layer in [layer for layer in model.modules() if isinstance(layer, torch.nn.Conv2d)]:
@@ -620,12 +616,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         images.append(maska)
 
-    
-        # Сбрасываем списки патчей и опций до состояния до вызова transparent
         target_unet.patches = copy.deepcopy(original_patches)
         target_unet.model_options = copy.deepcopy(original_model_options)
-    
-        # Очищаем только временные объекты
         del original_patches, original_model_options
         torch.cuda.empty_cache()
 
