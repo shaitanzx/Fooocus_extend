@@ -392,8 +392,8 @@ def parse_extend_loras(prompt: str, skip_file_check=False, prompt_cleanup=True, 
 
     tag_pattern = re.compile(r'<lora:([^>]+)>', re.IGNORECASE)
     
-    dloras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
-    ploras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+    extend_loras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+    
 
     for match in tag_pattern.finditer(prompt):
         raw = match.group(1)
@@ -447,17 +447,14 @@ def parse_extend_loras(prompt: str, skip_file_check=False, prompt_cleanup=True, 
         lora_tuple = (filename, w, te, unet, lbw, lbwe, start, stop)
 
         # Классификация
-        if start is not None or stop is not None:
-            dloras.append(lora_tuple)
-        else:
-            ploras.append(lora_tuple)
+        extend_loras.append(lora_tuple)
 
     # Удаляем теги и чистим промпт
     cleaned_prompt = tag_pattern.sub('', prompt)
     if prompt_cleanup:
         cleaned_prompt = cleanup_prompt(cleaned_prompt)
 
-    return dloras, ploras, cleaned_prompt    
+    return extend_loras, cleaned_prompt    
 
 def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
