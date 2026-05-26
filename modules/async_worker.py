@@ -998,8 +998,6 @@ def worker():
         extend_loras, prompt = parse_extend_loras(prompt, lora_filenames=lora_filenames)
         print ('loras = ',loras)
         print ('extend_loras = ',extend_loras)
-        print ('ploras = ',ploras)
-        print ('prompt = ',prompt)
         loras=loras + extend_loras
         print ('new loras = ',loras)
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
