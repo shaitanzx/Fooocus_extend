@@ -996,7 +996,7 @@ def worker():
                                                           lora_filenames=lora_filenames)
         loras += async_task.performance_loras
         print('---------',prompt)
-        dloras, ploras, prompt = parse_extend_loras(prompt, lora_filenames=["Face.safetensors", "Style.safetensors"])
+        dloras, ploras, prompt = parse_extend_loras(prompt, lora_filenames=)
         print ('loras = ',loras)
         print ('dloras = ',dloras)
         print ('ploras = ',ploras)
