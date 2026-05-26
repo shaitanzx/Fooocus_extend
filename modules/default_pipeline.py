@@ -390,6 +390,47 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
+    _lbw_debug_done = True
+
+    def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        global _lbw_debug_done
+    
+        if not _lbw_debug_done:
+            print("\n" + "="*70)
+            print("[LBW DIAG] FIRST STEP → Inspecting 'model' argument")
+            print(f"  Python type : {type(model)}")
+            print(f"  Class name  : {model.__class__.__name__}")
+
+            # Проверяем, является ли объект ModelPatcher
+            is_patcher = hasattr(model, 'patches') and hasattr(model, 'unpatch_model')
+            print(f"  Is ModelPatcher? {is_patcher}")
+
+            if is_patcher:
+                print(f"  🟢 .patches (queued)      : {len(model.patches)} items")
+                print(f"  🟢 .model_patches (applied) : {len(getattr(model, 'model_patches', []))} items")
+                print(f"  🟢 Inner .model type        : {type(model.model).__name__}")
+            
+                # Выведем ключи первых патчей, если есть
+                if model.patches:
+                    print(f"  🟢 Patch keys (first 3)     : {list(model.patches.keys())[:3]}")
+            else:
+                print("  🔴 WARNING: NOT a ModelPatcher. Это сырая или запечённая модель.")
+                print(f"  🔹 Has .forward?    : {hasattr(model, 'forward')}")
+                print(f"  🔹 Has .state_dict? : {hasattr(model, 'state_dict')}")
+            
+                # Проверим, не является ли это объектом внутри target_unet
+                if 'target_unet' in globals() or 'target_unet' in locals():
+                    try:
+                        print(f"  🔹 Matches target_unet? : {model is target_unet}")
+                        print(f"  🔹 Matches target_unet.model? : {model is getattr(target_unet, 'model', None)}")
+                    except: pass
+
+            print("="*70 + "\n")
+            _lbw_debug_done = True
+
+        # ⛔ НИЧЕГО НЕ МЕНЯЕМ. Просто передаём дальше.
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
 
     if transper != "None":
 
