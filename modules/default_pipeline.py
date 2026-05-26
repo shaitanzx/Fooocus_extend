@@ -619,11 +619,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         png, maska = vae_transparent_decoder.decode(latent, pixel)
         images[0] = png
-        #images.append(png)
-        #images.append(vis)
+
         images.append(maska)
 
-        
-        target_unet = original_unet
 
     return images
