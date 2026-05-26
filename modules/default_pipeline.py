@@ -394,7 +394,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     if transper != "None":
 
         print(f'[Transparency] {transper}')
-
+        original_patches = copy.deepcopy(target_unet.patches)
+        original_model_options = copy.deepcopy(target_unet.model_options)
         if transper == 'Attention Injection':
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
@@ -621,7 +622,11 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
     
         # Сбрасываем списки патчей и опций до состояния до вызова transparent
-        target_unet.patches.clear()
+        target_unet.patches = copy.deepcopy(original_patches)
+        target_unet.model_options = copy.deepcopy(original_model_options)
+    
+        # Очищаем только временные объекты
+        del original_patches, original_model_options
         torch.cuda.empty_cache()
 
     return images
