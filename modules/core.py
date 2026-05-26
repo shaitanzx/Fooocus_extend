@@ -174,7 +174,7 @@ class StableDiffusionModel:
 
 
     # 2. Загружаем DYNAMIC LoRA (с start/stop) в буфер (НЕ применяем)
-        for lora_filename, te_weight, unet_weight, filename, start, stop in dynamic_loras:
+        for lora_filename, weight,te_weight,unet_weight,lbw_preset,lbwe_preset,start,stop in dynamic_loras:
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
