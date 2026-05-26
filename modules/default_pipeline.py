@@ -395,9 +395,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         print(f'[Transparency] {transper}')
 
-        #unet_snapshot = target_unet.clone()
-
-
         if transper == 'Attention Injection':
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
@@ -425,7 +422,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             return cond
 
         def conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-            print('----- transper')
             if timestep[0].item() < sigma_end:
                 target_model = original_unet.model
                 cond = remove_concat(cond)
