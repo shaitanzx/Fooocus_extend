@@ -390,12 +390,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
-    _lbw_debug_done = False
+
 
     def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        global _lbw_debug_done
+
     
-        if not _lbw_debug_done:
+        if not getattr(lbw_conditioning_modifier, '_debug_done', False):
             print("\n" + "="*70)
             print("[LBW DIAG] FIRST STEP → Inspecting 'model' argument")
             print(f"  Python type : {type(model)}")
@@ -426,7 +426,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                     except: pass
 
             print("="*70 + "\n")
-            _lbw_debug_done = True
+            lbw_conditioning_modifier._debug_done = True
 
         # ⛔ НИЧЕГО НЕ МЕНЯЕМ. Просто передаём дальше.
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
