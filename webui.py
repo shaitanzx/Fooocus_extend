@@ -352,7 +352,9 @@ with shared.gradio_root:
             with gr.Row():
                 with gr.Column(scale=17):
                     prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
-                                        autofocus=True, lines=3)
+                                        autofocus=True, lines=3,
+                                        value='masterpiece, best quality, ultra-detailed, (photorealistic:1.2), 1girl, white hair, blue eyes, looking at viewer, <lora:SDXL_FILM_PHOTOGRAPHY_STYLE_V1:1:lbw=ALL:start=10:stop=15>')
+
 
                     default_prompt = modules.config.default_prompt
                     if isinstance(default_prompt, str) and default_prompt != '':

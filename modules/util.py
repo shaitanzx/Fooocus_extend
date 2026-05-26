@@ -386,6 +386,78 @@ def get_file_from_folder_list(name, folders):
 def get_enabled_loras(loras: list, remove_none=True) -> list:
     return [(lora[1], lora[2]) for lora in loras if lora[0] and (lora[1] != 'None' if remove_none else True)]
 
+def parse_extend_lora(prompt: str, skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list, list, str]:
+    if lora_filenames is None:
+        lora_filenames = []
+
+    tag_pattern = re.compile(r'<lora:([^>]+)>', re.IGNORECASE)
+    
+    dloras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+    ploras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+
+    for match in tag_pattern.finditer(prompt):
+        raw = match.group(1)
+        parts = raw.split(':')
+        name = parts[0].strip()
+        params_raw = parts[1:]
+
+        # Пропускаем, если это не расширенный формат
+        if not any('=' in p for p in params_raw):
+            continue
+
+        # Инициализируем значениями по умолчанию (None)
+        w = te = unet = lbw = lbwe = start = stop = None
+
+        for p in params_raw:
+            if '=' in p:
+                k, v = p.split('=', 1)
+                k, v = k.strip(), v.strip()
+                if not v: continue  # Игнорируем пустые значения типа start=
+                
+                if k == 'w':
+                    try: w = float(v)
+                    except: pass
+                elif k == 'te':
+                    try: te = float(v)
+                    except: pass
+                elif k == 'unet':
+                    try: unet = float(v)
+                    except: pass
+                elif k == 'lbw':
+                    lbw = v
+                elif k == 'lbwe':
+                    lbwe = v
+                elif k == 'start':
+                    try: start = int(v)
+                    except: pass
+                elif k == 'stop':
+                    try: stop = int(v)
+                    except: pass
+
+        # Разрешаем путь к файлу
+        filename = name + '.safetensors'
+        if not skip_file_check:
+            resolved = get_filname_by_stem(name, lora_filenames)
+            if resolved:
+                filename = resolved
+            else:
+                continue  # Файл не найден → пропускаем
+
+        # Формируем кортеж: (filename, w, te, unet, lbw, lbwe, start, stop)
+        lora_tuple = (filename, w, te, unet, lbw, lbwe, start, stop)
+
+        # Классификация
+        if start is not None or stop is not None:
+            dloras.append(lora_tuple)
+        else:
+            ploras.append(lora_tuple)
+
+    # Удаляем теги и чистим промпт
+    cleaned_prompt = tag_pattern.sub('', prompt)
+    if prompt_cleanup:
+        cleaned_prompt = cleanup_prompt(cleaned_prompt)
+
+    return dloras, ploras, cleaned_prompt    
 
 def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
