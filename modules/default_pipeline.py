@@ -395,7 +395,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         print(f'[Transparency] {transper}')
 
-        unet_snapshot = target_unet.clone()
+        #unet_snapshot = target_unet.clone()
 
 
         if transper == 'Attention Injection':
@@ -622,14 +622,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         images[0] = png
 
         images.append(maska)
-        target_unet.unpatch_model(device_to=target_unet.current_device)
+
     
         # Сбрасываем списки патчей и опций до состояния до вызова transparent
-        target_unet.patches = unet_snapshot.patches.copy()
-        target_unet.object_patches = unet_snapshot.object_patches.copy()
-        target_unet.model_options = copy.deepcopy(unet_snapshot.model_options)
-    
-        del unet_snapshot  # освобождаем память
+        target_unet.patches.clear()
         torch.cuda.empty_cache()
 
     return images
