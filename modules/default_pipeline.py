@@ -395,7 +395,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         print(f'[Transparency] {transper}')
 
-        original_unet = target_unet
+        unet_snapshot = target_unet.clone()
 
 
         if transper == 'Attention Injection':
@@ -412,6 +412,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
         target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
+        target_unet.patch_model(device_to=target_unet.current_device)
         step_index = int((len(minmax_sigmas) - 1))
         sigma_end = minmax_sigmas[step_index].item()
         def remove_concat(cond):
@@ -621,6 +622,14 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         images[0] = png
 
         images.append(maska)
-
+        target_unet.unpatch_model(device_to=target_unet.current_device)
+    
+        # Сбрасываем списки патчей и опций до состояния до вызова transparent
+        target_unet.patches = unet_snapshot.patches.copy()
+        target_unet.object_patches = unet_snapshot.object_patches.copy()
+        target_unet.model_options = copy.deepcopy(unet_snapshot.model_options)
+    
+        del unet_snapshot  # освобождаем память
+        torch.cuda.empty_cache()
 
     return images
