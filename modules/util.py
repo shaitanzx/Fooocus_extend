@@ -386,7 +386,7 @@ def get_file_from_folder_list(name, folders):
 def get_enabled_loras(loras: list, remove_none=True) -> list:
     return [(lora[1], lora[2]) for lora in loras if lora[0] and (lora[1] != 'None' if remove_none else True)]
 
-def parse_extend_lora(prompt: str, skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list, list, str]:
+def parse_extend_loras(prompt: str, skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list, list, str]:
     if lora_filenames is None:
         lora_filenames = []
 
