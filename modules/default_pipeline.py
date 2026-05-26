@@ -384,7 +384,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-
+    target_unet.model_options['conditioning_modifiers'] = []
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
@@ -392,17 +392,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
     if transper != "None":
-        B, C, H, W = initial_latent['samples'].shape  # latent_shape
-        height = H * 8
-        width = W * 8
-        batch_size = 1
+
         print(f'[Transparency] {transper}')
-
-        original_unet = target_unet
-        unet = target_unet.clone()
-        vae = target_vae
-        clip = target_clip
-
+        original_patches = copy.deepcopy(target_unet.patches)
+        original_model_options = copy.deepcopy(target_unet.model_options)
         if transper == 'Attention Injection':
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
@@ -416,11 +409,10 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 file_name='layer_xl_transparent_conv.safetensors'
             )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
-        unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
+        target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
         step_index = int((len(minmax_sigmas) - 1))
         sigma_end = minmax_sigmas[step_index].item()
-        
         def remove_concat(cond):
             cond = copy.deepcopy(cond)
             for i in range(len(cond)):
@@ -439,14 +431,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 target_model = model
 
             return target_model, x, timestep, uncond, cond, cond_scale, model_options, seed
-        
-        unet.add_conditioning_modifier(conditioning_modifier)
 
-        target_unet = unet
-
-
-
-
+        target_unet.add_conditioning_modifier(conditioning_modifier)
 
     def make_circular_asymm(model, tileX: bool, tileY: bool):
         
@@ -627,11 +613,12 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         png, maska = vae_transparent_decoder.decode(latent, pixel)
         images[0] = png
-        #images.append(png)
-        #images.append(vis)
+
         images.append(maska)
 
-        
-        target_unet = original_unet
+        target_unet.patches = copy.deepcopy(original_patches)
+        target_unet.model_options = copy.deepcopy(original_model_options)
+        del original_patches, original_model_options
+        torch.cuda.empty_cache()
 
     return images
