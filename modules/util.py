@@ -469,7 +469,7 @@ def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file
     if prompt_cleanup:
         cleaned_prompt = cleanup_prompt(cleaned_prompt)
 
-    return loras, ploras, dloras, cleaned_prompt    
+    return cleaned_old, ploras, dloras, cleaned_prompt    
 
 def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,
