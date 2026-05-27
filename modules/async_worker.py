@@ -474,9 +474,18 @@ def worker():
                 d.append(('FreeU', 'freeu',
                           str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
 
-        for li, (n, w) in enumerate(async_task.loras):
-                if n != 'None':
-                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+            for li, item in enumerate(loras):
+                if len(item) == 2:  # Только старый формат (filename, weight)
+                    n, w = item
+                    if n != 'None':
+                        d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+            for li, item in enumerate(loras):
+                if len(item) == 8:  # Только новый расширенный формат
+                    n, w, te, unet, lbw, lbwe, start, stop = item
+                    if n != 'None':
+                        # Формируем строку со всеми параметрами
+                        params_str = f'{n} | w={w} te={te} unet={unet} | lbw={lbw} lbwe={lbwe} | start={start} stop={stop}'
+                        d.append((f'Dynamic LoRA {li + 1}', f'lora_dynamic_{li + 1}', params_str))
         if async_task.codeformer_gen_enabled:
             d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
             d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
@@ -661,7 +670,7 @@ def worker():
                     if n != 'None':
                         # Формируем строку со всеми параметрами
                         params_str = f'{n} | w={w} te={te} unet={unet} | lbw={lbw} lbwe={lbwe} | start={start} stop={stop}'
-                        d.append((f'Dynamic LoRA {li + 1}', f'lora_combined_{li + 1}', params_str))
+                        d.append((f'Dynamic LoRA {li + 1}', f'lora_dynamic_{li + 1}', params_str))
             if async_task.codeformer_gen_enabled:
                 d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
                 d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
@@ -1104,7 +1113,6 @@ def worker():
             else:
                 progressbar(async_task, current_progress, f'Encoding negative #{i + 1} ...')
                 t['uc'] = pipeline.clip_encode(texts=t['negative'], pool_top_k=t['negative_top_k'])
-        print ('-------------------',loras)
         return tasks, use_expansion, loras, current_progress
 
     def apply_freeu(async_task):
