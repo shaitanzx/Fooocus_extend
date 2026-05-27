@@ -1104,6 +1104,7 @@ def worker():
             else:
                 progressbar(async_task, current_progress, f'Encoding negative #{i + 1} ...')
                 t['uc'] = pipeline.clip_encode(texts=t['negative'], pool_top_k=t['negative_top_k'])
+        print ('-------------------',loras)
         return tasks, use_expansion, loras, current_progress
 
     def apply_freeu(async_task):
