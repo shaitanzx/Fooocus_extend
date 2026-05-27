@@ -392,45 +392,64 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     decoded_latent = None
 
 
-    def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    _lbw_state = {
+        "baseline_patches": copy.deepcopy(target_unet.patches),
+        "active_names": set(),
+        "logged_steps": set()
+    }
 
-    
-        if not getattr(lbw_conditioning_modifier, '_debug_done', False):
-            print("\n" + "="*70)
-            print("[LBW DIAG] FIRST STEP → Inspecting 'model' argument")
-            print(f"  Python type : {type(model)}")
-            print(f"  Class name  : {model.__class__.__name__}")
+def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    tensor_cache = model_options.get("_lbw_tensor_cache", {})
+    step_ranges  = model_options.get("_lbw_step_ranges", {})
 
-            # Проверяем, является ли объект ModelPatcher
-            is_patcher = hasattr(model, 'patches') and hasattr(model, 'unpatch_model')
-            print(f"  Is ModelPatcher? {is_patcher}")
+    # 🛡️ АВТО-ОПРЕДЕЛЕНИЕ: если пришёл сырой UNet, берём target_unet (ModelPatcher)
+    patcher = model if hasattr(model, 'add_patches') else target_unet
 
-            if is_patcher:
-                print(f"  🟢 .patches (queued)      : {len(model.patches)} items")
-                print(f"  🟢 .model_patches (applied) : {len(getattr(model, 'model_patches', []))} items")
-                print(f"  🟢 Inner .model type        : {type(model.model).__name__}")
-            
-                # Выведем ключи первых патчей, если есть
-                if model.patches:
-                    print(f"  🟢 Patch keys (first 3)     : {list(model.patches.keys())[:3]}")
-            else:
-                print("  🔴 WARNING: NOT a ModelPatcher. Это сырая или запечённая модель.")
-                print(f"  🔹 Has .forward?    : {hasattr(model, 'forward')}")
-                print(f"  🔹 Has .state_dict? : {hasattr(model, 'state_dict')}")
-            
-                # Проверим, не является ли это объектом внутри target_unet
-                if 'target_unet' in globals() or 'target_unet' in locals():
-                    try:
-                        print(f"  🔹 Matches target_unet? : {model is target_unet}")
-                        print(f"  🔹 Matches target_unet.model? : {model is getattr(target_unet, 'model', None)}")
-                    except: pass
+    current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+    current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
 
-            print("="*70 + "\n")
-            lbw_conditioning_modifier._debug_done = True
+    desired_names = set()
+    desired_loras = []
+    for cfg in step_ranges.values():
+        start = cfg[5]
+        stop  = cfg[6]
+        if current_step >= start and (stop is None or current_step < stop):
+            desired_names.add(cfg[0])
+            desired_loras.append(cfg)
 
-        # ⛔ НИЧЕГО НЕ МЕНЯЕМ. Просто передаём дальше.
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
-    target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
+    action = "CACHED"
+    if desired_names != _lbw_state["active_names"]:
+        _lbw_state["active_names"] = desired_names
+        action = "SWITCHED"
+
+        # 1. Откат к baseline (Permanent LoRA + чистая база)
+        if hasattr(patcher, 'unpatch_model'):
+            patcher.unpatch_model()
+
+        # 2. Сброс словаря патчей к эталону
+        patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
+
+        # 3. Добавление только активных Dynamic LoRA из кэша
+        for cfg in desired_loras:
+            filename, te_weight, unet_weight = cfg[0], cfg[1], cfg[2]
+            u_patch, c_patch = tensor_cache.get(filename, (None, None))
+            if u_patch: patcher.add_patches(u_patch, unet_weight)
+            if c_patch: patcher.add_patches(c_patch, te_weight)
+
+        # 4. Запекание в GPU
+        try:
+            patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
+        except Exception as e:
+            action = f"PATCH_ERR: {str(e)[:30]}"
+
+    # 🔹 Логирование 1 раз на шаг диффузии
+    if current_step not in _lbw_state["logged_steps"]:
+        _lbw_state["logged_steps"].add(current_step)
+        log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
+        print(log_line, flush=True)
+
+    # Возвращаем исходный model (как ожидает ядро), но веса уже обновлены в patcher
+    return model, x, timestep, uncond, cond, cond_scale, model_options, seed
 
     if transper != "None":
 
