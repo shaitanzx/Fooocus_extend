@@ -995,7 +995,7 @@ def worker():
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
         loras += async_task.performance_loras
-        loras, ploras, dloras, prompt = parse_extend_loras(loras, prompt, lora_filenames=lora_filenames)
+        loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
         print ('loras = ',loras)
         print ('dloras = ',dloras)
         print ('ploras = ',ploras)
