@@ -57,11 +57,8 @@ class StableDiffusionModel:
             self.lora_key_map_clip = model_lora_keys_clip(self.clip.cond_stage_model, self.lora_key_map_clip)
             self.lora_key_map_clip.update({x: x for x in self.clip.cond_stage_model.state_dict().keys()})
 
-        self.lbw_config = {}
-
     @torch.no_grad()
     @torch.inference_mode()
-
     def refresh_loras(self, loras):
         assert isinstance(loras, list)
 
@@ -74,36 +71,10 @@ class StableDiffusionModel:
             return
 
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
-        self.lbw_config.clear()
-    
-        # Разделяем LoRA на две группы
-        permanent_loras = []      # без start/stop - применяются сразу
-        dynamic_loras = []        # с start/stop - в буфер для хука
-        #self._lbw_loaded_loras.clear()
-    
+
         loras_to_load = []
 
-        # Парсим все LoRA
-        for item in loras:
-            if len(item) == 2:
-                filename, weight = item
-                te_weight = float(weight)
-                unet_weight = float(weight)
-                lbw_preset = None
-                lbwe_preset = None
-                start, stop = 0, None
-            elif len(item) >= 3:
-                filename = item[0]
-                weight = float(item[1])
-                te_weight = float(item[2])
-                unet_weight = float(item[3])
-                lbw_preset = item[4]
-                lbwe_preset = item[5]
-                start = int(item[6]) if is not None else 0
-                stop = int(item[7]) if is not None else None
-            else:
-                continue
-
+        for filename, weight in loras:
             if filename == 'None':
                 continue
 
@@ -116,38 +87,18 @@ class StableDiffusionModel:
                 print(f'Lora file not found: {lora_filename}')
                 continue
 
-            loras_to_load.append((filename,weight,te_weight,unet_weight,lbw_preset,lbwe_preset,start,stop))
-        
-            # Сохраняем конфигурацию для всех LoRA
-            self.lbw_config[filename] = {
-                "weight": weight,
-                "te_weight":te_weight,
-                "unet_weight":unet_weight,
-                "lbw_preset":lbw_preset,
-                "lbwe_preset":lbwe_preset,
-                "start": start,
-                "stop": stop
-            }
-        
-            # 🆕 Разделяем: есть start/stop или нет
-            if (start == 0 or start is None) and stop is None:
-                permanent_loras.append((lora_filename,weight,te_weight,unet_weight,lbw_preset,lbwe_preset))
-                print(f'[LBW] Permanent LoRA: {filename} (applied once)')
-            else:
-                dynamic_loras.append((lora_filename, weight,te_weight,unet_weight,lbw_preset,lbwe_preset,start,stop))
-                print(f'[LBW] Dynamic LoRA: {filename} start={start} stop={stop}')
+            loras_to_load.append((lora_filename, weight))
 
-    # Создаем чистую модель
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
-        # 1. Применяем PERMANENT LoRA (без start/stop) - один раз, считаются частью модели
-        for lora_filename,weight,te_weight,unet_weight,lbw_preset,lbwe_preset in permanent_loras:
+        for lora_filename, weight in loras_to_load:
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
             lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
 
             if len(lora_unmatch) > 12:
+                # model mismatch
                 continue
 
             if len(lora_unmatch) > 0:
@@ -155,120 +106,20 @@ class StableDiffusionModel:
                       f'with unmatched keys {list(lora_unmatch.keys())}')
 
             if self.unet_with_lora is not None and len(lora_unet) > 0:
-                loaded_keys = self.unet_with_lora.add_patches(lora_unet, unet_weight)
-                #print(f'[LBW] Applied permanent LoRA {filename} to UNET (weight={unet_weight})')
-                print(f'[LBW] Applied permanent LoRA {filename} to UNET (weight={unet_weight}) '
-                      f'with {len(loaded_keys)} keys at weight {unet_weight}.')
+                loaded_keys = self.unet_with_lora.add_patches(lora_unet, weight)
+                print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
+                      f'with {len(loaded_keys)} keys at weight {weight}.')
                 for item in lora_unet:
                     if item not in loaded_keys:
                         print("UNet LoRA key skipped: ", item)
 
             if self.clip_with_lora is not None and len(lora_clip) > 0:
-                loaded_keys = self.clip_with_lora.add_patches(lora_clip, te_weight)
-                print(f'[LBW] Applied permanent LoRA {filename} to CLIP (weight={te_weight}) '
-                      f'with {len(loaded_keys)} keys at weight {te_weight}.')
+                loaded_keys = self.clip_with_lora.add_patches(lora_clip, weight)
+                print(f'Loaded LoRA [{lora_filename}] for CLIP [{self.filename}] '
+                      f'with {len(loaded_keys)} keys at weight {weight}.')
                 for item in lora_clip:
                     if item not in loaded_keys:
                         print("CLIP LoRA key skipped: ", item)
-
-
-
-    # 2. Загружаем DYNAMIC LoRA (с start/stop) в буфер (НЕ применяем)
-        for lora_filename, weight,te_weight,unet_weight,lbw_preset,lbwe_preset,start,stop in dynamic_loras:
-            lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
-            lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
-            lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
-
-            if len(lora_unmatch) > 12:
-                continue
-
-            if len(lora_unmatch) > 0:
-                print(f'Loaded LoRA [{lora_filename}] with unmatched keys {list(lora_unmatch.keys())}')
-
-            self._lbw_loaded_loras.append({
-                'filename': lora_filename,
-                'unet_patches': lora_unet,
-                'clip_patches': lora_clip,
-                'lora_name': filename,
-                'default_te': te_weight,
-                'default_unet': unet_weight,
-                'start': start,
-                'stop': stop
-            })
-            print(f'[LBW] Buffered dynamic LoRA: {filename} (start={start}, stop={stop})')
-
-    # Сохраняем конфигурацию и буфер в model_options для хука
-        if self.unet_with_lora is not None:
-            self.unet_with_lora.model_options["lbw_config"] = self.lbw_config.copy()
-            self.unet_with_lora.model_options["_lbw_loaded_loras"] = self._lbw_loaded_loras.copy()
-            # 🆕 Сохраняем флаг, что это уже модель с permanent LoRA
-            self.unet_with_lora.model_options["_lbw_base_model"] = True
-        
-            if self.unet_with_lora is not None:
-                self.unet_with_lora.model_options["lbw_config"] = self.lbw_config.copy()
-            #print('--------',self.lbw_config)
-            #print('--------',self._lbw_loaded_loras)
-    # def refresh_loras(self, loras):
-    #     assert isinstance(loras, list)
-
-    #     if self.visited_loras == str(loras):
-    #         return
-
-    #     self.visited_loras = str(loras)
-
-    #     if self.unet is None:
-    #         return
-
-    #     print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
-
-    #     loras_to_load = []
-
-    #     for filename, weight in loras:
-    #         if filename == 'None':
-    #             continue
-
-    #         if os.path.exists(filename):
-    #             lora_filename = filename
-    #         else:
-    #             lora_filename = get_file_from_folder_list(filename, modules.config.paths_loras)
-
-    #         if not os.path.exists(lora_filename):
-    #             print(f'Lora file not found: {lora_filename}')
-    #             continue
-
-    #         loras_to_load.append((lora_filename, weight))
-
-    #     self.unet_with_lora = self.unet.clone() if self.unet is not None else None
-    #     self.clip_with_lora = self.clip.clone() if self.clip is not None else None
-
-    #     for lora_filename, weight in loras_to_load:
-    #         lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
-    #         lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
-    #         lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
-
-    #         if len(lora_unmatch) > 12:
-    #             # model mismatch
-    #             continue
-
-    #         if len(lora_unmatch) > 0:
-    #             print(f'Loaded LoRA [{lora_filename}] for model [{self.filename}] '
-    #                   f'with unmatched keys {list(lora_unmatch.keys())}')
-
-    #         if self.unet_with_lora is not None and len(lora_unet) > 0:
-    #             loaded_keys = self.unet_with_lora.add_patches(lora_unet, weight)
-    #             print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
-    #                   f'with {len(loaded_keys)} keys at weight {weight}.')
-    #             for item in lora_unet:
-    #                 if item not in loaded_keys:
-    #                     print("UNet LoRA key skipped: ", item)
-
-    #         if self.clip_with_lora is not None and len(lora_clip) > 0:
-    #             loaded_keys = self.clip_with_lora.add_patches(lora_clip, weight)
-    #             print(f'Loaded LoRA [{lora_filename}] for CLIP [{self.filename}] '
-    #                   f'with {len(loaded_keys)} keys at weight {weight}.')
-    #             for item in lora_clip:
-    #                 if item not in loaded_keys:
-    #                     print("CLIP LoRA key skipped: ", item)
 
 
 @torch.no_grad()
