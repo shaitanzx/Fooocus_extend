@@ -386,13 +386,14 @@ def get_file_from_folder_list(name, folders):
 def get_enabled_loras(loras: list, remove_none=True) -> list:
     return [(lora[1], lora[2]) for lora in loras if lora[0] and (lora[1] != 'None' if remove_none else True)]
 
-def parse_extend_loras(prompt: str, skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list, list, str]:
+def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list, list, str]:
     if lora_filenames is None:
         lora_filenames = []
 
     tag_pattern = re.compile(r'<lora:([^>]+)>', re.IGNORECASE)
     
-    extend_loras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+    dloras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+    ploras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
     
 
     for match in tag_pattern.finditer(prompt):
@@ -447,14 +448,28 @@ def parse_extend_loras(prompt: str, skip_file_check=False, prompt_cleanup=True, 
         lora_tuple = (filename, w, te, unet, lbw, lbwe, start, stop)
 
         # Классификация
-        extend_loras.append(lora_tuple)
+        if start is not None or stop is not None:
+            dloras.append(lora_tuple)
+        else:
+            ploras.append(lora_tuple)
 
+    
+    # Собираем имена из нового формата (filename всегда на индексе 0)
+    new_names = {item[0] for item in ploras if item}
+    
+    # Оставляем в старом списке только те, которых НЕТ в новом
+    cleaned_old = [item for item in loras if item[0] not in new_names]
+    
+    # Логирование только при наличии конфликтов
+    removed = len(loras) - len(cleaned_old)
+    if removed > 0:
+        print(f"[LBW] Resolved {removed} conflict(s): old format overridden by new format.", flush=True)
     # Удаляем теги и чистим промпт
     cleaned_prompt = tag_pattern.sub('', prompt)
     if prompt_cleanup:
         cleaned_prompt = cleanup_prompt(cleaned_prompt)
 
-    return extend_loras, cleaned_prompt    
+    return loras, ploras, dloras, cleaned_prompt    
 
 def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,

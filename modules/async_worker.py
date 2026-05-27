@@ -995,10 +995,11 @@ def worker():
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
         loras += async_task.performance_loras
-        extend_loras, prompt = parse_extend_loras(prompt, lora_filenames=lora_filenames)
+        loras, ploras, dloras, prompt = parse_extend_loras(loras, prompt, lora_filenames=lora_filenames)
         print ('loras = ',loras)
-        print ('extend_loras = ',extend_loras)
-        loras=loras + extend_loras
+        print ('dloras = ',dloras)
+        print ('ploras = ',ploras)
+        loras=loras + ploras + dloras
         print ('new loras = ',loras)
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
