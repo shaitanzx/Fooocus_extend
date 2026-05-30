@@ -7,7 +7,7 @@ import math
 import os
 import cv2
 import re
-from typing import List, Tuple, AnyStr, NamedTuple
+from typing import List, Tuple, AnyStr, NamedTuple, Dict
 
 import json
 import hashlib
@@ -17,6 +17,9 @@ from PIL import Image
 import modules.config
 import modules.sdxl_styles
 from modules.flags import Performance
+
+from collections import defaultdict
+
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -385,6 +388,125 @@ def get_file_from_folder_list(name, folders):
 
 def get_enabled_loras(loras: list, remove_none=True) -> list:
     return [(lora[1], lora[2]) for lora in loras if lora[0] and (lora[1] != 'None' if remove_none else True)]
+
+
+SDXL_LBW_SLOTS = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" for i in range(9)]
+
+def parse_lbw_preset(preset: str) -> Dict[str, float]:
+    """Парсит lbw= строку в веса для 19 слотов SDXL"""
+    default_weights = {slot: 1.0 for slot in SDXL_LBW_SLOTS}
+    if not preset or not preset.strip():
+        print(f"[LBW] parse_lbw_preset: input is empty. Using default (all 1.0).")
+        return default_weights
+
+    preset = preset.strip()
+    weights = default_weights.copy()
+
+    # 🔍 Детекция именованного режима (IN/MID/OUT)
+    if re.search(r'(IN|MID|OUT)\s*[=:]\s*[\d.]+', preset, re.IGNORECASE):
+        parts = re.split(r'[,;]', preset)
+        log_parts = []
+        for part in parts:
+            part = part.strip()
+            if not part: continue
+            match = re.match(r'(IN|MID|OUT)\s*[=:]\s*([\d.]+)', part, re.IGNORECASE)
+            if match:
+                group, val = match.group(1).upper(), float(match.group(2))
+                if group == 'IN':
+                    for i in range(9): weights[f"IN{i:02d}"] = val
+                    log_parts.append(f"IN:{val}")
+                elif group == 'MID':
+                    weights["MID00"] = val
+                    log_parts.append(f"MID:{val}")
+                elif group == 'OUT':
+                    for i in range(9): weights[f"OUT{i:02d}"] = val
+                    log_parts.append(f"OUT:{val}")
+        print(f"[LBW] parse_lbw_preset (named): '{preset}' → {', '.join(log_parts)}")
+        return weights
+
+    # 🔢 Позиционный режим (0.8,1.0,1.5...)
+    values = []
+    for p in preset.split(','):
+        p = p.strip()
+        if not p: continue
+        try: values.append(float(p))
+        except ValueError: continue
+
+    for i, val in enumerate(values):
+        if i < len(SDXL_LBW_SLOTS):
+            weights[SDXL_LBW_SLOTS[i]] = val
+        else:
+            break
+
+    # Логируем только слоты с весом != 1.0 для компактности
+    changed = {k: v for k, v in weights.items() if v != 1.0}
+    print(f"[LBW] parse_lbw_preset (pos): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
+    return weights
+
+def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
+    """Группирует ключи lora_key_map_unet по 19 LBW-слотам"""
+    slots = defaultdict(list)
+    pattern = re.compile(r"diffusion_model\.(input_blocks|output_blocks|middle_block)(?:\.(\d+))?\.")
+
+    mapped_count = 0
+    for lora_key, model_path in key_map.items():
+        match = pattern.search(model_path)
+        if not match: continue
+
+        block_type, block_idx = match.group(1), match.group(2)
+        if block_type == "input_blocks":
+            slots[f"IN{int(block_idx):02d}"].append(lora_key)
+            mapped_count += 1
+        elif block_type == "output_blocks":
+            slots[f"OUT{int(block_idx):02d}"].append(lora_key)
+            mapped_count += 1
+        elif block_type == "middle_block":
+            slots["MID00"].append(lora_key)
+            mapped_count += 1
+
+    order = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" for i in range(9)]
+    result = {slot: slots[slot] for slot in order if slot in slots}
+
+    # Логирование структуры маппинга (вызовется 1 раз при загрузке модели)
+    slot_counts = {s: len(keys) for s, keys in result.items()}
+    print(f"[LBW] build_lbw_slot_mapping: Mapped {mapped_count}/{len(key_map)} keys into {len(result)} slots. "
+          f"Distribution: {slot_counts}")
+    return result
+
+
+def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset: str, slot_map: dict):
+    """Умное применение патчей с учётом LBW-весов"""
+    slot_weights = parse_lbw_preset(lbw_preset)
+    
+    # Если все веса == 1.0, применяем стандартно (быстрее)
+    if all(w == 1.0 for w in slot_weights.values()):
+        return patcher.add_patches(patch_dict, base_weight)
+        
+    # Разбиваем патчи по слотам
+    slot_patches = defaultdict(dict)
+    for lora_key, patch_data in patch_dict.items():
+        placed = False
+        for slot, keys in slot_map.items():
+            if lora_key in keys:
+                slot_patches[slot][lora_key] = patch_data
+                placed = True
+                break
+        if not placed:
+            # Ключи типа time_embed, conv_in/out идут в MID или применяются с base_weight
+            slot_patches["MID00"][lora_key] = patch_data
+            
+    # Применяем каждый слот со своим множителем
+    loaded_all = set()
+    for slot, patches in slot_patches.items():
+        mult = slot_weights.get(slot, 1.0)
+        final_weight = base_weight * mult
+        loaded_keys = patcher.add_patches(patches, final_weight)
+        if loaded_keys: loaded_all.update(loaded_keys)
+        
+    return loaded_all
+
+
+
 
 def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list,list, list, str]:
     if lora_filenames is None:

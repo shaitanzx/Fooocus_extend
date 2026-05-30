@@ -18,7 +18,7 @@ from ldm_patched.contrib.external import VAEDecode, EmptyLatentImage, VAEEncode,
 from ldm_patched.contrib.external_freelunch import FreeU_V2
 from ldm_patched.modules.sample import prepare_mask
 from modules.lora import match_lora
-from modules.util import get_file_from_folder_list
+from modules.util import get_file_from_folder_list, parse_lbw_preset, build_lbw_slot_mapping, apply_lbw_patches
 from ldm_patched.modules.lora import model_lora_keys_unet, model_lora_keys_clip
 from modules.config import path_embeddings
 from ldm_patched.contrib.external_model_advanced import ModelSamplingDiscrete, ModelSamplingContinuousEDM
@@ -85,8 +85,11 @@ class StableDiffusionModel:
             print("="*70 + "\n")
             self._lbw_debug_printed = True
 
-            
+
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
+
+
+        self._lbw_slot_map = build_lbw_slot_mapping(self.lora_key_map_unet)
 
         # Инициализация хранилищ для динамических LoRA
         self._lbw_tensor_cache = {}
@@ -140,7 +143,7 @@ class StableDiffusionModel:
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
-        # 🔹 1. Применяем PERMANENT LoRA (оригинальная логика + поддержка всех параметров)
+        # 🔹 1. Применяем PERMANENT LoRA
         for lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset in loras_to_load:
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
@@ -154,9 +157,12 @@ class StableDiffusionModel:
                       f'with unmatched keys {list(lora_unmatch.keys())}')
 
             if self.unet_with_lora is not None and len(lora_unet) > 0:
-                loaded_keys = self.unet_with_lora.add_patches(lora_unet, unet_weight)
+                # 👇 ЗАМЕНА: используем apply_lbw_patches вместо прямого add_patches
+                loaded_keys = apply_lbw_patches(
+                    self.unet_with_lora, lora_unet, unet_weight, lbw_preset, self._lbw_slot_map
+                )
                 print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
-                      f'with {len(loaded_keys)} keys at weight {unet_weight}.')
+                      f'with {len(loaded_keys)} keys at base weight {unet_weight} (LBW applied).')
                 for key in lora_unet:
                     if key not in loaded_keys:
                         print("UNet LoRA key skipped: ", key)
