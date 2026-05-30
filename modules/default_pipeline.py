@@ -384,13 +384,16 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-    target_unet.model_options['conditioning_modifiers'] = []
+
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
 
+    target_unet.model_options['conditioning_modifiers'] = []
+    original_patches = copy.deepcopy(target_unet.patches)
+    original_model_options = copy.deepcopy(target_unet.model_options)
 
     _lbw_state = {
         "baseline_patches": copy.deepcopy(target_unet.patches),
@@ -454,8 +457,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     if transper != "None":
 
         print(f'[Transparency] {transper}')
-        original_patches = copy.deepcopy(target_unet.patches)
-        original_model_options = copy.deepcopy(target_unet.model_options)
+
         if transper == 'Attention Injection':
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
@@ -676,9 +678,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         images.append(maska)
 
-        target_unet.patches = copy.deepcopy(original_patches)
-        target_unet.model_options = copy.deepcopy(original_model_options)
-        del original_patches, original_model_options
-        torch.cuda.empty_cache()
+    target_unet.patches = copy.deepcopy(original_patches)
+    target_unet.model_options = copy.deepcopy(original_model_options)
+    del original_patches, original_model_options
+    torch.cuda.empty_cache()
 
     return images
