@@ -12,7 +12,7 @@ from extras.expansion import FooocusExpansion
 
 from ldm_patched.modules.model_base import SDXL, SDXLRefiner
 from modules.sample_hijack import clip_separate
-from modules.util import get_file_from_folder_list, get_enabled_loras
+from modules.util import get_file_from_folder_list, get_enabled_loras, apply_lbw_patches
 
 
 import copy
