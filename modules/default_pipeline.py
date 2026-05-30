@@ -419,7 +419,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
         for cfg in step_ranges.values():
             # cfg = (filename, te_weight, unet_weight, lbw_preset, lbwe_preset, start, stop)
             start, stop = cfg[5], cfg[6]
-            if current_step >= start and (stop is None or current_step < stop):
+            if current_step >= start and (stop is None or current_step <= stop):
                 desired_names.add(cfg[0])
                 desired_loras.append(cfg)
 
