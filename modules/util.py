@@ -443,6 +443,75 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
     print(f"[LBW] parse_lbw_preset (pos): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
     return weights
 
+def parse_lbw_elemental(preset: str):
+    """
+    Парсит lbwe= в список правил: [(блок_диапазон, ключ_паттерн, вес), ...]
+    Формат: "BLOCK_RANGE=KEY_PATTERN=WEIGHT[,BLOCK_RANGE=KEY_PATTERN=WEIGHT...]"
+    Примеры:
+      "IN05-OUT08=attn=1.5"  → attention слои в блоках 5-8 умножить на 1.5
+      "MID00=ff=0.8"         → feed-forward в MID00 умножить на 0.8
+      "ALL=to_q=1.2"         → все to_q весы во всех блоках ×1.2
+    """
+    if not preset or not preset.strip():
+        return []
+        
+    rules = []
+    for part in preset.split(','):
+        part = part.strip()
+        if not part: continue
+        # 🔑 Разделитель теперь =
+        parts = part.split('=')
+        if len(parts) != 3: continue
+        block_range, key_pattern, w_str = parts[0].strip(), parts[1].strip(), parts[2].strip()
+        try:
+            rules.append((block_range.upper(), key_pattern.lower(), float(w_str)))
+        except ValueError:
+            continue
+    return rules
+
+def _slot_to_index(slot: str) -> int:
+    """Вспомогательная: преобразует имя слота в числовой индекс для сравнения диапазонов"""
+    s = slot.upper()
+    if s.startswith('IN'): return int(s[2:])
+    if s == 'MID00': return 999  # MID между IN и OUT
+    if s.startswith('OUT'): return 2000 + int(s[3:])
+    return -1
+
+def get_elemental_multiplier(lora_key: str, slot_name: str, elemental_rules):
+    """Возвращает множитель lbwe для конкретного ключа. Если нет совпадений → 1.0"""
+    if not elemental_rules:
+        return 1.0
+        
+    slot_idx = _slot_to_index(slot_name)
+    last_weight = 1.0
+    matched = False
+    
+    key_lower = lora_key.lower()
+    
+    for block_range, key_pattern, weight in elemental_rules:
+        # 1. Проверка паттерна ключа
+        if key_pattern not in key_lower:
+            continue
+            
+        # 2. Проверка диапазона блоков
+        in_range = False
+        if block_range == 'ALL':
+            in_range = True
+        elif '-' in block_range:
+            start_s, end_s = block_range.split('-', 1)
+            start_idx = _slot_to_index(start_s)
+            end_idx = _slot_to_index(end_s)
+            if 0 <= start_idx <= end_idx:
+                in_range = (start_idx <= slot_idx <= end_idx)
+        else:
+            in_range = (block_range == slot_name.upper())
+            
+        if in_range:
+            matched = True
+            last_weight = weight  # Последнее совпавшее правило имеет приоритет
+            
+    return last_weight if matched else 1.0
+
 def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
     """Группирует ключи lora_key_map_unet по 19 LBW-слотам"""
     slots = defaultdict(list)
@@ -474,16 +543,18 @@ def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
     return result
 
 
-def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset: str, slot_map: dict):
-    """Умное применение патчей с учётом LBW-весов"""
+def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset: str, slot_map: dict, lbwe_preset: str = None):
     slot_weights = parse_lbw_preset(lbw_preset)
+    elemental_rules = parse_lbw_elemental(lbwe_preset)
     
-    # Если все веса == 1.0, применяем стандартно (быстрее)
-    if all(w == 1.0 for w in slot_weights.values()):
+    # ⚡ Fast path: если все множители 1.0, применяем штатно
+    if all(w == 1.0 for w in slot_weights.values()) and not elemental_rules:
         return patcher.add_patches(patch_dict, base_weight)
         
-    # Разбиваем патчи по слотам
     slot_patches = defaultdict(dict)
+    unassigned = {}
+    
+    # Группируем патчи по слотам
     for lora_key, patch_data in patch_dict.items():
         placed = False
         for slot, keys in slot_map.items():
@@ -492,16 +563,44 @@ def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset:
                 placed = True
                 break
         if not placed:
-            # Ключи типа time_embed, conv_in/out идут в MID или применяются с base_weight
-            slot_patches["MID00"][lora_key] = patch_data
+            unassigned[lora_key] = patch_data
             
-    # Применяем каждый слот со своим множителем
+    if unassigned:
+        slot_patches["MID00"].update(unassigned)
+        
     loaded_all = set()
+    log_parts = []
+    
     for slot, patches in slot_patches.items():
-        mult = slot_weights.get(slot, 1.0)
-        final_weight = base_weight * mult
-        loaded_keys = patcher.add_patches(patches, final_weight)
-        if loaded_keys: loaded_all.update(loaded_keys)
+        slot_mult = slot_weights.get(slot, 1.0)
+        applied_patches = {}
+        
+        for lora_key, patch_data in patches.items():
+            # 1. Множитель блока
+            block_mult = slot_mult
+            # 2. Множитель элемента (переопределяет или дополняет)
+            elem_mult = get_elemental_multiplier(lora_key, slot, elemental_rules)
+            final_weight = base_weight * block_mult * elem_mult
+            
+            # Применяем патч с финальным весом
+            patcher.add_patch(lora_key, patch_data, final_weight)
+            loaded_all.add(lora_key)
+            
+            # Лог: собираем статистику только если вес отличается от base×block
+            if elem_mult != 1.0 and log_parts.count(f"{slot}×{elem_mult:.2f}({patches.get(lora_key,0)} keys)") == 0:
+                pass # Упрощённый лог ниже
+                
+        # Компактный лог применения LBWE
+        elem_changed = {k: get_elemental_multiplier(k, slot, elemental_rules) for k in patches}
+        changed_counts = defaultdict(int)
+        for k, m in elem_changed.items():
+            if m != 1.0:
+                changed_counts[f"{slot}×{m:.2f}"] += 1
+        for tag, cnt in changed_counts.items():
+            log_parts.append(f"{tag}({cnt} keys)")
+            
+    if log_parts:
+        print(f"[LBW+LBWE] Overrides: {', '.join(log_parts)} | base={base_weight:.2f}")
         
     return loaded_all
 

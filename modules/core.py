@@ -89,21 +89,6 @@ class StableDiffusionModel:
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
 
 
-        self._lbw_slot_map = build_lbw_slot_mapping(self.lora_key_map_unet)
-
-        # 🔍 DEBUG: Точный подсчёт блоков в модели (динамический)
-        if hasattr(self, '_lbw_slot_map') and self._lbw_slot_map:
-            slots = sorted(self._lbw_slot_map.keys())
-            in_blocks  = [s for s in slots if s.startswith('IN')]
-            out_blocks = [s for s in slots if s.startswith('OUT')]
-            mid_blocks = [s for s in slots if s.startswith('MID')]
-
-            print(f"[LBW] 📊 DETECTED ARCHITECTURE: {len(slots)} total slots")
-            print(f"     IN : {len(in_blocks)} blocks ({in_blocks[0]} → {in_blocks[-1] if in_blocks else '-'})")
-            print(f"     MID: {len(mid_blocks)} blocks {mid_blocks if mid_blocks else ''}")
-            print(f"     OUT: {len(out_blocks)} blocks ({out_blocks[0]} → {out_blocks[-1] if out_blocks else '-'})")
-            print(f"     FULL LIST: {slots}")
-
         # Инициализация хранилищ для динамических LoRA
         self._lbw_tensor_cache = {}
         self._lbw_step_ranges = {}
@@ -172,7 +157,7 @@ class StableDiffusionModel:
             if self.unet_with_lora is not None and len(lora_unet) > 0:
                 # 👇 ЗАМЕНА: используем apply_lbw_patches вместо прямого add_patches
                 loaded_keys = apply_lbw_patches(
-                    self.unet_with_lora, lora_unet, unet_weight, lbw_preset, self._lbw_slot_map
+                    self.unet_with_lora, lora_unet, unet_weight, lbw_preset, self._lbw_slot_map, lbwe_preset
                 )
                 print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
                       f'with {len(loaded_keys)} keys at base weight {unet_weight} (LBW applied).')
