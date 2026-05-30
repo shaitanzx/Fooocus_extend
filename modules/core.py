@@ -87,7 +87,7 @@ class StableDiffusionModel:
 
 
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
-
+        self._lbw_slot_map = build_lbw_slot_mapping(self.lora_key_map_unet)
 
         # Инициализация хранилищ для динамических LoRA
         self._lbw_tensor_cache = {}
