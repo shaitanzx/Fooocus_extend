@@ -189,10 +189,11 @@ class StableDiffusionModel:
                     print(f'Loaded LoRA [{lora_filename}] for model [{self.filename}] '
                           f'with unmatched keys {list(lora_unmatch.keys())}')
 
-                self._lbw_tensor_cache[lora_filename] = (lora_unet, lora_clip)
-                dynamic_files_loaded.add(lora_filename)
-                print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] buffered for dynamic steps.')
+            self._lbw_tensor_cache[lora_filename] = (lora_unet, lora_clip)
+            dynamic_files_loaded.add(lora_filename)
+            print(f'Buffered Dynamic LoRA [{lora_filename}] ({len(lora_unet)} UNet keys, {len(lora_clip)} CLIP keys)')
 
+            
         # 🆕 Передача кэша и диапазонов в модель для хука
         if self.unet_with_lora is not None:
             self.unet_with_lora.model_options["_lbw_tensor_cache"] = self._lbw_tensor_cache

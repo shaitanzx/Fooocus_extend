@@ -401,7 +401,7 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
 
     preset = preset.strip()
     weights = default_weights.copy()
-
+    # <lora:MyLora:lbw=IN=0.3;OUT=1.8>
     # 🔍 Детекция именованного режима (IN/MID/OUT)
     if re.search(r'(IN|MID|OUT)\s*[=:]\s*[\d.]+', preset, re.IGNORECASE):
         parts = re.split(r'[,;]', preset)

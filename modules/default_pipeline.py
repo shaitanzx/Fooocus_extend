@@ -404,18 +404,21 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
         tensor_cache = model_options.get("_lbw_tensor_cache", {})
         step_ranges  = model_options.get("_lbw_step_ranges", {})
+        slot_map     = model_options.get("_lbw_slot_map", {}) # Карта LBW-слотов модели
 
-        # 🛡️ АВТО-ОПРЕДЕЛЕНИЕ: если пришёл сырой UNet, берём target_unet (ModelPatcher)
+        # Определяем патчер (UNet)
         patcher = model if hasattr(model, 'add_patches') else target_unet
 
+        # Вычисляем текущий шаг диффузии
         current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
         current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
 
+        # Ищем активные Dynamic LoRA для текущего шага
         desired_names = set()
         desired_loras = []
         for cfg in step_ranges.values():
-            start = cfg[5]
-            stop  = cfg[6]
+            # cfg = (filename, te_weight, unet_weight, lbw_preset, lbwe_preset, start, stop)
+            start, stop = cfg[5], cfg[6]
             if current_step >= start and (stop is None or current_step < stop):
                 desired_names.add(cfg[0])
                 desired_loras.append(cfg)
@@ -425,21 +428,31 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             _lbw_state["active_names"] = desired_names
             action = "SWITCHED"
 
-            # 1. Откат к baseline (Permanent LoRA + чистая база)
+            # 1️⃣ Откат к baseline (Permanent LoRA + чистая база)
             if hasattr(patcher, 'unpatch_model'):
                 patcher.unpatch_model()
 
-            # 2. Сброс словаря патчей к эталону
+            # 2️⃣ Сброс словаря патчей к эталону
             patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
 
-            # 3. Добавление только активных Dynamic LoRA из кэша
+            # 3️⃣ Применение активных Dynamic LoRA
             for cfg in desired_loras:
-                filename, te_weight, unet_weight = cfg[0], cfg[1], cfg[2]
-                u_patch, c_patch = tensor_cache.get(filename, (None, None))
-                if u_patch: patcher.add_patches(u_patch, unet_weight)
-                if c_patch: patcher.add_patches(c_patch, te_weight)
+                filename = cfg[0]
+                te_weight = cfg[1]
+                unet_weight = cfg[2]
+                lbw_preset  = cfg[3]
 
-            # 4. Запекание в GPU
+                u_patch, c_patch = tensor_cache.get(filename, (None, None))
+
+                if u_patch:
+                    # 🔹 Применяем UNet с учётом LBW-множителей
+                    apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map)
+
+                if c_patch:
+                    # 🔹 CLIP применяем стандартно (без блочного взвешивания)
+                    patcher.add_patches(c_patch, te_weight)
+
+            # 4️⃣ Запекание весов в GPU
             try:
                 patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
             except Exception as e:
