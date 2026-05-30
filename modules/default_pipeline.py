@@ -433,6 +433,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
             for cfg in desired_loras:
                 filename, te_weight, unet_weight = cfg[0], cfg[1], cfg[2]
                 u_patch, c_patch = tensor_cache.get(filename, (None, None))
+                print('--------------------', c_patch)
+                print('--------------------', te_weight)
                 if u_patch: patcher.add_patches(u_patch, unet_weight)
                 if c_patch: patcher.add_patches(c_patch, te_weight)
 
