@@ -70,6 +70,22 @@ class StableDiffusionModel:
         if self.unet is None:
             return
 
+        # 🔍 DEBUG: Вывод структуры lora_key_map_unet
+        if not hasattr(self, '_lbw_debug_printed'):
+            print("\n" + "="*70)
+            print(f"[LBW DEBUG] Структура lora_key_map_unet для модели: {self.filename}")
+            print(f"Всего пар ключей: {len(self.lora_key_map_unet)}")
+            print("-"*70)
+            for i, (k, v) in enumerate(self.lora_key_map_unet.items()):
+                print(f"[{i:03d}] KEY : {k}")
+                print(f"      VALUE: {v}")
+                if i >= 15:  # Ограничим вывод, чтобы не забить консоль
+                    print(f" ... и ещё {len(self.lora_key_map_unet) - 16} элементов")
+                    break
+            print("="*70 + "\n")
+            self._lbw_debug_printed = True
+
+            
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
 
         # Инициализация хранилищ для динамических LoRA
