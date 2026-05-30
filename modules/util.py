@@ -386,7 +386,7 @@ def get_file_from_folder_list(name, folders):
 def get_enabled_loras(loras: list, remove_none=True) -> list:
     return [(lora[1], lora[2]) for lora in loras if lora[0] and (lora[1] != 'None' if remove_none else True)]
 
-def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list, list, str]:
+def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list,list, list, str]:
     if lora_filenames is None:
         lora_filenames = []
 
@@ -455,7 +455,7 @@ def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file
 
     
     # Собираем имена из нового формата (filename всегда на индексе 0)
-    new_names = {item[0] for item in ploras if item}
+    new_names = {item[0] for item in ploras + dloras}
     
     # Оставляем в старом списке только те, которых НЕТ в новом
     cleaned_old = [item for item in loras if item[0] not in new_names]
