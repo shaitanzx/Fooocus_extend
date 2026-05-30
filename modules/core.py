@@ -193,11 +193,12 @@ class StableDiffusionModel:
             dynamic_files_loaded.add(lora_filename)
             print(f'Buffered Dynamic LoRA [{lora_filename}] ({len(lora_unet)} UNet keys, {len(lora_clip)} CLIP keys)')
 
-            
+
         # 🆕 Передача кэша и диапазонов в модель для хука
         if self.unet_with_lora is not None:
             self.unet_with_lora.model_options["_lbw_tensor_cache"] = self._lbw_tensor_cache
             self.unet_with_lora.model_options["_lbw_step_ranges"] = self._lbw_step_ranges
+            self.unet_with_lora.model_options["_lbw_slot_map"] = self._lbw_slot_map
 
         # 🔚 Вывод всех настроенных динамических диапазонов
         if self._lbw_step_ranges:
