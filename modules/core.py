@@ -91,6 +91,19 @@ class StableDiffusionModel:
 
         self._lbw_slot_map = build_lbw_slot_mapping(self.lora_key_map_unet)
 
+        # 🔍 DEBUG: Точный подсчёт блоков в модели (динамический)
+        if hasattr(self, '_lbw_slot_map') and self._lbw_slot_map:
+            slots = sorted(self._lbw_slot_map.keys())
+            in_blocks  = [s for s in slots if s.startswith('IN')]
+            out_blocks = [s for s in slots if s.startswith('OUT')]
+            mid_blocks = [s for s in slots if s.startswith('MID')]
+
+            print(f"[LBW] 📊 DETECTED ARCHITECTURE: {len(slots)} total slots")
+            print(f"     IN : {len(in_blocks)} blocks ({in_blocks[0]} → {in_blocks[-1] if in_blocks else '-'})")
+            print(f"     MID: {len(mid_blocks)} blocks {mid_blocks if mid_blocks else ''}")
+            print(f"     OUT: {len(out_blocks)} blocks ({out_blocks[0]} → {out_blocks[-1] if out_blocks else '-'})")
+            print(f"     FULL LIST: {slots}")
+
         # Инициализация хранилищ для динамических LoRA
         self._lbw_tensor_cache = {}
         self._lbw_step_ranges = {}
