@@ -441,12 +441,13 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 te_weight = cfg[1]
                 unet_weight = cfg[2]
                 lbw_preset  = cfg[3]
+                lbwe_preset = cfg[4]
 
                 u_patch, c_patch = tensor_cache.get(filename, (None, None))
 
                 if u_patch:
                     # 🔹 Применяем UNet с учётом LBW-множителей
-                    apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map)
+                    apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map, lbwe_preset)
 
                 if c_patch:
                     # 🔹 CLIP применяем стандартно (без блочного взвешивания)
