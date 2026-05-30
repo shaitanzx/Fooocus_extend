@@ -551,10 +551,9 @@ def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset:
     if all(w == 1.0 for w in slot_weights.values()) and not elemental_rules:
         return patcher.add_patches(patch_dict, base_weight)
         
+    # 1. Группируем патчи по слотам
     slot_patches = defaultdict(dict)
     unassigned = {}
-    
-    # Группируем патчи по слотам
     for lora_key, patch_data in patch_dict.items():
         placed = False
         for slot, keys in slot_map.items():
@@ -568,40 +567,33 @@ def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset:
     if unassigned:
         slot_patches["MID00"].update(unassigned)
         
-    loaded_all = set()
-    log_parts = []
+    # 2. 🔑 ГРУППИРОВКА ПО ИТОГОВОМУ ВЕСУ (обход ограничения add_patches)
+    weight_groups = defaultdict(dict)
+    elemental_overrides = 0
     
     for slot, patches in slot_patches.items():
         slot_mult = slot_weights.get(slot, 1.0)
-        applied_patches = {}
-        
         for lora_key, patch_data in patches.items():
-            # 1. Множитель блока
-            block_mult = slot_mult
-            # 2. Множитель элемента (переопределяет или дополняет)
             elem_mult = get_elemental_multiplier(lora_key, slot, elemental_rules)
-            final_weight = base_weight * block_mult * elem_mult
+            # Округляем до 6 знаков, чтобы избежать дублирования групп из-за float precision
+            final_weight = round(base_weight * slot_mult * elem_mult, 6)
             
-            # Применяем патч с финальным весом
-            patcher.add_patch(lora_key, patch_data, final_weight)
-            loaded_all.add(lora_key)
-            
-            # Лог: собираем статистику только если вес отличается от base×block
-            if elem_mult != 1.0 and log_parts.count(f"{slot}×{elem_mult:.2f}({patches.get(lora_key,0)} keys)") == 0:
-                pass # Упрощённый лог ниже
+            weight_groups[final_weight][lora_key] = patch_data
+            if elem_mult != 1.0:
+                elemental_overrides += 1
                 
-        # Компактный лог применения LBWE
-        elem_changed = {k: get_elemental_multiplier(k, slot, elemental_rules) for k in patches}
-        changed_counts = defaultdict(int)
-        for k, m in elem_changed.items():
-            if m != 1.0:
-                changed_counts[f"{slot}×{m:.2f}"] += 1
-        for tag, cnt in changed_counts.items():
-            log_parts.append(f"{tag}({cnt} keys)")
+    # 3. Применяем сгруппированные патчи
+    loaded_all = set()
+    for weight, group_patches in weight_groups.items():
+        loaded_keys = patcher.add_patches(group_patches, weight)
+        if loaded_keys:
+            loaded_all.update(loaded_keys)
             
-    if log_parts:
-        print(f"[LBW+LBWE] Overrides: {', '.join(log_parts)} | base={base_weight:.2f}")
-        
+    # 4. Лог
+    if elemental_overrides > 0 or len(weight_groups) > 1:
+        print(f"[LBW+LBWE] Applied {len(loaded_all)} keys across {len(weight_groups)} weight groups. "
+              f"LBWE overrides: {elemental_overrides} keys. | base={base_weight:.2f}")
+            
     return loaded_all
 
 
