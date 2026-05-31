@@ -488,7 +488,7 @@ def worker():
                 if n != 'None':
                     # Формируем строку со всеми параметрами
                     params_str = f'{n} | w={w} te={te} unet={unet} | lbw={lbw} lbwe={lbwe} | start={start} stop={stop}'
-                    d.append((f'Dynamic LoRA {li + 1}', f'lora_dynamic_{li + 1}', params_str))
+                    d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                     lora_index +=1
         if async_task.codeformer_gen_enabled:
             d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
@@ -676,7 +676,7 @@ def worker():
                     if n != 'None':
                         # Формируем строку со всеми параметрами
                         params_str = f'{n} | w={w} te={te} unet={unet} | lbw={lbw} lbwe={lbwe} | start={start} stop={stop}'
-                        d.append((f'Dynamic LoRA {li + 1}', f'lora_dynamic_{li + 1}', params_str))
+                        d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                         lora_index +=1
             if async_task.codeformer_gen_enabled:
                 d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
