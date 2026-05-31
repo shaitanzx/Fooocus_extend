@@ -57,10 +57,12 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     get_seed('seed', 'Seed', loaded_parameter_dict, results)
     get_inpaint_engine_version('inpaint_engine_version', 'Inpaint Engine Version', loaded_parameter_dict, results, inpaint_mode)
     get_inpaint_method('inpaint_method', 'Inpaint Mode', loaded_parameter_dict, results)
-    dynamic_lora=""
+    dynamic_lora_prompt=""
     for i in range(modules.config.default_max_lora_number):
-        dynamic_lora +=get_dynamic_lora(f'lora_dynamic_{i + 1}', f'Dynamic LoRA {i + 1}',loaded_parameter_dict)
-
+        dynamic_lora=get_dynamic_lora(f'lora_dynamic_{i + 1}', f'Dynamic LoRA {i + 1}',loaded_parameter_dict)
+        if dynamic_lora is None:
+            continue
+        dynamic_lora_prompt += dynamic_lora
     if is_generating:
         results.append(gr.update())
     else:
