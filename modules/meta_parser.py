@@ -26,10 +26,11 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     assert isinstance(loaded_parameter_dict, dict)
 
     results = [len(loaded_parameter_dict) > 0]
-    dynamic_lora=""
     for i in range(modules.config.default_max_lora_number):
-        dynamic_lora +=get_dynamic_lora(f'lora_dynamic_{i + 1}', f'Dynamic LoRA {i + 1}',loaded_parameter_dict)
-
+        dynamic_lora=get_dynamic_lora(f'lora_dynamic_{i + 1}', f'Dynamic LoRA {i + 1}',loaded_parameter_dict)
+        if dynamic_lora is None:
+            continue
+        dynamic_lora_prompt += dynamic_lora
 
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
     get_str('prompt', 'Prompt', loaded_parameter_dict, results)
@@ -57,12 +58,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     get_seed('seed', 'Seed', loaded_parameter_dict, results)
     get_inpaint_engine_version('inpaint_engine_version', 'Inpaint Engine Version', loaded_parameter_dict, results, inpaint_mode)
     get_inpaint_method('inpaint_method', 'Inpaint Mode', loaded_parameter_dict, results)
-    dynamic_lora_prompt=""
-    for i in range(modules.config.default_max_lora_number):
-        dynamic_lora=get_dynamic_lora(f'lora_dynamic_{i + 1}', f'Dynamic LoRA {i + 1}',loaded_parameter_dict)
-        if dynamic_lora is None:
-            continue
-        dynamic_lora_prompt += dynamic_lora
+
     if is_generating:
         results.append(gr.update())
     else:
@@ -85,7 +81,6 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
 
 def get_dynamic_lora(key: str, fallback: str | None, source_dict: dict):
     raw = source_dict.get(key, source_dict.get(fallback))
-    print ('-----',raw)
     parts = [p.strip() for p in raw.split(' | ')]
     if parts:  # защита от пустой строки
         parts[0] = parts[0].removesuffix('.safetensors')
