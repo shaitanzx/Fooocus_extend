@@ -658,12 +658,14 @@ def worker():
             if async_task.freeu_enabled:
                 d.append(('FreeU', 'freeu',
                           str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
-
+            lora_index=0
             for li, item in enumerate(loras):
                 if len(item) == 2:  # Только старый формат (filename, weight)
                     n, w = item
                     if n != 'None':
-                        d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+                        d.append((f'LoRA {lora_index + 1}', f'lora_combined_{lora_index + 1}', f'{n} : {w}'))
+                        lora_index +=1
+            lora_index = 1
             for li, item in enumerate(loras):
                 if len(item) == 8:  # Только новый расширенный формат
                     n, w, te, unet, lbw, lbwe, start, stop = item
@@ -671,6 +673,7 @@ def worker():
                         # Формируем строку со всеми параметрами
                         params_str = f'{n} | w={w} te={te} unet={unet} | lbw={lbw} lbwe={lbwe} | start={start} stop={stop}'
                         d.append((f'Dynamic LoRA {li + 1}', f'lora_dynamic_{li + 1}', params_str))
+                        lora_index +=1
             if async_task.codeformer_gen_enabled:
                 d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
                 d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
