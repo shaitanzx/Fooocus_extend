@@ -26,6 +26,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     assert isinstance(loaded_parameter_dict, dict)
 
     results = [len(loaded_parameter_dict) > 0]
+    dynamic_lora_prompt =""
     for i in range(modules.config.default_max_lora_number):
         dynamic_lora=get_dynamic_lora(f'lora_dynamic_{i + 1}', f'Dynamic LoRA {i + 1}',loaded_parameter_dict)
         if dynamic_lora is None:
