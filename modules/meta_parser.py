@@ -29,8 +29,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     dynamic_lora = ""
     i = 1
     while True:
-        key = f'lora_dynamic_{i}'
-        if key not in loaded_parameter_dict:
+        if f'lora_dynamic_{i}' not in loaded_parameter_dict:
             break 
         dynamic_lora += get_dynamic_lora(key, f'Dynamic LoRA {i}', loaded_parameter_dict)        
         i += 1
@@ -84,12 +83,10 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
 
 def get_dynamic_lora(key: str, fallback: str | None, source_dict: dict):
     raw = source_dict.get(key, source_dict.get(fallback))
-    print('---------',raw)
-
     parts = [p.strip() for p in raw.split(' | ')]
     parts[0] = parts[0].removesuffix('.safetensors')
     tag_str = ':'.join(parts)
-    return f' <lora{tag_str}>'
+    return f' <lora:{tag_str}>'
     
 def get_str(key: str, fallback: str | None, source_dict: dict, results: list, default=None) -> str | None:
     try:
