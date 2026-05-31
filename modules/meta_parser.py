@@ -26,7 +26,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     assert isinstance(loaded_parameter_dict, dict)
 
     results = [len(loaded_parameter_dict) > 0]
-    dynamic_lora_prompt = ""
+    dynamic_lora = ""
     i = 1
     while True:
         key = f'lora_dynamic_{i}'
