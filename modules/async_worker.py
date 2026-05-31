@@ -398,7 +398,20 @@ def worker():
 
         async_task.yields.append(['results', async_task.results])
         return
+    def format_lora_params(n, w, te, unet, lbw, lbwe, start, stop):
+        parts = [n]
 
+        if w is not None: parts.append(f"w={w}")
+        if te is not None: parts.append(f"te={te}")
+        if unet is not None: parts.append(f"unet={unet}")
+
+        if lbw: parts.append(f"lbw={lbw}")
+        if lbwe: parts.append(f"lbwe={lbwe}")
+
+        if start is not None: parts.append(f"start={start}")
+        if stop is not None: parts.append(f"stop={stop}")
+
+        return " | ".join(parts)
     def build_image_wall(async_task):
         results = []
 
@@ -487,7 +500,7 @@ def worker():
                 n, w, te, unet, lbw, lbwe, start, stop = item
                 if n != 'None':
                     # Формируем строку со всеми параметрами
-                    params_str = f'{n} | w={w} te={te} unet={unet} | lbw={lbw} lbwe={lbwe} | start={start} stop={stop}'
+                    params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                     d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                     lora_index +=1
         if async_task.codeformer_gen_enabled:
@@ -675,7 +688,7 @@ def worker():
                     n, w, te, unet, lbw, lbwe, start, stop = item
                     if n != 'None':
                         # Формируем строку со всеми параметрами
-                        params_str = f'{n} | w={w} te={te} unet={unet} | lbw={lbw} lbwe={lbwe} | start={start} stop={stop}'
+                        params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                         d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                         lora_index +=1
             if async_task.codeformer_gen_enabled:
