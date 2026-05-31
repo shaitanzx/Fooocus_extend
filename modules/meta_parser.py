@@ -26,12 +26,14 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     assert isinstance(loaded_parameter_dict, dict)
 
     results = [len(loaded_parameter_dict) > 0]
-    dynamic_lora_prompt =""
-    for i in range(modules.config.default_max_lora_number):
-        dynamic_lora=get_dynamic_lora(f'lora_dynamic_{i + 1}', f'Dynamic LoRA {i + 1}',loaded_parameter_dict)
-        if dynamic_lora is None:
-            continue
-        dynamic_lora_prompt += dynamic_lora
+    dynamic_lora_prompt = ""
+    i = 1
+    while True:
+        key = f'lora_dynamic_{i}'
+        if key not in loaded_parameter_dict:
+            break 
+        dynamic_lora += get_dynamic_lora(key, f'Dynamic LoRA {i}', loaded_parameter_dict)        
+        i += 1
 
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
     get_str('prompt', 'Prompt', loaded_parameter_dict, results)
@@ -83,13 +85,12 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
 def get_dynamic_lora(key: str, fallback: str | None, source_dict: dict):
     raw = source_dict.get(key, source_dict.get(fallback))
     print('---------',raw)
-    if raw is None:
-        parts = [p.strip() for p in raw.split(' | ')]
-        parts[0] = parts[0].removesuffix('.safetensors')
-        tag_str = ':'.join(parts)
-        return f' <lora{tag_str}>'
-    return ""
 
+    parts = [p.strip() for p in raw.split(' | ')]
+    parts[0] = parts[0].removesuffix('.safetensors')
+    tag_str = ':'.join(parts)
+    return f' <lora{tag_str}>'
+    
 def get_str(key: str, fallback: str | None, source_dict: dict, results: list, default=None) -> str | None:
     try:
         h = source_dict.get(key, source_dict.get(fallback, default))
