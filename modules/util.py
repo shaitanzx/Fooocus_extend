@@ -395,7 +395,7 @@ SDXL_LBW_SLOTS = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" f
 def parse_lbw_preset(preset: str) -> Dict[str, float]:
     default_weights = {slot: 1.0 for slot in SDXL_LBW_SLOTS}
     if not preset or not preset.strip():
-        print(f"[LBW] parse_lbw_preset: input is empty. Using default (all 1.0).")
+        print(f"[Dynamic LORA] parse_lbw_preset: input is empty. Using default (all 1.0).")
         return default_weights
 
     preset = preset.strip()
@@ -418,7 +418,7 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
                 elif group == 'OUT':
                     for i in range(9): weights[f"OUT{i:02d}"] = val
                     log_parts.append(f"OUT:{val}")
-        print(f"[LBW] parse_lbw_preset (named): '{preset}' → {', '.join(log_parts)}")
+        print(f"[Dynamic LORA] parse_lbw_preset (named): '{preset}' → {', '.join(log_parts)}")
         return weights
 
     values = []
@@ -435,7 +435,7 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
             break
 
     changed = {k: v for k, v in weights.items() if v != 1.0}
-    print(f"[LBW] parse_lbw_preset (pos): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
+    print(f"[Dynamic LORA] parse_lbw_preset (pos): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
     return weights
 
 def parse_lbw_elemental(preset: str):
@@ -446,7 +446,6 @@ def parse_lbw_elemental(preset: str):
     for part in preset.split(','):
         part = part.strip()
         if not part: continue
-        # 🔑 Разделитель теперь =
         parts = part.split('=')
         if len(parts) != 3: continue
         block_range, key_pattern, w_str = parts[0].strip(), parts[1].strip(), parts[2].strip()
@@ -519,7 +518,7 @@ def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
     result = {slot: slots[slot] for slot in order if slot in slots}
 
     slot_counts = {s: len(keys) for s, keys in result.items()}
-    print(f"[LBW] build_lbw_slot_mapping: Mapped {mapped_count}/{len(key_map)} keys into {len(result)} slots. "
+    print(f"[Dynacmic LORA] build_lbw_slot_mapping: Mapped {mapped_count}/{len(key_map)} keys into {len(result)} slots. "
           f"Distribution: {slot_counts}")
     return result
 
@@ -566,8 +565,8 @@ def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset:
             loaded_all.update(loaded_keys)
             
     if elemental_overrides > 0 or len(weight_groups) > 1:
-        print(f"[LBW+LBWE] Applied {len(loaded_all)} keys across {len(weight_groups)} weight groups. "
-              f"LBWE overrides: {elemental_overrides} keys. | base={base_weight:.2f}")
+        print(f"[Dynamic LORA] Applied {len(loaded_all)} keys across {len(weight_groups)} weight groups. "
+              f"Dynamic LORA overrides: {elemental_overrides} keys. | base={base_weight:.2f}")
             
     return loaded_all
 
@@ -639,7 +638,7 @@ def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file
     
     removed = len(loras) - len(cleaned_old)
     if removed > 0:
-        print(f"[LBW] Resolved {removed} conflict(s): old format overridden by new format.", flush=True)
+        print(f"[Dynamic LORA] Resolved {removed} conflict(s): old format overridden by new format.", flush=True)
     cleaned_prompt = tag_pattern.sub('', prompt)
     if prompt_cleanup:
         cleaned_prompt = cleanup_prompt(cleaned_prompt)

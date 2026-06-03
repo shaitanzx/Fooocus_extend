@@ -419,10 +419,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 desired_names.add(cfg[0])
                 desired_loras.append(cfg)
 
-        #action = "CACHED"
         if desired_names != _lbw_state["active_names"]:
             _lbw_state["active_names"] = desired_names
-            #action = "SWITCHED"
 
             if hasattr(patcher, 'unpatch_model'):
                 patcher.unpatch_model()
@@ -448,11 +446,6 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
             except Exception as e:
                 action = f"PATCH_ERR: {str(e)[:30]}"
-
-        # if current_step not in _lbw_state["logged_steps"]:
-        #     _lbw_state["logged_steps"].add(current_step)
-        #     log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
-        #     print(log_line, flush=True)
 
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
     target_unet.add_conditioning_modifier(lbw_conditioning_modifier)

@@ -73,7 +73,6 @@ class StableDiffusionModel:
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
         self._lbw_slot_map = build_lbw_slot_mapping(self.lora_key_map_unet)
 
-        # Инициализация хранилищ для динамических LoRA
         self._lbw_tensor_cache = {}
         self._lbw_step_ranges = {}
         dynamic_files_loaded = set()
@@ -82,7 +81,6 @@ class StableDiffusionModel:
         loras_to_load = []
 
         for item in loras:
-            # 1️⃣ Старый формат: (filename, weight)
             if len(item) == 2:
                 filename = item[0]
                 w = float(item[1])
@@ -136,12 +134,11 @@ class StableDiffusionModel:
                       f'with unmatched keys {list(lora_unmatch.keys())}')
 
             if self.unet_with_lora is not None and len(lora_unet) > 0:
-                # 👇 ЗАМЕНА: используем apply_lbw_patches вместо прямого add_patches
                 loaded_keys = apply_lbw_patches(
                     self.unet_with_lora, lora_unet, unet_weight, lbw_preset, self._lbw_slot_map, lbwe_preset
                 )
                 print(f'Loaded LoRA [{lora_filename}] for UNet [{self.filename}] '
-                      f'with {len(loaded_keys)} keys at base weight {unet_weight} (LBW applied).')
+                      f'with {len(loaded_keys)} keys at base weight {unet_weight} (Dynamic LORA applied).')
                 for key in lora_unet:
                     if key not in loaded_keys:
                         print("UNet LoRA key skipped: ", key)
@@ -177,11 +174,11 @@ class StableDiffusionModel:
             self.unet_with_lora.model_options["_lbw_slot_map"] = self._lbw_slot_map
 
         if self._lbw_step_ranges:
-            print("[LBW] Configured Dynamic Ranges:", flush=True)
+            print("[Dynamic LORA] Configured Dynamic Ranges:", flush=True)
             for idx, (fn, te, unet, lbw, lbwe, start, stop) in self._lbw_step_ranges.items():
                 print(f"  #{idx}: {os.path.basename(fn)} | te={te} unet={unet} | range=[{start}-{stop}] | lbw={lbw} lbwe={lbwe}", flush=True)
         else:
-            print("[LBW] No dynamic ranges configured.", flush=True)
+            print("[Dynamic LORA] No dynamic ranges configured.", flush=True)
 
 
 @torch.no_grad()

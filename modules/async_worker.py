@@ -489,17 +489,16 @@ def worker():
 
         lora_index=0
         for li, item in enumerate(loras):
-            if len(item) == 2:  # Только старый формат (filename, weight)
+            if len(item) == 2:
                 n, w = item
                 if n != 'None':
                     d.append((f'LoRA {lora_index + 1}', f'lora_combined_{lora_index + 1}', f'{n} : {w}'))
                     lora_index +=1
         lora_index = 0
         for li, item in enumerate(loras):
-            if len(item) == 8:  # Только новый расширенный формат
+            if len(item) == 8:
                 n, w, te, unet, lbw, lbwe, start, stop = item
                 if n != 'None':
-                    # Формируем строку со всеми параметрами
                     params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                     d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                     lora_index +=1
@@ -677,17 +676,16 @@ def worker():
                           str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
             lora_index=0
             for li, item in enumerate(loras):
-                if len(item) == 2:  # Только старый формат (filename, weight)
+                if len(item) == 2:
                     n, w = item
                     if n != 'None':
                         d.append((f'LoRA {lora_index + 1}', f'lora_combined_{lora_index + 1}', f'{n} : {w}'))
                         lora_index +=1
             lora_index = 0
             for li, item in enumerate(loras):
-                if len(item) == 8:  # Только новый расширенный формат
+                if len(item) == 8:
                     n, w, te, unet, lbw, lbwe, start, stop = item
                     if n != 'None':
-                        # Формируем строку со всеми параметрами
                         params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                         d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                         lora_index +=1
@@ -1034,11 +1032,7 @@ def worker():
                                                           lora_filenames=lora_filenames)
         loras += async_task.performance_loras
         loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
-        print ('loras = ',loras)
-        print ('dloras = ',dloras)
-        print ('ploras = ',ploras)
         loras=loras + ploras + dloras
-        print ('new loras = ',loras)
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,
