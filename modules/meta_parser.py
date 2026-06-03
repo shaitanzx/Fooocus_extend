@@ -84,7 +84,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
 def get_dynamic_lora(key: str, fallback: str | None, source_dict: dict):
     raw = source_dict.get(key, source_dict.get(fallback))
     parts = [p.strip() for p in raw.split(' | ')]
-    parts[0] = parts[0].removesuffix('.safetensors')
+    parts[0] = parts[0].stem
     tag_str = ':'.join(parts)
     return f' <lora:{tag_str}>'
     
