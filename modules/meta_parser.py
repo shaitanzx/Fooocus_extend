@@ -352,7 +352,7 @@ class MetadataParser(ABC):
                 print('==========',item)
                 if n != 'None':
                     lora_path = get_file_from_folder_list(n, modules.config.paths_loras)
-                    parts = [(Path(lora_name).stem]
+                    parts = [Path(lora_name).stem]
 
                     if w is not None: parts.append(f"w={w}")
                     if te is not None: parts.append(f"te={te}")
