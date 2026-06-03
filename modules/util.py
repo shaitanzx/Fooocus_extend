@@ -393,7 +393,6 @@ def get_enabled_loras(loras: list, remove_none=True) -> list:
 SDXL_LBW_SLOTS = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" for i in range(9)]
 
 def parse_lbw_preset(preset: str) -> Dict[str, float]:
-    """Парсит lbw= строку в веса для 19 слотов SDXL"""
     default_weights = {slot: 1.0 for slot in SDXL_LBW_SLOTS}
     if not preset or not preset.strip():
         print(f"[LBW] parse_lbw_preset: input is empty. Using default (all 1.0).")
@@ -401,8 +400,6 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
 
     preset = preset.strip()
     weights = default_weights.copy()
-    # <lora:MyLora:lbw=IN=0.3;OUT=1.8>
-    # 🔍 Детекция именованного режима (IN/MID/OUT)
     if re.search(r'(IN|MID|OUT)\s*[=:]\s*[\d.]+', preset, re.IGNORECASE):
         parts = re.split(r'[,;]', preset)
         log_parts = []
@@ -424,7 +421,6 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
         print(f"[LBW] parse_lbw_preset (named): '{preset}' → {', '.join(log_parts)}")
         return weights
 
-    # 🔢 Позиционный режим (0.8,1.0,1.5...)
     values = []
     for p in preset.split(','):
         p = p.strip()
@@ -438,20 +434,11 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
         else:
             break
 
-    # Логируем только слоты с весом != 1.0 для компактности
     changed = {k: v for k, v in weights.items() if v != 1.0}
     print(f"[LBW] parse_lbw_preset (pos): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
     return weights
 
 def parse_lbw_elemental(preset: str):
-    """
-    Парсит lbwe= в список правил: [(блок_диапазон, ключ_паттерн, вес), ...]
-    Формат: "BLOCK_RANGE=KEY_PATTERN=WEIGHT[,BLOCK_RANGE=KEY_PATTERN=WEIGHT...]"
-    Примеры:
-      "IN05-OUT08=attn=1.5"  → attention слои в блоках 5-8 умножить на 1.5
-      "MID00=ff=0.8"         → feed-forward в MID00 умножить на 0.8
-      "ALL=to_q=1.2"         → все to_q весы во всех блоках ×1.2
-    """
     if not preset or not preset.strip():
         return []
         
@@ -470,15 +457,13 @@ def parse_lbw_elemental(preset: str):
     return rules
 
 def _slot_to_index(slot: str) -> int:
-    """Вспомогательная: преобразует имя слота в числовой индекс для сравнения диапазонов"""
     s = slot.upper()
     if s.startswith('IN'): return int(s[2:])
-    if s == 'MID00': return 999  # MID между IN и OUT
+    if s == 'MID00': return 999 
     if s.startswith('OUT'): return 2000 + int(s[3:])
     return -1
 
 def get_elemental_multiplier(lora_key: str, slot_name: str, elemental_rules):
-    """Возвращает множитель lbwe для конкретного ключа. Если нет совпадений → 1.0"""
     if not elemental_rules:
         return 1.0
         
@@ -489,11 +474,9 @@ def get_elemental_multiplier(lora_key: str, slot_name: str, elemental_rules):
     key_lower = lora_key.lower()
     
     for block_range, key_pattern, weight in elemental_rules:
-        # 1. Проверка паттерна ключа
         if key_pattern not in key_lower:
             continue
             
-        # 2. Проверка диапазона блоков
         in_range = False
         if block_range == 'ALL':
             in_range = True
@@ -508,12 +491,11 @@ def get_elemental_multiplier(lora_key: str, slot_name: str, elemental_rules):
             
         if in_range:
             matched = True
-            last_weight = weight  # Последнее совпавшее правило имеет приоритет
+            last_weight = weight
             
     return last_weight if matched else 1.0
 
 def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
-    """Группирует ключи lora_key_map_unet по 19 LBW-слотам"""
     slots = defaultdict(list)
     pattern = re.compile(r"diffusion_model\.(input_blocks|output_blocks|middle_block)(?:\.(\d+))?\.")
 
@@ -536,7 +518,6 @@ def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
     order = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" for i in range(9)]
     result = {slot: slots[slot] for slot in order if slot in slots}
 
-    # Логирование структуры маппинга (вызовется 1 раз при загрузке модели)
     slot_counts = {s: len(keys) for s, keys in result.items()}
     print(f"[LBW] build_lbw_slot_mapping: Mapped {mapped_count}/{len(key_map)} keys into {len(result)} slots. "
           f"Distribution: {slot_counts}")
@@ -547,11 +528,9 @@ def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset:
     slot_weights = parse_lbw_preset(lbw_preset)
     elemental_rules = parse_lbw_elemental(lbwe_preset)
     
-    # ⚡ Fast path: если все множители 1.0, применяем штатно
     if all(w == 1.0 for w in slot_weights.values()) and not elemental_rules:
         return patcher.add_patches(patch_dict, base_weight)
         
-    # 1. Группируем патчи по слотам
     slot_patches = defaultdict(dict)
     unassigned = {}
     for lora_key, patch_data in patch_dict.items():
@@ -567,7 +546,6 @@ def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset:
     if unassigned:
         slot_patches["MID00"].update(unassigned)
         
-    # 2. 🔑 ГРУППИРОВКА ПО ИТОГОВОМУ ВЕСУ (обход ограничения add_patches)
     weight_groups = defaultdict(dict)
     elemental_overrides = 0
     
@@ -575,29 +553,23 @@ def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset:
         slot_mult = slot_weights.get(slot, 1.0)
         for lora_key, patch_data in patches.items():
             elem_mult = get_elemental_multiplier(lora_key, slot, elemental_rules)
-            # Округляем до 6 знаков, чтобы избежать дублирования групп из-за float precision
             final_weight = round(base_weight * slot_mult * elem_mult, 6)
             
             weight_groups[final_weight][lora_key] = patch_data
             if elem_mult != 1.0:
                 elemental_overrides += 1
                 
-    # 3. Применяем сгруппированные патчи
     loaded_all = set()
     for weight, group_patches in weight_groups.items():
         loaded_keys = patcher.add_patches(group_patches, weight)
         if loaded_keys:
             loaded_all.update(loaded_keys)
             
-    # 4. Лог
     if elemental_overrides > 0 or len(weight_groups) > 1:
         print(f"[LBW+LBWE] Applied {len(loaded_all)} keys across {len(weight_groups)} weight groups. "
               f"LBWE overrides: {elemental_overrides} keys. | base={base_weight:.2f}")
             
     return loaded_all
-
-
-
 
 def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list,list, list, str]:
     if lora_filenames is None:
@@ -615,18 +587,16 @@ def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file
         name = parts[0].strip()
         params_raw = parts[1:]
 
-        # Пропускаем, если это не расширенный формат
         if not any('=' in p for p in params_raw):
             continue
 
-        # Инициализируем значениями по умолчанию (None)
         w = te = unet = lbw = lbwe = start = stop = None
 
         for p in params_raw:
             if '=' in p:
                 k, v = p.split('=', 1)
                 k, v = k.strip(), v.strip()
-                if not v: continue  # Игнорируем пустые значения типа start=
+                if not v: continue
                 
                 if k == 'w':
                     try: w = float(v)
@@ -648,36 +618,28 @@ def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file
                     try: stop = int(v)
                     except: pass
 
-        # Разрешаем путь к файлу
         filename = name + '.safetensors'
         if not skip_file_check:
             resolved = get_filname_by_stem(name, lora_filenames)
             if resolved:
                 filename = resolved
             else:
-                continue  # Файл не найден → пропускаем
+                continue
 
-        # Формируем кортеж: (filename, w, te, unet, lbw, lbwe, start, stop)
         lora_tuple = (filename, w, te, unet, lbw, lbwe, start, stop)
 
-        # Классификация
         if start is not None or stop is not None:
             dloras.append(lora_tuple)
         else:
             ploras.append(lora_tuple)
 
-    
-    # Собираем имена из нового формата (filename всегда на индексе 0)
     new_names = {item[0] for item in ploras + dloras}
     
-    # Оставляем в старом списке только те, которых НЕТ в новом
     cleaned_old = [item for item in loras if item[0] not in new_names]
     
-    # Логирование только при наличии конфликтов
     removed = len(loras) - len(cleaned_old)
     if removed > 0:
         print(f"[LBW] Resolved {removed} conflict(s): old format overridden by new format.", flush=True)
-    # Удаляем теги и чистим промпт
     cleaned_prompt = tag_pattern.sub('', prompt)
     if prompt_cleanup:
         cleaned_prompt = cleanup_prompt(cleaned_prompt)

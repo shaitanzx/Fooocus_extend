@@ -70,22 +70,6 @@ class StableDiffusionModel:
         if self.unet is None:
             return
 
-        # # 🔍 DEBUG: Вывод структуры lora_key_map_unet
-        # if not hasattr(self, '_lbw_debug_printed'):
-        #     print("\n" + "="*70)
-        #     print(f"[LBW DEBUG] Структура lora_key_map_unet для модели: {self.filename}")
-        #     print(f"Всего пар ключей: {len(self.lora_key_map_unet)}")
-        #     print("-"*70)
-        #     for i, (k, v) in enumerate(self.lora_key_map_unet.items()):
-        #         print(f"[{i:03d}] KEY : {k}")
-        #         print(f"      VALUE: {v}")
-        #         if i >= 15:  # Ограничим вывод, чтобы не забить консоль
-        #             print(f" ... и ещё {len(self.lora_key_map_unet) - 16} элементов")
-        #             break
-        #     print("="*70 + "\n")
-        #     self._lbw_debug_printed = True
-
-
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
         self._lbw_slot_map = build_lbw_slot_mapping(self.lora_key_map_unet)
 
@@ -106,7 +90,6 @@ class StableDiffusionModel:
                 lbw_preset = lbwe_preset = None
                 start, stop = 0, None
                 
-            # 2️⃣ Расширенный формат: (filename, w, te, unet, lbw, lbwe, start, stop)
             elif len(item) == 8:
                 filename = item[0]
                 w = float(item[1]) if item[1] is not None else 1.0
@@ -131,7 +114,6 @@ class StableDiffusionModel:
                 print(f'Lora file not found: {lora_filename}')
                 continue
 
-            # 📥 Классификация: Permanent vs Dynamic
             if (start == 0 or start is None) and stop is None:
                 loras_to_load.append((lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset))
             else:
@@ -141,7 +123,6 @@ class StableDiffusionModel:
         self.unet_with_lora = self.unet.clone() if self.unet is not None else None
         self.clip_with_lora = self.clip.clone() if self.clip is not None else None
 
-        # 🔹 1. Применяем PERMANENT LoRA
         for lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset in loras_to_load:
             lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
             lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
@@ -173,7 +154,6 @@ class StableDiffusionModel:
                     if key not in loaded_keys:
                         print("CLIP LoRA key skipped: ", key)
 
-        # 🔹 2. Буферизируем DYNAMIC LoRA (загружаем только уникальные файлы)
         for lora_filename, _, _, _, _, _, _ in self._lbw_step_ranges.values():
             if lora_filename not in dynamic_files_loaded:
                 lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
@@ -191,14 +171,11 @@ class StableDiffusionModel:
             dynamic_files_loaded.add(lora_filename)
             print(f'Buffered Dynamic LoRA [{lora_filename}] ({len(lora_unet)} UNet keys, {len(lora_clip)} CLIP keys)')
 
-
-        # 🆕 Передача кэша и диапазонов в модель для хука
         if self.unet_with_lora is not None:
             self.unet_with_lora.model_options["_lbw_tensor_cache"] = self._lbw_tensor_cache
             self.unet_with_lora.model_options["_lbw_step_ranges"] = self._lbw_step_ranges
             self.unet_with_lora.model_options["_lbw_slot_map"] = self._lbw_slot_map
 
-        # 🔚 Вывод всех настроенных динамических диапазонов
         if self._lbw_step_ranges:
             print("[LBW] Configured Dynamic Ranges:", flush=True)
             for idx, (fn, te, unet, lbw, lbwe, start, stop) in self._lbw_step_ranges.items():

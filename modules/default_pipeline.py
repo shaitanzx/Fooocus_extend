@@ -404,38 +404,31 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
         tensor_cache = model_options.get("_lbw_tensor_cache", {})
         step_ranges  = model_options.get("_lbw_step_ranges", {})
-        slot_map     = model_options.get("_lbw_slot_map", {}) # Карта LBW-слотов модели
+        slot_map     = model_options.get("_lbw_slot_map", {})
 
-        # Определяем патчер (UNet)
         patcher = model if hasattr(model, 'add_patches') else target_unet
 
-        # Вычисляем текущий шаг диффузии
         current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
         current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
 
-        # Ищем активные Dynamic LoRA для текущего шага
         desired_names = set()
         desired_loras = []
         for cfg in step_ranges.values():
-            # cfg = (filename, te_weight, unet_weight, lbw_preset, lbwe_preset, start, stop)
             start, stop = cfg[5], cfg[6]
             if current_step >= start and (stop is None or current_step <= stop):
                 desired_names.add(cfg[0])
                 desired_loras.append(cfg)
 
-        action = "CACHED"
+        #action = "CACHED"
         if desired_names != _lbw_state["active_names"]:
             _lbw_state["active_names"] = desired_names
-            action = "SWITCHED"
+            #action = "SWITCHED"
 
-            # 1️⃣ Откат к baseline (Permanent LoRA + чистая база)
             if hasattr(patcher, 'unpatch_model'):
                 patcher.unpatch_model()
 
-            # 2️⃣ Сброс словаря патчей к эталону
             patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
 
-            # 3️⃣ Применение активных Dynamic LoRA
             for cfg in desired_loras:
                 filename = cfg[0]
                 te_weight = cfg[1]
@@ -446,26 +439,21 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
                 u_patch, c_patch = tensor_cache.get(filename, (None, None))
 
                 if u_patch:
-                    # 🔹 Применяем UNet с учётом LBW-множителей
                     apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map, lbwe_preset)
 
                 if c_patch:
-                    # 🔹 CLIP применяем стандартно (без блочного взвешивания)
                     patcher.add_patches(c_patch, te_weight)
 
-            # 4️⃣ Запекание весов в GPU
             try:
                 patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
             except Exception as e:
                 action = f"PATCH_ERR: {str(e)[:30]}"
 
-        # 🔹 Логирование 1 раз на шаг диффузии
-        if current_step not in _lbw_state["logged_steps"]:
-            _lbw_state["logged_steps"].add(current_step)
-            log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
-            print(log_line, flush=True)
+        # if current_step not in _lbw_state["logged_steps"]:
+        #     _lbw_state["logged_steps"].add(current_step)
+        #     log_line = f"[LBW] Step {current_step:02d} | σ={current_sigma:.3f} | Active: {sorted(list(desired_names)) or 'None'} | {action}"
+        #     print(log_line, flush=True)
 
-        # Возвращаем исходный model (как ожидает ядро), но веса уже обновлены в patcher
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
     target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
     if transper != "None":
