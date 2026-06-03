@@ -348,9 +348,20 @@ class MetadataParser(ABC):
                 
             # 2️⃣ Расширенный формат: (filename, w, te, unet, lbw, lbwe, start, stop)
             elif len(item) == 8:
-                if item[0] != 'None':
-                    lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
-                    tag_str = ':'.join(item)
+                n, w, te, unet, lbw, lbwe, start, stop = item
+                if n != 'None':
+                    lora_path = get_file_from_folder_list(n, modules.config.paths_loras)
+                    parts = [n.stem]
+
+                    if w is not None: parts.append(f"w={w}")
+                    if te is not None: parts.append(f"te={te}")
+                    if unet is not None: parts.append(f"unet={unet}")
+                    if lbw: parts.append(f"lbw={lbw}")
+                    if lbwe: parts.append(f"lbwe={lbwe}")
+
+                    if start is not None: parts.append(f"start={start}")
+                    if stop is not None: parts.append(f"stop={stop}")
+                    tag_str = ':'.join(parts)
                     tag_str = f' <lora:{tag_str}>'
                     self.raw_prompt = f'{self.raw_prompt} {tag_str}>'
                     self.full_prompt = f'{self.full_prompt} {tag_str}>'
