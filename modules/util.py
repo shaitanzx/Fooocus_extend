@@ -400,6 +400,73 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
 
     preset = preset.strip()
     weights = default_weights.copy()
+    
+    # 1️⃣ Обработка формата: IN05-OUT05=0.5 (диапазон)
+    # 2️⃣ Обработка формата: IN02=0.7 (один слот)
+    # 3️⃣ Обработка формата: IN=0.5 (вся группа)
+    # 4️⃣ Обработка формата: 0.5,0.7,0.9 (позиционный)
+    
+    # Паттерн для одного слота или диапазона: IN05, IN05-OUT05, IN02=0.7, IN05-OUT05=0.5
+    slot_pattern = r'(IN|MID|OUT)(\d{2})(?:-(IN|MID|OUT)(\d{2}))?\s*[=:]\s*([\d.]+)'
+    matches = re.findall(slot_pattern, preset, re.IGNORECASE)
+    
+    if matches:
+        log_entries = []
+        for match in matches:
+            group1, num1, group2, num2, val = match
+            val = float(val)
+            group1 = group1.upper()
+            
+            if group2:  # Это диапазон: IN05-OUT05=0.5
+                group2 = group2.upper()
+                num2 = int(num2)
+                num1 = int(num1)
+                
+                # Определяем все слоты между IN(num1) и OUT(num2) или IN/OUT диапазоны
+                slots_to_update = []
+                
+                if group1 == 'IN' and group2 == 'OUT':
+                    # Все IN от num1 до 08 и все OUT от 00 до num2
+                    for i in range(num1, 9):
+                        slots_to_update.append(f"IN{i:02d}")
+                    for i in range(0, num2 + 1):
+                        slots_to_update.append(f"OUT{i:02d}")
+                elif group1 == 'IN' and group2 == 'IN':
+                    # Диапазон IN слотов
+                    for i in range(num1, num2 + 1):
+                        slots_to_update.append(f"IN{i:02d}")
+                elif group1 == 'OUT' and group2 == 'OUT':
+                    # Диапазон OUT слотов
+                    for i in range(num1, num2 + 1):
+                        slots_to_update.append(f"OUT{i:02d}")
+                elif group1 == 'MID' and group2 == 'MID':
+                    # MID только один слот
+                    slots_to_update.append("MID00")
+                
+                for slot in slots_to_update:
+                    weights[slot] = val
+                log_entries.append(f"{group1}{num1:02d}-{group2}{num2:02d}={val}")
+                
+            else:  # Это один слот: IN02=0.7
+                num = int(num1)
+                if group1 == 'IN' and 0 <= num <= 8:
+                    slot = f"IN{num:02d}"
+                    weights[slot] = val
+                    log_entries.append(f"{slot}={val}")
+                elif group1 == 'OUT' and 0 <= num <= 8:
+                    slot = f"OUT{num:02d}"
+                    weights[slot] = val
+                    log_entries.append(f"{slot}={val}")
+                elif group1 == 'MID':
+                    weights["MID00"] = val
+                    log_entries.append(f"MID={val}")
+        
+        if log_entries:
+            print(f"[Dynamic LORA] parse_lbw_preset (slots): '{preset}' → {', '.join(log_entries)}")
+            return weights
+    
+    # Если нет специфичных слотов, пробуем старые форматы
+    # Паттерн для целых групп: IN=0.5, OUT=0.7, MID=0.9
     if re.search(r'(IN|MID|OUT)\s*[=:]\s*[\d.]+', preset, re.IGNORECASE):
         parts = re.split(r'[,;]', preset)
         log_parts = []
@@ -418,15 +485,18 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
                 elif group == 'OUT':
                     for i in range(9): weights[f"OUT{i:02d}"] = val
                     log_parts.append(f"OUT:{val}")
-        print(f"[Dynamic LORA] parse_lbw_preset (named): '{preset}' → {', '.join(log_parts)}")
+        print(f"[Dynamic LORA] parse_lbw_preset (named groups): '{preset}' → {', '.join(log_parts)}")
         return weights
-
+    
+    # Позиционный формат: 0.5,0.7,0.9,...
     values = []
     for p in preset.split(','):
         p = p.strip()
         if not p: continue
-        try: values.append(float(p))
-        except ValueError: continue
+        try: 
+            values.append(float(p))
+        except ValueError: 
+            continue
 
     for i, val in enumerate(values):
         if i < len(SDXL_LBW_SLOTS):
@@ -435,7 +505,7 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
             break
 
     changed = {k: v for k, v in weights.items() if v != 1.0}
-    print(f"[Dynamic LORA] parse_lbw_preset (pos): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
+    print(f"[Dynamic LORA] parse_lbw_preset (positional): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
     return weights
 
 def parse_lbw_elemental(preset: str):
