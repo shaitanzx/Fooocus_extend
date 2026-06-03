@@ -337,7 +337,6 @@ class MetadataParser(ABC):
             self.refiner_model_hash = sha256_from_cache(refiner_model_path)
 
         self.loras = []
-        dynamic_lora = ""
         for item in loras:
             # 1️⃣ Старый формат: (filename, weight)
             if len(item) == 2:
@@ -352,7 +351,7 @@ class MetadataParser(ABC):
                 print('==========',item)
                 if n != 'None':
                     lora_path = get_file_from_folder_list(n, modules.config.paths_loras)
-                    parts = [n.stem]
+                    parts = [(Path(lora_name).stem]
 
                     if w is not None: parts.append(f"w={w}")
                     if te is not None: parts.append(f"te={te}")
