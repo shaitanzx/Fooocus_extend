@@ -780,7 +780,7 @@ with shared.gradio_root:
                                 ru_path = Path(__file__).parent / "dlora_rus.html"
         
                                 # Простая эвристика: если в HTML есть слово "Dynamic" - значит английский
-                                if "Dynamic" in current_html and "Динамический" not in current_html:
+                                if "lang=EN" in current_html and "lang=RU" not in current_html:
                                 # Переключаем на русский
                                     return ru_path.read_text(encoding="utf-8")
                                 else:
