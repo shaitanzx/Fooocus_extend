@@ -411,7 +411,7 @@ def parse_lbw_preset(preset: str) -> Dict[str, float]:
             val = float(val)
             group1 = group1.upper()
             
-            if group2:  # Это диапазон: IN05-OUT05=0.5
+            if group2: 
                 group2 = group2.upper()
                 num2 = int(num2)
                 num1 = int(num1)
