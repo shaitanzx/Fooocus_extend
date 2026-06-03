@@ -31,7 +31,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     while True:
         if f'lora_dynamic_{i}' not in loaded_parameter_dict:
             break 
-        dynamic_lora += get_dynamic_lora(key, f'Dynamic LoRA {i}', loaded_parameter_dict)        
+        dynamic_lora += get_dynamic_lora(f'lora_dynamic_{i}', f'Dynamic LoRA {i}', loaded_parameter_dict)        
         i += 1
 
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
@@ -348,24 +348,25 @@ class MetadataParser(ABC):
                 
             # 2️⃣ Расширенный формат: (filename, w, te, unet, lbw, lbwe, start, stop)
             elif len(item) == 8:
-                n, w, te, unet, lbw, lbwe, start, stop = item
-                print('==========',item)
-                if n != 'None':
-                    lora_path = get_file_from_folder_list(n, modules.config.paths_loras)
-                    parts = [Path(lora_path).stem]
+                continue
+                # n, w, te, unet, lbw, lbwe, start, stop = item
+                # print('==========',item)
+                # if n != 'None':
+                #     lora_path = get_file_from_folder_list(n, modules.config.paths_loras)
+                #     parts = [Path(lora_path).stem]
 
-                    if w is not None: parts.append(f"w={w}")
-                    if te is not None: parts.append(f"te={te}")
-                    if unet is not None: parts.append(f"unet={unet}")
-                    if lbw: parts.append(f"lbw={lbw}")
-                    if lbwe: parts.append(f"lbwe={lbwe}")
+                #     if w is not None: parts.append(f"w={w}")
+                #     if te is not None: parts.append(f"te={te}")
+                #     if unet is not None: parts.append(f"unet={unet}")
+                #     if lbw: parts.append(f"lbw={lbw}")
+                #     if lbwe: parts.append(f"lbwe={lbwe}")
 
-                    if start is not None: parts.append(f"start={start}")
-                    if stop is not None: parts.append(f"stop={stop}")
-                    tag_str = ':'.join(parts)
-                    tag_str = f' <lora:{tag_str}>'
-                    self.raw_prompt = f'{self.raw_prompt} {tag_str}>'
-                    self.full_prompt = f'{self.full_prompt} {tag_str}>'
+                #     if start is not None: parts.append(f"start={start}")
+                #     if stop is not None: parts.append(f"stop={stop}")
+                #     tag_str = ':'.join(parts)
+                #     tag_str = f' <lora:{tag_str}>'
+                #     self.raw_prompt = f'{self.raw_prompt} {tag_str}>'
+                #     self.full_prompt = f'{self.full_prompt} {tag_str}>'
                     #self.loras.append((Path(lora_name).stem, item[1],item[2],item[3],item[4],item[5],item[6],item[7], lora_hash))
         # for (lora_name, lora_weight) in loras:
         #     if lora_name != 'None':
