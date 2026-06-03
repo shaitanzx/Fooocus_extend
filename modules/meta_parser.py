@@ -350,7 +350,7 @@ class MetadataParser(ABC):
             elif len(item) == 8:
                 if item[0] != 'None':
                     lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
-                    tag_str = ':'.join(parts)
+                    tag_str = ':'.join(item)
                     tag_str = f' <lora:{tag_str}>'
                     self.raw_prompt = f'{self.raw_prompt} {tag_str}>'
                     self.full_prompt = f'{self.full_prompt} {tag_str}>'
