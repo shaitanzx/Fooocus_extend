@@ -775,7 +775,7 @@ with shared.gradio_root:
                         with gr.TabItem(label='DynamicButtonHelp') as dlora_tab:
                             html_dlora_path = Path(__file__).parent / "dlora.html"
                             html_dlora = html_dlora_path.read_text(encoding="utf-8")
-                            gr.HTML(value=html_content)
+                            gr.HTML(value=html_dlora)
 
 
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
