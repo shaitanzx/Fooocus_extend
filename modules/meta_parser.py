@@ -349,6 +349,7 @@ class MetadataParser(ABC):
             # 2️⃣ Расширенный формат: (filename, w, te, unet, lbw, lbwe, start, stop)
             elif len(item) == 8:
                 n, w, te, unet, lbw, lbwe, start, stop = item
+                print('==========',item)
                 if n != 'None':
                     lora_path = get_file_from_folder_list(n, modules.config.paths_loras)
                     parts = [n.stem]
