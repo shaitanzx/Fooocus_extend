@@ -352,8 +352,8 @@ class MetadataParser(ABC):
                     lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
                     tag_str = ':'.join(parts)
                     tag_str = f' <lora:{tag_str}>'
-                    self.raw_prompt = f'{self.raw_prompt}} {tag_str}>'
-                    self.full_prompt = f'{self.full_prompt}} {tag_str}>'
+                    self.raw_prompt = f'{self.raw_prompt} {tag_str}>'
+                    self.full_prompt = f'{self.full_prompt} {tag_str}>'
                     #self.loras.append((Path(lora_name).stem, item[1],item[2],item[3],item[4],item[5],item[6],item[7], lora_hash))
         # for (lora_name, lora_weight) in loras:
         #     if lora_name != 'None':
