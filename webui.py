@@ -773,7 +773,8 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='DynamicButtonHelp') as dlora_tab:
-                            html_dlora = Path("dlora.html").read_text(encoding="utf-8")
+                            html_dlora_path = Path(__file__).parent / "dlora.html"
+                            html_dlora = html_dlora_path.read_text(encoding="utf-8")
                             gr.HTML(value=html_content)
 
 
