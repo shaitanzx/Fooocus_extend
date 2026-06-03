@@ -1,0 +1,2062 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1251">
+<meta name=Generator content="Microsoft Word 15 (filtered)">
+<style>
+<!--
+ /* Font Definitions */
+
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:8.0pt;
+	margin-left:0cm;
+	line-height:107%;
+	font-size:11.0pt;
+	font-family:"Calibri","sans-serif";}
+h2
+	{
+	margin-right:0cm;
+	margin-left:0cm;
+	font-size:18.0pt;
+	font-family:"Times New Roman","serif";}
+
+
+.MsoChpDefault
+	{font-family:"Calibri","sans-serif";}
+.MsoPapDefault
+	{margin-bottom:8.0pt;
+	line-height:107%;}
+@page WordSection1
+	{size:595.3pt 841.9pt;
+	margin:2.0cm 42.5pt 2.0cm 3.0cm;}
+div.WordSection1
+	{page:WordSection1;}
+-->
+</style>
+
+</head>
+
+<body lang=RU>
+
+<div class=WordSection1>
+
+<p class=MsoNormalCxSpFirst style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Dynamic</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> – </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>Lora</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> на ----------------стероидах</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Обычная </span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> — это как
+включить свет в комнате одной кнопкой. Расширенный формат — это умный дом с
+диммерами в каждой зоне. Хочешь, чтобы в спальне был полумрак, а на кухне —
+ярко? Теперь можешь.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Зачем это вообще нужно? (Объясняю на
+пальцах)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Проблема обычной </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>LoRA</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Представь: ты скачал крутую </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> для
+аниме-стиля. Применяешь её с весом `0.7` и...</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- Картинка стала анимешной</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- Но лица поплыли, пальцы лишние,
+композиция сломалась.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Почему так? Потому что обычный тег `&lt;</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lora</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>anime</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:0.7&gt;`
+говорит модели: &quot;Примени этот стиль ВЕЗДЕ и КО ВСЕМУ одинаково&quot;. Как
+если бы ты покрасил весь дом одной кистью — и стены, и пол, и потолок.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Теперь есть решение: динамическое
+управление</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>А теперь представь, что ты можешь
+сказать:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&quot;Эй, модель! Возьми эту </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>, но:*</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- Для крупных форм (поза, композиция) —
+используй на 30%</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- Для мелких деталей (текстуры, стиль) —
+на 150%</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- И включи это только после 10-го шага,
+когда основа уже готова&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>**Вот это и есть динамическое
+управления.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Как устроена нейросеть?</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Чтобы понимать, куда применять веса,
+нужно знать, из чего состоит &quot;мозг&quot; генерации.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Представь процесс создания картинки как
+**строительство дома**:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Этап 1: Фундамент и каркас (</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>-блоки)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Этап 2: Отделка и стиль (</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>MID</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>-блок)  </span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Этап 3: Детали и полировка (</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>-блоки)</span></p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Группа блоков</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Аналогия</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>За что отвечает</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Если перестараться</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>IN00–IN08</span></b></span><span class=qwen-markdown-text><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'> (Входные)</span></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Архитектор,
+  чертёж</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>Поза, композиция, расположение объектов</span></b></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Кривые позы,
+  лишние конечности, каша в кадре</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>MID00</span></b></span><span class=qwen-markdown-text><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'> (Средний)</span></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Дизайнер
+  интерьера</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>Общий стиль, атмосфера, связность</span></b></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Стиль
+  &quot;перекосит&quot; всю картинку в одну сторону</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>OUT00–OUT08</span></b></span><span
+  class=qwen-markdown-text><span style='font-size:10.5pt;font-family:"Arial","sans-serif";
+  color:#1D1D1F;background:white'> (Выходные)</span></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Декоратор,
+  художник</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>Текстуры, цвета, кожа, волосы, детали</span></b></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Артефакты,
+  &quot;мыло&quot;, странные узоры на коже</span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Простое правило:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- Хочешь сохранить позу? &#8594; Снижай
+вес для `</span><span lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>`</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- Хочешь больше стиля? &#8594; Повышай
+вес для `</span><span lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>`</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- Хочешь изменить
+&quot;настроение&quot;? &#8594; Играй с `</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>MID</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>`</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Синтаксис </span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lora</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:ИмяФайла:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>w</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=вес:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>unet</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=вес:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>te</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=вес:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbw</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=значения:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbwe</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=выражение:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>start</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=шаг:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>stop</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=шаг&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Параметр</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Простыми слов</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Пример</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Зачем нужно</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>w</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Насколько
+  сильно применять всю LoRA.</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>w=0.8</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Быстро
+  ослабить или усилить эффект</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>unet</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>Вес <b>для картинки</b> (визуал).</span></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>unet=1.2</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Усилить
+  стиль, не трогая промпт</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>te</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>Вес <b>для понимания текста</b>.</span></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>te=0.5</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Если модель
+  слишком буквально следует промпту</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>lbw</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <div style='border:solid #E3E3E3 1.0pt;padding:0cm 0cm 0cm 0cm;background:
+  white'>
+  <p class=MsoNormal style='line-height:normal;background:white;border:none;
+  padding:0cm'><b><span style='font-size:18.0pt;font-family:"Arial","sans-serif";
+  color:#1D1D1F;letter-spacing:-.25pt'>Управление блоками</span></b></p>
+  </div>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>IN:0.5,MID:1.0,OUT:1.5</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Измененеи веса каждого блока модели
+  отдельно</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>lbwe</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Управление слоями</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>IN04-OUT04=attn2=1.3</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Управление весам слоев блоков</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>start</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>Когда включить</span></b></span><span
+  class=qwen-markdown-text><span style='font-size:10.5pt;font-family:"Arial","sans-serif";
+  color:#1D1D1F;background:white'>. Номер шага, с которого начать.</span></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>start=10</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Пусть
+  сначала нарисует основу, потом добавит стиль</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=156 valign=top style='width:116.8pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>stop</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span class=qwen-markdown-text><b><span
+  style='font-size:10.5pt;font-family:"Arial","sans-serif";color:#1D1D1F;
+  background:white'>Когда выключить</span></b></span><span
+  class=qwen-markdown-text><span style='font-size:10.5pt;font-family:"Arial","sans-serif";
+  color:#1D1D1F;background:white'>. Последний шаг применения.</span></span></p>
+  </td>
+  <td width=156 valign=top style='width:116.8pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>stop=25</span></p>
+  </td>
+  <td width=156 valign=top style='width:116.85pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:10.5pt;
+  font-family:"Arial","sans-serif";color:#1D1D1F;background:white'>Чтобы стиль
+  не &quot;пересушил&quot; финал</span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Главная особенность состоит в том, что
+все параметры не являются обязательными. Если параметр не указать, но вес
+становится равен 1 и всё продолжает работать.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Параметр </span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>te</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'> </span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>работает, только
+на перманентных моделях (которые работают на всех шагах генерации),</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Если параметр </span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>start</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'> </span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>не указан, то
+работа модели начинается с самого первого шага.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Если параметр </span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>stop</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'> </span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>не указан, то
+модель работает до конца генерации.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Примеры</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&quot;Хочу, чтобы стиль появился только
+в конце&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lora</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>WaterColor</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>unet</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=1.0:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>start</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=15&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Первые 15 шагов: чистая генерация. С
+16-го: добавляется акварельный стиль.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&quot;Слабая композиция, но крутые
+текстуры&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:FantasyArt:unet=0.3:lbw=IN=0.2,OUT=1.5&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>LoRA</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'> почти не влияет на позу (`</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.2`), но
+сильно добавляет фэнтези-детали (`</span><span lang=EN-US style='font-size:
+14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span style='font-size:
+14.0pt;font-family:"Times New Roman","serif"'>=1.5`).</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>LBW</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>: Управление блоками</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Способ 1: Простой (групповой)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Задаёшь вес сразу для всей группы
+блоков:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbw</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.5,</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>MID</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=1.0,</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=1.5</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td width=208 valign=top style='width:155.75pt;border:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Группа</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Что значит</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Когда использовать</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=208 valign=top style='width:155.75pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.5</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Входные блоки &times;0.5</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'> ломает
+  композицию &#8594; ослабляем</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=208 valign=top style='width:155.75pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>MID</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=1.0</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Средний блок &times;1.0</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Оставляем стиль как есть</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=208 valign=top style='width:155.75pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=1.5</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Выходные блоки &times;1.5</span></p>
+  </td>
+  <td width=208 valign=top style='width:155.75pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Хочется больше деталей/текстур</span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Также можно указывать как
+непосредственно каждый блок (</span><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>IN</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>00=0.2,</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>01=0.5 и так
+далее), так и диапазон блоков (IN05-OUT05=0.5). В данном случае все неуказанные
+блоки будут иметь вес равный 1.0</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Способ 2: Точный (поблочный)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Задаёшь вес для каждого из 19 блоков по
+порядку:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbw</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.0,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'> (Первые 9 чисел &#8594; </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>00–</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>08, 10-е &#8594;
+</span><span lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>MID</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>00, последние 9
+&#8594; </span><span lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>00–</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>08)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>В случае если указать меньше 19 блоков,
+то применяться только указанные (начиная с начала), если указать больше, то
+лишние отсекутся</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Совет для новичка: Начинай с группового
+способа (`</span><span lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=`, `</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>MID</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=`, `</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=`). Точный —
+для продвинутых экспериментов.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>LBWE</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>: Хирургическая точность (Для гиков и
+перфекционистов)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Параметр `</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbwe</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>` (</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>Elemental</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>) — это когда ты
+хочешь настроить не просто &quot;комнату&quot;, а **конкретный выключатель в
+комнате**.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>### Формула успеха</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>```</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbwe</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=ГДЕ=ЧТО=НАСКОЛЬКО</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>```</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- ГДЕ: диапазон блоков (`IN05-OUT05`,
+`MID00`)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- </span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>ЧТО</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>: </span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>тип</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> </span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>слоя</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'> (`attn`,
+`ff`, `to_q` </span><span style='font-size:14.0pt;font-family:"Times New Roman","serif"'>и</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> </span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>др</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>.)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>- НАСКОЛЬКО: множитель веса (`1.5`,
+`0.3`, `-0.5`)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0 width=595
+ style='width:446.3pt;border-collapse:collapse;border:none'>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Ключ</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Функция</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Визуальное влияние</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>to_q</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Query (Запрос). Как слой
+  &quot;смотрит&quot; на себя.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Влияет на внутреннюю
+  структуру объектов, позу.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>to_k</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Key (Ключ). Сопоставление
+  с текстом.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Насколько строго объект
+  соответствует промпту.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>to_v</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Value (Значение).
+  Извлечение смысла.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Стиль объектов, наполнение
+  деталями.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>to_out</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Output. Результат
+  внимания.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Общее влияние текстового
+  описания на блок.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>attn1</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Self-Attention. Внимание
+  внутри картинки.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Пространственная
+  согласованность (чтобы рука не приросла к голове).</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>attn2</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Cross-Attention. Внимание
+  к тексту.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Следование промпту.
+  Усиление делает картинку ближе к тексту.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Ff</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Feed-Forward (Нейросеть
+  внутри блока).</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Текстуры, шумы, сложные
+  паттерны. Частое место артефактов.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>proj_in</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Входная проекция данных.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Подготовительный этап
+  перед обработкой.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>proj_out</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Выходная проекция данных.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Финализация обработки
+  блока.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>in_layers</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Входные свертки (ResNet).</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Крупные формы, первичные
+  признаки.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>emb_layers</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Слои эмбеддингов
+  времени/условий.</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Динамика изменений по ходу
+  генерации.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>out_layers</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Выходные свертки (ResNet).</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Детализация, четкость
+  границ.</span></p>
+  </td>
+ </tr>
+ <tr style='height:15.75pt'>
+  <td width=131 nowrap valign=bottom style='width:98.35pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>skip</span></p>
+  </td>
+  <td width=195 nowrap valign=bottom style='width:146.1pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Пропуск обработки
+  (Residual).</span></p>
+  </td>
+  <td width=269 nowrap valign=bottom style='width:201.85pt;border-top:none;
+  border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:15.75pt'>
+  <p class=MsoNormal style='margin-bottom:0cm;margin-bottom:.0001pt;line-height:
+  normal'><span style='font-size:12.0pt;color:black'>Сохранение исходной
+  информации (без LoRA).</span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Примеры &quot;из жизни&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Хочу, чтобы модель лучше слушала промпт,
+но только в середине генерации&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbwe</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>04-</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>04=</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>attn</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>2=1.3</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Усиливает &quot;внимательность к
+тексту&quot; только в блоках с 4 по 4.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Убрать странную текстуру на коже, не
+теряя стиль&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbwe</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>00-</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>08=</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>ff</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.7</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Ослабляет &quot;текстурный движок&quot;
+только на выходных слоях.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Сделать лица чётче, но не трогать фон</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbwe=IN02-OUT02=to_v=1.4</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Усиливает детализацию объектов только в
+средних блоках (где обычно &quot;живут&quot; лица).</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Готовые рецепты (Копируй и пробуй)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Рецепт 1: &quot;Безопасный стиль&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Проблема:* </span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>Lo</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>ра крутая, но
+ломает композицию.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Решение:*</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:MyStyle:w=1.0:lbw=IN=0.3,MID=0.8,OUT=1.2&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>`</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&#8594; Слабое влияние на позу, среднее
+на стиль, сильное на детали.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Рецепт 2: &quot;Появление стиля по
+шагам&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Проблема:* Хочется, чтобы стиль
+&quot;проявлялся&quot; постепенно.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Решение:*</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:OilPaint:lbw=1.0:start=5:stop=25&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&#8594; Стиль включается на 5-м шаге и
+выключается на 25-м.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Рецепт 3: &quot;Исправление
+артефактов&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Проблема:* На руках/лицах странная
+текстура.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Решение:*</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:FixHands:lbw=OUT:1.0:lbwe=OUT05-OUT08=ff=0.6&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&#8594; Ослабляет &quot;текстурный
+движок&quot; только в финальных блоках, где рисуются детали.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Рецепт 4: &quot;Два стиля в одном&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Проблема:* Хочешь смешать два стиля, но
+по-разному.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>*Решение:*</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>```</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:StyleA:lbw=IN:1.0,OUT:0.5:start=0:stop=10&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:StyleB:lbw=IN:0.5,OUT:1.0:start=10:stop=20&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&#8594; Первые 10 шагов: стиль А задаёт
+композицию. Следующие 10: стиль Б добавляет детали.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>С чего начать? (План для новичка)</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>1. Не усложняй. Начни с обычного `&lt;</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lora</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:имя:0.7&gt;`.
+Работает? Отлично.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>2. Попробуй `</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbw</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>`. Если </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> ломает позу
+&#8594; добавь `</span><span lang=EN-US style='font-size:14.0pt;font-family:
+"Times New Roman","serif"'>lbw</span><span style='font-size:14.0pt;font-family:
+"Times New Roman","serif"'>=</span><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>IN</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=0.5`.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>3. Добавь тайминг. Если стиль мешает на
+старте &#8594; `</span><span lang=EN-US style='font-size:14.0pt;font-family:
+"Times New Roman","serif"'>start</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=10`.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>4. Экспериментируй с `</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbwe</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>`. Только когда
+освоишь предыдущие шаги. Начни с `</span><span lang=EN-US style='font-size:
+14.0pt;font-family:"Times New Roman","serif"'>attn</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>2`
+(внимательность к тексту) или `</span><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>ff</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>` (текстуры).</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Чек-лист &quot;Что попробовать,
+если...&quot;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td width=311 valign=top style='width:233.6pt;border:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Проблема</span></p>
+  </td>
+  <td width=312 valign=top style='width:233.65pt;border:solid windowtext 1.0pt;
+  border-left:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Что попробовать</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=311 valign=top style='width:233.6pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Кривые позы, лишние конечности</span></p>
+  </td>
+  <td width=312 valign=top style='width:233.65pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>lbw</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=</span><span
+  lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.3</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=311 valign=top style='width:233.6pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Стиль &quot;забивает&quot; промпт</span></p>
+  </td>
+  <td width=312 valign=top style='width:233.65pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>lbw=MID=0.7 </span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>или</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'> <span
+  lang=EN-US>lbwe=IN00-OUT08=attn2=0.8</span></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=311 valign=top style='width:233.6pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Мало деталей, &quot;мыльная&quot;
+  картинка</span></p>
+  </td>
+  <td width=312 valign=top style='width:233.65pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>lbw=OUT=1.5 </span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>или</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'> <span
+  lang=EN-US>lbwe=OUT00-OUT08=ff=1.2</span></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=311 valign=top style='width:233.6pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Артефакты на коже/волосах</span></p>
+  </td>
+  <td width=312 valign=top style='width:233.65pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>lbwe</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=</span><span
+  lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>05-</span><span
+  lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>08=</span><span
+  lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>ff</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.7`</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=311 valign=top style='width:233.6pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'> мешает на
+  ранних шагах</span></p>
+  </td>
+  <td width=312 valign=top style='width:233.65pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>start</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=10</span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width=311 valign=top style='width:233.6pt;border:solid windowtext 1.0pt;
+  border-top:none;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+  font-family:"Times New Roman","serif"'>Стиль &quot;пересушивает&quot; финал</span></p>
+  </td>
+  <td width=312 valign=top style='width:233.65pt;border-top:none;border-left:
+  none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+  text-align:justify;line-height:normal'><span lang=EN-US style='font-size:
+  14.0pt;font-family:"Times New Roman","serif"'>stop</span><span
+  style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=25</span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Частые вопросы</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>**В: Это сложно, я запутаюсь в
+параметрах.**</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>О: Начни с одного. Добавил `</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbw</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.5` &#8594;
+посмотрел результат. Понравилось? Добавь ещё один параметр. Не спеши.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>**В: А если я укажу не тот ключ в `</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbwe</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>`?**</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>О: Ничего страшного. Если в файле </span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>LoRA</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> нет такого слоя
+— правило просто проигнорируется. Ошибки не будет.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>**В: Это замедлит генерацию?**</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>О: Нет! Все расчёты делаются один раз
+при загрузке. Скорость генерации не меняется.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>**В: Где брать &quot;правильные&quot;
+значения?**</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>О: Методом проб. Начни с `0.5`
+(ослабить) или `1.5` (усилить). Смотри на результат. Запоминай.</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Шпаргалка в один экран</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>```</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Segoe UI Symbol","sans-serif"'>&#128230;</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> БАЗОВЫЕ:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>w</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=0.7                  # Общая сила</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>unet</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=1.2              # Сила для картинки</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>te</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=0.5                  # Сила для
+понимания текста</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>start</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=10               # Включить с шага 10</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>stop</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=25               # Выключить после шага
+25</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&#129521;</span><span style='font-size:
+14.0pt;font-family:"Times New Roman","serif"'> БЛОКИ (</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbw</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>):</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbw</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.5                  #
+Ослабить влияние на композицию</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbw</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>MID</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=1.0      #
+Оставить стиль как есть</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbw</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:1.5      #
+Усилить детали</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Segoe UI Symbol","sans-serif"'>&#128300;</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> СЛОИ (</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lbwe</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>):</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbwe</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>ALL</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>attn</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>2=1.2                      #
+Лучше слушать промпт</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbwe</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>00-</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>08=</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>ff</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=0.7           #
+Убрать артефакты в деталях</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>lbwe</span><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>=</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>IN</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>02-</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>OUT</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>02=</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>to</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>_</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>v</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=1.4                  #
+Чётче лица в средних блоках</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Segoe UI Symbol","sans-serif"'>&#127919;</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'> ГОТОВЫЕ:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'># Безопасный стиль:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:Style:lbw=IN=0.3,MID=0.8,OUT=1.2&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'># Стиль появляется позже:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;</span><span lang=EN-US
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>lora</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>Style</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>:</span><span
+lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>start</span><span
+style='font-size:14.0pt;font-family:"Times New Roman","serif"'>=10&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'># Исправление артефактов:</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&lt;lora:Fix:lbwe=OUT05-OUT08=ff=0.6&gt;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpMiddle style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span lang=EN-US style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>&nbsp;</span></p>
+
+<p class=MsoNormalCxSpLast style='margin-bottom:0cm;margin-bottom:.0001pt;
+text-align:justify;line-height:normal'><span style='font-size:14.0pt;
+font-family:"Times New Roman","serif"'>Главный совет: Не пытайся выучить всё
+сразу. Возьми одну картинку, один тег и один параметр. Поменял &#8594;
+посмотрел &#8594; запомнил. Так, шаг за шагом, ты станешь мастером тонкой
+настройки. </span><span lang=EN-US style='font-size:14.0pt;font-family:"Times New Roman","serif"'>Удачи
+в творчестве!</span></p>
+
+</div>
+
+</body>
+
+</html>
