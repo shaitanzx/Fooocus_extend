@@ -337,11 +337,29 @@ class MetadataParser(ABC):
             self.refiner_model_hash = sha256_from_cache(refiner_model_path)
 
         self.loras = []
-        for (lora_name, lora_weight) in loras:
-            if lora_name != 'None':
-                lora_path = get_file_from_folder_list(lora_name, modules.config.paths_loras)
-                lora_hash = sha256_from_cache(lora_path)
-                self.loras.append((Path(lora_name).stem, lora_weight, lora_hash))
+
+        for item in loras:
+            # 1️⃣ Старый формат: (filename, weight)
+            if len(item) == 2:
+                if item[0] != 'None':
+                    lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
+                    lora_hash = sha256_from_cache(lora_path)
+                    self.loras.append((Path(lora_name).stem, item[1], lora_hash))
+                
+            # 2️⃣ Расширенный формат: (filename, w, te, unet, lbw, lbwe, start, stop)
+            elif len(item) == 8:
+                if item[0] != 'None':
+                    lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
+                    lora_hash = sha256_from_cache(lora_path)
+                    self.loras.append((Path(lora_name).stem, item[1],item[2],item[3],item[4],item[5],item[6],item[7], lora_hash))
+
+
+
+        # for (lora_name, lora_weight) in loras:
+        #     if lora_name != 'None':
+        #         lora_path = get_file_from_folder_list(lora_name, modules.config.paths_loras)
+        #         lora_hash = sha256_from_cache(lora_path)
+        #         self.loras.append((Path(lora_name).stem, lora_weight, lora_hash))
         self.vae_name = Path(vae_name).stem
 
 
