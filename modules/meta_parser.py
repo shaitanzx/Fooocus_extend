@@ -26,9 +26,17 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     assert isinstance(loaded_parameter_dict, dict)
 
     results = [len(loaded_parameter_dict) > 0]
+    dynamic_lora = ""
+    i = 1
+    while True:
+        if f'lora_dynamic_{i}' not in loaded_parameter_dict:
+            break 
+        dynamic_lora += get_dynamic_lora(f'lora_dynamic_{i}', f'Dynamic LoRA {i}', loaded_parameter_dict)        
+        i += 1
 
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
     get_str('prompt', 'Prompt', loaded_parameter_dict, results)
+    results[-1] += dynamic_lora
     get_str('negative_prompt', 'Negative Prompt', loaded_parameter_dict, results)
     get_list('styles', 'Styles', loaded_parameter_dict, results)
     performance = get_str('performance', 'Performance', loaded_parameter_dict, results)
@@ -73,7 +81,13 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
 
     return results
 
-
+def get_dynamic_lora(key: str, fallback: str | None, source_dict: dict):
+    raw = source_dict.get(key, source_dict.get(fallback))
+    parts = [p.strip() for p in raw.split(' | ')]
+    parts[0]=Path(parts[0]).stem
+    tag_str = ':'.join(parts)
+    return f' <lora:{tag_str}>'
+    
 def get_str(key: str, fallback: str | None, source_dict: dict, results: list, default=None) -> str | None:
     try:
         h = source_dict.get(key, source_dict.get(fallback, default))
@@ -323,11 +337,15 @@ class MetadataParser(ABC):
             self.refiner_model_hash = sha256_from_cache(refiner_model_path)
 
         self.loras = []
-        for (lora_name, lora_weight) in loras:
-            if lora_name != 'None':
-                lora_path = get_file_from_folder_list(lora_name, modules.config.paths_loras)
-                lora_hash = sha256_from_cache(lora_path)
-                self.loras.append((Path(lora_name).stem, lora_weight, lora_hash))
+        for item in loras:
+            if len(item) == 2:
+                if item[0] != 'None':
+                    lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
+                    lora_hash = sha256_from_cache(lora_path)
+                    self.loras.append((Path(lora_name).stem, item[1], lora_hash))
+                
+            elif len(item) == 8:
+                continue
         self.vae_name = Path(vae_name).stem
 
 

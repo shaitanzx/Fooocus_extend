@@ -1,0 +1,385 @@
+
+<html>
+<head>
+<meta charset="utf-8">
+
+</head>
+
+<body lang=EN>
+
+<p>Dynamic LoRA – LoRA on steroids.</p>
+<p>Standard LoRA is like turning on the lights in a room with a single button. The extended format is a smart home with adjustable lighting levels in each zone. Want it dim in the bedroom and bright in the kitchen? Now you can.</p>
+<p>Why do you even need this? (I'll explain it in simple terms)</p>
+<p>The problem with standard LoRA</p>
+<p>Imagine: you downloaded a cool anime-style LoRA. You apply it with a weight of 0.7 and...<br>
+  - The picture looks anime-like<br>
+  - But the faces are blurry, there are unnecessary fingers, the composition is broken.</p>
+<p>Why is that? Because the standard &lt;lora:anime:0.7&gt; tag tells the model: &quot;Apply this style EVERYWHERE and TO EVERYTHING equally.&quot; It's as if you were painting the entire house with one brush – the walls, the floor, and the ceiling.</p>
+<p>Now there's a solution: dynamic control.<br>
+  Now imagine you could say:<br>
+  &quot;Hey, model! Take this LoRA, but:<br>
+  - For large shapes (pose, composition), use 30%<br>
+  - For small details (textures, style), use 150%<br>
+  - And only enable this after step 10, when the base is ready.&quot;</p>
+<p>That's dynamic control.</p>
+<p>How does a neural network work?</p>
+<p>To understand where to apply weights, you need to know what the &quot;brain&quot; of the generation consists of.</p>
+<p>Think of the process of creating an image as building a house:</p>
+<p>Stage 1: Foundation and frame (IN blocks)<br>
+  Stage 2: Finish and style (MID block)<br>
+  Stage 3: Details and polish (OUT blocks)</p>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <th scope="col">Group of blocks</th>
+      <th scope="col">Analogy</th>
+      <th scope="col">What it's responsible for</th>
+      <th scope="col">If you overdo it</th>
+    </tr>
+    <tr>
+      <td>IN00–IN08 (Input)</td>
+      <td>Architect, drawing</td>
+      <td>Pose, composition, arrangement of objects</td>
+      <td>Crooked poses, extra limbs, mess in the frame</td>
+    </tr>
+    <tr>
+      <td>MID00 (Middle)</td>
+      <td>Interior designer</td>
+      <td>General style, atmosphere, coherence</td>
+      <td>The style will "skew" the entire picture to one side</td>
+    </tr>
+    <tr>
+      <td>OUT00–OUT08 (Output)</td>
+      <td>decorator, artist</td>
+      <td>Textures, colors, skin, hair, details</td>
+      <td>Artifacts, "soap", strange patterns on the skin</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>A simple rule:<br>
+  - Want to maintain the pose? → Decrease the weight for 'IN'<br>
+  - Want more style? → Increase the weight for 'OUT'<br>
+  - Want to change the &quot;mood&quot;? → Play with 'MID'</p>
+<p>General Syntax</p>
+<p>&lt;lora:Name:w=weight:unet=weight:te=weight:lbw=values:lbwe=expression:start=step:stop=step&gt;</p>
+<p>The key feature is that all parameters are optional. If a parameter is omitted, the weight is set to 1 (for w, te, and unet) or remains unchanged (for all other parameters). All parameters are separated by a colon.</p>
+<p>The te parameter only works on permanent LORAs.</p>
+<p>A permanent LORA is a model that is applied to all generation steps without any modifications.</p>
+<p>Dynamic LORA is a model that changes LORA parameters in a given range of generation steps.</p>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <th scope="col">Parameter</th>
+      <th scope="col">In simple words</th>
+      <th scope="col">Example</th>
+      <th scope="col">Why do you need</th>
+    </tr>
+    <tr>
+      <td>w</td>
+      <td>How much to apply all of LoRA.</td>
+      <td>w=0.8</td>
+      <td>Quickly weaken or strengthen the effect</td>
+    </tr>
+    <tr>
+      <td>unet</td>
+      <td>Weight for the image (visual).</td>
+      <td>unet=1.2</td>
+      <td>Enhance the style without touching the prompt</td>
+    </tr>
+    <tr>
+      <td>te</td>
+      <td>Weight for understanding the text.</td>
+      <td>te=0.5</td>
+      <td>If the model follows the prompt too literally</td>
+    </tr>
+    <tr>
+      <td>lbw</td>
+      <td>Block management</td>
+      <td>IN=0.5,MID=1.0,OUT=1.5</td>
+      <td>Changing the weight of each block of the model separately</td>
+    </tr>
+    <tr>
+      <td>lbwe</td>
+      <td>Layer management</td>
+      <td>IN04-OUT04=attn2=1.3</td>
+      <td>Managing block layer weights</td>
+    </tr>
+    <tr>
+      <td>start</td>
+      <td>When to enable. Step number to start with.</td>
+      <td>start=10</td>
+      <td>Let him draw the base first, then add the style</td>
+    </tr>
+    <tr>
+      <td>stop</td>
+      <td>When to turn off. The final step of application.</td>
+      <td>stop=25</td>
+      <td>To prevent the style from drying out the finale</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>If multiple conditions need to be specified in the lbw and lbwe parameters, they are listed comma-separated within this parameter.</p>
+<p>If the start parameter is omitted, the model starts running from the very first step.<br>
+  If the stop parameter is omitted, the model runs until the end of generation.</p>
+<p>Examples</p>
+<p>&quot;I want the style to appear only at the end&quot;<br>
+  &lt;lora:WaterColor:unet=1.0:start=15&gt;<br>
+  The first 14 steps: pure generation. From the 15th: a watercolor style is added.</p>
+<p>&quot;Weak composition, but cool textures&quot;<br>
+  &lt;lora:FantasyArt:unet=0.3:lbw=IN=0.2,OUT=1.5&gt;<br>
+  LoRA has almost no effect on the pose (`IN=0.2`), but adds a lot of fantasy details (`OUT=1.5`).</p>
+<p>LBW: Block Management</p>
+<p>First, let's understand how LORA works. Each LoRa has the following 20 blocks:<br>
+  BASE, IN00, IN01, IN02, IN03, IN04, IN05, IN06, IN07, IN08, MID00, OUT00, OUT01, OUT02, OUT03, OUT04, OUT05, OUT06, OUT07, OUT08.<br>
+  Since the BASE block basically duplicates the MID00 block, it can be ignored.<br>
+  Since different LoRas can be trained for different things (style, lighting, character, etc.), they may have empty blocks, and therefore, changing them will not result in any changes.</p>
+<p>Method 1: Simple (group)<br>
+  Set the weight for the entire group of blocks at once:</p>
+<p>lbw=IN=0.5,MID=1.0,OUT=1.5</p>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <th scope="col">Group</th>
+      <th scope="col">What does it mean?</th>
+      <th scope="col">When to use</th>
+    </tr>
+    <tr>
+      <td>IN=0.5</td>
+      <td>Input blocks ×0.5</td>
+      <td>LoRA breaks the composition → weaken</td>
+    </tr>
+    <tr>
+      <td>MID=1.0</td>
+      <td>Middle block ×1.0</td>
+      <td>We leave the style as is</td>
+    </tr>
+    <tr>
+      <td>OUT=1.5</td>
+      <td>Output block ×1.5</td>
+      <td>I want more details/textures</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>You can also specify each block directly (IN00=0.2, IN01=0.5, etc.) or a range of blocks (IN05-OUT05=0.5). In this case, all unspecified blocks will have a weight of 1.0.</p>
+<p>Method 2. Named<br>
+  lbw=IN01=0.3,OUT05=0.9</p>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <th scope="col">Group</th>
+      <th scope="col">What does it mean?</th>
+      <th scope="col">When to use</th>
+    </tr>
+    <tr>
+      <td>IN01=0.3</td>
+      <td>First input block ×0.5</td>
+      <td>LoRA breaks the composition → weaken</td>
+    </tr>
+    <tr>
+      <td>OUT05=0.9</td>
+      <td>Fifth output block ×0.9</td>
+      <td>Reducing detail</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Method 3: Exact (Blockwise)<br>
+  Set the weight for each of the 19 blocks in order:</p>
+<p>lbw=0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.0,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7</p>
+<p>(The first 9 numbers → IN00–IN08, the 10th → MID00, the last 9 → OUT00–OUT08)</p>
+<p>If you specify fewer than 19 blocks, only the specified ones are used (starting from the beginning); if you specify more, the extra ones are cut off.</p>
+<p>Tip for beginners: Start with the group method (`IN=`, `MID=`, `OUT=`). Exact is for advanced experiments.</p>
+<p>LBWE: Surgical Precision (For Geeks and Perfectionists)</p>
+<p>The `lbwe` (Elemental) parameter is for when you want to configure not just a &quot;room&quot;, but a &quot;specific switch in the room&quot;.</p>
+<p>### Formula for Success</p>
+<p>lbwe=WHERE=WHAT=HOW MUCH<br>
+  <br>
+  - WHERE: block or range of blocks (`IN05-OUT05`, `MID00`)<br>
+  - WHAT: layer type (`attn`, `ff`, `to_q`, etc.)<br>
+  -HOW MUCH: weight multiplier (`1.5`, `0.3`, `-0.5`)</p>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <th scope="col">Key</th>
+      <th scope="col">Function</th>
+      <th scope="col">Visual Impact</th>
+    </tr>
+    <tr>
+      <td>to_q</td>
+      <td>Query. How the layer “looks” at itself.</td>
+      <td>Affects the internal structure of objects, posture.</td>
+    </tr>
+    <tr>
+      <td>to_k</td>
+      <td>Key. Matching with text.</td>
+      <td>How strictly does the object comply with the prompt?.</td>
+    </tr>
+    <tr>
+      <td>to_v</td>
+      <td>Value. Extracting meaning</td>
+      <td>Style of objects, filling with details.</td>
+    </tr>
+    <tr>
+      <td>to_out</td>
+      <td>Output. The result of attention.</td>
+      <td>The overall impact of text description on a block.</td>
+    </tr>
+    <tr>
+      <td>attn1</td>
+      <td>Self-Attention. Attention inside the picture.</td>
+      <td>Spatial consistency (so that the hand does not grow to the headве).</td>
+    </tr>
+    <tr>
+      <td>attn2</td>
+      <td>Cross-Attention. Attention to the text.</td>
+      <td>Following the prompt. Enhancement brings the image closer to the text.</td>
+    </tr>
+    <tr>
+      <td>ff</td>
+      <td>Feed-Forward (Neural network inside the block).</td>
+      <td>Textures, noise, complex patterns. A common source of artifacts.</td>
+    </tr>
+    <tr>
+      <td>proj_in</td>
+      <td>Input data projection.</td>
+      <td>Preparatory stage before processing.</td>
+    </tr>
+    <tr>
+      <td>proj_out</td>
+      <td>Output projection of data</td>
+      <td>Finalizing block processing.</td>
+    </tr>
+    <tr>
+      <td>in_layers</td>
+      <td>Input convolutions (ResNet).</td>
+      <td>Large forms, primary characteristics.</td>
+    </tr>
+    <tr>
+      <td>emb_layers</td>
+      <td>Time/Condition Embedding Layers.</td>
+      <td>Dynamics of changes during generation.</td>
+    </tr>
+    <tr>
+      <td>out_layers</td>
+      <td>Output convolutions (ResNet).</td>
+      <td>Detailing, clear boundaries.</td>
+    </tr>
+    <tr>
+      <td>skip</td>
+      <td>Skipping processing (Residual).</td>
+      <td>Preservation of original information (without LoRA).</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Examples from real life</p>
+<p>I want the model to listen to the prompt better, but only in the middle of generation<br>
+  lbwe=IN04-OUT04=attn2=1.3<br>
+  Strengthens “attention to the text” only in blocks from the 4th input to the 4th output.</p>
+<p>Remove weird texture on skin without losing style<br>
+  lbwe=OUT00-OUT08=ff=0.7<br>
+  Reduces the &quot;texture engine&quot; only on output layers.</p>
+<p>Make faces clearer, but leave the background alone<br>
+  lbwe=IN02-OUT02=to_v=1.4<br>
+  Enhances the detail of objects only in the middle blocks (where faces usually “live”).</p>
+<p>Ready-made recipes (Copy and try)</p>
+<p>Recipe 1: &quot;Safe Style&quot;<br>
+  Problem: Lora is cool, but breaks the composition.<br>
+  Solution: &lt;lora:MyStyle:w=1.0:lbw=IN=0.3,MID=0.8,OUT=1.2&gt;<br>
+  Weak influence on pose, medium on style, strong on detail.</p>
+<p>Recipe 2: “Emergence of style step by step”<br>
+  Problem: I want the style to “appear” gradually.<br>
+  Solution: &lt;lora:OilPaint:w=1.0:start=5:stop=25&gt;<br>
+  The style turns on at the 5th step and turns off at the 25th.</p>
+<p>Recipe 3: &quot;Fixing Artifacts&quot;<br>
+  Problem: Hands/faces have weird texture.<br>
+  Solution:&lt;lora:FixHands:lbw=OUT:1.0:lbwe=OUT05-OUT08=ff=0.6&gt;<br>
+  It weakens the &quot;texture engine&quot; only in the final blocks where details are drawn.</p>
+<p>Recipe 4: &quot;Two styles in one&quot;<br>
+  Problem: You want to mix two styles, but in different ways.<br>
+  Solution: &lt;lora:StyleA:lbw=IN:1.0,OUT:0.5:start=0:stop=10&gt; &lt;lora:StyleB:lbw=IN:0.5,OUT:1.0:start=10:stop=20&gt;<br>
+  First 10 steps: Style A sets the composition. Next 10: Style B adds detail.</p>
+<p>Where to start? (Beginner's plan)</p>
+<p>1. Keep it simple. Start with the usual `&lt;lora:name:0.7&gt;`. Works? Great.<br>
+  2. Try `lbw`. If LoRA breaks the pose → add `lbw=IN=0.5`.<br>
+  3. Add timing. If the style interferes at the start → `start=10`.<br>
+  4. Experiment with `lbwe`. Only when you master the previous steps. Start with `attn2` (text attention) or `ff` (texture).</p>
+<p>Checklist &quot;What to try if...&quot;</p>
+
+<table border="1">
+  <tbody>
+    <tr>
+      <th scope="col">Problem</th>
+      <th scope="col">What to try</th>
+    </tr>
+    <tr>
+      <td>Crooked postures, extra limbs</td>
+      <td>lbw=IN=0.3</td>
+    </tr>
+    <tr>
+      <td>The style "clogs" the prompt</td>
+      <td>lbw=MID=0.7 or lbwe=IN00-OUT08=attn2=0.8</td>
+    </tr>
+    <tr>
+      <td>Few details, blurry picture</td>
+      <td>lbw=OUT=1.5 or lbwe=OUT00-OUT08=ff=1.2</td>
+    </tr>
+    <tr>
+      <td>Artifacts on the skin/hair</td>
+      <td>lbwe=OUT05-OUT08=ff=0.7</td>
+    </tr>
+    <tr>
+      <td>LoRA is a hindrance in the early stages</td>
+      <td>start=10</td>
+    </tr>
+    <tr>
+      <td>The style "dries out" the ending</td>
+      <td>stop=25</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Frequently Asked Questions</p>
+<p>Q: This is complicated; I'll get confused by the parameters.<br>
+  A: Start with one. I added lbw=IN=0.5 → looked at the result. Like it? Add another parameter. Take your time.</p>
+<p>Q: What if I specify the wrong key in lbwe?<br>
+  A: It's okay. If the LoRA file doesn't have such a layer, the rule will simply be ignored. There will be no error.</p>
+<p>Q: Will this slow down generation?<br>
+  A: No! All calculations are done once upon loading. Generation speed does not change.</p>
+<p>Q: Where can I find the &quot;correct&quot; values?<br>
+  A: Trial and error. Start with 0.5 (weak) or 1.5 (strengthen). Look at the result. Remember.</p>
+<p>One-Screen Cheat Sheet</p>
+<p>BASIC:<br>
+  w=0.7 # Overall Strength<br>
+  unet=1.2 # Strength for Image<br>
+  te=0.5 # Strength for Text Understanding<br>
+  start=10 # Enable after step 10<br>
+  stop=25 # Disable after step 25</p>
+<p>BLOCKS (lbw):<br>
+  lbw=IN=0.5 # Reduce Impact on Composition<br>
+  lbw=MID=1.0 # Leave Style As Is<br>
+  lbw=OUT:1.5 # Enhance Details</p>
+<p>LAYERS (lbwe):<br>
+  lbwe=ALL=attn2=1.2 # Improve Prompt Listening<br>
+  lbwe=OUT00-OUT08=ff=0.7 # Remove Artifacts in Details<br>
+  lbwe=IN02-OUT02=to_v=1.4 # Sharpen Faces in Middle Blocks</p>
+<p>READY:<br>
+  # Safe Style:<br>
+  &lt;lora:Style:lbw=IN=0.3,MID=0.8,OUT=1.2&gt;</p>
+<p># Style appears later:<br>
+  &lt;lora:Style:start=10&gt;</p>
+<p># Artifact fixes:<br>
+  &lt;lora:Fix:lbwe=OUT05-OUT08=ff=0.6&gt;</p>
+<p>Top tip: Don't try to learn everything at once. Take one image, one tag, and one parameter. Change → look → remember. This way, step by step, you'll become a master of fine-tuning. Good luck with your creativity!</p>
+
+</body>
+</html>

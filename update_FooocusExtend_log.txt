@@ -1,3 +1,6 @@
+v9.3.0
+ 1.Add Dynamic Lora Support
+
 v9.2.11
  1. Some bugs fix
 

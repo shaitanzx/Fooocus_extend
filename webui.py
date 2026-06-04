@@ -352,7 +352,9 @@ with shared.gradio_root:
             with gr.Row():
                 with gr.Column(scale=17):
                     prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
-                                        autofocus=True, lines=3)
+                                        autofocus=True, lines=3,
+                                        )
+
 
                     default_prompt = modules.config.default_prompt
                     if isinstance(default_prompt, str) and default_prompt != '':
@@ -770,6 +772,33 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+                        with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
+                            toggle_btn = gr.Button(value="ENG / RUS")
+                            def toggle_html(current_html):
+                                # Определяем, какой файл сейчас загружен (можно по наличию русских букв или просто переключать)
+                                en_path = Path(__file__).parent / "dlora.html"
+                                ru_path = Path(__file__).parent / "dlora_rus.html"
+        
+                                # Простая эвристика: если в HTML есть слово "Dynamic" - значит английский
+                                if "lang=EN" in current_html and "lang=RU" not in current_html:
+                                # Переключаем на русский
+                                    return ru_path.read_text(encoding="utf-8")
+                                else:
+                                # Переключаем на английский
+                                    return en_path.read_text(encoding="utf-8")
+                                # Загружаем начальную версию
+                            en_path = Path(__file__).parent / "dlora.html"
+                            initial_html = en_path.read_text(encoding="utf-8")
+    
+                            html_display = gr.HTML(value=initial_html)
+                            
+                            toggle_btn.click(
+                                fn=toggle_html,
+                                inputs=html_display,
+                                outputs=[html_display]
+                                )
+
+
 
                         with gr.TabItem(label='OneButtonPrompt') as obp_tab:
                             (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,

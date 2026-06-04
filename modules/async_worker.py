@@ -348,7 +348,7 @@ def worker():
     from extras.expansion import safe_str
     from modules.util import (remove_empty_str, HWC3, resize_image, get_image_shape_ceil, set_image_shape_ceil,
                               get_shape_ceil, resample_image, erode_or_dilate, parse_lora_references_from_prompt,
-                              apply_wildcards)
+                              apply_wildcards, parse_extend_loras)
     from modules.upscaler import perform_upscale
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
@@ -398,7 +398,20 @@ def worker():
 
         async_task.yields.append(['results', async_task.results])
         return
+    def format_lora_params(n, w, te, unet, lbw, lbwe, start, stop):
+        parts = [n]
 
+        if w is not None: parts.append(f"w={w}")
+        if te is not None: parts.append(f"te={te}")
+        if unet is not None: parts.append(f"unet={unet}")
+
+        if lbw: parts.append(f"lbw={lbw}")
+        if lbwe: parts.append(f"lbwe={lbwe}")
+
+        if start is not None: parts.append(f"start={start}")
+        if stop is not None: parts.append(f"stop={stop}")
+
+        return " | ".join(parts)
     def build_image_wall(async_task):
         results = []
 
@@ -474,9 +487,21 @@ def worker():
                 d.append(('FreeU', 'freeu',
                           str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
 
-        for li, (n, w) in enumerate(async_task.loras):
+        lora_index=0
+        for li, item in enumerate(loras):
+            if len(item) == 2:
+                n, w = item
                 if n != 'None':
-                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+                    d.append((f'LoRA {lora_index + 1}', f'lora_combined_{lora_index + 1}', f'{n} : {w}'))
+                    lora_index +=1
+        lora_index = 0
+        for li, item in enumerate(loras):
+            if len(item) == 8:
+                n, w, te, unet, lbw, lbwe, start, stop = item
+                if n != 'None':
+                    params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
+                    d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
+                    lora_index +=1
         if async_task.codeformer_gen_enabled:
             d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
             d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
@@ -649,10 +674,21 @@ def worker():
             if async_task.freeu_enabled:
                 d.append(('FreeU', 'freeu',
                           str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
-
-            for li, (n, w) in enumerate(loras):
-                if n != 'None':
-                    d.append((f'LoRA {li + 1}', f'lora_combined_{li + 1}', f'{n} : {w}'))
+            lora_index=0
+            for li, item in enumerate(loras):
+                if len(item) == 2:
+                    n, w = item
+                    if n != 'None':
+                        d.append((f'LoRA {lora_index + 1}', f'lora_combined_{lora_index + 1}', f'{n} : {w}'))
+                        lora_index +=1
+            lora_index = 0
+            for li, item in enumerate(loras):
+                if len(item) == 8:
+                    n, w, te, unet, lbw, lbwe, start, stop = item
+                    if n != 'None':
+                        params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
+                        d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
+                        lora_index +=1
             if async_task.codeformer_gen_enabled:
                 d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
                 d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
@@ -995,6 +1031,8 @@ def worker():
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
         loras += async_task.performance_loras
+        loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
+        loras=loras + ploras + dloras
         pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,

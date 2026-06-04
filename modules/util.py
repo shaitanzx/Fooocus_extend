@@ -7,7 +7,7 @@ import math
 import os
 import cv2
 import re
-from typing import List, Tuple, AnyStr, NamedTuple
+from typing import List, Tuple, AnyStr, NamedTuple, Dict
 
 import json
 import hashlib
@@ -17,6 +17,9 @@ from PIL import Image
 import modules.config
 import modules.sdxl_styles
 from modules.flags import Performance
+
+from collections import defaultdict
+
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -386,6 +389,318 @@ def get_file_from_folder_list(name, folders):
 def get_enabled_loras(loras: list, remove_none=True) -> list:
     return [(lora[1], lora[2]) for lora in loras if lora[0] and (lora[1] != 'None' if remove_none else True)]
 
+
+SDXL_LBW_SLOTS = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" for i in range(9)]
+
+def parse_lbw_preset(preset: str) -> Dict[str, float]:
+    default_weights = {slot: 1.0 for slot in SDXL_LBW_SLOTS}
+    if not preset or not preset.strip():
+        print(f"[Dynamic LORA] parse_lbw_preset: input is empty. Using default (all 1.0).")
+        return default_weights
+
+    preset = preset.strip()
+    weights = default_weights.copy()
+
+    slot_pattern = r'(IN|MID|OUT)(\d{2})(?:-(IN|MID|OUT)(\d{2}))?\s*[=:]\s*([\d.]+)'
+    matches = re.findall(slot_pattern, preset, re.IGNORECASE)
+    
+    if matches:
+        log_entries = []
+        for match in matches:
+            group1, num1, group2, num2, val = match
+            val = float(val)
+            group1 = group1.upper()
+            
+            if group2: 
+                group2 = group2.upper()
+                num2 = int(num2)
+                num1 = int(num1)
+                
+                slots_to_update = []
+                
+                if group1 == 'IN' and group2 == 'OUT':
+
+                    for i in range(num1, 9):
+                        slots_to_update.append(f"IN{i:02d}")
+                    for i in range(0, num2 + 1):
+                        slots_to_update.append(f"OUT{i:02d}")
+                elif group1 == 'IN' and group2 == 'IN':
+                    for i in range(num1, num2 + 1):
+                        slots_to_update.append(f"IN{i:02d}")
+                elif group1 == 'OUT' and group2 == 'OUT':
+                    for i in range(num1, num2 + 1):
+                        slots_to_update.append(f"OUT{i:02d}")
+                elif group1 == 'MID' and group2 == 'MID':
+                    slots_to_update.append("MID00")
+                
+                for slot in slots_to_update:
+                    weights[slot] = val
+                log_entries.append(f"{group1}{num1:02d}-{group2}{num2:02d}={val}")
+                
+            else: 
+                num = int(num1)
+                if group1 == 'IN' and 0 <= num <= 8:
+                    slot = f"IN{num:02d}"
+                    weights[slot] = val
+                    log_entries.append(f"{slot}={val}")
+                elif group1 == 'OUT' and 0 <= num <= 8:
+                    slot = f"OUT{num:02d}"
+                    weights[slot] = val
+                    log_entries.append(f"{slot}={val}")
+                elif group1 == 'MID':
+                    weights["MID00"] = val
+                    log_entries.append(f"MID={val}")
+        
+        if log_entries:
+            print(f"[Dynamic LORA] parse_lbw_preset (slots): '{preset}' → {', '.join(log_entries)}")
+            return weights
+    
+    if re.search(r'(IN|MID|OUT)\s*[=:]\s*[\d.]+', preset, re.IGNORECASE):
+        parts = re.split(r'[,;]', preset)
+        log_parts = []
+        for part in parts:
+            part = part.strip()
+            if not part: continue
+            match = re.match(r'(IN|MID|OUT)\s*[=:]\s*([\d.]+)', part, re.IGNORECASE)
+            if match:
+                group, val = match.group(1).upper(), float(match.group(2))
+                if group == 'IN':
+                    for i in range(9): weights[f"IN{i:02d}"] = val
+                    log_parts.append(f"IN:{val}")
+                elif group == 'MID':
+                    weights["MID00"] = val
+                    log_parts.append(f"MID:{val}")
+                elif group == 'OUT':
+                    for i in range(9): weights[f"OUT{i:02d}"] = val
+                    log_parts.append(f"OUT:{val}")
+        print(f"[Dynamic LORA] parse_lbw_preset (named groups): '{preset}' → {', '.join(log_parts)}")
+        return weights
+    
+    values = []
+    for p in preset.split(','):
+        p = p.strip()
+        if not p: continue
+        try: 
+            values.append(float(p))
+        except ValueError: 
+            continue
+
+    for i, val in enumerate(values):
+        if i < len(SDXL_LBW_SLOTS):
+            weights[SDXL_LBW_SLOTS[i]] = val
+        else:
+            break
+
+    changed = {k: v for k, v in weights.items() if v != 1.0}
+    print(f"[Dynamic LORA] parse_lbw_preset (positional): '{preset}' → {len(values)} values parsed. Non-1.0 slots: {changed}")
+    return weights
+
+def parse_lbw_elemental(preset: str):
+    if not preset or not preset.strip():
+        return []
+        
+    rules = []
+    for part in preset.split(','):
+        part = part.strip()
+        if not part: continue
+        parts = part.split('=')
+        if len(parts) != 3: continue
+        block_range, key_pattern, w_str = parts[0].strip(), parts[1].strip(), parts[2].strip()
+        try:
+            rules.append((block_range.upper(), key_pattern.lower(), float(w_str)))
+        except ValueError:
+            continue
+    return rules
+
+def _slot_to_index(slot: str) -> int:
+    s = slot.upper()
+    if s.startswith('IN'): return int(s[2:])
+    if s == 'MID00': return 999 
+    if s.startswith('OUT'): return 2000 + int(s[3:])
+    return -1
+
+def get_elemental_multiplier(lora_key: str, slot_name: str, elemental_rules):
+    if not elemental_rules:
+        return 1.0
+        
+    slot_idx = _slot_to_index(slot_name)
+    last_weight = 1.0
+    matched = False
+    
+    key_lower = lora_key.lower()
+    
+    for block_range, key_pattern, weight in elemental_rules:
+        if key_pattern not in key_lower:
+            continue
+            
+        in_range = False
+        if block_range == 'ALL':
+            in_range = True
+        elif '-' in block_range:
+            start_s, end_s = block_range.split('-', 1)
+            start_idx = _slot_to_index(start_s)
+            end_idx = _slot_to_index(end_s)
+            if 0 <= start_idx <= end_idx:
+                in_range = (start_idx <= slot_idx <= end_idx)
+        else:
+            in_range = (block_range == slot_name.upper())
+            
+        if in_range:
+            matched = True
+            last_weight = weight
+            
+    return last_weight if matched else 1.0
+
+def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
+    slots = defaultdict(list)
+    pattern = re.compile(r"diffusion_model\.(input_blocks|output_blocks|middle_block)(?:\.(\d+))?\.")
+
+    mapped_count = 0
+    for lora_key, model_path in key_map.items():
+        match = pattern.search(model_path)
+        if not match: continue
+
+        block_type, block_idx = match.group(1), match.group(2)
+        if block_type == "input_blocks":
+            slots[f"IN{int(block_idx):02d}"].append(lora_key)
+            mapped_count += 1
+        elif block_type == "output_blocks":
+            slots[f"OUT{int(block_idx):02d}"].append(lora_key)
+            mapped_count += 1
+        elif block_type == "middle_block":
+            slots["MID00"].append(lora_key)
+            mapped_count += 1
+
+    order = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" for i in range(9)]
+    result = {slot: slots[slot] for slot in order if slot in slots}
+
+    slot_counts = {s: len(keys) for s, keys in result.items()}
+    print(f"[Dynacmic LORA] build_lbw_slot_mapping: Mapped {mapped_count}/{len(key_map)} keys into {len(result)} slots. "
+          f"Distribution: {slot_counts}")
+    return result
+
+
+def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset: str, slot_map: dict, lbwe_preset: str = None):
+    slot_weights = parse_lbw_preset(lbw_preset)
+    elemental_rules = parse_lbw_elemental(lbwe_preset)
+    
+    if all(w == 1.0 for w in slot_weights.values()) and not elemental_rules:
+        return patcher.add_patches(patch_dict, base_weight)
+        
+    slot_patches = defaultdict(dict)
+    unassigned = {}
+    for lora_key, patch_data in patch_dict.items():
+        placed = False
+        for slot, keys in slot_map.items():
+            if lora_key in keys:
+                slot_patches[slot][lora_key] = patch_data
+                placed = True
+                break
+        if not placed:
+            unassigned[lora_key] = patch_data
+            
+    if unassigned:
+        slot_patches["MID00"].update(unassigned)
+        
+    weight_groups = defaultdict(dict)
+    elemental_overrides = 0
+    
+    for slot, patches in slot_patches.items():
+        slot_mult = slot_weights.get(slot, 1.0)
+        for lora_key, patch_data in patches.items():
+            elem_mult = get_elemental_multiplier(lora_key, slot, elemental_rules)
+            final_weight = round(base_weight * slot_mult * elem_mult, 6)
+            
+            weight_groups[final_weight][lora_key] = patch_data
+            if elem_mult != 1.0:
+                elemental_overrides += 1
+                
+    loaded_all = set()
+    for weight, group_patches in weight_groups.items():
+        loaded_keys = patcher.add_patches(group_patches, weight)
+        if loaded_keys:
+            loaded_all.update(loaded_keys)
+            
+    if elemental_overrides > 0 or len(weight_groups) > 1:
+        print(f"[Dynamic LORA] Applied {len(loaded_all)} keys across {len(weight_groups)} weight groups. "
+              f"Dynamic LORA overrides: {elemental_overrides} keys. | base={base_weight:.2f}")
+            
+    return loaded_all
+
+def parse_extend_loras(prompt: str, loras: List[Tuple[AnyStr, float]], skip_file_check=False, prompt_cleanup=True, lora_filenames=None) -> Tuple[list,list, list, str]:
+    if lora_filenames is None:
+        lora_filenames = []
+
+    tag_pattern = re.compile(r'<lora:([^>]+)>', re.IGNORECASE)
+    
+    dloras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+    ploras: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[int], Optional[int]]] = []
+    
+
+    for match in tag_pattern.finditer(prompt):
+        raw = match.group(1)
+        parts = raw.split(':')
+        name = parts[0].strip()
+        params_raw = parts[1:]
+
+        if not any('=' in p for p in params_raw):
+            continue
+
+        w = te = unet = lbw = lbwe = start = stop = None
+
+        for p in params_raw:
+            if '=' in p:
+                k, v = p.split('=', 1)
+                k, v = k.strip(), v.strip()
+                if not v: continue
+                
+                if k == 'w':
+                    try: w = float(v)
+                    except: pass
+                elif k == 'te':
+                    try: te = float(v)
+                    except: pass
+                elif k == 'unet':
+                    try: unet = float(v)
+                    except: pass
+                elif k == 'lbw':
+                    lbw = v
+                elif k == 'lbwe':
+                    lbwe = v
+                elif k == 'start':
+                    try: start = int(v)
+                    except: pass
+                elif k == 'stop':
+                    try: stop = int(v)
+                    except: pass
+
+        filename = name + '.safetensors'
+        if not skip_file_check:
+            resolved = get_filname_by_stem(name, lora_filenames)
+            if resolved:
+                filename = resolved
+            else:
+                continue
+
+        lora_tuple = (filename, w, te, unet, lbw, lbwe, start, stop)
+
+        if start is not None or stop is not None:
+            dloras.append(lora_tuple)
+        else:
+            ploras.append(lora_tuple)
+
+    new_names = {item[0] for item in ploras + dloras}
+    
+    cleaned_old = [item for item in loras if item[0] not in new_names]
+    
+    removed = len(loras) - len(cleaned_old)
+    if removed > 0:
+        print(f"[Dynamic LORA] Resolved {removed} conflict(s): old format overridden by new format.", flush=True)
+    cleaned_prompt = tag_pattern.sub('', prompt)
+    if prompt_cleanup:
+        cleaned_prompt = cleanup_prompt(cleaned_prompt)
+
+    return cleaned_old, ploras, dloras, cleaned_prompt    
 
 def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, float]], loras_limit: int = 5,
                                       skip_file_check=False, prompt_cleanup=True, deduplicate_loras=True,

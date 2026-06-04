@@ -12,7 +12,7 @@ from extras.expansion import FooocusExpansion
 
 from ldm_patched.modules.model_base import SDXL, SDXLRefiner
 from modules.sample_hijack import clip_separate
-from modules.util import get_file_from_folder_list, get_enabled_loras
+from modules.util import get_file_from_folder_list, get_enabled_loras, apply_lbw_patches
 
 
 import copy
@@ -384,18 +384,75 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     sigma_min = float(sigma_min.cpu().numpy())
     sigma_max = float(sigma_max.cpu().numpy())
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
-    target_unet.model_options['conditioning_modifiers'] = []
+
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
         initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None
 
+    target_unet.model_options['conditioning_modifiers'] = []
+    original_patches = copy.deepcopy(target_unet.patches)
+    original_model_options = copy.deepcopy(target_unet.model_options)
+
+    _lbw_state = {
+        "baseline_patches": copy.deepcopy(target_unet.patches),
+        "active_names": set(),
+        "logged_steps": set()
+    }
+
+    def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        tensor_cache = model_options.get("_lbw_tensor_cache", {})
+        step_ranges  = model_options.get("_lbw_step_ranges", {})
+        slot_map     = model_options.get("_lbw_slot_map", {})
+
+        patcher = model if hasattr(model, 'add_patches') else target_unet
+
+        current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+        current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
+
+        desired_names = set()
+        desired_loras = []
+        for cfg in step_ranges.values():
+            start, stop = cfg[5], cfg[6]
+            if current_step >= start and (stop is None or current_step <= stop):
+                desired_names.add(cfg[0])
+                desired_loras.append(cfg)
+
+        if desired_names != _lbw_state["active_names"]:
+            _lbw_state["active_names"] = desired_names
+
+            if hasattr(patcher, 'unpatch_model'):
+                patcher.unpatch_model()
+
+            patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
+
+            for cfg in desired_loras:
+                filename = cfg[0]
+                te_weight = cfg[1]
+                unet_weight = cfg[2]
+                lbw_preset  = cfg[3]
+                lbwe_preset = cfg[4]
+
+                u_patch, c_patch = tensor_cache.get(filename, (None, None))
+
+                if u_patch:
+                    apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map, lbwe_preset)
+
+                if c_patch:
+                    patcher.add_patches(c_patch, te_weight)
+
+            try:
+                patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
+            except Exception as e:
+                action = f"PATCH_ERR: {str(e)[:30]}"
+
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
     if transper != "None":
 
         print(f'[Transparency] {transper}')
-        original_patches = copy.deepcopy(target_unet.patches)
-        original_model_options = copy.deepcopy(target_unet.model_options)
+
         if transper == 'Attention Injection':
             model_path = load_file_from_url(
                 url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
@@ -616,9 +673,9 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
 
         images.append(maska)
 
-        target_unet.patches = copy.deepcopy(original_patches)
-        target_unet.model_options = copy.deepcopy(original_model_options)
-        del original_patches, original_model_options
-        torch.cuda.empty_cache()
+    target_unet.patches = copy.deepcopy(original_patches)
+    target_unet.model_options = copy.deepcopy(original_model_options)
+    del original_patches, original_model_options
+    torch.cuda.empty_cache()
 
     return images
