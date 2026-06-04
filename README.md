@@ -46,6 +46,7 @@ Let's look at everything in order.
 18. Adetailer - extension for automatic masking and inpainting
 19. Support external upscalers
 20. Сhanging the number of steps
+21. Add Dynamic Lora Support (full help in panel Extentions -> in generate -> DinamicLoraHelp
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -573,6 +574,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.3.0
+ 1. Add Dinamic Lora Support
 
 v9.2.11
  1. Some bugs fix
