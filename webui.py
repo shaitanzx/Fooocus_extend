@@ -772,7 +772,7 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='DynamicButtonHelp') as dlora_tab:
+                        with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
                             def toggle_html(current_html):
                                 # Определяем, какой файл сейчас загружен (можно по наличию русских букв или просто переключать)
