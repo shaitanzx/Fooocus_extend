@@ -1034,7 +1034,7 @@ def worker():
                 print('------',ext_path)
                 
                 models_dir = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2")
-                print(model_dir)
+                print(models_dir)
                 hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir=models_dir)
                 # Путь к адаптеру (не к полной модели!)
                 #models_dir = os.path.join(os.path.dirname(__file__), "..", "models", "instantid")
