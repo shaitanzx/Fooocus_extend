@@ -1045,7 +1045,7 @@ def worker():
                 # Возвращает объект с .image_proj и .ip_layers (через твой To_KV)
                 async_task._instantid_adapter = instant.load_instantid_adapter(
                     adapter_file,
-                    cross_attention_dim=2048  # SDXL
+                    cross_attention_dim=1280  # SDXL
                 )
                 
                 # Инициализируем детектор лиц (лёгкий, ~50 МБ)
