@@ -1044,7 +1044,7 @@ def worker():
                 # 🔹 Загружаем ТОЛЬКО адаптер, НЕ базовую модель
                 # Возвращает объект с .image_proj и .ip_layers (через твой To_KV)
                 async_task._instantid_adapter = instant.load_instantid_adapter(
-                    os.path.join(models_dir, adapter_file),
+                    adapter_file,
                     cross_attention_dim=2048  # SDXL
                 )
                 
