@@ -44,10 +44,13 @@ class Resampler(torch.nn.Module):
 # ─────────────────────────────────────────────────────────────────────────────
 class InstantIDAdapter(torch.nn.Module):
     def __init__(self, state_dict, cross_attention_dim=2048, output_cross_attention_dim=1024,
-                 clip_embeddings_dim=1280, clip_extra_context_tokens=16):
+                 clip_embeddings_dim=1280, clip_extra_context_tokens=16, dim_head=64):
         super().__init__()
+        # 🔧 Автоматически рассчитываем heads, чтобы dim % heads == 0
+        heads = cross_attention_dim // dim_head  # 2048 // 64 = 32 для SDXL
+        
         self.image_proj_model = Resampler(
-            dim=cross_attention_dim, depth=4, dim_head=64, heads=20,
+            dim=cross_attention_dim, depth=4, dim_head=dim_head, heads=heads,
             num_queries=clip_extra_context_tokens,
             embedding_dim=clip_embeddings_dim, output_dim=output_cross_attention_dim, ff_mult=4
         )
@@ -58,7 +61,6 @@ class InstantIDAdapter(torch.nn.Module):
     @torch.inference_mode()
     def get_image_embeds(self, clip_embed, clip_embed_zeroed):
         return self.image_proj_model(clip_embed), self.image_proj_model(clip_embed_zeroed)
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Keypoints Drawing
 # ─────────────────────────────────────────────────────────────────────────────
