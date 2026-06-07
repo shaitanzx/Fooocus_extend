@@ -96,7 +96,7 @@ def _draw_kps(image_pil, kps, color_list=[(255,0,0), (0,255,0), (0,0,255), (255,
 # ПОСЛЕДОВАТЕЛЬНЫЕ ФУНКЦИИ (ШАГ ЗА ШАГОМ)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def step1_load_adapter(adapter_path: str, cross_attention_dim: int = 2048) -> InstantIDAdapter:
+def load_adapter(adapter_path: str, cross_attention_dim: int = 2048) -> InstantIDAdapter:
     """
     Загружает ТОЛЬКО веса адаптера (не базовую модель!).
     Возвращает InstantIDAdapter, готовый к использованию.
@@ -124,11 +124,11 @@ def step1_load_adapter(adapter_path: str, cross_attention_dim: int = 2048) -> In
     print(f"[InstantID] STEP 1: Adapter loaded. Output dim: {out_dim}")
     return adapter
 
-def step2_init_face_analyzer(provider: str = "CUDA", det_size: int = 640) -> FaceAnalysis:
+def init_face_analyzer(provider: str = "CUDA", det_size: int = 640) -> FaceAnalysis:
     """Инициализирует InsightFace детектор (один раз на сессию)"""
     print(f"[InstantID] STEP 2: Initializing FaceAnalysis (provider={provider})...")
     # Путь к папке с моделями insightface (относительно этого файла)
-    face_dir = os.path.join(os.path.dirname(__file__), "..", "..", "models", "insightface")
+    face_dir = os.path.join(os.path.dirname(__file__), "models")
     analyzer = FaceAnalysis(name="antelopev2", root=face_dir, providers=[f'{provider}ExecutionProvider'])
     analyzer.prepare(ctx_id=0, det_size=(det_size, det_size))
     print("[InstantID] STEP 2: FaceAnalyzer ready.")

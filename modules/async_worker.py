@@ -1030,17 +1030,17 @@ def worker():
                 
                 # Lazy import
                 from huggingface_hub import hf_hub_download
-                ext_path = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2")
-                print('------',ext_path)
-                
-                models_dir = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2")
-                print(models_dir)
-                hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir=models_dir)
-                # Путь к адаптеру (не к полной модели!)
-                #models_dir = os.path.join(os.path.dirname(__file__), "..", "models", "instantid")
-                adapter_file = [f for f in os.listdir(models_dir) 
-                               if f.endswith('.safetensors') and 'adapter' in f.lower()][0]
-                
+                ip_path = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2","checkpoints")
+                model_path = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2","models")
+                print('------',ip_path)
+                hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir=ip_path)
+                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/1k3d68.onnx", local_dir=model_path)
+                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/2d106det.onnx", local_dir=model_path)
+                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/genderage.onnx", local_dir=model_path)
+                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/glintr100.onnx", local_dir=model_path)
+                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir=model_path)
+                adapter_file = os.path.join(ip_path, "ip-adapter.bin")
+                print('------',adapter_file)
                 # 🔹 Загружаем ТОЛЬКО адаптер, НЕ базовую модель
                 # Возвращает объект с .image_proj и .ip_layers (через твой To_KV)
                 async_task._instantid_adapter = instant.load_instantid_adapter(
