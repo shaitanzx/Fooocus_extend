@@ -35,8 +35,9 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
         i += 1
 
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
+    prompt_idx = len(results)
     get_str('prompt', 'Prompt', loaded_parameter_dict, results)
-    results[-1] += dynamic_lora
+
 
     if dynamic_lora:
         current_prompt = results[prompt_idx]
