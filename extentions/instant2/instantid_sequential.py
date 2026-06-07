@@ -4,9 +4,9 @@ import torch
 import numpy as np
 import cv2
 import PIL.Image
+from .resampler import Resampler
 
-SD_V12_CHANNELS = [320] * 4 + [640] * 4 + [1280] * 4 + [1280] * 6 + [640] * 6 + [320] * 6 + [1280] * 2
-SD_XL_CHANNELS = [640] * 8 + [1280] * 40 + [1280] * 60 + [640] * 12 + [1280] * 20
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Custom Attention (как в оригинальном InstantID)
@@ -103,22 +103,14 @@ class Resampler(torch.nn.Module):
         
         return self.norm_out(self.proj_out(h))  # [B, num_queries, output_dim]
 class To_KV(torch.nn.Module):
-    def __init__(self, cross_attention_dim):
+    def __init__(self, state_dict):
         super().__init__()
 
-        channels = SD_XL_CHANNELS if cross_attention_dim == 2048 else SD_V12_CHANNELS
-        self.to_kvs = torch.nn.ModuleList(
-            [torch.nn.Linear(cross_attention_dim, channel, bias=False) for channel in channels])
-
-    def load_state_dict_ordered(self, sd):
-        state_dict = []
-        for i in range(4096):
-            for k in ['k', 'v']:
-                key = f'{i}.to_{k}_ip.weight'
-                if key in sd:
-                    state_dict.append(sd[key])
-        for i, v in enumerate(state_dict):
-            self.to_kvs[i].weight = torch.nn.Parameter(v, requires_grad=False)
+        self.to_kvs = torch.nn.ModuleDict()
+        for key, value in state_dict.items():
+            k = key.replace(".weight", "").replace(".", "_")
+            self.to_kvs[k] = torch.nn.Linear(value.shape[1], value.shape[0], bias=False)
+            self.to_kvs[k].weight.data = value
 # ─────────────────────────────────────────────────────────────────────────────
 # InstantIDAdapter
 # ─────────────────────────────────────────────────────────────────────────────
