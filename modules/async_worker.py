@@ -1025,7 +1025,7 @@ def worker():
 
 
         if async_task.enable_instant:
-            try:
+            
                 print("[InstantID] 🔄 Loading adapter weights only...")
                 
                 # Lazy import
@@ -1053,11 +1053,7 @@ def worker():
                 
                 print("[InstantID] ✅ Adapter loaded. Base model: unchanged.")
                 
-            except Exception as e:
-                print(f"[InstantID] ⚠️ Adapter load failed: {e}")
-                print("[InstantID] ⚠️ Continuing without InstantID.")
-                # Сбрасываем флаг, чтобы не пытаться применять дальше
-                async_task.enable_instant = False                            
+                                        
         pipeline.set_clip_skip(async_task.clip_skip)
         if advance_progress:
             current_progress += 1
