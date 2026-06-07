@@ -353,7 +353,7 @@ def worker():
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
     from PIL import Image
-    
+    from extentions.instant2 import instantid_sequential as instant
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
     import extentions.adetailer.scripts.adetailer as adetailer
@@ -1032,7 +1032,7 @@ def worker():
                 from huggingface_hub import hf_hub_download
                 ext_path = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2")
                 print('------',ext_path)
-                from .extentions.instant2.instantid_sequential import load_instantid_adapter, init_face_analyzer
+                
                 models_dir = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2")
                 print(model_dir)
                 hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir=models_dir)
@@ -1043,13 +1043,13 @@ def worker():
                 
                 # 🔹 Загружаем ТОЛЬКО адаптер, НЕ базовую модель
                 # Возвращает объект с .image_proj и .ip_layers (через твой To_KV)
-                async_task._instantid_adapter = load_instantid_adapter(
+                async_task._instantid_adapter = instant.load_instantid_adapter(
                     os.path.join(models_dir, adapter_file),
                     cross_attention_dim=2048  # SDXL
                 )
                 
                 # Инициализируем детектор лиц (лёгкий, ~50 МБ)
-                async_task._instantid_analyzer = init_face_analyzer(provider="CUDA")
+                async_task._instantid_analyzer = instant.init_face_analyzer(provider="CUDA")
                 
                 print("[InstantID] ✅ Adapter loaded. Base model: unchanged.")
                 
