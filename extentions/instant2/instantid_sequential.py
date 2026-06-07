@@ -5,62 +5,123 @@ import numpy as np
 import cv2
 import PIL.Image
 
-# 🔧 ИМПОРТ ТВОЕГО To_KV (поправь путь если нужно)
-
+# 🔧 ИМПОРТ ТВОЕГО To_KV
+from modules.patch import To_KV
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Resampler (ТОЧНО как в оригинале)
+# Custom Attention (как в оригинальном InstantID)
+# ─────────────────────────────────────────────────────────────────────────────
+class CustomAttention(torch.nn.Module):
+    def __init__(self, dim, heads, dim_head):
+        super().__init__()
+        inner_dim = dim_head * heads
+        self.heads = heads
+        self.scale = dim_head ** -0.5
+        
+        self.norm1 = torch.nn.LayerNorm(dim)
+        self.norm2 = torch.nn.LayerNorm(dim)
+        
+        self.to_q = torch.nn.Linear(dim, inner_dim, bias=False)
+        self.to_kv = torch.nn.Linear(dim, inner_dim * 2, bias=False)  # K и V вместе
+        self.to_out = torch.nn.Linear(inner_dim, dim)
+
+    def forward(self, x, context=None):
+        # x: [B, N, D], context: [B, M, D]
+        if context is None:
+            context = x
+        
+        x = self.norm1(x)
+        context = self.norm2(context)
+        
+        B, N, D = x.shape
+        M = context.shape[1]
+        
+        # Проекции
+        q = self.to_q(x)  # [B, N, inner_dim]
+        kv = self.to_kv(context)  # [B, M, inner_dim*2]
+        k, v = torch.chunk(kv, 2, dim=-1)  # [B, M, inner_dim] each
+        
+        # Reshape для multi-head
+        h = self.heads
+        q = q.reshape(B, N, h, -1).transpose(1, 2)  # [B, h, N, head_dim]
+        k = k.reshape(B, M, h, -1).transpose(1, 2)
+        v = v.reshape(B, M, h, -1).transpose(1, 2)
+        
+        # Attention
+        sim = torch.einsum('bhid,bhjd->bhij', q, k) * self.scale
+        attn = sim.softmax(dim=-1)
+        out = torch.einsum('bhij,bhjd->bhid', attn, v)
+        
+        # Merge heads
+        out = out.transpose(1, 2).reshape(B, N, -1)
+        return self.to_out(out)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FeedForward (как в оригинале)
+# ─────────────────────────────────────────────────────────────────────────────
+class FeedForward(torch.nn.Module):
+    def __init__(self, dim, mult=4):
+        super().__init__()
+        self.net = torch.nn.Sequential(
+            torch.nn.LayerNorm(dim),
+            torch.nn.Linear(dim, dim * mult, bias=False),
+            torch.nn.GELU(),
+            torch.nn.Linear(dim * mult, dim, bias=False),
+        )
+    def forward(self, x):
+        return self.net(x)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Resampler (ТОЧНО как в оригинальном InstantID)
 # ─────────────────────────────────────────────────────────────────────────────
 class Resampler(torch.nn.Module):
-    def __init__(self, dim=1024, depth=8, dim_head=64, heads=16, num_queries=8,
-                 embedding_dim=768, output_dim=1024, ff_mult=4):
+    def __init__(self, dim=1280, depth=4, dim_head=64, heads=20, num_queries=16,
+                 embedding_dim=512, output_dim=2048, ff_mult=4):
         super().__init__()
         self.num_queries = num_queries
         self.latents = torch.nn.Parameter(torch.randn(1, num_queries, dim))
         self.proj_in = torch.nn.Linear(embedding_dim, dim)
         self.proj_out = torch.nn.Linear(dim, output_dim)
         self.norm_out = torch.nn.LayerNorm(output_dim)
+        
         self.layers = torch.nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(torch.nn.ModuleList([
-                torch.nn.MultiheadAttention(dim, heads, batch_first=True),
-                torch.nn.Sequential(
-                    torch.nn.LayerNorm(dim),
-                    torch.nn.Linear(dim, dim * ff_mult, bias=False),
-                    torch.nn.GELU(),
-                    torch.nn.Linear(dim * ff_mult, dim, bias=False),
-                )
+                CustomAttention(dim, heads, dim_head),
+                FeedForward(dim, ff_mult)
             ]))
 
     def forward(self, x):
-        h = self.latents.repeat(x.shape[0], 1, 1)
-        x = self.proj_in(x)
+        # x: [B, M, embedding_dim]
+        h = self.latents.repeat(x.shape[0], 1, 1)  # [B, num_queries, dim]
+        x = self.proj_in(x)  # [B, M, dim]
+        
         for attn, ff in self.layers:
-            h = attn(h, x, x)[0] + h
+            # Cross-attention: h queries, x context
+            h = attn(h, context=x) + h
             h = ff(h) + h
-        return self.norm_out(self.proj_out(h))
+        
+        return self.norm_out(self.proj_out(h))  # [B, num_queries, output_dim]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# InstantIDAdapter (ПАРАМЕТРЫ КАК В ОРИГИНАЛЕ)
+# InstantIDAdapter
 # ─────────────────────────────────────────────────────────────────────────────
 class InstantIDAdapter(torch.nn.Module):
-    def __init__(self, state_dict, cross_attention_dim=1280, output_cross_attention_dim=1024,
+    def __init__(self, state_dict, cross_attention_dim=1280, output_cross_attention_dim=2048,
                  clip_embeddings_dim=512, clip_extra_context_tokens=16):
         super().__init__()
-        # 🔧 ТОЧНЫЕ параметры как в оригинальном InstantID
         self.image_proj_model = Resampler(
             dim=cross_attention_dim,           # 1280 (внутренний)
             depth=4,
             dim_head=64,
             heads=20,                           # 1280 // 64
             num_queries=clip_extra_context_tokens,  # 16
-            embedding_dim=clip_embeddings_dim,      # 512 (antelopev2)
-            output_dim=output_cross_attention_dim,  # динамический (1024/2048)
+            embedding_dim=clip_embeddings_dim,      # 512
+            output_dim=output_cross_attention_dim,  # динамический
             ff_mult=4
         )
-        self.image_proj_model.load_state_dict(state_dict["image_proj"])
+        self.image_proj_model.load_state_dict(state_dict["image_proj"], strict=False)
         
-        # 🔧 Твой To_KV: принимает cross_attention_dim=1280 (входной размер для to_k_ip)
         self.ip_layers = To_KV(cross_attention_dim)
         self.ip_layers.load_state_dict_ordered(state_dict["ip_adapter"])
 
@@ -97,11 +158,6 @@ def _draw_kps(image_pil, kps, color_list=[(255,0,0), (0,255,0), (0,0,255), (255,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 1280):
-    """
-    Загружает адаптер InstantID.
-    cross_attention_dim=1280 — ВНУТРЕННИЙ размер Resampler (как в оригинале).
-    output_cross_attention_dim определяется как shape[1] из to_k_ip.weight (вход в Linear).
-    """
     print(f"[InstantID] 📦 Loading adapter: {adapter_path}")
     
     if adapter_path.endswith('.safetensors'):
@@ -126,13 +182,13 @@ def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 1280):
         if isinstance(v, dict):
             for sub_k, sub_v in v.items():
                 ck = clean_key(sub_k)
-                if any(x in sub_k for x in ['image_proj', 'latents', 'proj_in', 'proj_out', 'norm_out', 'layers']):
+                if any(x in sub_k for x in ['image_proj', 'latents', 'proj_in', 'proj_out', 'norm_out', 'layers', 'to_q', 'to_kv', 'to_out', 'norm1', 'norm2']):
                     clean['image_proj'][ck] = sub_v
                 elif any(x in sub_k for x in ['ip_adapter', 'to_k_ip', 'to_v_ip']):
                     clean['ip_adapter'][ck] = sub_v
         else:
             ck = clean_key(k)
-            if any(x in k for x in ['image_proj', 'latents', 'proj_in', 'proj_out', 'norm_out', 'layers']):
+            if any(x in k for x in ['image_proj', 'latents', 'proj_in', 'proj_out', 'norm_out', 'layers', 'to_q', 'to_kv', 'to_out', 'norm1', 'norm2']):
                 clean['image_proj'][ck] = v
             elif any(x in k for x in ['ip_adapter', 'to_k_ip', 'to_v_ip']):
                 clean['ip_adapter'][ck] = v
@@ -142,25 +198,23 @@ def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 1280):
         print(f"[InstantID] 🔍 Первые ключи: {list(raw.keys())[:10]}")
         raise KeyError("Adapter keys mismatch")
 
-    # 🔧 Ищем to_k_ip и берём shape[1] (как в оригинале!)
+    # 🔧 Определяем output_dim как shape[1] (вход в Linear = выход Resampler)
     target_key = next((key for key in clean["ip_adapter"] if "to_k_ip" in key), None)
     if target_key is None:
         print(f"[InstantID] 🔍 Ключи ip_adapter: {list(clean['ip_adapter'].keys())[:10]}")
-        raise KeyError("to_k_ip not found in adapter weights")
+        raise KeyError("to_k_ip not found")
 
-    # 🔧 shape[1] = in_features для nn.Linear = выход Resampler = вход To_KV
     weight_tensor = clean["ip_adapter"][target_key]
-    output_cross_attention_dim = weight_tensor.shape[1]  # ← ИСПРАВЛЕНО: shape[1], не shape[0]
+    output_cross_attention_dim = weight_tensor.shape[1]  # ← shape[1] = in_features
     
     print(f"[InstantID] ✅ Adapter loaded. Internal dim: {cross_attention_dim}, Output dim: {output_cross_attention_dim}")
     print(f"[InstantID] 🔍 Weight shape: {weight_tensor.shape} [out={weight_tensor.shape[0]}, in={weight_tensor.shape[1]}]")
 
-    # 🔧 Создаём адаптер с правильными параметрами
     adapter = InstantIDAdapter(
         clean,
-        cross_attention_dim=cross_attention_dim,           # 1280 (внутренний Resampler)
-        output_cross_attention_dim=output_cross_attention_dim,  # динамический (выход Resampler)
-        clip_embeddings_dim=512,                           # antelopev2 face embed
+        cross_attention_dim=cross_attention_dim,
+        output_cross_attention_dim=output_cross_attention_dim,
+        clip_embeddings_dim=512,
         clip_extra_context_tokens=16
     )
     return adapter
@@ -224,10 +278,6 @@ def step6_patch_unet(model, adapter: InstantIDAdapter, cond: torch.Tensor,
                      uncond: torch.Tensor, weight: float = 0.8, 
                      start_at: float = 0.0, end_at: float = 1.0,
                      is_sdxl: bool = True) -> object:
-    """
-    Патчит cross-attention слои.
-    is_sdxl=True использует блоки SDXL, False — SD 1.5 (как в оригинале).
-    """
     print("[InstantID] STEP 6: Patching UNet attention layers...")
     from ldm_patched.modules.attention import optimized_attention
     
@@ -239,7 +289,7 @@ def step6_patch_unet(model, adapter: InstantIDAdapter, cond: torch.Tensor,
     sigma_start = ms.percent_to_sigma(start_at)
     sigma_end = ms.percent_to_sigma(end_at)
     
-    # 🔧 Блоки: SD 1.5 (оригинал) или SDXL
+    # Блоки для SDXL или SD 1.5
     if is_sdxl:
         blocks = [
             ("input", 2, 1), ("input", 5, 2), ("input", 8, 10),
@@ -247,28 +297,23 @@ def step6_patch_unet(model, adapter: InstantIDAdapter, cond: torch.Tensor,
             ("output", 3, 1), ("output", 6, 2), ("output", 8, 10)
         ]
     else:
-        # 🔽 Оригинальные блоки из ComfyUI InstantID (SD 1.5)
+        # Оригинальные блоки из ComfyUI InstantID (SD 1.5)
         blocks = []
-        number = 0
-        for block_id in [4, 5, 7, 8]:  # input_blocks
+        for block_id in [4, 5, 7, 8]:
             indices = range(2) if block_id in [4, 5] else range(10)
             for idx in indices:
                 blocks.append(("input", block_id, idx))
-                number += 1
-        for block_id in range(6):  # output_blocks
+        for block_id in range(6):
             indices = range(2) if block_id in [3, 4, 5] else range(10)
             for idx in indices:
                 blocks.append(("output", block_id, idx))
-                number += 1
-        for idx in range(10):  # middle
+        for idx in range(10):
             blocks.append(("middle", 1, idx))
-            number += 1
 
     number = 0
     for block_type, block_id, depth in blocks:
         for idx in range(depth):
             key = (block_type, block_id, idx)
-            # 🔧 Твой To_KV: плоский список [K0, V0, K1, V1, ...]
             k_layer = adapter.ip_layers.to_kvs[number * 2]
             v_layer = adapter.ip_layers.to_kvs[number * 2 + 1]
 
