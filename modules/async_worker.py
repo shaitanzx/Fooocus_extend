@@ -1038,7 +1038,7 @@ def worker():
                 hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/2d106det.onnx", local_dir=model_path)
                 hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/genderage.onnx", local_dir=model_path)
                 hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/glintr100.onnx", local_dir=model_path)
-                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir="extentions/instantid/models")
+                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir=model_path)
                 adapter_file = os.path.join(ip_path, "ip-adapter.bin")
                 print('------',adapter_file)
                 # 🔹 Загружаем ТОЛЬКО адаптер, НЕ базовую модель
