@@ -351,7 +351,7 @@ class MetadataParser(ABC):
                 if item[0] != 'None':
                     lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
                     lora_hash = sha256_from_cache(lora_path)
-                    self.loras.append((Path(lora_name).stem, item[1], lora_hash))
+                    self.loras.append((Path(lora_path).stem, item[1], lora_hash))
                 
             elif len(item) == 8:
                 continue
