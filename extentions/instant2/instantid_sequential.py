@@ -6,11 +6,10 @@ import cv2
 import PIL.Image
 
 # 🔧 ВАЖНО: Укажи точный файл, где у тебя объявлен class To_KV
-# Если он в modules.patch, оставь как есть. Если в другом файле - поправь путь.
-#from modules.ip_adapter import To_KV
+from modules.patch import To_KV
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Resampler (стандартный для InstantID)
+# Resampler
 # ─────────────────────────────────────────────────────────────────────────────
 class Resampler(torch.nn.Module):
     def __init__(self, dim=1024, depth=8, dim_head=64, heads=16, num_queries=8,
@@ -42,7 +41,7 @@ class Resampler(torch.nn.Module):
         return self.norm_out(self.proj_out(h))
 
 # ─────────────────────────────────────────────────────────────────────────────
-# InstantIDAdapter (использует твой To_KV)
+# InstantIDAdapter
 # ─────────────────────────────────────────────────────────────────────────────
 class InstantIDAdapter(torch.nn.Module):
     def __init__(self, state_dict, cross_attention_dim=2048, output_cross_attention_dim=1024,
@@ -86,52 +85,65 @@ def _draw_kps(image_pil, kps, color_list=[(255,0,0), (0,255,0), (0,0,255), (255,
     return PIL.Image.fromarray(out_img.astype(np.uint8))
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MAIN FUNCTIONS (вызываются из твоего Блока 1)
+# MAIN FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
 def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 2048):
-    """Загружает ip-adapter.bin или .safetensors и собирает адаптер"""
     print(f"[InstantID] 📦 Loading adapter: {adapter_path}")
-    
-    raw = torch.load(adapter_path, map_location="cpu")
+    if adapter_path.endswith('.safetensors'):
+        from safetensors.torch import load_file
+        raw = load_file(adapter_path, device="cpu")
+    else:
+        raw = torch.load(adapter_path, map_location="cpu")
 
-    # Очистка ключей под формат To_KV
     clean = {"image_proj": {}, "ip_adapter": {}}
     for k, v in raw.items():
-        if k.startswith("image_proj."):
-            clean["image_proj"][k.replace("image_proj.", "")] = v
-        elif k.startswith("ip_adapter."):
-            clean["ip_adapter"][k.replace("ip_adapter.", "")] = v
-        # Фоллбэк для файлов без строгих префиксов
-        elif "image_proj" in k:
-            clean["image_proj"][k.split(".")[-1]] = v
-        elif "ip_adapter" in k or "to_k_ip" in k or "to_v_ip" in k:
-            clean["ip_adapter"][k] = v
+        # Убираем лишние префиксы (model., net., diffusion_model.)
+        clean_k = k
+        for prefix in ["diffusion_model.", "model.", "net."]:
+            if clean_k.startswith(prefix):
+                clean_k = clean_k[len(prefix):]
+                
+        if "image_proj" in clean_k:
+            prefix = "image_proj." if "image_proj." in clean_k else ""
+            clean["image_proj"][clean_k.replace(prefix, "")] = v
+        elif "ip_adapter" in clean_k or "to_k_ip" in clean_k or "to_v_ip" in clean_k:
+            prefix = "ip_adapter." if "ip_adapter." in clean_k else ""
+            clean["ip_adapter"][clean_k.replace(prefix, "")] = v
 
-    out_dim = clean["ip_adapter"]["0.to_k_ip.weight"].shape[1]
+    # 🔍 Ищем выходную размерность УСТОЙЧИВО (без жесткой привязки к '0.to_k_ip.weight')
+    target_key = None
+    for key in clean["ip_adapter"]:
+        if "to_k_ip" in key:
+            target_key = key
+            break
+            
+    if target_key is None:
+        print(f"[InstantID] ❌ Не найден ключ 'to_k_ip'!")
+        print(f"[InstantID] 🔍 Доступные ключи ip_adapter: {list(clean['ip_adapter'].keys())[:10]}")
+        raise KeyError("Adapter keys mismatch. Check the file structure.")
+
+    out_dim = clean["ip_adapter"][target_key].shape[1]
+    print(f"[InstantID] ✅ Adapter loaded. Output dim: {out_dim} (found via '{target_key}')")
+    
     adapter = InstantIDAdapter(
         clean, cross_attention_dim=cross_attention_dim, output_cross_attention_dim=out_dim,
         clip_embeddings_dim=1280, clip_extra_context_tokens=16
     )
-    print(f"[InstantID] ✅ Adapter loaded. Output dim: {out_dim}")
     return adapter
 
 def init_face_analyzer(provider: str = "CUDA", det_size: int = 640, root_path: str = None):
-    """Инициализирует InsightFace. root_path должен содержать папку models/antelopev2/"""
     print(f"[InstantID] 👁️ Initializing FaceAnalysis (provider={provider})...")
     from insightface.app import FaceAnalysis
-    
     if root_path is None:
-        # По умолчанию ищем рядом с этим файлом: /extentions/instant2/models/
         root_path = os.path.join(os.path.dirname(__file__), "models")
-        
     analyzer = FaceAnalysis(name="antelopev2", root=root_path, providers=[f'{provider}ExecutionProvider'])
     analyzer.prepare(ctx_id=0, det_size=(det_size, det_size))
     print("[InstantID] ✅ FaceAnalyzer ready.")
     return analyzer
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SEQUENTIAL STEPS (для вызова по условию)
+# SEQUENTIAL STEPS
 # ─────────────────────────────────────────────────────────────────────────────
 
 def step3_extract_embedding(face_analyzer, image_pil) -> torch.Tensor:
