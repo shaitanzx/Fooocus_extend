@@ -37,6 +37,14 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
     get_str('prompt', 'Prompt', loaded_parameter_dict, results)
     results[-1] += dynamic_lora
+
+    if dynamic_lora:
+        current_prompt = results[prompt_idx]
+        results[prompt_idx] = current_prompt + dynamic_lora
+
+
+
+
     get_str('negative_prompt', 'Negative Prompt', loaded_parameter_dict, results)
     get_list('styles', 'Styles', loaded_parameter_dict, results)
     performance = get_str('performance', 'Performance', loaded_parameter_dict, results)
