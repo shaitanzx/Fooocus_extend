@@ -395,7 +395,6 @@ SDXL_LBW_SLOTS = [f"IN{i:02d}" for i in range(9)] + ["MID00"] + [f"OUT{i:02d}" f
 def parse_lbw_preset(preset: str) -> Dict[str, float]:
     default_weights = {slot: 1.0 for slot in SDXL_LBW_SLOTS}
     if not preset or not preset.strip():
-        print(f"[Dynamic LORA] parse_lbw_preset: input is empty. Using default (all 1.0).")
         return default_weights
 
     preset = preset.strip()

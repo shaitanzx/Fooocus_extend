@@ -35,8 +35,17 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
         i += 1
 
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
+    prompt_idx = len(results)
     get_str('prompt', 'Prompt', loaded_parameter_dict, results)
-    results[-1] += dynamic_lora
+
+
+    if dynamic_lora:
+        current_prompt = results[prompt_idx]
+        results[prompt_idx] = current_prompt + dynamic_lora
+
+
+
+
     get_str('negative_prompt', 'Negative Prompt', loaded_parameter_dict, results)
     get_list('styles', 'Styles', loaded_parameter_dict, results)
     performance = get_str('performance', 'Performance', loaded_parameter_dict, results)
@@ -342,7 +351,7 @@ class MetadataParser(ABC):
                 if item[0] != 'None':
                     lora_path = get_file_from_folder_list(item[0], modules.config.paths_loras)
                     lora_hash = sha256_from_cache(lora_path)
-                    self.loras.append((Path(lora_name).stem, item[1], lora_hash))
+                    self.loras.append((Path(lora_path).stem, item[1], lora_hash))
                 
             elif len(item) == 8:
                 continue
