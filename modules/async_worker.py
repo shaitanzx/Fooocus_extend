@@ -547,8 +547,29 @@ def worker():
 
         if async_task.instantid_enabled:
             import extentions.instant2.instantid as instantid
-            pipeline.model, positive_cond, negative_cond = instantid(pipeline.model, positive_cond, negative_cond, face_image_np, weight=0.8, start_at=0.0, end_at=1.0)
-
+            face_image_np = getattr(async_task, 'instantid_image', None)
+    
+            if face_image_np is None:
+                print("[InstantID] Изображение лица не найдено в async_task. Пропускаем.")
+            else:
+                instantid_weight = getattr(async_task, 'instantid_weight', 0.8)
+                instantid_start = getattr(async_task, 'instantid_start', 0.0)
+                instantid_end = getattr(async_task, 'instantid_end', 1.0)
+        
+                try:
+                    pipeline.model, positive_cond, negative_cond = instantid.apply_instantid(
+                        pipeline_model=pipeline.model,
+                        positive_cond=positive_cond,
+                        negative_cond=negative_cond,
+                        face_image_np=face_image_np,
+                        weight=instantid_weight,
+                        start_at=instantid_start,
+                        end_at=instantid_end
+                    )
+                    print("[InstantID] Интеграция успешно применена!")
+                except Exception as e:
+                    print(f"[InstantID] Ошибка при применении: {e}")
+                    # Не прерываем генерацию, пусть идет без InstantID
         imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,
                     negative_cond=negative_cond,
