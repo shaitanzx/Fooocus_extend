@@ -5,8 +5,7 @@ import numpy as np
 import cv2
 import PIL.Image
 
-# 🔧 ИМПОРТ ТВОЕГО To_KV
-from modules.patch import To_KV
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Custom Attention (как в оригинальном InstantID)
