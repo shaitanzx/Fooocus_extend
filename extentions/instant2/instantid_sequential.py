@@ -96,35 +96,51 @@ def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 2048):
         raw = torch.load(adapter_path, map_location="cpu")
 
     clean = {"image_proj": {}, "ip_adapter": {}}
-    for k, v in raw.items():
-        # Убираем лишние префиксы (model., net., diffusion_model.)
-        clean_k = k
-        for prefix in ["diffusion_model.", "model.", "net."]:
-            if clean_k.startswith(prefix):
-                clean_k = clean_k[len(prefix):]
-                
-        if "image_proj" in clean_k:
-            prefix = "image_proj." if "image_proj." in clean_k else ""
-            clean["image_proj"][clean_k.replace(prefix, "")] = v
-        elif "ip_adapter" in clean_k or "to_k_ip" in clean_k or "to_v_ip" in clean_k:
-            prefix = "ip_adapter." if "ip_adapter." in clean_k else ""
-            clean["ip_adapter"][clean_k.replace(prefix, "")] = v
 
-    # 🔍 Ищем выходную размерность УСТОЙЧИВО (без жесткой привязки к '0.to_k_ip.weight')
-    target_key = None
-    for key in clean["ip_adapter"]:
-        if "to_k_ip" in key:
-            target_key = key
-            break
-            
-    if target_key is None:
-        print(f"[InstantID] ❌ Не найден ключ 'to_k_ip'!")
-        print(f"[InstantID] 🔍 Доступные ключи ip_adapter: {list(clean['ip_adapter'].keys())[:10]}")
+    # Функция очистки префиксов
+    def clean_key(k):
+        for prefix in ["diffusion_model.", "model.", "net.", "image_proj.", "ip_adapter."]:
+            if k.startswith(prefix):
+                k = k[len(prefix):]
+        return k
+
+    # 1. Если весь файл вложен в один ключ, распаковываем
+    if len(raw) == 1 and isinstance(list(raw.values())[0], dict):
+        raw = list(raw.values())[0]
+
+    # 2. Распаковываем плоский или вложенный dict
+    for k, v in raw.items():
+        if isinstance(v, dict):
+            for sub_k, sub_v in v.items():
+                ck = clean_key(sub_k)
+                if 'image_proj' in sub_k or 'latents' in sub_k or 'proj_in' in sub_k:
+                    clean['image_proj'][ck] = sub_v
+                elif 'ip_adapter' in sub_k or 'to_k_ip' in sub_k or 'to_v_ip' in sub_k:
+                    clean['ip_adapter'][ck] = sub_v
+        else:
+            ck = clean_key(k)
+            if 'image_proj' in k:
+                clean['image_proj'][ck] = v
+            elif 'ip_adapter' in k or 'to_k_ip' in k or 'to_v_ip' in k:
+                clean['ip_adapter'][ck] = v
+
+    # 3. Проверяем наличие весов
+    if not clean["ip_adapter"]:
+        print(f"[InstantID] ❌ Не удалось найти веса ip_adapter!")
+        print(f"[InstantID] 🔍 Структура: {list(raw.keys())[:5]}")
         raise KeyError("Adapter keys mismatch. Check the file structure.")
+
+    # 4. Находим выходную размерность
+    target_key = next((key for key in clean["ip_adapter"] if "to_k_ip" in key), None)
+    if target_key is None:
+        target_key = next((key for key in clean["ip_adapter"] if "weight" in key), None)
+        if target_key is None:
+            print(f"[InstantID] 🔍 Ключи: {list(clean['ip_adapter'].keys())[:10]}")
+            raise KeyError("Adapter keys mismatch.")
 
     out_dim = clean["ip_adapter"][target_key].shape[1]
     print(f"[InstantID] ✅ Adapter loaded. Output dim: {out_dim} (found via '{target_key}')")
-    
+
     adapter = InstantIDAdapter(
         clean, cross_attention_dim=cross_attention_dim, output_cross_attention_dim=out_dim,
         clip_embeddings_dim=1280, clip_extra_context_tokens=16
