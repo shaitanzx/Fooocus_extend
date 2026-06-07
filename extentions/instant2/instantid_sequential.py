@@ -4,7 +4,7 @@ import torch
 import numpy as np
 import cv2
 import PIL.Image
-
+from modules.ip_adapter import To_KV
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -101,15 +101,15 @@ class Resampler(torch.nn.Module):
             h = ff(h) + h
         
         return self.norm_out(self.proj_out(h))  # [B, num_queries, output_dim]
-class To_KV(torch.nn.Module):
-    def __init__(self, state_dict):
-        super().__init__()
+# class To_KV(torch.nn.Module):
+#     def __init__(self, state_dict):
+#         super().__init__()
 
-        self.to_kvs = torch.nn.ModuleDict()
-        for key, value in state_dict.items():
-            k = key.replace(".weight", "").replace(".", "_")
-            self.to_kvs[k] = torch.nn.Linear(value.shape[1], value.shape[0], bias=False)
-            self.to_kvs[k].weight.data = value
+#         self.to_kvs = torch.nn.ModuleDict()
+#         for key, value in state_dict.items():
+#             k = key.replace(".weight", "").replace(".", "_")
+#             self.to_kvs[k] = torch.nn.Linear(value.shape[1], value.shape[0], bias=False)
+#             self.to_kvs[k].weight.data = value
 # ─────────────────────────────────────────────────────────────────────────────
 # InstantIDAdapter
 # ─────────────────────────────────────────────────────────────────────────────
@@ -118,19 +118,15 @@ class InstantIDAdapter(torch.nn.Module):
                  clip_embeddings_dim=512, clip_extra_context_tokens=16):
         super().__init__()
         self.image_proj_model = Resampler(
-            dim=cross_attention_dim,           # 1280 (внутренний)
-            depth=4,
-            dim_head=64,
-            heads=20,                           # 1280 // 64
-            num_queries=clip_extra_context_tokens,  # 16
-            embedding_dim=clip_embeddings_dim,      # 512
-            output_dim=output_cross_attention_dim,  # динамический
-            ff_mult=4
+            dim=cross_attention_dim, depth=4, dim_head=64, heads=20,
+            num_queries=clip_extra_context_tokens,
+            embedding_dim=clip_embeddings_dim, output_dim=output_cross_attention_dim, ff_mult=4
         )
         self.image_proj_model.load_state_dict(state_dict["image_proj"], strict=False)
-        
-        self.ip_layers = To_KV(cross_attention_dim)
-        self.ip_layers.load_state_dict_ordered(state_dict["ip_adapter"])
+
+        # 🔧 ПРАВИЛЬНЫЙ ВЫЗОВ ТВОЕГО To_KV:
+        self.ip_layers = To_KV(cross_attention_dim)              # Принимает int
+        self.ip_layers.load_state_dict_ordered(state_dict["ip_adapter"])  # Загружает веса
 
     @torch.inference_mode()
     def get_image_embeds(self, clip_embed, clip_embed_zeroed):
