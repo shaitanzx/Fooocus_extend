@@ -1032,9 +1032,7 @@ def worker():
                 from huggingface_hub import hf_hub_download
                 ext_path = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2")
                 print('------',ext_path)
-                if ext_path not in sys.path:
-                    sys.path.append(ext_path)
-                from extentions.instantid_sequential import load_instantid_adapter, init_face_analyzer
+                from .extentions.instant2.instantid_sequential import load_instantid_adapter, init_face_analyzer
                 models_dir = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2")
                 print(model_dir)
                 hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir=models_dir)
