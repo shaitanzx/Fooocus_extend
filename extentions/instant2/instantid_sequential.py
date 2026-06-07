@@ -100,7 +100,7 @@ def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 1280):
     """
     Загружает адаптер InstantID.
     cross_attention_dim=1280 — ВНУТРЕННИЙ размер Resampler (как в оригинале).
-    output_cross_attention_dim определяется динамически из весов.
+    output_cross_attention_dim определяется как shape[1] из to_k_ip.weight (вход в Linear).
     """
     print(f"[InstantID] 📦 Loading adapter: {adapter_path}")
     
@@ -113,7 +113,7 @@ def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 1280):
     clean = {"image_proj": {}, "ip_adapter": {}}
 
     def clean_key(k):
-        for prefix in ["diffusion_model.", "model.", "net.", "image_proj.", "ip_adapter."]:
+        for prefix in ["diffusion_model.", "model.", "net.", "module.", "image_proj.", "ip_adapter."]:
             if k.startswith(prefix):
                 k = k[len(prefix):]
         return k
@@ -126,42 +126,41 @@ def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 1280):
         if isinstance(v, dict):
             for sub_k, sub_v in v.items():
                 ck = clean_key(sub_k)
-                if 'image_proj' in sub_k or 'latents' in sub_k or 'proj_in' in sub_k:
+                if any(x in sub_k for x in ['image_proj', 'latents', 'proj_in', 'proj_out', 'norm_out', 'layers']):
                     clean['image_proj'][ck] = sub_v
-                elif 'ip_adapter' in sub_k or 'to_k_ip' in sub_k or 'to_v_ip' in sub_k:
+                elif any(x in sub_k for x in ['ip_adapter', 'to_k_ip', 'to_v_ip']):
                     clean['ip_adapter'][ck] = sub_v
         else:
             ck = clean_key(k)
-            if 'image_proj' in k:
+            if any(x in k for x in ['image_proj', 'latents', 'proj_in', 'proj_out', 'norm_out', 'layers']):
                 clean['image_proj'][ck] = v
-            elif 'ip_adapter' in k or 'to_k_ip' in k or 'to_v_ip' in k:
+            elif any(x in k for x in ['ip_adapter', 'to_k_ip', 'to_v_ip']):
                 clean['ip_adapter'][ck] = v
 
     if not clean["ip_adapter"]:
         print(f"[InstantID] ❌ Не найдены веса ip_adapter!")
-        print(f"[InstantID] 🔍 Структура: {list(raw.keys())[:5]}")
+        print(f"[InstantID] 🔍 Первые ключи: {list(raw.keys())[:10]}")
         raise KeyError("Adapter keys mismatch")
 
-    # 🔧 Динамическое определение output_dim (как в оригинале)
-    # Ищем ключ to_k_ip и берём shape[1] — это входной размер для Linear
+    # 🔧 Ищем to_k_ip и берём shape[1] (как в оригинале!)
     target_key = next((key for key in clean["ip_adapter"] if "to_k_ip" in key), None)
     if target_key is None:
-        print(f"[InstantID] 🔍 Ключи: {list(clean['ip_adapter'].keys())[:10]}")
-        raise KeyError("to_k_ip not found")
+        print(f"[InstantID] 🔍 Ключи ip_adapter: {list(clean['ip_adapter'].keys())[:10]}")
+        raise KeyError("to_k_ip not found in adapter weights")
 
-    # shape = [out_features, in_features] для nn.Linear
-    # shape[1] = in_features = cross_attention_dim (1280)
-    # shape[0] = out_features = output_cross_attention_dim (1024 для SD1.5, 2048 для SDXL)
+    # 🔧 shape[1] = in_features для nn.Linear = выход Resampler = вход To_KV
     weight_tensor = clean["ip_adapter"][target_key]
-    output_cross_attention_dim = weight_tensor.shape[0]  # ← Выходной размер!
+    output_cross_attention_dim = weight_tensor.shape[1]  # ← ИСПРАВЛЕНО: shape[1], не shape[0]
     
     print(f"[InstantID] ✅ Adapter loaded. Internal dim: {cross_attention_dim}, Output dim: {output_cross_attention_dim}")
+    print(f"[InstantID] 🔍 Weight shape: {weight_tensor.shape} [out={weight_tensor.shape[0]}, in={weight_tensor.shape[1]}]")
 
+    # 🔧 Создаём адаптер с правильными параметрами
     adapter = InstantIDAdapter(
         clean,
-        cross_attention_dim=cross_attention_dim,           # 1280 (внутренний)
-        output_cross_attention_dim=output_cross_attention_dim,  # динамический
-        clip_embeddings_dim=512,                           # antelopev2
+        cross_attention_dim=cross_attention_dim,           # 1280 (внутренний Resampler)
+        output_cross_attention_dim=output_cross_attention_dim,  # динамический (выход Resampler)
+        clip_embeddings_dim=512,                           # antelopev2 face embed
         clip_extra_context_tokens=16
     )
     return adapter
