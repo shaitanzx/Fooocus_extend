@@ -43,19 +43,22 @@ class Resampler(torch.nn.Module):
 # InstantIDAdapter
 # ─────────────────────────────────────────────────────────────────────────────
 class InstantIDAdapter(torch.nn.Module):
-    def __init__(self, state_dict, cross_attention_dim=2048, output_cross_attention_dim=1024,
-                 clip_embeddings_dim=1280, clip_extra_context_tokens=16, dim_head=64):
+    def __init__(self, state_dict, output_cross_attention_dim=2048, clip_embeddings_dim=512, clip_extra_context_tokens=16):
         super().__init__()
-        # 🔧 Автоматически рассчитываем heads, чтобы dim % heads == 0
-        heads = cross_attention_dim // dim_head  # 2048 // 64 = 32 для SDXL
-        
+        # 🔧 Правильные размеры для InstantID SDXL
+        resampler_dim = 1280
+        dim_head = 64
+        heads = resampler_dim // dim_head  # 1280 // 64 = 20
+
         self.image_proj_model = Resampler(
-            dim=cross_attention_dim, depth=4, dim_head=dim_head, heads=heads,
+            dim=resampler_dim, depth=4, dim_head=dim_head, heads=heads,
             num_queries=clip_extra_context_tokens,
             embedding_dim=clip_embeddings_dim, output_dim=output_cross_attention_dim, ff_mult=4
         )
         self.image_proj_model.load_state_dict(state_dict["image_proj"])
-        self.ip_layers = To_KV(cross_attention_dim)
+        
+        # To_KV принимает размерность выхода Resampler (2048 для SDXL)
+        self.ip_layers = To_KV(output_cross_attention_dim)
         self.ip_layers.load_state_dict_ordered(state_dict["ip_adapter"])
 
     @torch.inference_mode()
@@ -144,8 +147,10 @@ def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 2048):
     print(f"[InstantID] ✅ Adapter loaded. Output dim: {out_dim} (found via '{target_key}')")
 
     adapter = InstantIDAdapter(
-        clean, cross_attention_dim=cross_attention_dim, output_cross_attention_dim=out_dim,
-        clip_embeddings_dim=1280, clip_extra_context_tokens=16
+        clean,
+        output_cross_attention_dim=out_dim,  # Динамически 2048 для SDXL
+        clip_embeddings_dim=512,             # Antelopev2 face embedding size
+        clip_extra_context_tokens=16
     )
     return adapter
 
