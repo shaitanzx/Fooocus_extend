@@ -101,7 +101,15 @@ class Resampler(torch.nn.Module):
             h = ff(h) + h
         
         return self.norm_out(self.proj_out(h))  # [B, num_queries, output_dim]
+class To_KV(torch.nn.Module):
+    def __init__(self, state_dict):
+        super().__init__()
 
+        self.to_kvs = torch.nn.ModuleDict()
+        for key, value in state_dict.items():
+            k = key.replace(".weight", "").replace(".", "_")
+            self.to_kvs[k] = torch.nn.Linear(value.shape[1], value.shape[0], bias=False)
+            self.to_kvs[k].weight.data = value
 # ─────────────────────────────────────────────────────────────────────────────
 # InstantIDAdapter
 # ─────────────────────────────────────────────────────────────────────────────
