@@ -353,7 +353,8 @@ def worker():
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
     from PIL import Image
-    from extentions.instant2 import instantid_sequential as instant
+    import extentions.instantid.main as instantid
+    import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
     import extentions.adetailer.scripts.adetailer as adetailer
@@ -531,10 +532,18 @@ def worker():
                     positive_cond, negative_cond = core.apply_controlnet(
                         positive_cond, negative_cond,
                         pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
+        imgs=None 
 
-
-
-        imgs = pipeline.process_diffusion(
+        if (async_task.enable_instant == True and async_task.pre_gen == True) or async_task.enable_instant == False:
+            if async_task.enable_pm ==True:
+                imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
+                    async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
+                    async_task.sketch_image,async_task.adapter_conditioning_scale,
+                    async_task.adapter_conditioning_factor,
+                    modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
+                    loras,modules.config.paths_loras[0],async_task)
+            else:
+                imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,
                     negative_cond=negative_cond,
                     steps=steps,
@@ -555,7 +564,13 @@ def worker():
                     tile_y=async_task.tile_y,
                     transper=async_task.transper
                 )
-
+        if async_task.enable_instant == True:
+            imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
+                                   async_task.identitynet_strength_ratio,async_task.adapter_strength_ratio,
+                                   async_task.canny_strength_id,async_task.depth_strength_id,async_task.controlnet_selection_id,async_task.cfg_scale,
+                                   task,async_task.scheduler_id,async_task.enhance_face_region_id,
+                                   modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,loras,modules.config.paths_loras[0],async_task,
+                                   async_task.pre_gen,imgs)
         
         del positive_cond, negative_cond  # Save memory
         if inpaint_worker.current_task is not None:
@@ -1022,38 +1037,6 @@ def worker():
                                     base_model_name=async_task.base_model_name,
                                     loras=loras, base_model_additional_loras=base_model_additional_loras,
                                     use_synthetic_refiner=use_synthetic_refiner, vae_name=async_task.vae_name)
-
-
-        if async_task.enable_instant:
-            
-                print("[InstantID] 🔄 Loading adapter weights only...")
-                
-                # Lazy import
-                from huggingface_hub import hf_hub_download
-                ip_path = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2","checkpoints")
-                model_path = os.path.join(os.path.dirname(__file__), "..", "extentions", "instant2","models")
-                print('------',ip_path)
-                hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir=ip_path)
-                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/1k3d68.onnx", local_dir=model_path)
-                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/2d106det.onnx", local_dir=model_path)
-                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/genderage.onnx", local_dir=model_path)
-                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/glintr100.onnx", local_dir=model_path)
-                hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir=model_path)
-                adapter_file = os.path.join(ip_path, "ip-adapter.bin")
-                print('------',adapter_file)
-                # 🔹 Загружаем ТОЛЬКО адаптер, НЕ базовую модель
-                # Возвращает объект с .image_proj и .ip_layers (через твой To_KV)
-                async_task._instantid_adapter = instant.load_instantid_adapter(
-                    adapter_file,
-                    cross_attention_dim=1024  # SDXL
-                )
-                
-                # Инициализируем детектор лиц (лёгкий, ~50 МБ)
-                async_task._instantid_analyzer = instant.init_face_analyzer(provider="CUDA")
-                
-                print("[InstantID] ✅ Adapter loaded. Base model: unchanged.")
-                
-                                        
         pipeline.set_clip_skip(async_task.clip_skip)
         if advance_progress:
             current_progress += 1
