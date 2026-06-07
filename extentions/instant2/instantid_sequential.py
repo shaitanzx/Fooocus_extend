@@ -5,8 +5,7 @@ import numpy as np
 import cv2
 import PIL.Image
 
-# 🔧 ВАЖНО: Укажи точный файл, где у тебя объявлен class To_KV
-from modules.patch import To_KV
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Resampler
