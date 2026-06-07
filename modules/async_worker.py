@@ -545,7 +545,7 @@ def worker():
             # else:
 
 
-        if async_task.instantid_enabled:
+        if async_task.enable_instant:
             import extentions.instant2.instantid as instantid
             face_image_np = np.array(async_task.face_file_id)
     
