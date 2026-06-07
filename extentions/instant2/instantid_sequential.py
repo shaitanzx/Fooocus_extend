@@ -7,7 +7,7 @@ import PIL.Image
 
 # 🔧 ВАЖНО: Укажи точный файл, где у тебя объявлен class To_KV
 # Если он в modules.patch, оставь как есть. Если в другом файле - поправь путь.
-from modules.patch import To_KV
+#from modules.ip_adapter import To_KV
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Resampler (стандартный для InstantID)
