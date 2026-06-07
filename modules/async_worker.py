@@ -547,7 +547,7 @@ def worker():
 
         if async_task.instantid_enabled:
             import extentions.instant2.instantid as instantid
-            face_image_np = getattr(async_task, 'instantid_image', None)
+            face_image_np = np.array(async_task.face_file_id)
     
             if face_image_np is None:
                 print("[InstantID] Изображение лица не найдено в async_task. Пропускаем.")
