@@ -96,7 +96,7 @@ def _draw_kps(image_pil, kps, color_list=[(255,0,0), (0,255,0), (0,0,255), (255,
 # ПОСЛЕДОВАТЕЛЬНЫЕ ФУНКЦИИ (ШАГ ЗА ШАГОМ)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_adapter(adapter_path: str, cross_attention_dim: int = 2048) -> InstantIDAdapter:
+def load_instantid_adapter(adapter_path: str, cross_attention_dim: int = 2048) -> InstantIDAdapter:
     """
     Загружает ТОЛЬКО веса адаптера (не базовую модель!).
     Возвращает InstantIDAdapter, готовый к использованию.
