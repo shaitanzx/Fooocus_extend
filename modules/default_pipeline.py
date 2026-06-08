@@ -25,7 +25,7 @@ from torch.nn.modules.utils import _pair
 from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
-
+import extentions.instant2.instantid as instantid
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -346,7 +346,7 @@ layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer
 os.makedirs(layer_model_root, exist_ok=True)
 @torch.no_grad()
 @torch.inference_mode()
-def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
+def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
         disable_preview=False,tile_x=False,tile_y=False,transper='None'):
 
@@ -394,6 +394,8 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     target_unet.model_options['conditioning_modifiers'] = []
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
+    if p.enable_instant and p.face_file_id is None:
+        instantid.apply()
 
     _lbw_state = {
         "baseline_patches": copy.deepcopy(target_unet.patches),

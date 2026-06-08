@@ -1,194 +1,173 @@
-"""
-InstantID Integration for Fooocus
-Location: extensions/instant2/instantid.py
-"""
-import os
-import cv2
-import torch
-import numpy as np
-import copy
 from huggingface_hub import hf_hub_download
-
-
-# Импорт модулей Fooocus и ComfyUI
-import modules.config
-import ldm_patched.modules.model_management as model_management
-import ldm_patched.modules.utils as comfy_utils
 from insightface.app import FaceAnalysis
 
-# Глобальный кэш для моделей, чтобы не загружать их каждый раз
-_INSTANTID_CACHE = {
-    "insightface": None,
-    "ip_adapter": None,
-    "controlnet": None
-}
 
-def get_models_dir():
-    """Возвращает путь к папке с моделями InstantID"""
-    # Можно хранить в папке расширения или в общей папке моделей Fooocus
-    return os.path.join(os.path.dirname(__file__), 'models')
+def download():
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/1k3d68.onnx", local_dir="extentions/instant2/models")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/2d106det.onnx", local_dir="extentions/instant2/models")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/genderage.onnx", local_dir="extentions/instant2/models")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/glintr100.onnx", local_dir="extentions/instant2/models")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir="extentions/instant2/models")
+    hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
 
-def load_instantid_models():
-    """Загружает и кэширует модели InstantID"""
-    global _INSTANTID_CACHE
-    
-    if _INSTANTID_CACHE["insightface"] is not None:
-        return _INSTANTID_CACHE["insightface"], _INSTANTID_CACHE["ip_adapter"], _INSTANTID_CACHE["controlnet"]
+def apply():
+    download_models()
 
-    print("[InstantID] Загрузка моделей (первый запуск, это займет время)...")
-    models_dir = get_models_dir()
-    os.makedirs(models_dir, exist_ok=True)
+    ckpt_path = f"extentions/instantid/checkpoints/ip-adapter.bin"
 
-    # 1. InsightFace
-    print("[InstantID] Инициализация InsightFace...")
-    insightface_app = FaceAnalysis(
-        name='antelopev2',
-        root=models_dir,
-        providers=['CUDAExecutionProvider', 'CPUExecutionProvider']
+    model = comfy.utils.load_torch_file(ckpt_path, safe_load=True)
+
+    if ckpt_path.lower().endswith(".safetensors"):
+        st_model = {"image_proj": {}, "ip_adapter": {}}
+        for key in model.keys():
+            if key.startswith("image_proj."):
+                st_model["image_proj"][key.replace("image_proj.", "")] = model[key]
+            elif key.startswith("ip_adapter."):
+                st_model["ip_adapter"][key.replace("ip_adapter.", "")] = model[key]
+        model = st_model
+
+    model = InstantID(
+        model,
+        cross_attention_dim=1280,
+        output_cross_attention_dim=model["ip_adapter"]["1.to_k_ip.weight"].shape[1],
+        clip_embeddings_dim=512,
+        clip_extra_context_tokens=16,
     )
-    insightface_app.prepare(ctx_id=0, det_size=(640, 640))
-    _INSTANTID_CACHE["insightface"] = insightface_app
-
-    # 2. IP-Adapter (InstantID)
-    ip_path = os.path.join(models_dir, 'ip-adapter.bin') # или .safetensors
-    if os.path.exists(ip_path):
-        print(f"[InstantID] Загрузка IP-Adapter из {ip_path}")
-        # Пока оставляем как заглушку, полную загрузку сделаем на Шаге 3
-        _INSTANTID_CACHE["ip_adapter"] = {"path": ip_path, "loaded": False} 
-    else:
-        print(f"[InstantID] ВНИМАНИЕ: IP-Adapter не найден по пути {ip_path}")
-
-    # 3. ControlNet
-    cn_path = os.path.join(models_dir, 'diffusion_pytorch_model.safetensors')
-    if os.path.exists(cn_path):
-        print(f"[InstantID] Загрузка ControlNet из {cn_path}")
-        # Пока оставляем как заглушку, полную загрузку сделаем на Шаге 3
-        _INSTANTID_CACHE["controlnet"] = {"path": cn_path, "loaded": False}
-    else:
-        print(f"[InstantID] ВНИМАНИЕ: ControlNet не найден по пути {cn_path}")
-
-    print("[InstantID] Модели успешно инициализированы и закэшированы!")
-    return _INSTANTID_CACHE["insightface"], _INSTANTID_CACHE["ip_adapter"], _INSTANTID_CACHE["controlnet"]
 
 
-def extract_face_features(insightface_app, face_image_np):
-    """
-    Извлекает эмбеддинги и ключевые точки лица.
-    face_image_np: numpy array (H, W, 3) в диапазоне 0-255, RGB
-    """
-    # InsightFace ожидает BGR
-    if face_image_np.shape[2] == 3:
-        face_image_bgr = cv2.cvtColor(face_image_np, cv2.COLOR_RGB2BGR)
-    else:
-        face_image_bgr = face_image_np
-    
-    faces = insightface_app.get(face_image_bgr)
-    
-    if len(faces) == 0:
-        raise ValueError("[InstantID] Лицо не обнаружено на референсном изображении!")
-    
-    # Берем первое обнаруженное лицо (можно добавить логику выбора самого крупного)
-    face = faces[0]
-    
-    # Эмбеддинг [1, 512]
-    face_embed = torch.from_numpy(face.embedding).float().unsqueeze(0)
-    
-    # Ключевые точки (landmarks) [5, 2]
-    kps = face.kps 
-    
-    # Создаем изображение для ControlNet (черный фон, белые точки)
-    h, w = face_image_bgr.shape[:2]
-    kps_image = np.zeros((h, w, 3), dtype=np.uint8)
-    
-    for kp in kps:
-        x, y = int(kp[0]), int(kp[1])
-        # Рисуем точки и линии для лучшей детекции ControlNet (как в оригинальном InstantID)
-        cv2.circle(kps_image, (x, y), 3, (255, 255, 255), -1)
+
+
+
+    instantid = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
+    instantid.prepare(ctx_id=0, det_size=(640, 640))
+
+
+
+
+
+    apply_instantid(instantid, insightface, control_net, image, model, positive, negative, start_at, end_at, weight=.8, ip_weight=None, cn_strength=None, noise=0.35, image_kps=None, mask=None, combine_embeds='average')
+
+def apply_instantid(instantid, insightface, control_net, image, model, positive, negative, start_at, end_at, weight=.8, ip_weight=None, cn_strength=None, noise=0.35, image_kps=None, mask=None, combine_embeds='average'):
+        dtype = comfy.model_management.unet_dtype()
+        if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
+            dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
         
-    # Конвертируем в тензор [1, H, W, 3] в диапазоне 0.0 - 1.0
-    kps_tensor = torch.from_numpy(kps_image).float() / 255.0
-    kps_tensor = kps_tensor.unsqueeze(0)
-    
-    return face_embed, kps_tensor
+        self.dtype = dtype
+        self.device = comfy.model_management.get_torch_device()
 
+        ip_weight = weight if ip_weight is None else ip_weight
+        cn_strength = weight if cn_strength is None else cn_strength
 
-def apply_instantid_to_unet(unet, ip_model, insightface, face_image_np, weight=0.8, start_at=0.0, end_at=1.0):
-    """Патчит UNet для работы с IP-Adapter InstantID"""
-    print(f"[InstantID] Патчинг UNet (weight={weight}, start={start_at}, end={end_at})...")
-    
-    face_embed, face_kps = extract_face_features(insightface, face_image_np)
-    
-    # Клонируем модель, чтобы не менять оригинал
-    work_model = unet.clone()
-    
-    # TODO: ШАГ 4 - Реальная логика патчинга слоев внимания (Attention)
-    # Здесь мы добавим хуки в cross-attention слои
-    
-    print("[InstantID] UNet пропатчен (заглушка, ждем Шага 4)!")
-    return work_model
+        face_embed = extractFeatures(insightface, image)
+        if face_embed is None:
+            raise Exception('Reference Image: No face detected.')
 
+        # if no keypoints image is provided, use the image itself (only the first one in the batch)
+        face_kps = extractFeatures(insightface, image_kps if image_kps is not None else image[0].unsqueeze(0), extract_kps=True)
 
-def apply_instantid_to_conditioning(positive_cond, negative_cond, cn_model, insightface, face_image_np, weight=0.8, start_at=0.0, end_at=1.0):
-    """Добавляет ControlNet и эмбеддинги в conditioning"""
-    print("[InstantID] Модификация conditioning...")
-    
-    face_embed, face_kps = extract_face_features(insightface, face_image_np)
-    
-    new_positive = copy.deepcopy(positive_cond)
-    new_negative = copy.deepcopy(negative_cond)
-    
-    # TODO: ШАГ 5 - Реальная логика внедрения ControlNet в словари conditioning
-    # Добавление ключей 'control', 'cross_attn_controlnet' и т.д.
-    
-    print("[InstantID] Conditioning модифицирован (заглушка, ждем Шага 5)!")
-    return new_positive, new_negative
+        if face_kps is None:
+            face_kps = torch.zeros_like(image) if image_kps is None else image_kps
+            print(f"\033[33mWARNING: No face detected in the keypoints image!\033[0m")
 
-def download_models():
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/1k3d68.onnx", local_dir="extentions/instantid/models")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/2d106det.onnx", local_dir="extentions/instantid/models")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/genderage.onnx", local_dir="extentions/instantid/models")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/glintr100.onnx", local_dir="extentions/instantid/models")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir="extentions/instantid/models")
-    hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instantid/checkpoints")
-    hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
-    hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instantid/checkpoints")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instantid/checkpoints")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instantid/checkpoints")
-    hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
+        clip_embed = face_embed
+        # InstantID works better with averaged embeds (TODO: needs testing)
+        if clip_embed.shape[0] > 1:
+            if combine_embeds == 'average':
+                clip_embed = torch.mean(clip_embed, dim=0).unsqueeze(0)
+            elif combine_embeds == 'norm average':
+                clip_embed = torch.mean(clip_embed / torch.norm(clip_embed, dim=0, keepdim=True), dim=0).unsqueeze(0)
 
-def apply_instantid(pipeline_model, positive_cond, negative_cond, face_image_np, weight=0.8, start_at=0.0, end_at=1.0):
-    """Главная точка входа для интеграции InstantID"""
-    download_model()
-    try:
-        insightface_app, ip_model, cn_model = load_instantid_models()
-        
-        patched_model = apply_instantid_to_unet(
-            unet=pipeline_model,
-            ip_model=ip_model,
-            insightface=insightface_app,
-            face_image_np=face_image_np,
-            weight=weight,
-            start_at=start_at,
-            end_at=end_at
-        )
-        
-        modified_positive, modified_negative = apply_instantid_to_conditioning(
-            positive_cond=positive_cond,
-            negative_cond=negative_cond,
-            cn_model=cn_model,
-            insightface=insightface_app,
-            face_image_np=face_image_np,
-            weight=weight,
-            start_at=start_at,
-            end_at=end_at
-        )
-        
-        return patched_model, modified_positive, modified_negative
-        
-    except Exception as e:
-        print(f"[InstantID] Критическая ошибка: {e}")
-        import traceback
-        traceback.print_exc()
-        # Возвращаем оригинальные данные, чтобы не сломать пайплайн полностью
-        return pipeline_model, positive_cond, negative_cond
+        if noise > 0:
+            seed = int(torch.sum(clip_embed).item()) % 1000000007
+            torch.manual_seed(seed)
+            clip_embed_zeroed = noise * torch.rand_like(clip_embed)
+            #clip_embed_zeroed = add_noise(clip_embed, noise)
+        else:
+            clip_embed_zeroed = torch.zeros_like(clip_embed)
+
+        # 1: patch the attention
+        self.instantid = instantid
+        self.instantid.to(self.device, dtype=self.dtype)
+
+        image_prompt_embeds, uncond_image_prompt_embeds = self.instantid.get_image_embeds(clip_embed.to(self.device, dtype=self.dtype), clip_embed_zeroed.to(self.device, dtype=self.dtype))
+
+        image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.dtype)
+        uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.dtype)
+
+        work_model = model.clone()
+
+        sigma_start = model.get_model_object("model_sampling").percent_to_sigma(start_at)
+        sigma_end = model.get_model_object("model_sampling").percent_to_sigma(end_at)
+
+        if mask is not None:
+            mask = mask.to(self.device)
+
+        patch_kwargs = {
+            "ipadapter": self.instantid,
+            "weight": ip_weight,
+            "cond": image_prompt_embeds,
+            "uncond": uncond_image_prompt_embeds,
+            "mask": mask,
+            "sigma_start": sigma_start,
+            "sigma_end": sigma_end,
+        }
+
+        number = 0
+        for id in [4,5,7,8]: # id of input_blocks that have cross attention
+            block_indices = range(2) if id in [4, 5] else range(10) # transformer_depth
+            for index in block_indices:
+                patch_kwargs["module_key"] = str(number*2+1)
+                _set_model_patch_replace(work_model, patch_kwargs, ("input", id, index))
+                number += 1
+        for id in range(6): # id of output_blocks that have cross attention
+            block_indices = range(2) if id in [3, 4, 5] else range(10) # transformer_depth
+            for index in block_indices:
+                patch_kwargs["module_key"] = str(number*2+1)
+                _set_model_patch_replace(work_model, patch_kwargs, ("output", id, index))
+                number += 1
+        for index in range(10):
+            patch_kwargs["module_key"] = str(number*2+1)
+            _set_model_patch_replace(work_model, patch_kwargs, ("middle", 1, index))
+            number += 1
+
+        # 2: do the ControlNet
+        if mask is not None and len(mask.shape) < 3:
+            mask = mask.unsqueeze(0)
+
+        cnets = {}
+        cond_uncond = []
+
+        is_cond = True
+        for conditioning in [positive, negative]:
+            c = []
+            for t in conditioning:
+                d = t[1].copy()
+
+                prev_cnet = d.get('control', None)
+                if prev_cnet in cnets:
+                    c_net = cnets[prev_cnet]
+                else:
+                    c_net = control_net.copy().set_cond_hint(face_kps.movedim(-1,1), cn_strength, (start_at, end_at))
+                    c_net.set_previous_controlnet(prev_cnet)
+                    cnets[prev_cnet] = c_net
+
+                d['control'] = c_net
+                d['control_apply_to_uncond'] = False
+                d['cross_attn_controlnet'] = image_prompt_embeds.to(comfy.model_management.intermediate_device(), dtype=c_net.cond_hint_original.dtype) if is_cond else uncond_image_prompt_embeds.to(comfy.model_management.intermediate_device(), dtype=c_net.cond_hint_original.dtype)
+
+                if mask is not None and is_cond:
+                    d['mask'] = mask
+                    d['set_area_to_bounds'] = False
+
+                n = [t[0], d]
+                c.append(n)
+            cond_uncond.append(c)
+            is_cond = False
+
+        return(work_model, cond_uncond[0], cond_uncond[1], )

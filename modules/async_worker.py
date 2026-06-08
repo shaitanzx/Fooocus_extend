@@ -353,7 +353,7 @@ def worker():
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
     from PIL import Image
-
+    
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
@@ -544,33 +544,8 @@ def worker():
         #             loras,modules.config.paths_loras[0],async_task)
             # else:
 
-
-        if async_task.enable_instant:
-            import extentions.instant2.instantid as instantid
-            face_image_np = np.array(async_task.face_file_id)
-    
-            if face_image_np is None:
-                print("[InstantID] Изображение лица не найдено в async_task. Пропускаем.")
-            else:
-                instantid_weight = getattr(async_task, 'instantid_weight', 0.8)
-                instantid_start = getattr(async_task, 'instantid_start', 0.0)
-                instantid_end = getattr(async_task, 'instantid_end', 1.0)
-        
-                try:
-                    pipeline.model, positive_cond, negative_cond = instantid.apply_instantid(
-                        pipeline_model=pipeline.model,
-                        positive_cond=positive_cond,
-                        negative_cond=negative_cond,
-                        face_image_np=face_image_np,
-                        weight=instantid_weight,
-                        start_at=instantid_start,
-                        end_at=instantid_end
-                    )
-                    print("[InstantID] Интеграция успешно применена!")
-                except Exception as e:
-                    print(f"[InstantID] Ошибка при применении: {e}")
-                    # Не прерываем генерацию, пусть идет без InstantID
         imgs = pipeline.process_diffusion(
+                    p=async_task,
                     positive_cond=positive_cond,
                     negative_cond=negative_cond,
                     steps=steps,
