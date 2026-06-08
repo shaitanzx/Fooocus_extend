@@ -1,5 +1,20 @@
-from huggingface_hub import hf_hub_download
+import torch
+import numpy as np
+import math
+import cv2
+import PIL.Image
+import os
+
+#Убедитесь, что эти импорты ведут к вашим файлам
+from .resampler import Resampler
+from .CrossAttentionPatch import Attn2Replace, instantid_attention
 from insightface.app import FaceAnalysis
+from huggingface_hub import hf_hub_download
+try:
+    import torchvision.transforms.v2 as T
+except ImportError:
+    import torchvision.transforms as T
+
 
 
 def download():
@@ -16,158 +31,213 @@ def download():
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
 
-def apply():
-    download_models()
 
-    ckpt_path = f"extentions/instantid/checkpoints/ip-adapter.bin"
+def load_instantid_proj_model(file_path: str, device: torch.device):
+    """
+    Загружает веса image_proj из файла InstantID и возвращает готовый Resampler.
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Файл модели InstantID не найден: {file_path}")
 
-    model = comfy.utils.load_torch_file(ckpt_path, safe_load=True)
+    # 1. Загружаем веса
+    state_dict = torch.load(file_path, map_location=device)
 
-    if ckpt_path.lower().endswith(".safetensors"):
-        st_model = {"image_proj": {}, "ip_adapter": {}}
-        for key in model.keys():
-            if key.startswith("image_proj."):
-                st_model["image_proj"][key.replace("image_proj.", "")] = model[key]
-            elif key.startswith("ip_adapter."):
-                st_model["ip_adapter"][key.replace("ip_adapter.", "")] = model[key]
-        model = st_model
+    # 2. Фильтруем только веса для Resampler (убираем префикс "image_proj.")
+    proj_weights = {}
+    for key, value in state_dict.items():
+        if key.startswith("image_proj."):
+            clean_key = key.replace("image_proj.", "")
+            proj_weights[clean_key] = value
 
-    model = InstantID(
-        model,
-        cross_attention_dim=1280,
-        output_cross_attention_dim=model["ip_adapter"]["1.to_k_ip.weight"].shape[1],
-        clip_embeddings_dim=512,
-        clip_extra_context_tokens=16,
+    if not proj_weights:
+        raise ValueError("В файле не найдены веса 'image_proj'. Убедитесь, что это правильный файл InstantID.")
+
+    # 3. Создаем экземпляр Resampler с параметрами из оригинального кода InstantID
+    # Эти параметры жестко заданы в оригинальном InstantIDModelLoader
+    image_proj_model = Resampler(
+        dim=1280,
+        depth=4,
+        dim_head=64,
+        heads=20,
+        num_queries=16,
+        embedding_dim=512,
+        output_dim=1024,
+        ff_mult=4
     )
 
+    # 4. Загружаем веса, переводим в режим оценки и на нужное устройство
+    image_proj_model.load_state_dict(proj_weights)
+    image_proj_model.to(device)
+    image_proj_model.eval() # Важно: отключаем dropout и т.д. для инференса
+
+    print(f"[InstantID] Модель Resampler успешно загружена из {file_path}")
+    return image_proj_model
+
+def apply(image_path,target_unet,positive_cond, negative_cond):
+    download()
+    # 1. Загружаем модель проекции (Resampler) один раз при старте
+    instantid_path = f"extentions/instantid/checkpoints/ip-adapter.bin"
+    image_proj_model = load_instantid_proj_model(instantid_path, device="cuda")
+
+    # 2. Инициализируем InsightFace (тоже один раз)
+    insightface = FaceAnalysis(name="antelopev2", providers=["CUDAExecutionProvider"])
+    insightface.prepare(ctx_id=0, det_size=(640, 640))
 
 
 
+    patched_unet, new_positive, new_negative = apply_instantid_pipeline(
+        image_proj_model=my_image_proj_model,
+        insightface=my_insightface,
+        control_net=None,          # <--- ГЛАВНОЕ ИЗМЕНЕНИЕ
+        image_path=image_path,
+        unet_model=target_unet,
+        positive=positive_cond,
+        negative=negative_cond,
+    
+        weight=0.8,                # Сила влияния на идентичность
+        start_at=0.0,
+        end_at=1.0,
+        noise=0.35,
+    
+        device=torch.device('cuda'),
+        dtype=torch.float16,
+        sigma_min=sigma_min,
+        sigma_max=sigma_max
+    )
+def apply_instantid_pipeline(
+    # --- Основные объекты ---
+    image_proj_model,  # Экземпляр Resampler
+    insightface,       # Инициализированный объект FaceAnalysis
+    control_net=None,  # <<< ИЗМЕНЕНО: По умолчанию None. Передавайте None, если не нужен.
+    image_path=None,   # Путь к файлу изображения (str)
+    unet_model=None,   # Ваша модель UNet
+    
+    positive=None,     # Список conditioning: [[tensor, dict_params], ...]
+    negative=None,     # Список conditioning: [[tensor, dict_params], ...]
+    
+    # --- Параметры настройки ---
+    weight=0.8,
+    start_at=0.0,
+    end_at=1.0,
+    ip_weight=None,
+    cn_strength=None,
+    noise=0.35,
+    combine_embeds='average',
+    
+    # --- Явные параметры окружения ---
+    device=None,
+    dtype=None,
+    sigma_min=None,
+    sigma_max=None
+):
+    # 1. Инициализация
+    if device is None:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if dtype is None:
+        dtype = torch.float16
 
-    instantid = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
-    instantid.prepare(ctx_id=0, det_size=(640, 640))
+    ip_weight = weight if ip_weight is None else ip_weight
+    # cn_strength игнорируется, если control_net is None
 
+    # 2. Вычисление sigma_start и sigma_end
+    if sigma_min is not None and sigma_max is not None:
+        sigma_start = sigma_max + start_at * (sigma_min - sigma_max)
+        sigma_end = sigma_max + end_at * (sigma_min - sigma_max)
+    else:
+        sigma_start = 14.6146 * (1.0 - start_at)
+        sigma_end = 14.6146 * (1.0 - end_at)
+    
+    print(f'[InstantID] sigma_start = {sigma_start:.4f}, sigma_end = {sigma_end:.4f}')
 
+    # 3. Загрузка и обработка изображения
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image not found: {image_path}")
+    
+    img_bgr = cv2.imread(image_path)
+    if img_bgr is None:
+        raise ValueError(f"Failed to load image from {image_path}")
 
+    # 4. Извлечение эмбеддинга лица
+    faces = insightface.get(img_bgr)
+    if not faces:
+        raise Exception('Reference Image: No face detected.')
+    
+    face = sorted(faces, key=lambda x:(x['bbox'][2]-x['bbox'][0])*(x['bbox'][3]-x['bbox'][1]))[-1]
+    face_embed = torch.from_numpy(face['embedding']).unsqueeze(0)
 
+    # 5. Извлечение KPS (ТОЛЬКО если есть ControlNet, чтобы сэкономить ресурсы)
+    if control_net is not None:
+        kps_img_bgr = draw_kps(img_bgr, face['kps'])
+        face_kps = T.ToTensor()(kps_img_bgr).permute([1, 2, 0]).unsqueeze(0).to(device, dtype=dtype)
+    else:
+        face_kps = None
 
-    apply_instantid(instantid, insightface, control_net, image, model, positive, negative, start_at, end_at, weight=.8, ip_weight=None, cn_strength=None, noise=0.35, image_kps=None, mask=None, combine_embeds='average')
+    # 6. Обработка эмбеддингов
+    clip_embed = face_embed.to(device, dtype=dtype)
+    if clip_embed.shape[0] > 1:
+        if combine_embeds == 'average':
+            clip_embed = torch.mean(clip_embed, dim=0).unsqueeze(0)
+        elif combine_embeds == 'norm average':
+            clip_embed = torch.mean(clip_embed / torch.norm(clip_embed, dim=0, keepdim=True), dim=0).unsqueeze(0)
 
-def apply_instantid(instantid, insightface, control_net, image, model, positive, negative, start_at, end_at, weight=.8, ip_weight=None, cn_strength=None, noise=0.35, image_kps=None, mask=None, combine_embeds='average'):
-        dtype = comfy.model_management.unet_dtype()
-        if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
-            dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
-        
-        self.dtype = dtype
-        self.device = comfy.model_management.get_torch_device()
+    if noise > 0:
+        seed = int(torch.sum(clip_embed).item()) % 1000000007
+        torch.manual_seed(seed)
+        clip_embed_zeroed = noise * torch.rand_like(clip_embed)
+    else:
+        clip_embed_zeroed = torch.zeros_like(clip_embed)
 
-        ip_weight = weight if ip_weight is None else ip_weight
-        cn_strength = weight if cn_strength is None else cn_strength
+    # 7. Проекция эмбеддингов
+    image_prompt_embeds, uncond_image_prompt_embeds = get_image_embeds(
+        image_proj_model, clip_embed, clip_embed_zeroed, device, dtype
+    )
 
-        face_embed = extractFeatures(insightface, image)
-        if face_embed is None:
-            raise Exception('Reference Image: No face detected.')
+    # 8. ПАТЧИНГ МОДЕЛИ (Здесь ваша логика)
+    work_model = unet_model # Замените на вашу логику клонирования/патчинга
+    
+    patch_kwargs = {
+        "ipadapter": image_proj_model, 
+        "weight": ip_weight,
+        "cond": image_prompt_embeds,
+        "uncond": uncond_image_prompt_embeds,
+        "sigma_start": sigma_start,
+        "sigma_end": sigma_end,
+    }
+    # <<< ВАШ ЦИКЛ ПАТЧИНГА ЗДЕСЬ >>>
 
-        # if no keypoints image is provided, use the image itself (only the first one in the batch)
-        face_kps = extractFeatures(insightface, image_kps if image_kps is not None else image[0].unsqueeze(0), extract_kps=True)
+    # 9. Применение ControlNet к Conditioning (ТОЛЬКО если control_net передан)
+    cond_uncond = []
+    is_cond = True
+    
+    for conditioning in [positive, negative]:
+        c = []
+        for t in conditioning:
+            d = t[1].copy() # Копируем словарь параметров conditioning
 
-        if face_kps is None:
-            face_kps = torch.zeros_like(image) if image_kps is None else image_kps
-            print(f"\033[33mWARNING: No face detected in the keypoints image!\033[0m")
-
-        clip_embed = face_embed
-        # InstantID works better with averaged embeds (TODO: needs testing)
-        if clip_embed.shape[0] > 1:
-            if combine_embeds == 'average':
-                clip_embed = torch.mean(clip_embed, dim=0).unsqueeze(0)
-            elif combine_embeds == 'norm average':
-                clip_embed = torch.mean(clip_embed / torch.norm(clip_embed, dim=0, keepdim=True), dim=0).unsqueeze(0)
-
-        if noise > 0:
-            seed = int(torch.sum(clip_embed).item()) % 1000000007
-            torch.manual_seed(seed)
-            clip_embed_zeroed = noise * torch.rand_like(clip_embed)
-            #clip_embed_zeroed = add_noise(clip_embed, noise)
-        else:
-            clip_embed_zeroed = torch.zeros_like(clip_embed)
-
-        # 1: patch the attention
-        self.instantid = instantid
-        self.instantid.to(self.device, dtype=self.dtype)
-
-        image_prompt_embeds, uncond_image_prompt_embeds = self.instantid.get_image_embeds(clip_embed.to(self.device, dtype=self.dtype), clip_embed_zeroed.to(self.device, dtype=self.dtype))
-
-        image_prompt_embeds = image_prompt_embeds.to(self.device, dtype=self.dtype)
-        uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(self.device, dtype=self.dtype)
-
-        work_model = model.clone()
-
-        sigma_start = model.get_model_object("model_sampling").percent_to_sigma(start_at)
-        sigma_end = model.get_model_object("model_sampling").percent_to_sigma(end_at)
-
-        if mask is not None:
-            mask = mask.to(self.device)
-
-        patch_kwargs = {
-            "ipadapter": self.instantid,
-            "weight": ip_weight,
-            "cond": image_prompt_embeds,
-            "uncond": uncond_image_prompt_embeds,
-            "mask": mask,
-            "sigma_start": sigma_start,
-            "sigma_end": sigma_end,
-        }
-
-        number = 0
-        for id in [4,5,7,8]: # id of input_blocks that have cross attention
-            block_indices = range(2) if id in [4, 5] else range(10) # transformer_depth
-            for index in block_indices:
-                patch_kwargs["module_key"] = str(number*2+1)
-                _set_model_patch_replace(work_model, patch_kwargs, ("input", id, index))
-                number += 1
-        for id in range(6): # id of output_blocks that have cross attention
-            block_indices = range(2) if id in [3, 4, 5] else range(10) # transformer_depth
-            for index in block_indices:
-                patch_kwargs["module_key"] = str(number*2+1)
-                _set_model_patch_replace(work_model, patch_kwargs, ("output", id, index))
-                number += 1
-        for index in range(10):
-            patch_kwargs["module_key"] = str(number*2+1)
-            _set_model_patch_replace(work_model, patch_kwargs, ("middle", 1, index))
-            number += 1
-
-        # 2: do the ControlNet
-        if mask is not None and len(mask.shape) < 3:
-            mask = mask.unsqueeze(0)
-
-        cnets = {}
-        cond_uncond = []
-
-        is_cond = True
-        for conditioning in [positive, negative]:
-            c = []
-            for t in conditioning:
-                d = t[1].copy()
-
+            # <<< БЕЗОПАСНАЯ ПРОВЕРКА НА НАЛИЧИЕ CONTROLNET >>>
+            if control_net is not None and face_kps is not None:
                 prev_cnet = d.get('control', None)
-                if prev_cnet in cnets:
-                    c_net = cnets[prev_cnet]
-                else:
-                    c_net = control_net.copy().set_cond_hint(face_kps.movedim(-1,1), cn_strength, (start_at, end_at))
-                    c_net.set_previous_controlnet(prev_cnet)
-                    cnets[prev_cnet] = c_net
+                
+                # Здесь должна быть ваша логика применения ControlNet. 
+                # Оригинальный код ComfyUI выглядит так, но вам нужно адаптировать его под ваш формат:
+                # c_net = control_net.copy().set_cond_hint(face_kps.movedim(-1, 1), cn_strength, (start_at, end_at))
+                # if prev_cnet is not None:
+                #     c_net.set_previous_controlnet(prev_cnet)
+                # d['control'] = c_net
+                # d['control_apply_to_uncond'] = False
+                
+                # target_dtype = getattr(c_net, 'cond_hint_original', None)
+                # target_dtype = target_dtype.dtype if target_dtype is not None else dtype
+                # d['cross_attn_controlnet'] = (
+                #     image_prompt_embeds.to(device, dtype=target_dtype) if is_cond 
+                #     else uncond_image_prompt_embeds.to(device, dtype=target_dtype)
+                # )
+                print("[InstantID] ControlNet logic is stubbed. Implement your specific CN application here.")
 
-                d['control'] = c_net
-                d['control_apply_to_uncond'] = False
-                d['cross_attn_controlnet'] = image_prompt_embeds.to(comfy.model_management.intermediate_device(), dtype=c_net.cond_hint_original.dtype) if is_cond else uncond_image_prompt_embeds.to(comfy.model_management.intermediate_device(), dtype=c_net.cond_hint_original.dtype)
+            n = [t[0], d]
+            c.append(n)
+        cond_uncond.append(c)
+        is_cond = False
 
-                if mask is not None and is_cond:
-                    d['mask'] = mask
-                    d['set_area_to_bounds'] = False
-
-                n = [t[0], d]
-                c.append(n)
-            cond_uncond.append(c)
-            is_cond = False
-
-        return(work_model, cond_uncond[0], cond_uncond[1], )
+    # 10. Возврат результатов
+    return work_model, cond_uncond[0], cond_uncond[1]
