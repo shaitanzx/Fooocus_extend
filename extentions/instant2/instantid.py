@@ -1,7 +1,7 @@
 from huggingface_hub import hf_hub_download
 import torch
 import os
-import folder_paths
+#import folder_paths
 import numpy as np
 import math
 import cv2
