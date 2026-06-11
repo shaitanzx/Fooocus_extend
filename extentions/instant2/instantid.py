@@ -1,6 +1,7 @@
 from huggingface_hub import hf_hub_download
 import torch
 import os
+import safetensors.torch
 #import folder_paths
 import numpy as np
 import math
@@ -28,7 +29,7 @@ def download():
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
     ####hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instant2/checkpoints")
-    hf_hub_download(repo_id="h94/IP-Adapter", filename="sdxl_models/ip-adapter_sdxl.bin", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="h94/IP-Adapter", filename="sdxl_models/ip-adapter_sdxl.safetensors", local_dir="extentions/instant2/checkpoints")
     
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
@@ -120,26 +121,15 @@ def _set_model_patch_replace(model, patch_kwargs, key):
 # ==============================================================================
 
 def load_instantid_model(ckpt_path):
-    """Загружает файл InstantID и возвращает готовый объект класса InstantID."""
+    """Загружает файл InstantID (.safetensors) и возвращает готовый объект класса InstantID."""
     print(f"[InstantID] Загрузка модели из {ckpt_path}...")
     
     if not os.path.exists(ckpt_path):
         raise FileNotFoundError(f"Файл модели не найден: {ckpt_path}")
 
-    # ИСПРАВЛЕНО: используем ckpt_path вместо несуществующего ckpt, device и torch_args
-    # Загружаем на CPU, чтобы избежать проблем с нехваткой памяти GPU при загрузке
-    pl_sd = torch.load(ckpt_path, map_location="cpu", weights_only=True)
-
-    if "state_dict" in pl_sd:
-        sd = pl_sd["state_dict"]
-    else:
-        if len(pl_sd) == 1:
-            key = list(pl_sd.keys())[0]
-            sd = pl_sd[key]
-            if not isinstance(sd, dict):
-                sd = pl_sd
-        else:
-            sd = pl_sd
+    # Загружаем safetensors файл
+    # Используем device="cpu", чтобы избежать проблем с нехваткой памяти GPU при загрузке
+    sd = safetensors.torch.load_file(ckpt_path, device="cpu")
 
     # Разделяем веса на image_proj и ip_adapter
     st_model = {"image_proj": {}, "ip_adapter": {}}
@@ -151,10 +141,21 @@ def load_instantid_model(ckpt_path):
     
     # Проверка, что веса найдены
     if not st_model["ip_adapter"]:
-        raise ValueError("Не найдены веса 'ip_adapter' в файле модели. Убедитесь, что файл корректен.")
+        raise ValueError(
+            "Не найдены веса 'ip_adapter' в файле модели. "
+            "Убедитесь, что файл корректен и содержит ключи с префиксом 'ip_adapter.'."
+        )
 
     # Определяем output_cross_attention_dim динамически
-    output_dim = st_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+    # Ищем ключ, который содержит "to_k_ip.weight"
+    output_dim = None
+    for key in st_model["ip_adapter"].keys():
+        if "to_k_ip.weight" in key:
+            output_dim = st_model["ip_adapter"][key].shape[1]
+            break
+    
+    if output_dim is None:
+        raise ValueError("Не найден ключ 'to_k_ip.weight' в весах ip_adapter.")
 
     instantid = InstantID(
         st_model,
@@ -329,7 +330,7 @@ def apply(image_path,target_unet,positive_cond, negative_cond,sigma_min, sigma_m
     download()
     insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])           
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
-    instantid_model = load_instantid_model("extentions/instant2/checkpoints/sdxl_models/ip-adapter_sdxl.bin")
+    instantid_model = load_instantid_model("extentions/instant2/checkpoints/sdxl_models/ip-adapter_sdxl.safetensors")
 
     patched_unet, new_positive, new_negative = apply_instantid_pipeline(
         image_path=image_path,  # Путь к файлу!
