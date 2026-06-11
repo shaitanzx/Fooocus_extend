@@ -366,20 +366,7 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     
     # 2. InsightFace
     print("[Шаг 2/5] Инициализация InsightFace...")
-    models_root = "extentions/instant2/models"
-    model_name = "antelopev2"
-    model_dir = os.path.join(models_root, model_name)
-    
-    onnx_files = glob.glob(os.path.join(model_dir, "*.onnx"))
-    if not onnx_files:
-        raise FileNotFoundError(f"Модели InsightFace не найдены в {model_dir}.")
-    print(f"  Найдено {len(onnx_files)} .onnx файлов.")
-
-    insightface_app = FaceAnalysis(
-        name=model_name, 
-        root=models_root, 
-        providers=['CUDAExecutionProvider', 'CPUExecutionProvider']
-    )
+    insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
     print("[Шаг 2/5] ✅ InsightFace инициализирован.")
 
