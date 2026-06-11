@@ -395,7 +395,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
     if p.enable_instant:
-        instantid.apply(p.face_file_id,target_unet,positive_cond, negative_cond,sigma_min, sigma_max)
+        target_unet, positive_cond, negative_cond = instantid.apply(p.face_file_id,target_unet,positive_cond, negative_cond,sigma_min, sigma_max)
 
     _lbw_state = {
         "baseline_patches": copy.deepcopy(target_unet.patches),
