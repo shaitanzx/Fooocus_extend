@@ -27,7 +27,9 @@ def download():
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir="extentions/instant2/models")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
-    hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instant2/checkpoints")
+    ####hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instant2/checkpoints")
+    hf_hub_download(repo_id="h94/IP-Adapter", filename="sdxl_models/ip-adapter_sdxl.bin", local_dir="extentions/instant2/checkpoints")
+    
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instant2/checkpoints")
@@ -327,7 +329,7 @@ def apply(image_path,target_unet,positive_cond, negative_cond,sigma_min, sigma_m
     download()
     insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])           
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
-    instantid_model = load_instantid_model("extentions/instant2/checkpoints/ip-adapter.bin")
+    instantid_model = load_instantid_model("extentions/instant2/checkpoints/sdxl_models/ip-adapter_sdxl.bin")
 
     patched_unet, new_positive, new_negative = apply_instantid_pipeline(
         image_path=image_path,  # Путь к файлу!
