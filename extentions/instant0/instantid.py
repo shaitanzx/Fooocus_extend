@@ -32,7 +32,7 @@ def download():
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
 
 
-def load_instantid_proj_model(file_path: str, device: torch.device):
+def load_instantid_proj_model(file_path):
     """
     Загружает веса image_proj из файла InstantID и возвращает готовый Resampler.
     """
@@ -40,8 +40,8 @@ def load_instantid_proj_model(file_path: str, device: torch.device):
         raise FileNotFoundError(f"Файл модели InstantID не найден: {file_path}")
 
     # 1. Загружаем веса
-    state_dict = torch.load(file_path, map_location=device)
-
+    state_dict = torch.load(file_path, map_location="cpu", weights_only=True)
+    pl_sd = torch.load(ckpt_path, map_location="cpu", weights_only=True)
     # 2. Фильтруем только веса для Resampler (убираем префикс "image_proj.")
     proj_weights = {}
     for key, value in state_dict.items():
