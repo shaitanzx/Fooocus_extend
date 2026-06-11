@@ -80,7 +80,7 @@ def apply(image_path,target_unet,positive_cond, negative_cond):
     image_proj_model = load_instantid_proj_model(instantid_path, device="cuda")
 
     # 2. Инициализируем InsightFace (тоже один раз)
-    insightface = FaceAnalysis(name="antelopev2", providers=["CUDAExecutionProvider"])
+    insightface = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
     insightface.prepare(ctx_id=0, det_size=(640, 640))
 
 
