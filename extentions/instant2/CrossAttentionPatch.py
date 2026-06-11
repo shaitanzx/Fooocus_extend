@@ -1,8 +1,52 @@
 import torch
 import math
 import torch.nn.functional as F
-from comfy.ldm.modules.attention import optimized_attention
+# from comfy.ldm.modules.attention import optimized_attention  # <<< Убрали зависимость от ComfyUI
 from .utils import tensor_to_size
+
+# ==============================================================================
+# АВТОНОМНАЯ РЕАЛИЗАЦИЯ OPTIMIZED_ATTENTION (PyTorch 2.0+ SDPA)
+# ==============================================================================
+SDP_BATCH_LIMIT = 2**15
+
+def optimized_attention(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False, skip_output_reshape=False, **kwargs):
+    """
+    Оптимизированная функция attention через PyTorch SDPA (scaled_dot_product_attention).
+    Автоматически использует flash/memory-efficient attention под капотом.
+    """
+    if skip_reshape:
+        b, _, _, dim_head = q.shape
+    else:
+        b, _, dim_head = q.shape
+        dim_head //= heads
+        q, k, v = map(lambda t: t.view(b, -1, heads, dim_head).transpose(1, 2), (q, k, v))
+
+    if mask is not None:
+        if mask.ndim == 2:
+            mask = mask.unsqueeze(0)
+        if mask.ndim == 3:
+            mask = mask.unsqueeze(1)
+
+    sdpa_extra = {k_arg: v_arg for k_arg, v_arg in kwargs.items() if k_arg in ("scale",)}
+
+    if SDP_BATCH_LIMIT >= b:
+        out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0, is_causal=False, **sdpa_extra)
+        if not skip_output_reshape:
+            out = out.transpose(1, 2).reshape(b, -1, heads * dim_head)
+    else:
+        out = torch.empty((b, q.shape[2], heads * dim_head), dtype=q.dtype, layout=q.layout, device=q.device)
+        for i in range(0, b, SDP_BATCH_LIMIT):
+            m = mask
+            if mask is not None and mask.shape[0] > 1:
+                m = mask[i : i + SDP_BATCH_LIMIT]
+
+            out[i : i + SDP_BATCH_LIMIT] = F.scaled_dot_product_attention(
+                q[i : i + SDP_BATCH_LIMIT], k[i : i + SDP_BATCH_LIMIT], v[i : i + SDP_BATCH_LIMIT],
+                attn_mask=m, dropout_p=0.0, is_causal=False, **sdpa_extra
+            ).transpose(1, 2).reshape(-1, q.shape[2], heads * dim_head)
+    return out
+# ==============================================================================
+
 
 class Attn2Replace:
     def __init__(self, callback=None, **kwargs):
@@ -188,4 +232,3 @@ def instantid_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     #out = out + out_ip
 
     return out_ip.to(dtype=dtype)
-    
