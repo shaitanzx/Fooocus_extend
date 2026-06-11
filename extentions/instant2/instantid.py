@@ -327,7 +327,7 @@ def apply(image_path,target_unet,positive_cond, negative_cond,sigma_min, sigma_m
     download()
     insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])           
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
-    instantid_model = load_instantid_model("extentions/instant2/checkpoints")
+    instantid_model = load_instantid_model("extentions/instant2/checkpoints/ControlNetModel")
 
     patched_unet, new_positive, new_negative = apply_instantid_pipeline(
         image_path=image_path,  # Путь к файлу!
