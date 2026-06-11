@@ -1,6 +1,7 @@
 from huggingface_hub import hf_hub_download
 import torch
 import os
+import ldm_patched.controlnet
 #import folder_paths
 import numpy as np
 import math
@@ -18,7 +19,29 @@ except ImportError:
     import torchvision.transforms as T
 
 import torch.nn.functional as F
-
+def get_or_load_instantid_controlnet():
+    """
+    Загружает ControlNet для InstantID через ldm_patched (Fooocus backend).
+    Возвращает объект ControlNet или None, если загрузка не удалась.
+    """
+    ctrl_path = "extentions/instant2/checkpoints/ControlNetModel/diffusion_pytorch_model.safetensors"
+    
+    if not os.path.exists(ctrl_path):
+        print(f"[InstantID CN] ⚠️ Файл ControlNet не найден: {ctrl_path}")
+        return None
+    
+    print(f"[InstantID CN] Загрузка ControlNet из {ctrl_path}...")
+    
+    try:
+        # Используем функцию load_controlnet из ldm_patched (Fooocus backend)
+        control_net = ldm_patched.controlnet.load_controlnet(ctrl_path)
+        print("[InstantID CN] ✅ ControlNet успешно загружен через ldm_patched!")
+        return control_net
+    except Exception as e:
+        print(f"[InstantID CN] ❌ Ошибка загрузки ControlNet: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 def download():
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/1k3d68.onnx", local_dir="extentions/instant2/models")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/2d106det.onnx", local_dir="extentions/instant2/models")
@@ -325,16 +348,24 @@ def apply_instantid_pipeline(
         number += 1
     print(f"  -> ✅ Всего применено {number} патчей.")
 
-    # 6. Обработка ControlNet (если передан)
+    # 6. Обработка ControlNet
     print("[Шаг 6/6] Обработка Conditioning...")
+    
+    # Если ControlNet не передан явно - пытаемся загрузить автоматически
     if control_net is None:
+        print("  -> ControlNet не передан. Пытаемся загрузить автоматически...")
+        control_net = get_or_load_instantid_controlnet()
+    
+    if control_net is not None:
         print("  -> Применение ControlNet к conditioning...")
-        ctrl_path = "/content/Fooocus_extend/extentions/instant2/checkpoints/ControlNetModel/diffusion_pytorch_model.safetensors"
-        control_net = torch.load(ctrl_path, map_location="cpu", weights_only=False)
         cnets = {}
         cond_uncond = []
         is_cond = True
         
+        # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W] для ControlNet
+        control_hint = face_kps.movedim(-1, 1)
+        print(f"  -> Форма control_hint для ControlNet: {control_hint.shape}")
+
         for conditioning in [positive, negative]:
             c = []
             for t in conditioning:
@@ -344,15 +375,21 @@ def apply_instantid_pipeline(
                 if prev_cnet in cnets:
                     c_net = cnets[prev_cnet]
                 else:
-                    c_net = control_net.copy().set_cond_hint(face_kps.movedim(-1, 1), cn_strength, (start_at, end_at))
-                    c_net.set_previous_controlnet(prev_cnet)
+                    # Все эти методы есть у объекта ControlNet из ldm_patched
+                    c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (start_at, end_at))
+                    if prev_cnet is not None:
+                        c_net.set_previous_controlnet(prev_cnet)
                     cnets[prev_cnet] = c_net
 
                 d['control'] = c_net
                 d['control_apply_to_uncond'] = False
                 
-                target_dtype = c_net.cond_hint_original.dtype if hasattr(c_net, 'cond_hint_original') else dtype
-                d['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=target_dtype) if is_cond else uncond_image_prompt_embeds.to(device=device, dtype=target_dtype)
+                target_dtype = dtype
+                if hasattr(c_net, 'cond_hint_original') and c_net.cond_hint_original is not None:
+                    target_dtype = c_net.cond_hint_original.dtype
+
+                embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
+                d['cross_attn_controlnet'] = embed_to_use.to(device=device, dtype=target_dtype)
 
                 n = [t[0], d]
                 c.append(n)
@@ -362,7 +399,7 @@ def apply_instantid_pipeline(
         final_positive, final_negative = cond_uncond[0], cond_uncond[1]
         print("  -> ✅ ControlNet conditioning применен.")
     else:
-        print("  -> ControlNet не передан (control_net=None). Возвращаем оригинальные conditioning.")
+        print("  -> ⚠️ ControlNet недоступен. Возвращаем оригинальные conditioning.")
         final_positive = positive
         final_negative = negative
 
