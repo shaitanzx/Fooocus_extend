@@ -119,3 +119,4 @@ class Resampler(nn.Module):
             
         latents = self.proj_out(latents)
         return self.norm_out(latents)
+        

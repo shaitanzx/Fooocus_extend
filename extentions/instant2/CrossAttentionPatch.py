@@ -188,3 +188,4 @@ def instantid_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     #out = out + out_ip
 
     return out_ip.to(dtype=dtype)
+    
