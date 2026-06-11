@@ -1,7 +1,6 @@
 from huggingface_hub import hf_hub_download
 import torch
 import os
-import safetensors.torch
 #import folder_paths
 import numpy as np
 import math
@@ -28,9 +27,7 @@ def download():
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir="extentions/instant2/models")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
-    ####hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instant2/checkpoints")
-    hf_hub_download(repo_id="h94/IP-Adapter", filename="sdxl_models/ip-adapter_sdxl.safetensors", local_dir="extentions/instant2/checkpoints")
-    
+    hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instant2/checkpoints")
@@ -121,42 +118,60 @@ def _set_model_patch_replace(model, patch_kwargs, key):
 # ==============================================================================
 
 def load_instantid_model(ckpt_path):
-    """Загружает файл InstantID (.safetensors) и возвращает готовый объект класса InstantID."""
+    """Загружает файл InstantID (.bin) и возвращает готовый объект класса InstantID."""
     print(f"[InstantID] Загрузка модели из {ckpt_path}...")
     
     if not os.path.exists(ckpt_path):
         raise FileNotFoundError(f"Файл модели не найден: {ckpt_path}")
 
-    # Загружаем safetensors файл
-    # Используем device="cpu", чтобы избежать проблем с нехваткой памяти GPU при загрузке
-    sd = safetensors.torch.load_file(ckpt_path, device="cpu")
+    # Загружаем с weights_only=False, так как файл содержит вложенные словари
+    pl_sd = torch.load(ckpt_path, map_location="cpu", weights_only=False)
 
-    # Разделяем веса на image_proj и ip_adapter
+    # Рекурсивная функция для извлечения всех тензоров на любой глубине
+    def extract_all_tensors(d, prefix=""):
+        tensors = {}
+        # OrderedDict наследуется от dict, поэтому одной проверки isinstance(d, dict) достаточно
+        if isinstance(d, dict):
+            for k, v in d.items():
+                new_prefix = f"{prefix}.{k}" if prefix else str(k)
+                if isinstance(v, torch.Tensor):
+                    tensors[new_prefix] = v
+                else:
+                    tensors.update(extract_all_tensors(v, new_prefix))
+        return tensors
+
+    # Получаем плоский словарь со всеми тензорами
+    sd = extract_all_tensors(pl_sd)
+    print(f"[InstantID] Успешно извлечено {len(sd)} тензоров.")
+
     st_model = {"image_proj": {}, "ip_adapter": {}}
-    for key in sd.keys():
-        if key.startswith("image_proj."):
-            st_model["image_proj"][key.replace("image_proj.", "")] = sd[key]
-        elif key.startswith("ip_adapter."):
-            st_model["ip_adapter"][key.replace("ip_adapter.", "")] = sd[key]
     
-    # Проверка, что веса найдены
-    if not st_model["ip_adapter"]:
-        raise ValueError(
-            "Не найдены веса 'ip_adapter' в файле модели. "
-            "Убедитесь, что файл корректен и содержит ключи с префиксом 'ip_adapter.'."
-        )
+    for key, tensor in sd.items():
+        # Основной путь: ключи с префиксами
+        if key.startswith("image_proj."):
+            st_model["image_proj"][key.replace("image_proj.", "")] = tensor
+        elif key.startswith("ip_adapter."):
+            st_model["ip_adapter"][key.replace("ip_adapter.", "")] = tensor
+        # Резервный путь: если префиксов вдруг нет, но ключи характерные
+        elif "latents" in key or "proj_in" in key or "layers." in key:
+            st_model["image_proj"][key] = tensor
+        elif "to_k_ip" in key or "to_v_ip" in key:
+            st_model["ip_adapter"][key] = tensor
 
-    # Определяем output_cross_attention_dim динамически
-    # Ищем ключ, который содержит "to_k_ip.weight"
+    if not st_model["ip_adapter"]:
+        raise ValueError(f"Не найдены веса 'ip_adapter'. Доступные ключи: {list(sd.keys())[:5]}")
+
+    # Находим output_dim динамически
     output_dim = None
     for key in st_model["ip_adapter"].keys():
-        if "to_k_ip.weight" in key:
+        if "to_k_ip" in key:
             output_dim = st_model["ip_adapter"][key].shape[1]
             break
     
     if output_dim is None:
-        raise ValueError("Не найден ключ 'to_k_ip.weight' в весах ip_adapter.")
+        raise ValueError("Не найден ключ 'to_k_ip' в весах ip_adapter.")
 
+    # Создаем модель InstantID
     instantid = InstantID(
         st_model,
         cross_attention_dim=1280,
@@ -164,7 +179,49 @@ def load_instantid_model(ckpt_path):
         clip_embeddings_dim=512,
         clip_extra_context_tokens=16,
     )
-    print("[InstantID] Модель успешно загружена.")
+    print("[InstantID] Модель успешно загружена и инициализирована.")
+    return instantid
+
+    # Получаем плоский словарь со всеми тензорами
+    sd = extract_all_tensors(pl_sd)
+    print(f"[InstantID] Успешно извлечено {len(sd)} тензоров.")
+
+    st_model = {"image_proj": {}, "ip_adapter": {}}
+    
+    for key, tensor in sd.items():
+        # Основной путь: ключи с префиксами
+        if key.startswith("image_proj."):
+            st_model["image_proj"][key.replace("image_proj.", "")] = tensor
+        elif key.startswith("ip_adapter."):
+            st_model["ip_adapter"][key.replace("ip_adapter.", "")] = tensor
+        # Резервный путь: если префиксов вдруг нет, но ключи характерные
+        elif "latents" in key or "proj_in" in key or "layers." in key:
+            st_model["image_proj"][key] = tensor
+        elif "to_k_ip" in key or "to_v_ip" in key:
+            st_model["ip_adapter"][key] = tensor
+
+    if not st_model["ip_adapter"]:
+        raise ValueError(f"Не найдены веса 'ip_adapter'. Доступные ключи: {list(sd.keys())[:5]}")
+
+    # Находим output_dim динамически
+    output_dim = None
+    for key in st_model["ip_adapter"].keys():
+        if "to_k_ip" in key:
+            output_dim = st_model["ip_adapter"][key].shape[1]
+            break
+    
+    if output_dim is None:
+        raise ValueError("Не найден ключ 'to_k_ip' в весах ip_adapter.")
+
+    # Создаем модель InstantID
+    instantid = InstantID(
+        st_model,
+        cross_attention_dim=1280,
+        output_cross_attention_dim=output_dim,
+        clip_embeddings_dim=512,
+        clip_extra_context_tokens=16,
+    )
+    print("[InstantID] Модель успешно загружена и инициализирована.")
     return instantid
 
 # ==============================================================================
@@ -330,7 +387,7 @@ def apply(image_path,target_unet,positive_cond, negative_cond,sigma_min, sigma_m
     download()
     insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])           
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
-    instantid_model = load_instantid_model("extentions/instant2/checkpoints/sdxl_models/ip-adapter_sdxl.safetensors")
+    instantid_model = load_instantid_model("extentions/instant2/checkpoints/ip-adapter.bin")
 
     patched_unet, new_positive, new_negative = apply_instantid_pipeline(
         image_path=image_path,  # Путь к файлу!
