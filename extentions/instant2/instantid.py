@@ -63,14 +63,24 @@ def draw_kps(image_pil, kps, color_list=[(255,0,0), (0,255,0), (0,0,255), (255,2
 class InstantID(torch.nn.Module):
     def __init__(self, instantid_model, cross_attention_dim=1280, output_cross_attention_dim=1024, clip_embeddings_dim=512, clip_extra_context_tokens=16):
         super().__init__()
+        print("  [InstantID.__init__] Начало инициализации...")
+        
         self.clip_embeddings_dim = clip_embeddings_dim
         self.cross_attention_dim = cross_attention_dim
         self.output_cross_attention_dim = output_cross_attention_dim
         self.clip_extra_context_tokens = clip_extra_context_tokens
 
+        print("  [InstantID.__init__] Создание модели Resampler (image_proj_model)...")
         self.image_proj_model = self.init_proj()
+        print("  [InstantID.__init__] Resampler создан успешно.")
+
+        print(f"  [InstantID.__init__] Загрузка весов в Resampler (найдено {len(instantid_model['image_proj'])} ключей)...")
         self.image_proj_model.load_state_dict(instantid_model["image_proj"])
+        print("  [InstantID.__init__] Веса Resampler загружены успешно.")
+
+        print("  [InstantID.__init__] Создание слоев To_KV (ip_layers)...")
         self.ip_layers = To_KV(instantid_model["ip_adapter"])
+        print("  [InstantID.__init__] Инициализация завершена успешно!")
 
     def init_proj(self):
         image_proj_model = Resampler(
@@ -118,19 +128,18 @@ def _set_model_patch_replace(model, patch_kwargs, key):
 # ==============================================================================
 
 def load_instantid_model(ckpt_path):
-    """Загружает файл InstantID (.bin) и возвращает готовый объект класса InstantID."""
-    print(f"[InstantID] Загрузка модели из {ckpt_path}...")
+    print(f"\n[InstantID] === НАЧАЛО ЗАГРУЗКИ МОДЕЛИ ===")
+    print(f"[InstantID] Путь к файлу: {ckpt_path}")
     
     if not os.path.exists(ckpt_path):
         raise FileNotFoundError(f"Файл модели не найден: {ckpt_path}")
 
-    # Загружаем с weights_only=False, так как файл содержит вложенные словари
+    print("[InstantID] Чтение файла .bin (это может занять несколько секунд)...")
     pl_sd = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    print("[InstantID] Файл прочитан в память.")
 
-    # Рекурсивная функция для извлечения всех тензоров на любой глубине
     def extract_all_tensors(d, prefix=""):
         tensors = {}
-        # OrderedDict наследуется от dict, поэтому одной проверки isinstance(d, dict) достаточно
         if isinstance(d, dict):
             for k, v in d.items():
                 new_prefix = f"{prefix}.{k}" if prefix else str(k)
@@ -140,28 +149,30 @@ def load_instantid_model(ckpt_path):
                     tensors.update(extract_all_tensors(v, new_prefix))
         return tensors
 
-    # Получаем плоский словарь со всеми тензорами
+    print("[InstantID] Распаковка вложенных словарей...")
     sd = extract_all_tensors(pl_sd)
-    print(f"[InstantID] Успешно извлечено {len(sd)} тензоров.")
+    print(f"[InstantID] ✅ Успешно извлечено {len(sd)} тензоров.")
 
     st_model = {"image_proj": {}, "ip_adapter": {}}
     
+    print("[InstantID] Распределение тензоров по категориям (image_proj / ip_adapter)...")
     for key, tensor in sd.items():
-        # Основной путь: ключи с префиксами
         if key.startswith("image_proj."):
             st_model["image_proj"][key.replace("image_proj.", "")] = tensor
         elif key.startswith("ip_adapter."):
             st_model["ip_adapter"][key.replace("ip_adapter.", "")] = tensor
-        # Резервный путь: если префиксов вдруг нет, но ключи характерные
         elif "latents" in key or "proj_in" in key or "layers." in key:
             st_model["image_proj"][key] = tensor
         elif "to_k_ip" in key or "to_v_ip" in key:
             st_model["ip_adapter"][key] = tensor
 
+    print(f"[InstantID] Найдено {len(st_model['image_proj'])} ключей для image_proj.")
+    print(f"[InstantID] Найдено {len(st_model['ip_adapter'])} ключей для ip_adapter.")
+
     if not st_model["ip_adapter"]:
         raise ValueError(f"Не найдены веса 'ip_adapter'. Доступные ключи: {list(sd.keys())[:5]}")
 
-    # Находим output_dim динамически
+    print("[InstantID] Определение output_dim...")
     output_dim = None
     for key in st_model["ip_adapter"].keys():
         if "to_k_ip" in key:
@@ -170,8 +181,10 @@ def load_instantid_model(ckpt_path):
     
     if output_dim is None:
         raise ValueError("Не найден ключ 'to_k_ip' в весах ip_adapter.")
+    
+    print(f"[InstantID] output_dim определен как: {output_dim}")
 
-    # Создаем модель InstantID
+    print("[InstantID] Передача данных в класс InstantID...")
     instantid = InstantID(
         st_model,
         cross_attention_dim=1280,
@@ -179,49 +192,7 @@ def load_instantid_model(ckpt_path):
         clip_embeddings_dim=512,
         clip_extra_context_tokens=16,
     )
-    print("[InstantID] Модель успешно загружена и инициализирована.")
-    return instantid
-
-    # Получаем плоский словарь со всеми тензорами
-    sd = extract_all_tensors(pl_sd)
-    print(f"[InstantID] Успешно извлечено {len(sd)} тензоров.")
-
-    st_model = {"image_proj": {}, "ip_adapter": {}}
-    
-    for key, tensor in sd.items():
-        # Основной путь: ключи с префиксами
-        if key.startswith("image_proj."):
-            st_model["image_proj"][key.replace("image_proj.", "")] = tensor
-        elif key.startswith("ip_adapter."):
-            st_model["ip_adapter"][key.replace("ip_adapter.", "")] = tensor
-        # Резервный путь: если префиксов вдруг нет, но ключи характерные
-        elif "latents" in key or "proj_in" in key or "layers." in key:
-            st_model["image_proj"][key] = tensor
-        elif "to_k_ip" in key or "to_v_ip" in key:
-            st_model["ip_adapter"][key] = tensor
-
-    if not st_model["ip_adapter"]:
-        raise ValueError(f"Не найдены веса 'ip_adapter'. Доступные ключи: {list(sd.keys())[:5]}")
-
-    # Находим output_dim динамически
-    output_dim = None
-    for key in st_model["ip_adapter"].keys():
-        if "to_k_ip" in key:
-            output_dim = st_model["ip_adapter"][key].shape[1]
-            break
-    
-    if output_dim is None:
-        raise ValueError("Не найден ключ 'to_k_ip' в весах ip_adapter.")
-
-    # Создаем модель InstantID
-    instantid = InstantID(
-        st_model,
-        cross_attention_dim=1280,
-        output_cross_attention_dim=output_dim,
-        clip_embeddings_dim=512,
-        clip_extra_context_tokens=16,
-    )
-    print("[InstantID] Модель успешно загружена и инициализирована.")
+    print("[InstantID] === МОДЕЛЬ УСПЕШНО ЗАГРУЖЕНА ===\n")
     return instantid
 
 # ==============================================================================
@@ -383,23 +354,76 @@ def apply_instantid_pipeline(
 
     return work_model, final_positive, final_negative
 
-def apply(image_path,target_unet,positive_cond, negative_cond,sigma_min, sigma_max):
+def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max):
+    print("\n" + "="*60)
+    print("[InstantID Pipeline] === ЗАПУСК ПАПЛАЙНА ===")
+    print("="*60)
+    
+    # 1. Скачивание
+    print("[Шаг 1/5] Проверка и скачивание моделей...")
     download()
-    insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])           
-    insightface_app.prepare(ctx_id=0, det_size=(640, 640))
-    instantid_model = load_instantid_model("extentions/instant2/checkpoints/ip-adapter.bin")
+    print("[Шаг 1/5] ✅ Готово.")
+    
+    # 2. InsightFace
+    print("[Шаг 2/5] Инициализация InsightFace...")
+    models_root = "extentions/instant2/models"
+    model_name = "antelopev2"
+    model_dir = os.path.join(models_root, model_name)
+    
+    onnx_files = glob.glob(os.path.join(model_dir, "*.onnx"))
+    if not onnx_files:
+        raise FileNotFoundError(f"Модели InsightFace не найдены в {model_dir}.")
+    print(f"  Найдено {len(onnx_files)} .onnx файлов.")
 
-    patched_unet, new_positive, new_negative = apply_instantid_pipeline(
-        image_path=image_path,  # Путь к файлу!
-        unet_model=target_unet,
-        insightface=insightface_app,
-        instantid_model=instantid_model,
-        positive=positive_cond,
-        negative=negative_cond,
-        control_net=None,  # <--- Передайте None, если не хотите использовать ControlNet
-        weight=0.8,
-        start_at=0.0,
-        end_at=1.0,
-        sigma_min=sigma_min,  # Из вашего calculate_sigmas
-        sigma_max=sigma_max   # Из вашего calculate_sigmas
+    insightface_app = FaceAnalysis(
+        name=model_name, 
+        root=models_root, 
+        providers=['CUDAExecutionProvider', 'CPUExecutionProvider']
     )
+    insightface_app.prepare(ctx_id=0, det_size=(640, 640))
+    print("[Шаг 2/5] ✅ InsightFace инициализирован.")
+
+    # 3. Загрузка InstantID
+    print("[Шаг 3/5] Загрузка модели InstantID...")
+    instantid_file = "extentions/instant2/checkpoints/ip-adapter.bin"
+    
+    if not os.path.exists(instantid_file):
+        raise FileNotFoundError(f"Файл InstantID не найден: {instantid_file}")
+    
+    instantid_model = load_instantid_model(instantid_file)
+    print("[Шаг 3/5] ✅ Модель InstantID загружена.")
+
+    # 4. Запуск пайплайна
+    print("[Шаг 4/5] Запуск apply_instantid_pipeline...")
+    print(f"  - Путь к изображению: {image_path}")
+    print(f"  - Sigma min/max: {sigma_min} / {sigma_max}")
+    
+    try:
+        patched_unet, new_positive, new_negative = apply_instantid_pipeline(
+            image_path=image_path,
+            unet_model=target_unet,
+            insightface=insightface_app,
+            instantid_model=instantid_model,
+            positive=positive_cond,
+            negative=negative_cond,
+            control_net=None, 
+            weight=0.8,
+            start_at=0.0,
+            end_at=1.0,
+            sigma_min=sigma_min,
+            sigma_max=sigma_max
+        )
+        print("[Шаг 4/5] ✅ Пайплайн выполнен успешно.")
+    except Exception as e:
+        print(f"\n❌ ОШИБКА ВНУТРИ apply_instantid_pipeline:")
+        print(f"   {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+    print("[Шаг 5/5] Возврат пропатченных моделей и кондишенов...")
+    print("="*60)
+    print("[InstantID Pipeline] === ЗАВЕРШЕНО УСПЕШНО ===")
+    print("="*60 + "\n")
+    
+    return patched_unet, new_positive, new_negative
