@@ -200,92 +200,98 @@ def load_instantid_model(ckpt_path):
 # ==============================================================================
 
 def apply_instantid_pipeline(
-    image_path,          # str: Путь к файлу изображения
-    unet_model,          # object: Ваша модель Fooocus (ModelPatcher)
-    insightface,         # object: Инициализированный FaceAnalysis
-    instantid_model,     # object: Загруженный объект InstantID (из load_instantid_model)
-    positive,            # list: Conditioning Fooocus
-    negative,            # list: Conditioning Fooocus
-    control_net=None,    # object: ControlNet Fooocus ИЛИ None (если не нужен)
-    weight=0.8,
-    start_at=0.0,
-    end_at=1.0,
-    noise=0.35,
-    combine_embeds='average',
-    device=None,
-    dtype=None,
-    sigma_min=None,      # float: Из вашего calculate_sigmas (опционально)
-    sigma_max=None       # float: Из вашего calculate_sigmas (опционально)
+    image_path, unet_model, insightface, instantid_model, positive, negative,
+    control_net=None, weight=0.8, start_at=0.0, end_at=1.0, noise=0.35,
+    combine_embeds='average', device=None, dtype=None, sigma_min=None, sigma_max=None
 ):
-    """
-    Применяет InstantID к модели и conditioning.
-    Возвращает: (patched_unet_model, modified_positive, modified_negative)
-    """
-    # 1. Инициализация устройства и типа данных
+    print("\n" + "="*60)
+    print("[Pipeline] === НАЧАЛО apply_instantid_pipeline ===")
+    print("="*60)
+
+    # 1. Инициализация
+    print("[Шаг 1/6] Инициализация параметров...")
     if device is None:
         device = torch.device(torch.cuda.current_device())
     if dtype is None:
         dtype = torch.float16
-        # if dtype not in [torch.float32, torch.float16, torch.bfloat16]:
-        #     dtype = torch.float16 if comfy.model_management.should_use_fp16() else torch.float32
-
+    
     ip_weight = weight
     cn_strength = weight
+    print(f"  -> Устройство: {device}, Тип данных: {dtype}")
+    print(f"  -> Веса: ip_weight={ip_weight}, cn_strength={cn_strength}")
 
-    # 2. Загрузка изображения и извлечение признаков (НАПРЯМУЮ ИЗ ФАЙЛА)
+    # 2. Загрузка изображения и детекция лица
+    print("[Шаг 2/6] Загрузка изображения и детекция лица InsightFace...")
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
     
     img_bgr = cv2.imread(image_path)
     if img_bgr is None:
         raise ValueError(f"Failed to load image from {image_path}")
+    print(f"  -> Изображение загружено, размер: {img_bgr.shape}")
 
     insightface.det_model.input_size = (640, 640)
     faces = insightface.get(img_bgr)
     if not faces:
         raise Exception('Reference Image: No face detected.')
+    print(f"  -> Найдено лиц: {len(faces)}")
     
-    # Берем самое крупное лицо (оригинальная логика)
+    # Берем самое крупное лицо
     face = sorted(faces, key=lambda x:(x['bbox'][2]-x['bbox'][0])*(x['bbox'][3]-x['bbox'][1]))[-1]
-    face_embed = torch.from_numpy(face['embedding']).unsqueeze(0)
+    
+    # ИСПРАВЛЕНИЕ: Принудительно делаем тензор 3D: [batch=1, seq_len=1, dim=512]
+    raw_embed = torch.from_numpy(face['embedding'])
+    clip_embed = raw_embed.view(1, 1, -1).to(device, dtype=dtype)
+    print(f"  -> Форма clip_embed для Resampler: {clip_embed.shape} (ожидается [1, 1, 512])")
 
-    # Рисуем KPS и конвертируем в тензор ComfyUI [1, H, W, 3]
+    # Рисуем KPS и конвертируем в тензор [1, H, W, 3]
+    print("  -> Генерация карты ключевых точек (KPS)...")
     kps_img_pil = draw_kps(img_bgr, face['kps'])
     face_kps = T.ToTensor()(kps_img_pil).permute(1, 2, 0).unsqueeze(0)
+    print(f"  -> Форма face_kps: {face_kps.shape}")
 
     # 3. Обработка эмбеддингов (шум и усреднение)
-    clip_embed = face_embed.to(device, dtype=dtype)
+    print("[Шаг 3/6] Обработка эмбеддингов (шум/усреднение)...")
     if clip_embed.shape[0] > 1:
         if combine_embeds == 'average':
-            clip_embed = torch.mean(clip_embed, dim=0).unsqueeze(0)
+            clip_embed = torch.mean(clip_embed, dim=0, keepdim=True)
         elif combine_embeds == 'norm average':
-            clip_embed = torch.mean(clip_embed / torch.norm(clip_embed, dim=0, keepdim=True), dim=0).unsqueeze(0)
+            clip_embed = torch.mean(clip_embed / torch.norm(clip_embed, dim=-1, keepdim=True), dim=0, keepdim=True)
 
     if noise > 0:
         seed = int(torch.sum(clip_embed).item()) % 1000000007
         torch.manual_seed(seed)
         clip_embed_zeroed = noise * torch.rand_like(clip_embed)
+        print(f"  -> Добавлен шум (noise={noise}), seed={seed}")
     else:
         clip_embed_zeroed = torch.zeros_like(clip_embed)
+        print("  -> Шум не добавлен (noise=0)")
 
     # 4. Проекция эмбеддингов через Resampler
+    print("[Шаг 4/6] Проекция эмбеддингов через Resampler...")
     instantid_model.to(device, dtype=dtype)
+    print("  -> Запуск instantid_model.get_image_embeds()...")
     image_prompt_embeds, uncond_image_prompt_embeds = instantid_model.get_image_embeds(
         clip_embed, clip_embed_zeroed
     )
+    print(f"  -> ✅ Resampler отработал успешно. Форма cond: {image_prompt_embeds.shape}, uncond: {uncond_image_prompt_embeds.shape}")
+    
     image_prompt_embeds = image_prompt_embeds.to(device, dtype=dtype)
     uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(device, dtype=dtype)
 
-    # 5. Патчинг UNet (ОРИГИНАЛЬНАЯ ЛОГИКА COMFYUI/FOOOCUS)
+    # 5. Патчинг UNet
+    print("[Шаг 5/6] Патчинг слоев Cross-Attention в UNet...")
     work_model = unet_model.clone()
+    print("  -> Модель клонирована.")
 
-    # Вычисляем сигмы (либо из ваших значений, либо через штатный метод Fooocus)
     if sigma_min is not None and sigma_max is not None:
         sigma_start = sigma_max + start_at * (sigma_min - sigma_max)
         sigma_end = sigma_max + end_at * (sigma_min - sigma_max)
+        print(f"  -> Сигмы рассчитаны из переданных значений: start={sigma_start:.4f}, end={sigma_end:.4f}")
     else:
-        sigma_start = unet_model.get_model_object("model_sampling").percent_to_sigma(start_at)
-        sigma_end = unet_model.get_model_object("model_sampling").percent_to_sigma(end_at)
+        sigma_start = 14.6146 * (1.0 - start_at)
+        sigma_end = 14.6146 * (1.0 - end_at)
+        print(f"  -> Сигмы рассчитаны по умолчанию (fallback): start={sigma_start:.4f}, end={sigma_end:.4f}")
 
     patch_kwargs = {
         "ipadapter": instantid_model,
@@ -297,7 +303,7 @@ def apply_instantid_pipeline(
         "sigma_end": sigma_end,
     }
 
-    # Циклы патчинга input, output и middle блоков
+    print("  -> Применение патчей к input, output и middle блокам...")
     number = 0
     for id in [4, 5, 7, 8]: 
         block_indices = range(2) if id in [4, 5] else range(10) 
@@ -317,9 +323,12 @@ def apply_instantid_pipeline(
         patch_kwargs["module_key"] = str(number*2+1)
         _set_model_patch_replace(work_model, patch_kwargs, ("middle", 1, index))
         number += 1
+    print(f"  -> ✅ Всего применено {number} патчей.")
 
-    # 6. Обработка ControlNet (ТОЛЬКО если он передан)
+    # 6. Обработка ControlNet (если передан)
+    print("[Шаг 6/6] Обработка Conditioning...")
     if control_net is not None:
+        print("  -> Применение ControlNet к conditioning...")
         cnets = {}
         cond_uncond = []
         is_cond = True
@@ -339,7 +348,9 @@ def apply_instantid_pipeline(
 
                 d['control'] = c_net
                 d['control_apply_to_uncond'] = False
-                d['cross_attn_controlnet'] = image_prompt_embeds.to(comfy.model_management.intermediate_device(), dtype=c_net.cond_hint_original.dtype) if is_cond else uncond_image_prompt_embeds.to(comfy.model_management.intermediate_device(), dtype=c_net.cond_hint_original.dtype)
+                
+                target_dtype = c_net.cond_hint_original.dtype if hasattr(c_net, 'cond_hint_original') else dtype
+                d['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=target_dtype) if is_cond else uncond_image_prompt_embeds.to(device=device, dtype=target_dtype)
 
                 n = [t[0], d]
                 c.append(n)
@@ -347,11 +358,16 @@ def apply_instantid_pipeline(
             is_cond = False
             
         final_positive, final_negative = cond_uncond[0], cond_uncond[1]
+        print("  -> ✅ ControlNet conditioning применен.")
     else:
-        # Если ControlNet нет, просто возвращаем оригинальные conditioning
+        print("  -> ControlNet не передан (control_net=None). Возвращаем оригинальные conditioning.")
         final_positive = positive
         final_negative = negative
 
+    print("="*60)
+    print("[Pipeline] === apply_instantid_pipeline ЗАВЕРШЕН УСПЕШНО ===")
+    print("="*60 + "\n")
+    
     return work_model, final_positive, final_negative
 
 def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max):
