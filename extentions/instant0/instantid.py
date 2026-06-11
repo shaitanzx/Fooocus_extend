@@ -32,7 +32,7 @@ def download():
     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
 
 
-def load_instantid_proj_model(file_path):
+def load_instantid_proj_model(file_path: str, device: torch.device):
     """
     Загружает веса image_proj из файла InstantID и возвращает готовый Resampler.
     """
@@ -40,8 +40,8 @@ def load_instantid_proj_model(file_path):
         raise FileNotFoundError(f"Файл модели InstantID не найден: {file_path}")
 
     # 1. Загружаем веса
-    state_dict = torch.load(file_path, map_location="cpu", weights_only=True)
-    pl_sd = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+    state_dict = torch.load(file_path, map_location=device)
+
     # 2. Фильтруем только веса для Resampler (убираем префикс "image_proj.")
     proj_weights = {}
     for key, value in state_dict.items():
@@ -80,7 +80,7 @@ def apply(image_path,target_unet,positive_cond, negative_cond):
     image_proj_model = load_instantid_proj_model(instantid_path, device="cuda")
 
     # 2. Инициализируем InsightFace (тоже один раз)
-    insightface = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
+    insightface = FaceAnalysis(name="antelopev2", providers=["CUDAExecutionProvider"])
     insightface.prepare(ctx_id=0, det_size=(640, 640))
 
 

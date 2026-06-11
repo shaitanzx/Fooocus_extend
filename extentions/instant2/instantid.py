@@ -120,7 +120,13 @@ def _set_model_patch_replace(model, patch_kwargs, key):
 def load_instantid_model(ckpt_path):
     """Загружает файл InstantID и возвращает готовый объект класса InstantID."""
     print(f"[InstantID] Загрузка модели из {ckpt_path}...")
-    pl_sd = torch.load(ckpt, map_location=device, weights_only=True, **torch_args)
+    
+    if not os.path.exists(ckpt_path):
+        raise FileNotFoundError(f"Файл модели не найден: {ckpt_path}")
+
+    # ИСПРАВЛЕНО: используем ckpt_path вместо несуществующего ckpt, device и torch_args
+    # Загружаем на CPU, чтобы избежать проблем с нехваткой памяти GPU при загрузке
+    pl_sd = torch.load(ckpt_path, map_location="cpu", weights_only=True)
 
     if "state_dict" in pl_sd:
         sd = pl_sd["state_dict"]
@@ -133,7 +139,7 @@ def load_instantid_model(ckpt_path):
         else:
             sd = pl_sd
 
-    # Разделяем веса на image_proj и ip_adapter (поддержка и .bin, и .safetensors)
+    # Разделяем веса на image_proj и ip_adapter
     st_model = {"image_proj": {}, "ip_adapter": {}}
     for key in sd.keys():
         if key.startswith("image_proj."):
@@ -141,6 +147,10 @@ def load_instantid_model(ckpt_path):
         elif key.startswith("ip_adapter."):
             st_model["ip_adapter"][key.replace("ip_adapter.", "")] = sd[key]
     
+    # Проверка, что веса найдены
+    if not st_model["ip_adapter"]:
+        raise ValueError("Не найдены веса 'ip_adapter' в файле модели. Убедитесь, что файл корректен.")
+
     # Определяем output_cross_attention_dim динамически
     output_dim = st_model["ip_adapter"]["1.to_k_ip.weight"].shape[1]
 
@@ -315,7 +325,7 @@ def apply_instantid_pipeline(
 
 def apply(image_path,target_unet,positive_cond, negative_cond,sigma_min, sigma_max):
     download()
-    insightface_app = FaceAnalysis(name="antelopev2", root="extentions/instant2/models", providers=['CUDAExecutionProvider'])
+    insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])           
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
     instantid_model = load_instantid_model("extentions/instant2/checkpoints")
 
