@@ -1,7 +1,6 @@
 from huggingface_hub import hf_hub_download
 import torch
 import os
-import comfy.utils
 import folder_paths
 import numpy as np
 import math
