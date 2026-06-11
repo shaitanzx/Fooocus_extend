@@ -327,8 +327,10 @@ def apply_instantid_pipeline(
 
     # 6. Обработка ControlNet (если передан)
     print("[Шаг 6/6] Обработка Conditioning...")
-    if control_net is not None:
+    if control_net is None:
         print("  -> Применение ControlNet к conditioning...")
+        ctrl_path = "extentions/instant2/checkpoints"
+        control_net = torch.load(ctrl_path, map_location="cpu", weights_only=False)
         cnets = {}
         cond_uncond = []
         is_cond = True
