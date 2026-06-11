@@ -34,7 +34,7 @@ def get_or_load_instantid_controlnet():
     
     try:
         # Используем функцию load_controlnet из ldm_patched (Fooocus backend)
-        control_net = ldm_patched.controlnet.load_controlnet(ctrl_path)
+        control_net = ldm_patched.modules.controlnet.load_controlnet(ctrl_path)
         print("[InstantID CN] ✅ ControlNet успешно загружен через ldm_patched!")
         return control_net
     except Exception as e:
