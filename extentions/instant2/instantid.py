@@ -354,9 +354,9 @@ def apply_instantid_pipeline(
     print("="*60)
     
     # Если ControlNet не передан явно - пытаемся загрузить автоматически
-    if control_net is None:
-        print("  -> ControlNet не передан. Пытаемся загрузить автоматически...")
-        control_net = get_or_load_instantid_controlnet()
+    #if control_net is None:
+    #    print("  -> ControlNet не передан. Пытаемся загрузить автоматически...")
+    #    control_net = get_or_load_instantid_controlnet()
     
     if control_net is not None:
         print("  -> Применение ControlNet к conditioning...")
