@@ -171,10 +171,15 @@ class ControlNet(ControlBase):
         # ПОДДЕРЖКА INSTANTID: Извлекаем cross_attn_controlnet
         cross_attn_controlnet = cond.get('cross_attn_controlnet', None)
         if cross_attn_controlnet is not None:
-            print(f'[DEBUG ControlNet] ✅ Найден cross_attn_controlnet! Конкатенация с context...')
-            print(f'[DEBUG ControlNet]   context ДО: {context.shape}, cross_attn: {cross_attn_controlnet.shape}')
-            context = torch.cat([context, cross_attn_controlnet.to(context.dtype).to(context.device)], dim=1)
-            print(f'[DEBUG ControlNet]   context ПОСЛЕ: {context.shape}')
+            print(f'[DEBUG ControlNet] ✅ Найден cross_attn_controlnet!')
+            print(f'[DEBUG ControlNet]   Оригинальный context: {context.shape}')
+            print(f'[DEBUG ControlNet]   cross_attn_controlnet: {cross_attn_controlnet.shape}')
+            
+            # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Заменяем context на face embeddings, а не конкатенируем!
+            # ControlNet InstantID должен получать ТОЛЬКО face embeddings
+            context = cross_attn_controlnet.to(dtype=context.dtype).to(context.device)
+            
+            print(f'[DEBUG ControlNet]   Новый context (только face): {context.shape}')
 
             
         y = cond.get('y', None)

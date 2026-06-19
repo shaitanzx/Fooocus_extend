@@ -407,18 +407,18 @@ def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
 def patched_unet_forward(self, x, timesteps=None, context=None, y=None, control=None, transformer_options={}, **kwargs):
 
 
-    # ОТЛАДКА: Проверяем, есть ли control
-    if not hasattr(patched_unet_forward, 'call_count'):
-        patched_unet_forward.call_count = 0
-    patched_unet_forward.call_count += 1
+    # # ОТЛАДКА: Проверяем, есть ли control
+    # if not hasattr(patched_unet_forward, 'call_count'):
+    #     patched_unet_forward.call_count = 0
+    # patched_unet_forward.call_count += 1
     
-    if patched_unet_forward.call_count <= 3:
-        print(f"[DEBUG UNet Forward] Вызов #{patched_unet_forward.call_count}")
-        print(f"  -> control: {control}")
-        if control is not None:
-            print(f"  -> control type: {type(control)}")
-            if hasattr(control, 'cond_hint_original'):
-                print(f"  -> control.cond_hint_original shape: {control.cond_hint_original.shape}")
+    # if patched_unet_forward.call_count <= 3:
+    #     print(f"[DEBUG UNet Forward] Вызов #{patched_unet_forward.call_count}")
+    #     print(f"  -> control: {control}")
+    #     if control is not None:
+    #         print(f"  -> control type: {type(control)}")
+    #         if hasattr(control, 'cond_hint_original'):
+    #             print(f"  -> control.cond_hint_original shape: {control.cond_hint_original.shape}")
 
     self.current_step = 1.0 - timesteps.to(x) / 999.0
     patch_settings[os.getpid()].global_diffusion_progress = float(self.current_step.detach().cpu().numpy().tolist()[0])

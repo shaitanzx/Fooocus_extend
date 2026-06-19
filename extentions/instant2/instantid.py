@@ -350,7 +350,7 @@ def apply_instantid_pipeline(
     
     if control_net is not None:
         print("  -> ✅ ControlNet загружен.")
-
+        
         
         # === КРИТИЧЕСКИ ВАЖНО: Ресайз keypoints до размера генерации ===
         print(f"  -> Исходная форма face_kps: {face_kps.shape}")
@@ -367,12 +367,7 @@ def apply_instantid_pipeline(
         print(f"  -> Форма face_kps после ресайза: {face_kps_resized.shape}")
         
         # Преобразуем в control_hint [1, 3, H, W]
-        # Нормализуем control_hint в диапазон [0, 1]
-        control_hint = face_kps_resized.movedim(-1, 1)
-        control_hint = torch.clamp(control_hint, 0, 1)  # Убеждаемся, что в [0, 1]
-        control_hint = control_hint.to(device=device, dtype=dtype)
-
-        print(f"  -> control_hint min: {control_hint.min():.4f}, max: {control_hint.max():.4f}")
+        control_hint = face_kps_resized.movedim(-1, 1).to(device=device, dtype=dtype)
         
         print(f"  -> Форма control_hint: {control_hint.shape}")
         print(f"  -> control_hint range: [{control_hint.min():.4f}, {control_hint.max():.4f}]")
