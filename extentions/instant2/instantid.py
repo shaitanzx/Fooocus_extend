@@ -259,21 +259,18 @@ def apply_instantid_pipeline(
         raise Exception('Reference Image: No face detected.')
     print(f"  -> Найдено лиц: {len(faces)}")
     
-    # Берем самое крупное лицо
     face = sorted(faces, key=lambda x:(x['bbox'][2]-x['bbox'][0])*(x['bbox'][3]-x['bbox'][1]))[-1]
     
-    # ИСПРАВЛЕНИЕ: Принудительно делаем тензор 3D: [batch=1, seq_len=1, dim=512]
     raw_embed = torch.from_numpy(face['embedding'])
     clip_embed = raw_embed.view(1, 1, -1).to(device, dtype=dtype)
-    print(f"  -> Форма clip_embed для Resampler: {clip_embed.shape} (ожидается [1, 1, 512])")
+    print(f"  -> Форма clip_embed для Resampler: {clip_embed.shape}")
 
-    # Рисуем KPS и конвертируем в тензор [1, H, W, 3]
     print("  -> Генерация карты ключевых точек (KPS)...")
     kps_img_pil = draw_kps(img_bgr, face['kps'])
     face_kps = T.ToTensor()(kps_img_pil).permute(1, 2, 0).unsqueeze(0)
     print(f"  -> Форма face_kps: {face_kps.shape}")
 
-    # 3. Обработка эмбеддингов (шум и усреднение)
+    # 3. Обработка эмбеддингов
     print("[Шаг 3/6] Обработка эмбеддингов (шум/усреднение)...")
     if clip_embed.shape[0] > 1:
         if combine_embeds == 'average':
@@ -288,7 +285,6 @@ def apply_instantid_pipeline(
         print(f"  -> Добавлен шум (noise={noise}), seed={seed}")
     else:
         clip_embed_zeroed = torch.zeros_like(clip_embed)
-        print("  -> Шум не добавлен (noise=0)")
 
     # 4. Проекция эмбеддингов через Resampler
     print("[Шаг 4/6] Проекция эмбеддингов через Resampler...")
@@ -348,48 +344,68 @@ def apply_instantid_pipeline(
         number += 1
     print(f"  -> ✅ Всего применено {number} патчей.")
 
-    # 6. Подготовка данных для ControlNet (НЕ применяем, а передаём в хук)
+    # 6. Применение ControlNet (ОДИН РАЗ, перед сэмплированием)
     print("\n" + "="*60)
-    print("[Шаг 6/6] Подготовка данных для ControlNet хука...")
+    print("[Шаг 6/6] Применение ControlNet...")
     print("="*60)
     
-    # Если ControlNet не передан явно - пытаемся загрузить автоматически
     if control_net is None:
         print("  -> ControlNet не передан. Пытаемся загрузить автоматически...")
         control_net = get_or_load_instantid_controlnet()
     
     if control_net is not None:
-        print("  -> ✅ ControlNet загружен и готов к использованию в хуке")
+        print("  -> ✅ ControlNet загружен. Применяем к conditioning...")
         print(f"  -> Тип control_net: {type(control_net)}")
         print(f"  -> Форма face_kps: {face_kps.shape}")
-        print(f"  -> Форма image_prompt_embeds: {image_prompt_embeds.shape}")
-        print(f"  -> Форма uncond_image_prompt_embeds: {uncond_image_prompt_embeds.shape}")
-        print(f"  -> cn_strength: {cn_strength}")
-        print(f"  -> sigma_start: {sigma_start:.4f}, sigma_end: {sigma_end:.4f}")
         
-        # НЕ применяем ControlNet здесь — это будет делать хук в process_diffusion
-        # Вместо этого возвращаем все данные, необходимые для хука
-        instantid_data = {
-            'control_net': control_net,
-            'face_kps': face_kps,
-            'image_prompt_embeds': image_prompt_embeds,
-            'uncond_image_prompt_embeds': uncond_image_prompt_embeds,
-            'cn_strength': cn_strength,
-            'sigma_start': sigma_start,
-            'sigma_end': sigma_end
-        }
+        # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W]
+        control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
+        print(f"  -> Форма control_hint: {control_hint.shape}")
         
-        print("  -> ✅ Данные для хука подготовлены")
+        # Применяем ControlNet к conditioning
+        cnets = {}
+        cond_uncond = []
+        is_cond = True
+        
+        for conditioning in [positive, negative]:
+            c = []
+            for t in conditioning:
+                d = t[1].copy()
+                
+                prev_cnet = d.get('control', None)
+                if prev_cnet in cnets:
+                    c_net = cnets[prev_cnet]
+                else:
+                    c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
+                    if prev_cnet is not None:
+                        c_net.set_previous_controlnet(prev_cnet)
+                    cnets[prev_cnet] = c_net
+
+                d['control'] = c_net
+                d['control_apply_to_uncond'] = False
+                
+                embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
+                d['cross_attn_controlnet'] = embed_to_use.to(device=device, dtype=dtype)
+
+                n = [t[0], d]
+                c.append(n)
+            cond_uncond.append(c)
+            is_cond = False
+        
+        final_positive, final_negative = cond_uncond[0], cond_uncond[1]
+        print("  -> ✅ ControlNet conditioning применен.")
+        print(f"  -> final_positive len: {len(final_positive)}")
+        print(f"  -> final_negative len: {len(final_negative)}")
     else:
-        print("  -> ⚠️ ControlNet недоступен. Хук не будет применён.")
-        instantid_data = None
-    
+        print("  -> ⚠️ ControlNet недоступен. Возвращаем оригинальные conditioning.")
+        final_positive = positive
+        final_negative = negative
+
     print("="*60)
     print("[Pipeline] === apply_instantid_pipeline ЗАВЕРШЕН УСПЕШНО ===")
     print("="*60 + "\n")
     
-    # Возвращаем instantid_data вместе с остальными данными
-    return work_model, positive, negative, instantid_data
+    return work_model, final_positive, final_negative
 
 def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max):
     print("\n" + "="*60)
@@ -423,14 +439,14 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     print(f"  - Sigma min/max: {sigma_min} / {sigma_max}")
     
     try:
-        patched_unet, new_positive, new_negative, instantid_data = apply_instantid_pipeline(
+        patched_unet, new_positive, new_negative = apply_instantid_pipeline(
             image_path=image_path,
             unet_model=target_unet,
             insightface=insightface_app,
             instantid_model=instantid_model,
             positive=positive_cond,
             negative=negative_cond,
-            control_net=None, 
+            control_net=None,  # Загрузится автоматически
             weight=0.8,
             start_at=0.0,
             end_at=1.0,
@@ -450,5 +466,4 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     print("[InstantID Pipeline] === ЗАВЕРШЕНО УСПЕШНО ===")
     print("="*60 + "\n")
     
-    # Возвращаем instantid_data вместе с остальными данными
-    return patched_unet, new_positive, new_negative, instantid_data
+    return patched_unet, new_positive, new_negative
