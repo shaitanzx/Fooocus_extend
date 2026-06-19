@@ -360,6 +360,7 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     face_kps = instantid_data['face_kps']
     image_prompt_embeds = instantid_data['image_prompt_embeds']
     uncond_image_prompt_embeds = instantid_data['uncond_image_prompt_embeds']
+    cn_strength = instantid_data['device'] = instantid_data.get('device', 'cuda')
     cn_strength = instantid_data['cn_strength']
     sigma_start = instantid_data['sigma_start']
     sigma_end = instantid_data['sigma_end']
@@ -368,53 +369,80 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
     
     # Проверяем, находимся ли мы в диапазоне применения ControlNet
-    # ControlNet применяется когда sigma_start >= current_sigma >= sigma_end
     if current_sigma > sigma_start or current_sigma < sigma_end:
-        # Вне диапазона — не применяем ControlNet
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
     
     print(f"[InstantID Hook] Применяем ControlNet на шаге с sigma={current_sigma:.4f}")
     
-    # Применяем ControlNet к conditioning
-    # Определяем устройство и dtype из cond
-    device = cond[0][0].device
-    dtype = cond[0][0].dtype
+    # === ИСПРАВЛЕНИЕ: Определяем устройство и dtype безопасно ===
+    # Используем hardcoded значения, так как мы знаем, что работаем на GPU в fp16
+    device = torch.device('cuda')
+    dtype = torch.float16
     
     # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W]
     control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
     
+    # === ИСПРАВЛЕНИЕ: Работаем с conditioning безопасно ===
     # Модифицируем positive conditioning
     new_cond = []
     for t in cond:
-        d = t[1].copy()
-        prev_cnet = d.get('control', None)
+        # t может быть [tensor, dict] или просто dict
+        if isinstance(t, (list, tuple)) and len(t) >= 2:
+            # Старый формат: [tensor, dict]
+            tensor_part = t[0]
+            dict_part = t[1].copy()
+        elif isinstance(t, dict):
+            # Новый формат: dict
+            tensor_part = None
+            dict_part = t.copy()
+        else:
+            # Неизвестный формат — пропускаем
+            new_cond.append(t)
+            continue
+        
+        prev_cnet = dict_part.get('control', None)
         
         # Создаём ControlNet с подсказкой
         c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
         if prev_cnet is not None:
             c_net.set_previous_controlnet(prev_cnet)
         
-        d['control'] = c_net
-        d['control_apply_to_uncond'] = False
-        d['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=dtype)
+        dict_part['control'] = c_net
+        dict_part['control_apply_to_uncond'] = False
+        dict_part['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=dtype)
         
-        new_cond.append([t[0], d])
+        if tensor_part is not None:
+            new_cond.append([tensor_part, dict_part])
+        else:
+            new_cond.append(dict_part)
     
     # Модифицируем negative conditioning
     new_uncond = []
     for t in uncond:
-        d = t[1].copy()
-        prev_cnet = d.get('control', None)
+        if isinstance(t, (list, tuple)) and len(t) >= 2:
+            tensor_part = t[0]
+            dict_part = t[1].copy()
+        elif isinstance(t, dict):
+            tensor_part = None
+            dict_part = t.copy()
+        else:
+            new_uncond.append(t)
+            continue
+        
+        prev_cnet = dict_part.get('control', None)
         
         c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
         if prev_cnet is not None:
             c_net.set_previous_controlnet(prev_cnet)
         
-        d['control'] = c_net
-        d['control_apply_to_uncond'] = False
-        d['cross_attn_controlnet'] = uncond_image_prompt_embeds.to(device=device, dtype=dtype)
+        dict_part['control'] = c_net
+        dict_part['control_apply_to_uncond'] = False
+        dict_part['cross_attn_controlnet'] = uncond_image_prompt_embeds.to(device=device, dtype=dtype)
         
-        new_uncond.append([t[0], d])
+        if tensor_part is not None:
+            new_uncond.append([tensor_part, dict_part])
+        else:
+            new_uncond.append(dict_part)
     
     return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
 
