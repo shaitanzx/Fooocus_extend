@@ -344,6 +344,81 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
+
+
+def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    """
+    Хук применяется к conditioning на каждом шаге сэмплирования.
+    Все данные передаются через model_options.
+    """
+    # Получаем данные из model_options
+    instantid_data = model_options.get('instantid_data', None)
+    if instantid_data is None:
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    
+    control_net = instantid_data['control_net']
+    face_kps = instantid_data['face_kps']
+    image_prompt_embeds = instantid_data['image_prompt_embeds']
+    uncond_image_prompt_embeds = instantid_data['uncond_image_prompt_embeds']
+    cn_strength = instantid_data['cn_strength']
+    sigma_start = instantid_data['sigma_start']
+    sigma_end = instantid_data['sigma_end']
+    
+    # Определяем текущий шаг через сигму
+    current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+    
+    # Проверяем, находимся ли мы в диапазоне применения ControlNet
+    # ControlNet применяется когда sigma_start >= current_sigma >= sigma_end
+    if current_sigma > sigma_start or current_sigma < sigma_end:
+        # Вне диапазона — не применяем ControlNet
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    
+    print(f"[InstantID Hook] Применяем ControlNet на шаге с sigma={current_sigma:.4f}")
+    
+    # Применяем ControlNet к conditioning
+    # Определяем устройство и dtype из cond
+    device = cond[0][0].device
+    dtype = cond[0][0].dtype
+    
+    # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W]
+    control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
+    
+    # Модифицируем positive conditioning
+    new_cond = []
+    for t in cond:
+        d = t[1].copy()
+        prev_cnet = d.get('control', None)
+        
+        # Создаём ControlNet с подсказкой
+        c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
+        if prev_cnet is not None:
+            c_net.set_previous_controlnet(prev_cnet)
+        
+        d['control'] = c_net
+        d['control_apply_to_uncond'] = False
+        d['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=dtype)
+        
+        new_cond.append([t[0], d])
+    
+    # Модифицируем negative conditioning
+    new_uncond = []
+    for t in uncond:
+        d = t[1].copy()
+        prev_cnet = d.get('control', None)
+        
+        c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
+        if prev_cnet is not None:
+            c_net.set_previous_controlnet(prev_cnet)
+        
+        d['control'] = c_net
+        d['control_apply_to_uncond'] = False
+        d['cross_attn_controlnet'] = uncond_image_prompt_embeds.to(device=device, dtype=dtype)
+        
+        new_uncond.append([t[0], d])
+    
+    return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
+
+
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
@@ -394,8 +469,21 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.model_options['conditioning_modifiers'] = []
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
+
+
+    instantid_data = None
     if p.enable_instant:
-        target_unet, positive_cond, negative_cond = instantid.apply(p.face_file_id,target_unet,positive_cond, negative_cond,sigma_min, sigma_max)
+        target_unet, positive_cond, negative_cond, instantid_data = instantid.apply(p.face_file_id, target_unet, positive_cond, negative_cond, sigma_min, sigma_max)
+        
+        # Регистрируем хук для ControlNet
+        if instantid_data is not None:
+            print("[InstantID] Регистрация хука instantid_conditioning_modifier...")
+            target_unet.add_conditioning_modifier(instantid_conditioning_modifier)
+            target_unet.model_options['instantid_data'] = instantid_data
+            print("[InstantID] ✅ Хук зарегистрирован, данные переданы через model_options")
+        else:
+            print("[InstantID] ⚠️ instantid_data is None, хук не зарегистрирован")
+
 
     _lbw_state = {
         "baseline_patches": copy.deepcopy(target_unet.patches),
@@ -678,6 +766,15 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.patches = copy.deepcopy(original_patches)
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
+    
+    # Очищаем instantid_data из памяти
+    if instantid_data is not None:
+        print("[InstantID] Очистка instantid_data из памяти...")
+        del instantid_data
+        if 'instantid_data' in target_unet.model_options:
+            del target_unet.model_options['instantid_data']
+        print("[InstantID] ✅ instantid_data очищена")
+    
     torch.cuda.empty_cache()
-
+    
     return images

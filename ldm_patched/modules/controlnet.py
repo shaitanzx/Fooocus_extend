@@ -167,6 +167,16 @@ class ControlNet(ControlBase):
             self.cond_hint = broadcast_image_to(self.cond_hint, x_noisy.shape[0], batched_number)
 
         context = cond['c_crossattn']
+        
+        # ПОДДЕРЖКА INSTANTID: Извлекаем cross_attn_controlnet
+        cross_attn_controlnet = cond.get('cross_attn_controlnet', None)
+        if cross_attn_controlnet is not None:
+            print(f'[DEBUG ControlNet] ✅ Найден cross_attn_controlnet! Конкатенация с context...')
+            print(f'[DEBUG ControlNet]   context ДО: {context.shape}, cross_attn: {cross_attn_controlnet.shape}')
+            context = torch.cat([context, cross_attn_controlnet.to(context.dtype).to(context.device)], dim=1)
+            print(f'[DEBUG ControlNet]   context ПОСЛЕ: {context.shape}')
+
+            
         y = cond.get('y', None)
         if y is not None:
             y = y.to(dtype)

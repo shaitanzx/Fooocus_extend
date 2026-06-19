@@ -348,136 +348,48 @@ def apply_instantid_pipeline(
         number += 1
     print(f"  -> ✅ Всего применено {number} патчей.")
 
-    # 6. Обработка ControlNet
+    # 6. Подготовка данных для ControlNet (НЕ применяем, а передаём в хук)
     print("\n" + "="*60)
-    print("[Шаг 6/6] Обработка Conditioning...")
+    print("[Шаг 6/6] Подготовка данных для ControlNet хука...")
     print("="*60)
     
     # Если ControlNet не передан явно - пытаемся загрузить автоматически
-    #if control_net is None:
-    #    print("  -> ControlNet не передан. Пытаемся загрузить автоматически...")
-    #    control_net = get_or_load_instantid_controlnet()
+    if control_net is None:
+        print("  -> ControlNet не передан. Пытаемся загрузить автоматически...")
+        control_net = get_or_load_instantid_controlnet()
     
     if control_net is not None:
-        print("  -> Применение ControlNet к conditioning...")
+        print("  -> ✅ ControlNet загружен и готов к использованию в хуке")
         print(f"  -> Тип control_net: {type(control_net)}")
-        print(f"  -> Доступные методы: copy={hasattr(control_net, 'copy')}, set_cond_hint={hasattr(control_net, 'set_cond_hint')}, set_previous_controlnet={hasattr(control_net, 'set_previous_controlnet')}")
+        print(f"  -> Форма face_kps: {face_kps.shape}")
+        print(f"  -> Форма image_prompt_embeds: {image_prompt_embeds.shape}")
+        print(f"  -> Форма uncond_image_prompt_embeds: {uncond_image_prompt_embeds.shape}")
+        print(f"  -> cn_strength: {cn_strength}")
+        print(f"  -> sigma_start: {sigma_start:.4f}, sigma_end: {sigma_end:.4f}")
         
-        cnets = {}
-        cond_uncond = []
-        is_cond = True
+        # НЕ применяем ControlNet здесь — это будет делать хук в process_diffusion
+        # Вместо этого возвращаем все данные, необходимые для хука
+        instantid_data = {
+            'control_net': control_net,
+            'face_kps': face_kps,
+            'image_prompt_embeds': image_prompt_embeds,
+            'uncond_image_prompt_embeds': uncond_image_prompt_embeds,
+            'cn_strength': cn_strength,
+            'sigma_start': sigma_start,
+            'sigma_end': sigma_end
+        }
         
-        # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W] для ControlNet
-        print(f"\n  [DEBUG] Исходная форма face_kps: {face_kps.shape}")
-        print(f"  [DEBUG] face_kps dtype: {face_kps.dtype}, device: {face_kps.device}")
-        print(f"  [DEBUG] face_kps range: [{face_kps.min():.4f}, {face_kps.max():.4f}]")
-        
-        control_hint = face_kps.movedim(-1, 1)
-        print(f"  [DEBUG] После movedim форма control_hint: {control_hint.shape}")
-        
-        # Убеждаемся, что control_hint на правильном устройстве
-        control_hint = control_hint.to(device=device, dtype=dtype)
-        print(f"  [DEBUG] После to() форма control_hint: {control_hint.shape}")
-        print(f"  [DEBUG] control_hint dtype: {control_hint.dtype}, device: {control_hint.device}")
-        print(f"  [DEBUG] control_hint range: [{control_hint.min():.4f}, {control_hint.max():.4f}]")
-        print(f"  -> Форма control_hint для ControlNet: {control_hint.shape}")
-
-        print(f"\n  [DEBUG] Начало обработки conditioning...")
-        print(f"  [DEBUG] positive len: {len(positive)}, negative len: {len(negative)}")
-        
-        for cond_idx, conditioning in enumerate([positive, negative]):
-            cond_name = "positive" if cond_idx == 0 else "negative"
-            print(f"\n  [DEBUG] === Обработка {cond_name} conditioning ===")
-            print(f"  [DEBUG] is_cond = {is_cond}")
-            
-            c = []
-            for t_idx, t in enumerate(conditioning):
-                print(f"\n    [DEBUG] Элемент {t_idx} из {len(conditioning)}")
-                
-                d = t[1].copy()
-                print(f"    [DEBUG] Скопирован словарь d, keys: {list(d.keys())}")
-                
-                prev_cnet = d.get('control', None)
-                print(f"    [DEBUG] prev_cnet: {type(prev_cnet) if prev_cnet is not None else 'None'}")
-                
-                if prev_cnet in cnets:
-                    print(f"    [DEBUG] Используем кэшированный c_net")
-                    c_net = cnets[prev_cnet]
-                else:
-                    print(f"    [DEBUG] Создаём новый c_net...")
-                    print(f"    [DEBUG] Вызов control_net.copy()...")
-                    c_net_copy = control_net.copy()
-                    print(f"    [DEBUG] copy() вернул: {type(c_net_copy)}")
-                    
-                    print(f"    [DEBUG] Вызов set_cond_hint(control_hint, cn_strength={cn_strength}, range=({start_at}, {end_at}))...")
-                    print(f"    [DEBUG] control_hint shape: {control_hint.shape}, dtype: {control_hint.dtype}")
-                    c_net = c_net_copy.set_cond_hint(control_hint, cn_strength, (start_at, end_at))
-                    print(f"    [DEBUG] set_cond_hint() вернул: {type(c_net)}")
-                    
-                    if prev_cnet is not None:
-                        print(f"    [DEBUG] Вызов set_previous_controlnet(prev_cnet)...")
-                        c_net.set_previous_controlnet(prev_cnet)
-                        print(f"    [DEBUG] set_previous_controlnet() выполнен")
-                    
-                    cnets[prev_cnet] = c_net
-                    print(f"    [DEBUG] c_net сохранён в кэш cnets")
-
-                print(f"    [DEBUG] Установка d['control'] = c_net")
-                d['control'] = c_net
-                
-                print(f"    [DEBUG] Установка d['control_apply_to_uncond'] = False")
-                d['control_apply_to_uncond'] = False
-                
-                target_dtype = dtype
-                if hasattr(c_net, 'cond_hint_original') and c_net.cond_hint_original is not None:
-                    target_dtype = c_net.cond_hint_original.dtype
-                    print(f"    [DEBUG] target_dtype из cond_hint_original: {target_dtype}")
-                else:
-                    print(f"    [DEBUG] target_dtype по умолчанию: {target_dtype}")
-
-                embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
-                print(f"    [DEBUG] embed_to_use: {'image_prompt_embeds' if is_cond else 'uncond_image_prompt_embeds'}")
-                print(f"    [DEBUG] embed_to_use shape: {embed_to_use.shape}, dtype: {embed_to_use.dtype}, device: {embed_to_use.device}")
-                
-                embed_converted = embed_to_use.to(device=device, dtype=target_dtype)
-                print(f"    [DEBUG] После to() shape: {embed_converted.shape}, dtype: {embed_converted.dtype}, device: {embed_converted.device}")
-                
-                d['cross_attn_controlnet'] = embed_converted
-                print(f"    [DEBUG] Установлен d['cross_attn_controlnet']")
-
-                n = [t[0], d]
-                print(f"    [DEBUG] Создан кортеж n = [t[0], d]")
-                print(f"    [DEBUG] n[0] shape: {n[0].shape if hasattr(n[0], 'shape') else 'N/A'}")
-                print(f"    [DEBUG] n[1] keys: {list(n[1].keys())}")
-                print(f"    [DEBUG] n[1]['control']: {type(n[1]['control'])}")
-                print(f"    [DEBUG] n[1]['cross_attn_controlnet'] shape: {n[1]['cross_attn_controlnet'].shape}")
-                
-                c.append(n)
-                print(f"    [DEBUG] Элемент добавлен в список c (len={len(c)})")
-                
-            print(f"\n  [DEBUG] {cond_name} conditioning завершён, len(c)={len(c)}")
-            cond_uncond.append(c)
-            is_cond = False
-            print(f"  [DEBUG] is_cond установлен в False")
-            
-        print(f"\n  [DEBUG] cond_uncond создан: len={len(cond_uncond)}")
-        print(f"  [DEBUG] cond_uncond[0] (positive) len={len(cond_uncond[0])}")
-        print(f"  [DEBUG] cond_uncond[1] (negative) len={len(cond_uncond[1])}")
-        
-        final_positive, final_negative = cond_uncond[0], cond_uncond[1]
-        print("  -> ✅ ControlNet conditioning применен.")
-        print(f"  -> final_positive len: {len(final_positive)}")
-        print(f"  -> final_negative len: {len(final_negative)}")
+        print("  -> ✅ Данные для хука подготовлены")
     else:
-        print("  -> ⚠️ ControlNet недоступен. Возвращаем оригинальные conditioning.")
-        final_positive = positive
-        final_negative = negative
-
+        print("  -> ⚠️ ControlNet недоступен. Хук не будет применён.")
+        instantid_data = None
+    
     print("="*60)
     print("[Pipeline] === apply_instantid_pipeline ЗАВЕРШЕН УСПЕШНО ===")
     print("="*60 + "\n")
     
-    return work_model, final_positive, final_negative
+    # Возвращаем instantid_data вместе с остальными данными
+    return work_model, positive, negative, instantid_data
 
 def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max):
     print("\n" + "="*60)
@@ -511,7 +423,7 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     print(f"  - Sigma min/max: {sigma_min} / {sigma_max}")
     
     try:
-        patched_unet, new_positive, new_negative = apply_instantid_pipeline(
+        patched_unet, new_positive, new_negative, instantid_data = apply_instantid_pipeline(
             image_path=image_path,
             unet_model=target_unet,
             insightface=insightface_app,
@@ -538,4 +450,5 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     print("[InstantID Pipeline] === ЗАВЕРШЕНО УСПЕШНО ===")
     print("="*60 + "\n")
     
-    return patched_unet, new_positive, new_negative
+    # Возвращаем instantid_data вместе с остальными данными
+    return patched_unet, new_positive, new_negative, instantid_data
