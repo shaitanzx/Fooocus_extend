@@ -337,72 +337,105 @@ def apply_instantid_pipeline(
     print(f"  -> ✅ Применено {number} патчей.")
 
     # 6. Применение ControlNet (ПРАВИЛЬНЫЙ СПОСОБ)
+# 6. Применение ControlNet
     print("\n" + "="*60)
     print("[Шаг 6/6] Применение ControlNet...")
     print("="*60)
-    
+
     if control_net is None:
         print("  -> Загрузка ControlNet...")
         control_net = get_or_load_instantid_controlnet()
-    
+
     if control_net is not None:
         print("  -> ✅ ControlNet загружен.")
-        
+        print(f"  -> Тип control_net: {type(control_net)}")
+    
         # Преобразуем face_kps в control_hint [1, 3, H, W]
+        print(f"  -> Исходная форма face_kps: {face_kps.shape}")
+        print(f"  -> face_kps dtype: {face_kps.dtype}")
+        print(f"  -> face_kps device: {face_kps.device}")
+        print(f"  -> face_kps range: [{face_kps.min():.4f}, {face_kps.max():.4f}]")
+    
         control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
-        print(f"  -> control_hint shape: {control_hint.shape}")
-        
+    
+        print(f"  -> Форма control_hint: {control_hint.shape}")
+        print(f"  -> control_hint dtype: {control_hint.dtype}")
+        print(f"  -> control_hint device: {control_hint.device}")
+        print(f"  -> control_hint range: [{control_hint.min():.4f}, {control_hint.max():.4f}]")
+    
+        # Проверяем, что control_hint не пустой
+        if control_hint.sum() == 0:
+            print("  -> ❌ ОШИБКА: control_hint пустой (все нули)!")
+            print("  -> Возможно, draw_kps() не сработал правильно.")
+        else:
+            print("  -> ✅ control_hint содержит данные.")
+    
         # Применяем ControlNet к conditioning
-        # Это создаёт 'control' в conditioning dict, который будет использоваться
-        # в patched_unet_forward через apply_control() на КАЖДОМ шаге
         cnets = {}
         cond_uncond = []
         is_cond = True
+    
+        print(f"  -> Параметры: cn_strength={cn_strength}, start_at={start_at}, end_at={end_at}")
+    
+        for cond_idx, conditioning in enumerate([positive, negative]):
+            cond_name = "positive" if cond_idx == 0 else "negative"
+            print(f"\n  -> Обработка {cond_name} conditioning...")
         
-        for conditioning in [positive, negative]:
             c = []
-            for t in conditioning:
+            for t_idx, t in enumerate(conditioning):
                 d = t[1].copy()
-                
+            
                 prev_cnet = d.get('control', None)
                 if prev_cnet in cnets:
+                    print(f"    -> Используем кэшированный ControlNet")
                     c_net = cnets[prev_cnet]
                 else:
-                    # Создаём ControlNet с подсказкой
-                    # range=(start_at, end_at) определяет диапазон шагов (0.0-1.0)
-                    c_net = control_net.copy().set_cond_hint(
-                        control_hint, 
-                        cn_strength, 
-                        (start_at, end_at)  # Используем start_at/end_at из параметров
-                    )
+                    print(f"    -> Создаём новый ControlNet...")
+                    print(f"    -> control_net.copy()...")
+                    c_net_copy = control_net.copy()
+                
+                    print(f"    -> set_cond_hint(control_hint, {cn_strength}, ({start_at}, {end_at}))...")
+                    c_net = c_net_copy.set_cond_hint(control_hint, cn_strength, (start_at, end_at))
+                
                     if prev_cnet is not None:
                         c_net.set_previous_controlnet(prev_cnet)
+                
                     cnets[prev_cnet] = c_net
+                    print(f"    -> ✅ ControlNet создан и кэширован")
 
                 d['control'] = c_net
                 d['control_apply_to_uncond'] = False
-                
+            
                 # Добавляем cross_attn_controlnet для InstantID
                 embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
                 d['cross_attn_controlnet'] = embed_to_use.to(device=device, dtype=dtype)
+            
+                print(f"    -> Установлен d['control'] и d['cross_attn_controlnet']")
+                print(f"    -> d['control'] type: {type(d['control'])}")
+                print(f"    -> d['cross_attn_controlnet'] shape: {d['cross_attn_controlnet'].shape}")
 
                 n = [t[0], d]
                 c.append(n)
+        
             cond_uncond.append(c)
             is_cond = False
-        
+            print(f"  -> ✅ {cond_name} conditioning обработан")
+    
         final_positive, final_negative = cond_uncond[0], cond_uncond[1]
-        print("  -> ✅ ControlNet применён к conditioning.")
-        print(f"  -> positive len: {len(final_positive)}")
-        print(f"  -> negative len: {len(final_negative)}")
+        print("\n  -> ✅ ControlNet применён к conditioning.")
+        print(f"  -> final_positive len: {len(final_positive)}")
+        print(f"  -> final_negative len: {len(final_negative)}")
+    
+        # Проверяем, что control есть в conditioning
+        if len(final_positive) > 0:
+            has_control = 'control' in final_positive[0][1]
+            has_cross_attn = 'cross_attn_controlnet' in final_positive[0][1]
+            print(f"  -> positive[0][1] имеет 'control': {has_control}")
+            print(f"  -> positive[0][1] имеет 'cross_attn_controlnet': {has_cross_attn}")
     else:
         print("  -> ⚠️ ControlNet недоступен.")
         final_positive = positive
         final_negative = negative
-
-    print("="*60)
-    print("[Pipeline] === ЗАВЕРШЕН УСПЕШНО ===")
-    print("="*60 + "\n")
     
     return work_model, final_positive, final_negative
 
