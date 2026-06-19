@@ -355,6 +355,19 @@ def timed_adm(y, timesteps):
 
 
 def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
+
+    # ОТЛАДКА: Проверяем, вызывается ли ControlNet
+    if not hasattr(patched_cldm_forward, 'call_count'):
+        patched_cldm_forward.call_count = 0
+    patched_cldm_forward.call_count += 1
+    
+    if patched_cldm_forward.call_count <= 3:  # Выводим только первые 3 вызова
+        print(f"[DEBUG ControlNet Forward] Вызов #{patched_cldm_forward.call_count}")
+        print(f"  -> x shape: {x.shape}")
+        print(f"  -> hint shape: {hint.shape}")
+        print(f"  -> timesteps: {timesteps}")
+        print(f"  -> context shape: {context.shape}")
+
     t_emb = ldm_patched.ldm.modules.diffusionmodules.openaimodel.timestep_embedding(timesteps, self.model_channels, repeat_only=False).to(x.dtype)
     emb = self.time_embed(t_emb)
     pid = os.getpid()
@@ -392,6 +405,21 @@ def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
 
 
 def patched_unet_forward(self, x, timesteps=None, context=None, y=None, control=None, transformer_options={}, **kwargs):
+
+
+    # ОТЛАДКА: Проверяем, есть ли control
+    if not hasattr(patched_unet_forward, 'call_count'):
+        patched_unet_forward.call_count = 0
+    patched_unet_forward.call_count += 1
+    
+    if patched_unet_forward.call_count <= 3:
+        print(f"[DEBUG UNet Forward] Вызов #{patched_unet_forward.call_count}")
+        print(f"  -> control: {control}")
+        if control is not None:
+            print(f"  -> control type: {type(control)}")
+            if hasattr(control, 'cond_hint_original'):
+                print(f"  -> control.cond_hint_original shape: {control.cond_hint_original.shape}")
+
     self.current_step = 1.0 - timesteps.to(x) / 999.0
     patch_settings[os.getpid()].global_diffusion_progress = float(self.current_step.detach().cpu().numpy().tolist()[0])
 

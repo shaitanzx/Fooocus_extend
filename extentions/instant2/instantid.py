@@ -21,8 +21,8 @@ except ImportError:
 import torch.nn.functional as F
 def get_or_load_instantid_controlnet():
     """
-    Загружает ControlNet для InstantID через ldm_patched (Fooocus backend).
-    Возвращает объект ControlNet или None, если загрузка не удалась.
+    Загружает ControlNet для InstantID через core.load_controlnet (Fooocus backend).
+    Это правильно добавляет ControlNet в систему управления памятью.
     """
     ctrl_path = "extentions/instant2/checkpoints/ControlNetModel/diffusion_pytorch_model.safetensors"
     
@@ -33,9 +33,10 @@ def get_or_load_instantid_controlnet():
     print(f"[InstantID CN] Загрузка ControlNet из {ctrl_path}...")
     
     try:
-        # Используем функцию load_controlnet из ldm_patched (Fooocus backend)
-        control_net = ldm_patched.modules.controlnet.load_controlnet(ctrl_path)
-        print("[InstantID CN] ✅ ControlNet успешно загружен через ldm_patched!")
+        # ИСПОЛЬЗУЕМ core.load_controlnet ВМЕСТО ldm_patched.modules.controlnet.load_controlnet
+        import modules.core as core
+        control_net = core.load_controlnet(ctrl_path)
+        print("[InstantID CN] ✅ ControlNet успешно загружен через core.load_controlnet!")
         return control_net
     except Exception as e:
         print(f"[InstantID CN] ❌ Ошибка загрузки ControlNet: {type(e).__name__}: {e}")
