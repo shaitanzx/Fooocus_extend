@@ -423,7 +423,7 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     print(f"  - Sigma min/max: {sigma_min} / {sigma_max}")
     
     try:
-        patched_unet, new_positive, new_negative = apply_instantid_pipeline(
+        patched_unet, new_positive, new_negative, instantid_data = apply_instantid_pipeline(
             image_path=image_path,
             unet_model=target_unet,
             insightface=insightface_app,
