@@ -7,6 +7,7 @@ import numpy as np
 import math
 import cv2
 import PIL.Image
+import ldm_patched.modules.conds as conds
 from .resampler import Resampler
 from .CrossAttentionPatch import Attn2Replace, instantid_attention
 # from .utils import tensor_to_image  # Больше не нужно, так как читаем файл напрямую
@@ -413,7 +414,9 @@ def apply_instantid_pipeline(
                 print(f"[DEBUG instantid] Устанавливаем cross_attn_controlnet...")
                 print(f"[DEBUG instantid]   embed_to_use shape: {embed_to_use.shape}")
                 print(f"[DEBUG instantid]   embed_to_use dtype: {embed_to_use.dtype}")
-                d['cross_attn_controlnet'] = embed_to_use.to(device=device, dtype=dtype)
+
+                
+                d['cross_attn_controlnet'] = conds.CONDCrossAttn(embed_to_use.to(device=device, dtype=dtype))
 
                 n = [t[0], d]
                 c.append(n)
