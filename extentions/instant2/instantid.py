@@ -350,6 +350,11 @@ def apply_instantid_pipeline(
     
     if control_net is not None:
         print("  -> ✅ ControlNet загружен.")
+        control_net.control_model.eval()
+    
+        # Проверяем, что веса загружены правильно
+        print(f"  -> ControlNet model dtype: {next(control_net.control_model.parameters()).dtype}")
+        print(f"  -> ControlNet in eval mode: {not control_net.control_model.training}")
         
         # === КРИТИЧЕСКИ ВАЖНО: Ресайз keypoints до размера генерации ===
         print(f"  -> Исходная форма face_kps: {face_kps.shape}")
