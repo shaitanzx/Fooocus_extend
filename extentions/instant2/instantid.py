@@ -263,7 +263,7 @@ def apply_instantid_pipeline(
     
     raw_embed = torch.from_numpy(face['embedding'])
     clip_embed = raw_embed.view(1, 1, -1).to(device, dtype=dtype)
-    print(f"  -> Форма clip_embed для Resampler: {clip_embed.shape}")
+    print(f"  -> Форма clip_embed: {clip_embed.shape}")
 
     print("  -> Генерация карты ключевых точек (KPS)...")
     kps_img_pil = draw_kps(img_bgr, face['kps'])
@@ -271,46 +271,39 @@ def apply_instantid_pipeline(
     print(f"  -> Форма face_kps: {face_kps.shape}")
 
     # 3. Обработка эмбеддингов
-    print("[Шаг 3/6] Обработка эмбеддингов (шум/усреднение)...")
+    print("[Шаг 3/6] Обработка эмбеддингов...")
     if clip_embed.shape[0] > 1:
         if combine_embeds == 'average':
             clip_embed = torch.mean(clip_embed, dim=0, keepdim=True)
-        elif combine_embeds == 'norm average':
-            clip_embed = torch.mean(clip_embed / torch.norm(clip_embed, dim=-1, keepdim=True), dim=0, keepdim=True)
 
     if noise > 0:
         seed = int(torch.sum(clip_embed).item()) % 1000000007
         torch.manual_seed(seed)
         clip_embed_zeroed = noise * torch.rand_like(clip_embed)
-        print(f"  -> Добавлен шум (noise={noise}), seed={seed}")
     else:
         clip_embed_zeroed = torch.zeros_like(clip_embed)
 
-    # 4. Проекция эмбеддингов через Resampler
+    # 4. Проекция через Resampler
     print("[Шаг 4/6] Проекция эмбеддингов через Resampler...")
     instantid_model.to(device, dtype=dtype)
-    print("  -> Запуск instantid_model.get_image_embeds()...")
     image_prompt_embeds, uncond_image_prompt_embeds = instantid_model.get_image_embeds(
         clip_embed, clip_embed_zeroed
     )
-    print(f"  -> ✅ Resampler отработал успешно. Форма cond: {image_prompt_embeds.shape}, uncond: {uncond_image_prompt_embeds.shape}")
+    print(f"  -> ✅ cond: {image_prompt_embeds.shape}, uncond: {uncond_image_prompt_embeds.shape}")
     
     image_prompt_embeds = image_prompt_embeds.to(device, dtype=dtype)
     uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(device, dtype=dtype)
 
-    # 5. Патчинг UNet
+    # 5. Патчинг UNet (IP-Adapter часть)
     print("[Шаг 5/6] Патчинг слоев Cross-Attention в UNet...")
     work_model = unet_model.clone()
-    print("  -> Модель клонирована.")
-
+    
     if sigma_min is not None and sigma_max is not None:
         sigma_start = sigma_max + start_at * (sigma_min - sigma_max)
         sigma_end = sigma_max + end_at * (sigma_min - sigma_max)
-        print(f"  -> Сигмы рассчитаны из переданных значений: start={sigma_start:.4f}, end={sigma_end:.4f}")
     else:
         sigma_start = 14.6146 * (1.0 - start_at)
         sigma_end = 14.6146 * (1.0 - end_at)
-        print(f"  -> Сигмы рассчитаны по умолчанию (fallback): start={sigma_start:.4f}, end={sigma_end:.4f}")
 
     patch_kwargs = {
         "ipadapter": instantid_model,
@@ -322,7 +315,6 @@ def apply_instantid_pipeline(
         "sigma_end": sigma_end,
     }
 
-    print("  -> Применение патчей к input, output и middle блокам...")
     number = 0
     for id in [4, 5, 7, 8]: 
         block_indices = range(2) if id in [4, 5] else range(10) 
@@ -342,27 +334,27 @@ def apply_instantid_pipeline(
         patch_kwargs["module_key"] = str(number*2+1)
         _set_model_patch_replace(work_model, patch_kwargs, ("middle", 1, index))
         number += 1
-    print(f"  -> ✅ Всего применено {number} патчей.")
+    print(f"  -> ✅ Применено {number} патчей.")
 
-    # 6. Применение ControlNet (ОДИН РАЗ, перед сэмплированием)
+    # 6. Применение ControlNet (ПРАВИЛЬНЫЙ СПОСОБ)
     print("\n" + "="*60)
     print("[Шаг 6/6] Применение ControlNet...")
     print("="*60)
     
     if control_net is None:
-        print("  -> ControlNet не передан. Пытаемся загрузить автоматически...")
+        print("  -> Загрузка ControlNet...")
         control_net = get_or_load_instantid_controlnet()
     
     if control_net is not None:
-        print("  -> ✅ ControlNet загружен. Применяем к conditioning...")
-        print(f"  -> Тип control_net: {type(control_net)}")
-        print(f"  -> Форма face_kps: {face_kps.shape}")
+        print("  -> ✅ ControlNet загружен.")
         
-        # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W]
+        # Преобразуем face_kps в control_hint [1, 3, H, W]
         control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
-        print(f"  -> Форма control_hint: {control_hint.shape}")
+        print(f"  -> control_hint shape: {control_hint.shape}")
         
         # Применяем ControlNet к conditioning
+        # Это создаёт 'control' в conditioning dict, который будет использоваться
+        # в patched_unet_forward через apply_control() на КАЖДОМ шаге
         cnets = {}
         cond_uncond = []
         is_cond = True
@@ -376,7 +368,13 @@ def apply_instantid_pipeline(
                 if prev_cnet in cnets:
                     c_net = cnets[prev_cnet]
                 else:
-                    c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
+                    # Создаём ControlNet с подсказкой
+                    # range=(start_at, end_at) определяет диапазон шагов (0.0-1.0)
+                    c_net = control_net.copy().set_cond_hint(
+                        control_hint, 
+                        cn_strength, 
+                        (start_at, end_at)  # Используем start_at/end_at из параметров
+                    )
                     if prev_cnet is not None:
                         c_net.set_previous_controlnet(prev_cnet)
                     cnets[prev_cnet] = c_net
@@ -384,6 +382,7 @@ def apply_instantid_pipeline(
                 d['control'] = c_net
                 d['control_apply_to_uncond'] = False
                 
+                # Добавляем cross_attn_controlnet для InstantID
                 embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
                 d['cross_attn_controlnet'] = embed_to_use.to(device=device, dtype=dtype)
 
@@ -393,37 +392,34 @@ def apply_instantid_pipeline(
             is_cond = False
         
         final_positive, final_negative = cond_uncond[0], cond_uncond[1]
-        print("  -> ✅ ControlNet conditioning применен.")
-        print(f"  -> final_positive len: {len(final_positive)}")
-        print(f"  -> final_negative len: {len(final_negative)}")
+        print("  -> ✅ ControlNet применён к conditioning.")
+        print(f"  -> positive len: {len(final_positive)}")
+        print(f"  -> negative len: {len(final_negative)}")
     else:
-        print("  -> ⚠️ ControlNet недоступен. Возвращаем оригинальные conditioning.")
+        print("  -> ⚠️ ControlNet недоступен.")
         final_positive = positive
         final_negative = negative
 
     print("="*60)
-    print("[Pipeline] === apply_instantid_pipeline ЗАВЕРШЕН УСПЕШНО ===")
+    print("[Pipeline] === ЗАВЕРШЕН УСПЕШНО ===")
     print("="*60 + "\n")
     
     return work_model, final_positive, final_negative
 
 def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max):
     print("\n" + "="*60)
-    print("[InstantID Pipeline] === ЗАПУСК ПАПЛАЙНА ===")
+    print("[InstantID Pipeline] === ЗАПУСК ===")
     print("="*60)
     
-    # 1. Скачивание
-    print("[Шаг 1/5] Проверка и скачивание моделей...")
+    print("[Шаг 1/5] Скачивание моделей...")
     download()
     print("[Шаг 1/5] ✅ Готово.")
     
-    # 2. InsightFace
     print("[Шаг 2/5] Инициализация InsightFace...")
     insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
     print("[Шаг 2/5] ✅ InsightFace инициализирован.")
 
-    # 3. Загрузка InstantID
     print("[Шаг 3/5] Загрузка модели InstantID...")
     instantid_file = "extentions/instant2/checkpoints/ip-adapter.bin"
     
@@ -433,7 +429,6 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     instantid_model = load_instantid_model(instantid_file)
     print("[Шаг 3/5] ✅ Модель InstantID загружена.")
 
-    # 4. Запуск пайплайна
     print("[Шаг 4/5] Запуск apply_instantid_pipeline...")
     print(f"  - Путь к изображению: {image_path}")
     print(f"  - Sigma min/max: {sigma_min} / {sigma_max}")
@@ -446,7 +441,7 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
             instantid_model=instantid_model,
             positive=positive_cond,
             negative=negative_cond,
-            control_net=None,  # Загрузится автоматически
+            control_net=None,
             weight=0.8,
             start_at=0.0,
             end_at=1.0,
@@ -455,15 +450,15 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
         )
         print("[Шаг 4/5] ✅ Пайплайн выполнен успешно.")
     except Exception as e:
-        print(f"\n❌ ОШИБКА ВНУТРИ apply_instantid_pipeline:")
+        print(f"\n❌ ОШИБКА:")
         print(f"   {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
         raise
 
-    print("[Шаг 5/5] Возврат пропатченных моделей и кондишенов...")
+    print("[Шаг 5/5] Возврат результатов...")
     print("="*60)
-    print("[InstantID Pipeline] === ЗАВЕРШЕНО УСПЕШНО ===")
+    print("[InstantID Pipeline] === ЗАВЕРШЕНО ===")
     print("="*60 + "\n")
     
     return patched_unet, new_positive, new_negative
