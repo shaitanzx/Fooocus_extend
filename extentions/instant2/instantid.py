@@ -410,6 +410,9 @@ def apply_instantid_pipeline(
                 d['control_apply_to_uncond'] = False
                 
                 embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
+                print(f"[DEBUG instantid] Устанавливаем cross_attn_controlnet...")
+                print(f"[DEBUG instantid]   embed_to_use shape: {embed_to_use.shape}")
+                print(f"[DEBUG instantid]   embed_to_use dtype: {embed_to_use.dtype}")
                 d['cross_attn_controlnet'] = embed_to_use.to(device=device, dtype=dtype)
 
                 n = [t[0], d]

@@ -168,18 +168,25 @@ class ControlNet(ControlBase):
 
         context = cond['c_crossattn']
         
+        # ОТЛАДКА: Проверяем наличие cross_attn_controlnet
+        print(f"[DEBUG ControlNet.get_control] Проверка conditioning...")
+        print(f"[DEBUG ControlNet.get_control]   cond keys: {list(cond.keys())}")
+        print(f"[DEBUG ControlNet.get_control]   context shape: {context.shape}")
+        
         # ПОДДЕРЖКА INSTANTID: Извлекаем cross_attn_controlnet
         cross_attn_controlnet = cond.get('cross_attn_controlnet', None)
+        
         if cross_attn_controlnet is not None:
-            print(f'[DEBUG ControlNet] ✅ Найден cross_attn_controlnet!')
-            print(f'[DEBUG ControlNet]   Оригинальный context: {context.shape}')
-            print(f'[DEBUG ControlNet]   cross_attn_controlnet: {cross_attn_controlnet.shape}')
+            print(f"[DEBUG ControlNet.get_control] ✅ Найден cross_attn_controlnet!")
+            print(f"[DEBUG ControlNet.get_control]   cross_attn_controlnet shape: {cross_attn_controlnet.shape}")
+            print(f"[DEBUG ControlNet.get_control]   cross_attn_controlnet dtype: {cross_attn_controlnet.dtype}")
             
-            # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Заменяем context на face embeddings, а не конкатенируем!
-            # ControlNet InstantID должен получать ТОЛЬКО face embeddings
+            # ЗАМЕНА: Используем только face embeddings как context
             context = cross_attn_controlnet.to(dtype=context.dtype).to(context.device)
             
-            print(f'[DEBUG ControlNet]   Новый context (только face): {context.shape}')
+            print(f"[DEBUG ControlNet.get_control]   Новый context shape: {context.shape}")
+        else:
+            print(f"[DEBUG ControlNet.get_control] ❌ cross_attn_controlnet НЕ найден!")
 
             
         y = cond.get('y', None)
