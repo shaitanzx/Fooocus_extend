@@ -339,11 +339,15 @@ def apply_instantid_pipeline(
     print(f"  -> ✅ Применено {number} патчей.")
 
     # 6. Применение ControlNet (ПРАВИЛЬНЫЙ СПОСОБ)
-# 6. Применение ControlNet
     print("\n" + "="*60)
     print("[Шаг 6/6] Применение ControlNet...")
     print("="*60)
 
+    # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Загружаем ControlNet, если не передан ===
+    if control_net is None:
+        print("  -> ControlNet не передан. Загружаем автоматически...")
+        control_net = get_or_load_instantid_controlnet()
+    
     if control_net is not None:
         print("  -> ✅ ControlNet загружен.")
         
@@ -352,7 +356,6 @@ def apply_instantid_pipeline(
         print(f"  -> Размер генерации: {gen_width}x{gen_height}")
         
         # Ресайзим face_kps до размера генерации
-        # face_kps имеет форму [1, H, W, 3], нужно ресайзить до [1, gen_height, gen_width, 3]
         face_kps_resized = torch.nn.functional.interpolate(
             face_kps.movedim(-1, 1),  # [1, 3, H, W]
             size=(gen_height, gen_width),
@@ -417,8 +420,10 @@ def apply_instantid_pipeline(
         
         final_positive, final_negative = cond_uncond[0], cond_uncond[1]
         print("\n  -> ✅ ControlNet применён к conditioning.")
+        print(f"  -> final_positive[0][1] keys: {list(final_positive[0][1].keys())}")
+        print(f"  -> has 'control': {'control' in final_positive[0][1]}")
     else:
-        print("  -> ⚠️ ControlNet недоступен.")
+        print("  -> ⚠️ ControlNet недоступен даже после попытки загрузки!")
         final_positive = positive
         final_negative = negative
     
