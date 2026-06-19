@@ -360,7 +360,6 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     face_kps = instantid_data['face_kps']
     image_prompt_embeds = instantid_data['image_prompt_embeds']
     uncond_image_prompt_embeds = instantid_data['uncond_image_prompt_embeds']
-    cn_strength = instantid_data['device'] = instantid_data.get('device', 'cuda')
     cn_strength = instantid_data['cn_strength']
     sigma_start = instantid_data['sigma_start']
     sigma_end = instantid_data['sigma_end']
@@ -374,36 +373,41 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     
     print(f"[InstantID Hook] Применяем ControlNet на шаге с sigma={current_sigma:.4f}")
     
-    # === ИСПРАВЛЕНИЕ: Определяем устройство и dtype безопасно ===
-    # Используем hardcoded значения, так как мы знаем, что работаем на GPU в fp16
     device = torch.device('cuda')
     dtype = torch.float16
     
     # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W]
     control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
     
-    # === ИСПРАВЛЕНИЕ: Работаем с conditioning безопасно ===
+    # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ===
+    # Создаём ControlNet один раз и кэшируем его, вызывая pre_run() для инициализации
+    if 'instantid_controlnet' not in instantid_data:
+        print("[InstantID Hook] Создание и инициализация ControlNet...")
+        c_net = control_net.copy()
+        # Вызываем pre_run() вручную, чтобы инициализировать model_sampling_current
+        c_net.pre_run(model, model.model_sampling.percent_to_sigma)
+        instantid_data['instantid_controlnet'] = c_net
+        print("[InstantID Hook] ✅ ControlNet инициализирован и кэширован")
+    else:
+        c_net = instantid_data['instantid_controlnet']
+    
+    # Устанавливаем cond_hint (используем 0.0-1.0, так как мы сами фильтруем шаги в хуке)
+    c_net.set_cond_hint(control_hint, cn_strength, (0.0, 1.0))
+    
     # Модифицируем positive conditioning
     new_cond = []
     for t in cond:
-        # t может быть [tensor, dict] или просто dict
         if isinstance(t, (list, tuple)) and len(t) >= 2:
-            # Старый формат: [tensor, dict]
             tensor_part = t[0]
             dict_part = t[1].copy()
         elif isinstance(t, dict):
-            # Новый формат: dict
             tensor_part = None
             dict_part = t.copy()
         else:
-            # Неизвестный формат — пропускаем
             new_cond.append(t)
             continue
         
         prev_cnet = dict_part.get('control', None)
-        
-        # Создаём ControlNet с подсказкой
-        c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
         if prev_cnet is not None:
             c_net.set_previous_controlnet(prev_cnet)
         
@@ -430,8 +434,6 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
             continue
         
         prev_cnet = dict_part.get('control', None)
-        
-        c_net = control_net.copy().set_cond_hint(control_hint, cn_strength, (sigma_start, sigma_end))
         if prev_cnet is not None:
             c_net.set_previous_controlnet(prev_cnet)
         
