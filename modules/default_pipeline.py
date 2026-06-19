@@ -380,14 +380,21 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
     
     # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ===
-    # Создаём ControlNet один раз и кэшируем его, вызывая pre_run() для инициализации
+    # Создаём ControlNet один раз и кэшируем его, перемещая на GPU
     if 'instantid_controlnet' not in instantid_data:
         print("[InstantID Hook] Создание и инициализация ControlNet...")
         c_net = control_net.copy()
+        
+        # Перемещаем ControlNet на GPU
+        print("[InstantID Hook] Перемещение ControlNet на GPU...")
+        c_net.control_model = c_net.control_model.to(device=device, dtype=dtype)
+        c_net.load_device = device
+        
         # Вызываем pre_run() вручную, чтобы инициализировать model_sampling_current
         c_net.pre_run(model, model.model_sampling.percent_to_sigma)
+        
         instantid_data['instantid_controlnet'] = c_net
-        print("[InstantID Hook] ✅ ControlNet инициализирован и кэширован")
+        print("[InstantID Hook] ✅ ControlNet инициализирован, перемещён на GPU и кэширован")
     else:
         c_net = instantid_data['instantid_controlnet']
     
@@ -447,7 +454,6 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
             new_uncond.append(dict_part)
     
     return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
-
 
 @torch.no_grad()
 @torch.inference_mode()
