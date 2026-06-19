@@ -351,7 +351,6 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     Хук применяется к conditioning на каждом шаге сэмплирования.
     Все данные передаются через model_options.
     """
-    # Получаем данные из model_options
     instantid_data = model_options.get('instantid_data', None)
     if instantid_data is None:
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
@@ -364,10 +363,8 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     sigma_start = instantid_data['sigma_start']
     sigma_end = instantid_data['sigma_end']
     
-    # Определяем текущий шаг через сигму
     current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
     
-    # Проверяем, находимся ли мы в диапазоне применения ControlNet
     if current_sigma > sigma_start or current_sigma < sigma_end:
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
     
@@ -376,29 +373,13 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
     device = torch.device('cuda')
     dtype = torch.float16
     
-    # Преобразуем face_kps из [1, H, W, 3] в [1, 3, H, W]
     control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
     
-    # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ===
-    # Создаём ControlNet один раз и кэшируем его, перемещая на GPU
-    if 'instantid_controlnet' not in instantid_data:
-        print("[InstantID Hook] Создание и инициализация ControlNet...")
-        c_net = control_net.copy()
-        
-        # Перемещаем ControlNet на GPU
-        print("[InstantID Hook] Перемещение ControlNet на GPU...")
-        c_net.control_model = c_net.control_model.to(device=device, dtype=dtype)
-        c_net.load_device = device
-        
-        # Вызываем pre_run() вручную, чтобы инициализировать model_sampling_current
-        c_net.pre_run(model, model.model_sampling.percent_to_sigma)
-        
-        instantid_data['instantid_controlnet'] = c_net
-        print("[InstantID Hook] ✅ ControlNet инициализирован, перемещён на GPU и кэширован")
-    else:
-        c_net = instantid_data['instantid_controlnet']
-    
-    # Устанавливаем cond_hint (используем 0.0-1.0, так как мы сами фильтруем шаги в хуке)
+    # НЕ кэшируем — создаём новый ControlNet на каждом шаге
+    c_net = control_net.copy()
+    c_net.control_model = c_net.control_model.to(device=device, dtype=dtype)
+    c_net.load_device = device
+    c_net.pre_run(model, model.model_sampling.percent_to_sigma)
     c_net.set_cond_hint(control_hint, cn_strength, (0.0, 1.0))
     
     # Модифицируем positive conditioning
@@ -413,10 +394,6 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
         else:
             new_cond.append(t)
             continue
-        
-        prev_cnet = dict_part.get('control', None)
-        if prev_cnet is not None:
-            c_net.set_previous_controlnet(prev_cnet)
         
         dict_part['control'] = c_net
         dict_part['control_apply_to_uncond'] = False
@@ -439,10 +416,6 @@ def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale
         else:
             new_uncond.append(t)
             continue
-        
-        prev_cnet = dict_part.get('control', None)
-        if prev_cnet is not None:
-            c_net.set_previous_controlnet(prev_cnet)
         
         dict_part['control'] = c_net
         dict_part['control_apply_to_uncond'] = False
