@@ -482,6 +482,11 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     instantid_data = None
     if p.enable_instant:
+        # Получаем размер генерации
+        gen_width = width if width else 1152
+        gen_height = height if height else 896
+        
+        print(f"[InstantID] Размер генерации: {gen_width}x{gen_height}")
         target_unet, positive_cond, negative_cond = instantid.apply(p.face_file_id, target_unet, positive_cond, negative_cond, sigma_min, sigma_max)
         print("[InstantID] ✅ IP-Adapter + ControlNet применены")
 
