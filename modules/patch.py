@@ -507,7 +507,7 @@ def patch_all():
     if ldm_patched.modules.model_management.directml_enabled:
         ldm_patched.modules.model_management.lowvram_available = True
         ldm_patched.modules.model_management.OOM_EXCEPTION = Exception
-
+    print('(((((((((((((((((((((((((((((((((((((((((())))))))))))))))))))))))))))))))))))))))))')
     patch_all_precision()
     patch_all_clip()
 
