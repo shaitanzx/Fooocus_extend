@@ -480,9 +480,18 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     original_model_options = copy.deepcopy(target_unet.model_options)
 
 
+    instantid_data = None
     if p.enable_instant:
-        target_unet, positive_cond, negative_cond, _ = instantid.apply(p.face_file_id, target_unet, positive_cond, negative_cond, sigma_min, sigma_max)
-        print("[InstantID] ✅ Работает только IP-Adapter часть (ControlNet отключён)")
+        target_unet, positive_cond, negative_cond, instantid_data = instantid.apply(p.face_file_id, target_unet, positive_cond, negative_cond, sigma_min, sigma_max)
+        
+        # Регистрируем хук для ControlNet
+        if instantid_data is not None:
+            print("[InstantID] Регистрация хука instantid_conditioning_modifier...")
+            #target_unet.add_conditioning_modifier(instantid_conditioning_modifier)
+            target_unet.model_options['instantid_data'] = instantid_data
+            print("[InstantID] ✅ Хук зарегистрирован, данные переданы через model_options")
+        else:
+            print("[InstantID] ⚠️ instantid_data is None, хук не зарегистрирован")
 
 
     _lbw_state = {

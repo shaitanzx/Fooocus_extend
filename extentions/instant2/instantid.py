@@ -430,7 +430,7 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
             instantid_model=instantid_model,
             positive=positive_cond,
             negative=negative_cond,
-            control_net=None,  # ControlNet НЕ применяем — только IP-Adapter
+            control_net=None, 
             weight=0.8,
             start_at=0.0,
             end_at=1.0,
@@ -450,5 +450,5 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     print("[InstantID Pipeline] === ЗАВЕРШЕНО УСПЕШНО ===")
     print("="*60 + "\n")
     
-    # Возвращаем None вместо instantid_data, чтобы хук не применялся
-    return patched_unet, new_positive, new_negative, None
+    # Возвращаем instantid_data вместе с остальными данными
+    return patched_unet, new_positive, new_negative, instantid_data
