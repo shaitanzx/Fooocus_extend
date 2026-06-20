@@ -479,6 +479,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
 
+
+    instantid_data = None
     if p.enable_instant:
         gen_width = width if width else 1152
         gen_height = height if height else 896
@@ -795,7 +797,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     del original_patches, original_model_options
     
     # Очищаем instantid_data из памяти
-    if p.enable_instant:
+    if instantid_data is not None:
         print("[InstantID] Очистка instantid_data из памяти...")
         del instantid_data
         if 'instantid_data' in target_unet.model_options:
