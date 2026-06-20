@@ -504,7 +504,13 @@ def apply_instantid_pipeline(
         print("  -> ⚠️ ControlNet недоступен даже после попытки загрузки!")
         final_positive = positive
         final_negative = negative
+    # Сохраняем ControlNet для последующей очистки
+    if 'instantid_cleanup' not in work_model.model_options:
+        work_model.model_options['instantid_cleanup'] = {}
     
+    if control_net is not None:
+        work_model.model_options['instantid_cleanup']['control_net'] = control_net
+      
     return work_model, final_positive, final_negative
 
 def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max,
@@ -549,8 +555,8 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
             end_at=1.0,
             sigma_min=sigma_min,
             sigma_max=sigma_max,
-            gen_width=gen_width,  # ← ПЕРЕДАЁМ
-            gen_height=gen_height  # ← ПЕРЕДАЁМ
+            gen_width=gen_width,
+            gen_height=gen_height
         )
         print("[Шаг 4/5] ✅ Пайплайн выполнен успешно.")
     except Exception as e:
@@ -560,6 +566,13 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
         traceback.print_exc()
         raise
 
+    # Сохраняем ссылки для последующей очистки
+    if 'instantid_cleanup' not in target_unet.model_options:
+        target_unet.model_options['instantid_cleanup'] = {}
+    
+    target_unet.model_options['instantid_cleanup']['insightface'] = insightface_app
+    target_unet.model_options['instantid_cleanup']['instantid_model'] = instantid_model
+    
     print("[Шаг 5/5] Возврат результатов...")
     print("="*60)
     print("[InstantID Pipeline] === ЗАВЕРШЕНО ===")

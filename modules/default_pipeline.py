@@ -791,7 +791,29 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         images[0] = png
 
         images.append(maska)
-
+    # === ОЧИСТКА INSTANTID ===
+    if hasattr(target_unet, 'model_options') and 'instantid_cleanup' in target_unet.model_options:
+        print("[InstantID] Очистка памяти...")
+        cleanup_data = target_unet.model_options['instantid_cleanup']
+        
+        # Удаляем ссылки
+        if 'insightface' in cleanup_data:
+            del cleanup_data['insightface']
+        if 'instantid_model' in cleanup_data:
+            del cleanup_data['instantid_model']
+        if 'control_net' in cleanup_data:
+            del cleanup_data['control_net']
+        
+        # Удаляем сам словарь
+        del target_unet.model_options['instantid_cleanup']
+        
+        # Принудительная очистка памяти
+        import gc
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            allocated = torch.cuda.memory_allocated() / 1024**3
+            print(f"[InstantID] ✅ Память очищена. VRAM: {allocated:.2f} GB")
     target_unet.patches = copy.deepcopy(original_patches)
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
