@@ -345,6 +345,89 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
 
+
+def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    """
+    Хук применяется к conditioning на каждом шаге сэмплирования.
+    Все данные передаются через model_options.
+    """
+    instantid_data = model_options.get('instantid_data', None)
+    if instantid_data is None:
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    
+    control_net = instantid_data['control_net']
+    face_kps = instantid_data['face_kps']
+    image_prompt_embeds = instantid_data['image_prompt_embeds']
+    uncond_image_prompt_embeds = instantid_data['uncond_image_prompt_embeds']
+    cn_strength = instantid_data['cn_strength']
+    sigma_start = instantid_data['sigma_start']
+    sigma_end = instantid_data['sigma_end']
+    
+    current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+    
+    if current_sigma > sigma_start or current_sigma < sigma_end:
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    
+    print(f"[InstantID Hook] Применяем ControlNet на шаге с sigma={current_sigma:.4f}")
+    
+    device = torch.device('cuda')
+    dtype = torch.float16
+    
+    control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
+    
+    # НЕ кэшируем — создаём новый ControlNet на каждом шаге
+    c_net = control_net.copy()
+    c_net.control_model = c_net.control_model.to(device=device, dtype=dtype)
+    c_net.load_device = device
+    c_net.pre_run(model, model.model_sampling.percent_to_sigma)
+    c_net.set_cond_hint(control_hint, cn_strength, (0.0, 1.0))
+    
+    # Модифицируем positive conditioning
+    new_cond = []
+    for t in cond:
+        if isinstance(t, (list, tuple)) and len(t) >= 2:
+            tensor_part = t[0]
+            dict_part = t[1].copy()
+        elif isinstance(t, dict):
+            tensor_part = None
+            dict_part = t.copy()
+        else:
+            new_cond.append(t)
+            continue
+        
+        dict_part['control'] = c_net
+        dict_part['control_apply_to_uncond'] = False
+        dict_part['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=dtype)
+        
+        if tensor_part is not None:
+            new_cond.append([tensor_part, dict_part])
+        else:
+            new_cond.append(dict_part)
+    
+    # Модифицируем negative conditioning
+    new_uncond = []
+    for t in uncond:
+        if isinstance(t, (list, tuple)) and len(t) >= 2:
+            tensor_part = t[0]
+            dict_part = t[1].copy()
+        elif isinstance(t, dict):
+            tensor_part = None
+            dict_part = t.copy()
+        else:
+            new_uncond.append(t)
+            continue
+        
+        dict_part['control'] = c_net
+        dict_part['control_apply_to_uncond'] = False
+        dict_part['cross_attn_controlnet'] = uncond_image_prompt_embeds.to(device=device, dtype=dtype)
+        
+        if tensor_part is not None:
+            new_uncond.append([tensor_part, dict_part])
+        else:
+            new_uncond.append(dict_part)
+    
+    return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
+
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
@@ -396,6 +479,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
 
+
+    instantid_data = None
     if p.enable_instant:
         gen_width = width if width else 1152
         gen_height = height if height else 896
@@ -706,33 +791,19 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         images[0] = png
 
         images.append(maska)
-    # === ОЧИСТКА INSTANTID ===
-    if hasattr(target_unet, 'model_options') and 'instantid_cleanup' in target_unet.model_options:
-        print("[InstantID] Очистка памяти...")
-        cleanup_data = target_unet.model_options['instantid_cleanup']
-        
-        # Удаляем ссылки
-        if 'insightface' in cleanup_data:
-            del cleanup_data['insightface']
-        if 'instantid_model' in cleanup_data:
-            del cleanup_data['instantid_model']
-        if 'control_net' in cleanup_data:
-            del cleanup_data['control_net']
-        
-        # Удаляем сам словарь
-        del target_unet.model_options['instantid_cleanup']
-        
-        # Принудительная очистка памяти
-        import gc
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            allocated = torch.cuda.memory_allocated() / 1024**3
-            print(f"[InstantID] ✅ Память очищена. VRAM: {allocated:.2f} GB")
+
     target_unet.patches = copy.deepcopy(original_patches)
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
-        
+    
+    # Очищаем instantid_data из памяти
+    if instantid_data is not None:
+        print("[InstantID] Очистка instantid_data из памяти...")
+        del instantid_data
+        if 'instantid_data' in target_unet.model_options:
+            del target_unet.model_options['instantid_data']
+        print("[InstantID] ✅ instantid_data очищена")
+    
     torch.cuda.empty_cache()
     
     return images

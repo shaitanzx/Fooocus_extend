@@ -20,53 +20,6 @@ except ImportError:
     import torchvision.transforms as T
 
 import torch.nn.functional as F
-
-
-def log_vram(tag):
-    """Логирует использование VRAM и RAM с меткой"""
-    print(f"\n=== [MEMORY {tag}] ===")
-    
-    # VRAM логирование
-    if torch.cuda.is_available():
-        allocated = torch.cuda.memory_allocated() / 1024**3
-        reserved = torch.cuda.memory_reserved() / 1024**3
-        total = torch.cuda.get_device_properties(0).total_memory / 1024**3
-        free = total - reserved
-        print(f"[VRAM] allocated: {allocated:.2f} GB | reserved: {reserved:.2f} GB | free: {free:.2f} GB | total: {total:.2f} GB")
-    else:
-        print("[VRAM] CUDA недоступен")
-    
-    # RAM логирование (для Linux/Colab)
-    try:
-        import resource
-        # ru_maxrss в KB на Linux, в bytes на macOS
-        rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        rss_gb = rss_kb / (1024 * 1024)  # Конвертируем KB в GB
-        
-        # Читаем /proc/meminfo для общей информации о системе
-        with open('/proc/meminfo', 'r') as f:
-            meminfo = f.read()
-        
-        # Парсим общую память
-        for line in meminfo.split('\n'):
-            if line.startswith('MemTotal:'):
-                total_kb = int(line.split()[1])
-                total_gb = total_kb / (1024 * 1024)
-                break
-            elif line.startswith('MemAvailable:'):
-                available_kb = int(line.split()[1])
-                available_gb = available_kb / (1024 * 1024)
-                break
-        
-        used_gb = total_gb - available_gb
-        print(f"[RAM] process RSS: {rss_gb:.2f} GB | system used: {used_gb:.2f} GB | system available: {available_gb:.2f} GB | system total: {total_gb:.2f} GB")
-    except Exception as e:
-        print(f"[RAM] Ошибка чтения: {e}")
-    
-    print("=" * 50)
-
-
-
 def get_or_load_instantid_controlnet():
     """
     Загружает ControlNet для InstantID через core.load_controlnet (Fooocus backend).
@@ -390,17 +343,15 @@ def apply_instantid_pipeline(
     print("\n" + "="*60)
     print("[Шаг 6/6] Применение ControlNet...")
     print("="*60)
-    log_vram("BEFORE_CONTROLNET_LOAD")
 
     # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Загружаем ControlNet, если не передан ===
     if control_net is None:
         print("  -> ControlNet не передан. Загружаем автоматически...")
         control_net = get_or_load_instantid_controlnet()
     
-    log_vram("AFTER_CONTROLNET_LOAD")
-    
     if control_net is not None:
         print("  -> ✅ ControlNet загружен.")
+        
         
         # === КРИТИЧЕСКИ ВАЖНО: Ресайз keypoints до размера генерации ===
         print(f"  -> Исходная форма face_kps: {face_kps.shape}")
@@ -434,9 +385,6 @@ def apply_instantid_pipeline(
         is_cond = True
         
         print(f"  -> Параметры: cn_strength={cn_strength}, start_at={start_at}, end_at={end_at}")
-        print(f"  -> ControlNet type: {type(control_net)}")
-        print(f"  -> ControlNet has copy: {hasattr(control_net, 'copy')}")
-        print(f"  -> ControlNet has set_cond_hint: {hasattr(control_net, 'set_cond_hint')}")
         
         for cond_idx, conditioning in enumerate([positive, negative]):
             cond_name = "positive" if cond_idx == 0 else "negative"
@@ -449,34 +397,26 @@ def apply_instantid_pipeline(
                 prev_cnet = d.get('control', None)
                 if prev_cnet in cnets:
                     c_net = cnets[prev_cnet]
-                    print(f"    -> Используем кэшированный ControlNet")
                 else:
-                    print(f"    -> Создаём новый ControlNet...")
-                    c_net_copy = control_net.copy()
-                    print(f"    -> copy() вернул: {type(c_net_copy)}")
-                    
-                    c_net = c_net_copy.set_cond_hint(
+                    c_net = control_net.copy().set_cond_hint(
                         control_hint, 
                         cn_strength, 
                         (start_at, end_at)
                     )
-                    print(f"    -> set_cond_hint() вернул: {type(c_net)}")
-                    
                     if prev_cnet is not None:
                         c_net.set_previous_controlnet(prev_cnet)
                     cnets[prev_cnet] = c_net
-                    print(f"    -> ✅ ControlNet создан и кэширован")
 
                 d['control'] = c_net
                 d['control_apply_to_uncond'] = False
                 
                 embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
-                print(f"    -> Устанавливаем cross_attn_controlnet...")
-                print(f"    -> embed_to_use shape: {embed_to_use.shape}")
-                print(f"    -> embed_to_use dtype: {embed_to_use.dtype}")
+                print(f"[DEBUG instantid] Устанавливаем cross_attn_controlnet...")
+                print(f"[DEBUG instantid]   embed_to_use shape: {embed_to_use.shape}")
+                print(f"[DEBUG instantid]   embed_to_use dtype: {embed_to_use.dtype}")
 
+                
                 d['cross_attn_controlnet'] = conds.CONDCrossAttn(embed_to_use.to(device=device, dtype=dtype))
-                print(f"    -> ✅ cross_attn_controlnet установлен")
 
                 n = [t[0], d]
                 c.append(n)
@@ -486,31 +426,14 @@ def apply_instantid_pipeline(
             print(f"  -> ✅ {cond_name} conditioning обработан")
         
         final_positive, final_negative = cond_uncond[0], cond_uncond[1]
-        
-        log_vram("AFTER_CONTROLNET_APPLIED")
-        
         print("\n  -> ✅ ControlNet применён к conditioning.")
         print(f"  -> final_positive[0][1] keys: {list(final_positive[0][1].keys())}")
         print(f"  -> has 'control': {'control' in final_positive[0][1]}")
-        print(f"  -> has 'cross_attn_controlnet': {'cross_attn_controlnet' in final_positive[0][1]}")
-        
-        # Проверяем тип cross_attn_controlnet
-        if 'cross_attn_controlnet' in final_positive[0][1]:
-            cross_attn = final_positive[0][1]['cross_attn_controlnet']
-            print(f"  -> cross_attn_controlnet type: {type(cross_attn)}")
-            if hasattr(cross_attn, 'cond'):
-                print(f"  -> cross_attn_controlnet.cond shape: {cross_attn.cond.shape}")
     else:
         print("  -> ⚠️ ControlNet недоступен даже после попытки загрузки!")
         final_positive = positive
         final_negative = negative
-    # Сохраняем ControlNet для последующей очистки
-    if 'instantid_cleanup' not in work_model.model_options:
-        work_model.model_options['instantid_cleanup'] = {}
     
-    if control_net is not None:
-        work_model.model_options['instantid_cleanup']['control_net'] = control_net
-      
     return work_model, final_positive, final_negative
 
 def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max,
@@ -555,8 +478,8 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
             end_at=1.0,
             sigma_min=sigma_min,
             sigma_max=sigma_max,
-            gen_width=gen_width,
-            gen_height=gen_height
+            gen_width=gen_width,  # ← ПЕРЕДАЁМ
+            gen_height=gen_height  # ← ПЕРЕДАЁМ
         )
         print("[Шаг 4/5] ✅ Пайплайн выполнен успешно.")
     except Exception as e:
@@ -566,13 +489,6 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
         traceback.print_exc()
         raise
 
-    # Сохраняем ссылки для последующей очистки
-    if 'instantid_cleanup' not in target_unet.model_options:
-        target_unet.model_options['instantid_cleanup'] = {}
-    
-    target_unet.model_options['instantid_cleanup']['insightface'] = insightface_app
-    target_unet.model_options['instantid_cleanup']['instantid_model'] = instantid_model
-    
     print("[Шаг 5/5] Возврат результатов...")
     print("="*60)
     print("[InstantID Pipeline] === ЗАВЕРШЕНО ===")
