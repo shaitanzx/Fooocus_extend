@@ -480,14 +480,18 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     original_model_options = copy.deepcopy(target_unet.model_options)
 
 
-    instantid_data = None
+    # === ИСПРАВЛЕНИЕ: Сохраняем ссылки на InstantID объекты для очистки ===
+    instantid_control_net = None
+    instantid_ip_adapter = None
+    
     if p.enable_instant:
         gen_width = width if width else 1152
         gen_height = height if height else 896
         
         print(f"[InstantID] Размер генерации: {gen_width}x{gen_height}")
         
-        target_unet, positive_cond, negative_cond = instantid.apply(
+        # Вызываем instantid.apply() и получаем также instantid_data
+        target_unet, positive_cond, negative_cond, instantid_data = instantid.apply(
             p.face_file_id, 
             target_unet, 
             positive_cond, 
@@ -498,20 +502,13 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             gen_height=gen_height
         )
         
-        # ОТЛАДКА: Проверяем, есть ли control в conditioning
-        print(f"[DEBUG] positive_cond после instantid.apply():")
-        print(f"  -> len: {len(positive_cond)}")
-        if len(positive_cond) > 0:
-            print(f"  -> positive_cond[0][1] keys: {list(positive_cond[0][1].keys())}")
-            has_control = 'control' in positive_cond[0][1]
-            print(f"  -> has 'control': {has_control}")
-            if has_control:
-                control = positive_cond[0][1]['control']
-                print(f"  -> control type: {type(control)}")
-                if hasattr(control, 'cond_hint_original'):
-                    print(f"  -> control.cond_hint_original shape: {control.cond_hint_original.shape}")
+        # Сохраняем ссылки для очистки
+        if instantid_data is not None:
+            instantid_control_net = instantid_data.get('control_net', None)
+            instantid_ip_adapter = instantid_data.get('ip_adapter', None)
         
         print("[InstantID] ✅ IP-Adapter + ControlNet применены")
+
 
 
     _lbw_state = {
@@ -795,14 +792,19 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.patches = copy.deepcopy(original_patches)
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
+
     
-    # Очищаем instantid_data из памяти
-    if instantid_data is not None:
-        print("[InstantID] Очистка instantid_data из памяти...")
-        del instantid_data
-        if 'instantid_data' in target_unet.model_options:
-            del target_unet.model_options['instantid_data']
-        print("[InstantID] ✅ instantid_data очищена")
+    # === ОЧИСТКА INSTANTID ИЗ ПАМЯТИ ===
+    if p.enable_instant:
+        try:
+            import extentions.instant2.instantid as instantid
+            instantid.cleanup_instantid_memory(target_unet, positive_cond, negative_cond)
+        except Exception as e:
+            print(f"[InstantID] ⚠️ Ошибка при очистке памяти: {e}")
+    
+    torch.cuda.empty_cache()
+    
+    return images
     
     torch.cuda.empty_cache()
     

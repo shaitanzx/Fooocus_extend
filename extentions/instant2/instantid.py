@@ -20,6 +20,79 @@ except ImportError:
     import torchvision.transforms as T
 
 import torch.nn.functional as F
+def cleanup_instantid_memory(target_unet, positive_cond=None, negative_cond=None):
+    """
+    Очищает память от InstantID моделей после генерации.
+    
+    Args:
+        target_unet: UNet с патчами InstantID
+        positive_cond: Positive conditioning (опционально)
+        negative_cond: Negative conditioning (опционально)
+    """
+    import gc
+    import torch
+    
+    print("[InstantID Cleanup] Начало очистки памяти...")
+    
+    # 1. Очищаем патчи IP-Adapter из UNet
+    if target_unet is not None and hasattr(target_unet, 'model_options'):
+        if 'transformer_options' in target_unet.model_options:
+            to = target_unet.model_options['transformer_options']
+            if 'patches_replace' in to and 'attn2' in to['patches_replace']:
+                # Очищаем все патчи attn2
+                patches_count = len(to['patches_replace']['attn2'])
+                to['patches_replace']['attn2'].clear()
+                print(f"[InstantID Cleanup] ✅ Очищено {patches_count} патчей IP-Adapter из UNet")
+    
+    # 2. Очищаем ControlNet из conditioning
+    def clean_conditioning(cond):
+        if cond is None:
+            return
+        for cond_item in cond:
+            if isinstance(cond_item, (list, tuple)) and len(cond_item) >= 2:
+                if isinstance(cond_item[1], dict):
+                    # Удаляем ControlNet
+                    if 'control' in cond_item[1]:
+                        del cond_item[1]['control']
+                    # Удаляем cross_attn_controlnet
+                    if 'cross_attn_controlnet' in cond_item[1]:
+                        del cond_item[1]['cross_attn_controlnet']
+    
+    clean_conditioning(positive_cond)
+    clean_conditioning(negative_cond)
+    print("[InstantID Cleanup] ✅ Очищены ControlNet и cross_attn_controlnet из conditioning")
+    
+    # 3. Очищаем ControlNet из pipeline.loaded_ControlNets
+    try:
+        import modules.default_pipeline as pipeline
+        keys_to_remove = [k for k in list(pipeline.loaded_ControlNets.keys()) 
+                         if 'instantid' in k.lower() or 'ControlNetModel' in k]
+        for k in keys_to_remove:
+            del pipeline.loaded_ControlNets[k]
+            print(f"[InstantID Cleanup] ✅ ControlNet удалён из pipeline.loaded_ControlNets: {k}")
+    except Exception as e:
+        print(f"[InstantID Cleanup] ⚠️ Не удалось очистить pipeline.loaded_ControlNets: {e}")
+    
+    # 4. Агрессивная очистка памяти
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        allocated = torch.cuda.memory_allocated() / 1024**3
+        reserved = torch.cuda.memory_reserved() / 1024**3
+        print(f"[InstantID Cleanup] 💾 VRAM после очистки: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved")
+    
+    print("[InstantID Cleanup] ✅ Очистка завершена")
+    
+def _log_vram(tag):
+    """Вспомогательная функция для логирования VRAM"""
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated() / 1024**3
+        reserved = torch.cuda.memory_reserved() / 1024**3
+        free = (torch.cuda.get_device_properties(0).total_memory / 1024**3) - reserved
+        print(f"  [VRAM {tag}] allocated: {allocated:.2f} GB | reserved: {reserved:.2f} GB | free: {free:.2f} GB")
+    else:
+        print(f"  [VRAM {tag}] CUDA недоступна")
+
 def get_or_load_instantid_controlnet():
     """
     Загружает ControlNet для InstantID через core.load_controlnet (Fooocus backend).
@@ -228,11 +301,12 @@ def apply_instantid_pipeline(
     image_path, unet_model, insightface, instantid_model, positive, negative,
     control_net=None, weight=0.8, start_at=0.0, end_at=1.0, noise=0.35,
     combine_embeds='average', device=None, dtype=None, sigma_min=None, sigma_max=None,
-    gen_width=1152, gen_height=896  # ← ДОБАВЛЕНО: размер генерации
+    gen_width=1152, gen_height=896
 ):
     print("\n" + "="*60)
     print("[Pipeline] === НАЧАЛО apply_instantid_pipeline ===")
     print("="*60)
+    _log_vram("START")
 
     # 1. Инициализация
     print("[Шаг 1/6] Инициализация параметров...")
@@ -272,6 +346,7 @@ def apply_instantid_pipeline(
     kps_img_pil = draw_kps(img_bgr, face['kps'])
     face_kps = T.ToTensor()(kps_img_pil).permute(1, 2, 0).unsqueeze(0)
     print(f"  -> Форма face_kps: {face_kps.shape}")
+    _log_vram("AFTER_INSIGHTFACE")
 
     # 3. Обработка эмбеддингов
     print("[Шаг 3/6] Обработка эмбеддингов...")
@@ -296,6 +371,7 @@ def apply_instantid_pipeline(
     
     image_prompt_embeds = image_prompt_embeds.to(device, dtype=dtype)
     uncond_image_prompt_embeds = uncond_image_prompt_embeds.to(device, dtype=dtype)
+    _log_vram("AFTER_RESAMPLER")
 
     # 5. Патчинг UNet (IP-Adapter часть)
     print("[Шаг 5/6] Патчинг слоев Cross-Attention в UNet...")
@@ -338,48 +414,44 @@ def apply_instantid_pipeline(
         _set_model_patch_replace(work_model, patch_kwargs, ("middle", 1, index))
         number += 1
     print(f"  -> ✅ Применено {number} патчей.")
+    _log_vram("AFTER_UNET_PATCH")
 
-    # 6. Применение ControlNet (ПРАВИЛЬНЫЙ СПОСОБ)
+    # 6. Применение ControlNet
     print("\n" + "="*60)
     print("[Шаг 6/6] Применение ControlNet...")
     print("="*60)
 
-    # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Загружаем ControlNet, если не передан ===
     if control_net is None:
         print("  -> ControlNet не передан. Загружаем автоматически...")
         control_net = get_or_load_instantid_controlnet()
+    _log_vram("AFTER_CONTROLNET_LOAD")
     
     if control_net is not None:
         print("  -> ✅ ControlNet загружен.")
         
-        
-        # === КРИТИЧЕСКИ ВАЖНО: Ресайз keypoints до размера генерации ===
+        # Ресайз keypoints до размера генерации
         print(f"  -> Исходная форма face_kps: {face_kps.shape}")
         print(f"  -> Размер генерации: {gen_width}x{gen_height}")
         
-        # Ресайзим face_kps до размера генерации
         face_kps_resized = torch.nn.functional.interpolate(
-            face_kps.movedim(-1, 1),  # [1, 3, H, W]
+            face_kps.movedim(-1, 1),
             size=(gen_height, gen_width),
             mode='bilinear',
             align_corners=False
-        ).movedim(1, -1)  # [1, gen_height, gen_width, 3]
+        ).movedim(1, -1)
         
         print(f"  -> Форма face_kps после ресайза: {face_kps_resized.shape}")
         
-        # Преобразуем в control_hint [1, 3, H, W]
         control_hint = face_kps_resized.movedim(-1, 1).to(device=device, dtype=dtype)
         
         print(f"  -> Форма control_hint: {control_hint.shape}")
         print(f"  -> control_hint range: [{control_hint.min():.4f}, {control_hint.max():.4f}]")
         
-        # Проверяем, что control_hint не пустой
         if control_hint.sum() == 0:
             print("  -> ❌ ОШИБКА: control_hint пустой!")
         else:
             print("  -> ✅ control_hint содержит данные.")
         
-        # Применяем ControlNet к conditioning
         cnets = {}
         cond_uncond = []
         is_cond = True
@@ -411,11 +483,6 @@ def apply_instantid_pipeline(
                 d['control_apply_to_uncond'] = False
                 
                 embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
-                print(f"[DEBUG instantid] Устанавливаем cross_attn_controlnet...")
-                print(f"[DEBUG instantid]   embed_to_use shape: {embed_to_use.shape}")
-                print(f"[DEBUG instantid]   embed_to_use dtype: {embed_to_use.dtype}")
-
-                
                 d['cross_attn_controlnet'] = conds.CONDCrossAttn(embed_to_use.to(device=device, dtype=dtype))
 
                 n = [t[0], d]
@@ -433,6 +500,11 @@ def apply_instantid_pipeline(
         print("  -> ⚠️ ControlNet недоступен даже после попытки загрузки!")
         final_positive = positive
         final_negative = negative
+    
+    _log_vram("END_PIPELINE")
+    print("="*60)
+    print("[Pipeline] === ЗАВЕРШЕН ===")
+    print("="*60 + "\n")
     
     return work_model, final_positive, final_negative
 
