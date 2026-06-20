@@ -805,7 +805,3 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     torch.cuda.empty_cache()
     
     return images
-    
-    torch.cuda.empty_cache()
-    
-    return images
