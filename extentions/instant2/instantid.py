@@ -20,19 +20,6 @@ except ImportError:
     import torchvision.transforms as T
 
 import torch.nn.functional as F
-
-def log_vram(tag):
-    """Логирует использование VRAM с меткой"""
-    if torch.cuda.is_available():
-        allocated = torch.cuda.memory_allocated() / 1024**3
-        reserved = torch.cuda.memory_reserved() / 1024**3
-        total = torch.cuda.get_device_properties(0).total_memory / 1024**3
-        free = total - reserved
-        print(f"[VRAM {tag}] allocated: {allocated:.2f} GB | reserved: {reserved:.2f} GB | free: {free:.2f} GB | total: {total:.2f} GB")
-    else:
-        print(f"[VRAM {tag}] CUDA недоступен")
-
-
 def get_or_load_instantid_controlnet():
     """
     Загружает ControlNet для InstantID через core.load_controlnet (Fooocus backend).
@@ -352,45 +339,45 @@ def apply_instantid_pipeline(
         number += 1
     print(f"  -> ✅ Применено {number} патчей.")
 
-    # 6. Применение ControlNet
+    # 6. Применение ControlNet (ПРАВИЛЬНЫЙ СПОСОБ)
     print("\n" + "="*60)
     print("[Шаг 6/6] Применение ControlNet...")
     print("="*60)
-    log_vram("BEFORE_CONTROLNET")
 
+    # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Загружаем ControlNet, если не передан ===
     if control_net is None:
         print("  -> ControlNet не передан. Загружаем автоматически...")
         control_net = get_or_load_instantid_controlnet()
     
-    log_vram("AFTER_CONTROLNET_LOAD")
-    
     if control_net is not None:
         print("  -> ✅ ControlNet загружен.")
         
-        # Ресайз keypoints
+        
+        # === КРИТИЧЕСКИ ВАЖНО: Ресайз keypoints до размера генерации ===
         print(f"  -> Исходная форма face_kps: {face_kps.shape}")
         print(f"  -> Размер генерации: {gen_width}x{gen_height}")
         
+        # Ресайзим face_kps до размера генерации
         face_kps_resized = torch.nn.functional.interpolate(
-            face_kps.movedim(-1, 1),
+            face_kps.movedim(-1, 1),  # [1, 3, H, W]
             size=(gen_height, gen_width),
             mode='bilinear',
             align_corners=False
-        ).movedim(1, -1)
+        ).movedim(1, -1)  # [1, gen_height, gen_width, 3]
         
         print(f"  -> Форма face_kps после ресайза: {face_kps_resized.shape}")
         
+        # Преобразуем в control_hint [1, 3, H, W]
         control_hint = face_kps_resized.movedim(-1, 1).to(device=device, dtype=dtype)
         
         print(f"  -> Форма control_hint: {control_hint.shape}")
         print(f"  -> control_hint range: [{control_hint.min():.4f}, {control_hint.max():.4f}]")
         
+        # Проверяем, что control_hint не пустой
         if control_hint.sum() == 0:
             print("  -> ❌ ОШИБКА: control_hint пустой!")
         else:
             print("  -> ✅ control_hint содержит данные.")
-        
-        log_vram("AFTER_CONTROL_HINT")
         
         # Применяем ControlNet к conditioning
         cnets = {}
@@ -424,7 +411,12 @@ def apply_instantid_pipeline(
                 d['control_apply_to_uncond'] = False
                 
                 embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
-                d['cross_attn_controlnet'] = embed_to_use.to(device=device, dtype=dtype)
+                print(f"[DEBUG instantid] Устанавливаем cross_attn_controlnet...")
+                print(f"[DEBUG instantid]   embed_to_use shape: {embed_to_use.shape}")
+                print(f"[DEBUG instantid]   embed_to_use dtype: {embed_to_use.dtype}")
+
+                
+                d['cross_attn_controlnet'] = conds.CONDCrossAttn(embed_to_use.to(device=device, dtype=dtype))
 
                 n = [t[0], d]
                 c.append(n)
@@ -434,36 +426,31 @@ def apply_instantid_pipeline(
             print(f"  -> ✅ {cond_name} conditioning обработан")
         
         final_positive, final_negative = cond_uncond[0], cond_uncond[1]
-        log_vram("AFTER_CONTROLNET_APPLIED")
-        
         print("\n  -> ✅ ControlNet применён к conditioning.")
+        print(f"  -> final_positive[0][1] keys: {list(final_positive[0][1].keys())}")
+        print(f"  -> has 'control': {'control' in final_positive[0][1]}")
     else:
-        print("  -> ⚠️ ControlNet недоступен.")
+        print("  -> ⚠️ ControlNet недоступен даже после попытки загрузки!")
         final_positive = positive
         final_negative = negative
     
     return work_model, final_positive, final_negative
 
-def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max):
-    log_vram("START")
+def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigma_max,
+          gen_width=1152, gen_height=896):
     print("\n" + "="*60)
-    print("[InstantID Pipeline] === ЗАПУСК ПАПЛАЙНА ===")
+    print("[InstantID Pipeline] === ЗАПУСК ===")
     print("="*60)
     
-    # 1. Скачивание
-    print("[Шаг 1/5] Проверка и скачивание моделей...")
+    print("[Шаг 1/5] Скачивание моделей...")
     download()
     print("[Шаг 1/5] ✅ Готово.")
-    log_vram("AFTER_DOWNLOAD")
     
-    # 2. InsightFace
     print("[Шаг 2/5] Инициализация InsightFace...")
     insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])
     insightface_app.prepare(ctx_id=0, det_size=(640, 640))
     print("[Шаг 2/5] ✅ InsightFace инициализирован.")
-    log_vram("AFTER_INSIGHTFACE")
 
-    # 3. Загрузка InstantID
     print("[Шаг 3/5] Загрузка модели InstantID...")
     instantid_file = "extentions/instant2/checkpoints/ip-adapter.bin"
     
@@ -472,9 +459,7 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     
     instantid_model = load_instantid_model(instantid_file)
     print("[Шаг 3/5] ✅ Модель InstantID загружена.")
-    log_vram("AFTER_INSTANTID_MODEL")
 
-    # 4. Запуск пайплайна
     print("[Шаг 4/5] Запуск apply_instantid_pipeline...")
     print(f"  - Путь к изображению: {image_path}")
     print(f"  - Sigma min/max: {sigma_min} / {sigma_max}")
@@ -492,35 +477,21 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
             start_at=0.0,
             end_at=1.0,
             sigma_min=sigma_min,
-            sigma_max=sigma_max
+            sigma_max=sigma_max,
+            gen_width=gen_width,  # ← ПЕРЕДАЁМ
+            gen_height=gen_height  # ← ПЕРЕДАЁМ
         )
         print("[Шаг 4/5] ✅ Пайплайн выполнен успешно.")
     except Exception as e:
-        print(f"\n❌ ОШИБКА ВНУТРИ apply_instantid_pipeline:")
+        print(f"\n❌ ОШИБКА:")
         print(f"   {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
         raise
-    
-    log_vram("AFTER_PIPELINE")
 
-    # 5. ОЧИСТКА ПАМЯТИ - выгружаем временные модели
-    print("[Шаг 5/5] Очистка памяти InstantID...")
-    
-    # Удаляем ссылки на временные объекты
-    del insightface_app
-    del instantid_model
-    
-    # Принудительно очищаем кэш CUDA
-    import gc
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    
-    log_vram("AFTER_CLEANUP")
-    
+    print("[Шаг 5/5] Возврат результатов...")
     print("="*60)
-    print("[InstantID Pipeline] === ЗАВЕРШЕНО УСПЕШНО ===")
+    print("[InstantID Pipeline] === ЗАВЕРШЕНО ===")
     print("="*60 + "\n")
     
     return patched_unet, new_positive, new_negative
