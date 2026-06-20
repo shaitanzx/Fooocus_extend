@@ -491,7 +491,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         print(f"[InstantID] Размер генерации: {gen_width}x{gen_height}")
         
         # Вызываем instantid.apply() и получаем также instantid_data
-        target_unet, positive_cond, negative_cond, instantid_data = instantid.apply(
+        target_unet, positive_cond, negative_cond = instantid.apply(
             p.face_file_id, 
             target_unet, 
             positive_cond, 
