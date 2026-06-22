@@ -447,8 +447,8 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     print("[Шаг 1/5] ✅ Готово.")
     
     print("[Шаг 2/5] Инициализация InsightFace...")
-    insightface_app = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])
-    insightface_app.prepare(ctx_id=0, det_size=(640, 640))
+    insightface = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])
+    insightface.prepare(ctx_id=0, det_size=(640, 640))
     print("[Шаг 2/5] ✅ InsightFace инициализирован.")
 
     print("[Шаг 3/5] Загрузка модели InstantID...")
