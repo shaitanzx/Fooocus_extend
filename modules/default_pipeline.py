@@ -801,13 +801,13 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     negative_cond = copy.deepcopy(original_ncond)
     del original_pcond, original_ncond
     
-    # Очищаем instantid_data из памяти
-    if instantid_data is not None:
-        print("[InstantID] Очистка instantid_data из памяти...")
-        del instantid_data
-        if 'instantid_data' in target_unet.model_options:
-            del target_unet.model_options['instantid_data']
-        print("[InstantID] ✅ instantid_data очищена")
+    # # Очищаем instantid_data из памяти
+    # if instantid_data is not None:
+    #     print("[InstantID] Очистка instantid_data из памяти...")
+    #     del instantid_data
+    #     if 'instantid_data' in target_unet.model_options:
+    #         del target_unet.model_options['instantid_data']
+    #     print("[InstantID] ✅ instantid_data очищена")
     
     torch.cuda.empty_cache()
     
