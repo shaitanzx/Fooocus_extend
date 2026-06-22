@@ -436,7 +436,7 @@ def load_instantid_model(ckpt_path):
     
 #     return work_model, final_positive, final_negative
 
-def apply(image_path, unet_model, positive_cond, negative_cond, sigma_min, sigma_max,
+def apply(image_path, unet_model, positive, negative, sigma_min, sigma_max,
           gen_width=1152, gen_height=896):
     print("\n" + "="*60)
     print("[InstantID Pipeline] === ЗАПУСК ===")
