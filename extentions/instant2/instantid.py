@@ -477,10 +477,8 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
 
     # 1. Инициализация
     print("[Шаг 1/6] Инициализация параметров...")
-    if device is None:
-        device = torch.device(torch.cuda.current_device())
-    if dtype is None:
-        dtype = torch.float16
+    device = torch.device(torch.cuda.current_device())
+    dtype = torch.float16
     
     ip_weight = weight
     cn_strength = weight
