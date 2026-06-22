@@ -707,5 +707,5 @@ def apply(image_path, unet_model, positive, negative, sigma_min, sigma_max,
     print("="*60)
     print("[InstantID Pipeline] === ЗАВЕРШЕНО ===")
     print("="*60 + "\n")
-    
+    del instantid_model,
     return work_model, final_positive, final_negative
