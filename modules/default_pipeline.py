@@ -346,87 +346,87 @@ layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer
 os.makedirs(layer_model_root, exist_ok=True)
 
 
-def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-    """
-    Хук применяется к conditioning на каждом шаге сэмплирования.
-    Все данные передаются через model_options.
-    """
-    instantid_data = model_options.get('instantid_data', None)
-    if instantid_data is None:
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+# def instantid_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+#     """
+#     Хук применяется к conditioning на каждом шаге сэмплирования.
+#     Все данные передаются через model_options.
+#     """
+#     instantid_data = model_options.get('instantid_data', None)
+#     if instantid_data is None:
+#         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
     
-    control_net = instantid_data['control_net']
-    face_kps = instantid_data['face_kps']
-    image_prompt_embeds = instantid_data['image_prompt_embeds']
-    uncond_image_prompt_embeds = instantid_data['uncond_image_prompt_embeds']
-    cn_strength = instantid_data['cn_strength']
-    sigma_start = instantid_data['sigma_start']
-    sigma_end = instantid_data['sigma_end']
+#     control_net = instantid_data['control_net']
+#     face_kps = instantid_data['face_kps']
+#     image_prompt_embeds = instantid_data['image_prompt_embeds']
+#     uncond_image_prompt_embeds = instantid_data['uncond_image_prompt_embeds']
+#     cn_strength = instantid_data['cn_strength']
+#     sigma_start = instantid_data['sigma_start']
+#     sigma_end = instantid_data['sigma_end']
     
-    current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+#     current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
     
-    if current_sigma > sigma_start or current_sigma < sigma_end:
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+#     if current_sigma > sigma_start or current_sigma < sigma_end:
+#         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
     
-    print(f"[InstantID Hook] Применяем ControlNet на шаге с sigma={current_sigma:.4f}")
+#     print(f"[InstantID Hook] Применяем ControlNet на шаге с sigma={current_sigma:.4f}")
     
-    device = torch.device('cuda')
-    dtype = torch.float16
+#     device = torch.device('cuda')
+#     dtype = torch.float16
     
-    control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
+#     control_hint = face_kps.movedim(-1, 1).to(device=device, dtype=dtype)
     
-    # НЕ кэшируем — создаём новый ControlNet на каждом шаге
-    c_net = control_net.copy()
-    c_net.control_model = c_net.control_model.to(device=device, dtype=dtype)
-    c_net.load_device = device
-    c_net.pre_run(model, model.model_sampling.percent_to_sigma)
-    c_net.set_cond_hint(control_hint, cn_strength, (0.0, 1.0))
+#     # НЕ кэшируем — создаём новый ControlNet на каждом шаге
+#     c_net = control_net.copy()
+#     c_net.control_model = c_net.control_model.to(device=device, dtype=dtype)
+#     c_net.load_device = device
+#     c_net.pre_run(model, model.model_sampling.percent_to_sigma)
+#     c_net.set_cond_hint(control_hint, cn_strength, (0.0, 1.0))
     
-    # Модифицируем positive conditioning
-    new_cond = []
-    for t in cond:
-        if isinstance(t, (list, tuple)) and len(t) >= 2:
-            tensor_part = t[0]
-            dict_part = t[1].copy()
-        elif isinstance(t, dict):
-            tensor_part = None
-            dict_part = t.copy()
-        else:
-            new_cond.append(t)
-            continue
+#     # Модифицируем positive conditioning
+#     new_cond = []
+#     for t in cond:
+#         if isinstance(t, (list, tuple)) and len(t) >= 2:
+#             tensor_part = t[0]
+#             dict_part = t[1].copy()
+#         elif isinstance(t, dict):
+#             tensor_part = None
+#             dict_part = t.copy()
+#         else:
+#             new_cond.append(t)
+#             continue
         
-        dict_part['control'] = c_net
-        dict_part['control_apply_to_uncond'] = False
-        dict_part['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=dtype)
+#         dict_part['control'] = c_net
+#         dict_part['control_apply_to_uncond'] = False
+#         dict_part['cross_attn_controlnet'] = image_prompt_embeds.to(device=device, dtype=dtype)
         
-        if tensor_part is not None:
-            new_cond.append([tensor_part, dict_part])
-        else:
-            new_cond.append(dict_part)
+#         if tensor_part is not None:
+#             new_cond.append([tensor_part, dict_part])
+#         else:
+#             new_cond.append(dict_part)
     
-    # Модифицируем negative conditioning
-    new_uncond = []
-    for t in uncond:
-        if isinstance(t, (list, tuple)) and len(t) >= 2:
-            tensor_part = t[0]
-            dict_part = t[1].copy()
-        elif isinstance(t, dict):
-            tensor_part = None
-            dict_part = t.copy()
-        else:
-            new_uncond.append(t)
-            continue
+#     # Модифицируем negative conditioning
+#     new_uncond = []
+#     for t in uncond:
+#         if isinstance(t, (list, tuple)) and len(t) >= 2:
+#             tensor_part = t[0]
+#             dict_part = t[1].copy()
+#         elif isinstance(t, dict):
+#             tensor_part = None
+#             dict_part = t.copy()
+#         else:
+#             new_uncond.append(t)
+#             continue
         
-        dict_part['control'] = c_net
-        dict_part['control_apply_to_uncond'] = False
-        dict_part['cross_attn_controlnet'] = uncond_image_prompt_embeds.to(device=device, dtype=dtype)
+#         dict_part['control'] = c_net
+#         dict_part['control_apply_to_uncond'] = False
+#         dict_part['cross_attn_controlnet'] = uncond_image_prompt_embeds.to(device=device, dtype=dtype)
         
-        if tensor_part is not None:
-            new_uncond.append([tensor_part, dict_part])
-        else:
-            new_uncond.append(dict_part)
+#         if tensor_part is not None:
+#             new_uncond.append([tensor_part, dict_part])
+#         else:
+#             new_uncond.append(dict_part)
     
-    return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
+#     return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -481,7 +481,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     original_pcond = copy.deepcopy(positive_cond)
     original_ncond = copy.deepcopy(negative_cond)
-    instantid_data = None
+    #instantid_data = None
     if p.enable_instant:
         gen_width = width if width else 1152
         gen_height = height if height else 896
