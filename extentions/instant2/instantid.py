@@ -474,6 +474,8 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
     weight=0.8
     combine_embeds='average'
     noise=0.35
+    start_at=0.0
+    end_at=1.0
     print("\n" + "="*60)
     print("[Pipeline] === НАЧАЛО apply_instantid_pipeline ===")
     print("="*60)
