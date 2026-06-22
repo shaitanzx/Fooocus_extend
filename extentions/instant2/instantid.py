@@ -471,6 +471,8 @@ def apply(image_path, target_unet, positive_cond, negative_cond, sigma_min, sigm
 #     combine_embeds='average', device=None, dtype=None, sigma_min=None, sigma_max=None,
 #     gen_width=1152, gen_height=896  # ← ДОБАВЛЕНО: размер генерации
 # ):
+    weight=0.8
+    combine_embeds='average'
     print("\n" + "="*60)
     print("[Pipeline] === НАЧАЛО apply_instantid_pipeline ===")
     print("="*60)
