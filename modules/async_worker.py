@@ -6,6 +6,7 @@ from modules.patch import PatchSettings, patch_settings, patch_all
 import modules.config
 import sys
 import random
+import numpy as np
 
 
 patch_all()
