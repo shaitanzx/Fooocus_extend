@@ -436,7 +436,7 @@ def load_instantid_model(ckpt_path):
     
 #     return work_model, final_positive, final_negative
 
-def apply(image_path, unet_model, positive, negative, sigma_min, sigma_max,
+def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigma_max,
           gen_width=1152, gen_height=896):
     print("\n" + "="*60)
     print("[InstantID Pipeline] === ЗАПУСК ===")
@@ -511,9 +511,19 @@ def apply(image_path, unet_model, positive, negative, sigma_min, sigma_max,
     raw_embed = torch.from_numpy(face['embedding'])
     clip_embed = raw_embed.view(1, 1, -1).to(device, dtype=dtype)
     print(f"  -> Форма clip_embed: {clip_embed.shape}")
+    image_ref = img_bgr
+
+    if pose_path is not None:
+        pose_image = cv2.cvtColor(pose_path, cv2.COLOR_RGB2BGR)
+        faces = insightface.get(pose_image)
+        face = sorted(faces, key=lambda x:(x['bbox'][2]-x['bbox'][0])*(x['bbox'][3]-x['bbox'][1]))[-1]
+        image_ref = pose_image
+
+
+
 
     print("  -> Генерация карты ключевых точек (KPS)...")
-    kps_img_pil = draw_kps(img_bgr, face['kps'])
+    kps_img_pil = draw_kps(image_ref, face['kps'])
     face_kps = T.ToTensor()(kps_img_pil).permute(1, 2, 0).unsqueeze(0)
     print(f"  -> Форма face_kps: {face_kps.shape}")
 
