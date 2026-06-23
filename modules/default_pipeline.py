@@ -487,7 +487,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         
         print(f"[InstantID] Размер генерации: {width}x{height}")
         
-        target_unet, positive_cond, negative_cond = instantid.apply(
+        target_unet, positive_cond, negative_cond, instantid_model = instantid.apply(
             p.face_file_id,
             p.pose_file_id, 
             target_unet, 
@@ -797,25 +797,22 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
 
-    # --- Явно удаляем ControlNet из conditioning перед заменой ---
-    print("[Memory Cleanup] Удаляем ключи 'control' и 'cross_attn_controlnet' из positive_cond и negative_cond...")
-    for cond_name, cond in [("positive", positive_cond), ("negative", negative_cond)]:
-        for idx, item in enumerate(cond):
+    # --- Удаляем InstantID модель и связанные тензоры ---
+    if 'instantid_model' in locals():
+        print("[Memory] Удаляем instantid_model...")
+        del instantid_model
+
+    # Удаляем conditioning (в них могут остаться ссылки на control, но их уже нет)
+    # Для надёжности удаляем ключи control/cross_attn_controlnet (если есть)
+    for cond in [positive_cond, negative_cond]:
+        for item in cond:
             if isinstance(item, list) and len(item) == 2:
                 d = item[1]
-                if 'control' in d:
-                    print(f"[Memory Cleanup]   Удалён 'control' из {cond_name}[{idx}]")
-                    d.pop('control', None)
-                if 'cross_attn_controlnet' in d:
-                    print(f"[Memory Cleanup]   Удалён 'cross_attn_controlnet' из {cond_name}[{idx}]")
-                    d.pop('cross_attn_controlnet', None)
+                d.pop('control', None)
+                d.pop('cross_attn_controlnet', None)
             elif isinstance(item, dict):
-                if 'control' in item:
-                    print(f"[Memory Cleanup]   Удалён 'control' из {cond_name}[{idx}] (dict)")
-                    item.pop('control', None)
-                if 'cross_attn_controlnet' in item:
-                    print(f"[Memory Cleanup]   Удалён 'cross_attn_controlnet' из {cond_name}[{idx}] (dict)")
-                    item.pop('cross_attn_controlnet', None)
+                item.pop('control', None)
+                item.pop('cross_attn_controlnet', None)
 
     # Теперь заменяем их копиями оригиналов (без ControlNet)
     positive_cond = copy.deepcopy(original_pcond)

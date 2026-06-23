@@ -625,4 +625,4 @@ def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigm
     import gc
     gc.collect()
    
-    return unet_model, final_positive, final_negative
+    return unet_model, final_positive, final_negative, instantid_model
