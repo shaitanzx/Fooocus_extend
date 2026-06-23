@@ -807,7 +807,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     #     if 'instantid_data' in target_unet.model_options:
     #         del target_unet.model_options['instantid_data']
     #     print("[InstantID] ✅ instantid_data очищена")
-    
+    gc.collect()
     torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     
     return images
