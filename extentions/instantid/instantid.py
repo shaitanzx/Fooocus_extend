@@ -294,7 +294,7 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
     print("[Шаг 2/5] ✅ InsightFace инициализирован.")
 
     print("[Шаг 3/5] Загрузка модели InstantID...")
-    instantid_file = "extentions/instant2/checkpoints/ip-adapter.bin"
+    instantid_file = "extentions/instantid/checkpoints/ip-adapter.bin"
     
     if not os.path.exists(instantid_file):
         raise FileNotFoundError(f"Файл InstantID не найден: {instantid_file}")
