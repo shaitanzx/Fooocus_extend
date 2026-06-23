@@ -595,137 +595,34 @@ def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigm
         number += 1
     print(f"  -> ✅ Применено {number} патчей.")
 
-    # 6. Применение ControlNet (ПРАВИЛЬНЫЙ СПОСОБ)
+
+    # 6. Применение ControlNet (ВРЕМЕННО ОТКЛЮЧЕНО)
     print("\n" + "="*60)
-    print("[Шаг 6/6] Применение ControlNet...")
+    print("[Шаг 6/6] ПРОПУСКАЕМ ControlNet для диагностики утечки")
     print("="*60)
-
-    # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Загружаем ControlNet, если не передан ===
-    # if control_net is None:
-    #     print("  -> ControlNet не передан. Загружаем автоматически...")
-    #     control_net = get_or_load_instantid_controlnet()
     
-    # if control_net is not None:
-    #     print("  -> ✅ ControlNet загружен.")
-        
-    control_net = get_or_load_instantid_controlnet()   
-    print("  -> ✅ ControlNet загружен.") 
-    # === КРИТИЧЕСКИ ВАЖНО: Ресайз keypoints до размера генерации ===
-    print(f"  -> Исходная форма face_kps: {face_kps.shape}")
-    print(f"  -> Размер генерации: {width}x{height}")
-        
-    # Ресайзим face_kps до размера генерации
-    face_kps_resized = torch.nn.functional.interpolate(
-        face_kps.movedim(-1, 1),  # [1, 3, H, W]
-        size=(height, width),
-        mode='bilinear',
-        align_corners=False
-    ).movedim(1, -1)  # [1, gen_height, gen_width, 3]
-        
-    print(f"  -> Форма face_kps после ресайза: {face_kps_resized.shape}")
-        
-    # Преобразуем в control_hint [1, 3, H, W]
-    control_hint = face_kps_resized.movedim(-1, 1).to(device=device, dtype=dtype)
-        
-    print(f"  -> Форма control_hint: {control_hint.shape}")
-    print(f"  -> control_hint range: [{control_hint.min():.4f}, {control_hint.max():.4f}]")
-        
-    # Проверяем, что control_hint не пустой
-    if control_hint.sum() == 0:
-        print("  -> ❌ ОШИБКА: control_hint пустой!")
-    else:
-        print("  -> ✅ control_hint содержит данные.")
-        
-    # Применяем ControlNet к conditioning
-    cnets = {}
-    cond_uncond = []
-    is_cond = True
-        
-    print(f"  -> Параметры: cn_strength={cn_strength}, start_at={start_at}, end_at={end_at}")
-        
-    for cond_idx, conditioning in enumerate([positive, negative]):
-        cond_name = "positive" if cond_idx == 0 else "negative"
-        print(f"\n  -> Обработка {cond_name} conditioning...")
-            
-        c = []
-        for t_idx, t in enumerate(conditioning):
-            d = t[1].copy()
-              
-            prev_cnet = d.get('control', None)
-            if prev_cnet in cnets:
-                c_net = cnets[prev_cnet]
-            else:
-                c_net = control_net.copy().set_cond_hint(
-                    control_hint, 
-                    cn_strength, 
-                    (start_at, end_at)
-                )
-                if prev_cnet is not None:
-                    c_net.set_previous_controlnet(prev_cnet)
-                cnets[prev_cnet] = c_net
-
-            d['control'] = c_net
-            d['control_apply_to_uncond'] = False
-                
-            embed_to_use = image_prompt_embeds if is_cond else uncond_image_prompt_embeds
-            print(f"[DEBUG instantid] Устанавливаем cross_attn_controlnet...")
-            print(f"[DEBUG instantid]   embed_to_use shape: {embed_to_use.shape}")
-            print(f"[DEBUG instantid]   embed_to_use dtype: {embed_to_use.dtype}")
-
-                
-            d['cross_attn_controlnet'] = conds.CONDCrossAttn(embed_to_use.to(device=device, dtype=dtype))
-
-            n = [t[0], d]
-            c.append(n)
-            
-        cond_uncond.append(c)
-        is_cond = False
-        print(f"  -> ✅ {cond_name} conditioning обработан")
-        
-    final_positive, final_negative = cond_uncond[0], cond_uncond[1]
-    print("\n  -> ✅ ControlNet применён к conditioning.")
-    print(f"  -> final_positive[0][1] keys: {list(final_positive[0][1].keys())}")
-    print(f"  -> has 'control': {'control' in final_positive[0][1]}")
-    
-    
-#    return work_model, final_positive, final_negative
-
-    # try:
-    #     patched_unet, new_positive, new_negative = apply_instantid_pipeline(
-    #         image_path=image_path,
-    #         unet_model=target_unet,
-    #         insightface=insightface_app,
-    #         instantid_model=instantid_model,
-    #         positive=positive_cond,
-    #         negative=negative_cond,
-    #         control_net=None,
-    #         weight=0.8,
-    #         start_at=0.0,
-    #         end_at=1.0,
-    #         sigma_min=sigma_min,
-    #         sigma_max=sigma_max,
-    #         gen_width=gen_width,  # ← ПЕРЕДАЁМ
-    #         gen_height=gen_height  # ← ПЕРЕДАЁМ
-    #     )
-    #     print("[Шаг 4/5] ✅ Пайплайн выполнен успешно.")
-    # except Exception as e:
-    #     print(f"\n❌ ОШИБКА:")
-    #     print(f"   {type(e).__name__}: {e}")
-    #     import traceback
-    #     traceback.print_exc()
-    #     raise
+    # Просто используем исходные positive и negative без ControlNet
+    final_positive = positive
+    final_negative = negative
+    print("  -> ⚠️ ControlNet НЕ загружен и НЕ применён (диагностический режим)")
 
     print("[Шаг 5/5] Возврат результатов...")
     print("="*60)
     print("[InstantID Pipeline] === ЗАВЕРШЕНО ===")
     print("="*60 + "\n")
 
-
-
-
-    del insightface, control_net,cnets
-    del face_kps, face_kps_resized, control_hint
-
+    # Очистка только того, что было создано
+    del insightface
+    del face_kps
     del clip_embed, clip_embed_zeroed
+    # Если были созданы image_prompt_embeds и uncond_image_prompt_embeds, их тоже удаляем
+    del image_prompt_embeds, uncond_image_prompt_embeds
+    if 'pose_image' in locals():
+        del pose_image
+    del img_bgr
+    del kps_img_pil
+
+    import gc
+    gc.collect()
    
     return unet_model, final_positive, final_negative
