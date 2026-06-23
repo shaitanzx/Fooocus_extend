@@ -26,6 +26,7 @@ from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.instant2.instantid as instantid
+import gc
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
