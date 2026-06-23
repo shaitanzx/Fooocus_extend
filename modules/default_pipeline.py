@@ -27,6 +27,7 @@ import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.instant2.instantid as instantid
 import gc
+from memory_profiler import profile
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -428,7 +429,7 @@ os.makedirs(layer_model_root, exist_ok=True)
 #             new_uncond.append(dict_part)
     
 #     return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
-
+@profile
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 

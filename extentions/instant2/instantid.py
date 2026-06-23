@@ -438,7 +438,7 @@ def load_instantid_model(ckpt_path):
 #         final_negative = negative
     
 #     return work_model, final_positive, final_negative
-@profile
+
 def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigma_max,
           width, height):
     print("\n" + "="*60)
