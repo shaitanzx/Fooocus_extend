@@ -7,7 +7,7 @@ import modules.config
 import sys
 import random
 import numpy as np
-
+from PIL import Image
 
 patch_all()
 
@@ -247,8 +247,7 @@ class AsyncTask:
         self.face_file_id = args.pop()
         self.pose_file_id = args.pop()
         if self.pose_file_id is not None:
-            self.pose_file_id = np.array(self.pose_file_id)
-            print ('zzzzzzzzzzzzzzzzzz',self.pose_file_id)
+            self.pose_file_id = np.array(Image.open(self.pose_file_id))
         self.identitynet_strength_ratio = args.pop()
         self.adapter_strength_ratio = args.pop()
         self.controlnet_selection_id = args.pop()
