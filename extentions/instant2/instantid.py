@@ -553,7 +553,7 @@ def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigm
 
     # 5. Патчинг UNet (IP-Adapter часть)
     print("[Шаг 5/6] Патчинг слоев Cross-Attention в UNet...")
-    work_model = unet_model.clone()
+    #work_model = unet_model.clone()
     
     if sigma_min is not None and sigma_max is not None:
         sigma_start = sigma_max + start_at * (sigma_min - sigma_max)
@@ -577,19 +577,19 @@ def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigm
         block_indices = range(2) if id in [4, 5] else range(10) 
         for index in block_indices:
             patch_kwargs["module_key"] = str(number*2+1)
-            _set_model_patch_replace(work_model, patch_kwargs, ("input", id, index))
+            _set_model_patch_replace(unet_model, patch_kwargs, ("input", id, index))
             number += 1
             
     for id in range(6): 
         block_indices = range(2) if id in [3, 4, 5] else range(10) 
         for index in block_indices:
             patch_kwargs["module_key"] = str(number*2+1)
-            _set_model_patch_replace(work_model, patch_kwargs, ("output", id, index))
+            _set_model_patch_replace(unet_model, patch_kwargs, ("output", id, index))
             number += 1
             
     for index in range(10):
         patch_kwargs["module_key"] = str(number*2+1)
-        _set_model_patch_replace(work_model, patch_kwargs, ("middle", 1, index))
+        _set_model_patch_replace(unet_model, patch_kwargs, ("middle", 1, index))
         number += 1
     print(f"  -> ✅ Применено {number} патчей.")
 
@@ -726,4 +726,4 @@ def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigm
 
     del clip_embed, clip_embed_zeroed
    
-    return work_model, final_positive, final_negative
+    return unet_model, final_positive, final_negative
