@@ -796,23 +796,22 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.patches = copy.deepcopy(original_patches)
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
-
-    # --- Удаляем InstantID модель и связанные тензоры ---
-    if 'instantid_model' in locals():
-        print("[Memory] Удаляем instantid_model...")
+    if p.enable_instant:
         del instantid_model
 
     # Удаляем conditioning (в них могут остаться ссылки на control, но их уже нет)
     # Для надёжности удаляем ключи control/cross_attn_controlnet (если есть)
-    for cond in [positive_cond, negative_cond]:
-        for item in cond:
-            if isinstance(item, list) and len(item) == 2:
-                d = item[1]
-                d.pop('control', None)
-                d.pop('cross_attn_controlnet', None)
-            elif isinstance(item, dict):
-                item.pop('control', None)
-                item.pop('cross_attn_controlnet', None)
+        for cond in [positive_cond, negative_cond]:
+            for item in cond:
+                if isinstance(item, list) and len(item) == 2:
+                    print('1111111111111111111111')
+                    d = item[1]
+                    d.pop('control', None)
+                    d.pop('cross_attn_controlnet', None)
+                elif isinstance(item, dict):
+                    item.pop('control', None)
+                    item.pop('cross_attn_controlnet', None)
+                    print('222222222222222222222222')
 
     # Теперь заменяем их копиями оригиналов (без ControlNet)
     positive_cond = copy.deepcopy(original_pcond)
