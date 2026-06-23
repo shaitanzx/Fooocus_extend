@@ -434,9 +434,7 @@ os.makedirs(layer_model_root, exist_ok=True)
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
         disable_preview=False,tile_x=False,tile_y=False,transper='None'):
-    global loaded_ControlNets
-    print('1111111111111',len(loaded_ControlNets))
-    print('1111111111111',loaded_ControlNets)
+
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
 
@@ -799,20 +797,33 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
 
+    # --- Явно удаляем ControlNet из conditioning перед заменой ---
+    print("[Memory Cleanup] Удаляем ключи 'control' и 'cross_attn_controlnet' из positive_cond и negative_cond...")
+    for cond_name, cond in [("positive", positive_cond), ("negative", negative_cond)]:
+        for idx, item in enumerate(cond):
+            if isinstance(item, list) and len(item) == 2:
+                d = item[1]
+                if 'control' in d:
+                    print(f"[Memory Cleanup]   Удалён 'control' из {cond_name}[{idx}]")
+                    d.pop('control', None)
+                if 'cross_attn_controlnet' in d:
+                    print(f"[Memory Cleanup]   Удалён 'cross_attn_controlnet' из {cond_name}[{idx}]")
+                    d.pop('cross_attn_controlnet', None)
+            elif isinstance(item, dict):
+                if 'control' in item:
+                    print(f"[Memory Cleanup]   Удалён 'control' из {cond_name}[{idx}] (dict)")
+                    item.pop('control', None)
+                if 'cross_attn_controlnet' in item:
+                    print(f"[Memory Cleanup]   Удалён 'cross_attn_controlnet' из {cond_name}[{idx}] (dict)")
+                    item.pop('cross_attn_controlnet', None)
+
+    # Теперь заменяем их копиями оригиналов (без ControlNet)
     positive_cond = copy.deepcopy(original_pcond)
     negative_cond = copy.deepcopy(original_ncond)
     del original_pcond, original_ncond
     
-    # # Очищаем instantid_data из памяти
-    # if instantid_data is not None:
-    #     print("[InstantID] Очистка instantid_data из памяти...")
-    #     del instantid_data
-    #     if 'instantid_data' in target_unet.model_options:
-    #         del target_unet.model_options['instantid_data']
-    #     print("[InstantID] ✅ instantid_data очищена")
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
-    print('222222222222222',len(loaded_ControlNets))
-    print('222222222222222',loaded_ControlNets)
+
     return images
