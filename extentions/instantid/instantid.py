@@ -83,7 +83,7 @@ def get_or_load_instantid_controlnet():
     Загружает ControlNet для InstantID через core.load_controlnet (Fooocus backend).
     Это правильно добавляет ControlNet в систему управления памятью.
     """
-    ctrl_path = "extentions/instant2/checkpoints/ControlNetModel/diffusion_pytorch_model.safetensors"
+    ctrl_path = "extentions/instantid/checkpoints/ControlNetModel/diffusion_pytorch_model.safetensors"
     
     if not os.path.exists(ctrl_path):
         print(f"[InstantID CN] ⚠️ Файл ControlNet не найден: {ctrl_path}")
