@@ -434,7 +434,9 @@ os.makedirs(layer_model_root, exist_ok=True)
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
         disable_preview=False,tile_x=False,tile_y=False,transper='None'):
-
+    global loaded_ControlNets
+    print('1111111111111',len(loaded_ControlNets))
+    print('1111111111111',loaded_ControlNets)
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
 
@@ -811,5 +813,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
-    
+    print('1111111111111',len(loaded_ControlNets))
+    print('1111111111111',loaded_ControlNets)
     return images
