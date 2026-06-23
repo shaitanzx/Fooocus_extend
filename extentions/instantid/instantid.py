@@ -289,7 +289,7 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
     print("[Шаг 1/5] ✅ Готово.")
     
     print("[Шаг 2/5] Инициализация InsightFace...")
-    insightface = FaceAnalysis(name='antelopev2', root='extentions/instant2', providers=['CPUExecutionProvider'])
+    insightface = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
     insightface.prepare(ctx_id=0, det_size=(640, 640))
     print("[Шаг 2/5] ✅ InsightFace инициализирован.")
 
