@@ -429,9 +429,10 @@ os.makedirs(layer_model_root, exist_ok=True)
 #             new_uncond.append(dict_part)
     
 #     return model, x, timestep, new_uncond, new_cond, cond_scale, model_options, seed
-@profile
+
 @torch.no_grad()
 @torch.inference_mode()
+@profile
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
         disable_preview=False,tile_x=False,tile_y=False,transper='None'):
