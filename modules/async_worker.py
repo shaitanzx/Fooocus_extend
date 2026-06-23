@@ -249,14 +249,8 @@ class AsyncTask:
         if self.pose_file_id is not None:
             self.pose_file_id = np.array(Image.open(self.pose_file_id))
         self.identitynet_strength_ratio = args.pop()
-        self.adapter_strength_ratio = args.pop()
-        self.controlnet_selection_id = args.pop()
-        self.canny_strength_id = args.pop()
-        self.depth_strength_id = args.pop()
-        self.scheduler_id = args.pop()
-        self.enhance_face_region_id = args.pop()
+        self.adapter_strength_ratio = args.pop()        
         self.pre_gen = args.pop()
-
         self.enable_pm = args.pop()
         self.files_pm = args.pop()
         self.style_strength_ratio = args.pop()

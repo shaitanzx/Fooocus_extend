@@ -2,7 +2,7 @@ from huggingface_hub import hf_hub_download
 import torch
 import os
 import ldm_patched.modules.controlnet
-#import folder_paths
+import gradio as gr
 import numpy as np
 import math
 import cv2
@@ -20,6 +20,62 @@ except ImportError:
     import torchvision.transforms as T
 
 import torch.nn.functional as F
+
+def gui():
+    with gr.Row():
+        enable_instant = gr.Checkbox(label="Enabled", value=False)
+    with gr.Row():
+        with gr.Column():
+                # upload face image
+                face_file = gr.Image(label="Upload a photo of your face", type="filepath")
+        with gr.Column():
+                # optional: upload a reference pose image
+                pose_file = gr.Image(label="Upload a reference pose image (Optional)",type="filepath")
+                pre_gen = gr.Checkbox(label="Pregeneration image", value=False)
+    with gr.Row():
+            # strength
+            identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.05,value=0.80,interactive=True)
+            adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.05,value=0.80,interactive=True)
+    # with gr.Row():
+    #         with gr.Accordion("Controlnet"):
+    #             controlnet_selection = gr.CheckboxGroup(
+    #                 ["canny", "depth"], label="Controlnet", value=["depth"],
+    #                 info="Use pose for skeleton inference, canny for edge detection, and depth for depth map estimation. You can try all three to control the generation process",
+    #                 interactive=True
+    #             )
+
+    #             canny_strength = gr.Slider(label="Canny strength",minimum=0,maximum=1.5,step=0.05,value=0.40,interactive=True)
+    #             depth_strength = gr.Slider(label="Depth strength",minimum=0,maximum=1.5,step=0.05,value=0.40,interactive=True)
+    # with gr.Row():
+    #         schedulers = [
+    #              "DEISMultistepScheduler",
+    #              "HeunDiscreteScheduler",
+    #              "EulerDiscreteScheduler",
+    #              "DPMSolverMultistepScheduler",
+    #              "DPMSolverMultistepScheduler-Karras",
+    #              "DPMSolverMultistepScheduler-Karras-SDE"]
+    #         scheduler = gr.Dropdown(
+    #                 label="Schedulers",
+    #                 choices=schedulers,
+    #                 value="EulerDiscreteScheduler",
+    #                 interactive=True
+    #             )
+    # with gr.Row():
+    #         enhance_face_region = gr.Checkbox(label="Enhance non-face region", value=True,interactive=True)
+    with gr.Row():
+            tips = r"""
+### Usage tips of InstantID
+1. If you're not satisfied with the similarity, try increasing the weight of "IdentityNet Strength" and "Adapter Strength."    
+2. If you feel that the saturation is too high, first decrease the Adapter strength. If it remains too high, then decrease the IdentityNet strength.
+3. If you find that text control is not as expected, decrease Adapter strength.
+4. If you find that realistic style is not good enough, go for our Github repo and use a more realistic base model.
+"""
+            gr.Markdown(value=tips)
+    with gr.Row():
+        gr.HTML('* \"InstantID\" is powered by InstantX Research. <a href="https://github.com/instantX-research/InstantID" target="_blank">\U0001F4D4 Document</a>')
+
+
+    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,pre_gen
 
 
 def get_or_load_instantid_controlnet():

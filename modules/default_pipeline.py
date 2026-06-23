@@ -25,7 +25,7 @@ from torch.nn.modules.utils import _pair
 from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
-import extentions.instant2.instantid as instantid
+import extentions.instantid.instantid as instantid
 import gc
 
 model_base = core.StableDiffusionModel()
@@ -803,15 +803,10 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     # Для надёжности удаляем ключи control/cross_attn_controlnet (если есть)
         for cond in [positive_cond, negative_cond]:
             for item in cond:
-                if isinstance(item, list) and len(item) == 2:
-                    print('1111111111111111111111')
-                    d = item[1]
-                    d.pop('control', None)
-                    d.pop('cross_attn_controlnet', None)
-                elif isinstance(item, dict):
-                    item.pop('control', None)
-                    item.pop('cross_attn_controlnet', None)
-                    print('222222222222222222222222')
+                d = item[1]
+                d.pop('control', None)
+                d.pop('cross_attn_controlnet', None)
+
 
     # Теперь заменяем их копиями оригиналов (без ControlNet)
     positive_cond = copy.deepcopy(original_pcond)
