@@ -717,5 +717,13 @@ def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigm
     print("="*60)
     print("[InstantID Pipeline] === ЗАВЕРШЕНО ===")
     print("="*60 + "\n")
-    del instantid_model
+
+
+
+
+    del insightface, control_net,cnets
+    del face_kps, face_kps_resized, control_hint
+
+    del clip_embed, clip_embed_zeroed
+   
     return work_model, final_positive, final_negative
