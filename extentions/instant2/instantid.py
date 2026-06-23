@@ -20,6 +20,9 @@ except ImportError:
     import torchvision.transforms as T
 
 import torch.nn.functional as F
+
+from memory_profiler import profile
+
 def get_or_load_instantid_controlnet():
     """
     Загружает ControlNet для InstantID через core.load_controlnet (Fooocus backend).
@@ -435,7 +438,7 @@ def load_instantid_model(ckpt_path):
 #         final_negative = negative
     
 #     return work_model, final_positive, final_negative
-
+@profile
 def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigma_max,
           width, height):
     print("\n" + "="*60)
