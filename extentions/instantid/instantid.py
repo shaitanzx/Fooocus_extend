@@ -315,7 +315,7 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
 # ):
 
     combine_embeds='average'
-    noise=0
+    noise=0.35
 
     print("\n" + "="*60)
     print("[Pipeline] === НАЧАЛО apply_instantid_pipeline ===")
@@ -328,6 +328,7 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
 
     print(f"  -> Устройство: {device}, Тип данных: {dtype}")
     print(f"  -> Веса: ip_weight={ip_weight}, cn_strength={cn_strength}")
+    print(f"  -> ControlNet диапазон: start=0.0, end=1.0 (работает ВСЕ шаги!)")
 
     # 2. Загрузка изображения и детекция лица
     print("[Шаг 2/6] Загрузка изображения и детекция лица InsightFace...")

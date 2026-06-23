@@ -400,7 +400,20 @@ def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
         for i in range(10):
             k = 1.0 - float(i) / 9.0
             outs[i] = outs[i] * (1.0 - patch_settings[pid].controlnet_softness * k)
+    # === ЛОГИРОВАНИЕ СТАТИСТИКИ ВЫХОДОВ CONTROLNET ===
+    if not hasattr(patched_cldm_forward, '_log_count'):
+        patched_cldm_forward._log_count = 0
+    patched_cldm_forward._log_count += 1
 
+    if patched_cldm_forward._log_count <= 3:  # Логируем только первые 3 вызова
+        print(f"\n[ControlNet Stats] Вызов #{patched_cldm_forward._log_count}")
+        for i, out in enumerate(outs):
+            if out is not None:
+                min_val = out.min().item()
+                max_val = out.max().item()
+                mean_val = out.mean().item()
+                print(f"  -> outs[{i}] min={min_val:.4f}, max={max_val:.4f}, mean={mean_val:.4f}")
+        print("=" * 50 + "\n")
     return outs
 
 
