@@ -813,6 +813,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
-    print('1111111111111',len(loaded_ControlNets))
-    print('1111111111111',loaded_ControlNets)
+    print('222222222222222',len(loaded_ControlNets))
+    print('222222222222222',loaded_ControlNets)
     return images
