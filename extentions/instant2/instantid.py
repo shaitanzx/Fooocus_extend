@@ -437,7 +437,7 @@ def load_instantid_model(ckpt_path):
 #     return work_model, final_positive, final_negative
 
 def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigma_max,
-          gen_width=1152, gen_height=896):
+          width, height):
     print("\n" + "="*60)
     print("[InstantID Pipeline] === ЗАПУСК ===")
     print("="*60)
@@ -610,12 +610,12 @@ def apply(image_path, pose_path, unet_model, positive, negative, sigma_min, sigm
     print("  -> ✅ ControlNet загружен.") 
     # === КРИТИЧЕСКИ ВАЖНО: Ресайз keypoints до размера генерации ===
     print(f"  -> Исходная форма face_kps: {face_kps.shape}")
-    print(f"  -> Размер генерации: {gen_width}x{gen_height}")
+    print(f"  -> Размер генерации: {width}x{height}")
         
     # Ресайзим face_kps до размера генерации
     face_kps_resized = torch.nn.functional.interpolate(
         face_kps.movedim(-1, 1),  # [1, 3, H, W]
-        size=(gen_height, gen_width),
+        size=(height, width),
         mode='bilinear',
         align_corners=False
     ).movedim(1, -1)  # [1, gen_height, gen_width, 3]
