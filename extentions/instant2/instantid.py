@@ -21,7 +21,6 @@ except ImportError:
 
 import torch.nn.functional as F
 
-from memory_profiler import profile
 
 def get_or_load_instantid_controlnet():
     """
