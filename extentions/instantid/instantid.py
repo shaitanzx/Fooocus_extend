@@ -34,12 +34,12 @@ def gui():
                 pre_gen = gr.Checkbox(label="Pregeneration image", value=False)
     with gr.Row():
             # strength
-            identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.05,value=0.80,interactive=True)
-            adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.05,value=0.80,interactive=True)
+            identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
+            adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
     with gr.Row():
             # strength
-            start_instant = gr.Slider(label="Start at",minimum=0,maximum=1,step=0.1,value=0.0,interactive=True)
-            end_instant = gr.Slider(label="End at",minimum=0,maximum=1,step=0.01,value=1.00,interactive=True)
+            start_instant = gr.Slider(label="Start at",minimum=0,maximum=1,step=0.001,value=0.0,interactive=True)
+            end_instant = gr.Slider(label="End at",minimum=0,maximum=1,step=0.001,value=1.00,interactive=True)
     # with gr.Row():
     #         with gr.Accordion("Controlnet"):
     #             controlnet_selection = gr.CheckboxGroup(
