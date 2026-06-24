@@ -251,6 +251,10 @@ class AsyncTask:
         self.identitynet_strength_ratio = args.pop()
         self.adapter_strength_ratio = args.pop()        
         self.pre_gen = args.pop()
+        self.start_instant = args.pop()
+        self.end_instant = args.pop()
+
+
         self.enable_pm = args.pop()
         self.files_pm = args.pop()
         self.style_strength_ratio = args.pop()

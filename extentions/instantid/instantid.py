@@ -36,6 +36,10 @@ def gui():
             # strength
             identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.05,value=0.80,interactive=True)
             adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.05,value=0.80,interactive=True)
+    with gr.Row():
+            # strength
+            start_instant = gr.Slider(label="Start at",minimum=0,maximum=1,step=0.1,value=0.0,interactive=True)
+            end_instant = gr.Slider(label="End at",minimum=0,maximum=1,step=0.01,value=1.00,interactive=True)
     # with gr.Row():
     #         with gr.Accordion("Controlnet"):
     #             controlnet_selection = gr.CheckboxGroup(
@@ -75,7 +79,7 @@ def gui():
         gr.HTML('* \"InstantID\" is powered by InstantX Research. <a href="https://github.com/instantX-research/InstantID" target="_blank">\U0001F4D4 Document</a>')
 
 
-    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,pre_gen
+    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,pre_gen,start_instant, end_instant
 
 
 def get_or_load_instantid_controlnet():
@@ -279,7 +283,7 @@ def load_instantid_model(ckpt_path):
     return instantid
 
 def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, negative, sigma_min, sigma_max,
-          width, height):
+          width, height,start,end):
     print("\n" + "="*60)
     print("[InstantID Pipeline] === ЗАПУСК ===")
     print("="*60)
@@ -493,7 +497,7 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
                 c_net = control_net.copy().set_cond_hint(
                     control_hint, 
                     cn_strength, 
-                    (0, 1)
+                    (start, end)
                 )
                 if prev_cnet is not None:
                     c_net.set_previous_controlnet(prev_cnet)

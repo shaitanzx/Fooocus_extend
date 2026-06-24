@@ -417,7 +417,9 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             sigma_min, 
             sigma_max,
             width,
-            height
+            height,
+            p.start_instant,
+            p.end_instant
         )
         
         # ОТЛАДКА: Проверяем, есть ли control в conditioning
