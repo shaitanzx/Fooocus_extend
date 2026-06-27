@@ -23,15 +23,12 @@ except ImportError:
 import torch.nn.functional as F
 
 def gui():
-    ip_images = []
-    ip_types = []
-    ip_stops = []
-    ip_weights = []
-    ip_ctrls = []
-    ip_ad_cols = []
-
     with gr.Row():
         enable_instant = gr.Checkbox(label="Enabled", value=False)
+        with gr.Row():
+            # strength
+            identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
+            adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
     with gr.Row():
         with gr.Column():
             # upload face image
@@ -51,10 +48,6 @@ def gui():
                 with gr.Row():
                     ip_stop_cdps = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
                     ip_weigh_cdpst = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)                    
-    with gr.Row():
-            # strength
-            identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
-            adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
     with gr.Row():
             # strength
             start_instant = gr.Slider(label="Start at",minimum=0,maximum=1,step=0.001,value=0.0,interactive=True)
