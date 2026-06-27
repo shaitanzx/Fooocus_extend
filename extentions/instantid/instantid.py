@@ -567,4 +567,4 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
 
     del clip_embed, clip_embed_zeroed
    
-    return unet_model, final_positive, final_negative, instantid_model
+    return unet_model, final_positive, final_negative
