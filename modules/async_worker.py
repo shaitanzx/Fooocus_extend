@@ -258,7 +258,7 @@ class AsyncTask:
                     self.cn_tasks['PyraCanny'].append([self.pose_file_id, stop_pyracanny, weight_pyracanny])
                 if self.enable_cpds:
                     self.cn_tasks['CPDS'].append([pose_file_id, stop_cpds, weight_cpds])
-
+        print('----------------------------',self.cn_tasks)
         self.enable_pm = args.pop()
         self.files_pm = args.pop()
         self.style_strength_ratio = args.pop()
