@@ -1333,7 +1333,7 @@ def worker():
             skip_prompt_processing = True
 
         return base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner
-    def apply_instant_cn(async_task,controlnet_canny_path,controlnet_cpds_path):
+    def apply_instant_cn(async_task,controlnet_canny_path,controlnet_cpds_path,goals):
         goals.append('cn')
         progressbar(async_task, 1, 'Downloading control models ...')
         if len(async_task.cn_tasks[flags.cn_canny]) > 0:
@@ -1578,7 +1578,7 @@ def worker():
                 ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner)
         if async_task.enable_instant:
             controlnet_canny_path, controlnet_cpds_path = apply_instant_cn(
-                async_task, controlnet_canny_path, controlnet_cpds_path)
+                async_task, controlnet_canny_path, controlnet_cpds_path,goals)
         # Load or unload CNs
         progressbar(async_task, current_progress, 'Loading control models ...')
         pipeline.refresh_controlnets([controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path])
