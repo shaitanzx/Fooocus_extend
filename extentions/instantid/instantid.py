@@ -25,21 +25,21 @@ import torch.nn.functional as F
 def gui():
     with gr.Row():
         enable_instant = gr.Checkbox(label="Enabled", value=False)
-        with gr.Row():
-            # strength
-            identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
-            adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
     with gr.Row():
         with gr.Column():
             # upload face image
             face_file = grh.Image(label="Upload a photo of your face", type="filepath")
+            with gr.Row():
+                # strength
+                identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
+                adapter_strength_ratio = gr.Slider(label="Image adapter strength (for detail)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
         with gr.Column():
             # optional: upload a reference pose image
             pose_file = grh.Image(label="Upload a reference pose image (Optional)",type="filepath")
-            with gr.Column():
-                with gr.Row():
+            with gr.Row():
+                with gr.Column():
                     gr.Checkbox(label='PyraCanny', value=False, container=False, elem_classes='min_check')
-                with gr.Row():
+                with gr.Column():
                     ip_stop_canny = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
                     ip_weight_canny = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)
             with gr.Column():
