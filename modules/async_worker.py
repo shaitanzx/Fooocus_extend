@@ -125,7 +125,7 @@ class AsyncTask:
             cn_type = args.pop()
             if cn_img is not None:
                 self.cn_tasks[cn_type].append([cn_img, cn_stop, cn_weight])
-
+        print('-----------------', self.cn_tasks)
         self.debugging_dino = args.pop()
         self.dino_erode_or_dilate = args.pop()
         self.debugging_enhance_masks_checkbox = args.pop()

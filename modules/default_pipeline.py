@@ -400,7 +400,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
 
     if p.enable_instant:
-        instantid_model = None
+        instantid_model, control_net = None, None
         original_pcond = copy.deepcopy(positive_cond)
         original_ncond = copy.deepcopy(negative_cond)
 
@@ -733,7 +733,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         positive_cond = copy.deepcopy(original_pcond)
         negative_cond = copy.deepcopy(original_ncond)
         del original_pcond, original_ncond
-        del instantid_model
+        del instantid_model, control_net
 
 
     # Теперь заменяем их копиями оригиналов (без ControlNet)
