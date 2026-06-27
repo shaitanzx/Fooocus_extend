@@ -250,7 +250,6 @@ class AsyncTask:
             self.pose_file_id = np.array(Image.open(self.pose_file_id))
         self.identitynet_strength_ratio = args.pop()
         self.adapter_strength_ratio = args.pop()        
-        self.pre_gen = args.pop()
         self.start_instant = args.pop()
         self.end_instant = args.pop()
 
@@ -544,34 +543,6 @@ def worker():
         #             modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
         #             loras,modules.config.paths_loras[0],async_task)
             # else:
-        if async_task.enable_instant:
-            if async_task.pre_gen:
-                async_task.enable_instant=False
-                imgs = pipeline.process_diffusion(
-                    p=async_task,
-                    positive_cond=positive_cond,
-                    negative_cond=negative_cond,
-                    steps=steps,
-                    switch=switch,
-                    width=width,
-                    height=height,
-                    image_seed=task['task_seed'],
-                    callback=callback,
-                    sampler_name=async_task.sampler_name,
-                    scheduler_name=final_scheduler_name,
-                    latent=initial_latent,
-                    denoise=denoising_strength,
-                    tiled=tiled,
-                    cfg_scale=async_task.cfg_scale,
-                    refiner_swap_method=async_task.refiner_swap_method,
-                    disable_preview=async_task.disable_preview,
-                    tile_x=async_task.tile_x,
-                    tile_y=async_task.tile_y,
-                    transper=async_task.transper
-                )
-                async_task.enable_instant=True
-                async_task.pose_file_id=imgs[0]
-
         imgs = pipeline.process_diffusion(
                     p=async_task,
                     positive_cond=positive_cond,

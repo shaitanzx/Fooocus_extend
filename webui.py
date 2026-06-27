@@ -854,7 +854,7 @@ with shared.gradio_root:
                         with gr.TabItem(label='Photomaker') as photomaker_tab:
                             enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
-                            enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,pre_gen,start_instant,end_instant=instantid.gui()                          
+                            enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant=instantid.gui()                          
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
                         with gr.TabItem(label='CodeFormer'):
@@ -1893,7 +1893,7 @@ with shared.gradio_root:
         ctrls += [name_prefix]
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
         ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
-        ctrls += [enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,pre_gen,start_instant,end_instant]
+        ctrls += [enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
         ctrls += [promptcompounderlevel, ANDtoggle, silentmode, antistring]

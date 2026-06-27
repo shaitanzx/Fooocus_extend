@@ -400,13 +400,14 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
 
     if p.enable_instant:
+        instantid_model = None
         original_pcond = copy.deepcopy(positive_cond)
         original_ncond = copy.deepcopy(negative_cond)
 
 
         print(f"[InstantID] Размер генерации: {width}x{height}")
         
-        target_unet, positive_cond, negative_cond, instantid_model = instantid.apply(
+        target_unet, positive_cond, negative_cond = instantid.apply(
             p.face_file_id,
             p.pose_file_id,
             p.identitynet_strength_ratio,
@@ -720,7 +721,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
     if p.enable_instant:
-        del instantid_model
+
 
     # Удаляем conditioning (в них могут остаться ссылки на control, но их уже нет)
     # Для надёжности удаляем ключи control/cross_attn_controlnet (если есть)
@@ -732,6 +733,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         positive_cond = copy.deepcopy(original_pcond)
         negative_cond = copy.deepcopy(original_ncond)
         del original_pcond, original_ncond
+        del instantid_model
 
 
     # Теперь заменяем их копиями оригиналов (без ControlNet)

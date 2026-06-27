@@ -31,7 +31,6 @@ def gui():
         with gr.Column():
                 # optional: upload a reference pose image
                 pose_file = gr.Image(label="Upload a reference pose image (Optional)",type="filepath")
-                pre_gen = gr.Checkbox(label="Pregeneration image", value=False)
     with gr.Row():
             # strength
             identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
@@ -79,7 +78,7 @@ def gui():
         gr.HTML('* \"InstantID\" is powered by InstantX Research. <a href="https://github.com/instantX-research/InstantID" target="_blank">\U0001F4D4 Document</a>')
 
 
-    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,pre_gen,start_instant, end_instant
+    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,start_instant, end_instant
 
 
 def get_or_load_instantid_controlnet():
@@ -284,6 +283,7 @@ def load_instantid_model(ckpt_path):
 
 def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, negative, sigma_min, sigma_max,
           width, height,start,end):
+    global instantid_model
     print("\n" + "="*60)
     print("[InstantID Pipeline] === ЗАПУСК ===")
     print("="*60)
