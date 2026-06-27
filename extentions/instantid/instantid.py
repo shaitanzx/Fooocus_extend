@@ -43,7 +43,7 @@ def gui():
             pose_file = grh.Image(label="Upload a reference pose image (Optional)",type="numpy")
             with gr.Column():
                 with gr.Row():
-                    canny_instant = gr.Checkbox(label='PyraCanny', value=False, container=False, elem_classes='min_check')
+                    canny_instant = gr.Checkbox(label='PyraCanny', value=True, container=False, elem_classes='min_check')
                 with gr.Row():
                     canny_stop = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
                     canny_weight = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)
