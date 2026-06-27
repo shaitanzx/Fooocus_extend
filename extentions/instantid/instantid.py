@@ -66,8 +66,8 @@ def gui():
     with gr.Row():
         gr.HTML('* \"InstantID\" is powered by InstantX Research. <a href="https://github.com/instantX-research/InstantID" target="_blank">\U0001F4D4 Document</a>')
 
-    cn_instant = [canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight] 
-    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,start_instant, end_instant,cn_instant
+
+    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,start_instant, end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight
 
 
 def get_or_load_instantid_controlnet():

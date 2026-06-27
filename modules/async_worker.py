@@ -249,15 +249,19 @@ class AsyncTask:
         self.adapter_strength_ratio = args.pop()        
         self.start_instant = args.pop()
         self.end_instant = args.pop()
-        self.cn_instant = args.pop()
+        self.canny_instant = args.pop()
+        self.canny_stop = args.pop()
+        self.canny_weight = args.pop()
+        self.cpds_instant = args.pop()
+        self.cdps_stop = args.pop()
+        self.cpds_weight = args.pop()
+        
         if self.enable_instant:
             if self.pose_file_id is not None:
-                enable_pyracanny, stop_pyracanny, weight_pyracanny, enable_cpds, stop_cpds, weight_cpds = cn_instant
-    
-                if enable_pyracanny:
-                    self.cn_tasks['PyraCanny'].append([self.pose_file_id, stop_pyracanny, weight_pyracanny])
+                if self.canny_instant:
+                    self.cn_tasks['PyraCanny'].append([self.pose_file_id, self.canny_stop, self.canny_weight])
                 if self.enable_cpds:
-                    self.cn_tasks['CPDS'].append([pose_file_id, stop_cpds, weight_cpds])
+                    self.cn_tasks['CPDS'].append([self.pose_file_id, self.cdps_stop, self.cpds_weight])
         print('----------------------------',self.cn_tasks)
         self.enable_pm = args.pop()
         self.files_pm = args.pop()
