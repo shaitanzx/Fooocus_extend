@@ -278,7 +278,7 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
     print("="*60)
     
     print("[Шаг 1/5] Скачивание моделей...")
-    download()
+    #download()
     print("[Шаг 1/5] ✅ Готово.")
     
     print("[Шаг 2/5] Инициализация InsightFace...")

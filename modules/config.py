@@ -946,7 +946,47 @@ def downloading_sdxl_hyper_sd_lora():
         file_name=modules.flags.PerformanceLoRA.HYPER_SD.value
     )
     return modules.flags.PerformanceLoRA.HYPER_SD.value
-
+def download_instantid():
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/1k3d68.onnx',
+        model_dir='extentions/instantid/models',
+        file_name='1k3d68.onnx'
+    )
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/2d106det.onnx',
+        model_dir='extentions/instantid/models',
+        file_name='2d106det.onnx'
+    )
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/genderage.onnx',
+        model_dir='extentions/instantid/models',
+        file_name='genderage.onnx'
+    )  
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/glintr100.onnx',
+        model_dir='extentions/instantid/models',
+        file_name='glintr100.onnx'
+    ) 
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/scrfd_10g_bnkps.onnx',
+        model_dir='extentions/instantid/models',
+        file_name='scrfd_10g_bnkps.onnx'
+    ) 
+    load_file_from_url(
+        url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/config.json',
+        model_dir='extentions/instantid/checkpoints',
+        file_name='config.json'
+    )   
+    load_file_from_url(
+        url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/diffusion_pytorch_model.safetensors',
+        model_dir='extentions/instantid/checkpoints',
+        file_name='diffusion_pytorch_model.safetensors'
+    )     
+    load_file_from_url(
+        url='https://huggingface.co/InstantX/InstantID/resolve/main/ip-adapter.bin',
+        model_dir='extentions/instantid/checkpoints',
+        file_name='ip-adapter.bin'
+    )  
 
 def downloading_controlnet_canny():
     load_file_from_url(
