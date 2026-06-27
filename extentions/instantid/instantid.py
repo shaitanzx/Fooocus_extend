@@ -3,7 +3,6 @@ import torch
 import os
 import ldm_patched.modules.controlnet
 import gradio as gr
-import modules.config
 import modules.gradio_hijack as grh
 import numpy as np
 import math
@@ -44,14 +43,14 @@ def gui():
                 with gr.Row():
                     gr.Checkbox(label='PyraCanny', value=False, container=False, elem_classes='min_check')
                 with gr.Row():
-                    ip_stop_canny = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=modules.config.default_ip_stop_ats['cn_canny'],interactive=True)
-                    ip_weight_canny = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=modules.config.default_ip_weights['cn_canny'],interactive=True)
+                    ip_stop_canny = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
+                    ip_weight_canny = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)
             with gr.Column():
                 with gr.Row():
                     gr.Checkbox(label='CPDS', value=False, container=False, elem_classes='min_check')
                 with gr.Row():
-                    ip_stop_cdps = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=modules.config.default_ip_stop_ats['cn_cpds'],interactive=True)
-                    ip_weigh_cdpst = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=modules.config.default_ip_weights['cn_cpds'],interactive=True)                    
+                    ip_stop_cdps = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
+                    ip_weigh_cdpst = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)                    
     with gr.Row():
             # strength
             identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
