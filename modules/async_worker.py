@@ -1576,7 +1576,7 @@ def worker():
                 controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, 
                 goals, inpaint_head_model_path, inpaint_image, inpaint_mask, inpaint_parameterized, ip_adapter_face_path,
                 ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner)
-        if async_task.input_image_checkbox:
+        if async_task.enable_instant:
             controlnet_canny_path, controlnet_cpds_path = apply_instant_cn(
                 async_task, controlnet_canny_path, controlnet_cpds_path)
         # Load or unload CNs
