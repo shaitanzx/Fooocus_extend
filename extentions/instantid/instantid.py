@@ -3,6 +3,8 @@ import torch
 import os
 import ldm_patched.modules.controlnet
 import gradio as gr
+import modeules.config
+import modules.gradio_hijack as grh
 import numpy as np
 import math
 import cv2
@@ -22,15 +24,34 @@ except ImportError:
 import torch.nn.functional as F
 
 def gui():
+    ip_images = []
+    ip_types = []
+    ip_stops = []
+    ip_weights = []
+    ip_ctrls = []
+    ip_ad_cols = []
+
     with gr.Row():
         enable_instant = gr.Checkbox(label="Enabled", value=False)
     with gr.Row():
         with gr.Column():
-                # upload face image
-                face_file = gr.Image(label="Upload a photo of your face", type="filepath")
+            # upload face image
+            face_file = grh.Image(label="Upload a photo of your face", type="filepath")
         with gr.Column():
-                # optional: upload a reference pose image
-                pose_file = gr.Image(label="Upload a reference pose image (Optional)",type="filepath")
+            # optional: upload a reference pose image
+            pose_file = grh.Image(label="Upload a reference pose image (Optional)",type="filepath")
+            with gr.Column():
+                with gr.Row():
+                    gr.Checkbox(label='PyraCanny', value=False, container=False, elem_classes='min_check')
+                with gr.Row():
+                    ip_stop_canny = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=modules.config.default_ip_stop_ats[3])
+                    ip_weight_canny = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=modules.config.default_ip_weights[3])
+            with gr.Column():
+                with gr.Row():
+                    gr.Checkbox(label='CDPS', value=False, container=False, elem_classes='min_check')
+                with gr.Row():
+                    ip_stop_cdps = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=modules.config.default_ip_stop_ats[4])
+                    ip_weigh_cdpst = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=modules.config.default_ip_weights[4])                    
     with gr.Row():
             # strength
             identitynet_strength_ratio = gr.Slider(label="IdentityNet strength (for fidelity)",minimum=0,maximum=1.5,step=0.001,value=0.80,interactive=True)
