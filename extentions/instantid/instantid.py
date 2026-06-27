@@ -3,7 +3,7 @@ import torch
 import os
 import ldm_patched.modules.controlnet
 import gradio as gr
-import modeules.config
+import modules.config
 import modules.gradio_hijack as grh
 import numpy as np
 import math
