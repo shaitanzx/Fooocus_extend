@@ -9,6 +9,7 @@ import math
 import cv2
 import PIL.Image
 import ldm_patched.modules.conds as conds
+import modules.core as core
 from .resampler import Resampler
 from .CrossAttentionPatch import Attn2Replace, instantid_attention
 # from .utils import tensor_to_image  # Больше не нужно, так как читаем файл напрямую
@@ -39,45 +40,20 @@ def gui():
 
         with gr.Column():
             # optional: upload a reference pose image
-            pose_file = grh.Image(label="Upload a reference pose image (Optional)",type="filepath")
+            pose_file = grh.Image(label="Upload a reference pose image (Optional)",type="numpy")
             with gr.Column():
                 with gr.Row():
-                    gr.Checkbox(label='PyraCanny', value=False, container=False, elem_classes='min_check')
+                    canny_instant = gr.Checkbox(label='PyraCanny', value=False, container=False, elem_classes='min_check')
                 with gr.Row():
-                    ip_stop_canny = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
-                    ip_weight_canny = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)
+                    canny_stop = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
+                    canny_weight = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)
             with gr.Column():
                 with gr.Row():
-                    gr.Checkbox(label='CPDS', value=False, container=False, elem_classes='min_check')
+                    cpds_instant = gr.Checkbox(label='CPDS', value=False, container=False, elem_classes='min_check')
                 with gr.Row():
-                    ip_stop_cdps = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
-                    ip_weigh_cdpst = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)                    
-    # with gr.Row():
-    #         with gr.Accordion("Controlnet"):
-    #             controlnet_selection = gr.CheckboxGroup(
-    #                 ["canny", "depth"], label="Controlnet", value=["depth"],
-    #                 info="Use pose for skeleton inference, canny for edge detection, and depth for depth map estimation. You can try all three to control the generation process",
-    #                 interactive=True
-    #             )
+                    cdps_stop = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=0.5,interactive=True)
+                    cpds_weight = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=1,interactive=True)                    
 
-    #             canny_strength = gr.Slider(label="Canny strength",minimum=0,maximum=1.5,step=0.05,value=0.40,interactive=True)
-    #             depth_strength = gr.Slider(label="Depth strength",minimum=0,maximum=1.5,step=0.05,value=0.40,interactive=True)
-    # with gr.Row():
-    #         schedulers = [
-    #              "DEISMultistepScheduler",
-    #              "HeunDiscreteScheduler",
-    #              "EulerDiscreteScheduler",
-    #              "DPMSolverMultistepScheduler",
-    #              "DPMSolverMultistepScheduler-Karras",
-    #              "DPMSolverMultistepScheduler-Karras-SDE"]
-    #         scheduler = gr.Dropdown(
-    #                 label="Schedulers",
-    #                 choices=schedulers,
-    #                 value="EulerDiscreteScheduler",
-    #                 interactive=True
-    #             )
-    # with gr.Row():
-    #         enhance_face_region = gr.Checkbox(label="Enhance non-face region", value=True,interactive=True)
     with gr.Row():
             tips = r"""
 ### Usage tips of InstantID
@@ -90,8 +66,8 @@ def gui():
     with gr.Row():
         gr.HTML('* \"InstantID\" is powered by InstantX Research. <a href="https://github.com/instantX-research/InstantID" target="_blank">\U0001F4D4 Document</a>')
 
-
-    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,start_instant, end_instant
+    cn_instant = [canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight] 
+    return enable_instant,face_file,pose_file,identitynet_strength_ratio,adapter_strength_ratio,start_instant, end_instant,cn_instant
 
 
 def get_or_load_instantid_controlnet():
@@ -109,7 +85,7 @@ def get_or_load_instantid_controlnet():
     
     try:
         # ИСПОЛЬЗУЕМ core.load_controlnet ВМЕСТО ldm_patched.modules.controlnet.load_controlnet
-        import modules.core as core
+        
         control_net = core.load_controlnet(ctrl_path)
         print("[InstantID CN] ✅ ControlNet успешно загружен через core.load_controlnet!")
         return control_net

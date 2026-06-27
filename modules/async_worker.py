@@ -125,7 +125,6 @@ class AsyncTask:
             cn_type = args.pop()
             if cn_img is not None:
                 self.cn_tasks[cn_type].append([cn_img, cn_stop, cn_weight])
-        print('-----------------', self.cn_tasks)
         self.debugging_dino = args.pop()
         self.dino_erode_or_dilate = args.pop()
         self.debugging_enhance_masks_checkbox = args.pop()
@@ -246,13 +245,19 @@ class AsyncTask:
 
         self.face_file_id = args.pop()
         self.pose_file_id = args.pop()
-        if self.pose_file_id is not None:
-            self.pose_file_id = np.array(Image.open(self.pose_file_id))
         self.identitynet_strength_ratio = args.pop()
         self.adapter_strength_ratio = args.pop()        
         self.start_instant = args.pop()
         self.end_instant = args.pop()
-
+        self.cn_instant = args.pop()
+        if self.enable_instant:
+            if self.pose_file_id is not None:
+                enable_pyracanny, stop_pyracanny, weight_pyracanny, enable_cpds, stop_cpds, weight_cpds = cn_instant
+    
+                if enable_pyracanny:
+                    self.cn_tasks['PyraCanny'].append([self.pose_file_id, stop_pyracanny, weight_pyracanny])
+                if self.enable_cpds:
+                    self.cn_tasks['CPDS'].append([pose_file_id, stop_cpds, weight_cpds])
 
         self.enable_pm = args.pop()
         self.files_pm = args.pop()
