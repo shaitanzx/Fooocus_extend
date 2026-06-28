@@ -245,7 +245,7 @@ class AsyncTask:
 
         self.face_file_id = args.pop()
         self.pose_file_id = args.pop()
-        if self.pose_file_id in None:
+        if self.pose_file_id is None:
             self.pose_file_id = self.face_file_id
         self.identitynet_strength_ratio = args.pop()
         self.adapter_strength_ratio = args.pop()        
