@@ -167,26 +167,14 @@ class ControlNet(ControlBase):
             self.cond_hint = broadcast_image_to(self.cond_hint, x_noisy.shape[0], batched_number)
 
         context = cond['c_crossattn']
-        
-        # ОТЛАДКА: Проверяем наличие cross_attn_controlnet
-        print(f"[DEBUG ControlNet.get_control] Проверка conditioning...")
-        print(f"[DEBUG ControlNet.get_control]   cond keys: {list(cond.keys())}")
-        print(f"[DEBUG ControlNet.get_control]   context shape: {context.shape}")
-        
-        # ПОДДЕРЖКА INSTANTID: Извлекаем cross_attn_controlnet
+
         cross_attn_controlnet = cond.get('cross_attn_controlnet', None)
         
         if cross_attn_controlnet is not None:
-            print(f"[DEBUG ControlNet.get_control] ✅ Найден cross_attn_controlnet!")
-            print(f"[DEBUG ControlNet.get_control]   cross_attn_controlnet shape: {cross_attn_controlnet.shape}")
-            print(f"[DEBUG ControlNet.get_control]   cross_attn_controlnet dtype: {cross_attn_controlnet.dtype}")
-            
-            # ЗАМЕНА: Используем только face embeddings как context
+
             context = cross_attn_controlnet.to(dtype=context.dtype).to(context.device)
             
-            print(f"[DEBUG ControlNet.get_control]   Новый context shape: {context.shape}")
-        else:
-            print(f"[DEBUG ControlNet.get_control] ❌ cross_attn_controlnet НЕ найден!")
+
 
             
         y = cond.get('y', None)
