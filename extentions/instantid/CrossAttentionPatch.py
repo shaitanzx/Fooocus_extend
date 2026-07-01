@@ -1,19 +1,12 @@
 import torch
 import math
 import torch.nn.functional as F
-# from comfy.ldm.modules.attention import optimized_attention  # <<< Убрали зависимость от ComfyUI
 from .utils import tensor_to_size
 
-# ==============================================================================
-# АВТОНОМНАЯ РЕАЛИЗАЦИЯ OPTIMIZED_ATTENTION (PyTorch 2.0+ SDPA)
-# ==============================================================================
 SDP_BATCH_LIMIT = 2**15
 
 def optimized_attention(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False, skip_output_reshape=False, **kwargs):
-    """
-    Оптимизированная функция attention через PyTorch SDPA (scaled_dot_product_attention).
-    Автоматически использует flash/memory-efficient attention под капотом.
-    """
+
     if skip_reshape:
         b, _, _, dim_head = q.shape
     else:
@@ -45,7 +38,7 @@ def optimized_attention(q, k, v, heads, mask=None, attn_precision=None, skip_res
                 attn_mask=m, dropout_p=0.0, is_causal=False, **sdpa_extra
             ).transpose(1, 2).reshape(-1, q.shape[2], heads * dim_head)
     return out
-# ==============================================================================
+
 
 
 class Attn2Replace:

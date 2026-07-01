@@ -1,4 +1,3 @@
-#from huggingface_hub import hf_hub_download
 import torch
 import os
 import ldm_patched.modules.controlnet
@@ -12,7 +11,6 @@ import ldm_patched.modules.conds as conds
 import modules.core as core
 from .resampler import Resampler
 from .CrossAttentionPatch import Attn2Replace, instantid_attention
-# from .utils import tensor_to_image  # Больше не нужно, так как читаем файл напрямую
 
 from insightface.app import FaceAnalysis
 
@@ -71,42 +69,20 @@ def gui():
 
 
 def get_or_load_instantid_controlnet():
-    """
-    Загружает ControlNet для InstantID через core.load_controlnet (Fooocus backend).
-    Это правильно добавляет ControlNet в систему управления памятью.
-    """
+
     ctrl_path = "extentions/instantid/checkpoints/ControlNetModel/diffusion_pytorch_model.safetensors"
     
-    if not os.path.exists(ctrl_path):
-        print(f"[InstantID CN] ⚠️ Файл ControlNet не найден: {ctrl_path}")
-        return None
-    
-    print(f"[InstantID CN] Загрузка ControlNet из {ctrl_path}...")
+    print(f"[InstantID CN] Loading ControlNet into memory")
     
     try:
-        # ИСПОЛЬЗУЕМ core.load_controlnet ВМЕСТО ldm_patched.modules.controlnet.load_controlnet
-        
         control_net = core.load_controlnet(ctrl_path)
-        print("[InstantID CN] ✅ ControlNet успешно загружен через core.load_controlnet!")
+        print("[InstantID CN] ✅ ControlNet loaded!")
         return control_net
     except Exception as e:
-        print(f"[InstantID CN] ❌ Ошибка загрузки ControlNet: {type(e).__name__}: {e}")
+        print(f"[InstantID CN] ❌ Loading error: {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
         return None
-# def download():
-#     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/1k3d68.onnx", local_dir="extentions/instantid/models")
-#     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/2d106det.onnx", local_dir="extentions/instantid/models")
-#     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/genderage.onnx", local_dir="extentions/instantid/models")
-#     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/glintr100.onnx", local_dir="extentions/instantid/models")
-#     hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="antelopev2/scrfd_10g_bnkps.onnx", local_dir="extentions/instantid/models")
-#     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/config.json", local_dir="extentions/instantid/checkpoints")
-#     hf_hub_download(repo_id="InstantX/InstantID", filename="ControlNetModel/diffusion_pytorch_model.safetensors", local_dir="extentions/instantid/checkpoints")
-#     hf_hub_download(repo_id="InstantX/InstantID", filename="ip-adapter.bin", local_dir="extentions/instantid/checkpoints")
-#     #hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/config.json", local_dir="extentions/instant2/checkpoints")
-#     #hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="canny_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
-#     #hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/config.json", local_dir="extentions/instant2/checkpoints")
-#     #hf_hub_download(repo_id="shaitanzx/FooocusExtend", filename="depth_small/diffusion_pytorch_model.safetensors", local_dir="extentions/instant2/checkpoints")
 
 def draw_kps(image_pil, kps, color_list=[(255,0,0), (0,255,0), (0,0,255), (255,255,0), (255,0,255)]):
     stickwidth = 4
@@ -137,25 +113,15 @@ def draw_kps(image_pil, kps, color_list=[(255,0,0), (0,255,0), (0,0,255), (255,2
 
 class InstantID(torch.nn.Module):
     def __init__(self, instantid_model, cross_attention_dim=1280, output_cross_attention_dim=1024, clip_embeddings_dim=512, clip_extra_context_tokens=16):
-        super().__init__()
-        print("  [InstantID.__init__] Начало инициализации...")
-        
+        super().__init__()        
         self.clip_embeddings_dim = clip_embeddings_dim
         self.cross_attention_dim = cross_attention_dim
         self.output_cross_attention_dim = output_cross_attention_dim
         self.clip_extra_context_tokens = clip_extra_context_tokens
-
-        print("  [InstantID.__init__] Создание модели Resampler (image_proj_model)...")
         self.image_proj_model = self.init_proj()
-        print("  [InstantID.__init__] Resampler создан успешно.")
-
-        print(f"  [InstantID.__init__] Загрузка весов в Resampler (найдено {len(instantid_model['image_proj'])} ключей)...")
         self.image_proj_model.load_state_dict(instantid_model["image_proj"])
-        print("  [InstantID.__init__] Веса Resampler загружены успешно.")
-
-        print("  [InstantID.__init__] Создание слоев To_KV (ip_layers)...")
         self.ip_layers = To_KV(instantid_model["ip_adapter"])
-        print("  [InstantID.__init__] Инициализация завершена успешно!")
+
 
     def init_proj(self):
         image_proj_model = Resampler(
@@ -197,21 +163,13 @@ def _set_model_patch_replace(model, patch_kwargs, key):
         model.model_options["transformer_options"] = to
     else:
         to["patches_replace"]["attn2"][key].add(instantid_attention, **patch_kwargs)
-
-# ==============================================================================
-# 2. ФУНКЦИЯ ЗАГРУЗКИ МОДЕЛИ (АДАПТИРОВАНА ПОД .bin И .safetensors)
-# ==============================================================================
-
 def load_instantid_model(ckpt_path):
-    print(f"\n[InstantID] === НАЧАЛО ЗАГРУЗКИ МОДЕЛИ ===")
-    print(f"[InstantID] Путь к файлу: {ckpt_path}")
-    
-    if not os.path.exists(ckpt_path):
-        raise FileNotFoundError(f"Файл модели не найден: {ckpt_path}")
+    print(f"[InstantID] Loading IP-Adaper into memory")
 
-    print("[InstantID] Чтение файла .bin (это может занять несколько секунд)...")
+
+    print("[InstantID] Please wait...")
     pl_sd = torch.load(ckpt_path, map_location="cpu", weights_only=False)
-    print("[InstantID] Файл прочитан в память.")
+    print("[InstantID] IP-Adaper is loaded")
 
     def extract_all_tensors(d, prefix=""):
         tensors = {}
@@ -224,13 +182,11 @@ def load_instantid_model(ckpt_path):
                     tensors.update(extract_all_tensors(v, new_prefix))
         return tensors
 
-    print("[InstantID] Распаковка вложенных словарей...")
     sd = extract_all_tensors(pl_sd)
-    print(f"[InstantID] ✅ Успешно извлечено {len(sd)} тензоров.")
+
 
     st_model = {"image_proj": {}, "ip_adapter": {}}
-    
-    print("[InstantID] Распределение тензоров по категориям (image_proj / ip_adapter)...")
+
     for key, tensor in sd.items():
         if key.startswith("image_proj."):
             st_model["image_proj"][key.replace("image_proj.", "")] = tensor
@@ -241,25 +197,12 @@ def load_instantid_model(ckpt_path):
         elif "to_k_ip" in key or "to_v_ip" in key:
             st_model["ip_adapter"][key] = tensor
 
-    print(f"[InstantID] Найдено {len(st_model['image_proj'])} ключей для image_proj.")
-    print(f"[InstantID] Найдено {len(st_model['ip_adapter'])} ключей для ip_adapter.")
-
-    if not st_model["ip_adapter"]:
-        raise ValueError(f"Не найдены веса 'ip_adapter'. Доступные ключи: {list(sd.keys())[:5]}")
-
-    print("[InstantID] Определение output_dim...")
     output_dim = None
     for key in st_model["ip_adapter"].keys():
         if "to_k_ip" in key:
             output_dim = st_model["ip_adapter"][key].shape[1]
             break
     
-    if output_dim is None:
-        raise ValueError("Не найден ключ 'to_k_ip' в весах ip_adapter.")
-    
-    print(f"[InstantID] output_dim определен как: {output_dim}")
-
-    print("[InstantID] Передача данных в класс InstantID...")
     instantid = InstantID(
         st_model,
         cross_attention_dim=1280,
@@ -267,7 +210,7 @@ def load_instantid_model(ckpt_path):
         clip_embeddings_dim=512,
         clip_extra_context_tokens=16,
     )
-    print("[InstantID] === МОДЕЛЬ УСПЕШНО ЗАГРУЖЕНА ===\n")
+
     return instantid
 
 def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, negative, sigma_min, sigma_max,
