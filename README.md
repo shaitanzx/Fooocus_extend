@@ -113,20 +113,20 @@ This module allows you to generate an image from a reference face image.
 
 Upload a photo of your face—the reference face should be uploaded here.
 
-Upload a reference pose image (optional)—the reference pose image will be uploaded here. Optional.
+Upload a reference pose image (optional) — the reference pose image will be uploaded here. Optional.
 
 If you don't specify a reference pose image, an image will be generated based on your request, using only the face image and the same pose as the reference image.
 
-IdentityNet Strength (for Accuracy)—is responsible for the accuracy of facial reproduction.
+IdentityNet strength (for fidelity) — is responsible for the accuracy of facial reproduction.
 
-Image Adapter Strength (for Detail)—is responsible for detail.
+Image Adapter Strength (for Detail) — is responsible for detail.
 
 ControlNet
-- PyraCanny—is used to detect image contours
-- CPDS—is used to create an image depth map
+- PyraCanny — is used to detect image contours
+- CPDS — is used to create an image depth map
 
-Start at—defines when IdentityNet begins running
-End at—defines when IdentityNet ends running
+Start at — defines when IdentityNet begins running
+End at — defines when IdentityNet ends running
 
 
 **Inswapper**
