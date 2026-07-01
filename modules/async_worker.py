@@ -245,7 +245,7 @@ class AsyncTask:
 
         self.face_file_id = args.pop()
         self.pose_file_id = args.pop()
-        if self.pose_file_id is None:
+        if self.enable_instant and self.pose_file_id is None:
             self.pose_file_id = np.array(Image.open(self.face_file_id))
         self.identitynet_strength_ratio = args.pop()
         self.adapter_strength_ratio = args.pop()        
