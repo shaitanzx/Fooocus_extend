@@ -403,9 +403,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         instantid_model, control_net = None, None
         original_pcond = copy.deepcopy(positive_cond)
         original_ncond = copy.deepcopy(negative_cond)
-
-
-        print(f"[InstantID] Размер генерации: {width}x{height}")
         
         target_unet, positive_cond, negative_cond = instantid.apply(
             p.face_file_id,
@@ -422,21 +419,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             p.start_instant,
             p.end_instant
         )
-        
-        # ОТЛАДКА: Проверяем, есть ли control в conditioning
-        print(f"[DEBUG] positive_cond после instantid.apply():")
-        print(f"  -> len: {len(positive_cond)}")
-        if len(positive_cond) > 0:
-            print(f"  -> positive_cond[0][1] keys: {list(positive_cond[0][1].keys())}")
-            has_control = 'control' in positive_cond[0][1]
-            print(f"  -> has 'control': {has_control}")
-            if has_control:
-                control = positive_cond[0][1]['control']
-                print(f"  -> control type: {type(control)}")
-                if hasattr(control, 'cond_hint_original'):
-                    print(f"  -> control.cond_hint_original shape: {control.cond_hint_original.shape}")
-        
-        print("[InstantID] ✅ IP-Adapter + ControlNet применены")
+
 
 
     _lbw_state = {

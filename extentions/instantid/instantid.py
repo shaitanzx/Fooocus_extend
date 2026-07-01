@@ -221,7 +221,7 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
     insightface.prepare(ctx_id=0, det_size=(640, 640))
 
     instantid_file = "extentions/instantid/checkpoints/ip-adapter.bin"
-
+    instantid_model = load_instantid_model(instantid_file)
     combine_embeds='average'
     noise=0.35
 
@@ -243,7 +243,6 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
     
     raw_embed = torch.from_numpy(face['embedding'])
     clip_embed = raw_embed.view(1, 1, -1).to(device, dtype=dtype)
-    print(f"  -> Форма clip_embed: {clip_embed.shape}")
     image_ref = img_bgr
 
     if pose_path is not None:
