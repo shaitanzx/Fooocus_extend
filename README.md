@@ -573,7 +573,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
-
+v9.3.1
+ 1. Native Fooocus support InstatID
+    
 v9.3.0
  1. Add Dinamic Lora Support
 
