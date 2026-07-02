@@ -8,7 +8,7 @@ Let's look at everything in order.
    - OneButtonPrompt - prompt generator with many settings
    - Prompt Translate
    - PhotoMaker - generating images with a reference face
-   - InstantID - generating images with a reference face
+   - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT)
    - Inswapper - face replacements in the generated image
    - CodeFormer - face enhancer
    - Vector - vector image generation
@@ -104,31 +104,30 @@ Upload a photo of your face - your reference face should be uploaded here.
 **Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 4 minutes.**
 
 
-**InstantID** (works only in the local version) 
-![image](https://github.com/user-attachments/assets/f12b7389-48b4-4659-a94d-5d01268ab179)
+**InstantID**
 
-The module allows you to generate an image with a reference face
-Upload a photo of your face - your reference face should be uploaded here.
+<img width="975" height="528" alt="image" src="https://github.com/user-attachments/assets/3bb5d9d0-5053-4147-a9d9-828f2efbd4d2" />
 
-Upload a reference pose image (Optional) - a reference pose image will be uploaded here. Optional.
 
-Pregeneration image - if this mode is enabled, then a new image will be generated as a reference pose image based on your Prompt.
+This module allows you to generate an image from a reference face image.
 
-If you have not specified a pose reference image, an image will be generated from your prompt based only on the face image and the same resolution. 
+Upload a photo of your face—the reference face should be uploaded here.
 
-If a pose reference image is present, the dimensions will be the same as the pose reference image.
+Upload a reference pose image (optional) — the reference pose image will be uploaded here. Optional.
 
-IdentityNet strength (for fidelity) - responsible for the accuracy of face repetition.
+If you don't specify a reference pose image, an image will be generated based on your request, using only the face image and the same pose as the reference image.
 
-Image adapter strength (for detail) - responsible for details
+IdentityNet strength (for fidelity) — is responsible for the accuracy of facial reproduction.
 
-ContrloNet
-- canny - used to define image contours
-- depth - used to create a depth map of the image
-Schedulers - select the Schedulers that will be used when generating the image with our face.
-Enhance non-face region - enhance non-face parts of the image
+Image Adapter Strength (for Detail) — is responsible for detail.
 
-**Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 7 minutes.**
+ControlNet
+- PyraCanny — is used to detect image contours
+- CPDS — is used to create an image depth map
+
+Start at — defines when IdentityNet begins running
+End at — defines when IdentityNet ends running
+
 
 **Inswapper**
 
@@ -574,7 +573,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
-
+v9.3.1
+ 1. Native Fooocus support InstatID
+    
 v9.3.0
  1. Add Dinamic Lora Support
 

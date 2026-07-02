@@ -6,7 +6,8 @@ from modules.patch import PatchSettings, patch_settings, patch_all
 import modules.config
 import sys
 import random
-
+import numpy as np
+from PIL import Image
 
 patch_all()
 
@@ -124,7 +125,6 @@ class AsyncTask:
             cn_type = args.pop()
             if cn_img is not None:
                 self.cn_tasks[cn_type].append([cn_img, cn_stop, cn_weight])
-
         self.debugging_dino = args.pop()
         self.dino_erode_or_dilate = args.pop()
         self.debugging_enhance_masks_checkbox = args.pop()
@@ -245,15 +245,25 @@ class AsyncTask:
 
         self.face_file_id = args.pop()
         self.pose_file_id = args.pop()
+        if self.enable_instant and self.pose_file_id is None:
+            self.pose_file_id = np.array(Image.open(self.face_file_id))
         self.identitynet_strength_ratio = args.pop()
-        self.adapter_strength_ratio = args.pop()
-        self.controlnet_selection_id = args.pop()
-        self.canny_strength_id = args.pop()
-        self.depth_strength_id = args.pop()
-        self.scheduler_id = args.pop()
-        self.enhance_face_region_id = args.pop()
-        self.pre_gen = args.pop()
-
+        self.adapter_strength_ratio = args.pop()        
+        self.start_instant = args.pop()
+        self.end_instant = args.pop()
+        self.canny_instant = args.pop()
+        self.canny_stop = args.pop()
+        self.canny_weight = args.pop()
+        self.cpds_instant = args.pop()
+        self.cdps_stop = args.pop()
+        self.cpds_weight = args.pop()
+        
+        if self.enable_instant:
+            if self.pose_file_id is not None:
+                if self.canny_instant:
+                    self.cn_tasks['PyraCanny'].append([self.pose_file_id, self.canny_stop, self.canny_weight])
+                if self.cpds_instant:
+                    self.cn_tasks['CPDS'].append([self.pose_file_id, self.cdps_stop, self.cpds_weight])
         self.enable_pm = args.pop()
         self.files_pm = args.pop()
         self.style_strength_ratio = args.pop()
@@ -353,7 +363,7 @@ def worker():
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
     from PIL import Image
-    import extentions.instantid.main as instantid
+    
     import extentions.photomaker.app as photomaker
     from extentions.obp.scripts import onebuttonprompt as ob_prompt
     from extentions.vector import vector as vector
@@ -532,18 +542,17 @@ def worker():
                     positive_cond, negative_cond = core.apply_controlnet(
                         positive_cond, negative_cond,
                         pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
-        imgs=None 
 
-        if (async_task.enable_instant == True and async_task.pre_gen == True) or async_task.enable_instant == False:
-            if async_task.enable_pm ==True:
-                imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
-                    async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
-                    async_task.sketch_image,async_task.adapter_conditioning_scale,
-                    async_task.adapter_conditioning_factor,
-                    modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
-                    loras,modules.config.paths_loras[0],async_task)
-            else:
-                imgs = pipeline.process_diffusion(
+        if async_task.enable_pm ==True:
+            imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
+                     async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
+                     async_task.sketch_image,async_task.adapter_conditioning_scale,
+                     async_task.adapter_conditioning_factor,
+                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
+                     loras,modules.config.paths_loras[0],async_task)
+        else:
+            imgs = pipeline.process_diffusion(
+                    p=async_task,
                     positive_cond=positive_cond,
                     negative_cond=negative_cond,
                     steps=steps,
@@ -564,13 +573,6 @@ def worker():
                     tile_y=async_task.tile_y,
                     transper=async_task.transper
                 )
-        if async_task.enable_instant == True:
-            imgs = instantid.start(async_task.face_file_id,async_task.pose_file_id,steps,
-                                   async_task.identitynet_strength_ratio,async_task.adapter_strength_ratio,
-                                   async_task.canny_strength_id,async_task.depth_strength_id,async_task.controlnet_selection_id,async_task.cfg_scale,
-                                   task,async_task.scheduler_id,async_task.enhance_face_region_id,
-                                   modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,loras,modules.config.paths_loras[0],async_task,
-                                   async_task.pre_gen,imgs)
         
         del positive_cond, negative_cond  # Save memory
         if inpaint_worker.current_task is not None:
@@ -1229,7 +1231,6 @@ def worker():
         async_task.adm_scaler_negative = 1.0
         async_task.adm_scaler_end = 0.0
         return current_progress
-
     def apply_image_input(async_task, base_model_additional_loras, clip_vision_path, controlnet_canny_path,
                           controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, 
                           controlnet_manga_path, goals, inpaint_head_model_path, inpaint_image, inpaint_mask,
@@ -1324,6 +1325,16 @@ def worker():
             skip_prompt_processing = True
 
         return base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner
+    def apply_instant_cn(async_task,controlnet_canny_path,controlnet_cpds_path,goals):
+        goals.append('cn')
+        progressbar(async_task, 1, 'Downloading control models ...')
+        if len(async_task.cn_tasks[flags.cn_canny]) > 0:
+            controlnet_canny_path = modules.config.downloading_controlnet_canny()
+        if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
+            controlnet_cpds_path = modules.config.downloading_controlnet_cpds()
+        modules.config.download_instantid()
+
+        return controlnet_canny_path, controlnet_cpds_path
 
     def prepare_upscale(async_task, goals, uov_input_image, uov_method, performance, steps, current_progress,
                         advance_progress=False, skip_prompt_processing=False):
@@ -1557,7 +1568,9 @@ def worker():
                 controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, 
                 goals, inpaint_head_model_path, inpaint_image, inpaint_mask, inpaint_parameterized, ip_adapter_face_path,
                 ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner)
-
+        if async_task.enable_instant:
+            controlnet_canny_path, controlnet_cpds_path = apply_instant_cn(
+                async_task, controlnet_canny_path, controlnet_cpds_path,goals)
         # Load or unload CNs
         progressbar(async_task, current_progress, 'Loading control models ...')
         pipeline.refresh_controlnets([controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path])

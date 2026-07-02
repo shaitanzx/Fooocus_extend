@@ -25,7 +25,8 @@ from torch.nn.modules.utils import _pair
 from modules.model_loader import load_file_from_url
 import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
-
+import extentions.instantid.instantid as instantid
+import gc
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -344,9 +345,10 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
+
 @torch.no_grad()
 @torch.inference_mode()
-def process_diffusion(positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
+def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
         disable_preview=False,tile_x=False,tile_y=False,transper='None'):
 
@@ -394,6 +396,31 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     target_unet.model_options['conditioning_modifiers'] = []
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
+
+
+
+    if p.enable_instant:
+        instantid_model, control_net = None, None
+        original_pcond = copy.deepcopy(positive_cond)
+        original_ncond = copy.deepcopy(negative_cond)
+        
+        target_unet, positive_cond, negative_cond = instantid.apply(
+            p.face_file_id,
+            p.pose_file_id,
+            p.identitynet_strength_ratio,
+            p.adapter_strength_ratio, 
+            target_unet, 
+            positive_cond, 
+            negative_cond, 
+            sigma_min, 
+            sigma_max,
+            width,
+            height,
+            p.start_instant,
+            p.end_instant
+        )
+
+
 
     _lbw_state = {
         "baseline_patches": copy.deepcopy(target_unet.patches),
@@ -676,6 +703,19 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     target_unet.patches = copy.deepcopy(original_patches)
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
+    if p.enable_instant:
+        for cond in [positive_cond, negative_cond]:
+            for item in cond:
+                d = item[1]
+                d.pop('control', None)
+                d.pop('cross_attn_controlnet', None)
+        positive_cond = copy.deepcopy(original_pcond)
+        negative_cond = copy.deepcopy(original_ncond)
+        del original_pcond, original_ncond
+        del instantid_model, control_net
+
+    gc.collect()
     torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
 
     return images

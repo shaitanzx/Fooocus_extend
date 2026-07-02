@@ -355,6 +355,7 @@ def timed_adm(y, timesteps):
 
 
 def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
+
     t_emb = ldm_patched.ldm.modules.diffusionmodules.openaimodel.timestep_embedding(timesteps, self.model_channels, repeat_only=False).to(x.dtype)
     emb = self.time_embed(t_emb)
     pid = os.getpid()
@@ -387,11 +388,11 @@ def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
         for i in range(10):
             k = 1.0 - float(i) / 9.0
             outs[i] = outs[i] * (1.0 - patch_settings[pid].controlnet_softness * k)
-
     return outs
 
 
 def patched_unet_forward(self, x, timesteps=None, context=None, y=None, control=None, transformer_options={}, **kwargs):
+
     self.current_step = 1.0 - timesteps.to(x) / 999.0
     patch_settings[os.getpid()].global_diffusion_progress = float(self.current_step.detach().cpu().numpy().tolist()[0])
 
@@ -507,7 +508,6 @@ def patch_all():
     if ldm_patched.modules.model_management.directml_enabled:
         ldm_patched.modules.model_management.lowvram_available = True
         ldm_patched.modules.model_management.OOM_EXCEPTION = Exception
-
     patch_all_precision()
     patch_all_clip()
 
