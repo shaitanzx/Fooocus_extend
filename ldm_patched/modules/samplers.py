@@ -57,11 +57,10 @@ def get_area_and_mult(conds, x_in, timestep_in):
     model_conds = conds["model_conds"]
     for c in model_conds:
         conditioning[c] = model_conds[c].process_cond(batch_size=x_in.shape[0], device=x_in.device, area=area)
-    # === ИСПРАВЛЕНИЕ ДЛЯ INSTANTID ===
-    # Сохраняем cross_attn_controlnet в conditioning, чтобы он не потерялся
+
     if 'cross_attn_controlnet' in conds:
         conditioning['cross_attn_controlnet'] = conds['cross_attn_controlnet']
-    # =================================
+
     control = conds.get('control', None)
 
     patches = None
