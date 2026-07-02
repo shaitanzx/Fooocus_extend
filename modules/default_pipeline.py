@@ -704,10 +704,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.model_options = copy.deepcopy(original_model_options)
     del original_patches, original_model_options
     if p.enable_instant:
-
-
-    # Удаляем conditioning (в них могут остаться ссылки на control, но их уже нет)
-    # Для надёжности удаляем ключи control/cross_attn_controlnet (если есть)
         for cond in [positive_cond, negative_cond]:
             for item in cond:
                 d = item[1]
@@ -718,10 +714,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         del original_pcond, original_ncond
         del instantid_model, control_net
 
-
-    # Теперь заменяем их копиями оригиналов (без ControlNet)
-
-    
     gc.collect()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
