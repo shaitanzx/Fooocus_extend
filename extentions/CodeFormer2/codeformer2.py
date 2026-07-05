@@ -418,7 +418,56 @@ Trained with the same Frankendata dataset that I used for the pretrain model.
 Crustaceous D: A 1x model designed to reduce artifacts and restore detail to images upscaled by 4xFrankendata_FullDegradation_SRFormer. It could possibly work with other upscaling models too.
 """],
 }
+def get_model_type(model_name):
+    # Define model type mappings based on key parts of the model names
+    model_type = "other"
+    if any(value in model_name.lower() for value in ("4x-animesharp.pth", "sudo-realesrgan", "remacri")):
+        model_type = "ESRGAN"
+    elif "srformer" in model_name.lower():
+        model_type = "SRFormer"
+    elif ("realplksr" in model_name.lower() and "dysample" in model_name.lower()) or "rplksrd" in model_name.lower():
+        model_type = "RealPLKSR_dysample"
+    elif any(value in model_name.lower() for value in ("realplksr", "rplksr", "realplskr")):
+        model_type = "RealPLKSR"
+    elif any(value in model_name.lower() for value in ("realesrgan", "realesrnet")):
+        model_type = "RRDB"
+    elif any(value in model_name.lower() for value in ("realesr", "compact")):
+        model_type = "SRVGG"
+    elif "esrgan" in model_name.lower():
+        model_type = "ESRGAN"
+    elif "dat" in model_name.lower():
+        model_type = "DAT"
+    elif "hat" in model_name.lower():
+        model_type = "HAT"
+    elif "drct" in model_name.lower():
+        model_type = "DRCT"
+    elif "atd" in model_name.lower():
+        model_type = "ATD"
+    elif "mosr" in model_name.lower():
+        model_type = "MoSR"
+    return f"{model_type}, {model_name}"
+    
+typed_upscale_models = {get_model_type(key): value[0] for key, value in upscale_models.items()}
+
 def ui():
+    
+    rows = []
+    tmptype = None
+    upscale_model_tables = []
+    for key, _ in typed_upscale_models.items():
+        upscale_type, upscale_model = key.split(", ", 1)
+        if tmptype and tmptype != upscale_type:#RRDB ESRGAN
+            speed = "Fast" if tmptype == "SRVGG" else ("Slow" if any(value == tmptype for value in ("DAT", "HAT", "DRCT", "ATD", "SRFormer")) else "Normal")
+            upscale_model_header = f"| Upscale Model | Info, Type: {tmptype}, Model execution speed: {speed} | Download URL |\n|------------|------|--------------|"
+            upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
+            rows.clear()
+        tmptype = upscale_type
+        value = upscale_models[upscale_model]
+        row = f"| [{upscale_model}]({value[1]}) | " + value[2].replace("\n", "<br>") + " | [download]({value[0]}) |"
+        rows.append(row)
+    speed = "Fast" if tmptype == "SRVGG" else ("Slow" if any(value == tmptype for value in ("DAT", "HAT", "DRCT", "ATD", "SRFormer")) else "Normal")
+    upscale_model_header = f"| Upscale Model Name | Info, Type: {tmptype}, Model execution speed: {speed} | Download URL |\n|------------|------|--------------|"
+    upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
     with gr.Row():
         with gr.Column(variant="panel"):
             submit = gr.Button(value="Submit", variant="primary", size="lg")
