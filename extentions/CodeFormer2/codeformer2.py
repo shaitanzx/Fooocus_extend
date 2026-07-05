@@ -446,10 +446,10 @@ def get_model_type(model_name):
     elif "mosr" in model_name.lower():
         model_type = "MoSR"
     return f"{model_type}, {model_name}"
-    
+
 typed_upscale_models = {get_model_type(key): value[0] for key, value in upscale_models.items()}
 
-def ui():
+def gui():
     
     rows = []
     tmptype = None
