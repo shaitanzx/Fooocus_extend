@@ -11,7 +11,7 @@ import time
 import ast
 
 from collections import defaultdict
-from facexlib.utils.misc import download_from_url
+from facexlib.utils.misc import load_file_from_url
 from extras.basicsr.utils.realesrganer import RealESRGANer
 from utils.dataops import auto_split_upscale
 class Upscale:
