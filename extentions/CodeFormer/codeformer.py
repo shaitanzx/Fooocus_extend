@@ -13,7 +13,7 @@ import modules.config
 sys.path.append(os.path.abspath('extentions/CodeFormer'))
 from extras.basicsr.utils import imwrite, img2tensor, tensor2img
 from extras.basicsr.utils.download_util import load_file_from_url
-from extras.facelib.utils.face_restoration_helper import FaceRestoreHelper
+from facelib.utils.face_restoration_helper import FaceRestoreHelper
 from extras.basicsr.archs.rrdbnet_arch import RRDBNet
 from extras.basicsr.utils.realesrgan_utils import RealESRGANer
 from facelib.utils.misc import is_gray
