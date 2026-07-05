@@ -458,26 +458,26 @@ def gui():
         upscale_type, upscale_model = key.split(", ", 1)
         if tmptype and tmptype != upscale_type:#RRDB ESRGAN
             speed = "Fast" if tmptype == "SRVGG" else ("Slow" if any(value == tmptype for value in ("DAT", "HAT", "DRCT", "ATD", "SRFormer")) else "Normal")
-            upscale_model_header = f"| Upscale Model | Info, Type: {tmptype}, Model execution speed: {speed} | Download URL |\n|------------|------|--------------|"
+            upscale_model_header = f"| Upscale Model | Info, Type: {tmptype}, Model execution speed: {speed} |\n|------------|------|"
             upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
             rows.clear()
         tmptype = upscale_type
         value = upscale_models[upscale_model]
-        row = f"| [{upscale_model}]({value[1]}) | " + value[2].replace("\n", "<br>") + " | [download]({value[0]}) |"
+        row = f"| [{upscale_model}]({value[1]}) | " + value[2].replace("\n", "<br>") + " |"
         rows.append(row)
     speed = "Fast" if tmptype == "SRVGG" else ("Slow" if any(value == tmptype for value in ("DAT", "HAT", "DRCT", "ATD", "SRFormer")) else "Normal")
-    upscale_model_header = f"| Upscale Model Name | Info, Type: {tmptype}, Model execution speed: {speed} | Download URL |\n|------------|------|--------------|"
+    upscale_model_header = f"| Upscale Model Name | Info, Type: {tmptype}, Model execution speed: {speed} |\n|------------|------|"
     upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
     with gr.Row():
         with gr.Column(variant="panel"):
             submit = gr.Button(value="Submit", variant="primary", size="lg")
             input_gallery = gr.Image(label="Input image",interactive=True,type="numpy")
-            face_model                 = gr.Dropdown([None]+list(face_models.keys()), type="value", value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
+            face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
             
-            upscale_model              = gr.Dropdown([None]+list(typed_upscale_models.keys()), type="value", value='SRVGG, realesr-general-x4v3.pth', label='UpScale version')
-            upscale_scale              = gr.Number(label="Rescaling factor", value=4)
-            face_detection             = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], type="value", value="retinaface_resnet50", label="Face Detection type")
-            face_detection_threshold   = gr.Number(label="Face eye dist threshold", value=10, info="A threshold to filter out faces with too small an eye distance (e.g., side faces).")
+            upscale_model              = gr.Dropdown([None]+list(typed_upscale_models.keys()), interactive=True,type="value", value='SRVGG, realesr-general-x4v3.pth', label='UpScale version')
+            upscale_scale              = gr.Number(label="Rescaling factor", value=4,interactive=True)
+            face_detection             = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")
+            face_detection_threshold   = gr.Number(label="Face eye dist threshold", interactive=True,value=10, info="A threshold to filter out faces with too small an eye distance (e.g., side faces).")
             face_detection_only_center = gr.Checkbox(value=False, label="Face detection only center", info="If set to True, only the face closest to the center of the image will be kept.")
             #with_model_name            = gr.Checkbox(label="Output image files name with model name", value=True)
             # Add a checkbox to always save the output as a PNG file for the best quality.
@@ -504,26 +504,26 @@ def gui():
             #         ], variant="secondary", size="lg",)
         with gr.Column(variant="panel"):
             gallerys = gr.Image(label="Output image",visible=True,height=260,interactive=False)
-            outputs = gr.File(label="Download the output ZIP file")
     # with gr.Row(variant="panel"):
     #     # Generate output array
     #     output_arr = []
     #     for file_name in example_list:
     #         output_arr.append([[file_name],])
     #     gr.Examples(output_arr, inputs=[input_gallery,], examples_per_page=20)
-    with gr.Row(variant="panel"):
-        # Convert to Markdown table
-        header = "| Face Model Name | Info |\n|------------|------|"
-        rows = [
-            f"| [{key}]({value[1]}) | " + value[2].replace("\n", "<br>") + f" |"
-            for key, value in face_models.items()
-        ]
-        markdown_table = header + "\n" + "\n".join(rows)
-        gr.Markdown(value=markdown_table)
-
-    for table in upscale_model_tables:
+    with gr.Accordion('About models', open=False,elem_classes="nested-accordion"):
         with gr.Row(variant="panel"):
-            gr.Markdown(value=table)
+            # Convert to Markdown table
+            header = "| Face Model Name | Info |\n|------------|------|"
+            rows = [
+                f"| [{key}]({value[1]}) | " + value[2].replace("\n", "<br>") + f" |"
+                for key, value in face_models.items()
+            ]
+            markdown_table = header + "\n" + "\n".join(rows)
+            gr.Markdown(value=markdown_table)
+
+        for table in upscale_model_tables:
+            with gr.Row(variant="panel"):
+                gr.Markdown(value=table)
 
     # submit.click(
     #     upscale.inference, 
