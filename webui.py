@@ -56,8 +56,8 @@ from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
 import chardet
-#from extentions.inswapper import face_swap
-#from extentions.CodeFormer import codeformer
+from extentions.inswapper import face_swap
+from extentions.CodeFormer import codeformer
 import extentions.instantid.instantid as instantid
 import extentions.photomaker.app as photomaker
 
@@ -855,35 +855,21 @@ with shared.gradio_root:
                             enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
                             enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight=instantid.gui()                          
-                        #with gr.TabItem(label='Inswapper'):
-                        #    inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
-                        #with gr.TabItem(label='CodeFormer'):
-                        #    codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
+                        with gr.TabItem(label='Inswapper'):
+                            inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
+                        with gr.TabItem(label='CodeFormer'):
+                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
-                # def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
-                #     enabled_modules = [
-                #         ('OneButtonPrompt', obp),
-                #         ('PromptTranslate', translate),
-                #         ('PhotoMaker', photomaker),
-                #         ('InstantID', instant),
-                #         ('Inswapper', inswapper),
-                #         ('Codeformer', codeformer),
-                #         ('Vector', vector)
-                #         ]
-                #     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
-                #     main_name = "in generation"
-                #     if active_modules:
-                #         main_name += f" — {', '.join(active_modules)}"   
-                #     return gr.update(label=main_name)
-                def gen_acc_name(obp,translate, photomaker, instant,vector):
+                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
-
+                        ('Inswapper', inswapper),
+                        ('Codeformer', codeformer),
                         ('Vector', vector)
                         ]
                     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
@@ -891,17 +877,14 @@ with shared.gradio_root:
                     if active_modules:
                         main_name += f" — {', '.join(active_modules)}"   
                     return gr.update(label=main_name)
- 
-
-                # #enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled,poDoVector]
-                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,poDoVector]
+                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled,poDoVector]
                 poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                #inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                #codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                #enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Image Batch') as im_batch:
@@ -1051,11 +1034,11 @@ with shared.gradio_root:
                     xyz_start=gr.Button(value="Start xyz",visible=True)
                     gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
                     gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
-                  #with gr.TabItem(label='Inswapper'):
-                  #  face_swap.inswapper(False)
+                  with gr.TabItem(label='Inswapper'):
+                    face_swap.inswapper(False)
 
-                  #with gr.TabItem(label='CodeFormer'):
-                  #  codeformer.codeformer_gui(False)
+                  with gr.TabItem(label='CodeFormer'):
+                    codeformer.codeformer_gui(False)
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
 
@@ -1908,8 +1891,8 @@ with shared.gradio_root:
         #!ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
         ctrls += [name_prefix]
-        #ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
-        #ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
+        ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
+        ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
         ctrls += [enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
