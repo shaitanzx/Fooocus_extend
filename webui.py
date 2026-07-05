@@ -58,6 +58,7 @@ from modules.extra_utils import get_files_from_folder
 import chardet
 from extentions.inswapper import face_swap
 from extentions.CodeFormer import codeformer
+from extentions.CodeFormer2 import codeformer2
 import extentions.instantid.instantid as instantid
 import extentions.photomaker.app as photomaker
 
@@ -857,6 +858,9 @@ with shared.gradio_root:
                             enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight=instantid.gui()                          
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
+                        with gr.TabItem(label='CodeFormer2'):
+                            codeformer2.gui()
+                        
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
                         with gr.TabItem(label='Vector'):
