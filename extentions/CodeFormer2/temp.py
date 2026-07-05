@@ -1,46 +1,4 @@
-Hugging Face's logo
-Hugging Face
-Models
-Datasets
-Spaces
-Buckets
-new
-Docs
-Pricing
-
-
-Spaces:
-avans06
-/
-Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN
-
-
-like
-148
-App
-Files
-Community
-2
-Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN
-/
-app.py
-
-avans06's picture
-avans06
-Optimize Gallery UI and enable Ctrl+V image pasting
-314497f
-7 months ago
-Raw
-
-Download with hf CLI
-
-Copy download link
-History
-Blame
-Contribute
-Delete
-87.7 kB
-﻿import os
+import os
 import gc
 import re
 import cv2
