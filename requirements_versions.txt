@@ -52,7 +52,7 @@ addict
 future
 requests
 scikit-image
-tb-nightly
+#tb-nightly
 fvcore
 matplotlib
 fairscale
