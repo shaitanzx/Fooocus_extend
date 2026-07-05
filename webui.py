@@ -1053,7 +1053,7 @@ with shared.gradio_root:
                             with gr.Row():
                                 image_mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
                             with gr.Row():
-                                clean_image_button = gr.Button("Clean Up", height=100,visible=True)
+                                clean_image_button = gr.Button("Clean Up",visible=True)
                             with gr.Row():                                
                                 result_gallery = gr.Gallery(label='Clean result', show_label=True, object_fit='contain', visible=False, height=768,
                                     elem_classes=['resizable_area', 'main_view', 'image_gallery'],
