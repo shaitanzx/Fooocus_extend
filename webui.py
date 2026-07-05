@@ -1059,7 +1059,6 @@ with shared.gradio_root:
                                     elem_classes=['resizable_area', 'main_view', 'image_gallery'],
                                     elem_id='cleaner_gallery',
                                     preview=True,
-                                    show_fullscreen_button=True,
                                     allow_preview=True,
                                     show_download_button=True)
                             with gr.Row(visible=False):
@@ -1093,7 +1092,7 @@ with shared.gradio_root:
                             with gr.Row():
                                 mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
                             with gr.Row():
-                                clean_button_video = gr.Button("Clean Up", height=100,visible=False)
+                                clean_button_video = gr.Button("Clean Up", visible=False)
                             with gr.Row(visible=False):
                                 ext_dir_video_cl=gr.Textbox(value='batch_cleaner_video',visible=False)
                         mask_check.change(lambda x: gr.update(visible=x), inputs=mask_check,
