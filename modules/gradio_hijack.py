@@ -462,14 +462,7 @@ if not hasattr(Block, 'original__init__'):
 
 def blk_ini(self, *args, **kwargs):
     all_components.append(self)
-    
-    # Проверяем ВСЕ компоненты с параметром height
-    if 'height' in kwargs:
-        import traceback
-        print(f"\n=== {self.__class__.__name__} with height={kwargs['height']} ===")
-        print(f"File: {self.__class__.__module__}")
-        traceback.print_stack(limit=10)
-        print("=========================================\n")
+
     
     return Block.original_init(self, *args, **kwargs)
 
