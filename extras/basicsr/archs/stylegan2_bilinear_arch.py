@@ -271,7 +271,7 @@ class ConstantInput(nn.Module):
         return out
 
 
-@ARCH_REGISTRY.register(suffix='basicsr')
+@ARCH_REGISTRY.register(suffix='extras.basicsr')
 class StyleGAN2GeneratorBilinear(nn.Module):
     """StyleGAN2 Generator.
 
