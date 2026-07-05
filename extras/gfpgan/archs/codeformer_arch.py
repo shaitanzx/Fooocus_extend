@@ -10,7 +10,7 @@ from torch import nn, Tensor
 import torch.nn.functional as F
 from typing import Optional, List
 
-from gfpgan.archs.vqgan_arch import ResBlock, VQAutoEncoder
+from extras.gfpgan.archs.vqgan_arch import ResBlock, VQAutoEncoder
 from extras.basicsr.utils import get_root_logger
 from extras.basicsr.utils.registry import ARCH_REGISTRY
 
