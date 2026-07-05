@@ -53,9 +53,9 @@ future
 requests
 scikit-image
 tb-nightly
-fvcore     # For PLKSR
-matplotlib # For PLKSR
-fairscale  # For ATD
+fvcore
+matplotlib
+fairscale
 
 #gfpgan @ git+https://github.com/avan06/GFPGAN
 
