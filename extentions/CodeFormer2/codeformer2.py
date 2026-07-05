@@ -11,7 +11,7 @@ import time
 import ast
 
 from collections import defaultdict
-from facexlib.utils.misc import load_file_from_url
+from .misc import download_from_url
 from extras.basicsr.utils.realesrganer import RealESRGANer
 #from utils.dataops import auto_split_upscale
 def auto_split_upscale(
@@ -157,7 +157,7 @@ class Upscale:
 
     def initBGUpscaleModel(self, upscale_model):
         upscale_type, upscale_model = upscale_model.split(", ", 1)
-        load_file_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("weights", "upscale"))
+        download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("weights", "upscale"))
         self.modelInUse = f"_{os.path.splitext(upscale_model)[0]}"
         netscale = 1 if any(sub in upscale_model.lower() for sub in ("x1", "1x")) else (2 if any(sub in upscale_model.lower() for sub in ("x2", "2x")) else 4)
         model = None
@@ -437,7 +437,7 @@ class Upscale:
     def initFaceEnhancerModel(self, face_restoration, face_detection):
         model_rootpath = os.path.join("weights", "face")
         model_path = os.path.join(model_rootpath, face_restoration)
-        load_file_from_url(face_models[face_restoration][0], face_restoration, model_rootpath)
+        download_from_url(face_models[face_restoration][0], face_restoration, model_rootpath)
         
         self.modelInUse = f"_{os.path.splitext(face_restoration)[0]}" + self.modelInUse
         from gfpgan.utils import GFPGANer
