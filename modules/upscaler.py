@@ -7,7 +7,7 @@ from ldm_patched.contrib.external_upscale_model import ImageUpscaleWithModel
 from ldm_patched.pfn.model_loading import load_state_dict,UnsupportedModel
 from ldm_patched.pfn.model_loading import (
     ESRGAN, RealESRGANv2, SPSR, SwiftSRGAN, SwinIR, Swin2SR,
-    HAT, DAT, OmniSR, SCUNet, GFPGANv1Clean, RestoreFormer, LaMa
+    HAT, DAT, OmniSR, SCUNet, GFPGANv1Clean, RestoreFormer, CodeFormer, LaMa
 )
 from ldm_patched.pfn.architecture.RRDB import RRDBNet as ESRGAN
 from modules.config import downloading_upscale_model2
@@ -111,7 +111,8 @@ def perform_upscale(img,upscale_model):
             model = GFPGANv1Clean(sd)
         elif arch == "RestoreFormer":
             model = RestoreFormer(sd)
-
+        elif arch == "CodeFormer":
+            model = CodeFormer(sd)
         elif arch == "LaMa":
             model = LaMa(sd)
         else:

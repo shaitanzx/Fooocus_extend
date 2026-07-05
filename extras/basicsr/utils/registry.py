@@ -35,13 +35,19 @@ class Registry():
         self._name = name
         self._obj_map = {}
 
-    def _do_register(self, name, obj, suffix=None):
-        if isinstance(suffix, str):
-            name = name + '_' + suffix
-
-        assert (name not in self._obj_map), (f"An object named '{name}' was already registered "
-                                             f"in '{self._name}' registry!")
-        self._obj_map[name] = obj
+    def _do_register(self, name, func_or_class, suffix=None):
+        if name in self._obj_map:
+            import traceback
+            print(f"\n{'='*70}")
+            print(f"[DUPLICATE REGISTRY] '{name}' in '{self._name}' registry")
+            print(f"First registered from:  {self._obj_map[name].__module__}")
+            print(f"Second registration from: {func_or_class.__module__}")
+            print(f"Same class? {self._obj_map[name] is func_or_class}")
+            print(f"Stack trace of SECOND registration:")
+            traceback.print_stack()
+            print(f"{'='*70}\n")
+            return  # Игнорируем дубль
+        self._obj_map[name] = func_or_class
 
     def register(self, obj=None, suffix=None):
         """
