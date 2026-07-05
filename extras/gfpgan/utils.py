@@ -8,7 +8,7 @@ from typing import Literal
 from extras.basicsr.utils import img2tensor, tensor2img
 from extras.basicsr.utils.download_util import load_file_from_url
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
-from extras.torchvision.transforms.functional import normalize
+from torchvision.transforms.functional import normalize
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
