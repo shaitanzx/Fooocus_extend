@@ -440,7 +440,7 @@ class Upscale:
         download_from_url(face_models[face_restoration][0], face_restoration, model_rootpath)
         
         self.modelInUse = f"_{os.path.splitext(face_restoration)[0]}" + self.modelInUse
-        from gfpgan.utils import GFPGANer
+        from extras.gfpgan.utils import GFPGANer
         resolution = 512
         channel_multiplier = None
         
