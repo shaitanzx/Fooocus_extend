@@ -8,9 +8,9 @@ import numpy as np
 import torch
 from torchvision.transforms.functional import normalize
 from .mask_generator import MaskGenerator
-sys.path.append(os.path.abspath('extras'))
-from facexlib.parsing import init_parsing_model
-from facexlib.utils.misc import img2tensor
+#sys.path.append(os.path.abspath('extras'))
+from extras.facexlib.parsing import init_parsing_model
+from extras.facexlib.utils.misc import img2tensor
 
 
 
