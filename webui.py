@@ -899,7 +899,7 @@ with shared.gradio_root:
                 enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                #inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 #codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 #enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
