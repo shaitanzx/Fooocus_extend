@@ -1104,6 +1104,8 @@ def get_model_type(model_name):
 
 typed_upscale_models = {get_model_type(key): value[0] for key, value in upscale_models.items()}
 
+upscale = Upscale()
+
 def gui():
     
     rows = []
@@ -1158,7 +1160,7 @@ def gui():
             #             save_as_png,
             #         ], variant="secondary", size="lg",)
         with gr.Column(variant="panel"):
-            gallerys = gr.Image(label="Output image",visible=True,height=260,interactive=False)
+            file_out = gr.Image(label="Output image",visible=True,height=260,interactive=False)
     # with gr.Row(variant="panel"):
     #     # Generate output array
     #     output_arr = []
@@ -1191,5 +1193,5 @@ def gui():
             face_detection_threshold,
             face_detection_only_center
         ],
-        outputs=[gallerys, outputs],
+        outputs=[file_out],
     )
