@@ -1126,7 +1126,7 @@ def gui():
     with gr.Row():
         with gr.Column(variant="panel"):
             submit = gr.Button(value="Submit", variant="primary", size="lg")
-            file_in = gr.Image(label="Input image",interactive=True,type="filename")
+            file_in = gr.File(label="Input image",interactive=True,type="filename")
             face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
             
             upscale_model              = gr.Dropdown([None]+list(typed_upscale_models.keys()), interactive=True,type="value", value='SRVGG, realesr-general-x4v3.pth', label='UpScale version')
