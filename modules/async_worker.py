@@ -229,18 +229,18 @@ class AsyncTask:
         self.original_prompt = args.pop()
         self.original_negative = args.pop()
         self.name_prefix = args.pop().strip().replace(" ", "_")
-        self.inswapper_enabled = args.pop()
-        self.inswapper_source_image_indicies = args.pop()
-        self.inswapper_target_image_indicies = args.pop()
-        self.inswapper_source_image = args.pop()
-        self.inswapper_temp = args.pop()
-        self.codeformer_gen_enabled = args.pop()
-        self.codeformer_gen_preface = args.pop()
-        self.codeformer_gen_background_enhance = args.pop()
-        self.codeformer_gen_face_upsample = args.pop()
-        self.codeformer_gen_upscale = args.pop()
-        self.codeformer_gen_fidelity = args.pop()
-        self.codeformer_temp = args.pop()
+        # self.inswapper_enabled = args.pop()
+        # self.inswapper_source_image_indicies = args.pop()
+        # self.inswapper_target_image_indicies = args.pop()
+        # self.inswapper_source_image = args.pop()
+        # self.inswapper_temp = args.pop()
+        # self.codeformer_gen_enabled = args.pop()
+        # self.codeformer_gen_preface = args.pop()
+        # self.codeformer_gen_background_enhance = args.pop()
+        # self.codeformer_gen_face_upsample = args.pop()
+        # self.codeformer_gen_upscale = args.pop()
+        # self.codeformer_gen_fidelity = args.pop()
+        # self.codeformer_temp = args.pop()
         self.enable_instant = args.pop()
 
         self.face_file_id = args.pop()
@@ -372,10 +372,10 @@ def worker():
     from pathlib import Path
     import re
     from extentions.module_translate import translate
-    sys.path.append(os.path.abspath('extentions/inswapper'))
-    from face_swap import perform_face_swap
-    sys.path.append(os.path.abspath('extentions/CodeFormer'))
-    from codeformer import codeformer_process
+    # sys.path.append(os.path.abspath('extentions/inswapper'))
+    # from face_swap import perform_face_swap
+    # sys.path.append(os.path.abspath('extentions/CodeFormer'))
+    # from codeformer import codeformer_process
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -512,11 +512,11 @@ def worker():
                     params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                     d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                     lora_index +=1
-        if async_task.codeformer_gen_enabled:
-            d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
-            d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
-            d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
-            d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
+        # if async_task.codeformer_gen_enabled:
+        #     d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
+        #     d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
+        #     d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
+        #     d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
         
         log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True, name_prefix=async_task.name_prefix)
         return
@@ -579,17 +579,17 @@ def worker():
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
-        if async_task.inswapper_enabled:            
-            progressbar(async_task, current_progress, 'inswapper in progress ...')
-            temp_imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
-            imgs[-1 if not async_task.inswapper_temp else len(imgs):] = temp_imgs
+        # if async_task.inswapper_enabled:            
+        #     progressbar(async_task, current_progress, 'inswapper in progress ...')
+        #     temp_imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
+        #     imgs[-1 if not async_task.inswapper_temp else len(imgs):] = temp_imgs
             
-        if async_task.codeformer_gen_enabled:
-            progressbar(async_task, current_progress, 'CodeFormer in progress ...')
-            temp_imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
-                    async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
-                    async_task.codeformer_gen_fidelity)
-            imgs[-1 if not async_task.codeformer_temp else len(imgs):] = temp_imgs
+        # if async_task.codeformer_gen_enabled:
+        #     progressbar(async_task, current_progress, 'CodeFormer in progress ...')
+        #     temp_imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
+        #             async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
+        #             async_task.codeformer_gen_fidelity)
+        #     imgs[-1 if not async_task.codeformer_temp else len(imgs):] = temp_imgs
 
         
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
@@ -691,11 +691,11 @@ def worker():
                         params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                         d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                         lora_index +=1
-            if async_task.codeformer_gen_enabled:
-                d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
-                d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
-                d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
-                d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
+            # if async_task.codeformer_gen_enabled:
+            #     d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
+            #     d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
+            #     d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
+            #     d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
             metadata_parser = None
             if async_task.save_metadata_to_images:
                 metadata_parser = modules.meta_parser.get_metadata_parser(async_task.metadata_scheme)
