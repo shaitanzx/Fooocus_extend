@@ -9,7 +9,7 @@ from extras.basicsr.data import build_dataloader, build_dataset
 from extras.basicsr.data.data_sampler import EnlargedSampler
 from extras.basicsr.data.prefetch_dataloader import CPUPrefetcher, CUDAPrefetcher
 from extras.basicsr.models import build_model
-from bextras.asicsr.utils import (AvgTimer, MessageLogger, check_resume, get_env_info, get_root_logger, get_time_str,
+from extras.basicsr.utils import (AvgTimer, MessageLogger, check_resume, get_env_info, get_root_logger, get_time_str,
                            init_tb_logger, init_wandb_logger, make_exp_dirs, mkdir_and_rename, scandir)
 from extras.basicsr.utils.options import copy_opt_file, dict2str, parse_options
 
