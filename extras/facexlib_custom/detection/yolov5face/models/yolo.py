@@ -23,10 +23,10 @@ from extras.facexlib_custom.detection.yolov5face.models.common import (
     ShuffleV2Block,
     StemBlock,
 )
-from facexlib.detection.yolov5face.models.experimental import CrossConv, MixConv2d
-from facexlib.detection.yolov5face.utils.autoanchor import check_anchor_order
-from facexlib.detection.yolov5face.utils.general import make_divisible
-from facexlib.detection.yolov5face.utils.torch_utils import copy_attr, fuse_conv_and_bn
+from extras.facexlib_custom.detection.yolov5face.models.experimental import CrossConv, MixConv2d
+from extras.facexlib_custom.detection.yolov5face.utils.autoanchor import check_anchor_order
+from extras.facexlib_custom.detection.yolov5face.utils.general import make_divisible
+from extras.facexlib_custom.detection.yolov5face.utils.torch_utils import copy_attr, fuse_conv_and_bn
 
 
 class Detect(nn.Module):
