@@ -476,8 +476,8 @@ class Upscale:
             print(face_restoration, upscale_model, scale, f"gallery: {gallery}")
 
             timer = Timer()
-            if upscale_model = 'None'
-                scale = 1
+            #if upscale_model = 'None'
+            #    scale = 1
             self.scale = scale
         
             progressRatio = 0.5 if upscale_model and face_restoration else 1
