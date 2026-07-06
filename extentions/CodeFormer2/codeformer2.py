@@ -156,6 +156,8 @@ class Upscale:
         self.face_enhancer = None
 
     def initBGUpscaleModel(self, upscale_model):
+        if upscale_model == "None":
+            return
         upscale_type, upscale_model = upscale_model.split(", ", 1)
         download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("weights", "upscale"))
         self.modelInUse = f"_{os.path.splitext(upscale_model)[0]}"
@@ -466,8 +468,8 @@ class Upscale:
 
     def inference(self, gallery, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool, progress=gr.Progress()):
         try:
-            if not gallery or (not face_restoration and not upscale_model):
-                raise ValueError("Invalid parameter setting")
+            #if not gallery or (not face_restoration and not upscale_model):
+            #    raise ValueError("Invalid parameter setting")
         
             self.modelInUse = "" 
             print(face_restoration, upscale_model, scale, f"gallery: {gallery}")
@@ -479,7 +481,7 @@ class Upscale:
             current_progress = 0
             progress(0, desc="Initializing models...")
         
-            if upscale_model:
+            if upscale_model != "None":
                 self.initBGUpscaleModel(upscale_model)
                 current_progress += progressRatio / 2
                 progress(current_progress, desc="BG upscale model initialized.")
