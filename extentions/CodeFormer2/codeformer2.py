@@ -158,6 +158,7 @@ class Upscale:
     def initBGUpscaleModel(self, upscale_model):
         if upscale_model == "None":
             return
+        print ('1111111111111111111111111111111111111111111111111111111111')
         upscale_type, upscale_model = upscale_model.split(", ", 1)
         download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("weights", "upscale"))
         self.modelInUse = f"_{os.path.splitext(upscale_model)[0]}"
@@ -475,6 +476,8 @@ class Upscale:
             print(face_restoration, upscale_model, scale, f"gallery: {gallery}")
 
             timer = Timer()
+            if upscale_model = 'None'
+                scale = 1
             self.scale = scale
         
             progressRatio = 0.5 if upscale_model and face_restoration else 1
@@ -482,13 +485,10 @@ class Upscale:
             progress(0, desc="Initializing models...")
         
             if upscale_model != "None":
-                print('11111111111', upscale_model)
                 self.initBGUpscaleModel(upscale_model)
                 current_progress += progressRatio / 2
                 progress(current_progress, desc="BG upscale model initialized.")
                 timer.checkpoint("Initialize BG upscale model")
-            else:
-                self.realesrganer = None
 
             if face_restoration:
                 self.initFaceEnhancerModel(face_restoration, face_detection)
@@ -513,7 +513,6 @@ class Upscale:
 
             bg_upsample_img = None
             if upscale_model != "None" and self.realesrganer and hasattr(self.realesrganer, "enhance"):
-                print('222222222222', upscale_model)
                 bg_upsample_img, _ = auto_split_upscale(img_cv2, self.realesrganer.enhance, self.scale) if is_auto_split_upscale else self.realesrganer.enhance(img_cv2, outscale=self.scale)
                 current_progress += progressRatio / 2
                 progress(current_progress, desc="Background upscaling...")
