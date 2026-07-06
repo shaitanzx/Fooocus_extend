@@ -52,7 +52,7 @@ class GFPGANer():
 
         # initialize the model
         if arch == 'clean':
-            from gfpgan.archs.gfpganv1_clean_arch import GFPGANv1Clean
+            from extras.gfpgan.archs.gfpganv1_clean_arch import GFPGANv1Clean
             self.gfpgan = GFPGANv1Clean(
                 out_size=512,
                 num_style_feat=512,
@@ -65,7 +65,7 @@ class GFPGANer():
                 narrow=1,
                 sft_half=True)
         elif arch == 'bilinear':
-            from gfpgan.archs.gfpgan_bilinear_arch import GFPGANBilinear
+            from extras.gfpgan.archs.gfpgan_bilinear_arch import GFPGANBilinear
             self.gfpgan = GFPGANBilinear(
                 out_size=512,
                 num_style_feat=512,
@@ -78,7 +78,7 @@ class GFPGANer():
                 narrow=1,
                 sft_half=True)
         elif arch == 'original':
-            from gfpgan.archs.gfpganv1_arch import GFPGANv1
+            from extras.gfpgan.archs.gfpganv1_arch import GFPGANv1
             self.gfpgan = GFPGANv1(
                 out_size=512,
                 num_style_feat=512,
@@ -91,15 +91,15 @@ class GFPGANer():
                 narrow=1,
                 sft_half=True)
         elif arch and arch.startswith("RestoreFormer"):
-            from gfpgan.archs.restoreformer_arch import VQVAEGANMultiHeadTransformer
+            from extras.gfpgan.archs.restoreformer_arch import VQVAEGANMultiHeadTransformer
             head_size = 4 if arch == "RestoreFormer++" else 8
             ex_multi_scale_num = 1 if arch == "RestoreFormer++" else 0
             self.gfpgan = VQVAEGANMultiHeadTransformer(head_size = head_size, ex_multi_scale_num = ex_multi_scale_num, resolution = self.resolution)
         elif arch == "CodeFormer":
-            from gfpgan.archs.codeformer_arch import CodeFormer
+            from extras.gfpgan.archs.codeformer_arch import CodeFormer
             self.gfpgan= CodeFormer(dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256'])
         elif arch and arch.startswith("GPEN"):
-            from gfpgan.archs.gpen_arch import FullGenerator
+            from extras.gfpgan.archs.gpen_arch import FullGenerator
             self.gfpgan = FullGenerator(size=self.resolution, style_dim=512, n_mlp=8, channel_multiplier=channel_multiplier, narrow=1)
 
         # initialize face helper
