@@ -437,7 +437,7 @@ class Upscale:
 
 
     def initFaceEnhancerModel(self, face_restoration, face_detection):
-        if face_restoration == "None"
+        if face_restoration == "None":
             return
         model_rootpath = os.path.join("weights", "face")
         model_path = os.path.join(model_rootpath, face_restoration)
