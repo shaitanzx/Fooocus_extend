@@ -482,6 +482,7 @@ class Upscale:
             progress(0, desc="Initializing models...")
         
             if upscale_model != "None":
+                print('11111111111', upscale_model)
                 self.initBGUpscaleModel(upscale_model)
                 current_progress += progressRatio / 2
                 progress(current_progress, desc="BG upscale model initialized.")
@@ -512,6 +513,7 @@ class Upscale:
 
             bg_upsample_img = None
             if upscale_model != "None" and self.realesrganer and hasattr(self.realesrganer, "enhance"):
+                print('222222222222', upscale_model)
                 bg_upsample_img, _ = auto_split_upscale(img_cv2, self.realesrganer.enhance, self.scale) if is_auto_split_upscale else self.realesrganer.enhance(img_cv2, outscale=self.scale)
                 current_progress += progressRatio / 2
                 progress(current_progress, desc="Background upscaling...")
