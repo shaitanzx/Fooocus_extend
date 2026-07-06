@@ -158,7 +158,6 @@ class Upscale:
     def initBGUpscaleModel(self, upscale_model):
         if upscale_model == "None":
             return
-        print ('1111111111111111111111111111111111111111111111111111111111')
         upscale_type, upscale_model = upscale_model.split(", ", 1)
         download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("weights", "upscale"))
         self.modelInUse = f"_{os.path.splitext(upscale_model)[0]}"
@@ -438,6 +437,8 @@ class Upscale:
 
 
     def initFaceEnhancerModel(self, face_restoration, face_detection):
+        if face_restoration == "None"
+            return
         model_rootpath = os.path.join("weights", "face")
         model_path = os.path.join(model_rootpath, face_restoration)
         download_from_url(face_models[face_restoration][0], face_restoration, model_rootpath)
@@ -490,7 +491,7 @@ class Upscale:
                 progress(current_progress, desc="BG upscale model initialized.")
                 timer.checkpoint("Initialize BG upscale model")
 
-            if face_restoration:
+            if face_restoration!= "None":
                 self.initFaceEnhancerModel(face_restoration, face_detection)
                 current_progress += progressRatio / 2
                 progress(current_progress, desc="Face enhancer model initialized.")
@@ -518,7 +519,7 @@ class Upscale:
                 progress(current_progress, desc="Background upscaling...")
                 timer.checkpoint("Background upscale")
 
-            if face_restoration and self.face_enhancer:
+            if face_restoration!= "None" and self.face_enhancer:
                 cropped_faces, restored_aligned, bg_upsample_img = self.face_enhancer.enhance(
                     img_cv2, has_aligned=False, only_center_face=face_detection_only_center, 
                     paste_back=True, bg_upsample_img=bg_upsample_img, eye_dist_threshold=face_detection_threshold
