@@ -135,8 +135,8 @@ def auto_split_upscale(
     
     # --- Step 3: Stitch the results back together ---
     # Reassemble the upscaled quadrants into a single image.
-    out_h = input_h * scale
-    out_w = input_w * scale
+    out_h = int(input_h * scale)
+    out_w = int(input_w * scale)
     
     # Create an empty output image
     output_img = np.zeros((out_h, out_w, input_c), np.uint8)
