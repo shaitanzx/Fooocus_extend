@@ -864,7 +864,7 @@ Phhofm: Restoration, 4x ESRGAN model for photography, trained with realistic noi
 ESRGAN version of 4xNomosWebPhoto_RealPLKSR, trained on the same dataset and in the same way."""],
 
 
-    "4x_foolhardy_Remacri.pth": ["https://civitai.com/api/download/models/164821?type=Model&format=PickleTensor",
+    "4x_foolhardy_Remacri.pth": ["https://huggingface.co/YIFANGQ/4x_foolhardy_Remacri/resolve/main/4x_foolhardy_Remacri.pth",
                                "https://openmodeldb.info/models/4x-Remacri", 
 """Original
 FoolhardyVEVO: A creation of BSRGAN with more details and less smoothing, made by interpolating IRL models such as Siax, 
