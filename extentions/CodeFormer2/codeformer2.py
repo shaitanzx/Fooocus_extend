@@ -870,7 +870,7 @@ ESRGAN version of 4xNomosWebPhoto_RealPLKSR, trained on the same dataset and in 
 FoolhardyVEVO: A creation of BSRGAN with more details and less smoothing, made by interpolating IRL models such as Siax, 
 Superscale, Superscale Artisoft, Pixel Perfect, etc. This was, things like skin and other details don't become mushy and blurry."""],
 
-    "4x_foolhardy_Remacri_ExtraSmoother.pth": ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/upscalers/4x_foolhardy_Remacri_ExtraSmoother.safetensors",
+    "4x_foolhardy_Remacri_ExtraSmoother.safetensors": ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/upscalers/4x_foolhardy_Remacri_ExtraSmoother.safetensors",
                                "https://openmodeldb.info/models/4x-Remacri", 
 """ExtraSmoother
 FoolhardyVEVO: A creation of BSRGAN with more details and less smoothing, made by interpolating IRL models such as Siax, 
