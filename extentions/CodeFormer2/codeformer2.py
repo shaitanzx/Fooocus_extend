@@ -663,47 +663,47 @@ class Timer:
 
 
 face_models = {
-    "GFPGANv1.4.pth"      : ["https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth",
+    "GFPGANv1.4.pth"      : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/GFPGANv1.4.pth",
                             "https://github.com/TencentARC/GFPGAN/", 
 """GFPGAN: Towards Real-World Blind Face Restoration and Upscalling of the image with a Generative Facial Prior.
 GFPGAN aims at developing a Practical Algorithm for Real-world Face Restoration.
 It leverages rich and diverse priors encapsulated in a pretrained face GAN (e.g., StyleGAN2) for blind face restoration."""],
 
-    "RestoreFormer++.ckpt": ["https://github.com/wzhouxiff/RestoreFormerPlusPlus/releases/download/v1.0.0/RestoreFormer++.ckpt",
+    "RestoreFormer++.ckpt": ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/RestoreFormer++.ckpt",
                             "https://github.com/wzhouxiff/RestoreFormerPlusPlus", 
 """RestoreFormer++: Towards Real-World Blind Face Restoration from Undegraded Key-Value Pairs.
 RestoreFormer++ is an extension of RestoreFormer. It proposes to restore a degraded face image with both fidelity and \
 realness by using the powerful fully-spacial attention mechanisms to model the abundant contextual information in the face and \
 its interplay with reconstruction-oriented high-quality priors."""],
 
-    "CodeFormer.pth"      : ["https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth",
+    "CodeFormer.pth"      : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/codeformer.pth",
                             "https://github.com/sczhou/CodeFormer", 
 """CodeFormer: Towards Robust Blind Face Restoration with Codebook Lookup Transformer (NeurIPS 2022).
 CodeFormer is a Transformer-based model designed to tackle the challenging problem of blind face restoration, where inputs are often severely degraded.
 By framing face restoration as a code prediction task, this approach ensures both improved mapping from degraded inputs to outputs and the generation of visually rich, high-quality faces.
 """],
 
-    "GPEN-BFR-512.pth"    : ["https://huggingface.co/akhaliq/GPEN-BFR-512/resolve/main/GPEN-BFR-512.pth",
+    "GPEN-BFR-512.pth"    : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/GPEN-BFR-512.pth",
                             "https://github.com/yangxy/GPEN", 
 """GPEN: GAN Prior Embedded Network for Blind Face Restoration in the Wild.
 GPEN addresses blind face restoration (BFR) by embedding a GAN into a U-shaped DNN, combining GAN’s ability to generate high-quality images with DNN’s feature extraction.
 This design reconstructs global structure, fine details, and backgrounds from degraded inputs.
 Simple yet effective, GPEN outperforms state-of-the-art methods, delivering realistic results even for severely degraded images."""],
 
-    "GPEN-BFR-1024.pt"    : ["https://www.modelscope.cn/models/iic/cv_gpen_image-portrait-enhancement-hires/resolve/master/pytorch_model.pt",
+    "GPEN-BFR-1024.pt"    : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/GPEN-BFR-1024.pt",
                             "https://www.modelscope.cn/models/iic/cv_gpen_image-portrait-enhancement-hires/files", 
 """The same as GPEN but for 1024 resolution."""],
 
-    "GPEN-BFR-2048.pt"    : ["https://www.modelscope.cn/models/iic/cv_gpen_image-portrait-enhancement-hires/resolve/master/pytorch_model-2048.pt",
+    "GPEN-BFR-2048.pt"    : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/GPEN-BFR-2048.pt",
                             "https://www.modelscope.cn/models/iic/cv_gpen_image-portrait-enhancement-hires/files", 
 """The same as GPEN but for 2048 resolution."""],
 
     # legacy model
-    "GFPGANv1.3.pth"    : ["https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth",
+    "GFPGANv1.3.pth"    : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/GFPGANv1.3.pth",
                           "https://github.com/TencentARC/GFPGAN/", "The same as GFPGAN but legacy model"],
-    "GFPGANv1.2.pth"    : ["https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.2.pth",
+    "GFPGANv1.2.pth"    : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/GFPGANv1.2.pth",
                           "https://github.com/TencentARC/GFPGAN/", "The same as GFPGAN but legacy model"],
-    "RestoreFormer.ckpt": ["https://github.com/wzhouxiff/RestoreFormerPlusPlus/releases/download/v1.0.0/RestoreFormer.ckpt",
+    "RestoreFormer.ckpt": ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/RestoreFormer.ckpt",
                           "https://github.com/wzhouxiff/RestoreFormerPlusPlus", "The same as RestoreFormer++ but legacy model"],
 }
 upscale_models = {
