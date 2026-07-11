@@ -468,7 +468,7 @@ class Upscale:
         self.face_enhancer = GFPGANer(model_path=model_path, upscale=self.scale, arch=arch, channel_multiplier=channel_multiplier, model_rootpath=model_rootpath, det_model=face_detection, resolution=resolution)
 
 
-    def inference(self, gallery, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool, progress=gr.Progress()):
+    def inference(self, gallery, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool):
         try:
             #if not gallery or (not face_restoration and not upscale_model):
             #    raise ValueError("Invalid parameter setting")
@@ -483,18 +483,18 @@ class Upscale:
         
             progressRatio = 0.5 if upscale_model and face_restoration else 1
             current_progress = 0
-            progress(0, desc="Initializing models...")
+            #progress(0, desc="Initializing models...")
         
             if upscale_model != "None":
                 self.initBGUpscaleModel(upscale_model)
                 current_progress += progressRatio / 2
-                progress(current_progress, desc="BG upscale model initialized.")
+                #progress(current_progress, desc="BG upscale model initialized.")
                 timer.checkpoint("Initialize BG upscale model")
 
             if face_restoration!= "None":
                 self.initFaceEnhancerModel(face_restoration, face_detection)
                 current_progress += progressRatio / 2
-                progress(current_progress, desc="Face enhancer model initialized.")
+                #progress(current_progress, desc="Face enhancer model initialized.")
                 timer.checkpoint("Initialize face enhancer model")
 
             timer.report()
@@ -516,7 +516,7 @@ class Upscale:
             if upscale_model != "None" and self.realesrganer and hasattr(self.realesrganer, "enhance"):
                 bg_upsample_img, _ = auto_split_upscale(img_cv2, self.realesrganer.enhance, self.scale) if is_auto_split_upscale else self.realesrganer.enhance(img_cv2, outscale=self.scale)
                 current_progress += progressRatio / 2
-                progress(current_progress, desc="Background upscaling...")
+                #progress(current_progress, desc="Background upscaling...")
                 timer.checkpoint("Background upscale")
 
             if face_restoration!= "None" and self.face_enhancer:
@@ -525,7 +525,7 @@ class Upscale:
                     paste_back=True, bg_upsample_img=bg_upsample_img, eye_dist_threshold=face_detection_threshold
                 )
                 current_progress += progressRatio / 2
-                progress(current_progress, desc="Face enhancement...")
+                #progress(current_progress, desc="Face enhancement...")
                 timer.checkpoint("Face enhancement")
 
             restored_img = bg_upsample_img
@@ -540,7 +540,7 @@ class Upscale:
             # Color conversion BGR -> RGB для возврата в Gradio
             restored_img = cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB)
         
-            progress(1, desc="Processing complete.")
+            #progress(1, desc="Processing complete.")
             timer.report_all()
         
             return restored_img
