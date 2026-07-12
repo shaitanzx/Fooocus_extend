@@ -1137,11 +1137,11 @@ def gui(generator):
             face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
             upscale_model              = gr.Dropdown([None]+list(typed_upscale_models.keys()), interactive=True,type="value", value='SRVGG, realesr-general-x4v3.pth', label='UpScale version')
         with gr.Column():
-            face_detection             = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")
+            face_detection_only_center = gr.Checkbox(value=False, label="Face detection only center", info="If set to True, only the face closest to the center of the image will be kept.")
             face_detection_threshold   = gr.Number(label="Face eye dist threshold", interactive=True,value=10, info="A threshold to filter out faces with too small an eye distance (e.g., side faces).")
             
         with gr.Column():
-            face_detection_only_center = gr.Checkbox(value=False, label="Face detection only center", info="If set to True, only the face closest to the center of the image will be kept.")
+            face_detection             = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")            
             upscale_scale              = gr.Number(label="Rescaling factor", value=4,interactive=True)
     # with gr.Row():
     #     with gr.Column(variant="panel"):
