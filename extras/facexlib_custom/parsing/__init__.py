@@ -14,9 +14,6 @@ def init_parsing_model(model_name='bisenet', half=False, device='cuda', model_ro
         model_url = 'https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/parsing_parsenet.pth'
     else:
         raise NotImplementedError(f'{model_name} is not implemented.')
-    print('qqqqqqqqqqqqqqqqqqqqqqqqqqq')
-    print(model_url)
-    print(model_rootpath)
     model_path = load_file_from_url(
         url=model_url, model_dir='facexlib_custom/weights', progress=True, file_name=None, save_dir=model_rootpath)
     load_net = torch.load(model_path, map_location=lambda storage, loc: storage, weights_only=True)
