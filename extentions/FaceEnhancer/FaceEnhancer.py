@@ -1108,7 +1108,7 @@ typed_upscale_models = {get_model_type(key): value[0] for key, value in upscale_
 
 upscale = Upscale()
 
-def gui():
+def gui(generator):
     
     rows = []
     tmptype = None
@@ -1127,6 +1127,10 @@ def gui():
     speed = "Fast" if tmptype == "SRVGG" else ("Slow" if any(value == tmptype for value in ("DAT", "HAT", "DRCT", "ATD", "SRFormer")) else "Normal")
     upscale_model_header = f"| Upscale Model Name | Info, Type: {tmptype}, Model execution speed: {speed} |\n|------------|------|"
     upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
+    with gr.Row(visible=not generator):
+        file_in,files_single,image_single,enable_zip,file_out,preview, image_out = batch.ui_batch()
+    with gr.Row(visible=generator):
+        face_en_enabled = gr.Checkbox(label="Enabled", value=False)
     with gr.Row():
         with gr.Column(variant="panel"):
             submit = gr.Button(value="Submit", variant="primary", size="lg")
@@ -1183,7 +1187,8 @@ def gui():
         for table in upscale_model_tables:
             with gr.Row(variant="panel"):
                 gr.Markdown(value=table)
-
+    with gr.Row(visible=not generator):
+        face_en_start=gr.Button(value='Start CodeFormer')
     submit.click(
         upscale.inference, 
         inputs=[
