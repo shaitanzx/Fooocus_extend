@@ -1143,7 +1143,7 @@ def gui(generator):
         with gr.Column():
             face_detection = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")            
             upscale_scale = gr.Number(label="Rescaling factor", value=4,interactive=True)
-            with_model_name = gr.Checkbox(label="Output image files name with model name", value=not generator,interactive=True,visible=generetor)
+            with_model_name = gr.Checkbox(label="Output image files name with model name", value=not generator,interactive=True,visible=generator)
     # with gr.Row():
     #     with gr.Column(variant="panel"):
     #         submit = gr.Button(value="Submit", variant="primary", size="lg")
