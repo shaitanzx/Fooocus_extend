@@ -1043,7 +1043,7 @@ with shared.gradio_root:
                 #   with gr.TabItem(label='CodeFormer'):
                 #     codeformer.codeformer_gui(False)
                   with gr.TabItem(label='FaceEnhancer'):
-                        FaceEnhancer.gui()                
+                        FaceEnhancer.gui(False)                
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
 
