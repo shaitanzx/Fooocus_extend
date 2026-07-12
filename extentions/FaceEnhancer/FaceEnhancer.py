@@ -1131,17 +1131,26 @@ def gui(generator):
         file_in,files_single,image_single,enable_zip,file_out,preview, image_out = batch.ui_batch()
     with gr.Row(visible=generator):
         face_en_enabled = gr.Checkbox(label="Enabled", value=False)
+
     with gr.Row():
-        with gr.Column(variant="panel"):
-            submit = gr.Button(value="Submit", variant="primary", size="lg")
-            file_in = gr.Image(label="Reference image",visible=True,height=260,interactive=True,type="filepath")
+        with gr.Column():
             face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
-            
-            upscale_model              = gr.Dropdown([None]+list(typed_upscale_models.keys()), interactive=True,type="value", value='SRVGG, realesr-general-x4v3.pth', label='UpScale version')
-            upscale_scale              = gr.Number(label="Rescaling factor", value=4,interactive=True)
+
             face_detection             = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")
             face_detection_threshold   = gr.Number(label="Face eye dist threshold", interactive=True,value=10, info="A threshold to filter out faces with too small an eye distance (e.g., side faces).")
             face_detection_only_center = gr.Checkbox(value=False, label="Face detection only center", info="If set to True, only the face closest to the center of the image will be kept.")
+        with gr.Column():
+            upscale_model              = gr.Dropdown([None]+list(typed_upscale_models.keys()), interactive=True,type="value", value='SRVGG, realesr-general-x4v3.pth', label='UpScale version')
+        upscale_scale              = gr.Number(label="Rescaling factor", value=4,interactive=True)
+    # with gr.Row():
+    #     with gr.Column(variant="panel"):
+    #         submit = gr.Button(value="Submit", variant="primary", size="lg")
+    #         file_in = gr.Image(label="Reference image",visible=True,height=260,interactive=True,type="filepath")
+            
+            
+
+            
+            
             #with_model_name            = gr.Checkbox(label="Output image files name with model name", value=True)
             # Add a checkbox to always save the output as a PNG file for the best quality.
             #save_as_png                = gr.Checkbox(label="Always save output as PNG", value=True, info="If enabled, all output images will be saved in PNG format to ensure the best quality. If disabled, the format will be determined automatically (PNG for images with transparency, otherwise JPG).")
@@ -1165,8 +1174,8 @@ def gui(generator):
             #             with_model_name,
             #             save_as_png,
             #         ], variant="secondary", size="lg",)
-        with gr.Column(variant="panel"):
-            file_out = gr.Image(label="Output image",visible=True,height=260,interactive=False)
+        # with gr.Column(variant="panel"):
+        #     file_out = gr.Image(label="Output image",visible=True,height=260,interactive=False)
     # with gr.Row(variant="panel"):
     #     # Generate output array
     #     output_arr = []
@@ -1189,16 +1198,16 @@ def gui(generator):
                 gr.Markdown(value=table)
     with gr.Row(visible=not generator):
         face_en_start=gr.Button(value='Start CodeFormer')
-    submit.click(
-        upscale.inference, 
-        inputs=[
-            file_in,
-            face_model,
-            upscale_model,
-            upscale_scale,
-            face_detection,
-            face_detection_threshold,
-            face_detection_only_center
-        ],
-        outputs=[file_out],
-    )
+    # submit.click(
+    #     upscale.inference, 
+    #     inputs=[
+    #         file_in,
+    #         face_model,
+    #         upscale_model,
+    #         upscale_scale,
+    #         face_detection,
+    #         face_detection_threshold,
+    #         face_detection_only_center
+    #     ],
+    #     outputs=[file_out],
+    # )
