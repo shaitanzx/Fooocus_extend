@@ -707,7 +707,7 @@ def worker():
             #     d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
             #     d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
             #     d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
-            # metadata_parser = None
+            metadata_parser = None
             if async_task.save_metadata_to_images:
                 metadata_parser = modules.meta_parser.get_metadata_parser(async_task.metadata_scheme)
                 metadata_parser.set_data(task['log_positive_prompt'], task['positive'],
