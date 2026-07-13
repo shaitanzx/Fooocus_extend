@@ -515,11 +515,11 @@ def worker():
                     params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                     d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                     lora_index +=1
-        if async_task.codeformer_gen_enabled:
-            d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
-            d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
-            d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
-            d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
+        # if async_task.codeformer_gen_enabled:
+        #     d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
+        #     d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
+        #     d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
+        #     d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
         
         log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True, name_prefix=async_task.name_prefix)
         return
@@ -702,12 +702,12 @@ def worker():
                         params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
                         d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
                         lora_index +=1
-            if async_task.codeformer_gen_enabled:
-                d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
-                d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
-                d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
-                d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
-            metadata_parser = None
+            # if async_task.codeformer_gen_enabled:
+            #     d.append(('Codeformer Pre_Face_Align', 'codeformer_pre_face_align', async_task.codeformer_gen_preface))
+            #     d.append(('Codeformer Background Enchanced', 'codeformer_background_enchanced', async_task.codeformer_gen_background_enhance))
+            #     d.append(('Codeformer Face Upsample', 'codeformer_face_upsample', async_task.codeformer_gen_face_upsample))
+            #     d.append(('Codeformer Fidelity', 'codeformer_fidelity', async_task.codeformer_gen_fidelity))
+            # metadata_parser = None
             if async_task.save_metadata_to_images:
                 metadata_parser = modules.meta_parser.get_metadata_parser(async_task.metadata_scheme)
                 metadata_parser.set_data(task['log_positive_prompt'], task['positive'],
