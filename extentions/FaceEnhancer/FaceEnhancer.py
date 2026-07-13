@@ -544,7 +544,7 @@ class Upscale:
             timer.checkpoint("Processing complete")
 
             # Color conversion BGR -> RGB для возврата в Gradio
-            restored_img = cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB)
+            #restored_img = cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB)
         
             #progress(1, desc="Processing complete.")
             timer.report_all()
