@@ -880,7 +880,7 @@ with shared.gradio_root:
                     if active_modules:
                         main_name += f" — {', '.join(active_modules)}"   
                     return gr.update(label=main_name)
-                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled,poDoVector]
+                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,face_en_enabled,poDoVector]
                 poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
