@@ -519,7 +519,7 @@ class Upscale:
             is_auto_split_upscale = True
             #img_path = gallery
 
-            img_cv2 = gallery
+            img_cv2 = cv2.cvtColor(gallery, cv2.COLOR_RGB2BGR)
 
             # if img_cv2 is None:
             #     print(f"Warning: Could not read or decode image '{img_path}'.")
@@ -556,7 +556,7 @@ class Upscale:
 
             # Color conversion BGR -> RGB для возврата в Gradio
             #restored_img = cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB)
-        
+            restored_img = cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB)
             #progress(1, desc="Processing complete.")
             timer.report_all()
             gallery_array.append(restored_img)
