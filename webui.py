@@ -1896,7 +1896,7 @@ with shared.gradio_root:
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
         ctrls += [name_prefix]
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
-        ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
+        ctrls += [face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale]
         ctrls += [enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]

@@ -473,8 +473,18 @@ class Upscale:
         
         self.face_enhancer = GFPGANer(model_path=model_path, upscale=self.scale, arch=arch, channel_multiplier=channel_multiplier, model_rootpath=model_rootpath, det_model=face_detection, resolution=resolution)
 
-
-    def inference(self, gallery, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool):
+    def get_image(input_data: Union[list, np.ndarray]) -> np.ndarray:
+        if isinstance(input_data, (list, tuple)) and len(input_data) > 0:        
+            return input_data[-1],True
+        elif isinstance(input_data, np.ndarray):
+        
+            return input_data,False
+    def inference(self, gallery_input, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool):
+        
+        gallery_array=[]
+        gallery,generator=self.get_image(gallery_input)
+        
+        
         try:
             #if not gallery or (not face_restoration and not upscale_model):
             #    raise ValueError("Invalid parameter setting")
@@ -548,8 +558,12 @@ class Upscale:
         
             #progress(1, desc="Processing complete.")
             timer.report_all()
-        
-            return restored_img
+            gallery_array.append(restored_img)
+            if generator:
+                return gallery_array
+            else:
+                return restored_img
+
 
         except Exception as error:
             print(f"Global exception occurred: {error}")

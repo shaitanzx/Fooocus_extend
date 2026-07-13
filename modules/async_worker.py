@@ -234,13 +234,15 @@ class AsyncTask:
         self.inswapper_target_image_indicies = args.pop()
         self.inswapper_source_image = args.pop()
         self.inswapper_temp = args.pop()
-        self.codeformer_gen_enabled = args.pop()
-        self.codeformer_gen_preface = args.pop()
-        self.codeformer_gen_background_enhance = args.pop()
-        self.codeformer_gen_face_upsample = args.pop()
-        self.codeformer_gen_upscale = args.pop()
-        self.codeformer_gen_fidelity = args.pop()
-        self.codeformer_temp = args.pop()
+        self.face_en_enabled = args.pop()
+        self.face_model = args.pop()
+        self.upscale_model = args.pop()
+        self.face_detection_only_center = args.pop()
+        self.face_detection_threshold = args.pop()
+        self.face_temp = args.pop()
+        self.face_detection = args.pop()
+        self.upscale_scale = args.pop()
+
         self.enable_instant = args.pop()
 
         self.face_file_id = args.pop()
@@ -372,6 +374,7 @@ def worker():
     from pathlib import Path
     import re
     from extentions.module_translate import translate
+    from extentions.FaceEnhancer import FaceEnhancer
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
     sys.path.append(os.path.abspath('extentions/CodeFormer'))
@@ -583,7 +586,15 @@ def worker():
             progressbar(async_task, current_progress, 'inswapper in progress ...')
             temp_imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
             imgs[-1 if not async_task.inswapper_temp else len(imgs):] = temp_imgs
-            
+
+        if async_task.face_en_enabled:
+            progressbar(async_task, current_progress, 'FaceEnhancer in progress ...')
+            temp_imgs = FaceEnhancer.upscale.inference(imgs,async_task.face_model,async_task.upscale_model,
+                    async_task.upscale_scale,async_task.face_detection,
+                    async_task.face_detection_threshold,async_task.face_detection_only_center)
+            imgs[-1 if not async_task.face_temp else len(imgs):] = temp_imgs
+
+
         if async_task.codeformer_gen_enabled:
             progressbar(async_task, current_progress, 'CodeFormer in progress ...')
             temp_imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
