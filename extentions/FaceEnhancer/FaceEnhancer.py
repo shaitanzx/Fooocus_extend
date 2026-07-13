@@ -1,4 +1,5 @@
 import gradio as gr
+from PIL import Image
 import os
 import gc
 import re
