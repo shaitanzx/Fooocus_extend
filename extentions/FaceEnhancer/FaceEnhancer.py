@@ -506,13 +506,13 @@ class Upscale:
             timer.report()
 
             is_auto_split_upscale = True
-            img_path = gallery
+            #img_path = gallery
 
-            img_cv2 = cv2.imdecode(np.fromfile(img_path, np.uint8), cv2.IMREAD_UNCHANGED)
+            img_cv2 = gallery
 
-            if img_cv2 is None:
-                print(f"Warning: Could not read or decode image '{img_path}'.")
-                return None
+            # if img_cv2 is None:
+            #     print(f"Warning: Could not read or decode image '{img_path}'.")
+            #     return None
 
             if len(img_cv2.shape) == 2:  # for gray inputs
                 img_cv2 = cv2.cvtColor(img_cv2, cv2.COLOR_GRAY2BGR)
@@ -1119,10 +1119,9 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
     for f_name in batch_files:
         print (f"\033[91m[FaceEnhancer QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
         gr.Info(f"FaceEnhancer Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
-        image=batch_path+os.path.sep+f_name
-        img = Image.open(image)
+        img = Image.open(batch_path+os.path.sep+f_name)
         yield gr.update(value=img,visible=True),gr.update(visible=False)
-        #image=np.array(img)
+        image=np.array(img)
 
         img_cf=Image.fromarray(upscale.inference(image,face_model,upscale_model,upscale_scale,face_detection,face_detection_threshold,face_detection_only_center))
         name, ext = os.path.splitext(f_name)
