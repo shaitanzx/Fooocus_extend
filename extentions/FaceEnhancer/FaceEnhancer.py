@@ -474,7 +474,7 @@ class Upscale:
         
         self.face_enhancer = GFPGANer(model_path=model_path, upscale=self.scale, arch=arch, channel_multiplier=channel_multiplier, model_rootpath=model_rootpath, det_model=face_detection, resolution=resolution)
 
-    def get_image(input_data: Union[list, np.ndarray]) -> np.ndarray:
+    def get_image(self, input_data: Union[list, np.ndarray]) -> np.ndarray:
         if isinstance(input_data, (list, tuple)) and len(input_data) > 0:        
             return input_data[-1],True
         elif isinstance(input_data, np.ndarray):
