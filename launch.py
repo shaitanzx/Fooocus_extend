@@ -163,7 +163,7 @@ init_cache(config.model_filenames, config.paths_checkpoints, config.lora_filenam
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_images", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_vector", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_temp", exist_ok=True)
-os.makedirs(f"{config.temp_path}{os.path.sep}batch_codeformer", exist_ok=True)
+os.makedirs(f"{config.temp_path}{os.path.sep}batch_face_enhancer", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_insw_face", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_insw_image", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_logo", exist_ok=True)
