@@ -858,21 +858,21 @@ with shared.gradio_root:
                             enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight=instantid.gui()                          
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
-
-                        
+                        with gr.TabItem(label='FaceEnhancer'):
+                            face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale = FaceEnhancer.gui(True)  
                         with gr.TabItem(label='CodeFormer'):
                             codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
-                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
+                def gen_acc_name(obp,translate, photomaker, instant, inswapper, face_enhancer,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
                         ('Inswapper', inswapper),
-                        ('Codeformer', codeformer),
+                        ('FaceEnhancer', face_enhancer),
                         ('Vector', vector)
                         ]
                     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
@@ -886,7 +886,7 @@ with shared.gradio_root:
                 enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+                face_en_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):

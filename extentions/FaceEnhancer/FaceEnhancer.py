@@ -1165,7 +1165,7 @@ def gui(generator):
         with gr.Column():
             face_detection_only_center = gr.Checkbox(value=False, label="Face detection only center", info="If set to True, only the face closest to the center of the image will be kept.")
             face_detection_threshold = gr.Number(label="Face eye dist threshold", interactive=True,value=10, info="A threshold to filter out faces with too small an eye distance (e.g., side faces).")
-            
+            face_temp=gr.Checkbox(label="Save input image", value=False, visible=generator)
         with gr.Column():
             face_detection = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")            
             upscale_scale = gr.Number(label="Rescaling factor", value=4,interactive=True)
@@ -1238,9 +1238,9 @@ def gui(generator):
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)   
-    
+    return face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale
 
-    
+
     
     # submit.click(
     #     upscale.inference, 
