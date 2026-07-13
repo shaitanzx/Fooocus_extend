@@ -15,6 +15,8 @@ from extras.facexlib_custom.utils.misc import download_from_url
 from extras.basicsr.utils.realesrganer import RealESRGANer
 
 import extentions.batch as batch
+import modules.config
+temp_dir=modules.config.temp_path+os.path.sep
 
 #from utils.dataops import auto_split_upscale
 def auto_split_upscale(
@@ -1107,6 +1109,30 @@ def get_model_type(model_name):
 typed_upscale_models = {get_model_type(key): value[0] for key, value in upscale_models.items()}
 
 upscale = Upscale()
+def process(face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name):
+    batch_path=f"{temp_dir}batch_face_enhancer"
+    batch_temp=f"{temp_dir}batch_temp"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    passed=1
+    for f_name in batch_files:
+        print (f"\033[91m[FaceEnhancer QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
+        gr.Info(f"FaceEnhancer Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
+        image=batch_path+os.path.sep+f_name
+        img = Image.open(image)
+        yield gr.update(value=img,visible=True),gr.update(visible=False)
+        #image=np.array(img)
+
+        img_cf=Image.fromarray(upscale.inference(image,face_model,upscale_model,upscale_scale,face_detection,face_detection_threshold,face_detection_only_center))
+        name, ext = os.path.splitext(f_name)
+        suf = ''
+        if with_model_name:
+            suf=f'_{face_model}_{upscale_model}'
+        filename =  batch_temp + os.path.sep + name + suf + ext
+        img_cf.save(filename)
+        passed+=1
+    return gr.update(value=None,visible=False),gr.update(visible=True)
+
 
 def gui(generator):
     
@@ -1202,6 +1228,20 @@ def gui(generator):
         face_en_start=gr.Button(value='Start CodeFormer')
     with gr.Row():
         gr.HTML('* \"FaceEnhancer\" is powered by avan06. <a href="https://huggingface.co/spaces/avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN" target="_blank">\U0001F4D4 Document</a>')
+    with gr.Row(visible=False):
+        ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
+    face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
+              .then(fn=process, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name],
+                        outputs=[preview,file_out],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
+              .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)   
+    
+
+    
+    
     # submit.click(
     #     upscale.inference, 
     #     inputs=[
