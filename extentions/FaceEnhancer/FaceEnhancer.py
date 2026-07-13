@@ -1124,11 +1124,11 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
         image=np.array(img)
 
         img_cf=Image.fromarray(upscale.inference(image,face_model,upscale_model,upscale_scale,face_detection,face_detection_threshold,face_detection_only_center))
-        name, ext = os.path.splitext(f_name)
+        name, _ = os.path.splitext(f_name)
         suf = ''
         if with_model_name:
             suf=f'_{face_model}_{upscale_model}'
-        filename =  batch_temp + os.path.sep + name + suf + ext
+        filename =  batch_temp + os.path.sep + name + suf + '.png'
         img_cf.save(filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
