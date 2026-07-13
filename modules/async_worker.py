@@ -595,12 +595,12 @@ def worker():
             imgs[-1 if not async_task.face_temp else len(imgs):] = temp_imgs
 
 
-        if async_task.codeformer_gen_enabled:
-            progressbar(async_task, current_progress, 'CodeFormer in progress ...')
-            temp_imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
-                    async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
-                    async_task.codeformer_gen_fidelity)
-            imgs[-1 if not async_task.codeformer_temp else len(imgs):] = temp_imgs
+        # if async_task.codeformer_gen_enabled:
+        #     progressbar(async_task, current_progress, 'CodeFormer in progress ...')
+        #     temp_imgs = codeformer_process(imgs, async_task.codeformer_gen_preface,async_task.codeformer_gen_background_enhance,
+        #             async_task.codeformer_gen_face_upsample,async_task.codeformer_gen_upscale,
+        #             async_task.codeformer_gen_fidelity)
+        #     imgs[-1 if not async_task.codeformer_temp else len(imgs):] = temp_imgs
 
         
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
