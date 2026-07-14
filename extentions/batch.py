@@ -29,14 +29,14 @@ def ui_batch():
                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260,interactive=True)
                 files_single = gr.Files(label="Drag (Select) 1 or more reference images",file_count="multiple",
                                             file_types=["image"],visible=True,interactive=True,height=260)
-                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True)
+                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True,type="filepath")
             with gr.Row():
                 enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
             with gr.Row():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
-                image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False,type="filepath")
+                image_out=gr.Image(label="Output image",visible=False,height=260,interactive=False)
     enable_zip.change(fn=zip_enable,inputs=[enable_zip,files_single],outputs=[file_in,files_single,image_single],show_progress=False)
     image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
     files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
