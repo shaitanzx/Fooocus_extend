@@ -1146,7 +1146,7 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
         filename =  batch_temp + os.path.sep + name + suf + '.png'
         img_cf.save(filename)
         passed+=1
-    return gr.update(visible=False),gr.update(visible=True)
+    return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
 def gui(generator):
