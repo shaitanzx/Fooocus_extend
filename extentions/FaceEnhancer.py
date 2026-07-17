@@ -1169,7 +1169,16 @@ def gui(generator):
             face_detection = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")            
             upscale_scale = gr.Number(label="Rescaling factor", value=4,interactive=True)
             with_model_name = gr.Checkbox(label="Output image files name with model name (if saved *.zip)", value=not generator,interactive=True,visible=not generator)
-
+    with gr.Row():
+        enable_swap = gr.Checkbox(label="Enable Face Swap", value=False, info="Replace faces in the target image with the face from the source image.")
+    with gr.Row():
+        with gr.Column(visible=False) as swap_mode:
+            source_img = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=150)
+        with gr.Column():
+            source_index = gr.Textbox(label="Source Face Index", value="0", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+            target_index = gr.Textbox(label="Target Face Index", value="-1", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+    enable_swap.change(lambda x: gr.update(visible=x), inputs=enable_swap,
+                                        outputs=swap_mode, queue=False, show_progress=False)
     with gr.Accordion('About models', open=False):
         with gr.Row(variant="panel"):
             # Convert to Markdown table
