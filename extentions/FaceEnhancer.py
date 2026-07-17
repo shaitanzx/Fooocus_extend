@@ -562,7 +562,7 @@ class Upscale:
                         else:
                             print(f"⚠️ Face swap model not found at: {swapper_path}. Skipping swap.")
 
-                  if self.face_swapper is not None:
+                    if self.face_swapper is not None:
                         # Конвертируем source_img в BGR
                         source_cv2 = cv2.cvtColor(np.array(source_img), cv2.COLOR_RGB2BGR)
                         
