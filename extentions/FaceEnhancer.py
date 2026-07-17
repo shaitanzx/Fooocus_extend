@@ -166,7 +166,7 @@ class Upscale:
         if upscale_model == "None":
             return
         upscale_type, upscale_model = upscale_model.split(", ", 1)
-        download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("extentions","FaceEnhancer","weights", "upscale"))
+        download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("models","face_enhancer", "upscale"))
         self.modelInUse = f"_{os.path.splitext(upscale_model)[0]}"
         netscale = 1 if any(sub in upscale_model.lower() for sub in ("x1", "1x")) else (2 if any(sub in upscale_model.lower() for sub in ("x2", "2x")) else 4)
         model = None
@@ -175,7 +175,7 @@ class Upscale:
             # The values of the following hyperparameters are based on the research findings of the Spandrel project.
             # https://github.com/chaiNNer-org/spandrel/tree/main/libs/spandrel/spandrel/architectures
             from extras.basicsr.archs.rrdbnet_arch import RRDBNet
-            loadnet = torch.load(os.path.join("extentions","FaceEnhancer","weights", "upscale", upscale_model), map_location=torch.device('cpu'), weights_only=True)
+            loadnet = torch.load(os.path.join("models","face_enhancer", "upscale", upscale_model), map_location=torch.device('cpu'), weights_only=True)
             if 'params_ema' in loadnet or 'params' in loadnet:
                 loadnet = loadnet['params_ema'] if 'params_ema' in loadnet else loadnet['params']
 
@@ -390,7 +390,7 @@ class Upscale:
                              qkv_bias=qkv_bias, qk_scale=None, ape=ape, patch_norm=patch_norm, upscale=netscale, upsampler=upsampler, resi_connection=resi_connection,)
 
         if model:
-            self.realesrganer = RealESRGANer(scale=netscale, model_path=os.path.join("extentions","FaceEnhancer","weights", "upscale", upscale_model), model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
+            self.realesrganer = RealESRGANer(scale=netscale, model_path=os.path.join("models","face_enhancer", "upscale", upscale_model), model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
         elif upscale_model:
             import PIL
             from image_gen_aux import UpscaleWithModel
@@ -438,7 +438,7 @@ class Upscale:
                     return cv_image, None
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            upscaler = UpscaleWithModel.from_pretrained(os.path.join("extentions","FaceEnhancer","weights", "upscale", upscale_model)).to(device)
+            upscaler = UpscaleWithModel.from_pretrained(os.path.join("models","face_enhancer", "upscale", upscale_model)).to(device)
             upscaler.__class__ = UpscaleWithModel_Gfpgan
             self.realesrganer = upscaler
 
@@ -446,7 +446,7 @@ class Upscale:
     def initFaceEnhancerModel(self, face_restoration, face_detection):
         if face_restoration == "None":
             return
-        model_rootpath = os.path.join("extentions","FaceEnhancer","weights", "face")
+        model_rootpath = os.path.join("models","face_enhancer", "face")
         model_path = os.path.join(model_rootpath, face_restoration)
         download_from_url(face_models[face_restoration][0], face_restoration, model_rootpath)
         
@@ -487,43 +487,31 @@ class Upscale:
         
         
         try:
-            #if not gallery or (not face_restoration and not upscale_model):
-            #    raise ValueError("Invalid parameter setting")
+
         
             self.modelInUse = "" 
-            print(face_restoration, upscale_model, scale, f"gallery: {gallery}")
+            print(face_restoration, upscale_model, scale)
 
             timer = Timer()
-            #if upscale_model = 'None'
-            #    scale = 1
             self.scale = scale
         
             progressRatio = 0.5 if upscale_model and face_restoration else 1
             current_progress = 0
-            #progress(0, desc="Initializing models...")
         
             if upscale_model != "None":
                 self.initBGUpscaleModel(upscale_model)
                 current_progress += progressRatio / 2
-                #progress(current_progress, desc="BG upscale model initialized.")
                 timer.checkpoint("Initialize BG upscale model")
 
             if face_restoration!= "None":
                 self.initFaceEnhancerModel(face_restoration, face_detection)
                 current_progress += progressRatio / 2
-                #progress(current_progress, desc="Face enhancer model initialized.")
                 timer.checkpoint("Initialize face enhancer model")
 
             timer.report()
 
             is_auto_split_upscale = True
-            #img_path = gallery
-
             img_cv2 = cv2.cvtColor(gallery, cv2.COLOR_RGB2BGR)
-
-            # if img_cv2 is None:
-            #     print(f"Warning: Could not read or decode image '{img_path}'.")
-            #     return None
 
             if len(img_cv2.shape) == 2:  # for gray inputs
                 img_cv2 = cv2.cvtColor(img_cv2, cv2.COLOR_GRAY2BGR)
@@ -533,7 +521,7 @@ class Upscale:
             if upscale_model != "None" and self.realesrganer and hasattr(self.realesrganer, "enhance"):
                 bg_upsample_img, _ = auto_split_upscale(img_cv2, self.realesrganer.enhance, self.scale) if is_auto_split_upscale else self.realesrganer.enhance(img_cv2, outscale=self.scale)
                 current_progress += progressRatio / 2
-                #progress(current_progress, desc="Background upscaling...")
+
                 timer.checkpoint("Background upscale")
 
             if face_restoration!= "None" and self.face_enhancer:
@@ -542,7 +530,6 @@ class Upscale:
                     paste_back=True, bg_upsample_img=bg_upsample_img, eye_dist_threshold=face_detection_threshold
                 )
                 current_progress += progressRatio / 2
-                #progress(current_progress, desc="Face enhancement...")
                 timer.checkpoint("Face enhancement")
 
             restored_img = bg_upsample_img
@@ -554,10 +541,7 @@ class Upscale:
         
             timer.checkpoint("Processing complete")
 
-            # Color conversion BGR -> RGB для возврата в Gradio
-            #restored_img = cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB)
             restored_img = cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB)
-            #progress(1, desc="Processing complete.")
             timer.report_all()
             gallery_array.append(restored_img)
             if generator:
@@ -1184,47 +1168,8 @@ def gui(generator):
         with gr.Column():
             face_detection = gr.Dropdown(["retinaface_resnet50", "YOLOv5l", "YOLOv5n"], interactive=True,type="value", value="retinaface_resnet50", label="Face Detection type")            
             upscale_scale = gr.Number(label="Rescaling factor", value=4,interactive=True)
-            with_model_name = gr.Checkbox(label="Output image files name with model name", value=not generator,interactive=True,visible=not generator)
-    # with gr.Row():
-    #     with gr.Column(variant="panel"):
-    #         submit = gr.Button(value="Submit", variant="primary", size="lg")
-    #         file_in = gr.Image(label="Reference image",visible=True,height=260,interactive=True,type="filepath")
-            
-            
+            with_model_name = gr.Checkbox(label="Output image files name with model name (if saved *.zip)", value=not generator,interactive=True,visible=not generator)
 
-            
-            
-            #with_model_name            = gr.Checkbox(label="Output image files name with model name", value=True)
-            # Add a checkbox to always save the output as a PNG file for the best quality.
-            #save_as_png                = gr.Checkbox(label="Always save output as PNG", value=True, info="If enabled, all output images will be saved in PNG format to ensure the best quality. If disabled, the format will be determined automatically (PNG for images with transparency, otherwise JPG).")
-
-            # Event to update the selected image when an image is clicked in the gallery
-            #selected_image = gr.Textbox(label="Selected Image", visible=False)
-            #input_gallery.select(get_selection_from_gallery, inputs=None, outputs=selected_image)
-            # Trigger update when gallery changes
-            #input_gallery.change(limit_gallery, input_gallery, input_gallery)
-
-            # with gr.Row():
-            #     clear = gr.ClearButton(
-            #         components=[
-            #             input_gallery,
-            #             face_model,
-            #             upscale_model,
-            #             upscale_scale,
-            #             face_detection,
-            #             face_detection_threshold,
-            #             face_detection_only_center,
-            #             with_model_name,
-            #             save_as_png,
-            #         ], variant="secondary", size="lg",)
-        # with gr.Column(variant="panel"):
-        #     file_out = gr.Image(label="Output image",visible=True,height=260,interactive=False)
-    # with gr.Row(variant="panel"):
-    #     # Generate output array
-    #     output_arr = []
-    #     for file_name in example_list:
-    #         output_arr.append([[file_name],])
-    #     gr.Examples(output_arr, inputs=[input_gallery,], examples_per_page=20)
     with gr.Accordion('About models', open=False):
         with gr.Row(variant="panel"):
             # Convert to Markdown table
@@ -1254,19 +1199,3 @@ def gui(generator):
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)   
     return face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale
-
-
-    
-    # submit.click(
-    #     upscale.inference, 
-    #     inputs=[
-    #         file_in,
-    #         face_model,
-    #         upscale_model,
-    #         upscale_scale,
-    #         face_detection,
-    #         face_detection_threshold,
-    #         face_detection_only_center
-    #     ],
-    #     outputs=[file_out],
-    # )

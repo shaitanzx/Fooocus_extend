@@ -16,7 +16,8 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 import platform
 import fooocus_version
-
+import shutil
+import stat
 from build_launcher import build_launcher
 from modules.launch_util import is_installed, run, python, run_pip, requirements_met, delete_folder_content
 from modules.model_loader import load_file_from_url
@@ -158,6 +159,17 @@ config.default_base_model_name, config.checkpoint_downloads = download_models(
 
 config.update_files()
 init_cache(config.model_filenames, config.paths_checkpoints, config.lora_filenames, config.paths_loras)
+
+def remove_readonly(func, path, excinfo):
+    # Снимаем атрибут "только для чтения" и пробуем удалить снова
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+folder_path = f"extentions/CodeFormer"
+
+if os.path.exists(folder_path):
+    # onerror (или onexc в Python 3.12+) обрабатывает ошибки прав доступа
+    shutil.rmtree(folder_path, onerror=remove_readonly) 
 
 
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_images", exist_ok=True)

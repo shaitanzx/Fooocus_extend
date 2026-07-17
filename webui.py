@@ -58,7 +58,7 @@ from modules.extra_utils import get_files_from_folder
 import chardet
 from extentions.inswapper import face_swap
 from extentions.CodeFormer import codeformer
-from extentions.FaceEnhancer import FaceEnhancer
+from extentions import FaceEnhancer
 import extentions.instantid.instantid as instantid
 import extentions.photomaker.app as photomaker
 
