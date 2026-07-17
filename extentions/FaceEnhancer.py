@@ -509,7 +509,7 @@ class Upscale:
         elif isinstance(input_data, np.ndarray):
         
             return input_data,False
-    def inference(self, gallery_input, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool):
+    def inference(self, gallery_input, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool,enable_swap, source_face, source_index, target_index):
         
         gallery_array=[]
         gallery,generator=self.get_image(gallery_input)
