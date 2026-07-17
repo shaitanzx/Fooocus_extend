@@ -562,6 +562,11 @@ class Upscale:
                         else:
                             print(f"⚠️ Face swap model not found at: {swapper_path}. Skipping swap.")
 
+
+                            model_rootpath = os.path.join("models","face_enhancer")
+                            model_path = os.path.join(model_rootpath, face_restoration)
+                            download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", model_rootpath)
+
                     if self.face_swapper is not None:
                         # Конвертируем source_img в BGR
                         source_cv2 = cv2.cvtColor(np.array(source_img), cv2.COLOR_RGB2BGR)
