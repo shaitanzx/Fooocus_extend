@@ -1036,8 +1036,8 @@ with shared.gradio_root:
                     xyz_start=gr.Button(value="Start xyz",visible=True)
                     gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
                     gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
-                #   with gr.TabItem(label='Inswapper'):
-                #     face_swap.inswapper(False)
+                  with gr.TabItem(label='Inswapper'):
+                    face_swap.inswapper(False)
 
 
                   with gr.TabItem(label='FaceEnhancer'):

@@ -1,4 +1,3 @@
-
 torchsde==0.2.6
 einops==0.8.0
 safetensors==0.4.3
@@ -43,29 +42,12 @@ transformers==4.42.4
 litelama==0.1.7
 ftfy==6.3.1
 regex
-
 lmdb
 yapf
-
-#basicsr @ git+https://github.com/avan06/BasicSR
 addict
 future
 requests
 scikit-image
-#tb-nightly
 fvcore
 matplotlib
 fairscale
-
-#gfpgan @ git+https://github.com/avan06/GFPGAN
-
-
-
-#facexlib @ git+https://github.com/avan06/facexlib
-
-
-
-
-
-#image_gen_aux @ git+https://github.com/huggingface/image_gen_aux
-#gdown # supports downloading the large file from Google Drive

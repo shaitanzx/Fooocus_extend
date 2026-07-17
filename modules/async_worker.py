@@ -375,8 +375,8 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
-    sys.path.append(os.path.abspath('extentions/inswapper'))
-    from face_swap import perform_face_swap
+    #sys.path.append(os.path.abspath('extentions/inswapper'))
+    from extentions.face_swap import perform_face_swap
 
 
     pid = os.getpid()

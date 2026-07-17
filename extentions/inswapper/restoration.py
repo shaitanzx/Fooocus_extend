@@ -4,11 +4,11 @@ import cv2
 import torch
 import torch.nn.functional as F
 from torchvision.transforms.functional import normalize
-sys.path.append(os.path.abspath('extentions/CodeFormer'))
+#sys.path.append(os.path.abspath('extentions/CodeFormer'))
 from extras.basicsr.utils import imwrite, img2tensor, tensor2img
 from extras.basicsr.utils.download_util import load_file_from_url
-from facelib.utils.face_restoration_helper import FaceRestoreHelper
-from facelib.utils.misc import is_gray
+from extras.facelib_custom.utils.face_restoration_helper import FaceRestoreHelper
+from extras.facelib_custom.utils.misc import is_gray
 from extras.basicsr.archs.rrdbnet_arch import RRDBNet
 from extras.basicsr.utils.realesrgan_utils import RealESRGANer
 from extras.basicsr.utils.registry import ARCH_REGISTRY
@@ -16,20 +16,20 @@ from extras.basicsr.utils.registry import ARCH_REGISTRY
 
 def check_ckpts():
     pretrain_model_url = {
-        'codeformer': 'https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/codeformer.pth',
+        'codeformer': 'https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/codeformer.pth',
         'detection': 'https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/detection_Resnet50_Final.pth',
         'parsing': 'https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/parsing_parsenet.pth',
-        'realesrgan': 'https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/RealESRGAN_x2plus.pth'
+        'realesrgan': 'https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/upscalers/RealESRGAN_x2plus.pth'
     }
     # download weights
-    if not os.path.exists('extentions/CodeFormer/weights/CodeFormer/codeformer.pth'):
-        load_file_from_url(url=pretrain_model_url['codeformer'], model_dir='extentions/CodeFormer/weights/CodeFormer', progress=True, file_name=None)
+    if not os.path.exists('models/face_enhancer/face/codeformer.pth'):
+        load_file_from_url(url=pretrain_model_url['codeformer'], model_dir='models/face_enhancer/face', progress=True, file_name=None)
     if not os.path.exists('extentions/CodeFormer/weights/facelib/detection_Resnet50_Final.pth'):
-        load_file_from_url(url=pretrain_model_url['detection'], model_dir='extentions/CodeFormer/weights/facelib', progress=True, file_name=None)
+        load_file_from_url(url=pretrain_model_url['detection'], model_dir='models/face_enhancer/face', progress=True, file_name=None)
     if not os.path.exists('extentions/CodeFormer/weights/facelib/parsing_parsenet.pth'):
-        load_file_from_url(url=pretrain_model_url['parsing'], model_dir='extentions/CodeFormer/weights/facelib', progress=True, file_name=None)
+        load_file_from_url(url=pretrain_model_url['parsing'], model_dir='models/face_enhancer/face', progress=True, file_name=None)
     if not os.path.exists('extentions/CodeFormer/weights/realesrgan/RealESRGAN_x2plus.pth'):
-        load_file_from_url(url=pretrain_model_url['realesrgan'], model_dir='extentions/CodeFormer/weights/realesrgan', progress=True, file_name=None)
+        load_file_from_url(url=pretrain_model_url['realesrgan'], model_dir='models/face_enhancer/upscale', progress=True, file_name=None)
     
     
 # set enhancer with RealESRGAN
@@ -45,7 +45,7 @@ def set_realesrgan():
     )
     upsampler = RealESRGANer(
         scale=2,
-        model_path="extentions/CodeFormer/weights/realesrgan/RealESRGAN_x2plus.pth",
+        model_path="models/face_enhancer/upscale/RealESRGAN_x2plus.pth",
         model=model,
         tile=400,
         tile_pad=40,
