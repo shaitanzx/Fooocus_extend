@@ -1172,7 +1172,7 @@ def gui(generator):
     with gr.Row():
         enable_swap = gr.Checkbox(label="Enable Face Swap", value=False, info="Replace faces in the target image with the face from the source image.")
     with gr.Row(visible=False) as swap_mode:
-        with gr.Column:
+        with gr.Column():
             source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=260)
         with gr.Column():
             source_index = gr.Textbox(label="Source Face Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
