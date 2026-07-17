@@ -547,7 +547,7 @@ class Upscale:
             print(f"> Processing image, Shape: {img_cv2.shape}")
 
 
-            if enable_swap and source_img is not None:
+            if enable_swap and source_face is not None:
                 print("Attempting Face Swap...")
                 try:
                     # Ленивая загрузка моделей (только при первом вызове)
