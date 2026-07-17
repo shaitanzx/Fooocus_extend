@@ -57,7 +57,7 @@ from extentions import geeky_remb as GeekyRemBExtras
 from modules.extra_utils import get_files_from_folder
 import chardet
 from extentions.inswapper import face_swap
-from extentions.CodeFormer import codeformer
+
 from extentions import FaceEnhancer
 import extentions.instantid.instantid as instantid
 import extentions.photomaker.app as photomaker
@@ -860,8 +860,7 @@ with shared.gradio_root:
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
                         with gr.TabItem(label='FaceEnhancer'):
                             face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale = FaceEnhancer.gui(True)  
-                        with gr.TabItem(label='CodeFormer'):
-                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
+
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
@@ -1040,8 +1039,7 @@ with shared.gradio_root:
                 #   with gr.TabItem(label='Inswapper'):
                 #     face_swap.inswapper(False)
 
-                #   with gr.TabItem(label='CodeFormer'):
-                #     codeformer.codeformer_gui(False)
+
                   with gr.TabItem(label='FaceEnhancer'):
                         FaceEnhancer.gui(False)                
                   with gr.TabItem(label='Remove Background') as rembg_tab:

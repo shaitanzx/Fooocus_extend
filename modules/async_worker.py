@@ -377,8 +377,7 @@ def worker():
     from extentions.FaceEnhancer import FaceEnhancer
     sys.path.append(os.path.abspath('extentions/inswapper'))
     from face_swap import perform_face_swap
-    sys.path.append(os.path.abspath('extentions/CodeFormer'))
-    from codeformer import codeformer_process
+
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
