@@ -1173,12 +1173,11 @@ def gui(generator):
         enable_swap = gr.Checkbox(label="Enable Face Swap", value=False, info="Replace faces in the target image with the face from the source image.")
     with gr.Row():
         with gr.Column(visible=False) as swap_mode:
-            source_img = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=150)
+            source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=150)
         with gr.Column():
             source_index = gr.Textbox(label="Source Face Index", value="0", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
             target_index = gr.Textbox(label="Target Face Index", value="-1", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
-    enable_swap.change(lambda x: gr.update(visible=x), inputs=enable_swap,
-                                        outputs=swap_mode, queue=False, show_progress=False)
+
     with gr.Accordion('About models', open=False):
         with gr.Row(variant="panel"):
             # Convert to Markdown table
@@ -1199,10 +1198,12 @@ def gui(generator):
         gr.HTML('* \"FaceEnhancer\" is powered by avan06. <a href="https://huggingface.co/spaces/avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
+    enable_swap.change(lambda x: gr.update(visible=x), inputs=enable_swap,
+                                        outputs=swap_mode, queue=False, show_progress=False)
     face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
-              .then(fn=process, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name],
+              .then(fn=process, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap,source_face,source_index,target_index],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
