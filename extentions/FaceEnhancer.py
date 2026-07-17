@@ -1109,7 +1109,7 @@ def get_model_type(model_name):
 typed_upscale_models = {get_model_type(key): value[0] for key, value in upscale_models.items()}
 
 upscale = Upscale()
-def process(face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name):
+def process(face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap,source_face,source_index,target_index):
     batch_path=f"{temp_dir}batch_face_enhancer"
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
@@ -1122,7 +1122,11 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         image=np.array(img)
 
-        img_cf=Image.fromarray(upscale.inference(image,face_model,upscale_model,upscale_scale,face_detection,face_detection_threshold,face_detection_only_center))
+        img_cf = Image.fromarray(upscale.inference(
+            image, face_model, upscale_model, upscale_scale, face_detection, 
+            face_detection_threshold, face_detection_only_center, 
+            enable_swap, source_face, source_index, target_index
+            ))
         name, _ = os.path.splitext(f_name)
         suf = ''
         if with_model_name:
