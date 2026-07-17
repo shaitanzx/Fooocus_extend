@@ -554,22 +554,12 @@ class Upscale:
                     if self.face_analyser is None:
                         self.face_analyser = getFaceAnalyser("buffalo_l", ['CPUExecutionProvider'])
                     
-                    if self.face_swapper is None:
-                        # Укажите здесь правильный путь к вашей модели inswapper_128.onnx
-                        swapper_path = os.path.join("models", "clip_vision", "inswapper_128.onnx")
-                        if os.path.exists(swapper_path):
-                            self.face_swapper = getFaceSwapModel(swapper_path)
-                        else:
-                            print(f"⚠️ Face swap model not found at: {swapper_path}. Skipping swap.")
+                        model_rootpath = os.path.join("models","face_enhancer")
+                        model_path = os.path.join(model_rootpath, face_restoration)
+                        download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", model_rootpath)
 
-
-                            model_rootpath = os.path.join("models","face_enhancer")
-                            model_path = os.path.join(model_rootpath, face_restoration)
-                            download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", model_rootpath)
-
-                    if self.face_swapper is not None:
                         # Конвертируем source_img в BGR
-                        source_cv2 = cv2.cvtColor(np.array(source_img), cv2.COLOR_RGB2BGR)
+                        source_cv2 = cv2.cvtColor(np.array(source_face), cv2.COLOR_RGB2BGR)
                         
                         # Детектим лица
                         source_faces = get_many_faces(self.face_analyser, source_cv2)
