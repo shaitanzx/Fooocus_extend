@@ -1175,8 +1175,8 @@ def gui(generator):
         with gr.Column(visible=False) as swap_mode:
             source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=150)
         with gr.Column():
-            source_index = gr.Textbox(label="Source Face Index", value="0", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
-            target_index = gr.Textbox(label="Target Face Index", value="-1", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+            source_index = gr.Textbox(label="Source Face Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
+            target_index = gr.Textbox(label="Target Face Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
 
     with gr.Accordion('About models', open=False):
         with gr.Row(variant="panel"):
