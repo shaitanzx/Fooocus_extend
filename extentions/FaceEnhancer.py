@@ -607,7 +607,7 @@ class Upscale:
 
                     if source_faces is None:
                         raise Exception("No source faces found!")
-
+                    entire_mask_image = np.zeros_like(np.array(img_cv2))
                     if target_indexes == "-1":
                         if num_source_faces == 1:
                             print("Replacing all faces in target image with the same face from the source image")
@@ -634,6 +634,7 @@ class Upscale:
                                 target_index,
                                 temp_frame
                             )
+                            temp_frame = apply_face_mask(temp_frame, img_cv2, target_faces[target_index], entire_mask_image)
                     else:
                         print("Replacing specific face(s) in the target image with specific face(s) from the source image")
 
@@ -660,7 +661,7 @@ class Upscale:
                             num_iterations = num_target_faces_to_swap
 
                         if num_source_faces_to_swap == num_target_faces_to_swap:
-                            entire_mask_image = np.zeros_like(np.array(img_cv2))
+                            
                             for index in range(num_iterations):
                                 source_index = int(source_indexes[index])
                                 target_index = int(target_indexes[index])
