@@ -600,6 +600,7 @@ class Upscale:
                     #         )
                     #if num_source_images == 1:
                     # detect source faces that will be replaced into the target image
+                    print('==================',source_face)
                     source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face), cv2.COLOR_RGB2BGR))
                     num_source_faces = len(source_faces)
                     print(f"Source faces: {num_source_faces}")
