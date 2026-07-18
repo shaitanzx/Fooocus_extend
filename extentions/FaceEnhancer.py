@@ -583,6 +583,7 @@ class Upscale:
                     if isinstance(source_face, list) and num_source_images == num_target_faces:
                         print("Replacing faces in target image from the left to the right by order")
                         for i in range(num_target_faces):
+                            print('======================',source_face[i])
                             source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face[i]), cv2.COLOR_RGB2BGR))
                             source_index = i
                             target_index = i
