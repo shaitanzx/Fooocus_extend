@@ -566,7 +566,7 @@ class Upscale:
                         self.face_analyser = getFaceAnalyser("buffalo_l", ['CPUExecutionProvider'])
                     
                         model_rootpath = os.path.join("models","face_enhancer")
-                        model_path = os.path.join(model_rootpath, face_restoration)
+                        model_path = os.path.join(model_rootpath, "inswapper_128.onnx")
                         download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", model_rootpath)
                         
                         self.face_swapper = getFaceSwapModel(model_path)
