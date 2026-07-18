@@ -178,7 +178,18 @@ def get_many_faces(face_analyser, frame: np.ndarray):
     except (IndexError, ValueError, AttributeError):
         return None
 
-def swap_face(face_swapper, source_face, target_face, temp_frame):
+def swap_face(face_swapper,
+              source_faces,
+              target_faces,
+              source_index,
+              target_index,
+              temp_frame):
+    """
+    paste source_face on target image
+    """
+    source_face = source_faces[source_index]
+    target_face = target_faces[target_index]
+
     return face_swapper.get(temp_frame, target_face, source_face, paste_back=True)
 
 
