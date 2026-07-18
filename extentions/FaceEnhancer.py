@@ -658,7 +658,7 @@ class Upscale:
                                             #     target_idx,
                                             #     temp_frame
                                             # )
-                                            temp_frame = self.face_swapper.get(temp_frame, target_faces[target_index_val], source_face[source_index_val], paste_back=True)
+                                            temp_frame = self.face_swapper.get(temp_frame, target_faces[target_idx], source_face[source_idx], paste_back=True)
                             else:
                                 raise Exception("Unsupported face configuration (multiple source faces not supported in this UI)")
                             
