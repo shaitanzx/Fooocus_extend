@@ -16,7 +16,7 @@ from extras.facexlib_custom.utils.misc import img2tensor
 
 class BiSeNetMaskGenerator(MaskGenerator):
     def __init__(self) -> None:
-        self.mask_model = init_parsing_model(device="cuda")
+        self.mask_model = init_parsing_model(device="cuda",model_rootpath=os.path.join("models", "face_enhancer", "face"))
 
     def name(self):
         return "BiSeNet"
