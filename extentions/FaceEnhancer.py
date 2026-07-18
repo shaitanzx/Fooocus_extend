@@ -557,7 +557,8 @@ class Upscale:
                         model_rootpath = os.path.join("models","face_enhancer")
                         model_path = os.path.join(model_rootpath, face_restoration)
                         download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", model_rootpath)
-
+                        
+                        self.face_swapper = getFaceSwapModel(model_path)
                         # Конвертируем source_img в BGR
                         source_cv2 = cv2.cvtColor(np.array(source_face), cv2.COLOR_RGB2BGR)
                         
@@ -661,7 +662,7 @@ class Upscale:
             # ==========================================
 
 
-            bg_upsample_img = None
+            bg_upsample_img = img_cv2
             if upscale_model != "None" and self.realesrganer and hasattr(self.realesrganer, "enhance"):
                 bg_upsample_img, _ = auto_split_upscale(img_cv2, self.realesrganer.enhance, self.scale) if is_auto_split_upscale else self.realesrganer.enhance(img_cv2, outscale=self.scale)
                 current_progress += progressRatio / 2
