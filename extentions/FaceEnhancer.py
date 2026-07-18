@@ -686,7 +686,10 @@ class Upscale:
 
                     entire_mask_image = np.zeros_like(np.array(target_img))
                     img_cv2 = apply_face_mask(result, target_img, target_faces[target_index], entire_mask_image)            
-                    
+                except Exception as e:
+                    print(f"⚠️ Face Swap failed gracefully: {e}")
+                    import traceback
+                    traceback.print_exc()    
             # ==========================================
             # --- КОНЕЦ ЛОГИКИ FACE SWAP ---
             # ==========================================
