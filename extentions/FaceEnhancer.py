@@ -580,28 +580,27 @@ class Upscale:
 
                 if target_faces is not None:
                     temp_frame = copy.deepcopy(img_cv2)
-                    if isinstance(source_face, list) and num_source_images == num_target_faces:
-                        print("Replacing faces in target image from the left to the right by order")
-                        for i in range(num_target_faces):
-                            print('======================',source_face[i])
-                            source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face[i]), cv2.COLOR_RGB2BGR))
-                            source_index = i
-                            target_index = i
+                    # if isinstance(source_face, list) and num_source_images == num_target_faces:
+                    #     print("Replacing faces in target image from the left to the right by order")
+                    #     for i in range(num_target_faces):
+                    #         source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face[i]), cv2.COLOR_RGB2BGR))
+                    #         source_index = i
+                    #         target_index = i
 
-                            if source_faces is None:
-                                raise Exception("No source faces found!")
+                    #         if source_faces is None:
+                    #             raise Exception("No source faces found!")
 
-                            temp_frame = swap_face(
-                                self.face_swapper,
-                                source_faces,
-                                target_faces,
-                                source_index,
-                                target_index,
-                                temp_frame
-                            )
-                    elif num_source_images == 1:
+                    #         temp_frame = swap_face(
+                    #             self.face_swapper,
+                    #             source_faces,
+                    #             target_faces,
+                    #             source_index,
+                    #             target_index,
+                    #             temp_frame
+                    #         )
+                    if num_source_images == 1:
                         # detect source faces that will be replaced into the target image
-                        source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face[0]), cv2.COLOR_RGB2BGR))
+                        source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face), cv2.COLOR_RGB2BGR))
                         num_source_faces = len(source_faces)
                         print(f"Source faces: {num_source_faces}")
                         print(f"Target faces: {num_target_faces}")
@@ -635,7 +634,7 @@ class Upscale:
                                     target_index,
                                     temp_frame
                                 )
-                        else:
+                    else:
                             print("Replacing specific face(s) in the target image with specific face(s) from the source image")
 
                             if source_indexes == "-1":
@@ -1304,7 +1303,7 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
         img_cf = Image.fromarray(upscale.inference(
             image, face_model, upscale_model, upscale_scale, face_detection, 
             face_detection_threshold, face_detection_only_center, 
-            enable_swap, [source_face], source_index, target_index
+            enable_swap, source_face, source_index, target_index
             ))
         name, _ = os.path.splitext(f_name)
         suf = ''
