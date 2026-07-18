@@ -54,7 +54,7 @@ def swap_face(face_swapper,
     source_face = source_faces[source_index]
     target_face = target_faces[target_index]
 
-    return upscale.face_swapper.get(temp_frame, target_face, source_face, paste_back=True)
+    return face_swapper.get(temp_frame, target_face, source_face, paste_back=True)
  
     
 def process(source_img: Union[Image.Image, List],
