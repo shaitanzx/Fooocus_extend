@@ -575,9 +575,8 @@ class Upscale:
 
                 # detect faces that will be replaced in the target image
                 target_faces = get_many_faces(self.face_analyser, img_cv2)
-                source_faces = get_many_faces(self.face_analyser, source_face)
                 num_target_faces = len(target_faces)
-                num_source_images = len(source_face)
+                #num_source_images = len(source_face)
 
                 if target_faces is not None:
                     temp_frame = copy.deepcopy(img_cv2)
@@ -599,33 +598,77 @@ class Upscale:
                     #             target_index,
                     #             temp_frame
                     #         )
-                    if num_source_images == 1:
-                        # detect source faces that will be replaced into the target image
-                        source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face), cv2.COLOR_RGB2BGR))
-                        num_source_faces = len(source_faces)
-                        print(f"Source faces: {num_source_faces}")
-                        print(f"Target faces: {num_target_faces}")
+                    #if num_source_images == 1:
+                    # detect source faces that will be replaced into the target image
+                    source_faces = get_many_faces(self.face_analyser, cv2.cvtColor(np.array(source_face), cv2.COLOR_RGB2BGR))
+                    num_source_faces = len(source_faces)
+                    print(f"Source faces: {num_source_faces}")
+                    print(f"Target faces: {num_target_faces}")
 
-                        if source_faces is None:
-                            raise Exception("No source faces found!")
+                    if source_faces is None:
+                        raise Exception("No source faces found!")
+
+                    if target_indexes == "-1":
+                        if num_source_faces == 1:
+                            print("Replacing all faces in target image with the same face from the source image")
+                            num_iterations = num_target_faces
+                        elif num_source_faces < num_target_faces:
+                            print("There are less faces in the source image than the target image, replacing as many as we can")
+                            num_iterations = num_source_faces
+                        elif num_target_faces < num_source_faces:
+                            print("There are less faces in the target image than the source image, replacing as many as we can")
+                            num_iterations = num_target_faces
+                        else:
+                            print("Replacing all faces in the target image with the faces from the source image")
+                            num_iterations = num_target_faces
+
+                        for i in range(num_iterations):
+                            source_index = 0 if num_source_faces == 1 else i
+                            target_index = i
+
+                            temp_frame = swap_face(
+                                self.face_swapper,
+                                source_faces,
+                                target_faces,
+                                source_index,
+                                target_index,
+                                temp_frame
+                            )
+                    else:
+                        print("Replacing specific face(s) in the target image with specific face(s) from the source image")
+
+                        if source_indexes == "-1":
+                            source_indexes = ','.join(map(lambda x: str(x), range(num_source_faces)))
 
                         if target_indexes == "-1":
-                            if num_source_faces == 1:
-                                print("Replacing all faces in target image with the same face from the source image")
-                                num_iterations = num_target_faces
-                            elif num_source_faces < num_target_faces:
-                                print("There are less faces in the source image than the target image, replacing as many as we can")
-                                num_iterations = num_source_faces
-                            elif num_target_faces < num_source_faces:
-                                print("There are less faces in the target image than the source image, replacing as many as we can")
-                                num_iterations = num_target_faces
-                            else:
-                                print("Replacing all faces in the target image with the faces from the source image")
-                                num_iterations = num_target_faces
+                            target_indexes = ','.join(map(lambda x: str(x), range(num_target_faces)))
 
-                            for i in range(num_iterations):
-                                source_index = 0 if num_source_faces == 1 else i
-                                target_index = i
+                        source_indexes = source_indexes.split(',')
+                        target_indexes = target_indexes.split(',')
+                        num_source_faces_to_swap = len(source_indexes)
+                        num_target_faces_to_swap = len(target_indexes)
+
+                        if num_source_faces_to_swap > num_source_faces:
+                            raise Exception("Number of source indexes is greater than the number of faces in the source image")
+
+                        if num_target_faces_to_swap > num_target_faces:
+                            raise Exception("Number of target indexes is greater than the number of faces in the target image")
+
+                        if num_source_faces_to_swap > num_target_faces_to_swap:
+                            num_iterations = num_source_faces_to_swap
+                        else:
+                            num_iterations = num_target_faces_to_swap
+
+                        if num_source_faces_to_swap == num_target_faces_to_swap:
+                            for index in range(num_iterations):
+                                source_index = int(source_indexes[index])
+                                target_index = int(target_indexes[index])
+
+                                if source_index > num_source_faces-1:
+                                    raise ValueError(f"Source index {source_index} is higher than the number of faces in the source image")
+
+                                if target_index > num_target_faces-1:
+                                    raise ValueError(f"Target index {target_index} is higher than the number of faces in the target image")
 
                                 temp_frame = swap_face(
                                     self.face_swapper,
@@ -635,52 +678,8 @@ class Upscale:
                                     target_index,
                                     temp_frame
                                 )
-                    else:
-                            print("Replacing specific face(s) in the target image with specific face(s) from the source image")
-
-                            if source_indexes == "-1":
-                                source_indexes = ','.join(map(lambda x: str(x), range(num_source_faces)))
-
-                            if target_indexes == "-1":
-                                target_indexes = ','.join(map(lambda x: str(x), range(num_target_faces)))
-
-                            source_indexes = source_indexes.split(',')
-                            target_indexes = target_indexes.split(',')
-                            num_source_faces_to_swap = len(source_indexes)
-                            num_target_faces_to_swap = len(target_indexes)
-
-                            if num_source_faces_to_swap > num_source_faces:
-                                raise Exception("Number of source indexes is greater than the number of faces in the source image")
-
-                            if num_target_faces_to_swap > num_target_faces:
-                                raise Exception("Number of target indexes is greater than the number of faces in the target image")
-
-                            if num_source_faces_to_swap > num_target_faces_to_swap:
-                                num_iterations = num_source_faces_to_swap
-                            else:
-                                num_iterations = num_target_faces_to_swap
-
-                            if num_source_faces_to_swap == num_target_faces_to_swap:
-                                for index in range(num_iterations):
-                                    source_index = int(source_indexes[index])
-                                    target_index = int(target_indexes[index])
-
-                                    if source_index > num_source_faces-1:
-                                        raise ValueError(f"Source index {source_index} is higher than the number of faces in the source image")
-
-                                    if target_index > num_target_faces-1:
-                                        raise ValueError(f"Target index {target_index} is higher than the number of faces in the target image")
-
-                                    temp_frame = swap_face(
-                                        self.face_swapper,
-                                        source_faces,
-                                        target_faces,
-                                        source_index,
-                                        target_index,
-                                        temp_frame
-                                    )
-                    else:
-                        raise Exception("Unsupported face configuration")
+                    # else:
+                    #     raise Exception("Unsupported face configuration")
                     result = temp_frame
                 else:
                     print("No target faces found!")
