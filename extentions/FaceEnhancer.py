@@ -681,7 +681,7 @@ class Upscale:
                                 )
                                 
                         
-                                temp_frame = apply_face_mask(result, img_cv2, target_faces[target_index], entire_mask_image)
+                                temp_frame = apply_face_mask(temp_frame, img_cv2, target_faces[target_index], entire_mask_image)
                     # else:
                     #     raise Exception("Unsupported face configuration")
                     img_cv2 = temp_frame
