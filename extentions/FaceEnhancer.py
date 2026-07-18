@@ -603,14 +603,21 @@ class Upscale:
                                     for i in range(num_iterations):
                                         source_index_val = 0 if num_source_faces == 1 else i
                                         target_index_val = i
-                                        temp_frame = swap_face(
-                                            self.face_swapper,
-                                            source_faces,
-                                            target_faces,
-                                            source_index_val,
-                                            target_index_val,
-                                            temp_frame
-                                        )
+                                        # temp_frame = swap_face(
+                                        #     self.face_swapper,
+                                        #     source_faces,
+                                        #     target_faces,
+                                        #     source_index_val,
+                                        #     target_index_val,
+                                        #     temp_frame
+                                        # )
+
+                                        temp_frame = self.face_swapper.get(temp_frame, target_faces[target_index_val], source_face[source_index_val], paste_back=True)
+
+
+
+
+
                                 else:
                                     # Замена конкретных индексов
                                     print("Replacing specific face(s) in the target image with specific face(s) from the source image")
@@ -643,14 +650,15 @@ class Upscale:
                                             if target_idx > num_target_faces - 1:
                                                 raise ValueError(f"Target index {target_idx} is higher than the number of faces in the target image")
                                             
-                                            temp_frame = swap_face(
-                                                self.face_swapper,
-                                                source_faces,
-                                                target_faces,
-                                                source_idx,
-                                                target_idx,
-                                                temp_frame
-                                            )
+                                            # temp_frame = swap_face(
+                                            #     self.face_swapper,
+                                            #     source_faces,
+                                            #     target_faces,
+                                            #     source_idx,
+                                            #     target_idx,
+                                            #     temp_frame
+                                            # )
+                                            temp_frame = self.face_swapper.get(temp_frame, target_faces[target_index_val], source_face[source_index_val], paste_back=True)
                             else:
                                 raise Exception("Unsupported face configuration (multiple source faces not supported in this UI)")
                             
