@@ -199,8 +199,8 @@ class Upscale:
         self.modelInUse    = ""
         self.realesrganer  = None
         self.face_enhancer = None
-        self.face_analyser = None  # <-- НОВОЕ
-        self.face_swapper  = None  # <-- НОВОЕ
+        self.face_analyser = None
+        self.face_swapper  = None
 
     def initBGUpscaleModel(self, upscale_model):
         if upscale_model == "None":
@@ -523,12 +523,8 @@ class Upscale:
     def inference(self, gallery_input, face_restoration, upscale_model, scale: float, face_detection, face_detection_threshold: any, face_detection_only_center: bool,enable_swap, source_face, source_indexes, target_indexes):
         
         gallery_array=[]
-        gallery,generator=self.get_image(gallery_input)
-        
-        
+        gallery,generator=self.get_image(gallery_input)                
         try:
-
-        
             self.modelInUse = "" 
             print(face_restoration, upscale_model, scale)
 
@@ -599,8 +595,6 @@ class Upscale:
                                     temp_frame
                                 )
                                 temp_frame = apply_face_mask(temp_frame, img_cv2, target_faces[target_index], entire_mask_image)
-                            
-                        
                         else:
                             print("Replacing specific face(s) in the target image with specific face(s) from the source image")
 
@@ -615,11 +609,9 @@ class Upscale:
                             num_source_faces_to_swap = len(source_indexes)
                             num_target_faces_to_swap = len(target_indexes)
 
-
                             if num_source_faces_to_swap != num_target_faces_to_swap:
                                 print(f" Warning: Number of source indexes ({num_source_faces_to_swap}) is not equal to number of target indexes ({num_target_faces_to_swap}). Using only matching pairs.")
                             
-                            # Количество итераций = минимум из двух списков
                             num_iterations = min(num_source_faces_to_swap, num_target_faces_to_swap)
 
                             for index in range(num_iterations):
@@ -645,22 +637,14 @@ class Upscale:
                                 
                         
                                 temp_frame = apply_face_mask(temp_frame, img_cv2, target_faces[target_index], entire_mask_image)
-                    # else:
-                    #     raise Exception("Unsupported face configuration")
+
                         img_cv2 = temp_frame
                     else:
                         raise Exception("No target faces found!")
-
-                # entire_mask_image = np.zeros_like(np.array(img_cv2))
-                # img_cv2 = apply_face_mask(result, img_cv2, target_faces[target_index], entire_mask_image)            
                 except Exception as e:
                     print(f"⚠️ Face Swap failed gracefully: {e}")
                     import traceback
                     traceback.print_exc()    
-            # ==========================================
-            # --- КОНЕЦ ЛОГИКИ FACE SWAP ---
-            # ==========================================
-
 
             bg_upsample_img = img_cv2
             if upscale_model != "None" and self.realesrganer and hasattr(self.realesrganer, "enhance"):
@@ -700,8 +684,15 @@ class Upscale:
             print(traceback.format_exc())
             return None
         finally:
+            if hasattr(self, 'face_analyser') and self.face_analyser:
+                self.face_analyser._cleanup()
+            if hasattr(self, 'face_swapper') and self.face_swapper:
+                self.face_swapper._cleanup()
             if hasattr(self, 'face_enhancer') and self.face_enhancer:
                 self.face_enhancer._cleanup()
+
+
+
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             gc.collect()
