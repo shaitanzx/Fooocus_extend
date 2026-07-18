@@ -635,6 +635,8 @@ class Upscale:
                                 temp_frame
                             )
                             temp_frame = apply_face_mask(temp_frame, img_cv2, target_faces[target_index], entire_mask_image)
+                            
+                        
                     else:
                         print("Replacing specific face(s) in the target image with specific face(s) from the source image")
 
@@ -698,7 +700,55 @@ class Upscale:
             # ==========================================
             # --- КОНЕЦ ЛОГИКИ FACE SWAP ---
             # ==========================================
+                    else:
+                        print("Replacing specific face(s) in the target image with specific face(s) from the source image")
 
+                        if source_indexes == "-1":
+                            source_indexes = ','.join(map(lambda x: str(x), range(num_source_faces)))
+
+                        if target_indexes == "-1":
+                            target_indexes = ','.join(map(lambda x: str(x), range(num_target_faces)))
+
+                        source_indexes_list = source_indexes.split(',')
+                        target_indexes_list = target_indexes.split(',')
+                        
+                        num_source_faces_to_swap = len(source_indexes_list)
+                        num_target_faces_to_swap = len(target_indexes_list)
+
+                        if num_source_faces_to_swap > num_source_faces:
+                            raise Exception("Number of source indexes is greater than the number of faces in the source image")
+
+                        if num_target_faces_to_swap > num_target_faces:
+                            raise Exception("Number of target indexes is greater than the number of faces in the target image")
+
+                        # Итерируемся по всем целевым индексам
+                        num_iterations = num_target_faces_to_swap
+                        
+                        for i in range(num_iterations):
+                            target_index = int(target_indexes_list[i])
+                            
+                            # Если источников несколько, берем соответствующий. Если один (например, "0"), используем его для всех целей.
+                            if num_source_faces_to_swap > 1:
+                                source_index = int(source_indexes_list[i])
+                            else:
+                                source_index = int(source_indexes_list[0])
+
+                            if source_index > num_source_faces - 1:
+                                raise ValueError(f"Source index {source_index} is higher than the number of faces in the source image")
+
+                            if target_index > num_target_faces - 1:
+                                raise ValueError(f"Target index {target_index} is higher than the number of faces in the target image")
+
+                            temp_frame = swap_face(
+                                self.face_swapper,
+                                source_faces,
+                                target_faces,
+                                source_index,
+                                target_index,
+                                temp_frame
+                            )
+                            
+                            temp_frame = apply_face_mask(temp_frame, img_cv2, target_faces[target_index], entire_mask_image)
 
             bg_upsample_img = img_cv2
             if upscale_model != "None" and self.realesrganer and hasattr(self.realesrganer, "enhance"):
