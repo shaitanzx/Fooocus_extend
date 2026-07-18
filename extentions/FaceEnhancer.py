@@ -660,6 +660,7 @@ class Upscale:
                             num_iterations = num_target_faces_to_swap
 
                         if num_source_faces_to_swap == num_target_faces_to_swap:
+                            entire_mask_image = np.zeros_like(np.array(img_cv2))
                             for index in range(num_iterations):
                                 source_index = int(source_indexes[index])
                                 target_index = int(target_indexes[index])
@@ -678,14 +679,17 @@ class Upscale:
                                     target_index,
                                     temp_frame
                                 )
+                                
+                        
+                                temp_frame = apply_face_mask(result, img_cv2, target_faces[target_index], entire_mask_image)
                     # else:
                     #     raise Exception("Unsupported face configuration")
-                    result = temp_frame
+                    img_cv2 = temp_frame
                 else:
                     print("No target faces found!")
 
-                entire_mask_image = np.zeros_like(np.array(img_cv2))
-                img_cv2 = apply_face_mask(result, img_cv2, target_faces[target_index], entire_mask_image)            
+                # entire_mask_image = np.zeros_like(np.array(img_cv2))
+                # img_cv2 = apply_face_mask(result, img_cv2, target_faces[target_index], entire_mask_image)            
                 # except Exception as e:
                 #     print(f"⚠️ Face Swap failed gracefully: {e}")
                 #     import traceback
