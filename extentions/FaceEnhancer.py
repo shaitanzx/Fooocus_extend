@@ -575,6 +575,7 @@ class Upscale:
 
                 # detect faces that will be replaced in the target image
                 target_faces = get_many_faces(self.face_analyser, img_cv2)
+                source_faces = get_many_faces(self.face_analyser, source_face)
                 num_target_faces = len(target_faces)
                 num_source_images = len(source_face)
 
