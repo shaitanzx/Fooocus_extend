@@ -685,9 +685,11 @@ class Upscale:
             return None
         finally:
             if hasattr(self, 'face_analyser') and self.face_analyser:
-                self.face_analyser._cleanup()
+                del self.face_analyser
+                self.face_analyser = None
             if hasattr(self, 'face_swapper') and self.face_swapper:
-                self.face_swapper._cleanup()
+                del self.face_swapper
+                self.face_swapper = None
             if hasattr(self, 'face_enhancer') and self.face_enhancer:
                 self.face_enhancer._cleanup()
 
