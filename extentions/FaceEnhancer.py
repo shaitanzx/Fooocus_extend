@@ -692,9 +692,6 @@ class Upscale:
                 self.face_swapper = None
             if hasattr(self, 'face_enhancer') and self.face_enhancer:
                 self.face_enhancer._cleanup()
-
-
-
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             gc.collect()
@@ -1249,29 +1246,34 @@ typed_upscale_models = {get_model_type(key): value[0] for key, value in upscale_
 upscale = Upscale()
 def process(face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap,source_face,source_index,target_index):
     batch_path=f"{temp_dir}batch_face_enhancer"
+    batch_path_face=f"{temp_dir}batch_insw_face"
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
-    batch_all=len(batch_files)
+    batch_files_face=sorted([name for name in os.listdir(batch_path_face) if os.path.isfile(os.path.join(batch_path_face, name))])
+    batch_all=len(batch_files) * len(batch_files_image)
     passed=1
-    for f_name in batch_files:
-        print (f"\033[91m[FaceEnhancer QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
-        gr.Info(f"FaceEnhancer Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
-        img = Image.open(batch_path+os.path.sep+f_name)
-        yield gr.update(value=img,visible=True),gr.update(visible=False)
-        image=np.array(img)
+    for f_name_face in batch_files_face:
+        for f_name in batch_files:
+            print (f"\033[91m[FaceEnhancer QUEUE] {passed} / {batch_all}. Filename face: {f_name_face}. Filename image: {f_name} \033[0m")
+            gr.Info(f"FaceEnhancer Batch: start element generation {passed}/{batch_all}. Filename face: {f_name_face}. Filename image: {f_name}")
+            img = Image.open(batch_path+os.path.sep+f_name)
+            img_face = Image.open(batch_path_face+os.path.sep+f_name_face)
+            yield gr.update(value=img_face,visible=True),gr.update(value=img,visible=True),gr.update(visible=False)
+            image=np.array(img)
+            source_face=np.array(img_face)
 
-        img_cf = Image.fromarray(upscale.inference(
-            image, face_model, upscale_model, upscale_scale, face_detection, 
-            face_detection_threshold, face_detection_only_center, 
-            enable_swap, source_face, source_index, target_index
-            ))
-        name, _ = os.path.splitext(f_name)
-        suf = ''
-        if with_model_name:
-            suf=f'_{face_model}_{upscale_model}'
-        filename =  batch_temp + os.path.sep + name + suf + '.png'
-        img_cf.save(filename)
-        passed+=1
+            img_cf = Image.fromarray(upscale.inference(
+                image, face_model, upscale_model, upscale_scale, face_detection, 
+                face_detection_threshold, face_detection_only_center, 
+                enable_swap, source_face, source_index, target_index
+                ))
+            name, _ = os.path.splitext(f_name)
+            suf = ''
+            if with_model_name:
+                suf=f'_{face_model}_{upscale_model}'
+            filename =  batch_temp + os.path.sep + name + suf + '.png'
+            img_cf.save(filename)
+            passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
@@ -1295,7 +1297,7 @@ def gui(generator):
     upscale_model_header = f"| Upscale Model Name | Info, Type: {tmptype}, Model execution speed: {speed} |\n|------------|------|"
     upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
     with gr.Row(visible=not generator):
-        file_in,files_single,image_single,enable_zip,file_out,preview, image_out = batch.ui_batch()
+        file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
     with gr.Row(visible=generator):
         face_en_enabled = gr.Checkbox(label="Enabled", value=False)
 
@@ -1315,7 +1317,15 @@ def gui(generator):
         enable_swap = gr.Checkbox(label="Enable Face Swap", value=False, info="Replace faces in the target image with the face from the source image.")
     with gr.Row(visible=False) as swap_mode:
         with gr.Column():
-            source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=260)
+            #source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=260)
+            with gr.Row():
+                file_in_face=gr.File(label="Upload a ZIP file of Source Face",file_count='single',file_types=['.zip'],visible=False,height=260)
+                files_single_face = gr.Files(label="Drag (Select) 1 or more Source Face images",file_count="multiple",
+                                            file_types=["image"],visible=True,interactive=True,height=260)
+                image_single_face=gr.Image(label="Source Face",visible=False,height=260,interactive=True,type="filepath")
+                preview_face=gr.Image(label="Input face preview",visible=False,height=260,interactive=False)
+            with gr.Row():
+                enable_zip_face = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
             source_index = gr.Textbox(label="Source Face Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
             target_index = gr.Textbox(label="Target Face Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
@@ -1340,14 +1350,46 @@ def gui(generator):
         gr.HTML('* \"FaceEnhancer\" is powered by avan06. <a href="https://huggingface.co/spaces/avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
+        ext_dir_face=gr.Textbox(value='batch_insw_face',visible=False)
     enable_swap.change(lambda x: gr.update(visible=x), inputs=enable_swap,
                                         outputs=swap_mode, queue=False, show_progress=False)
+
+
+
+    enable_zip_face.change(fn=zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False)
+    image_single_face.clear(fn=clear_single,inputs=image_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
+    files_single_face.upload(fn=single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
+
     face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
-              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
+              .then(fn=batch.unzip_file,inputs=[file_in_face,files_single_face,enable_zip_face,ext_dir_face]) \
               .then(fn=process, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap,source_face,source_index,target_index],
-                        outputs=[preview,file_out],show_progress=False) \
-              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
+                        outputs=[preview_face,preview,file_out],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview_face,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)   
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)  
+
+
+
+
+
+
+
+
+              .then(lambda: (gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)),
+                        outputs=[file_in_face,files_single_face,image_single_face,file_in_image,files_single_image,image_single_image]) \
+
+
+
+              .then(fn=process_insw, inputs=[inswap_source_image_indicies, inswap_target_image_indicies],
+                        outputs=[preview_face,preview_image,file_out],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False),gr.update(visible=False)),outputs=[file_out,preview_face,preview_image],show_progress=False) \
+              .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
+              .then(fn=zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
+              .then(fn=zip_enable,inputs=[enable_zip_image,files_single_image],outputs=[file_in_image,files_single_image,image_single_image],show_progress=False) \
+              .then(fn=single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False) \
+              .then(fn=single_image,inputs=files_single_image,outputs=[image_single_image,files_single_image],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=inswap_start)           
     return face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale
