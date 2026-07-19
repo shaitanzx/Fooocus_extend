@@ -1346,9 +1346,8 @@ def gui(generator):
             with gr.Row(variant="panel"):
                 gr.Markdown(value=table)
     with gr.Row(visible=not generator):
-        face_en_start=gr.Button(value='Start FaceEnhancer')
-    with gr.Row(visible=not generator):
-        face_en_start_face=gr.Button(value='Start FaceEnhancer2')
+        face_en_start=gr.Button(value='Start FaceEnhancer',visible=True)
+        face_en_start_face=gr.Button(value='Start FaceEnhancer2',visible=False)
     with gr.Row():
         gr.HTML('* \"FaceEnhancer\" is powered by avan06. <a href="https://huggingface.co/spaces/avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
