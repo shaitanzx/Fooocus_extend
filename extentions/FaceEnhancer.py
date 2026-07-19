@@ -1366,8 +1366,11 @@ def gui(generator):
               .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
               .then(fn=batch.unzip_file,inputs=[file_in_face,files_single_face,enable_zip_face,ext_dir_face]) \
+              .then(lambda: (gr.update(visible=False),gr.update(visible=False),gr.update(visible=False)),
+                        outputs=[file_in_face,files_single_face,image_single_face]) \
               .then(fn=process, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap,source_index,target_index],
                         outputs=[preview_face,preview,file_out],show_progress=False) \
+              .then(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False),gr.update(visible=False)),outputs=[file_out,preview_face,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)  
