@@ -1276,6 +1276,36 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
             img_cf.save(filename)
             passed+=1
     return gr.update(value=None,visible=False),gr.update(value=None,visible=False),gr.update(visible=True)
+def process_without_face(face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name):
+    batch_path=f"{temp_dir}batch_face_enhancer"
+    batch_temp=f"{temp_dir}batch_temp"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    passed=1
+
+        for f_name in batch_files:
+            print (f"\033[91m[FaceEnhancer QUEUE] {passed} / {batch_all}. Filename image: {f_name} \033[0m")
+            gr.Info(f"FaceEnhancer Batch: start element generation {passed}/{batch_all}. Filename image: {f_name}")
+            img = Image.open(batch_path+os.path.sep+f_name)
+
+            yield gr.update(value=img,visible=True),gr.update(visible=False)
+            image=np.array(img)
+
+
+            img_cf = Image.fromarray(upscale.inference(
+                image, face_model, upscale_model, upscale_scale, face_detection, 
+                face_detection_threshold, face_detection_only_center, 
+                enable_swap, False, "0", "0'
+                ))
+            name, _ = os.path.splitext(f_name)
+
+            suf = ''
+            if with_model_name:
+                suf=f'_{face_model}_{upscale_model}'
+            filename =  batch_temp + os.path.sep + name + suf + '.png'
+            img_cf.save(filename)
+            passed+=1
+    return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
 def gui(generator):
@@ -1374,7 +1404,15 @@ def gui(generator):
               .then(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)  
+    face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
 
+              .then(fn=process_without_face, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name],
+                        outputs=[preview,file_out],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
+              .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start) 
 
 
 
