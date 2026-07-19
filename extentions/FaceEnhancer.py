@@ -1347,13 +1347,14 @@ def gui(generator):
                 gr.Markdown(value=table)
     with gr.Row(visible=not generator):
         face_en_start=gr.Button(value='Start FaceEnhancer')
+    with gr.Row(visible=not generator):
+        face_en_start_face=gr.Button(value='Start FaceEnhancer2')
     with gr.Row():
         gr.HTML('* \"FaceEnhancer\" is powered by avan06. <a href="https://huggingface.co/spaces/avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
         ext_dir_face=gr.Textbox(value='batch_insw_face',visible=False)
-    enable_swap.change(lambda x: gr.update(visible=x), inputs=enable_swap,
-                                        outputs=swap_mode, queue=False, show_progress=False)
+    enable_swap.change(lambda x: [gr.update(visible=x),gr.update(visible=x),gr.update(visible=not x)], inputs=enable_swap,outputs=[swap_mode,face_en_start,face_en_start_face], queue=False, show_progress=False)
 
 
 
