@@ -1250,7 +1250,7 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
     batch_temp=f"{temp_dir}batch_temp"
     batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
     batch_files_face=sorted([name for name in os.listdir(batch_path_face) if os.path.isfile(os.path.join(batch_path_face, name))])
-    batch_all=len(batch_files) * len(batch_files_image)
+    batch_all=len(batch_files) * len(batch_files_face)
     passed=1
     for f_name_face in batch_files_face:
         for f_name in batch_files:
