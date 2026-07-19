@@ -1272,7 +1272,7 @@ def process(face_model,upscale_model,face_detection_only_center,face_detection_t
             suf = ''
             if with_model_name:
                 suf=f'_{face_model}_{upscale_model}'
-            filename =  batch_temp + os.path.sep + name '_' +name_face + suf + '.png'
+            filename =  batch_temp + os.path.sep + name +'_' +name_face + suf + '.png'
             img_cf.save(filename)
             passed+=1
     return gr.update(value=None,visible=False),gr.update(value=None,visible=False),gr.update(visible=True)
