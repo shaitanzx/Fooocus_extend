@@ -1356,7 +1356,7 @@ def gui(generator):
 
 
 
-    enable_zip_face.change(fn=batch.ui_batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False)
+    enable_zip_face.change(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False)
     image_single_face.clear(fn=batch.clear_single,inputs=image_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
     files_single_face.upload(fn=batch.single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
 
