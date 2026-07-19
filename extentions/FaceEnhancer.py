@@ -1353,7 +1353,7 @@ def gui(generator):
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
         ext_dir_face=gr.Textbox(value='batch_insw_face',visible=False)
-    enable_swap.change(lambda x: [gr.update(visible=x),gr.update(visible=x),gr.update(visible=not x)], inputs=enable_swap,outputs=[swap_mode,face_en_start,face_en_start_face], queue=False, show_progress=False)
+    enable_swap.change(lambda x: [gr.update(visible=x),gr.update(visible=not x),gr.update(visible=x)], inputs=enable_swap,outputs=[swap_mode,face_en_start,face_en_start_face], queue=False, show_progress=False)
 
 
 
