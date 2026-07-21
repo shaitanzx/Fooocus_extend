@@ -356,7 +356,7 @@ with shared.gradio_root:
                                         autofocus=True, lines=3,
                                         )
                     new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='negative_prompt',
-                                        autofocus=True, lines=3, visible=False
+                                        autofocus=True, lines=3, visible=True
                                         )
     
 
@@ -1261,8 +1261,8 @@ with shared.gradio_root:
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
                                              value=modules.config.default_prompt_negative)
-                new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main place",
-                        value=False)
+                new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main page",
+                        value=True)
                 seed_random = gr.Checkbox(label='Random', value=True)
                 image_seed = gr.Textbox(label='Seed', value=0, max_lines=1, visible=False) # workaround for https://github.com/gradio-app/gradio/issues/5354
 
