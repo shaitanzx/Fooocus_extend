@@ -803,11 +803,6 @@ class Timer:
 
 
 face_models = {
-    "codeformer_colorization.pth"      : ["https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer_colorization.pth",
-                            "https://github.com/TencentARC/GFPGAN/", 
-"""GFPGAN: Towards Real-World Blind Face Restoration and Upscalling of the image with a Generative Facial Prior.
-GFPGAN aims at developing a Practical Algorithm for Real-world Face Restoration.
-It leverages rich and diverse priors encapsulated in a pretrained face GAN (e.g., StyleGAN2) for blind face restoration."""],
     "GFPGANv1.4.pth"      : ["https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/faces/GFPGANv1.4.pth",
                             "https://github.com/TencentARC/GFPGAN/", 
 """GFPGAN: Towards Real-World Blind Face Restoration and Upscalling of the image with a Generative Facial Prior.
