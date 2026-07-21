@@ -9,15 +9,13 @@ Let's look at everything in order.
    - Prompt Translate
    - PhotoMaker - generating images with a reference face
    - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT)
-   - Inswapper - face replacements in the generated image
-   - CodeFormer - face enhancer
+   - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
    - Vector - vector image generation
 2. Additional modules
    - Image Batch - generation with a batch of reference images
    - Prompt Batch - generating a prompt batch
    - X/Y/Z Plot - a module that allows you to generate images by changing various parameters
-   - Inswapper - face replacements in the generated image
-   - CodeFormer - face enhancer
+   - FaceEnhancer - face enhancer, face replacementsand upscale
    - Remove Background
    - Cleaner - removes small unnecessary objects from images and videos.
    - Vector - allows you to convert a raster image into a vector
@@ -129,40 +127,26 @@ Start at — defines when IdentityNet begins running
 End at — defines when IdentityNet ends running
 
 
-**Inswapper**
+**FaceEnhancer**
 
-<img width="746" height="381" alt="image" src="https://github.com/user-attachments/assets/138962ee-5dda-4e61-9b3d-24879922de99" />
+<img width="1181" height="776" alt="image" src="https://github.com/user-attachments/assets/420716cc-0305-462a-a760-d9b4b4b387f5" />
 
 
-This module is also intended for face replacement.
 
-Source Image Index - index of the face in the reference image. Faces are numbered from left to right from top to bottom starting from zero. If you specify -1, the average mixed face of all available faces will be taken as the reference face
+This module is designed for enhancement, face replacement and upscaling.
 
-Target Image Index - index of the face in the output image. This is the index of the face to be replaced in the output image. If you specify -1, all faces will be replaced.
+Face Restoration version - model for enhancement and upscale face
+UpScale version - model for enhancement and upscale background
+Face detection only center - If set to True, only the face closest to the center of the image will be kept.
+Face eye dist threshold - A threshold to filter out faces with too small an eye distance (e.g., side faces).
+Save input image - saves the input image from the previous iteration (generation or previous Extention)
+Face Detection type - model of face detection
+Rescaling factor - Output image scaling factor
 
+Enable Face Swap - enable FaceSwap mode
 Source Face Image - image with face
-
-Sace input image - saves the input image from the previous iteration (generation or previous Extention)
-
-**CodeFormer**
-
-<img width="743" height="252" alt="image" src="https://github.com/user-attachments/assets/ef798a4d-3329-4318-a4c0-7d704d82b8f7" />
-
-
-
-Face enhancement module with upscale capability
-
-Pre_Face_Align - aligns the face if it is tilted
-
-Background Enchanced - improve background quality
-
-Face Upsample - adjust reference face to the size of the input image face
-
-Upscale - image enlargement
-
-Codeformer_Fidelity - signability coefficient, inversely proportional to quality
-
-Face input image - saves the input image from the previous iteration (generation or previous Extention)
+Source Image Index - index of the face in the reference image. Faces are numbered from left to right from top to bottom starting from zero. If you specify -1, the average mixed face of all available faces will be taken as the reference face
+Target Image Index - index of the face in the output image. This is the index of the face to be replaced in the output image. If you specify -1, all faces will be replaced.
 
 
 **Vector**
