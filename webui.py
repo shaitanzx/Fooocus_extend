@@ -352,11 +352,12 @@ with shared.gradio_root:
                                  elem_id='final_gallery')
             with gr.Row():
                 with gr.Column(scale=17):
-                    prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
+                    with gr.Row():
+                        prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
                                         autofocus=True, lines=3,
                                         )
-                    gr.HTML("")
-                    new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
+                    with gr.Row():
+                        new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
                                         autofocus=False, lines=3, visible=True,
                                         value=modules.config.default_prompt_negative
                                         )
