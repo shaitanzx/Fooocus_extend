@@ -10,7 +10,7 @@ upscale_fast = 'Final Upscale'
 
 uov_list = [disabled, subtle_variation, strong_variation, upscale_15, upscale_2, upscale_fast]
 
-
+negative_prompt_main = True
 enhancement_uov_before = "Before First Enhancement"
 enhancement_uov_after = "After Last Enhancement"
 enhancement_uov_processing_order = [enhancement_uov_before, enhancement_uov_after]
