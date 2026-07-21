@@ -400,7 +400,7 @@ default_prompt_negative = get_config_item_or_set_default(
     key='default_prompt_negative',
     default_value='',
     validator=lambda x: isinstance(x, str),
-    disable_empty_as_none=False,
+    disable_empty_as_none=True,
     expected_type=str
 )
 default_prompt = get_config_item_or_set_default(

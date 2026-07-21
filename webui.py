@@ -1260,7 +1260,8 @@ with shared.gradio_root:
                 negative_prompt = gr.Textbox(label='Negative Prompt', show_label=True, placeholder="Type prompt here.",
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
-                                             value=modules.config.default_prompt_negative)
+                                             value=modules.config.default_prompt_negative,
+                                             visible=False)
                 new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main page",
                         value=True)
                 seed_random = gr.Checkbox(label='Random', value=True)
