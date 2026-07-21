@@ -242,6 +242,11 @@ class AsyncTask:
         self.face_temp = args.pop()
         self.face_detection = args.pop()
         self.upscale_scale = args.pop()
+        self.image_generetor_face = args.pop()
+        self.enable_swap = args.pop()
+        self.source_index = args.pop()
+        self.target_index = args.pop()
+       
 
         self.enable_instant = args.pop()
 
@@ -591,7 +596,9 @@ def worker():
             progressbar(async_task, current_progress, 'FaceEnhancer in progress ...')
             temp_imgs = FaceEnhancer.upscale.inference(imgs,async_task.face_model,async_task.upscale_model,
                     async_task.upscale_scale,async_task.face_detection,
-                    async_task.face_detection_threshold,async_task.face_detection_only_center)
+                    async_task.face_detection_threshold,async_task.face_detection_only_center,
+                    async_task.enable_swap,async_task.image_generetor_face,async_task.source_index,
+                    async_task.target_index)
             imgs[-1 if not async_task.face_temp else len(imgs):] = temp_imgs
         
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:

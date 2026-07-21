@@ -1348,8 +1348,10 @@ def gui(generator):
         enable_swap = gr.Checkbox(label="Enable Face Swap", value=False, info="Replace faces in the target image with the face from the source image.")
     with gr.Row(visible=False) as swap_mode:
         with gr.Column():
+            with gr.Row(visible=generetor):
+                image_generetor_face=gr.Image(label="Source Face",visible=False,height=260,interactive=True,type="filepath")
             #source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=260)
-            with gr.Row():
+            with gr.Row(visible=not generator):
                 file_in_face=gr.File(label="Upload a ZIP file of Source Face",file_count='single',file_types=['.zip'],visible=False,height=260)
                 files_single_face = gr.Files(label="Drag (Select) 1 or more Source Face images",file_count="multiple",
                                             file_types=["image"],visible=True,interactive=True,height=260)
@@ -1420,4 +1422,4 @@ def gui(generator):
 
 
 
-    return face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale
+    return face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index

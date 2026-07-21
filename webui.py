@@ -859,7 +859,7 @@ with shared.gradio_root:
                         with gr.TabItem(label='Inswapper'):
                             inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
                         with gr.TabItem(label='FaceEnhancer'):
-                            face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale = FaceEnhancer.gui(True)  
+                            face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index = FaceEnhancer.gui(True)  
 
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
@@ -1894,7 +1894,7 @@ with shared.gradio_root:
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
         ctrls += [name_prefix]
         ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
-        ctrls += [face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale]
+        ctrls += [face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index]
         ctrls += [enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
