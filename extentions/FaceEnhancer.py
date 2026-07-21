@@ -1392,7 +1392,7 @@ def gui(generator):
     image_single_face.clear(fn=batch.clear_single,inputs=image_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
     files_single_face.upload(fn=batch.single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
 
-    face_en_start_face.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
+    face_en_start_face.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start_face,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
@@ -1404,7 +1404,7 @@ def gui(generator):
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False),gr.update(visible=False)),outputs=[file_out,preview_face,preview],show_progress=False) \
               .then(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)  
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start_face)  
     face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
