@@ -241,18 +241,12 @@ In the second case, the file first contains a line with a positive prompt, follo
 
 This extension allows you to make image grids to make it easier to see the difference between different generation settings and choose the best option. You can change the following parameters - Styles, Steps, Aspect Ratio, Seed, Sharpness, CFG (Guidance) Scale, Checkpoint, Refiner, Clip skip, Sampler, Scheduler, VAE, Refiner swap method, Softness of ControlNet, and also replace words in the prompt and change their order
 
-**Inswapper**
+**FaceEnhancer**
 
-<img width="1070" height="506" alt="image" src="https://github.com/user-attachments/assets/3e8e4005-e3be-481e-b04d-90fd4a5d3e28" />
-
-The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
-
-**CodeFormer**
-
-<img width="1057" height="537" alt="image" src="https://github.com/user-attachments/assets/b0d1780f-0438-4e73-ba3f-281fb4b68a90" />
+<img width="1181" height="776" alt="image" src="https://github.com/user-attachments/assets/601d6bb5-0cc3-4608-84f1-6ae406892d34" />
 
 
-The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
+The full analog of this module in the “in generation” panel, unlike which you need to load an additional input images
 
 **Remove Background**
 
@@ -566,6 +560,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+v9.3.2
+ 1. Codeformer and Inswapper have been replaced by a single FaceEnhancer module with a choice of processing models
+
 v9.3.1
  1. Native Fooocus support InstatID
     
