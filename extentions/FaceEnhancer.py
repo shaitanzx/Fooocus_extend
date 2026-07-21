@@ -1294,7 +1294,7 @@ def process_without_face(face_model,upscale_model,face_detection_only_center,fac
         img_cf = Image.fromarray(upscale.inference(
             image, face_model, upscale_model, upscale_scale, face_detection, 
             face_detection_threshold, face_detection_only_center, 
-            enable_swap, False, "0", "0'
+            enable_swap, False, "0", "0"
             ))
         name, _ = os.path.splitext(f_name)
 
