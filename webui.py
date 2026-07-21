@@ -355,7 +355,10 @@ with shared.gradio_root:
                     prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
                                         autofocus=True, lines=3,
                                         )
-
+                    new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='negative_prompt',
+                                        autofocus=True, lines=3, visible=False
+                                        )
+    
 
                     default_prompt = modules.config.default_prompt
                     if isinstance(default_prompt, str) and default_prompt != '':
@@ -1258,6 +1261,8 @@ with shared.gradio_root:
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
                                              value=modules.config.default_prompt_negative)
+                new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main place",
+                        value=False)
                 seed_random = gr.Checkbox(label='Random', value=True)
                 image_seed = gr.Textbox(label='Seed', value=0, max_lines=1, visible=False) # workaround for https://github.com/gradio-app/gradio/issues/5354
 
@@ -2002,7 +2007,13 @@ with shared.gradio_root:
         path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
+        new_negative_checkbox.change(lambda x: (gr.update(visible=x), gr.update(visible=not x)),
+                inputs=[new_negative_checkbox],outputs=[new_negative_prompt, negative_prompt])
+        new_negative_prompt.change(lambda x: gr.update(value=x),inputs=[new_negative_prompt],
+                    outputs=[negative_prompt])
 
+        negative_prompt.change(lambda x: gr.update(value=x),inputs=[negative_prompt],
+                    outputs=[new_negative_prompt])        
         xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[xyz_start, stop_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
