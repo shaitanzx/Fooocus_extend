@@ -45,6 +45,7 @@ Let's look at everything in order.
 19. Support external upscalers
 20. Сhanging the number of steps
 21. Add Dynamic Lora Support (full help in panel Extentions -> in generate -> DinamicLoraHelp
+22. The negative prompt field has been moved to the main page with the option to return it to its original location.
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -543,7 +544,11 @@ You can load external upscalers using civatai helper. The upscaler is based on t
 
 <img width="378" height="63" alt="image" src="https://github.com/user-attachments/assets/3b753d16-a39b-4c66-ad78-6818a99f48a1" />
 
+**The negative prompt field has been moved to the main page.**
 
+<img width="834" height="204" alt="image" src="https://github.com/user-attachments/assets/08402616-a20c-442d-8224-bfcec9db39ba" />
+
+You can return it to its original location through the Advanced settings - Settings - Show negative prompt textbox in main page
 
 <table>
   <tr>
