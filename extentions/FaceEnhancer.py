@@ -1363,7 +1363,7 @@ def gui(generator):
             target_index = gr.Textbox(label="Target Face Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
 
     with gr.Accordion('About models', open=False):
-        with gr.Row(variant="panel"):
+        with gr.Row(variant="compact"):
             # Convert to Markdown table
             header = "| Face Model Name | Info |\n|------------|------|"
             rows = [
