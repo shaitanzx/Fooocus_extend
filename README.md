@@ -136,16 +136,25 @@ End at — defines when IdentityNet ends running
 This module is designed for enhancement, face replacement and upscaling.
 
 Face Restoration version - model for enhancement and upscale face
+
 UpScale version - model for enhancement and upscale background
+
 Face detection only center - If set to True, only the face closest to the center of the image will be kept.
+
 Face eye dist threshold - A threshold to filter out faces with too small an eye distance (e.g., side faces).
+
 Save input image - saves the input image from the previous iteration (generation or previous Extention)
+
 Face Detection type - model of face detection
+
 Rescaling factor - Output image scaling factor
 
 Enable Face Swap - enable FaceSwap mode
+
 Source Face Image - image with face
+
 Source Image Index - index of the face in the reference image. Faces are numbered from left to right from top to bottom starting from zero. If you specify -1, the average mixed face of all available faces will be taken as the reference face
+
 Target Image Index - index of the face in the output image. This is the index of the face to be replaced in the output image. If you specify -1, all faces will be replaced.
 
 
