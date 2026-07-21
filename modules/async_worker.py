@@ -229,11 +229,7 @@ class AsyncTask:
         self.original_prompt = args.pop()
         self.original_negative = args.pop()
         self.name_prefix = args.pop().strip().replace(" ", "_")
-        self.inswapper_enabled = args.pop()
-        self.inswapper_source_image_indicies = args.pop()
-        self.inswapper_target_image_indicies = args.pop()
-        self.inswapper_source_image = args.pop()
-        self.inswapper_temp = args.pop()
+
         self.face_en_enabled = args.pop()
         self.face_model = args.pop()
         self.upscale_model = args.pop()
@@ -380,8 +376,7 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
-    #sys.path.append(os.path.abspath('extentions/inswapper'))
-    from extentions.inswapper.face_swap import perform_face_swap
+
 
 
     pid = os.getpid()
@@ -587,10 +582,7 @@ def worker():
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
-        if async_task.inswapper_enabled:            
-            progressbar(async_task, current_progress, 'inswapper in progress ...')
-            temp_imgs = perform_face_swap(imgs, async_task.inswapper_source_image, async_task.inswapper_source_image_indicies, async_task.inswapper_target_image_indicies)
-            imgs[-1 if not async_task.inswapper_temp else len(imgs):] = temp_imgs
+
 
         if async_task.face_en_enabled:
             progressbar(async_task, current_progress, 'FaceEnhancer in progress ...')
