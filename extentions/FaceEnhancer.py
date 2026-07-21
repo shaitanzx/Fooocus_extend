@@ -1347,7 +1347,7 @@ def gui(generator):
         enable_swap = gr.Checkbox(label="Enable Face Swap", value=False, info="Replace faces in the target image with the face from the source image.")
     with gr.Row(visible=False) as swap_mode:
         with gr.Column():
-            with gr.Row(visible=generetor):
+            with gr.Row(visible=generator):
                 image_generetor_face=gr.Image(label="Source Face",visible=False,height=260,interactive=True,type="numpy")
             #source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=260)
             with gr.Row(visible=not generator):
