@@ -355,7 +355,7 @@ with shared.gradio_root:
                     prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
                                         autofocus=True, lines=3,
                                         )
-                    gr.HTML("<br>")
+                    gr.HTML("/p")
                     new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='negative_prompt',
                                         autofocus=False, lines=3, visible=True,
                                         value=modules.config.default_prompt_negative
