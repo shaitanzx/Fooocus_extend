@@ -356,7 +356,8 @@ with shared.gradio_root:
                                         autofocus=True, lines=3,
                                         )
                     new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='negative_prompt',
-                                        autofocus=True, lines=3, visible=True
+                                        autofocus=False, lines=3, visible=True,
+                                        value=modules.config.default_prompt_negative
                                         )
     
 
