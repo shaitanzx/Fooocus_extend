@@ -1380,7 +1380,7 @@ def gui(generator):
         face_en_start=gr.Button(value='Start FaceEnhancer',visible=True)
         face_en_start_face=gr.Button(value='Start FaceEnhancer',visible=False)
     with gr.Row():
-        gr.HTML('* \"FaceEnhancer\" is powered by avan06. <a href="https://huggingface.co/spaces/avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN" target="_blank">\U0001F4D4 Document</a>')
+        gr.HTML('* \"FaceEnhancer\" is powered by avan06 <a href="https://huggingface.co/spaces/avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN" target="_blank">\U0001F4D4 Document</a> and haofanwang. <a href="https://github.com/haofanwang/inswapper" target="_blank">\U0001F4D4 Document</a>')
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
         ext_dir_face=gr.Textbox(value='batch_insw_face',visible=False)
