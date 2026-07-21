@@ -2009,10 +2009,10 @@ with shared.gradio_root:
 
         new_negative_checkbox.change(lambda x: (gr.update(visible=x), gr.update(visible=not x)),
                 inputs=[new_negative_checkbox],outputs=[new_negative_prompt, negative_prompt],queue=False, show_progress=False)
-        new_negative_prompt.blur(lambda x: gr.update(value=x),inputs=[new_negative_prompt],
+        new_negative_prompt.change(lambda x: gr.update(value=x),inputs=[new_negative_prompt],
                     outputs=[negative_prompt],queue=False, show_progress=False)
 
-        negative_prompt.blur(lambda x: gr.update(value=x),inputs=[negative_prompt],
+        negative_prompt.change(lambda x: gr.update(value=x),inputs=[negative_prompt],
                     outputs=[new_negative_prompt])        
         xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[xyz_start, stop_button, generate_button, gallery, state_is_generating]) \
