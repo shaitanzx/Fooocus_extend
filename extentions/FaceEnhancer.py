@@ -1348,7 +1348,7 @@ def gui(generator):
     with gr.Row(visible=False) as swap_mode:
         with gr.Column():
             with gr.Row(visible=generator):
-                image_generetor_face=gr.Image(label="Source Face",visible=False,height=260,interactive=True,type="numpy")
+                image_generetor_face=gr.Image(label="Source Face1",visible=False,height=260,interactive=True,type="numpy")
             #source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=260)
             with gr.Row(visible=not generator):
                 file_in_face=gr.File(label="Upload a ZIP file of Source Face",file_count='single',file_types=['.zip'],visible=False,height=260)
@@ -1356,7 +1356,7 @@ def gui(generator):
                                             file_types=["image"],visible=True,interactive=True,height=260)
                 image_single_face=gr.Image(label="Source Face",visible=False,height=260,interactive=True,type="filepath")
                 preview_face=gr.Image(label="Input face preview",visible=False,height=260,interactive=False)
-            with gr.Row():
+            with gr.Row(visible=not generator):
                 enable_zip_face = gr.Checkbox(label="Upload ZIP-file", value=False)
         with gr.Column():
             source_index = gr.Textbox(label="Source Face Index", info="-1 will swap all faces, otherwise provide the 0-based index of the face (0, 1, etc)", value="0")
