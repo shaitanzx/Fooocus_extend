@@ -2008,9 +2008,9 @@ with shared.gradio_root:
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
         new_negative_checkbox.change(lambda x: (gr.update(visible=x), gr.update(visible=not x)),
-                inputs=[new_negative_checkbox],outputs=[new_negative_prompt, negative_prompt])
+                inputs=[new_negative_checkbox],outputs=[new_negative_prompt, negative_prompt],queue=False, show_progress=False)
         new_negative_prompt.change(lambda x: gr.update(value=x),inputs=[new_negative_prompt],
-                    outputs=[negative_prompt])
+                    outputs=[negative_prompt],queue=False, show_progress=False)
 
         negative_prompt.change(lambda x: gr.update(value=x),inputs=[negative_prompt],
                     outputs=[new_negative_prompt])        
