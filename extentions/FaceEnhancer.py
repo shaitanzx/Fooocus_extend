@@ -1348,7 +1348,7 @@ def gui(generator):
     with gr.Row(visible=False) as swap_mode:
         with gr.Column():
             with gr.Row(visible=generetor):
-                image_generetor_face=gr.Image(label="Source Face",visible=False,height=260,interactive=True,type="filepath")
+                image_generetor_face=gr.Image(label="Source Face",visible=False,height=260,interactive=True,type="numpy")
             #source_face = gr.Image(label="Source Face (Reference Image)", type="numpy", interactive=True, height=260)
             with gr.Row(visible=not generator):
                 file_in_face=gr.File(label="Upload a ZIP file of Source Face",file_count='single',file_types=['.zip'],visible=False,height=260)
