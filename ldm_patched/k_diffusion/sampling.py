@@ -227,7 +227,8 @@ def sample_cyberdelia_ralston(model, x, sigmas=None,extra_args=None, callback=No
         if float(s1) < 1e-6:
             d0 = _to_d(x, s0, den0)
             x = x + h * d0
-            _cb(i, s0, s1, s1, den0)
+            if callback is not None:
+                callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': s0, 'sigma_next': s1, 'denoised': den0})
             continue
 
         d0 = _to_d(x, s0, den0)
