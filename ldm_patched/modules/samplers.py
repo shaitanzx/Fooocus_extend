@@ -534,7 +534,7 @@ class UNIPCBH2(Sampler):
 KSAMPLER_NAMES = ["euler", "euler_ancestral", "heun", "heunpp2","dpm_2", "dpm_2_ancestral",
                   "lms", "dpm_fast", "dpm_adaptive", "dpmpp_2s_ancestral", "dpmpp_sde", "dpmpp_sde_gpu",
                   "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_2m_sde_gpu", "dpmpp_3m_sde", "dpmpp_3m_sde_gpu", 
-                  "ddpm", "cyberdelia_ralston", "lcm", "cyberdelia_lcm_ralston","tcd", "edm_playground_v2.5", "restart"]
+                  "ddpm", "cyberdelia_ralston", "lcm", "tcd", "edm_playground_v2.5", "restart"]
 
 class KSAMPLER(Sampler):
     def __init__(self, sampler_function, extra_options={}, inpaint_options={}):
