@@ -142,13 +142,8 @@ def sample_euler(model, x, sigmas, extra_args=None, callback=None, disable=None,
         # Euler method
         x = x + d * dt
     return x
-def _resolve_sigmas(sigmas, kwargs):
-    """Get sigmas from the argument or common Forge keyword variants."""
-    if sigmas is None:
-        sigmas = kwargs.get("sigmas") or kwargs.get("sigma_sched")
-    if sigmas is None:
-        raise ValueError(f"{_TAG} missing sigmas schedule")
-    return sigmas
+
+
 def _normalize_sigmas(sigmas, device, dtype) -> torch.Tensor:
     if sigmas is None:
         return None
@@ -159,6 +154,8 @@ def _normalize_sigmas(sigmas, device, dtype) -> torch.Tensor:
     if sigmas.ndim != 1:
         sigmas = sigmas.flatten()
     return sigmas.contiguous()
+
+
 def _to_d(x: torch.Tensor, sigma, denoised: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
     if not torch.is_tensor(sigma):
         sigma = torch.tensor(float(sigma), device=x.device, dtype=x.dtype)
@@ -172,12 +169,30 @@ def _to_d(x: torch.Tensor, sigma, denoised: torch.Tensor, eps: float = 1e-8) -> 
         sigma = sigma.view(-1, 1, 1, 1)
 
     return (x - denoised) / sigma
+
+
 def _nan_guard(x: torch.Tensor, tag: str = "", step: int = -1) -> torch.Tensor:
     if torch.isnan(x).any() or torch.isinf(x).any():
         if tag:
             print(f"{_TAG} NaN/Inf detected in {tag} at step {step} — clamping, generation may be corrupt")
         x = torch.nan_to_num(x)
     return x
+
+
+def _resolve_sigmas(sigmas, kwargs):
+    """Get sigmas from the argument or common Forge keyword variants."""
+    if sigmas is None:
+        sigmas = kwargs.get("sigmas") or kwargs.get("sigma_sched")
+    if sigmas is None:
+        raise ValueError(f"{_TAG} missing sigmas schedule")
+    return sigmas
+
+
+def _filter_cd_args(ea: dict) -> dict:
+    """Strip cd_* keys so they don't leak into the model call."""
+    if not ea:
+        return {}
+    return {k: v for k, v in ea.items() if not str(k).startswith("cd_")}
 
 @torch.no_grad()
 def sample_cyberdelia_ralston(model, x: torch.Tensor, *, sigmas=None,extra_args=None,callback=None,disable=False,**kwargs):
