@@ -61,30 +61,55 @@ def default_noise_sampler(x):
     return lambda sigma, sigma_next: torch.randn_like(x)
 
 
-def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model, device):
-    if inner_model is None or not hasattr(inner_model, "sigmas"):
-        raise RuntimeError("Beta57 scheduler requires inner_model.sigmas.")
+def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model=None, device='cpu'):
+    """
+    Beta57 scheduler: Beta distribution with alpha=0.5 and beta=0.7.
+    Samples from the model's native sigma table when inner_model is available,
+    otherwise falls back to a standard beta-distribution schedule.
+    """
+    try:
+        from scipy import stats
+    except ImportError as exc:
+        raise RuntimeError(
+            "Beta57 scheduler requires scipy. Install it with: pip install scipy"
+        ) from exc
 
-    total_timesteps = len(inner_model.sigmas) - 1
-    if total_timesteps <= 0:
-        return torch.tensor([0.0], device=device, dtype=torch.float32)
+    ALPHA = 0.5
+    BETA = 0.7
 
-    # Start at the highest sigma and move towards lower sigmas.
+    # Если есть inner_model с нативной таблицей сигм — используем её
+    if inner_model is not None and hasattr(inner_model, "sigmas") and inner_model.sigmas is not None:
+        total_timesteps = len(inner_model.sigmas) - 1
+        if total_timesteps <= 0:
+            return torch.tensor([0.0], device=device, dtype=torch.float32)
+
+        quantiles = 1.0 - np.linspace(0.0, 1.0, n, endpoint=False)
+        timesteps = stats.beta.ppf(quantiles, ALPHA, BETA) * total_timesteps
+        timesteps = np.rint(timesteps)
+        timesteps = np.clip(timesteps, 0, total_timesteps).astype(np.int64)
+
+        sigmas = []
+        previous_timestep = None
+        for timestep in timesteps:
+            if timestep != previous_timestep:
+                sigmas.append(float(inner_model.sigmas[int(timestep)]))
+                previous_timestep = timestep
+
+        sigmas.append(0.0)
+        return torch.tensor(sigmas, device=device, dtype=torch.float32)
+
+    # Fallback: стандартная beta-распределённая таблица сигм
     quantiles = 1.0 - np.linspace(0.0, 1.0, n, endpoint=False)
-    timesteps = stats.beta.ppf(quantiles, ALPHA, BETA) * total_timesteps
-    timesteps = np.rint(timesteps)
-    timesteps = np.clip(timesteps, 0, total_timesteps).astype(np.int64)
+    t_values = stats.beta.ppf(quantiles, ALPHA, BETA)
 
-    sigmas = []
-    previous_timestep = None
+    # Преобразуем t ∈ [0, 1] в сигмы через логарифмическую интерполяцию
+    log_sigma_min = math.log(sigma_min)
+    log_sigma_max = math.log(sigma_max)
+    log_sigmas = log_sigma_max + t_values * (log_sigma_min - log_sigma_max)
+    sigmas = np.exp(log_sigmas)
 
-    for timestep in timesteps:
-        if timestep != previous_timestep:
-            sigmas.append(float(inner_model.sigmas[int(timestep)]))
-            previous_timestep = timestep
-
-    sigmas.append(0.0)
-    return torch.tensor(sigmas, device=device, dtype=torch.float32)
+    sigmas = np.append(sigmas, 0.0)
+    return torch.tensor(sigmas.tolist(), device=device, dtype=torch.float32)
 
 class BatchedBrownianTree:
     """A wrapper around torchsde.BrownianTree that enables batches of entropy."""
