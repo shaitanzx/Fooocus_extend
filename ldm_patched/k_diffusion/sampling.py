@@ -84,7 +84,7 @@ def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model=None, device='cpu'):
         if total_timesteps <= 0:
             return torch.tensor([0.0], device=device, dtype=torch.float32)
 
-        quantiles = 1.0 - np.linspace(0.0, 1.0, n, endpoint=False)
+        quantiles = np.linspace(0.0, 1.0, n, endpoint=False)
         timesteps = stats.beta.ppf(quantiles, ALPHA, BETA) * total_timesteps
         timesteps = np.rint(timesteps)
         timesteps = np.clip(timesteps, 0, total_timesteps).astype(np.int64)
@@ -100,7 +100,7 @@ def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model=None, device='cpu'):
         return torch.tensor(sigmas, device=device, dtype=torch.float32)
 
     # Fallback: стандартная beta-распределённая таблица сигм
-    quantiles = 1.0 - np.linspace(0.0, 1.0, n, endpoint=False)
+    quantiles = np.linspace(0.0, 1.0, n, endpoint=False)
     t_values = stats.beta.ppf(quantiles, ALPHA, BETA)
 
     # Преобразуем t ∈ [0, 1] в сигмы через логарифмическую интерполяцию
