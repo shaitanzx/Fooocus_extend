@@ -142,7 +142,95 @@ def sample_euler(model, x, sigmas, extra_args=None, callback=None, disable=None,
         # Euler method
         x = x + d * dt
     return x
+def _resolve_sigmas(sigmas, kwargs):
+    """Get sigmas from the argument or common Forge keyword variants."""
+    if sigmas is None:
+        sigmas = kwargs.get("sigmas") or kwargs.get("sigma_sched")
+    if sigmas is None:
+        raise ValueError(f"{_TAG} missing sigmas schedule")
+    return sigmas
+def _normalize_sigmas(sigmas, device, dtype) -> torch.Tensor:
+    if sigmas is None:
+        return None
+    if not torch.is_tensor(sigmas):
+        sigmas = torch.tensor(sigmas, device=device, dtype=dtype)
+    else:
+        sigmas = sigmas.to(device=device, dtype=dtype)
+    if sigmas.ndim != 1:
+        sigmas = sigmas.flatten()
+    return sigmas.contiguous()
+def _to_d(x: torch.Tensor, sigma, denoised: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+    if not torch.is_tensor(sigma):
+        sigma = torch.tensor(float(sigma), device=x.device, dtype=x.dtype)
+    else:
+        sigma = sigma.to(device=x.device, dtype=x.dtype)
 
+    sigma = sigma.clamp_min(eps)
+
+    # Per-batch [B] → [B,1,1,1] for NCHW broadcast
+    if sigma.ndim == 1:
+        sigma = sigma.view(-1, 1, 1, 1)
+
+    return (x - denoised) / sigma
+def _nan_guard(x: torch.Tensor, tag: str = "", step: int = -1) -> torch.Tensor:
+    if torch.isnan(x).any() or torch.isinf(x).any():
+        if tag:
+            print(f"{_TAG} NaN/Inf detected in {tag} at step {step} — clamping, generation may be corrupt")
+        x = torch.nan_to_num(x)
+    return x
+
+@torch.no_grad()
+def sample_cyberdelia_ralston(model, x: torch.Tensor, *, sigmas=None,extra_args=None,callback=None,disable=False,**kwargs):
+    sigmas = _resolve_sigmas(sigmas, kwargs)
+    device, dtype = x.device, x.dtype
+    sigmas = _normalize_sigmas(sigmas, device, dtype)
+
+    steps = int(sigmas.numel() - 1)
+    if steps <= 0:
+        return x
+
+    ea = extra_args or {}
+    s_in = torch.ones((x.shape[0],), device=device, dtype=dtype)
+
+    def _cb(i, s0, s_r, s1, denoised):
+        if callback is None:
+            return
+        try:
+            callback({"i": i, "sigma": s0, "sigma_hat": s_r, "sigma_next": s1, "x": x, "denoised": denoised})
+        except TypeError:
+            callback(i, x, s0, s1)
+
+    for i in range(steps):
+        s0 = sigmas[i]
+        s1 = sigmas[i + 1]
+        h = s1 - s0  # negative: sigmas decrease toward 0
+
+        # Denoise at s0
+        den0 = model(x, s0 * s_in, **ea)
+
+        # If last step to (near-)zero, do a stable Euler finalize
+        if float(s1) < 1e-6:
+            d0 = _to_d(x, s0, den0)
+            x = x + h * d0
+            _cb(i, s0, s1, s1, den0)
+            continue
+
+        d0 = _to_d(x, s0, den0)
+
+        # Ralston interior point: 2/3 of the way from s0 to s1
+        s_r = torch.clamp(s0 + (2.0 / 3.0) * h, min=1e-8)
+        x_r = x + (2.0 / 3.0) * h * d0
+
+        den_r = model(x_r, s_r * s_in, **ea)
+        d_r = _to_d(x_r, s_r, den_r)
+
+        # Weighted RK2 combination (optimal 1/4 + 3/4 Ralston weights)
+        x = x + h * (0.25 * d0 + 0.75 * d_r)
+        x = _nan_guard(x, "Ralston", i)
+
+        _cb(i, s0, s_r, s1, den_r)
+
+    return x
 
 @torch.no_grad()
 def sample_euler_ancestral(model, x, sigmas, extra_args=None, callback=None, disable=None, eta=1., s_noise=1., noise_sampler=None):

@@ -19,7 +19,7 @@ enhancement_uov_prompt_type_original = 'Original Prompts'
 enhancement_uov_prompt_type_last_filled = 'Last Filled Enhancement Prompts'
 enhancement_uov_prompt_types = [enhancement_uov_prompt_type_original, enhancement_uov_prompt_type_last_filled]
 
-CIVITAI_NO_KARRAS = ["euler", "euler_ancestral", "heun", "dpm_fast", "dpm_adaptive", "ddim", "uni_pc"]
+CIVITAI_NO_KARRAS = ["euler", "euler_ancestral", "heun", "dpm_fast", "dpm_adaptive", "ddim", "uni_pc","cyberdelia_ralston"]
 
 # fooocus: a1111 (Civitai)
 KSAMPLER = {
@@ -41,6 +41,7 @@ KSAMPLER = {
     "dpmpp_3m_sde": "",
     "dpmpp_3m_sde_gpu": "",
     "ddpm": "",
+    "cyberdelia_ralston": "cyberdelia_ralston",
     "lcm": "LCM",
     "tcd": "TCD",
     "restart": "Restart"
