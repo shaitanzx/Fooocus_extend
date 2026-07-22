@@ -207,15 +207,15 @@ def sample_cyberdelia_ralston(model, x, sigmas=None,extra_args=None, callback=No
     ea = extra_args or {}
     s_in = torch.ones((x.shape[0],), device=device, dtype=dtype)
 
-    def _cb(i, s0, s_r, s1, denoised):
-        if callback is None:
-            return
-        try:
-            callback({"i": i, "sigma": s0, "sigma_hat": s_r, "sigma_next": s1, "x": x, "denoised": denoised})
-        except TypeError:
-            callback(i, x, s0, s1)
+    # def _cb(i, s0, s_r, s1, denoised):
+    #     if callback is None:
+    #         return
+    #     try:
+    #         callback({"i": i, "sigma": s0, "sigma_hat": s_r, "sigma_next": s1, "x": x, "denoised": denoised})
+    #     except TypeError:
+    #         callback(i, x, s0, s1)
 
-    for i in range(steps):
+    for i in trange(steps, disable=disable):
         s0 = sigmas[i]
         s1 = sigmas[i + 1]
         h = s1 - s0  # negative: sigmas decrease toward 0
@@ -243,7 +243,9 @@ def sample_cyberdelia_ralston(model, x, sigmas=None,extra_args=None, callback=No
         x = x + h * (0.25 * d0 + 0.75 * d_r)
         x = _nan_guard(x, "Ralston", i)
 
-        _cb(i, s0, s_r, s1, den_r)
+        if callback is not None:
+            callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': s_r, 'sigma_next': s1, 'denoised': den_r})
+
 
     return x
 
