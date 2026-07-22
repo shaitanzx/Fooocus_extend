@@ -183,10 +183,10 @@ def calculate_sigmas_scheduler_hacked(model, scheduler_name, steps):
         print('111111111111111111111111111111111111111111111111111111111111111')
         sigmas = k_diffusion_sampling.get_sigmas_beta57(
             n=steps,
-            sigma_min=float(model_sampling.sigma_min),
-            sigma_max=float(model_sampling.sigma_max),
-            inner_model=getattr(model_sampling, 'inner_model', None),
-            device=model_sampling.sigma_min.device
+            sigma_min=float(model.model_sampling.sigma_min),
+            sigma_max=float(model.model_sampling.sigma_max),
+            inner_model=getattr(model.model_sampling, 'inner_model', None),
+            device=model.model_sampling.sigma_min.device
         )
     else:
         raise TypeError("error invalid scheduler")
