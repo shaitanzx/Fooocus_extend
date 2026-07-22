@@ -1773,17 +1773,63 @@ with shared.gradio_root:
                 .then(lambda: None, _js='()=>{refresh_style_localization();}') \
                 .then(inpaint_engine_state_change, inputs=[inpaint_engine_state] + enhance_inpaint_mode_ctrls, outputs=enhance_inpaint_engine_ctrls, queue=False, show_progress=False)
 
-        performance_selection.change(lambda x: [gr.update(interactive=not flags.Performance.has_restricted_features(x))] * 11 +
-                                               [gr.update(visible=not flags.Performance.has_restricted_features(x))] * 1 +
-                                               [gr.update(value=flags.Performance.has_restricted_features(x))] * 1 +
-                                               [gr.update(value=flags.Performance(x).steps())],
-                                     inputs=performance_selection,
-                                     outputs=[
-                                         guidance_scale, sharpness, adm_scaler_end, adm_scaler_positive,
-                                         adm_scaler_negative, refiner_switch, refiner_model, sampler_name,
-                                         scheduler_name, adaptive_cfg, refiner_swap_method, negative_prompt, disable_intermediate_results, steps_slider
-                                     ], queue=False, show_progress=False)
 
+
+        def update_sampler_for_performance(perf_name):
+            """
+            При Extreme Speed / Lightning / Hyper-SD — sampler интерактивный,
+            но показывает только 'lcm' и 'cyberdelia_lcm_ralston'.
+            При остальных режимах — полный список семплеров.
+            """
+            try:
+                perf = flags.Performance(perf_name)
+            except ValueError:
+                perf = flags.Performance.QUALITY
+
+            # Режимы, для которых нужен ограниченный список (LCM/Lightning/Hyper-SD)
+            lcm_restricted = perf in (
+                flags.Performance.EXTREME_SPEED,
+                flags.Performance.LIGHTNING,
+                flags.Performance.HYPER_SD
+            )
+
+            if lcm_restricted:
+                return gr.update(
+                    interactive=True,
+                    choices=['lcm', 'cyberdelia_lcm_ralston'],
+                    value='lcm'
+                )
+            else:
+                return gr.update(
+                    interactive=True,
+                    choices=flags.sampler_list,
+                    value=modules.config.default_sampler
+                )
+
+
+
+
+        performance_selection.change(
+            lambda x: [
+                gr.update(interactive=not flags.Performance.has_restricted_features(x))
+            ] * 7 +                                          # guidance_scale, sharpness, adm_scaler_end,
+                                                     # adm_scaler_positive, adm_scaler_negative,
+                                                     # refiner_switch, refiner_model
+            [update_sampler_for_performance(x)] +            # sampler_name — всегда интерактивный
+            [gr.update(interactive=not flags.Performance.has_restricted_features(x))] * 2 +  # scheduler_name, adaptive_cfg
+            [gr.update(interactive=not flags.Performance.has_restricted_features(x))] +      # refiner_swap_method
+            [gr.update(visible=not flags.Performance.has_restricted_features(x))] +          # negative_prompt
+            [gr.update(value=flags.Performance.has_restricted_features(x))] +                # disable_intermediate_results
+            [gr.update(value=flags.Performance(x).steps())],                                 # steps_slider
+            inputs=performance_selection,
+            outputs=[
+                guidance_scale, sharpness, adm_scaler_end, adm_scaler_positive,
+                adm_scaler_negative, refiner_switch, refiner_model, sampler_name,
+                scheduler_name, adaptive_cfg, refiner_swap_method, negative_prompt,
+                disable_intermediate_results, steps_slider
+            ],
+            queue=False, show_progress=False
+        )
         output_format.input(lambda x: gr.update(output_format=x), inputs=output_format)
 
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
