@@ -43,6 +43,7 @@ KSAMPLER = {
     "ddpm": "",
     "cyberdelia_ralston": "cyberdelia_ralston",
     "lcm": "LCM",
+    "cyberdelia_lcm_ralston": "cyberdelia_lcm_ralston",
     "tcd": "TCD",
     "restart": "Restart"
 }

@@ -193,6 +193,78 @@ def _filter_cd_args(ea: dict) -> dict:
     if not ea:
         return {}
     return {k: v for k, v in ea.items() if not str(k).startswith("cd_")}
+@torch.no_grad()
+def sample_cyberdelia_lcm_ralston(model,x: torch.Tensor,sigmas=None,extra_args=None,callback=None,disable=False,**kwargs):
+    sigmas = _resolve_sigmas(sigmas, kwargs)
+    device, dtype = x.device, x.dtype
+    sigmas = _normalize_sigmas(sigmas, device, dtype)
+
+    steps = int(sigmas.numel() - 1)
+    if steps <= 0:
+        return x
+
+    ea = extra_args or {}
+    ea_model = _filter_cd_args(ea)
+
+    s_noise = float(ea.get("cd_lcm_s_noise", 1.0))
+    eps = float(ea.get("cd_lcm_eps", 1e-8))
+    rk2_blend = max(0.0, min(1.0, float(ea.get("cd_lcm_rk2_blend", 0.0))))
+    use_rk2 = rk2_blend > 1e-6
+
+    s_in = torch.ones((x.shape[0],), device=device, dtype=dtype)
+    eps_t = torch.tensor(eps, device=device, dtype=dtype)
+
+    # def _cb(i, s0, s_r, s1, den):
+    #     if callback is None:
+    #         return
+    #     try:
+    #         callback({"i": i, "sigma": s0, "sigma_hat": s_r, "sigma_next": s1, "x": x, "denoised": den})
+    #     except TypeError:
+    #         pass
+
+    for i in trange(steps,disable=disable):
+        s0 = sigmas[i]
+        s1 = sigmas[i + 1]
+
+        # First denoise
+        den0 = model(x, s0 * s_in, **ea_model)
+
+        if use_rk2:
+            # Ralston RK2 stabilization of the denoise prediction
+            sigma_r = torch.maximum(s0 + (2.0 / 3.0) * (s1 - s0), eps_t)
+
+            d0 = _to_d(x, s0, den0, eps=eps)
+            x_r = x + (2.0 / 3.0) * (s1 - s0) * d0
+
+            den_r = model(x_r, sigma_r * s_in, **ea_model)
+
+            # Ralston weights: 0.25/0.75 on denoise predictions, blended
+            den_hat_rk2 = 0.25 * den0 + 0.75 * den_r
+            den_hat = (1.0 - rk2_blend) * den0 + rk2_blend * den_hat_rk2
+        else:
+            # Plain LCM path — skip the second model call entirely
+            sigma_r = s0
+            den_hat = den0
+
+        # Final step: if sigma_next is 0, return denoised (no re-noise)
+        if float(s1) == 0.0:
+            x = _nan_guard(den_hat, "LCM Ralston", i)
+            if callback is not None:
+                callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': sr, 'denoised': den_hat})
+
+            break
+
+        # LCM loop: re-noise to the next sigma
+        if s_noise > 0.0:
+            x = den_hat + torch.randn_like(x) * (s1 * s_noise)
+        else:
+            x = den_hat
+
+        x = _nan_guard(x, "LCM Ralston", i)
+        if callback is not None:
+            callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': sr, 'denoised': den_hat})
+
+    return x
 
 @torch.no_grad()
 def sample_cyberdelia_ralston(model, x, sigmas=None,extra_args=None, callback=None, disable=False,**kwargs):
