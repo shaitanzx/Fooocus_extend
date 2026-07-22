@@ -61,6 +61,31 @@ def default_noise_sampler(x):
     return lambda sigma, sigma_next: torch.randn_like(x)
 
 
+def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model, device):
+    if inner_model is None or not hasattr(inner_model, "sigmas"):
+        raise RuntimeError("Beta57 scheduler requires inner_model.sigmas.")
+
+    total_timesteps = len(inner_model.sigmas) - 1
+    if total_timesteps <= 0:
+        return torch.tensor([0.0], device=device, dtype=torch.float32)
+
+    # Start at the highest sigma and move towards lower sigmas.
+    quantiles = 1.0 - np.linspace(0.0, 1.0, n, endpoint=False)
+    timesteps = stats.beta.ppf(quantiles, ALPHA, BETA) * total_timesteps
+    timesteps = np.rint(timesteps)
+    timesteps = np.clip(timesteps, 0, total_timesteps).astype(np.int64)
+
+    sigmas = []
+    previous_timestep = None
+
+    for timestep in timesteps:
+        if timestep != previous_timestep:
+            sigmas.append(float(inner_model.sigmas[int(timestep)]))
+            previous_timestep = timestep
+
+    sigmas.append(0.0)
+    return torch.tensor(sigmas, device=device, dtype=torch.float32)
+
 class BatchedBrownianTree:
     """A wrapper around torchsde.BrownianTree that enables batches of entropy."""
 
