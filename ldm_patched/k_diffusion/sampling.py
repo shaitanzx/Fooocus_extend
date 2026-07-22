@@ -250,7 +250,7 @@ def sample_cyberdelia_lcm_ralston(model,x: torch.Tensor,sigmas=None,extra_args=N
         if float(s1) == 0.0:
             x = _nan_guard(den_hat, "LCM Ralston", i)
             if callback is not None:
-                callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': sr, 'denoised': den_hat})
+                callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': sigma_r, 'denoised': den_hat})
 
             break
 
@@ -262,7 +262,7 @@ def sample_cyberdelia_lcm_ralston(model,x: torch.Tensor,sigmas=None,extra_args=N
 
         x = _nan_guard(x, "LCM Ralston", i)
         if callback is not None:
-            callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': sr, 'denoised': den_hat})
+            callback({'x': x, 'i': i, 'sigma': s0, 'sigma_hat': sigma_r, 'denoised': den_hat})
 
     return x
 
