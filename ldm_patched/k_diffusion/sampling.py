@@ -181,6 +181,7 @@ def _nan_guard(x: torch.Tensor, tag: str = "", step: int = -1) -> torch.Tensor:
 
 @torch.no_grad()
 def sample_cyberdelia_ralston(model, x: torch.Tensor, *, sigmas=None,extra_args=None,callback=None,disable=False,**kwargs):
+    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
     sigmas = _resolve_sigmas(sigmas, kwargs)
     device, dtype = x.device, x.dtype
     sigmas = _normalize_sigmas(sigmas, device, dtype)
