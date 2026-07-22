@@ -195,8 +195,10 @@ def _filter_cd_args(ea: dict) -> dict:
     return {k: v for k, v in ea.items() if not str(k).startswith("cd_")}
 
 @torch.no_grad()
-def sample_cyberdelia_ralston(model, x: torch.Tensor, *, sigmas=None,extra_args=None,callback=None,disable=False,**kwargs):
+def sample_cyberdelia_ralston(model, x, sigmas=None,extra_args=None, callback=None, disable=False,**kwargs):
+
     print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
+
     sigmas = _resolve_sigmas(sigmas, kwargs)
     device, dtype = x.device, x.dtype
     sigmas = _normalize_sigmas(sigmas, device, dtype)
