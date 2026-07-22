@@ -1,7 +1,7 @@
 import math
 
 import numpy as np
-from scipy import integrate
+from scipy import integrate, stats
 import torch
 from torch import nn
 import torchsde
@@ -68,17 +68,9 @@ def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model=None, device='cpu'):
     Samples from the model's native sigma table when inner_model is available,
     otherwise falls back to a standard beta-distribution schedule.
     """
-    try:
-        from scipy import stats
-    except ImportError as exc:
-        raise RuntimeError(
-            "Beta57 scheduler requires scipy. Install it with: pip install scipy"
-        ) from exc
-
     ALPHA = 0.5
     BETA = 0.7
 
-    # Если есть inner_model с нативной таблицей сигм — используем её
     if inner_model is not None and hasattr(inner_model, "sigmas") and inner_model.sigmas is not None:
         total_timesteps = len(inner_model.sigmas) - 1
         if total_timesteps <= 0:
@@ -99,11 +91,11 @@ def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model=None, device='cpu'):
         sigmas.append(0.0)
         return torch.tensor(sigmas, device=device, dtype=torch.float32)
 
-    # Fallback: стандартная beta-распределённая таблица сигм
+
     quantiles = np.linspace(0.0, 1.0, n, endpoint=False)
     t_values = stats.beta.ppf(quantiles, ALPHA, BETA)
 
-    # Преобразуем t ∈ [0, 1] в сигмы через логарифмическую интерполяцию
+
     log_sigma_min = math.log(sigma_min)
     log_sigma_max = math.log(sigma_max)
     log_sigmas = log_sigma_max + t_values * (log_sigma_min - log_sigma_max)

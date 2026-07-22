@@ -647,13 +647,12 @@ def calculate_sigmas_scheduler(model, scheduler_name, steps):
     elif scheduler_name == "sgm_uniform":
         sigmas = normal_scheduler(model, steps, sgm=True)
     elif scheduler_name == "beta57":
-        
         sigmas = k_diffusion_sampling.get_sigmas_beta57(
             n=steps,
-            sigma_min=float(model_sampling.sigma_min),
-            sigma_max=float(model_sampling.sigma_max),
-            inner_model=getattr(model_sampling, 'inner_model', None),
-            device=model_sampling.sigma_min.device
+            sigma_min=float(model.model_sampling.sigma_min),
+            sigma_max=float(model.model_sampling.sigma_max),
+            inner_model=getattr(model.model_sampling, 'inner_model', None),
+            device=model.model_sampling.sigma_min.device
         )
     else:
         print("error invalid scheduler", scheduler_name)
