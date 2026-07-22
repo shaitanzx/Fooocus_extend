@@ -1224,7 +1224,7 @@ def worker():
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in LCM mode.')
         async_task.refiner_model_name = 'None'
-        async_task.sampler_name = 'lcm'
+        #async_task.sampler_name = 'lcm'
         async_task.scheduler_name = 'lcm'
         async_task.sharpness = 0.0
         async_task.cfg_scale = 1.0
