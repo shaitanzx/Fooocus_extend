@@ -196,9 +196,6 @@ def _filter_cd_args(ea: dict) -> dict:
 
 @torch.no_grad()
 def sample_cyberdelia_ralston(model, x, sigmas=None,extra_args=None, callback=None, disable=False,**kwargs):
-
-    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
-
     sigmas = _resolve_sigmas(sigmas, kwargs)
     device, dtype = x.device, x.dtype
     sigmas = _normalize_sigmas(sigmas, device, dtype)
