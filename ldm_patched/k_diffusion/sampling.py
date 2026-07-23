@@ -82,16 +82,16 @@ def get_sigmas_beta57(n, sigma_min, sigma_max, sigmas=None, device='cpu'):
     timesteps = np.rint(timesteps)
     timesteps = np.clip(timesteps, 0, total_timesteps).astype(np.int64)
 
-    sigmas = []
+    sigmas_mod = []
     previous_timestep = None
 
     for timestep in timesteps:
         if timestep != previous_timestep:
-            sigmas.append(float(inner_model.sigmas[int(timestep)]))
+            sigmas_mod.append(float(sigmas[int(timestep)]))
             previous_timestep = timestep
 
-    sigmas.append(0.0)
-    return torch.tensor(sigmas, device=device, dtype=torch.float32)
+    sigmas_mod.append(0.0)
+    return torch.tensor(sigmas_mod, device=device, dtype=torch.float32)
 
 class BatchedBrownianTree:
     """A wrapper around torchsde.BrownianTree that enables batches of entropy."""
