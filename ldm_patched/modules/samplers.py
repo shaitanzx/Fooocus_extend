@@ -633,7 +633,15 @@ SCHEDULER_NAMES = ["normal", "karras", "exponential", "sgm_uniform", "simple", "
 SAMPLER_NAMES = KSAMPLER_NAMES + ["ddim", "uni_pc", "uni_pc_bh2"]
 
 def calculate_sigmas_scheduler(model, scheduler_name, steps):
-    
+    print("\n=== Model Sampling Attributes ===")
+    for attr in dir(model.model_sampling):
+        if not attr.startswith('_'):
+            try:
+                value = getattr(model.model_sampling, attr)
+                print(f"{attr}: {type(value)}")
+            except Exception as e:
+                print(f"{attr}: [Error] {str(e)}")
+    print("================================\n")    
     if scheduler_name == "karras":
         sigmas = k_diffusion_sampling.get_sigmas_karras(n=steps, sigma_min=float(model.model_sampling.sigma_min), sigma_max=float(model.model_sampling.sigma_max))
     elif scheduler_name == "exponential":
