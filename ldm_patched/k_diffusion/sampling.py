@@ -71,39 +71,27 @@ def get_sigmas_beta57(n, sigma_min, sigma_max, sigmas=None, device='cpu'):
     ALPHA = 0.5
     BETA = 0.7
 
-    if sigmas is not None:
-        print ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
-        total_timesteps = len(sigmas) - 1
-        if total_timesteps <= 0:
-            return torch.tensor([0.0], device=device, dtype=torch.float32)
 
-        quantiles = np.linspace(0.0, 1.0, n, endpoint=False)
-        timesteps = stats.beta.ppf(quantiles, ALPHA, BETA) * total_timesteps
-        timesteps = np.rint(timesteps)
-        timesteps = np.clip(timesteps, 0, total_timesteps).astype(np.int64)
+    total_timesteps = len(sigmas) - 1
+    if total_timesteps <= 0:
+        return torch.tensor([0.0], device=device, dtype=torch.float32)
 
-        sigmas = []
-        previous_timestep = None
-        for timestep in timesteps:
-            if timestep != previous_timestep:
-                sigmas.append(float(inner_model.sigmas[int(timestep)]))
-                previous_timestep = timestep
+    # Start at the highest sigma and move towards lower sigmas.
+    quantiles = 1.0 - np.linspace(0.0, 1.0, n, endpoint=False)
+    timesteps = stats.beta.ppf(quantiles, ALPHA, BETA) * total_timesteps
+    timesteps = np.rint(timesteps)
+    timesteps = np.clip(timesteps, 0, total_timesteps).astype(np.int64)
 
-        sigmas.append(0.0)
-        return torch.tensor(sigmas, device=device, dtype=torch.float32)
+    sigmas = []
+    previous_timestep = None
 
+    for timestep in timesteps:
+        if timestep != previous_timestep:
+            sigmas.append(float(inner_model.sigmas[int(timestep)]))
+            previous_timestep = timestep
 
-    quantiles = np.linspace(0.0, 1.0, n, endpoint=False)
-    t_values = stats.beta.ppf(quantiles, ALPHA, BETA)
-
-
-    log_sigma_min = math.log(sigma_min)
-    log_sigma_max = math.log(sigma_max)
-    log_sigmas = log_sigma_max + t_values * (log_sigma_min - log_sigma_max)
-    sigmas = np.exp(log_sigmas)
-
-    sigmas = np.append(sigmas, 0.0)
-    return torch.tensor(sigmas.tolist(), device=device, dtype=torch.float32)
+    sigmas.append(0.0)
+    return torch.tensor(sigmas, device=device, dtype=torch.float32)
 
 class BatchedBrownianTree:
     """A wrapper around torchsde.BrownianTree that enables batches of entropy."""
