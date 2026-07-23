@@ -651,7 +651,7 @@ def calculate_sigmas_scheduler(model, scheduler_name, steps):
             n=steps,
             sigma_min=float(model.model_sampling.sigma_min),
             sigma_max=float(model.model_sampling.sigma_max),
-            inner_model=(model.model_sampling.sigmas,
+            inner_model=model.model_sampling.sigmas,
             device=model.model_sampling.sigma_min.device
         )
     else:
