@@ -62,7 +62,7 @@ def default_noise_sampler(x):
     return lambda sigma, sigma_next: torch.randn_like(x)
 
 
-def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model=None, device='cpu'):
+def get_sigmas_beta57(n, sigma_min, sigma_max, sigmas=None, device='cpu'):
     """
     Beta57 scheduler: Beta distribution with alpha=0.5 and beta=0.7.
     Samples from the model's native sigma table when inner_model is available,
@@ -71,8 +71,9 @@ def get_sigmas_beta57(n, sigma_min, sigma_max, inner_model=None, device='cpu'):
     ALPHA = 0.5
     BETA = 0.7
 
-    if inner_model is not None and hasattr(inner_model, "sigmas") and inner_model.sigmas is not None:
-        total_timesteps = len(inner_model.sigmas) - 1
+    if sigmas is not None:
+        print ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
+        total_timesteps = len(sigmas) - 1
         if total_timesteps <= 0:
             return torch.tensor([0.0], device=device, dtype=torch.float32)
 
