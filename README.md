@@ -9,15 +9,13 @@ Let's look at everything in order.
    - Prompt Translate
    - PhotoMaker - generating images with a reference face
    - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT)
-   - Inswapper - face replacements in the generated image
-   - CodeFormer - face enhancer
+   - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
    - Vector - vector image generation
 2. Additional modules
    - Image Batch - generation with a batch of reference images
    - Prompt Batch - generating a prompt batch
    - X/Y/Z Plot - a module that allows you to generate images by changing various parameters
-   - Inswapper - face replacements in the generated image
-   - CodeFormer - face enhancer
+   - FaceEnhancer - face enhancer, face replacementsand upscale
    - Remove Background
    - Cleaner - removes small unnecessary objects from images and videos.
    - Vector - allows you to convert a raster image into a vector
@@ -46,7 +44,10 @@ Let's look at everything in order.
 18. Adetailer - extension for automatic masking and inpainting
 19. Support external upscalers
 20. Сhanging the number of steps
-21. Add Dynamic Lora Support (full help in panel Extentions -> in generate -> DinamicLoraHelp
+21. Add Dynamic Lora Support (full help in panel Extentions -> in generate -> DinamicLoraHelp)
+22. The negative prompt field has been moved to the main page with the option to return it to its original location.
+23. Add cyberdelia_ralston sampler
+24. Add beta57 scheduler
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -129,40 +130,35 @@ Start at — defines when IdentityNet begins running
 End at — defines when IdentityNet ends running
 
 
-**Inswapper**
+**FaceEnhancer**
 
-<img width="746" height="381" alt="image" src="https://github.com/user-attachments/assets/138962ee-5dda-4e61-9b3d-24879922de99" />
+<img width="1181" height="776" alt="image" src="https://github.com/user-attachments/assets/420716cc-0305-462a-a760-d9b4b4b387f5" />
 
 
-This module is also intended for face replacement.
+
+This module is designed for enhancement, face replacement and upscaling.
+
+Face Restoration version - model for enhancement and upscale face
+
+UpScale version - model for enhancement and upscale background
+
+Face detection only center - If set to True, only the face closest to the center of the image will be kept.
+
+Face eye dist threshold - A threshold to filter out faces with too small an eye distance (e.g., side faces).
+
+Save input image - saves the input image from the previous iteration (generation or previous Extention)
+
+Face Detection type - model of face detection
+
+Rescaling factor - Output image scaling factor
+
+Enable Face Swap - enable FaceSwap mode
+
+Source Face Image - image with face
 
 Source Image Index - index of the face in the reference image. Faces are numbered from left to right from top to bottom starting from zero. If you specify -1, the average mixed face of all available faces will be taken as the reference face
 
 Target Image Index - index of the face in the output image. This is the index of the face to be replaced in the output image. If you specify -1, all faces will be replaced.
-
-Source Face Image - image with face
-
-Sace input image - saves the input image from the previous iteration (generation or previous Extention)
-
-**CodeFormer**
-
-<img width="743" height="252" alt="image" src="https://github.com/user-attachments/assets/ef798a4d-3329-4318-a4c0-7d704d82b8f7" />
-
-
-
-Face enhancement module with upscale capability
-
-Pre_Face_Align - aligns the face if it is tilted
-
-Background Enchanced - improve background quality
-
-Face Upsample - adjust reference face to the size of the input image face
-
-Upscale - image enlargement
-
-Codeformer_Fidelity - signability coefficient, inversely proportional to quality
-
-Face input image - saves the input image from the previous iteration (generation or previous Extention)
 
 
 **Vector**
@@ -248,18 +244,12 @@ In the second case, the file first contains a line with a positive prompt, follo
 
 This extension allows you to make image grids to make it easier to see the difference between different generation settings and choose the best option. You can change the following parameters - Styles, Steps, Aspect Ratio, Seed, Sharpness, CFG (Guidance) Scale, Checkpoint, Refiner, Clip skip, Sampler, Scheduler, VAE, Refiner swap method, Softness of ControlNet, and also replace words in the prompt and change their order
 
-**Inswapper**
+**FaceEnhancer**
 
-<img width="1070" height="506" alt="image" src="https://github.com/user-attachments/assets/3e8e4005-e3be-481e-b04d-90fd4a5d3e28" />
-
-The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
-
-**CodeFormer**
-
-<img width="1057" height="537" alt="image" src="https://github.com/user-attachments/assets/b0d1780f-0438-4e73-ba3f-281fb4b68a90" />
+<img width="1181" height="776" alt="image" src="https://github.com/user-attachments/assets/601d6bb5-0cc3-4608-84f1-6ae406892d34" />
 
 
-The full analog of this module in the “in generation” panel, unlike which you need to load an additional input image
+The full analog of this module in the “in generation” panel, unlike which you need to load an additional input images
 
 **Remove Background**
 
@@ -556,7 +546,11 @@ You can load external upscalers using civatai helper. The upscaler is based on t
 
 <img width="378" height="63" alt="image" src="https://github.com/user-attachments/assets/3b753d16-a39b-4c66-ad78-6818a99f48a1" />
 
+**The negative prompt field has been moved to the main page.**
 
+<img width="834" height="204" alt="image" src="https://github.com/user-attachments/assets/08402616-a20c-442d-8224-bfcec9db39ba" />
+
+You can return it to its original location through the Advanced settings - Settings - Show negative prompt textbox in main page
 
 <table>
   <tr>
@@ -573,6 +567,12 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.3.2
+ 1. Codeformer and Inswapper have been replaced by a single FaceEnhancer module with a choice of processing models
+ 2. Add cyberdelia_ralston sampler
+ 3. Add beta57 scheduler
+
 v9.3.1
  1. Native Fooocus support InstatID
     

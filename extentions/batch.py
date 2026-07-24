@@ -6,23 +6,26 @@ import zipfile
 import modules.util 
 
 temp_dir=modules.config.temp_path+os.path.sep
+def zip_enable(enable,single_file):
+    if enable:
+        return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
+    else:
+        if single_file and len(single_file)==1:
+            return gr.update(visible=False),gr.update(visible=False),gr.update(visible=True)
+        else:
+            return gr.update(visible=False),gr.update(visible=True),gr.update(visible=False)
+def clear_single(image):
+    return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
+def single_image(single_upload):
+    if len(single_upload) == 1:
+        return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
+    else:
+        return gr.update (visible=False),gr.update(visible=True)
 
 def ui_batch():
-    def zip_enable(enable,single_file):
-        if enable:
-            return gr.update(visible=True),gr.update(visible=False),gr.update(visible=False)
-        else:
-            if single_file and len(single_file)==1:
-                return gr.update(visible=False),gr.update(visible=False),gr.update(visible=True)
-            else:
-                return gr.update(visible=False),gr.update(visible=True),gr.update(visible=False)
-    def clear_single(image):
-        return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
-    def single_image(single_upload):
-        if len(single_upload) == 1:
-            return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
-        else:
-            return gr.update (visible=False),gr.update(visible=True)
+
+    
+    
     with gr.Row():
         with gr.Column():
             with gr.Row():

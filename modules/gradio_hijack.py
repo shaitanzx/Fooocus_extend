@@ -461,7 +461,7 @@ if not hasattr(Block, 'original__init__'):
 
 
 def blk_ini(self, *args, **kwargs):
-    all_components.append(self)
+    all_components.append(self)    
     return Block.original_init(self, *args, **kwargs)
 
 

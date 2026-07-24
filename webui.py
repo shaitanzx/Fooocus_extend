@@ -56,8 +56,9 @@ from extentions import geeky_remb as GeekyRemBExtras
 
 from modules.extra_utils import get_files_from_folder
 import chardet
-from extentions.inswapper import face_swap
-from extentions.CodeFormer import codeformer
+
+
+from extentions import FaceEnhancer
 import extentions.instantid.instantid as instantid
 import extentions.photomaker.app as photomaker
 
@@ -351,10 +352,16 @@ with shared.gradio_root:
                                  elem_id='final_gallery')
             with gr.Row():
                 with gr.Column(scale=17):
-                    prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
+                    with gr.Row():
+                        prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
                                         autofocus=True, lines=3,
                                         )
-
+                    with gr.Row():
+                        new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
+                                        autofocus=False, lines=3, visible=modules.flags.negative_prompt_main,
+                                        value=modules.config.default_prompt_negative
+                                        )
+    
 
                     default_prompt = modules.config.default_prompt
                     if isinstance(default_prompt, str) and default_prompt != '':
@@ -855,21 +862,19 @@ with shared.gradio_root:
                             enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
                         with gr.TabItem(label='InstantID') as instantid_tab:
                             enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight=instantid.gui()                          
-                        with gr.TabItem(label='Inswapper'):
-                            inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp = face_swap.inswapper(True)
-                        with gr.TabItem(label='CodeFormer'):
-                            codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp = codeformer.codeformer_gui(True)
+                        with gr.TabItem(label='FaceEnhancer'):
+                            face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index = FaceEnhancer.gui(True)  
+
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
-                def gen_acc_name(obp,translate, photomaker, instant, inswapper, codeformer,vector):
+                def gen_acc_name(obp,translate, photomaker, instant, face_enhancer,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
-                        ('Inswapper', inswapper),
-                        ('Codeformer', codeformer),
+                        ('FaceEnhancer', face_enhancer),
                         ('Vector', vector)
                         ]
                     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
@@ -877,13 +882,13 @@ with shared.gradio_root:
                     if active_modules:
                         main_name += f" — {', '.join(active_modules)}"   
                     return gr.update(label=main_name)
-                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,inswapper_enabled,codeformer_gen_enabled,poDoVector]
+                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,face_en_enabled,poDoVector]
                 poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                inswapper_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                codeformer_gen_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
+
+                face_en_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
@@ -1034,11 +1039,11 @@ with shared.gradio_root:
                     xyz_start=gr.Button(value="Start xyz",visible=True)
                     gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
                     gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
-                  with gr.TabItem(label='Inswapper'):
-                    face_swap.inswapper(False)
 
-                  with gr.TabItem(label='CodeFormer'):
-                    codeformer.codeformer_gui(False)
+
+
+                  with gr.TabItem(label='FaceEnhancer'):
+                        FaceEnhancer.gui(False)                
                   with gr.TabItem(label='Remove Background') as rembg_tab:
                         GeekyRemBExtras.on_ui_tabs()
 
@@ -1053,13 +1058,12 @@ with shared.gradio_root:
                             with gr.Row():
                                 image_mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
                             with gr.Row():
-                                clean_image_button = gr.Button("Clean Up", height=100,visible=True)
+                                clean_image_button = gr.Button("Clean Up",visible=True)
                             with gr.Row():                                
                                 result_gallery = gr.Gallery(label='Clean result', show_label=True, object_fit='contain', visible=False, height=768,
                                     elem_classes=['resizable_area', 'main_view', 'image_gallery'],
                                     elem_id='cleaner_gallery',
                                     preview=True,
-                                    show_fullscreen_button=True,
                                     allow_preview=True,
                                     show_download_button=True)
                             with gr.Row(visible=False):
@@ -1093,7 +1097,7 @@ with shared.gradio_root:
                             with gr.Row():
                                 mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
                             with gr.Row():
-                                clean_button_video = gr.Button("Clean Up", height=100,visible=False)
+                                clean_button_video = gr.Button("Clean Up", visible=False)
                             with gr.Row(visible=False):
                                 ext_dir_video_cl=gr.Textbox(value='batch_cleaner_video',visible=False)
                         mask_check.change(lambda x: gr.update(visible=x), inputs=mask_check,
@@ -1259,7 +1263,10 @@ with shared.gradio_root:
                 negative_prompt = gr.Textbox(label='Negative Prompt', show_label=True, placeholder="Type prompt here.",
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
-                                             value=modules.config.default_prompt_negative)
+                                             value=modules.config.default_prompt_negative,
+                                             visible=not modules.flags.negative_prompt_main)
+                new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main page",
+                        value=modules.flags.negative_prompt_main)
                 seed_random = gr.Checkbox(label='Random', value=True)
                 image_seed = gr.Textbox(label='Seed', value=0, max_lines=1, visible=False) # workaround for https://github.com/gradio-app/gradio/issues/5354
 
@@ -1891,8 +1898,7 @@ with shared.gradio_root:
         #!ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
         ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
         ctrls += [name_prefix]
-        ctrls += [inswapper_enabled,inswapper_source_image_indicies,inswapper_target_image_indicies,inswapper_source_image,inswapper_temp]
-        ctrls += [codeformer_gen_enabled,codeformer_gen_preface,codeformer_gen_background_enhance,codeformer_gen_face_upsample,codeformer_gen_upscale,codeformer_gen_fidelity,codeformer_temp]
+        ctrls += [face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index]
         ctrls += [enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight]
         ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
         ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
@@ -2005,7 +2011,13 @@ with shared.gradio_root:
         path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
             .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
 
+        new_negative_checkbox.change(lambda x: (gr.update(visible=x), gr.update(visible=not x)),
+                inputs=[new_negative_checkbox],outputs=[new_negative_prompt, negative_prompt],queue=False, show_progress=False)
+        new_negative_prompt.blur(lambda x: gr.update(value=x),inputs=[new_negative_prompt],
+                    outputs=[negative_prompt],queue=False, show_progress=False)
 
+        negative_prompt.change(lambda x: gr.update(value=x),inputs=[negative_prompt],
+                    outputs=[new_negative_prompt])        
         xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[xyz_start, stop_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \

@@ -10,7 +10,7 @@ upscale_fast = 'Final Upscale'
 
 uov_list = [disabled, subtle_variation, strong_variation, upscale_15, upscale_2, upscale_fast]
 
-
+negative_prompt_main = True
 enhancement_uov_before = "Before First Enhancement"
 enhancement_uov_after = "After Last Enhancement"
 enhancement_uov_processing_order = [enhancement_uov_before, enhancement_uov_after]
@@ -19,7 +19,7 @@ enhancement_uov_prompt_type_original = 'Original Prompts'
 enhancement_uov_prompt_type_last_filled = 'Last Filled Enhancement Prompts'
 enhancement_uov_prompt_types = [enhancement_uov_prompt_type_original, enhancement_uov_prompt_type_last_filled]
 
-CIVITAI_NO_KARRAS = ["euler", "euler_ancestral", "heun", "dpm_fast", "dpm_adaptive", "ddim", "uni_pc"]
+CIVITAI_NO_KARRAS = ["euler", "euler_ancestral", "heun", "dpm_fast", "dpm_adaptive", "ddim", "uni_pc","cyberdelia_ralston"]
 
 # fooocus: a1111 (Civitai)
 KSAMPLER = {
@@ -41,6 +41,7 @@ KSAMPLER = {
     "dpmpp_3m_sde": "",
     "dpmpp_3m_sde_gpu": "",
     "ddpm": "",
+    "cyberdelia_ralston": "cyberdelia_ralston",
     "lcm": "LCM",
     "tcd": "TCD",
     "restart": "Restart"
@@ -56,7 +57,7 @@ SAMPLERS = KSAMPLER | SAMPLER_EXTRA
 
 KSAMPLER_NAMES = list(KSAMPLER.keys())
 
-SCHEDULER_NAMES = ["normal", "karras", "exponential", "sgm_uniform", "simple", "ddim_uniform", "lcm", "turbo", "align_your_steps", "tcd", "edm_playground_v2.5"]
+SCHEDULER_NAMES = ["normal", "karras", "exponential", "sgm_uniform", "simple", "ddim_uniform", "lcm", "turbo", "align_your_steps", "tcd", "edm_playground_v2.5","beta57"]
 SAMPLER_NAMES = KSAMPLER_NAMES + list(SAMPLER_EXTRA.keys())
 
 sampler_list = SAMPLER_NAMES

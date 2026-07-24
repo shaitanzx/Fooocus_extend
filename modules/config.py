@@ -1083,15 +1083,6 @@ def downloading_upscale_model2(model):
         )
     return os.path.join(path_upscale_models, f'{model}')
 
-
-#!def downloading_upscale_model():
-#!    load_file_from_url(
-#!        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
-#!        model_dir=path_upscale_models,
-#!        file_name='fooocus_upscaler_s409985e5.bin'
-#!    )
-#!    return os.path.join(path_upscale_models, 'fooocus_upscaler_s409985e5.bin')
-
 def downloading_safety_checker_model():
     load_file_from_url(
         url='https://huggingface.co/mashb1t/misc/resolve/main/stable-diffusion-safety-checker.bin',

@@ -458,7 +458,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     label="Use separate CLIP skip" + suffix(n),
                     value=False,
                     visible=True,
-                    interactiv=False,
+                    interactive=True,
                     elem_id=eid("ad_use_clip_skip"),
                 )
 
@@ -470,6 +470,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     value=1,
                     visible=True,
                     elem_id=eid("ad_clip_skip"),
+                    interactive=False
                 )
 
                 w.ad_use_clip_skip.change(

@@ -162,6 +162,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
 @torch.no_grad()
 @torch.inference_mode()
 def calculate_sigmas_scheduler_hacked(model, scheduler_name, steps):
+  
     if scheduler_name == "karras":
         sigmas = k_diffusion_sampling.get_sigmas_karras(n=steps, sigma_min=float(model.model_sampling.sigma_min), sigma_max=float(model.model_sampling.sigma_max))
     elif scheduler_name == "exponential":
@@ -179,6 +180,14 @@ def calculate_sigmas_scheduler_hacked(model, scheduler_name, steps):
     elif scheduler_name == "align_your_steps":
         model_type = 'SDXL' if isinstance(model.latent_format, ldm_patched.modules.latent_formats.SDXL) else 'SD1'
         sigmas = AlignYourStepsScheduler().get_sigmas(model_type=model_type, steps=steps, denoise=1.0)[0]
+    elif scheduler_name == "beta57":
+        sigmas = k_diffusion_sampling.get_sigmas_beta57(
+            n=steps,
+            sigma_min=float(model.model_sampling.sigma_min),
+            sigma_max=float(model.model_sampling.sigma_max),
+            sigmas=model.model_sampling.sigmas,
+            device=model.model_sampling.sigma_min.device
+        )
     else:
         raise TypeError("error invalid scheduler")
     return sigmas
