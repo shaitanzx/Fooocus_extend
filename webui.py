@@ -2127,6 +2127,13 @@ with shared.gradio_root:
         
     </div>
     """)
+    gr.HTML("""
+        <div style="text-align: center;">
+            <p>Original code by <a href="https://github.com/lllyasviel/Fooocus" target="_blank">lllyasviel and other contributors.</a> Forked and extended by <a href="https://github.com/shaitanzx">Shahmatist^RMDA</a></p>        
+        </div>
+        """)
+
+
     
   
 def dump_default_english_config():
