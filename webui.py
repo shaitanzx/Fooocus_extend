@@ -349,7 +349,7 @@ with shared.gradio_root:
                                     elem_id='progress-bar', elem_classes='progress-bar')
             gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
                                  elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                                 elem_id='final_gallery')
+                                 elem_id='final_gallery',value=['css/logo.png'])
             with gr.Row():
                 with gr.Column(scale=17):
                     with gr.Row():
