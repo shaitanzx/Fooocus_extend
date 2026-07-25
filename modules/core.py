@@ -134,6 +134,8 @@ class StableDiffusionModel:
                       f'with unmatched keys {list(lora_unmatch.keys())}')
 
             if self.unet_with_lora is not None and len(lora_unet) > 0:
+                print(f"\033[93m[DEBUG] Applying UNet LoRA patches: {len(lora_unet)} keys\033[0m")
+
                 loaded_keys = apply_lbw_patches(
                     self.unet_with_lora, lora_unet, unet_weight, lbw_preset, self._lbw_slot_map, lbwe_preset
                 )
@@ -144,6 +146,8 @@ class StableDiffusionModel:
                         print("UNet LoRA key skipped: ", key)
 
             if self.clip_with_lora is not None and len(lora_clip) > 0:
+                print(f"\033[93m[DEBUG] Applying CLIP LoRA patches: {len(lora_clip)} keys\033[0m")
+
                 loaded_keys = self.clip_with_lora.add_patches(lora_clip, te_weight)
                 print(f'Loaded LoRA [{lora_filename}] for CLIP [{self.filename}] '
                       f'with {len(loaded_keys)} keys at weight {te_weight}.')
@@ -154,9 +158,14 @@ class StableDiffusionModel:
         for lora_filename, _, _, _, _, _, _ in self._lbw_step_ranges.values():
             if lora_filename not in dynamic_files_loaded:
                 lora_unmatch = ldm_patched.modules.utils.load_torch_file(lora_filename, safe_load=False)
-                lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
-                lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
+                print(f"\033[93m[DEBUG] Loaded LoRA file: {lora_filename}, keys count: {len(lora_unmatch)}\033[0m")
 
+                lora_unet, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_unet)
+                print(f"\033[93m[DEBUG] Matched UNet LoRA keys: {len(lora_unet)}\033[0m")
+
+                lora_clip, lora_unmatch = match_lora(lora_unmatch, self.lora_key_map_clip)
+                print(f"\033[93m[DEBUG] Matched CLIP LoRA keys: {len(lora_clip)}\033[0m")
+                
                 if len(lora_unmatch) > 12:
                     continue
 

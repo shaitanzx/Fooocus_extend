@@ -141,6 +141,8 @@ class ModelPatcher:
             return self.model.get_dtype()
 
     def add_patches(self, patches, strength_patch=1.0, strength_model=1.0):
+        print(f"\033[93m[DEBUG] add_patches called, patches count: {len(patches)}\033[0m")
+
         p = set()
         for k in patches:
             if k in self.model_keys:
@@ -213,6 +215,8 @@ class ModelPatcher:
         return self.model
 
     def calculate_weight(self, patches, weight, key):
+        print(f"\033[93m[DEBUG] calculate_weight called for key: {key}, patches count: {len(patches)}\033[0m")
+
         # Цвета для консоли
         C_OK = "\033[92m"      # зелёный
         C_WARN = "\033[93m"    # жёлтый
