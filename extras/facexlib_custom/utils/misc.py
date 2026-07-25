@@ -322,9 +322,15 @@ def adain_npy(content_feat, style_feat):
     normalized_feat = (content_feat - np.broadcast_to(content_mean, size)) / np.broadcast_to(content_std, size)
     return normalized_feat * np.broadcast_to(style_std, size) + np.broadcast_to(style_mean, size)
 
-IS_HIGH_VERSION = [int(m) for m in list(re.findall(r"^([0-9]+)\.([0-9]+)\.([0-9]+)([^0-9][a-zA-Z0-9]*)?(\+git.*)?$",\
-    torch.__version__)[0][:3])] >= [1, 12, 0]
-
+#IS_HIGH_VERSION = [int(m) for m in list(re.findall(r"^([0-9]+)\.([0-9]+)\.([0-9]+)([^0-9][a-zA-Z0-9]*)?(\+git.*)?$",\
+#    torch.__version__)[0][:3])] >= [1, 12, 0]
+try:
+    clean_ver = torch.__version__.split('+')[0].split('-')[0]
+    ver_parts = [int(x) for x in clean_ver.split('.')[:3]]
+    while len(ver_parts) < 3: ver_parts.append(0)
+    IS_HIGH_VERSION = ver_parts >= [1, 12, 0]
+except Exception:
+    IS_HIGH_VERSION = False
 def get_device(gpu_id=None):
     """
     From the CodeFormer project by author sczhou.
