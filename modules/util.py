@@ -580,8 +580,6 @@ def build_lbw_slot_mapping(key_map: dict) -> Dict[str, List[str]]:
 
 
 def apply_lbw_patches(patcher, patch_dict: dict, base_weight: float, lbw_preset: str, slot_map: dict, lbwe_preset: str = None):
-    print(f"\033[93m[DEBUG] apply_lbw_patches called, patches count: {len(patch_dict)}\033[0m")
-
     slot_weights = parse_lbw_preset(lbw_preset)
     elemental_rules = parse_lbw_elemental(lbwe_preset)
     
