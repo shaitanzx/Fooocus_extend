@@ -18,8 +18,15 @@ from extras.facexlib_custom.detection.yolov5face.utils.general import (
 )
 
 # IS_HIGH_VERSION = tuple(map(int, torch.__version__.split('+')[0].split('.')[:2])) >= (1, 9)
-IS_HIGH_VERSION = [int(m) for m in list(re.findall(r"^([0-9]+)\.([0-9]+)\.([0-9]+)([^0-9][a-zA-Z0-9]*)?(\+git.*)?$",\
-    torch.__version__)[0][:3])] >= [1, 9, 0]
+#IS_HIGH_VERSION = [int(m) for m in list(re.findall(r"^([0-9]+)\.([0-9]+)\.([0-9]+)([^0-9][a-zA-Z0-9]*)?(\+git.*)?$",\
+#    torch.__version__)[0][:3])] >= [1, 9, 0]
+try:
+    clean_ver = torch.__version__.split('+')[0].split('-')[0]
+    ver_parts = [int(x) for x in clean_ver.split('.')[:3]]
+    while len(ver_parts) < 3: ver_parts.append(0)
+    IS_HIGH_VERSION = ver_parts >= [1, 12, 0]
+except Exception:
+    IS_HIGH_VERSION = False
 
 
 def isListempty(inList):
