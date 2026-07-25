@@ -21,6 +21,7 @@ import stat
 from build_launcher import build_launcher
 from modules.launch_util import is_installed, run, python, run_pip, requirements_met, delete_folder_content
 from modules.model_loader import load_file_from_url
+import torch
 
 REINSTALL_ALL = False
 TRY_INSTALL_XFORMERS = False
@@ -34,6 +35,7 @@ def prepare_environment():
 
     print(f"Python {sys.version}")
     print(f"Fooocus version: {fooocus_version.version}")
+    print(f"PyTorch version: {torch.__version__}")
 
     if REINSTALL_ALL or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
@@ -161,16 +163,19 @@ config.update_files()
 init_cache(config.model_filenames, config.paths_checkpoints, config.lora_filenames, config.paths_loras)
 
 def remove_readonly(func, path, excinfo):
-    # Снимаем атрибут "только для чтения" и пробуем удалить снова
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
-folder_path = f"extentions/CodeFormer"
-
-if os.path.exists(folder_path):
-    # onerror (или onexc в Python 3.12+) обрабатывает ошибки прав доступа
-    shutil.rmtree(folder_path, onerror=remove_readonly) 
-
+folders_to_delete = [
+    "extentions/CodeFormer",
+    "extentions/inswapper"
+]
+for folder_path in folders_to_delete:
+    if os.path.exists(folder_path):
+        try:
+            shutil.rmtree(folder_path, onerror=remove_readonly) 
+        except Exception:
+            pass
 
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_images", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_vector", exist_ok=True)
