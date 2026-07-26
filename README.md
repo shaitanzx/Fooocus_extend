@@ -48,6 +48,7 @@ Let's look at everything in order.
 22. The negative prompt field has been moved to the main page with the option to return it to its original location.
 23. Add cyberdelia_ralston sampler
 24. Add beta57 scheduler
+25. Add DoRA models support
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -568,10 +569,14 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.3.3
+ 1. Add DoRA models support
+ 
 v9.3.2
  1. Codeformer and Inswapper have been replaced by a single FaceEnhancer module with a choice of processing models
  2. Add cyberdelia_ralston sampler
  3. Add beta57 scheduler
+ 4. The negative prompt field has been moved to the main page with the option to return it to its original location.
 
 v9.3.1
  1. Native Fooocus support InstatID

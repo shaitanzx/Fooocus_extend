@@ -2,12 +2,6 @@ def match_lora(lora, to_load):
     patch_dict = {}
     loaded_keys = set()
     
-    # === ОТЛАДКА: считаем ключи ===
-    total_keys = len(lora)
-    dora_keys_found = [k for k in lora.keys() if 'dora_scale' in k]
-    print(f"\033[96m[match_lora] Вход: всего ключей в LoRA файле = {total_keys}\033[0m")
-    print(f"\033[96m[match_lora] Найдено dora_scale ключей: {len(dora_keys_found)}\033[0m")
-    
     for x in to_load:
         real_load_key = to_load[x]
         if real_load_key in lora:
@@ -60,11 +54,7 @@ def match_lora(lora, to_load):
             if mid_name is not None and mid_name in lora.keys():
                 mid = lora[mid_name]
                 loaded_keys.add(mid_name)
-            
-            # === ОТЛАДКА: логируем распознавание LoRA ===
-            has_dora = "✅ DoRA" if dora_scale is not None else "❌ no DoRA"
-            print(f"\033[93m[match_lora] LoRA key matched: {x} | format=regular/diffusers | {has_dora}\033[0m")
-            
+                        
             patch_dict[to_load[x]] = ("lora", (lora[A_name], lora[B_name], alpha, mid, dora_scale))
             loaded_keys.add(A_name)
             loaded_keys.add(B_name)
@@ -182,28 +172,5 @@ def match_lora(lora, to_load):
             loaded_keys.add(diff_bias_name)
 
     remaining_dict = {x: y for x, y in lora.items() if x not in loaded_keys}
-    
-    # === ОТЛАДКА: итоговая статистика ===
-    print(f"\033[92m[match_lora] ИТОГО patch_dict: {len(patch_dict)} патчей\033[0m")
-    print(f"\033[92m[match_lora] ИТОГО remaining_dict: {len(remaining_dict)} нераспознанных ключей\033[0m")
-    
-    # Подсчёт типов патчей
-    type_counts = {}
-    dora_count = 0
-    for key, val in patch_dict.items():
-        ptype = val[0]
-        type_counts[ptype] = type_counts.get(ptype, 0) + 1
-        # Проверяем, есть ли DoRA в кортеже
-        data = val[1]
-        if ptype in ('lora', 'loha', 'lokr', 'glora'):
-            # dora_scale — последний элемент в кортеже для этих типов
-            if data[-1] is not None:
-                dora_count += 1
-    
-    print(f"\033[92m[match_lora] Типы патчей: {type_counts}\033[0m")
-    print(f"\033[92m[match_lora] Патчей с DoRA (dora_scale != None): {dora_count}\033[0m")
-    
-    if remaining_dict:
-        print(f"\033[93m[match_lora] Примеры оставшихся ключей (первые 5): {list(remaining_dict.keys())[:5]}\033[0m")
-    
+       
     return patch_dict, remaining_dict
