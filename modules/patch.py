@@ -56,6 +56,7 @@ patch_settings = {}
 
 
 def weight_decompose(dora_scale, weight, lora_diff, alpha, strength):
+    print('aaaaaaaaaaaaaaaaaaaaaaa')
     """
     DoRA (Weight-Decomposed Low-Rank Adaptation)
     Разделяет magnitude и direction для более точной настройки
