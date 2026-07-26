@@ -53,6 +53,56 @@ class PatchSettings:
 patch_settings = {}
 
 
+
+
+def weight_decompose(dora_scale, weight, lora_diff, alpha, strength):
+    """
+    DoRA (Weight-Decomposed Low-Rank Adaptation)
+    Разделяет magnitude и direction для более точной настройки
+    """
+    dora_scale = ldm_patched.modules.model_management.cast_to_device(
+        dora_scale, weight.device, torch.float32
+    )
+    
+    # Вычисляем комбинированный вес
+    weight_calc = weight + lora_diff.mul(alpha).to(weight.dtype)
+    
+    # Определяем ось для нормализации
+    wd_on_output_axis = dora_scale.shape[0] == weight_calc.shape[0]
+    
+    if wd_on_output_axis:
+        # Нормализация по выходной оси (для Linear и Conv2d)
+        weight_norm = (
+            weight_calc.reshape(weight_calc.shape[0], -1)
+            .norm(dim=1, keepdim=True)
+            .reshape(weight_calc.shape[0], *[1] * (weight_calc.dim() - 1))
+        )
+    else:
+        # Нормализация по входной оси
+        weight_norm = (
+            weight_calc.transpose(0, 1)
+            .reshape(weight_calc.shape[1], -1)
+            .norm(dim=1, keepdim=True)
+            .reshape(weight_calc.shape[1], *[1] * (weight_calc.dim() - 1))
+            .transpose(0, 1)
+        )
+    
+    # Добавляем epsilon для избежания деления на ноль
+    weight_norm = weight_norm + torch.finfo(weight.dtype).eps
+    
+    # Применяем DoRA rescaling
+    scale = (dora_scale / weight_norm).to(weight.dtype)
+    weight_calc = weight_calc * scale
+    
+    # Применяем strength
+    if strength != 1.0:
+        weight = weight + (weight_calc - weight) * strength
+    else:
+        weight = weight_calc
+    
+    return weight
+
+
 def calculate_weight_patched(self, patches, weight, key):
     for p in patches:
         alpha = p[0]
@@ -75,13 +125,17 @@ def calculate_weight_patched(self, patches, weight, key):
             w1 = v[0]
             if alpha != 0.0:
                 if w1.shape != weight.shape:
-                    print(f"\033[93m[LoRA] SHAPE MISMATCH {key}: {w1.shape} != {weight.shape} — SKIP\033[0m")
+                    print("WARNING SHAPE MISMATCH {} WEIGHT NOT MERGED {} != {}".format(key, w1.shape, weight.shape))
                 else:
                     weight += alpha * ldm_patched.modules.model_management.cast_to_device(w1, weight.device, weight.dtype)
                     
         elif patch_type == "lora":
             mat1 = ldm_patched.modules.model_management.cast_to_device(v[0], weight.device, torch.float32)
             mat2 = ldm_patched.modules.model_management.cast_to_device(v[1], weight.device, torch.float32)
+            
+            # Проверяем наличие dora_scale (5-й элемент)
+            dora_scale = v[4] if len(v) > 4 else None
+            
             if v[2] is not None:
                 alpha *= v[2] / mat2.shape[0]
             if v[3] is not None:
@@ -89,35 +143,17 @@ def calculate_weight_patched(self, patches, weight, key):
                 final_shape = [mat2.shape[1], mat2.shape[0], mat3.shape[2], mat3.shape[3]]
                 mat2 = torch.mm(mat2.transpose(0, 1).flatten(start_dim=1), mat3.transpose(0, 1).flatten(start_dim=1)).reshape(final_shape).transpose(0, 1)
             
-            # DoRA support: проверяем наличие dora_scale (5-й элемент)
-            dora_scale = v[4] if len(v) > 4 else None
-            
             try:
-                # Вычисляем LoRA patch БЕЗ alpha
-                patch = torch.mm(mat1.flatten(start_dim=1), mat2.flatten(start_dim=1)).reshape(weight.shape).type(weight.dtype)
+                lora_diff = torch.mm(mat1.flatten(start_dim=1), mat2.flatten(start_dim=1)).reshape(weight.shape)
                 
                 if dora_scale is not None:
-                    # DoRA: сначала добавляем patch с alpha, потом нормализуем
-                    weight_combined = weight + alpha * patch
-                    # Нормализация по направлению (по out_features/out_channels)
-                    weight_flat = weight_combined.view(weight_combined.shape[0], -1)
-                    weight_norm = torch.nn.functional.normalize(weight_flat, dim=1, eps=1e-8).view(weight_combined.shape)
-                    # Применяем magnitude из dora_scale
-                    dora_scale_cast = ldm_patched.modules.model_management.cast_to_device(dora_scale, weight.device, torch.float32)
-                    if dora_scale_cast.dim() == 1:
-                        if weight.dim() == 2:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1)
-                        elif weight.dim() == 4:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1, 1, 1)
-                    weight = weight_norm * dora_scale_cast
-                    print(f"\033[92m[DoRA] Applied to '{key}'\033[0m")
+                    # Применяем DoRA
+                    weight = weight_decompose(dora_scale, weight, lora_diff, alpha, 1.0)
                 else:
                     # Обычный LoRA
-                    weight += alpha * patch
+                    weight += (alpha * lora_diff).type(weight.dtype)
             except Exception as e:
-                print(f"\033[91m[LoRA] ERROR on '{key}': {e}\033[0m")
-                import traceback
-                traceback.print_exc()
+                print("ERROR", key, e)
                 
         elif patch_type == "fooocus":
             w1 = ldm_patched.modules.model_management.cast_to_device(v[0], weight.device, torch.float32)
@@ -126,7 +162,7 @@ def calculate_weight_patched(self, patches, weight, key):
             w1 = (w1 / 255.0) * (w_max - w_min) + w_min
             if alpha != 0.0:
                 if w1.shape != weight.shape:
-                    print(f"\033[93m[LoRA] SHAPE MISMATCH {key}: {w1.shape} != {weight.shape} — SKIP\033[0m")
+                    print("WARNING SHAPE MISMATCH {} FOOOCUS WEIGHT NOT MERGED {} != {}".format(key, w1.shape, weight.shape))
                 else:
                     weight += alpha * ldm_patched.modules.model_management.cast_to_device(w1, weight.device, weight.dtype)
                     
@@ -139,6 +175,9 @@ def calculate_weight_patched(self, patches, weight, key):
             w2_b = v[6]
             t2 = v[7]
             dim = None
+
+            # Проверяем наличие dora_scale (9-й элемент)
+            dora_scale = v[8] if len(v) > 8 else None
 
             if w1 is None:
                 dim = w1_b.shape[0]
@@ -165,39 +204,25 @@ def calculate_weight_patched(self, patches, weight, key):
             if v[2] is not None and dim is not None:
                 alpha *= v[2] / dim
 
-            # DoRA support: проверяем наличие dora_scale (9-й элемент)
-            dora_scale = v[8] if len(v) > 8 else None
-            
             try:
-                # Вычисляем LoKr patch БЕЗ alpha
-                patch = torch.kron(w1, w2).reshape(weight.shape).type(weight.dtype)
+                lora_diff = torch.kron(w1, w2).reshape(weight.shape)
                 
                 if dora_scale is not None:
-                    # DoRA: сначала добавляем patch с alpha, потом нормализуем
-                    weight_combined = weight + alpha * patch
-                    # Нормализация по направлению
-                    weight_flat = weight_combined.view(weight_combined.shape[0], -1)
-                    weight_norm = torch.nn.functional.normalize(weight_flat, dim=1, eps=1e-8).view(weight_combined.shape)
-                    # Применяем magnitude из dora_scale
-                    dora_scale_cast = ldm_patched.modules.model_management.cast_to_device(dora_scale, weight.device, torch.float32)
-                    if dora_scale_cast.dim() == 1:
-                        if weight.dim() == 2:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1)
-                        elif weight.dim() == 4:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1, 1, 1)
-                    weight = weight_norm * dora_scale_cast
-                    print(f"\033[92m[DoRA] Applied LoKr to '{key}'\033[0m")
+                    # Применяем DoRA
+                    weight = weight_decompose(dora_scale, weight, lora_diff, alpha, 1.0)
                 else:
                     # Обычный LoKr
-                    weight += alpha * patch
+                    weight += (alpha * lora_diff).type(weight.dtype)
             except Exception as e:
-                print(f"\033[91m[LoRA] ERROR on '{key}': {e}\033[0m")
-                import traceback
-                traceback.print_exc()
+                print("ERROR", key, e)
                 
         elif patch_type == "loha":
             w1a = v[0]
             w1b = v[1]
+            
+            # Проверяем наличие dora_scale (8-й элемент)
+            dora_scale = v[7] if len(v) > 7 else None
+            
             if v[2] is not None:
                 alpha *= v[2] / w1b.shape[0]
             w2a = v[3]
@@ -219,37 +244,22 @@ def calculate_weight_patched(self, patches, weight, key):
                 m2 = torch.mm(ldm_patched.modules.model_management.cast_to_device(w2a, weight.device, torch.float32),
                               ldm_patched.modules.model_management.cast_to_device(w2b, weight.device, torch.float32))
 
-            # DoRA support: проверяем наличие dora_scale (8-й элемент)
-            dora_scale = v[7] if len(v) > 7 else None
-            
             try:
-                # Вычисляем LoHa patch БЕЗ alpha
-                patch = (m1 * m2).reshape(weight.shape).type(weight.dtype)
+                lora_diff = (m1 * m2).reshape(weight.shape)
                 
                 if dora_scale is not None:
-                    # DoRA: сначала добавляем patch с alpha, потом нормализуем
-                    weight_combined = weight + alpha * patch
-                    # Нормализация по направлению
-                    weight_flat = weight_combined.view(weight_combined.shape[0], -1)
-                    weight_norm = torch.nn.functional.normalize(weight_flat, dim=1, eps=1e-8).view(weight_combined.shape)
-                    # Применяем magnitude из dora_scale
-                    dora_scale_cast = ldm_patched.modules.model_management.cast_to_device(dora_scale, weight.device, torch.float32)
-                    if dora_scale_cast.dim() == 1:
-                        if weight.dim() == 2:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1)
-                        elif weight.dim() == 4:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1, 1, 1)
-                    weight = weight_norm * dora_scale_cast
-                    print(f"\033[92m[DoRA] Applied LoHa to '{key}'\033[0m")
+                    # Применяем DoRA
+                    weight = weight_decompose(dora_scale, weight, lora_diff, alpha, 1.0)
                 else:
                     # Обычный LoHa
-                    weight += alpha * patch
+                    weight += (alpha * lora_diff).type(weight.dtype)
             except Exception as e:
-                print(f"\033[91m[LoRA] ERROR on '{key}': {e}\033[0m")
-                import traceback
-                traceback.print_exc()
+                print("ERROR", key, e)
                 
         elif patch_type == "glora":
+            # Проверяем наличие dora_scale (6-й элемент)
+            dora_scale = v[5] if len(v) > 5 else None
+            
             if v[4] is not None:
                 alpha *= v[4] / v[0].shape[0]
 
@@ -258,37 +268,19 @@ def calculate_weight_patched(self, patches, weight, key):
             b1 = ldm_patched.modules.model_management.cast_to_device(v[2].flatten(start_dim=1), weight.device, torch.float32)
             b2 = ldm_patched.modules.model_management.cast_to_device(v[3].flatten(start_dim=1), weight.device, torch.float32)
 
-            # DoRA support: проверяем наличие dora_scale (6-й элемент)
-            dora_scale = v[5] if len(v) > 5 else None
-            
             try:
-                # Вычисляем GLora patch
-                patch = (torch.mm(b2, b1) + torch.mm(torch.mm(weight.flatten(start_dim=1), a2), a1)).reshape(weight.shape).type(weight.dtype)
+                lora_diff = (torch.mm(b2, b1) + torch.mm(torch.mm(weight.flatten(start_dim=1), a2), a1)).reshape(weight.shape)
                 
                 if dora_scale is not None:
-                    # DoRA: сначала добавляем patch с alpha, потом нормализуем
-                    weight_combined = weight + alpha * patch
-                    # Нормализация по направлению
-                    weight_flat = weight_combined.view(weight_combined.shape[0], -1)
-                    weight_norm = torch.nn.functional.normalize(weight_flat, dim=1, eps=1e-8).view(weight_combined.shape)
-                    # Применяем magnitude из dora_scale
-                    dora_scale_cast = ldm_patched.modules.model_management.cast_to_device(dora_scale, weight.device, torch.float32)
-                    if dora_scale_cast.dim() == 1:
-                        if weight.dim() == 2:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1)
-                        elif weight.dim() == 4:
-                            dora_scale_cast = dora_scale_cast.view(-1, 1, 1, 1)
-                    weight = weight_norm * dora_scale_cast
-                    print(f"\033[92m[DoRA] Applied GLora to '{key}'\033[0m")
+                    # Применяем DoRA
+                    weight = weight_decompose(dora_scale, weight, lora_diff, alpha, 1.0)
                 else:
                     # Обычный GLora
-                    weight += alpha * patch
+                    weight += (alpha * lora_diff).type(weight.dtype)
             except Exception as e:
-                print(f"\033[91m[LoRA] ERROR on '{key}': {e}\033[0m")
-                import traceback
-                traceback.print_exc()
+                print("ERROR", key, e)
         else:
-            print(f"\033[93m[LoRA] Unknown patch type '{patch_type}' for '{key}'\033[0m")
+            print("patch type not recognized", patch_type, key)
 
     return weight
 
