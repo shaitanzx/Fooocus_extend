@@ -341,9 +341,8 @@ with shared.gradio_root:
     with gr.Row():
         with gr.Column(scale=2):
             with gr.Row():
-                logos=random.randint(1,4)
                 progress_window = grh.Image(label='Preview', show_label=False, visible=True, height=768,
-                                            elem_classes=['main_view'],value=f'css/logo{logos}.png')
+                                            elem_classes=['main_view'],value=f'css/logo{random.randint(1,4)}.png')
                 progress_gallery = gr.Gallery(label='Finished Images', show_label=True, object_fit='contain',
                                               height=768, visible=False, elem_classes=['main_view', 'image_gallery'])
             progress_html = gr.HTML(value=modules.html.make_progress_html(32, 'Progress 32%'), visible=False,
