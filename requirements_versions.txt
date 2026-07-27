@@ -49,6 +49,6 @@ addict==2.4.0
 future==1.0.0
 requests==2.31.0
 scikit-image==0.23.2
-fvcore==0.1.5
+fvcore==0.1.5.post20221221
 matplotlib==3.7.2
 fairscale==0.4.13
