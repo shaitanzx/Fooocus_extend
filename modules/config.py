@@ -882,7 +882,6 @@ def update_files():
     upscaler_filenames = list(dict.fromkeys(UPSCALE_DEFAULT_FILENAMES + upscaler_from_disk))
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
-    print('==================',emb_filenames)
     return
 
 
