@@ -1488,7 +1488,8 @@ with shared.gradio_root:
                         max_lines=2,
                         interactive=False
                         )     
-                    emb_model.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag])               
+                    emb_model.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag],queue=False)   
+                    emb_weight.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag],queue=False)             
                 with gr.Row():
                     refresh_files = gr.Button(label='Refresh', value='\U0001f504 Refresh All Files', variant='secondary', elem_classes='refresh_button')
             with gr.Tab(label='Advanced'):
