@@ -1723,6 +1723,7 @@ with shared.gradio_root:
                 def refresh_files_clicked():
                     modules.config.update_files()
                     results = [gr.update(choices=modules.config.model_filenames)]
+                    results += [gr.update(choices=modules.config.emb_filenames)]
                     results += [gr.update(choices=['None'] + modules.config.model_filenames)]
                     results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
                     results += [gr.update(choices=modules.config.upscaler_filenames)]
@@ -1734,7 +1735,7 @@ with shared.gradio_root:
                     
                     return results
 
-                refresh_files_output = [base_model, refiner_model, vae_name, uov_model]
+                refresh_files_output = [base_model, emb_model, refiner_model, vae_name, uov_model]
                 if not args_manager.args.disable_preset_selection:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
