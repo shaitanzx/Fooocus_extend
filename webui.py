@@ -1416,9 +1416,9 @@ with shared.gradio_root:
                         .then(lambda x: gr.update(visible=x != 'None'),
                                     inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
-                with gr.Group():
+                with gr.Tab(label='LoRAs'):
                     ###################
-                    with gr.Tab(label='LoRAs'):
+                    with gr.Group():
                         def lora_tag(filename_sft):
                             filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
                             if filename_value == 'None':
@@ -1470,20 +1470,20 @@ with shared.gradio_root:
                             lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
                             lora_ctrls += [lora_enabled, lora_model, lora_weight]
                 #########################
-                    with gr.Tab(label='Embeddings'):
-                        emb_model = gr.Dropdown(label='Embeddings',
-                            choices=['None'], value='None',interactive=True,
-                            elem_classes='lora_model', scale=5)
-                        emb_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
-                            maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
-                            elem_classes='lora_weight', scale=5,interactive=True,)
-                        emb_tag = gr.Textbox(label='Embedding Tag',
-                            value="",
-                            visible=True,
-                            lines=1,
-                            max_lines=2,
-                            interactive=False
-                            )                    
+                with gr.Tab(label='Embeddings'):
+                    emb_model = gr.Dropdown(label='Embeddings',
+                        choices=['None'], value='None',interactive=True,
+                        elem_classes='lora_model', scale=5)
+                    emb_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
+                        maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
+                        elem_classes='lora_weight', scale=5,interactive=True,)
+                    emb_tag = gr.Textbox(label='Embedding Tag',
+                        value="",
+                        visible=True,
+                        lines=1,
+                        max_lines=2,
+                        interactive=False
+                        )                    
                 with gr.Row():
                     refresh_files = gr.Button(label='Refresh', value='\U0001f504 Refresh All Files', variant='secondary', elem_classes='refresh_button')
             with gr.Tab(label='Advanced'):
