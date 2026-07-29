@@ -1724,6 +1724,7 @@ with shared.gradio_root:
                     modules.config.update_files()
                     results = [gr.update(choices=modules.config.model_filenames)]
                     results += [gr.update(choices=['None'] + modules.config.emb_filenames)]
+                    print('aaaaaaaaaaaaaaaaaaaaaaaaa',modules.config.emb_filenames)
                     results += [gr.update(choices=['None'] + modules.config.model_filenames)]
                     results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
                     results += [gr.update(choices=modules.config.upscaler_filenames)]
