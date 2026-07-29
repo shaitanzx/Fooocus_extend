@@ -1470,7 +1470,7 @@ with shared.gradio_root:
                             lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
                             lora_ctrls += [lora_enabled, lora_model, lora_weight]
                 #########################
-                    with gr.Tab(label='Embeddings')
+                    with gr.Tab(label='Embeddings'):
                         emb_model = gr.Dropdown(label='Embeddings',
                             choices=['None'], value='None',
                             elem_classes='lora_model', scale=5)
