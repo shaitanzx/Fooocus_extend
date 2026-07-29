@@ -133,7 +133,7 @@ available_presets = get_presets()
 preset = args_manager.args.preset
 temp_dict.update(try_get_preset_content(preset))
 if 'base_model' in temp_dict:
-    key_remove=['default_model', 'checkpoint_downloads', 'embeddings_downloads', 'lora_downloads', 'previous_default_models']
+    key_remove=['default_model', 'checkpoint_downloads', 'embeddings_downloads', 'downloads', 'previous_default_models']
     for key in key_remove:
         config_dict.pop(key, None)
 config_dict.update(temp_dict)
@@ -828,6 +828,7 @@ with open(config_example_path, "w", encoding="utf-8") as json_file:
 
 model_filenames = []
 lora_filenames = []
+emb_filenames = []
 vae_filenames = []
 YOLO_DEFAULT_FILENAMES = [
 
@@ -870,9 +871,10 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     return files
 
 def update_files():
-    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames, upscaler_filenames
+    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames, upscaler_filenames,path_embeddings
     model_filenames = get_model_filenames(paths_checkpoints)
     lora_filenames = get_model_filenames(paths_loras)
+    emb_filenames = get_model_filenames(path_embeddings)
     vae_filenames = get_model_filenames(path_vae)
     yolo_from_disk = get_model_filenames(str(path_yolo))
     yolo_filenames = list(dict.fromkeys(YOLO_DEFAULT_FILENAMES + yolo_from_disk))
