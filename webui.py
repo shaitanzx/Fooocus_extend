@@ -1418,7 +1418,7 @@ with shared.gradio_root:
 
                 with gr.Group():
                     ###################
-                    with gr.Tab(label='LoRAs')
+                    with gr.Tab(label='LoRAs'):
                         def lora_tag(filename_sft):
                             filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
                             if filename_value == 'None':
