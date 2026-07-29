@@ -1472,7 +1472,7 @@ with shared.gradio_root:
                 #########################
                 with gr.Tab(label='Embeddings'):
                     emb_model = gr.Dropdown(label='Embeddings',
-                        choices=['None'], value='None',interactive=True,
+                        choices=['None'] + modules.config.emb_filenames, value='None',interactive=True,
                         elem_classes='lora_model', scale=5)
                     emb_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
                         maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
