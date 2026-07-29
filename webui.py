@@ -1472,7 +1472,7 @@ with shared.gradio_root:
                 #########################
                 with gr.Tab(label='Embeddings'):
                     def emb_change(name,weight):
-                        if name = "None":
+                        if name == "None":
                             return gr.update(visible=False)
                         return gr.update(value=f'(embedding:{os.path.splitext(name)[0]}:{weight})',visible=True)
                     emb_model = gr.Dropdown(label='Embeddings',
