@@ -1471,19 +1471,24 @@ with shared.gradio_root:
                             lora_ctrls += [lora_enabled, lora_model, lora_weight]
                 #########################
                 with gr.Tab(label='Embeddings'):
+                    def emb_change(name,weight):
+                        if name = "None":
+                            return gr.update(visible=False)
+                        return gr.update(value=f'(embedding:{os.path.splitext(name)[0]}:{weight})',visible=True)
                     emb_model = gr.Dropdown(label='Embeddings',
                         choices=['None'] + modules.config.emb_filenames, value='None',interactive=True,
                         elem_classes='lora_model', scale=5)
-                    #emb_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
-                    #    maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
-                    #    elem_classes='lora_weight', scale=5,interactive=True,)
+                    emb_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
+                        maximum=modules.config.default_loras_max_weight, step=0.01, value=1,
+                        elem_classes='lora_weight', scale=5,interactive=True)
                     emb_tag = gr.Textbox(label='Embedding Tag',
                         value="",
-                        visible=True,
+                        visible=False,
                         lines=1,
                         max_lines=2,
                         interactive=False
-                        )                    
+                        )     
+                    emb_model.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag])               
                 with gr.Row():
                     refresh_files = gr.Button(label='Refresh', value='\U0001f504 Refresh All Files', variant='secondary', elem_classes='refresh_button')
             with gr.Tab(label='Advanced'):
@@ -1724,7 +1729,6 @@ with shared.gradio_root:
                     modules.config.update_files()
                     results = [gr.update(choices=modules.config.model_filenames)]
                     results += [gr.update(choices=['None'] + modules.config.emb_filenames)]
-                    print('aaaaaaaaaaaaaaaaaaaaaaaaa',modules.config.emb_filenames)
                     results += [gr.update(choices=['None'] + modules.config.model_filenames)]
                     results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
                     results += [gr.update(choices=modules.config.upscaler_filenames)]
