@@ -320,8 +320,8 @@ class AsyncTask:
         self.transper = args.pop()
         self.uov_model = args.pop()
         self.enable_region = args.pop()
-        self.prompt_list = args.pop()
-        self.mask_list = args.pop()
+        self.prompt_region = args.pop()
+        self.mask_region = args.pop()
         
         
 
