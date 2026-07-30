@@ -8,7 +8,7 @@ def gui():
     file_l = os.path.join(os.path.dirname(__file__),'mask.png')
     #file_r = os.path.join(os.path.dirname(__file__),'mask_right.png')
     with gr.Row():
-        enable_region = gr.Checkbox(label="Enabled", value=False)
+        enable_region = gr.Checkbox(label="Enabled", value=True)
     with gr.Row():
         prompt_region= gr.Textbox(label='Prompt left', show_label=True, value='cute orange cat, sitting BREAK happy golden dog, running', lines=2)
         #prompt_r= gr.Textbox(label='Prompt right', show_label=True, value='happy golden dog, running', lines=2)
