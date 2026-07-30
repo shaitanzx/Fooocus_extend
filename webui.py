@@ -1946,7 +1946,7 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
-        #ctrls += [enable_region,prompt_list,mask_list]
+        ctrls += [enable_region,enable_region,enable_region]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
