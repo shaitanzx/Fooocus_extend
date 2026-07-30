@@ -60,11 +60,13 @@ import chardet
 
 from extentions import FaceEnhancer
 import extentions.instantid.instantid as instantid
+import extentions.region.region as region
 import extentions.photomaker.app as photomaker
 
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 from extentions import tile_roll
 from extentions.vector import vector
+
 import extentions.batch as batch
 import extentions.watermark as watermark
 
@@ -354,7 +356,7 @@ with shared.gradio_root:
                 with gr.Column(scale=17):
                     with gr.Row():
                         prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
-                                        autofocus=True, lines=3,
+                                        autofocus=True, lines=3,value='masterpiece, forest background, high quality'
                                         )
                     with gr.Row():
                         new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
@@ -779,6 +781,13 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+                        with gr.TabItem(label='Region') as region_tab:
+                            enable_region,prompt_list,mask_list = region.gui()
+
+
+
+
+
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
                             def toggle_html(current_html):
@@ -1937,6 +1946,7 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
+        ctrls += [enable_region,prompt_list,mask_list]
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
