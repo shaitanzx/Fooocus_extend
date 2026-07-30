@@ -438,7 +438,7 @@ def worker():
             "num_regions": 2
         }
 
-async_tasks = []
+
 
 
     pid = os.getpid()
