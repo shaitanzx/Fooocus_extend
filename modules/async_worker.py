@@ -426,15 +426,28 @@ def worker():
         latent_h = height // 8
         latent_w = width // 8
 
-        m1_tensor = torch.from_numpy(mask_1).unsqueeze(0).unsqueeze(0) # [1, 1, H, W]
-        m2_tensor = torch.from_numpy(mask_2).unsqueeze(0).unsqueeze(0)
+        # Изначально mask_1 и mask_2 имеют форму [H, W] (2D)
+        m1_tensor = torch.from_numpy(mask_1)
+        m2_tensor = torch.from_numpy(mask_2)
 
-        m1_resized = F.interpolate(m1_tensor, size=(latent_h, latent_w), mode='bilinear')
-        m2_resized = F.interpolate(m2_tensor, size=(latent_h, latent_w), mode='bilinear')
+        # F.interpolate требует минимум 3D [N, C, L] или 4D [N, C, H, W].
+        # Мы добавляем измерения, ресайзим, а затем УБИРАЕМ их обратно (.squeeze), 
+        # чтобы вернуть 2D форму [H, W], которую ожидает сэмплер ComfyUI.
+        m1_resized = F.interpolate(
+            m1_tensor.unsqueeze(0).unsqueeze(0), 
+            size=(latent_h, latent_w), 
+            mode='bilinear'
+        ).squeeze(0).squeeze(0)
+
+        m2_resized = F.interpolate(
+            m2_tensor.unsqueeze(0).unsqueeze(0), 
+            size=(latent_h, latent_w), 
+            mode='bilinear'
+        ).squeeze(0).squeeze(0)
 
         return {
             "prompts": prompts_list,
-            "masks": [m1_resized, m2_resized],
+            "masks": [m1_resized, m2_resized],  # Теперь это список 2D тензоров [H, W]
             "num_regions": 2
         }
 
