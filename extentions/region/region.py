@@ -27,8 +27,8 @@ OPTDHIRES = "Disabled in Hires Fix"
 OPTIONLIST = [OPTAND,OPTUSEL,OPTBREAK,OPTFLIP,OPTCOUT,OPTAHIRES,OPTDHIRES,"debug", "debug2"]
 
 # Modules.basedir points to extension's dir. script_path or scripts.basedir points to root.
-PTPRESET = modules.scripts.basedir()
-PTPRESETALT = os.path.join(paths.script_path, "scripts")
+PTPRESET = os.path.dirname(__file__)
+PTPRESETALT = os.path.dirname(__file__)
 
 def lange(l):
     return range(len(l))
