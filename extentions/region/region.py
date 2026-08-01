@@ -1,5 +1,6 @@
 import gradio as gr
 import os
+import json
 
 
 
@@ -52,7 +53,23 @@ PROMPTURL = GUIDEURL + r"/blob/main/prompt_en.md"
 PROMPTURL2 = GUIDEURL + r"/blob/main/prompt_ja.md"
 
 
-
+def loadpresets(filepath):
+    presets = []
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            # presets = json.loads(json.load(f))
+            presets = json.load(f)
+            # presets = loadblob(presets) # DO NOT load all blobs - that's the point.
+    except OSError as e:
+        print("Init / preset error.")
+        presets = initpresets(filepath)
+    except TypeError:
+        print("Corrupted preset file, resetting.")
+        presets = initpresets(filepath)
+    except JSONDecodeError:
+        print("Preset file could not be decoded.")
+        presets = initpresets(filepath)
+    return presets
 def ui_tab(mode, submode, eladd):
     """Structures components for mode tab.
     
