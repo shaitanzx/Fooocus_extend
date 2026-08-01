@@ -7,6 +7,9 @@ import os
 def gui():
     file_l = os.path.join(os.path.dirname(__file__),'mask.png')
     #file_r = os.path.join(os.path.dirname(__file__),'mask_right.png')
+    
+    with gr.Row():
+        region_weight = gr.Slider(minimum=0,maximum=1,step=0.01,value=0.2,label='Regionweight', interactive=True)
     with gr.Row():
         enable_region = gr.Checkbox(label="Enabled", value=True)
     with gr.Row():
@@ -15,4 +18,4 @@ def gui():
     with gr.Row():
         mask_region= gr.Image(value=file_l,label='Mask', source='upload', type='numpy',height=260, show_label=True,visible=True,interactive=True)
         #mask_r= gr.Image(value=file_r,label='Mask right', source='upload', type='numpy',height=260, show_label=True,visible=True,interactive=True)
-    return enable_region, prompt_region, mask_region
+    return enable_region, prompt_region, mask_region,region_weight

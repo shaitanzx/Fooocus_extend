@@ -30,12 +30,19 @@ import gc
 
 @torch.no_grad()
 @torch.inference_mode()
+@torch.no_grad()
+@torch.inference_mode()
 def apply_regional_conditioning(positive_cond, negative_cond, p):
     """
     Преобразует обычные conditioning в список masked conditioning для регионального промптинга.
-    Это нативный способ ComfyUI/Fooocus: сэмплер сам применит маски и сложит результаты.
+    Добавляет базовый conditioning к каждой зоне для согласованности стиля.
+    
+    :param base_strength: Сила базового conditioning в каждой зоне (0.0-1.0).
+                          0.0 = только региональный промпт (изолированные зоны)
+                          0.5 = 50% базового + 50% регионального (сбалансировано)
+                          1.0 = только базовый промпт (региональные промпты игнорируются)
     """
-    # Если региональные данные не переданы, возвращаем всё как есть (безопасный выход)
+    # Если региональные данные не переданы, возвращаем всё как есть
     if not (hasattr(p, 'regional_data') and p.regional_data is not None):
         return positive_cond, negative_cond
 
@@ -46,28 +53,34 @@ def apply_regional_conditioning(positive_cond, negative_cond, p):
     new_pos_cond = []
     new_neg_cond = []
 
-    # 1. Добавляем региональные условия с их масками
+    # 1. Для каждой зоны добавляем региональный conditioning + часть базового
     for i in range(r_data["num_regions"]):
         if r_conds[i] is not None:
-            # r_conds[i] имеет формат: [[tensor, {"pooled_output": tensor}]]
+            # Добавляем региональный conditioning с маской
             for c_item in r_conds[i]:
                 pos_dict = copy.deepcopy(c_item[1])
-                pos_dict['mask'] = masks[i]  # <-- Ключевой момент: добавляем маску
+                pos_dict['mask'] = masks[i]
                 new_pos_cond.append([c_item[0], pos_dict])
             
-            # Для стабильности CFG (Classifier-Free Guidance) применяем ту же маску 
-            # к отрицательному промпту в этой зоне
+            # Добавляем базовый conditioning к этой зоне с уменьшенной силой
+            # Это обеспечивает согласованность стиля и освещения
+            for c_item in positive_cond:
+                pos_dict = copy.deepcopy(c_item[1])
+                pos_dict['mask'] = masks[i]
+                pos_dict['strength'] = p.base_strength  # <-- Ключевой параметр!
+                new_pos_cond.append([c_item[0], pos_dict])
+            
+            # То же самое для negative conditioning
             for c_item in negative_cond:
                 neg_dict = copy.deepcopy(c_item[1])
                 neg_dict['mask'] = masks[i]
+                neg_dict['strength'] = p.base_strength
                 new_neg_cond.append([c_item[0], neg_dict])
 
-    # 2. Добавляем базовое условие (фон)
-    # Создаем маску фона: 1.0 минус сумма всех региональных масок
+    # 2. Добавляем базовое условие для фона (без regional strength)
     bg_mask = torch.ones_like(masks[0])
     for m in masks:
         bg_mask = bg_mask - m
-    # Гарантируем, что значения не уйдут в минус из-за погрешностей float
     bg_mask = torch.clamp(bg_mask, 0.0, 1.0)
 
     for c_item in positive_cond:
@@ -80,7 +93,7 @@ def apply_regional_conditioning(positive_cond, negative_cond, p):
         neg_dict['mask'] = bg_mask
         new_neg_cond.append([c_item[0], neg_dict])
 
-    print(f"[Regional Prompter] Successfully applied {len(masks)} regional masks + background.")
+    print(f"[Regional Prompter] Applied {len(masks)} regional masks + background (base_strength={p.base_strength})")
     return new_pos_cond, new_neg_cond
 
 

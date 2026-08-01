@@ -322,6 +322,7 @@ class AsyncTask:
         self.enable_region = args.pop()
         self.prompt_region = args.pop()
         self.mask_region = args.pop()
+        self.region_weight = args.pop()
         self.regional_data = None
         
         
