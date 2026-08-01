@@ -367,6 +367,7 @@ def is_json(data: str) -> bool:
 
 
 def get_filname_by_stem(lora_name, filenames: List[str]) -> str | None:
+    print ('aaaaaaaaaaaaaaa', lora_name, filenames)
     for filename in filenames:
         path = Path(filename)
         if lora_name == path.stem:
