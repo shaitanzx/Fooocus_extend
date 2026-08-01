@@ -367,7 +367,6 @@ def is_json(data: str) -> bool:
 
 
 def get_filname_by_stem(lora_name, filenames: List[str]) -> str | None:
-    print ('aaaaaaaaaaaaaaa', lora_name, filenames)
     for filename in filenames:
         path = Path(filename)
         if lora_name == path.stem:
@@ -710,7 +709,7 @@ def parse_lora_references_from_prompt(prompt: str, loras: List[Tuple[AnyStr, flo
 
     if lora_filenames is None:
         lora_filenames = []
-    print ('bbbbbbbbbbbbbbbbbb', lora_filenames, prompt)
+
     found_loras = []
     prompt_without_loras = ''
     cleaned_prompt = ''
