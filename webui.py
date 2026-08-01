@@ -782,7 +782,7 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='Region') as region_tab:
-                            enable_region,prompt_region,mask_region, region_weight = region.gui()
+                            region.gui()
 
 
 
@@ -1946,7 +1946,7 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
-        ctrls += [enable_region,prompt_region,mask_region,region_weight]
+
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)

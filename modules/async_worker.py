@@ -319,11 +319,7 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.uov_model = args.pop()
-        self.enable_region = args.pop()
-        self.prompt_region = args.pop()
-        self.mask_region = args.pop()
-        self.region_weight = args.pop()
-        self.regional_data = None
+
         
         
 
@@ -385,82 +381,7 @@ def worker():
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
 
-    def parse_regional_data(prompt_region, regional_mask, width, height):
-        """Парсит региональные промпты и извлекает 2 маски из цветного numpy массива."""
 
-
-        # 1. Парсим промпты по BREAK
-        prompts_list = [p.strip() for p in str(prompt_region).split("BREAK")]
-        # Гарантируем, что у нас ровно 2 элемента (обрезаем или дополняем пустыми)
-        while len(prompts_list) < 2:
-            prompts_list.append("")
-        prompts_list = prompts_list[:2]
-
-        # 2. Обрабатываем маску (учитываем формат Gradio Image)
-        mask = regional_mask
-        if isinstance(mask, dict) and 'image' in mask:
-            mask = mask['image']
-        elif isinstance(mask, str):
-            mask = np.array(Image.open(mask).convert("RGB"))
-    
-        # Гарантируем 3 канала (RGB)
-        if mask.ndim == 2:
-            mask = np.stack([mask]*3, axis=-1)
-        elif mask.shape[-1] == 4: # Если вдруг RGBA
-            mask = mask[:, :, :3]
-
-        # Ресайзим под целевой размер (используем NEAREST, чтобы сохранить точные цвета!)
-        if mask.shape[0] != height or mask.shape[1] != width:
-            mask_pil = Image.fromarray(mask)
-            mask_pil = mask_pil.resize((width, height), Image.Resampling.NEAREST)
-            mask = np.array(mask_pil)
-
-        # 3. Определяем цвета (Красный и Зеленый)
-        COLOR_1 = np.array([255, 0, 0], dtype=np.uint8)
-        COLOR_2 = np.array([0, 255, 0], dtype=np.uint8)
-
-        # Создаем бинарные маски (True/False -> 1.0/0.0)
-        mask_1 = np.all(mask == COLOR_1, axis=-1).astype(np.float32)
-        mask_2 = np.all(mask == COLOR_2, axis=-1).astype(np.float32)
-
-        # 4. Конвертируем в тензоры и ресайзим под латентное пространство (1/8 от оригинала)
-        latent_h = height // 8
-        latent_w = width // 8
-
-        m1_tensor = torch.from_numpy(mask_1)
-        m2_tensor = torch.from_numpy(mask_2)
-
-        # Ресайзим через interpolate (требует минимум 3D)
-        m1_resized = F.interpolate(
-            m1_tensor.unsqueeze(0).unsqueeze(0), 
-            size=(latent_h, latent_w), 
-            mode='bilinear'
-        )
-    
-        m2_resized = F.interpolate(
-            m2_tensor.unsqueeze(0).unsqueeze(0), 
-            size=(latent_h, latent_w), 
-            mode='bilinear'
-        )
-
-        # ГАРАНТИРОВАННО приводим к 2D [H, W], убирая все лишние измерения
-        m1_resized = m1_resized.squeeze()
-        m2_resized = m2_resized.squeeze()
-    
-        # Дополнительная проверка: если вдруг всё ещё не 2D, делаем явный reshape
-        if m1_resized.ndim != 2:
-            m1_resized = m1_resized.view(latent_h, latent_w)
-        if m2_resized.ndim != 2:
-            m2_resized = m2_resized.view(latent_h, latent_w)
-
-        # Финальная проверка для отладки
-        print(f"[Regional Prompter Debug] Mask 1 shape: {m1_resized.shape}, Mask 2 shape: {m2_resized.shape}")
-
-        return {
-            "prompts": prompts_list,
-            "masks": [m1_resized, m2_resized],
-            "num_regions": 2
-        }
 
 
 
@@ -1693,44 +1614,7 @@ def worker():
                         async_task.presetprefix, async_task.presetsuffix)
 
 
-            # === НАЧАЛО: REGIONAL PROMPTER - ПОДГОТОВКА ДАННЫХ ===
-            # Выполняется после загрузки моделей и кодирования основного промпта.
-            # Здесь width и height уже известны, pipeline уже загружен.
-            if async_task.enable_region == True:
-            
-                print(f'[Regional Prompter] Enabled. Parsing regional data...')
-                try:
-                    # 1. Парсим маску и промпты
-                    regional_data = parse_regional_data(
-                        async_task.prompt_region,
-                        async_task.mask_region,
-                        width,
-                        height
-                    )
-                
-                    # 2. Кодируем региональные промпты через CLIP (тот же pipeline, что и основной)
-                    regional_conds = []
-                    for i, prompt in enumerate(regional_data["prompts"]):
-                        if prompt.strip():
-                            cond = pipeline.clip_encode(texts=[prompt], pool_top_k=1)
-                            regional_conds.append(cond)
-                            print(f'[Regional Prompter] Region {i+1}: "{prompt[:50]}..." encoded.')
-                        else:
-                            regional_conds.append(None)
-                            print(f'[Regional Prompter] Region {i+1}: Empty prompt, skipped.')
-                
-                    regional_data["conds"] = regional_conds
-                
-                    # 3. Сохраняем в async_task для последующего использования в pipeline
-                    async_task.regional_data = regional_data
-                
-                except Exception as e:
-                    print(f'[Regional Prompter] Error parsing regional data: {e}')
-                    print(f'[Regional Prompter] Falling back to normal generation.')
-                    import traceback
-                    traceback.print_exc()
-                    async_task.regional_data = None
-            # === КОНЕЦ: REGIONAL PROMPTER - ПОДГОТОВКА ДАННЫХ ===
+
 
 
             tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,

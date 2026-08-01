@@ -28,77 +28,6 @@ from extentions.transper.models import TransparentVAEDecoder
 import extentions.instantid.instantid as instantid
 import gc
 
-@torch.no_grad()
-@torch.inference_mode()
-@torch.no_grad()
-@torch.inference_mode()
-def apply_regional_conditioning(positive_cond, negative_cond, p):
-    """
-    Преобразует обычные conditioning в список masked conditioning для регионального промптинга.
-    Добавляет базовый conditioning к каждой зоне для согласованности стиля.
-    
-    :param base_strength: Сила базового conditioning в каждой зоне (0.0-1.0).
-                          0.0 = только региональный промпт (изолированные зоны)
-                          0.5 = 50% базового + 50% регионального (сбалансировано)
-                          1.0 = только базовый промпт (региональные промпты игнорируются)
-    """
-    # Если региональные данные не переданы, возвращаем всё как есть
-    if not (hasattr(p, 'regional_data') and p.regional_data is not None):
-        return positive_cond, negative_cond
-
-    r_data = p.regional_data
-    masks = r_data["masks"]
-    r_conds = r_data["conds"]
-    
-    new_pos_cond = []
-    new_neg_cond = []
-
-    # 1. Для каждой зоны добавляем региональный conditioning + часть базового
-    for i in range(r_data["num_regions"]):
-        if r_conds[i] is not None:
-            # Добавляем региональный conditioning с маской
-            for c_item in r_conds[i]:
-                pos_dict = copy.deepcopy(c_item[1])
-                pos_dict['mask'] = masks[i]
-                new_pos_cond.append([c_item[0], pos_dict])
-            
-            # Добавляем базовый conditioning к этой зоне с уменьшенной силой
-            # Это обеспечивает согласованность стиля и освещения
-            for c_item in positive_cond:
-                pos_dict = copy.deepcopy(c_item[1])
-                pos_dict['mask'] = masks[i]
-                pos_dict['strength'] = p.region_weight  # <-- Ключевой параметр!
-                new_pos_cond.append([c_item[0], pos_dict])
-            
-            # То же самое для negative conditioning
-            for c_item in negative_cond:
-                neg_dict = copy.deepcopy(c_item[1])
-                neg_dict['mask'] = masks[i]
-                neg_dict['strength'] = p.region_weight
-                new_neg_cond.append([c_item[0], neg_dict])
-
-    # 2. Добавляем базовое условие для фона (без regional strength)
-    bg_mask = torch.ones_like(masks[0])
-    for m in masks:
-        bg_mask = bg_mask - m
-    bg_mask = torch.clamp(bg_mask, 0.0, 1.0)
-
-    for c_item in positive_cond:
-        pos_dict = copy.deepcopy(c_item[1])
-        pos_dict['mask'] = bg_mask
-        new_pos_cond.append([c_item[0], pos_dict])
-        
-    for c_item in negative_cond:
-        neg_dict = copy.deepcopy(c_item[1])
-        neg_dict['mask'] = bg_mask
-        new_neg_cond.append([c_item[0], neg_dict])
-
-    print(f"[Regional Prompter] Applied {len(masks)} regional masks + background (base_strength={p.region_weight})")
-    return new_pos_cond, new_neg_cond
-
-
-
-
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -469,12 +398,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
 
-
-
-    # === НАЧАЛО: REGIONAL PROMPTER INTEGRATION ===
-    # Преобразуем conditioning в masked conditioning перед передачей в ksampler
-    positive_cond, negative_cond = apply_regional_conditioning(positive_cond, negative_cond, p)
-    # === КОНЕЦ: REGIONAL PROMPTER INTEGRATION ===
 
 
 
