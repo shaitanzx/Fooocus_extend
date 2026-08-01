@@ -6,16 +6,16 @@ from pprint import pprint
 import gradio as gr
 import numpy as np
 from PIL import Image
-import modules.ui
-import modules # SBM Apparently, basedir only works when accessed directly.
-from modules import paths, scripts, shared, extra_networks, prompt_parser, launch_utils
-from modules.processing import Processed
-from modules.script_callbacks import (on_ui_settings, CFGDenoisedParams, CFGDenoiserParams, on_cfg_denoised, on_cfg_denoiser)
+#import modules.ui
+#import modules # SBM Apparently, basedir only works when accessed directly.
+#from modules import paths, scripts, shared, extra_networks, prompt_parser, launch_utils
+#from modules.processing import Processed
+#from modules.script_callbacks import (on_ui_settings, CFGDenoisedParams, CFGDenoiserParams, on_cfg_denoised, on_cfg_denoiser)
 import json  # Presets.
 from json.decoder import JSONDecodeError
-from scripts.attention import (TOKENS, hook_forwards, reset_pmasks, savepmasks)
-from scripts.latent import (denoised_callback_s, denoiser_callback_s, lora_namer, setuploras, unloadlorafowards, forge_linear_forward)
-from scripts.regions import (MAXCOLREG, IDIM, KEYBRK, KEYBASE, KEYCOMM, KEYPROMPT, ALLKEYS, ALLALLKEYS,
+from extentions.region.attention import (TOKENS, hook_forwards, reset_pmasks, savepmasks)
+from extentions.region.latent import (denoised_callback_s, denoiser_callback_s, lora_namer, setuploras, unloadlorafowards, forge_linear_forward)
+from extentions.region.regions import (MAXCOLREG, IDIM, KEYBRK, KEYBASE, KEYCOMM, KEYPROMPT, ALLKEYS, ALLALLKEYS,
                              create_canvas, draw_region, change_color,#detect_mask, detect_polygons,  
                              draw_image, save_mask, load_mask, changecs,
                              floatdef, inpaintmaskdealer, makeimgtmp, matrixdealer)
@@ -25,14 +25,14 @@ from packaging import version
 from functools import wraps
 
 OPT_RP_DISABLE_IMAGE_EDITOR = "regional_prompter_disable_iamgeeditor"
-disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
+#disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
 
 USE_OLD_ACTIVE = "old_active_check"
-use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
+#use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
 
-forge = launch_utils.git_tag()[0:2] == "f2" or launch_utils.git_tag() == "neo" 
-reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
-print(f"Forge: {forge}, reForge: {reforge}")
+#forge = launch_utils.git_tag()[0:2] == "f2" or launch_utils.git_tag() == "neo" 
+#reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+#print(f"Forge: {forge}, reForge: {reforge}")
 
 KEYBRK_R = "RP_TEMP_REPLACE"
 FLJSON = "regional_prompter_presets.json"
@@ -53,7 +53,7 @@ PTPRESETALT = os.path.join(paths.script_path, "scripts")
 def lange(l):
     return range(len(l))
 
-orig_batch_cond_uncond = shared.opts.batch_cond_uncond if hasattr(shared.opts,"batch_cond_uncond") else shared.batch_cond_uncond
+#orig_batch_cond_uncond = shared.opts.batch_cond_uncond if hasattr(shared.opts,"batch_cond_uncond") else shared.batch_cond_uncond
 
 PRESETSDEF =[
     ["Vertical-3", "Vertical",'1,1,1',"",False,False,False,"Attention",False,"0","0"],
