@@ -51,8 +51,36 @@ MATRIXURL = GUIDEURL + r"#2d-region-assignment"
 MASKURL = GUIDEURL + r"#mask-regions-aka-inpaint-experimental-function"
 PROMPTURL = GUIDEURL + r"/blob/main/prompt_en.md"
 PROMPTURL2 = GUIDEURL + r"/blob/main/prompt_ja.md"
-
-
+def presetfallback():
+    """Swaps main json dir to alt if exists, attempts reload.
+    
+    """
+    global PTPRESET
+    global PTPRESETALT
+    
+    if PTPRESETALT is not None:
+        print("Unknown preset error, fallback.")
+        PTPRESET = PTPRESETALT
+        PTPRESETALT = None
+        return loadpresets(PTPRESET)
+    else: # Already attempted swap.
+        print("Presets could not be loaded.") 
+        return None
+def initpresets(filepath):
+    lpr = PRESETSDEF
+    # if not os.path.isfile(filepath):
+    try:
+        with open(filepath, mode='w', encoding="utf-8") as f:
+            lprj = []
+            for pr in lpr:
+                plen = min(len(PRESET_KEYS), len(pr)) # Future setting additions ignored.
+                prj = {PRESET_KEYS[i][0]:pr[i] for i in range(plen)}
+                lprj.append(prj)
+            #json.dump(json.dumps(lprj), f, indent = 2)
+            json.dump(lprj, f, indent = 2)
+            return lprj
+    except Exception as e:
+        return presetfallback()
 def loadpresets(filepath):
     presets = []
     try:
