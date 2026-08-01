@@ -2,12 +2,140 @@ import gradio as gr
 import os
 
 
-def ui(self, is_img2img):
+
+
+# OPT_RP_DISABLE_IMAGE_EDITOR = "regional_prompter_disable_iamgeeditor"
+# disable_image_editor = getattr(shared.opts,"regprp_" + OPT_RP_DISABLE_IMAGE_EDITOR, False)
+
+# USE_OLD_ACTIVE = "old_active_check"
+# use_old_active = getattr(shared.opts,"regprp_" + USE_OLD_ACTIVE, False)
+
+# forge = launch_utils.git_tag()[0:2] == "f2" or launch_utils.git_tag() == "neo" 
+# reforge = launch_utils.git_tag()[0:2] == "f1" or launch_utils.git_tag() == "classic"
+# print(f"Forge: {forge}, reForge: {reforge}")
+
+KEYBRK_R = "RP_TEMP_REPLACE"
+FLJSON = "regional_prompter_presets.json"
+OPTAND = "disable convert 'AND' to 'BREAK'"
+OPTUSEL = "Use LoHa or other"
+OPTBREAK = "Use BREAK to change chunks"
+OPTFLIP = "Flip prompts"
+OPTCOUT = "Comment Out `#`"
+OPTAHIRES = "Enabled only in Hires Fix"
+OPTDHIRES = "Disabled in Hires Fix"
+
+OPTIONLIST = [OPTAND,OPTUSEL,OPTBREAK,OPTFLIP,OPTCOUT,OPTAHIRES,OPTDHIRES,"debug", "debug2"]
+
+# Modules.basedir points to extension's dir. script_path or scripts.basedir points to root.
+PTPRESET = modules.scripts.basedir()
+PTPRESETALT = os.path.join(paths.script_path, "scripts")
+
+def lange(l):
+    return range(len(l))
+
+# orig_batch_cond_uncond = shared.opts.batch_cond_uncond if hasattr(shared.opts,"batch_cond_uncond") else shared.batch_cond_uncond
+
+PRESETSDEF =[
+    ["Vertical-3", "Vertical",'1,1,1',"",False,False,False,"Attention",False,"0","0"],
+    ["Horizontal-3", "Horizontal",'1,1,1',"",False,False,False,"Attention",False,"0","0"],
+    ["Horizontal-7", "Horizontal",'1,1,1,1,1,1,1',"0.2",True,False,False,"Attention",False,"0","0"],
+    ["Twod-2-1", "Horizontal",'1,2,3;1,1',"0.2",False,False,False,"Attention",False,"0","0"],
+]
+
+# ATTNSCALE = 8 # Initial image compression in attention layers.
+
+fhurl = lambda url, label: r"""<a href="{}">{}</a>""".format(url, label)
+GUIDEURL = r"https://github.com/hako-mikan/sd-webui-regional-prompter"
+MATRIXURL = GUIDEURL + r"#2d-region-assignment"
+MASKURL = GUIDEURL + r"#mask-regions-aka-inpaint-experimental-function"
+PROMPTURL = GUIDEURL + r"/blob/main/prompt_en.md"
+PROMPTURL2 = GUIDEURL + r"/blob/main/prompt_ja.md"
+
+
+
+def ui_tab(mode, submode, eladd):
+    """Structures components for mode tab.
+    
+    Semi harcoded but it's clearer this way.
+    """
+    vret = None
+    if mode == "Matrix":
+        with gr.Row():
+            mguide = gr.HTML(value = fhurl(MATRIXURL, "Matrix mode guide")) 
+        with gr.Row():
+            mmode = gr.Radio(label="Main Splitting", choices=submode, value="Columns", type="value", interactive=True,elem_id="RP_main_splitting" + eladd)
+            ratios = gr.Textbox(label="Divide Ratio",lines=1,value="1,1",interactive=True,elem_id="RP_divide_ratio" + eladd,visible=True)
+        with gr.Row():
+            with gr.Column():
+                with gr.Row():
+                    twid = gr.Slider(label="Width", minimum=64, maximum=2048, value=512, step=8,elem_id="RP_matrix_width" + eladd)
+                    thei = gr.Slider(label="Height", minimum=64, maximum=2048, value=512, step=8,elem_id="RP_matrix_height" + eladd)
+                maketemp = gr.Button(value="visualize and make template")
+
+                template = gr.Textbox(label="template",interactive=True,visible=True,elem_id="RP_matrix_template" + eladd)
+                flipper = gr.Checkbox(label = 'flip "," and ";"', value = False,elem_id="RP_matrix_flip" + eladd)
+                overlay = gr.Slider(label="Overlay Ratio", minimum=0, maximum=1, step=0.1, value=0.5,elem_id="RP_matrix_overlay" + eladd)
+
+            with gr.Column():
+                areasimg = gr.Image(type="pil", show_label  = False, height=256, width=256,source = "upload", interactive=True)
+        # Need to add maketemp function based on base / common checks.
+        vret = [mmode, ratios, maketemp, template, areasimg, flipper, thei, twid, overlay]
+    elif mode == "Mask":
+        with gr.Row():
+            xguide = gr.HTML(value = fhurl(MASKURL, "Inpaint+ mode guide"))
+        with gr.Row(): # Creep: Placeholder, should probably make this invisible.
+            xmode = gr.Radio(label="Mask mode", choices=submode, value="Mask", type="value", interactive=True,elem_id="RP_mask_mode" + eladd)
+        with gr.Row(): # CREEP: Css magic to make the canvas bigger? I think it's in style.css: #img2maskimg -> height.
+            if IS_GRADIO_4:
+                if disable_image_editor:
+                    polymask = gr.Image(label = "Image",elem_id="polymask" + eladd,
+                                source = "upload", mirror_webcam = False, type = "numpy")#.style(height=480)
+                else:
+                    polymask = gr.ImageEditor(elem_id="polymask" + eladd, image_mode = "RGB",canvas_size = (512,512),
+                        source = "upload", mirror_webcam = False, type = "numpy", tool = "sketch",
+                        brush = gr.Brush(colors=["#804040"], color_mode='fixed'))#.style(height=480)
+            else:
+                polymask = gr.Image(label = "Do not upload here until bugfix",elem_id="polymask" + eladd,
+                                source = "upload", mirror_webcam = False, type = "numpy", tool = "sketch")#.style(height=480)
+        with gr.Row():
+           
+            with gr.Column():
+                num = gr.Slider(label="Region", minimum=-1, maximum=MAXCOLREG, step=1, value=1,elem_id="RP_mask_region" + eladd)
+                canvas_width = gr.Slider(label="Inpaint+ Width", minimum=64, maximum=2048, value=512, step=8,elem_id="RP_mask_width" + eladd)
+                canvas_height = gr.Slider(label="Inpaint+ Height", minimum=64, maximum=2048, value=512, step=8,elem_id="RP_mask_height" + eladd)
+                btn = gr.Button(value = "Draw region + show mask")
+                # btn2 = gr.Button(value = "Display mask") # Not needed.
+                cbtn = gr.Button(value="Create mask area")
+            with gr.Column():
+                showmask = gr.Image(label = "Mask", shape=(IDIM, IDIM))
+                # CONT: Awaiting fix for https://github.com/gradio-app/gradio/issues/4088.
+                uploadmask = gr.Image(label="Upload mask here cus gradio",source = "upload", type = "numpy")
+            # btn.click(detect_polygons, inputs = [polymask,num], outputs = [polymask,num])
+            btn.click(draw_region, inputs = [polymask, num], outputs = [polymask, num, showmask])
+            # btn2.click(detect_mask, inputs = [polymask,num], outputs = [showmask])
+            cbtn.click(fn=create_canvas, inputs=[canvas_height, canvas_width], outputs=[polymask])   
+            uploadmask.upload(fn = draw_image, inputs = [uploadmask], outputs = [polymask, uploadmask, showmask])
+
+
+            vret = [xmode, polymask, num, canvas_width, canvas_height, showmask, uploadmask]
+        
+    elif mode == "Prompt":
+        with gr.Row():
+            pguide = gr.HTML(value = fhurl(PROMPTURL, "Prompt mode guide"))
+            pguide2 = gr.HTML(value = fhurl(PROMPTURL2, "Extended prompt guide (jp)"))
+        with gr.Row():
+            pmode = gr.Radio(label="Prompt mode", choices=submode, value="Prompt", type="value", interactive=True, elem_id="RP_prompt_mode" + eladd)
+            threshold = gr.Textbox(label = "threshold", value = 0.4, interactive=True, elem_id="RP_prompt_threshold" + eladd)
+        
+        vret = [pmode, threshold]
+
+    return vret
+def gui():
     filepath = os.path.join(PTPRESET, FLJSON)
 
     presets = []
 
-    eladd = "i2i" if is_img2img else "t2i"
+    eladd = "t2i"
 
     presets = loadpresets(filepath)
     presets = LPRESET.update(presets)
