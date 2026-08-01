@@ -67,14 +67,14 @@ def apply_regional_conditioning(positive_cond, negative_cond, p):
             for c_item in positive_cond:
                 pos_dict = copy.deepcopy(c_item[1])
                 pos_dict['mask'] = masks[i]
-                pos_dict['strength'] = p.base_strength  # <-- Ключевой параметр!
+                pos_dict['strength'] = p.region_weight  # <-- Ключевой параметр!
                 new_pos_cond.append([c_item[0], pos_dict])
             
             # То же самое для negative conditioning
             for c_item in negative_cond:
                 neg_dict = copy.deepcopy(c_item[1])
                 neg_dict['mask'] = masks[i]
-                neg_dict['strength'] = p.base_strength
+                neg_dict['strength'] = p.region_weight
                 new_neg_cond.append([c_item[0], neg_dict])
 
     # 2. Добавляем базовое условие для фона (без regional strength)
@@ -93,7 +93,7 @@ def apply_regional_conditioning(positive_cond, negative_cond, p):
         neg_dict['mask'] = bg_mask
         new_neg_cond.append([c_item[0], neg_dict])
 
-    print(f"[Regional Prompter] Applied {len(masks)} regional masks + background (base_strength={p.base_strength})")
+    print(f"[Regional Prompter] Applied {len(masks)} regional masks + background (base_strength={p.region_weight})")
     return new_pos_cond, new_neg_cond
 
 
