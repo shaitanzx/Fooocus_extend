@@ -133,7 +133,7 @@ available_presets = get_presets()
 preset = args_manager.args.preset
 temp_dict.update(try_get_preset_content(preset))
 if 'base_model' in temp_dict:
-    key_remove=['default_model', 'checkpoint_downloads', 'embeddings_downloads', 'downloads', 'previous_default_models']
+    key_remove=['default_model', 'checkpoint_downloads', 'embeddings_downloads', 'lora_downloads', 'previous_default_models']
     for key in key_remove:
         config_dict.pop(key, None)
 config_dict.update(temp_dict)
