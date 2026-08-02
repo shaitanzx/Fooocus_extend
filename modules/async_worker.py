@@ -319,6 +319,8 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.uov_model = args.pop()
+
+        
         
 
     
@@ -376,8 +378,6 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
-
-
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -1605,6 +1605,11 @@ def worker():
                         async_task.autonegativeprompt, async_task.autonegativepromptstrength, async_task.autonegativepromptenhance, 
                         async_task.base_model_obp, async_task.OBP_preset, async_task.amountoffluff, async_task.promptenhancer, 
                         async_task.presetprefix, async_task.presetsuffix)
+
+
+
+
+
             tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,
                                                          base_model_additional_loras, async_task.image_number,
                                                          async_task.disable_seed_increment, use_expansion, use_style,

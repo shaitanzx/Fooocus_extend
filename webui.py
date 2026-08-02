@@ -65,6 +65,7 @@ import extentions.photomaker.app as photomaker
 from extentions.obp.scripts import onebuttonprompt as ob_prompt
 from extentions import tile_roll
 from extentions.vector import vector
+
 import extentions.batch as batch
 import extentions.watermark as watermark
 
@@ -341,20 +342,20 @@ with shared.gradio_root:
     with gr.Row():
         with gr.Column(scale=2):
             with gr.Row():
-                progress_window = grh.Image(label='Preview', show_label=True, visible=False, height=768,
-                                            elem_classes=['main_view'])
+                progress_window = grh.Image(label='Preview', show_label=False, visible=True, height=768,
+                                            elem_classes=['main_view'],value=f'css/logo{random.randint(1,5)}.png')
                 progress_gallery = gr.Gallery(label='Finished Images', show_label=True, object_fit='contain',
                                               height=768, visible=False, elem_classes=['main_view', 'image_gallery'])
             progress_html = gr.HTML(value=modules.html.make_progress_html(32, 'Progress 32%'), visible=False,
                                     elem_id='progress-bar', elem_classes='progress-bar')
-            gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=True, height=768,
+            gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
                                  elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
                                  elem_id='final_gallery')
             with gr.Row():
                 with gr.Column(scale=17):
                     with gr.Row():
                         prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
-                                        autofocus=True, lines=3,
+                                        autofocus=True, lines=3
                                         )
                     with gr.Row():
                         new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
@@ -779,6 +780,7 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
                             def toggle_html(current_html):
@@ -1416,58 +1418,80 @@ with shared.gradio_root:
                         .then(lambda x: gr.update(visible=x != 'None'),
                                     inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
-                with gr.Group():
-                    def lora_tag(filename_sft):
-                        filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
-                        if filename_value == 'None':
-                            return gr.update(visible=False),gr.update(visible=False)
-                        try:
-                            filename = os.path.join(modules.config.paths_loras[0], filename_value[:filename_value.rfind('.')] + ".civitai.info")
-                            with open(filename, "r", encoding="utf-8") as file:
-                                content = file.read()
-                                json_data = re.search(r'\{.*\}', content, re.DOTALL).group()
-                            data = json.loads(json_data)
-                            trained_words = data.get("trainedWords", [])
-                            quoted_tags = [f'"{tag.strip()}"' for tag in trained_words]
-                            trained_words = ", ".join(quoted_tags)
-                            line_count = max(1, len(trained_words) // 50 + 1)
-                            model_id = str(data.get("modelId"))
-                            version_id = str(data.get("id"))
-                            return gr.update(visible=True,value=trained_words,lines=line_count),gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
-                            #f'{trained_words}'
-                        except Exception as e:
-                            print(f"Error loading LORA tags: {e}")
-                            return gr.update(visible=False),gr.update(visible=False)
+                with gr.Tab(label='LoRAs'):
+                    ###################
+                    with gr.Group():
+                        def lora_tag(filename_sft):
+                            filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
+                            if filename_value == 'None':
+                                return gr.update(visible=False),gr.update(visible=False)
+                            try:
+                                filename = os.path.join(modules.config.paths_loras[0], filename_value[:filename_value.rfind('.')] + ".civitai.info")
+                                with open(filename, "r", encoding="utf-8") as file:
+                                    content = file.read()
+                                    json_data = re.search(r'\{.*\}', content, re.DOTALL).group()
+                                data = json.loads(json_data)
+                                trained_words = data.get("trainedWords", [])
+                                quoted_tags = [f'"{tag.strip()}"' for tag in trained_words]
+                                trained_words = ", ".join(quoted_tags)
+                                line_count = max(1, len(trained_words) // 50 + 1)
+                                model_id = str(data.get("modelId"))
+                                version_id = str(data.get("id"))
+                                return gr.update(visible=True,value=trained_words,lines=line_count),gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
+                                #f'{trained_words}'
+                            except Exception as e:
+                                print(f"Error loading LORA tags: {e}")
+                                return gr.update(visible=False),gr.update(visible=False)
 
 
-                    lora_len = gr.Slider(label='Loraslen', minimum=0.0, maximum=100.0, step=1, value=modules.config.default_max_lora_number, visible=False)
-                    lora_ctrls = []
+                        lora_len = gr.Slider(label='Loraslen', minimum=0.0, maximum=100.0, step=1, value=modules.config.default_max_lora_number, visible=False)
+                        lora_ctrls = []
 
-                    for i, (enabled, filename, weight) in enumerate(modules.config.default_loras):
-                        initial_tag, initial_page = lora_tag(filename)
-                        with gr.Row():
-                            lora_enabled = gr.Checkbox(label='Enable', value=enabled,
-                                                       elem_classes=['lora_enable', 'min_check'], scale=1)
-                            lora_model = gr.Dropdown(label=f'LoRA {i + 1}',
-                                                     choices=['None'] + modules.config.lora_filenames, value=filename,
-                                                     elem_classes='lora_model', scale=5)
-                            lora_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
-                                                    maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
-                                                    elem_classes='lora_weight', scale=5)
-                            lora_link=gr.HTML(value=initial_page.get("value",""),visible=initial_page.get("visible", False))
-                        with gr.Row():
+                        for i, (enabled, filename, weight) in enumerate(modules.config.default_loras):
+                            initial_tag, initial_page = lora_tag(filename)
+                            with gr.Row():
+                                lora_enabled = gr.Checkbox(label='Enable', value=enabled,
+                                                           elem_classes=['lora_enable', 'min_check'], scale=1)
+                                lora_model = gr.Dropdown(label=f'LoRA {i + 1}',
+                                                         choices=['None'] + modules.config.lora_filenames, value=filename,
+                                                         elem_classes='lora_model', scale=5)
+                                lora_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
+                                                        maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
+                                                        elem_classes='lora_weight', scale=5)
+                                lora_link=gr.HTML(value=initial_page.get("value",""),visible=initial_page.get("visible", False))
+                            with gr.Row():
                             
-                            lora_tag_mark = gr.Textbox(label='Trigger word(s)',
-                                  value=initial_tag.get("value", ""),
-                                  visible=initial_tag.get("visible", False),
-                                  lines=initial_tag.get("lines", 2),
-                                  max_lines=10,
-                                  interactive=False
-                                  )
+                                lora_tag_mark = gr.Textbox(label='Trigger word(s)',
+                                      value=initial_tag.get("value", ""),
+                                      visible=initial_tag.get("visible", False),
+                                      lines=initial_tag.get("lines", 2),
+                                      max_lines=10,
+                                      interactive=False
+                                      )
                         
-                        lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
-                        lora_ctrls += [lora_enabled, lora_model, lora_weight]
-
+                            lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
+                            lora_ctrls += [lora_enabled, lora_model, lora_weight]
+                #########################
+                with gr.Tab(label='Embeddings'):
+                    def emb_change(name,weight):
+                        if name == "None":
+                            return gr.update(visible=False)
+                        return gr.update(value=f'(embedding:{os.path.splitext(name)[0]}:{weight})',visible=True)
+                    emb_model = gr.Dropdown(label='Embeddings',
+                        choices=['None'] + modules.config.emb_filenames, value='None',interactive=True,
+                        elem_classes='lora_model', scale=5)
+                    emb_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
+                        maximum=modules.config.default_loras_max_weight, step=0.01, value=1,
+                        elem_classes='lora_weight', scale=5,interactive=True)
+                    emb_tag = gr.Textbox(label='Embedding Tag',
+                        value="",
+                        visible=False,
+                        lines=1,
+                        max_lines=2,
+                        interactive=False
+                        )     
+                    emb_model.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag],queue=False)   
+                    emb_weight.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag],queue=False)             
                 with gr.Row():
                     refresh_files = gr.Button(label='Refresh', value='\U0001f504 Refresh All Files', variant='secondary', elem_classes='refresh_button')
             with gr.Tab(label='Advanced'):
@@ -1707,6 +1731,7 @@ with shared.gradio_root:
                 def refresh_files_clicked():
                     modules.config.update_files()
                     results = [gr.update(choices=modules.config.model_filenames)]
+                    results += [gr.update(choices=['None'] + modules.config.emb_filenames)]
                     results += [gr.update(choices=['None'] + modules.config.model_filenames)]
                     results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
                     results += [gr.update(choices=modules.config.upscaler_filenames)]
@@ -1718,7 +1743,7 @@ with shared.gradio_root:
                     
                     return results
 
-                refresh_files_output = [base_model, refiner_model, vae_name, uov_model]
+                refresh_files_output = [base_model, emb_model, refiner_model, vae_name, uov_model]
                 if not args_manager.args.disable_preset_selection:
                     refresh_files_output += [preset_selection]
                 refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
@@ -1914,6 +1939,7 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
+
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
@@ -2127,6 +2153,13 @@ with shared.gradio_root:
         
     </div>
     """)
+    gr.HTML("""
+        <div style="text-align: center;">
+            <p>Original code by <a href="https://github.com/lllyasviel/Fooocus" target="_blank">lllyasviel and other contributors.</a> Forked and extended by <a href="https://github.com/shaitanzx">Shahmatist^RMDA.</a> Logo by ‎⁨𝓐𝓵𝓮𝔁 ☭ 𝓜𝓮⁩</p>        
+        </div>
+        """)
+
+
     
   
 def dump_default_english_config():

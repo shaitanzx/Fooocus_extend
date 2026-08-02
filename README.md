@@ -48,6 +48,8 @@ Let's look at everything in order.
 22. The negative prompt field has been moved to the main page with the option to return it to its original location.
 23. Add cyberdelia_ralston sampler
 24. Add beta57 scheduler
+25. Add DoRA models support
+26. embedding tag constructor
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -466,6 +468,12 @@ Allows you to upload a file (in *.json format) with custom styles
 
 If trigger words or links to model pages are not displayed, you will need to scan the models in the Civitai Helper module in the "Scan Models" section.
 
+**embedding tag contructor**
+
+<img width="394" height="234" alt="image" src="https://github.com/user-attachments/assets/2ab7f2ef-5ebc-4e68-8d49-fe0bc1763602" />
+
+Here, after selecting the file to embed and specifying its weight, you can insert the resulting tag wherever needed.
+
 **Seamless tiling**
 
 <img width="368" height="138" alt="image" src="https://github.com/user-attachments/assets/71564718-7048-4ce9-96df-24a145ede961" />
@@ -568,10 +576,15 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.3.3
+ 1. Add DoRA models support
+ 2. embedding tag constructor
+ 
 v9.3.2
  1. Codeformer and Inswapper have been replaced by a single FaceEnhancer module with a choice of processing models
  2. Add cyberdelia_ralston sampler
  3. Add beta57 scheduler
+ 4. The negative prompt field has been moved to the main page with the option to return it to its original location.
 
 v9.3.1
  1. Native Fooocus support InstatID

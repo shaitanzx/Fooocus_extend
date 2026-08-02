@@ -28,6 +28,7 @@ from extentions.transper.models import TransparentVAEDecoder
 import extentions.instantid.instantid as instantid
 import gc
 
+
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
 
@@ -396,6 +397,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     target_unet.model_options['conditioning_modifiers'] = []
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
+
 
 
 
