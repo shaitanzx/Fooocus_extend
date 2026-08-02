@@ -357,8 +357,6 @@ def worker():
     import extras.face_crop
     import fooocus_version
 
-    import torch.nn.functional as F
-
     from extras.censor import default_censor
     from modules.sdxl_styles import apply_style, get_random_style, fooocus_expansion, apply_arrays, random_style_name
     from modules.private_logger import log
@@ -380,11 +378,6 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
-
-
-
-
-
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
