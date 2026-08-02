@@ -579,6 +579,7 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 v9.3.3
  1. Add DoRA models support
  2. embedding tag constructor
+ 3. Google Colab script update
  
 v9.3.2
  1. Codeformer and Inswapper have been replaced by a single FaceEnhancer module with a choice of processing models
