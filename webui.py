@@ -355,7 +355,7 @@ with shared.gradio_root:
                 with gr.Column(scale=17):
                     with gr.Row():
                         prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
-                                        autofocus=True, lines=3,value='masterpiece, forest background, high quality'
+                                        autofocus=True, lines=3
                                         )
                     with gr.Row():
                         new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
