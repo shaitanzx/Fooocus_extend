@@ -34,8 +34,8 @@ diffusers==0.29.0
 ##huggingface-hub==0.23.2
 ##huggingface-hub==0.30.0
 controlnet_aux==0.0.10
-potracer
-deep-translator
+potracer==0.0.4
+deep-translator==1.11.4
 ultralytics==8.3.227
 mediapipe==0.10.13
 transformers==4.42.4
