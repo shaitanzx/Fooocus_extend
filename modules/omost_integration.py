@@ -91,19 +91,16 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
 if __name__ == "__main__":
     canvas = generate_canvas("A cozy living room, a cat sleeping on the left, a hot cup of tea on the right.")
     
-    if canvas:
-        print(f"Canvas type: {type(canvas)}")
-        print(f"Canvas length: {len(canvas)}")
-        print(f"Canvas content: {canvas}")
+    if canvas and 'bag_of_conditions' in canvas:
+        bag_of_conditions = canvas['bag_of_conditions']
+        print(f"Found {len(bag_of_conditions)} regions.")
         
-        for i, cond in enumerate(canvas):
-            print(f"Region {i} type: {type(cond)}")
-            if isinstance(cond, dict):
-                print(f"Region {i}: {cond.get('rect', 'No rect key')}")
-                print(f"Region {i} keys: {cond.keys()}")
-            else:
-                print(f"Region {i} is not a dict. Content: {cond}")
+        for i, cond in enumerate(bag_of_conditions):
+            print(f"Region {i}:")
+            print(f"  Mask shape: {cond['mask'].shape}")
+            print(f"  Prefixes: {cond['prefixes']}")
+            print(f"  Suffixes count: {len(cond['suffixes'])}")
     else:
-        print("Canvas is None")
+        print("Canvas is None or missing 'bag_of_conditions'")
         
     unload_llm()
