@@ -1,11 +1,19 @@
+model_rootpath = os.path.join("models","face_enhancer", "face")
+
+
+
 import torch
 import gc
 import threading
+import os
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 from modules.lib_omost.canvas import Canvas as OmostCanvas
 from modules.lib_omost.canvas import system_prompt
 
-
+# Укажите путь к папке, где будет храниться модель
+# Пример для Linux: "/content/Fooocus_extend/models/omost"
+# Пример для Windows: "C:/Fooocus_extend/models/omost"
+#MODEL_CACHE_DIR = os.path.join("models","omost")
 
 # Глобальные переменные для хранения модели, чтобы не перезагружать её каждый раз
 _global_llm = None
@@ -18,22 +26,23 @@ def load_local_llm(model_name="lllyasviel/omost-llama-3-8b-4bits"):
         
     print(f"[Omost] Loading LLM: {model_name}...")
     
+
+    
     # Используем fp16, если поддерживается, иначе fp32
     dtype = torch.float16 if torch.cuda.is_available() else torch.float32
     
     _global_llm = AutoModelForCausalLM.from_pretrained(
         model_name,
+        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
         torch_dtype=dtype,
-        device_map="auto", # Автоматически распределит слои между GPU и CPU, если не влезут
+        device_map="auto",
         trust_remote_code=True,
     )
-    _global_tokenizer = AutoTokenizer.from_pretrained(model_name)
-    
-    # Исправляем предупреждение о pad_token_id
-    if _global_tokenizer.pad_token_id is None:
-        _global_tokenizer.pad_token_id = _global_tokenizer.eos_token_id
-        
-    print("[Omost] LLM loaded successfully.")
+    _global_tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
+    )
+    print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
     return _global_llm, _global_tokenizer
 
 def unload_llm():
@@ -70,16 +79,12 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
     
     input_length = input_ids.shape[1]
     
-    # Создаем attention_mask, чтобы избежать предупреждений
-    attention_mask = torch.ones_like(input_ids)
-    
     # Создаем стример для вывода текста в реальном времени
     streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
     
     # Параметры генерации
     generation_kwargs = dict(
         input_ids=input_ids,
-        attention_mask=attention_mask,
         max_new_tokens=4096,
         temperature=0.6,
         top_p=0.9,
@@ -124,7 +129,9 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
 
 # Тестовый блок для проверки работы
 if __name__ == "__main__":
-    bag_of_conditions = generate_canvas("A cozy living room, a cat sleeping on the left, a hot cup of tea on the right.")
+    bag_of_conditions = generate_canvas(
+        "A cozy living room, a cat sleeping on the left, a hot cup of tea on the right."
+    )
     
     if bag_of_conditions:
         for i, cond in enumerate(bag_of_conditions):
