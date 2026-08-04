@@ -1,7 +1,3 @@
-model_rootpath = os.path.join("models","face_enhancer", "face")
-
-
-
 import torch
 import gc
 import threading
