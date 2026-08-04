@@ -1594,7 +1594,7 @@ def worker():
         if async_task.use_omost:
             print("[Omost] Starting Omost canvas generation...")
             from modules.omost_integration import generate_canvas, unload_llm
-            from modules.omost_regional import build_regional_conditioning
+            from modules.omost_regional import build_regional_conditioning,visualize_masks
             
             try:
                 # Генерируем Canvas
