@@ -321,6 +321,8 @@ class AsyncTask:
         self.uov_model = args.pop()
 
         self.use_omost =True
+        self.omost_canvas = None
+        self.omost_regional_cond = None
         
 
     
@@ -378,7 +380,7 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
-    from modules.omost_integration import generate_canvas, unload_llm
+
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -1591,25 +1593,61 @@ def worker():
         # ==========================================
         if async_task.use_omost:
             print("[Omost] Starting Omost canvas generation...")
-
+            from modules.omost_integration import generate_canvas, unload_llm
+            from modules.omost_regional import build_regional_conditioning
+            
             try:
-                # Используем основной позитивный промпт для генерации Canvas
+                # Генерируем Canvas
                 omost_canvas = generate_canvas(async_task.prompt)
                 if omost_canvas:
                     print(f"[Omost] Canvas generated successfully. Found {len(omost_canvas)} regions.")
                     async_task.omost_canvas = omost_canvas
+
+
+                    # 🎨 ВИЗУАЛИЗАЦИЯ МАСОК ДЛЯ ОТЛАДКИ
+                    try:
+                        visualize_masks(omost_canvas, height, width, "omost_masks_debug.png")
+                    except Exception as e:
+                        print(f"[Omost] Failed to visualize masks: {e}")
+                    
+                    regional_cond = build_regional_conditioning(
+                        omost_canvas, 
+                        height, 
+                        width,
+                        global_strength=0.2,
+                        region_strength=0.8
+                    )
+
+                    # Строим региональный conditioning
+                    # Размеры изображения уже определены в async_task (width, height)
+                    regional_cond = build_regional_conditioning(
+                        omost_canvas, 
+                        height, 
+                        width,
+                        global_strength=0.2,
+                        region_strength=0.8
+                    )
+                    
+                    if regional_cond:
+                        async_task.omost_regional_cond = regional_cond
+                        print(f"[Omost] Regional conditioning built successfully.")
+                    else:
+                        async_task.omost_regional_cond = None
                 else:
                     print("[Omost] Failed to generate canvas. Falling back to standard generation.")
                     async_task.omost_canvas = None
+                    async_task.omost_regional_cond = None
             except Exception as e:
                 print(f"[Omost] Error during canvas generation: {e}")
                 async_task.omost_canvas = None
+                async_task.omost_regional_cond = None
             
             # КРИТИЧЕСКИ ВАЖНО: Выгружаем LLM из VRAM перед диффузией
             unload_llm()
             print("[Omost] LLM unloaded, proceeding to standard diffusion pipeline...")
         else:
             async_task.omost_canvas = None
+            async_task.omost_regional_cond = None
         # ==========================================
         # --- КОНЕЦ ВСТАВКИ Omost Integration ---
         # ==========================================
