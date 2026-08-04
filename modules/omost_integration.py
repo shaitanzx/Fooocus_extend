@@ -1,6 +1,7 @@
 import torch
 import gc
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import threading
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 from modules.lib_omost.canvas import Canvas as OmostCanvas
 from modules.lib_omost.canvas import system_prompt
 
@@ -62,21 +63,36 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
     
     input_length = input_ids.shape[1]
     
-    # Генерация ответа
-    output_ids = llm.generate(
+    # Создаем стример для вывода текста в реальном времени
+    streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+    
+    # Параметры генерации
+    generation_kwargs = dict(
         input_ids=input_ids,
         max_new_tokens=4096,
         temperature=0.6,
         top_p=0.9,
         do_sample=True,
+        streamer=streamer,
     )
     
-    generated_text = tokenizer.decode(
-        output_ids[0][input_length:], 
-        skip_special_tokens=True
-    )
+    # Запускаем генерацию в отдельном потоке
+    thread = threading.Thread(target=llm.generate, kwargs=generation_kwargs)
+    thread.start()
     
-    print(f"[Omost] LLM generated response:\n{generated_text[:100]}...")
+    print("[Omost] LLM generating code in real-time:")
+    print("-" * 50)
+    
+    generated_text = ""
+    # Читаем текст из стримера в реальном времени
+    for new_text in streamer:
+        print(new_text, end="", flush=True)
+        generated_text += new_text
+    
+    print("\n" + "-" * 50)
+    
+    # Ждем завершения потока генерации
+    thread.join()
     
     # Парсим Python-код в структуру Canvas
     try:
