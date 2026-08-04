@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import modules.default_pipeline as pipeline
 
+
 def convert_masks_to_tensors(bag_of_conditions, target_height, target_width):
     """
     Конвертирует numpy-маски из Omost в torch-тензоры и масштабирует их под размер latent space.
@@ -61,61 +62,57 @@ def encode_regional_prompts(bag_of_conditions):
     
     return regional_conditioning
 
-def build_regional_conditioning(bag_of_conditions, target_height, target_width, global_strength=0.2, region_strength=0.8):
+
+
+def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_strength=0.8):
     """
     Создает финальный список conditioning с масками для регионального промптинга.
-    
-    Args:
-        bag_of_conditions: список регионов из Omost
-        target_height: высота изображения в пикселях
-        target_width: ширина изображения в пикселях
-        global_strength: сила глобального промпта (первый регион)
-        region_strength: сила региональных промптов
-    
-    Returns:
-        list: список conditioning в формате Fooocus
+    Формат полностью совпадает с тем, что использует ComfyUI_omost + ConditioningSetMask.
     """
-    # Кодируем все регионы
-    regional_conds = encode_regional_prompts(bag_of_conditions)
-    
-    if not regional_conds:
-        return None
-    
-    # Создаем маски
-    masks = convert_masks_to_tensors(bag_of_conditions, target_height, target_width)
-    
-    # Собираем финальный conditioning
     final_conditioning = []
     
-    for i, (reg_cond, mask) in enumerate(zip(regional_conds, masks)):
+    for i, cond in enumerate(bag_of_conditions):
         is_global = (i == 0)  # Первый регион - глобальный
         
-        # Определяем силу маски
+        # Склеиваем префиксы и суффиксы в один промпт
+        if is_global:
+            full_prompt = ", ".join(cond['prefixes'] + cond['suffixes'])
+        else:
+            # Для регионов пропускаем глобальный префикс (как в OmostComfyLayoutNode)
+            full_prompt = ", ".join(cond['prefixes'][1:] + cond['suffixes'])
+        
+        # Кодируем через стандартную функцию Fooocus
+        encoded = pipeline.clip_encode([full_prompt], pool_top_k=1)
+        
+        if not encoded or len(encoded) == 0:
+            print(f"[Omost] Failed to encode region {i}")
+            continue
+        
+        cond_tensor = encoded[0][0]
+        pooled_output = encoded[0][1]["pooled_output"]
+        
+        # Маска из Omost (numpy 90x90) -> torch tensor
+        mask = torch.from_numpy(np.ascontiguousarray(cond['mask'])).float()
+        
+        # Сила воздействия маски
         strength = global_strength if is_global else region_strength
         
-        # Для глобального региона маска должна быть везде (или очень слабой)
-        if is_global:
-            # Создаем маску, которая покрывает всё изображение
-            latent_height = target_height // 8
-            latent_width = target_width // 8
-            mask = torch.ones((1, latent_height, latent_width), dtype=torch.float32)
-        
-        # Формируем conditioning в формате Fooocus
-        # Формат: [[cond_tensor, {"pooled_output": pooled, "mask": mask, "mask_strength": strength}]]
-        cond_entry = [
-            reg_cond['cond'],
+        # Формат conditioning ldm_patched/ComfyUI:
+        # [cond_tensor, {"pooled_output": ..., "mask": ..., "strength": ...}]
+        entry = [
+            cond_tensor,
             {
-                "pooled_output": reg_cond['pooled'],
+                "pooled_output": pooled_output,
                 "mask": mask,
-                "mask_strength": strength
+                "strength": strength,
             }
         ]
         
-        final_conditioning.append(cond_entry)
+        final_conditioning.append(entry)
+        print(f"[Omost] Region {i} encoded. Mask shape: {tuple(mask.shape)}, strength: {strength}")
     
     print(f"[Omost] Built regional conditioning with {len(final_conditioning)} regions")
     return final_conditioning
-
 
 
 import cv2
