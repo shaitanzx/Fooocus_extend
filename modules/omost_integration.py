@@ -5,6 +5,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 from modules.lib_omost.canvas import Canvas as OmostCanvas
 from modules.lib_omost.canvas import system_prompt
 
+
+
 # Глобальные переменные для хранения модели, чтобы не перезагружать её каждый раз
 _global_llm = None
 _global_tokenizer = None
@@ -26,6 +28,11 @@ def load_local_llm(model_name="lllyasviel/omost-llama-3-8b-4bits"):
         trust_remote_code=True,
     )
     _global_tokenizer = AutoTokenizer.from_pretrained(model_name)
+    
+    # Исправляем предупреждение о pad_token_id
+    if _global_tokenizer.pad_token_id is None:
+        _global_tokenizer.pad_token_id = _global_tokenizer.eos_token_id
+        
     print("[Omost] LLM loaded successfully.")
     return _global_llm, _global_tokenizer
 
@@ -63,12 +70,16 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
     
     input_length = input_ids.shape[1]
     
+    # Создаем attention_mask, чтобы избежать предупреждений
+    attention_mask = torch.ones_like(input_ids)
+    
     # Создаем стример для вывода текста в реальном времени
     streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
     
     # Параметры генерации
     generation_kwargs = dict(
         input_ids=input_ids,
+        attention_mask=attention_mask,
         max_new_tokens=4096,
         temperature=0.6,
         top_p=0.9,
