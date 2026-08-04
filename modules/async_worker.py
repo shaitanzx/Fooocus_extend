@@ -320,7 +320,7 @@ class AsyncTask:
         self.transper = args.pop()
         self.uov_model = args.pop()
 
-        
+        self.use_omost =True
         
 
     
@@ -378,6 +378,7 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
+    from modules.omost_integration import generate_canvas, unload_llm
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -1585,7 +1586,33 @@ def worker():
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
         #if async_task.layer_enable:
         #    async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
+        # ==========================================
+        # --- НАЧАЛО ВСТАВКИ Omost Integration ---
+        # ==========================================
+        if async_task.use_omost:
+            print("[Omost] Starting Omost canvas generation...")
 
+            try:
+                # Используем основной позитивный промпт для генерации Canvas
+                omost_canvas = generate_canvas(async_task.prompt)
+                if omost_canvas:
+                    print(f"[Omost] Canvas generated successfully. Found {len(omost_canvas)} regions.")
+                    async_task.omost_canvas = omost_canvas
+                else:
+                    print("[Omost] Failed to generate canvas. Falling back to standard generation.")
+                    async_task.omost_canvas = None
+            except Exception as e:
+                print(f"[Omost] Error during canvas generation: {e}")
+                async_task.omost_canvas = None
+            
+            # КРИТИЧЕСКИ ВАЖНО: Выгружаем LLM из VRAM перед диффузией
+            unload_llm()
+            print("[Omost] LLM unloaded, proceeding to standard diffusion pipeline...")
+        else:
+            async_task.omost_canvas = None
+        # ==========================================
+        # --- КОНЕЦ ВСТАВКИ Omost Integration ---
+        # ==========================================
 
         print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
         print(f'[Parameters] Steps = {async_task.steps} - {switch}')
