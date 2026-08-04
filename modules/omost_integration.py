@@ -38,7 +38,7 @@ def load_local_llm(model_name="lllyasviel/omost-llama-3-8b-4bits"):
         model_name,
         cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
     )
-    print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
+    #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
     return _global_llm, _global_tokenizer
 
 def unload_llm():
