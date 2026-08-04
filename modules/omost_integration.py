@@ -45,7 +45,7 @@ def unload_llm():
 def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4bits"):
     """
     Генерирует структуру Canvas (список регионов и промптов) на основе текста пользователя.
-    Возвращает список словарей OmostCanvasCondition или None при ошибке.
+    Возвращает список bag_of_conditions или None при ошибке.
     """
     llm, tokenizer = load_local_llm(model_name)
     
@@ -81,26 +81,31 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
     # Парсим Python-код в структуру Canvas
     try:
         canvas = OmostCanvas.from_bot_response(generated_text).process()
-        print(f"[Omost] Canvas parsed successfully. Found {len(canvas)} regions.")
-        return canvas
+        
+        # Извлекаем bag_of_conditions из словаря
+        if canvas and 'bag_of_conditions' in canvas:
+            bag_of_conditions = canvas['bag_of_conditions']
+            print(f"[Omost] Canvas parsed successfully. Found {len(bag_of_conditions)} regions.")
+            return bag_of_conditions
+        else:
+            print("[Omost] Canvas parsed but missing 'bag_of_conditions'.")
+            return None
+            
     except Exception as e:
         print(f"[Omost] Error parsing canvas: {e}")
         return None
 
 # Тестовый блок для проверки работы
 if __name__ == "__main__":
-    canvas = generate_canvas("A cozy living room, a cat sleeping on the left, a hot cup of tea on the right.")
+    bag_of_conditions = generate_canvas("A cozy living room, a cat sleeping on the left, a hot cup of tea on the right.")
     
-    if canvas and 'bag_of_conditions' in canvas:
-        bag_of_conditions = canvas['bag_of_conditions']
-        print(f"Found {len(bag_of_conditions)} regions.")
-        
+    if bag_of_conditions:
         for i, cond in enumerate(bag_of_conditions):
             print(f"Region {i}:")
             print(f"  Mask shape: {cond['mask'].shape}")
             print(f"  Prefixes: {cond['prefixes']}")
             print(f"  Suffixes count: {len(cond['suffixes'])}")
     else:
-        print("Canvas is None or missing 'bag_of_conditions'")
+        print("Failed to generate bag_of_conditions")
         
     unload_llm()
