@@ -55,8 +55,8 @@ def unload_llm():
             torch.cuda.empty_cache()
             print("[Omost] VRAM cleared.")
 
-def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4bits", cache_dir=None):
-    llm, tokenizer = load_local_llm(model_name, cache_dir=cache_dir)
+def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4bits"):
+    llm, tokenizer = load_local_llm(model_name)
     
     conversation = [
         {"role": "system", "content": system_prompt},
