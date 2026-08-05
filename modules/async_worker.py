@@ -1607,7 +1607,11 @@ def worker():
                 if omost_canvas:
                     print(f"[Omost] Canvas generated successfully. Found {len(omost_canvas)} regions.")
                     async_task.omost_canvas = omost_canvas
-                    
+                    # 🎨 ВИЗУАЛИЗАЦИЯ МАСОК ДЛЯ ОТЛАДКИ
+                    try:
+                        visualize_masks(omost_canvas, height, width, "omost_masks_debug.png")
+                    except Exception as e:
+                        print(f"[Omost] Failed to visualize masks: {e}")                    
                     regional_cond = build_regional_conditioning(
                         omost_canvas,
                         global_strength=0.2,
