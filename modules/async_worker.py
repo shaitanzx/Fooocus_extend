@@ -565,6 +565,10 @@ def worker():
                      modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
                      loras,modules.config.paths_loras[0],async_task)
         else:
+            if omost_latent is not None:
+                print('++++++++++++++++++++++++++++++++++++++++++++++++++')
+            if omost_denoise is not None:
+                print('---------------------------------------------------')
             imgs = pipeline.process_diffusion(
                     p=async_task,
                     positive_cond=positive_cond,
