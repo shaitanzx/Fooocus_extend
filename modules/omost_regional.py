@@ -67,18 +67,18 @@ def encode_regional_prompts(bag_of_conditions):
 def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_strength=0.8):
     """
     Создает финальный список conditioning с масками для регионального промптинга.
-    Формат полностью совпадает с тем, что использует ComfyUI_omost + ConditioningSetMask.
+    Формат адаптирован под ldm_patched (список словарей).
     """
     final_conditioning = []
     
     for i, cond in enumerate(bag_of_conditions):
-        is_global = (i == 0)  # Первый регион - глобальный
+        is_global = (i == 0)
         
-        # Склеиваем префиксы и суффиксы в один промпт
+        # Формируем промпт для региона
         if is_global:
             full_prompt = ", ".join(cond['prefixes'] + cond['suffixes'])
         else:
-            # Для регионов пропускаем глобальный префикс (как в OmostComfyLayoutNode)
+            # Для регионов пропускаем глобальный префикс
             full_prompt = ", ".join(cond['prefixes'][1:] + cond['suffixes'])
         
         # Кодируем через стандартную функцию Fooocus
@@ -94,19 +94,17 @@ def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_s
         # Маска из Omost (numpy 90x90) -> torch tensor
         mask = torch.from_numpy(np.ascontiguousarray(cond['mask'])).float()
         
-        # Сила воздействия маски
         strength = global_strength if is_global else region_strength
         
-        # Формат conditioning ldm_patched/ComfyUI:
-        # [cond_tensor, {"pooled_output": ..., "mask": ..., "strength": ...}]
-        entry = [
-            cond_tensor,
-            {
-                "pooled_output": pooled_output,
-                "mask": mask,
-                "strength": strength,
-            }
-        ]
+        # Формат словаря для ldm_patched
+        # resolve_areas_and_cond_masks обработает mask и strength
+        # encode_model_conds сконвертирует c_crossattn в model_conds
+        entry = {
+            "c_crossattn": cond_tensor,
+            "pooled_output": pooled_output,
+            "mask": mask,
+            "strength": strength,
+        }
         
         final_conditioning.append(entry)
         print(f"[Omost] Region {i} encoded. Mask shape: {tuple(mask.shape)}, strength: {strength}")

@@ -551,6 +551,7 @@ def worker():
         if async_task.omost_regional_cond is not None:
             print("[Omost] >>> Using REGIONAL conditioning for positive prompt <<<")
             positive_cond = async_task.omost_regional_cond
+            
         # ------------------------------------------------------------
         if async_task.enable_pm ==True:
             imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
@@ -1606,11 +1607,7 @@ def worker():
                 if omost_canvas:
                     print(f"[Omost] Canvas generated successfully. Found {len(omost_canvas)} regions.")
                     async_task.omost_canvas = omost_canvas
-                    # 🎨 ВИЗУАЛИЗАЦИЯ МАСОК ДЛЯ ОТЛАДКИ
-                    try:
-                        visualize_masks(omost_canvas, height, width, "omost_masks_debug.png")
-                    except Exception as e:
-                        print(f"[Omost] Failed to visualize masks: {e}")                    
+                    
                     regional_cond = build_regional_conditioning(
                         omost_canvas,
                         global_strength=0.2,
@@ -1622,7 +1619,6 @@ def worker():
                     else:
                         async_task.omost_regional_cond = None
                 else:
-                    print("[Omost] Failed to generate canvas. Falling back to standard generation.")
                     async_task.omost_canvas = None
                     async_task.omost_regional_cond = None
             except Exception as e:
@@ -1632,12 +1628,11 @@ def worker():
                 async_task.omost_canvas = None
                 async_task.omost_regional_cond = None
             
-            # КРИТИЧЕСКИ ВАЖНО: Выгружаем LLM из VRAM перед диффузией
             unload_llm()
             print("[Omost] LLM unloaded, proceeding to diffusion pipeline...")
         else:
             async_task.omost_canvas = None
-            async_task.omost_regional_cond = None
+            async_task.omost_regional_cond = Nonee
         # ==========================================
         # --- КОНЕЦ ВСТАВКИ Omost Integration ---
         # ==========================================
