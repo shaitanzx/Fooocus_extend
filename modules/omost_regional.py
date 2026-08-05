@@ -2,74 +2,10 @@ import torch
 import numpy as np
 import modules.default_pipeline as pipeline
 
-
-def convert_masks_to_tensors(bag_of_conditions, target_height, target_width):
-    """
-    Конвертирует numpy-маски из Omost в torch-тензоры и масштабирует их под размер latent space.
-    Omost возвращает маски 90x90. Для SDXL latent space (1024x1024) нужно масштабировать до 128x128.
-    """
-    masks = []
-    # Latent space в 8 раз меньше пиксельного (для SDXL 1024x1024 -> 128x128)
-    latent_height = target_height // 8
-    latent_width = target_width // 8
-    
-    for cond in bag_of_conditions:
-        mask_np = cond['mask']  # numpy array (90, 90)
-        
-        # Конвертируем в тензор и добавляем batch и channel измерения
-        mask_tensor = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0)  # (1, 1, 90, 90)
-        
-        # Масштабируем под размер latent space
-        mask_tensor = torch.nn.functional.interpolate(
-            mask_tensor, size=(latent_height, latent_width), mode='nearest'
-        )
-        
-        # Убираем batch измерение, оставляем (1, latent_height, latent_width)
-        mask_tensor = mask_tensor.squeeze(0)
-        masks.append(mask_tensor)
-    
-    return masks
-
-def encode_regional_prompts(bag_of_conditions):
-    """
-    Кодирует текст для каждого региона через CLIP и добавляет маски.
-    Возвращает список conditioning с масками.
-    """
-    regional_conditioning = []
-    
-    for i, cond in enumerate(bag_of_conditions):
-        # Склеиваем prefixes и suffixes в один промпт
-        # Prefixes содержат глобальный стиль, suffixes - детали региона
-        full_prompt = ", ".join(cond['prefixes'] + cond['suffixes'])
-        
-        # Кодируем через стандартную функцию Fooocus
-        # clip_encode возвращает [[cond_tensor, {"pooled_output": pooled}]]
-        encoded = pipeline.clip_encode([full_prompt], pool_top_k=1)
-        
-        if encoded and len(encoded) > 0:
-            cond_tensor = encoded[0][0]
-            pooled_output = encoded[0][1]["pooled_output"]
-            
-            # Сохраняем conditioning (маску добавим позже, когда будем знать размеры)
-            regional_conditioning.append({
-                'cond': cond_tensor,
-                'pooled': pooled_output,
-                'prompt': full_prompt,
-                'index': i
-            })
-        else:
-            print(f"[Omost] Failed to encode region {i}")
-    
-    return regional_conditioning
-
-
-
 def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_strength=0.8):
     """
-    Создает conditioning в ТОМ ЖЕ формате, что и pipeline.clip_encode:
-    список пар [tensor, dict], но с добавлением mask и strength в dict.
-    convert_cond в ldm_patched сам перенесет mask/strength в итоговый словарь,
-    и они будут применены нативно.
+    Создает conditioning в формате Fooocus [[tensor, dict]] с масками.
+    Маски нативно применяются через ldm_patched.
     """
     final_conditioning = []
     
@@ -79,6 +15,8 @@ def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_s
         if is_global:
             full_prompt = ", ".join(cond['prefixes'] + cond['suffixes'])
         else:
+            # Как в ComfyUI_omost: пропускаем глобальный префикс для регионов,
+            # т.к. он уже есть в глобальном условии
             full_prompt = ", ".join(cond['prefixes'][1:] + cond['suffixes'])
         
         encoded = pipeline.clip_encode([full_prompt], pool_top_k=1)
@@ -92,16 +30,13 @@ def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_s
         
         mask = torch.from_numpy(np.ascontiguousarray(cond['mask'])).float()
         mask_sum = float(mask.sum())
-        print(f"[Omost] Region {i}: mask sum = {mask_sum:.1f}, strength = {global_strength if is_global else region_strength}")
         
-        # Защита от пустых масок (иногда LLM выдает битые rect)
         if mask_sum <= 0.0 and not is_global:
-            print(f"[Omost] WARNING: region {i} has EMPTY mask, skipping it")
+            print(f"[Omost] WARNING: region {i} has EMPTY mask, skipping")
             continue
         
         strength = global_strength if is_global else region_strength
         
-        # Формат Fooocus: пара [tensor, dict] + mask/strength внутри dict
         entry = [
             cond_tensor,
             {
@@ -111,9 +46,24 @@ def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_s
             }
         ]
         final_conditioning.append(entry)
+        print(f"[Omost] Region {i}: mask_sum={mask_sum:.1f}, strength={strength}")
     
     print(f"[Omost] Built regional conditioning with {len(final_conditioning)} regions")
     return final_conditioning
+
+
+def get_initial_latent(canvas_data):
+    """
+    Возвращает initial_latent из Canvas (numpy array 90x90x3 RGB, 0-255).
+    Это цветная карта композиции, которая используется как стартовая точка диффузии.
+    """
+    if canvas_data is None:
+        return None
+    
+    # process() вернул словарь с initial_latent
+    # Нам нужно повторно вызвать process() на самом Canvas для получения initial_latent,
+    # но у нас уже есть bag_of_conditions. Поэтому вернем initial_latent, сохраненный ранее.
+    return canvas_data.get('initial_latent', None)
 
 
 import cv2

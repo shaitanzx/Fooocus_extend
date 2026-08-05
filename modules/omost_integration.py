@@ -55,30 +55,22 @@ def unload_llm():
             torch.cuda.empty_cache()
             print("[Omost] VRAM cleared.")
 
-def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4bits"):
-    """
-    Генерирует структуру Canvas (список регионов и промптов) на основе текста пользователя.
-    Возвращает список bag_of_conditions или None при ошибке.
-    """
-    llm, tokenizer = load_local_llm(model_name)
+def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4bits", cache_dir=None):
+    llm, tokenizer = load_local_llm(model_name, cache_dir=cache_dir)
     
-    # Формируем диалог с системным промптом Omost
     conversation = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
     ]
     
-    # Применяем шаблон чата (ChatML / Llama-3 формат)
     input_ids = tokenizer.apply_chat_template(
         conversation, return_tensors="pt", add_generation_prompt=True
     ).to(llm.device)
     
     input_length = input_ids.shape[1]
     
-    # Создаем стример для вывода текста в реальном времени
     streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
     
-    # Параметры генерации
     generation_kwargs = dict(
         input_ids=input_ids,
         max_new_tokens=4096,
@@ -88,7 +80,6 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
         streamer=streamer,
     )
     
-    # Запускаем генерацию в отдельном потоке
     thread = threading.Thread(target=llm.generate, kwargs=generation_kwargs)
     thread.start()
     
@@ -96,27 +87,26 @@ def generate_canvas(user_prompt: str, model_name="lllyasviel/omost-llama-3-8b-4b
     print("-" * 50)
     
     generated_text = ""
-    # Читаем текст из стримера в реальном времени
     for new_text in streamer:
         print(new_text, end="", flush=True)
         generated_text += new_text
     
     print("\n" + "-" * 50)
-    
-    # Ждем завершения потока генерации
     thread.join()
     
-    # Парсим Python-код в структуру Canvas
     try:
-        canvas = OmostCanvas.from_bot_response(generated_text).process()
+        canvas_dict = OmostCanvas.from_bot_response(generated_text).process()
         
-        # Извлекаем bag_of_conditions из словаря
-        if canvas and 'bag_of_conditions' in canvas:
-            bag_of_conditions = canvas['bag_of_conditions']
-            print(f"[Omost] Canvas parsed successfully. Found {len(bag_of_conditions)} regions.")
-            return bag_of_conditions
+        if canvas_dict and 'bag_of_conditions' in canvas_dict:
+            bag_of_conditions = canvas_dict['bag_of_conditions']
+            initial_latent = canvas_dict.get('initial_latent', None)
+            print(f"[Omost] Canvas parsed. Found {len(bag_of_conditions)} regions. Initial latent: {'yes' if initial_latent is not None else 'no'}")
+            return {
+                'bag_of_conditions': bag_of_conditions,
+                'initial_latent': initial_latent
+            }
         else:
-            print("[Omost] Canvas parsed but missing 'bag_of_conditions'.")
+            print("[Omost] Canvas missing 'bag_of_conditions'.")
             return None
             
     except Exception as e:

@@ -323,6 +323,7 @@ class AsyncTask:
         self.use_omost =True
         self.omost_canvas = None
         self.omost_regional_cond = None
+        self.omost_initial_latent = None
         
 
     
@@ -548,10 +549,13 @@ def worker():
                     positive_cond, negative_cond = core.apply_controlnet(
                         positive_cond, negative_cond,
                         pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
+        omost_latent = None
+        omost_denoise = None
         if async_task.omost_regional_cond is not None:
             print("[Omost] >>> Using REGIONAL conditioning for positive prompt <<<")
-            positive_cond = async_task.omost_regional_cond
-            
+            omost_latent = async_task.omost_initial_latent
+            omost_denoise = 0.95  # Уменьшаем denoise, чтобы не перезаписать латент полностью
+        # -------------------------------------------------------------------------
         # ------------------------------------------------------------
         if async_task.enable_pm ==True:
             imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
@@ -573,8 +577,8 @@ def worker():
                     callback=callback,
                     sampler_name=async_task.sampler_name,
                     scheduler_name=final_scheduler_name,
-                    latent=initial_latent,
-                    denoise=denoising_strength,
+                    latent=omost_latent if omost_latent is not None else initial_latent,
+                    denoise=denoising_strength if omost_denoise is None else omost_denoise,
                     tiled=tiled,
                     cfg_scale=async_task.cfg_scale,
                     refiner_swap_method=async_task.refiner_swap_method,
@@ -1600,18 +1604,17 @@ def worker():
         if async_task.use_omost:
             print("[Omost] Starting Omost canvas generation...")
             from modules.omost_integration import generate_canvas, unload_llm
-            from modules.omost_regional import build_regional_conditioning, visualize_masks
+            from modules.omost_regional import build_regional_conditioning, get_initial_latent
+            from ldm_patched.contrib.external import VAEEncode
             
             try:
-                omost_canvas = generate_canvas(async_task.prompt)
-                if omost_canvas:
+                canvas_data = generate_canvas(async_task.prompt)
+                if canvas_data:
+                    omost_canvas = canvas_data['bag_of_conditions']
                     print(f"[Omost] Canvas generated successfully. Found {len(omost_canvas)} regions.")
                     async_task.omost_canvas = omost_canvas
-                    # 🎨 ВИЗУАЛИЗАЦИЯ МАСОК ДЛЯ ОТЛАДКИ
-                    try:
-                        visualize_masks(omost_canvas, height, width, "omost_masks_debug.png")
-                    except Exception as e:
-                        print(f"[Omost] Failed to visualize masks: {e}")                    
+                    
+                    # Строим региональный conditioning
                     regional_cond = build_regional_conditioning(
                         omost_canvas,
                         global_strength=0.2,
@@ -1622,21 +1625,50 @@ def worker():
                         async_task.omost_regional_cond = regional_cond
                     else:
                         async_task.omost_regional_cond = None
+                    
+                    # Получаем initial_latent (цветовая карта)
+                    initial_latent_np = get_initial_latent(canvas_data)
+                    if initial_latent_np is not None:
+                        # Upscale с 90x90 до размера изображения
+                        import cv2
+                        initial_latent_resized = cv2.resize(
+                            initial_latent_np, 
+                            (width, height), 
+                            interpolation=cv2.INTER_LINEAR
+                        )
+                        # Конвертируем в PyTorch тензор [B, H, W, C] в диапазоне [0, 1]
+                        initial_latent_tensor = torch.from_numpy(
+                            initial_latent_resized.astype(np.float32) / 255.0
+                        ).unsqueeze(0)
+                        # Кодируем через VAE
+                        vae_encoder = VAEEncode()
+                        # pipeline.final_vae доступен после refresh_everything
+                        encoded = vae_encoder.encode(
+                            pixels=initial_latent_tensor.to(ldm_patched.modules.model_management.get_torch_device()),
+                            vae=pipeline.final_vae
+                        )[0]
+                        async_task.omost_initial_latent = encoded
+                        print(f"[Omost] Initial latent encoded. Shape: {encoded['samples'].shape}")
+                    else:
+                        async_task.omost_initial_latent = None
                 else:
                     async_task.omost_canvas = None
                     async_task.omost_regional_cond = None
+                    async_task.omost_initial_latent = None
             except Exception as e:
-                print(f"[Omost] Error during canvas generation: {e}")
+                print(f"[Omost] Error: {e}")
                 import traceback
                 traceback.print_exc()
                 async_task.omost_canvas = None
                 async_task.omost_regional_cond = None
+                async_task.omost_initial_latent = None
             
             unload_llm()
-            print("[Omost] LLM unloaded, proceeding to diffusion pipeline...")
+            print("[Omost] LLM unloaded.")
         else:
             async_task.omost_canvas = None
-            async_task.omost_regional_cond = Nonee
+            async_task.omost_regional_cond = None
+            async_task.omost_initial_latent = None
         # ==========================================
         # --- КОНЕЦ ВСТАВКИ Omost Integration ---
         # ==========================================
