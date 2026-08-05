@@ -66,22 +66,21 @@ def encode_regional_prompts(bag_of_conditions):
 
 def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_strength=0.8):
     """
-    Создает финальный список conditioning с масками для регионального промптинга.
-    Формат адаптирован под ldm_patched (список словарей).
+    Создает conditioning в ТОМ ЖЕ формате, что и pipeline.clip_encode:
+    список пар [tensor, dict], но с добавлением mask и strength в dict.
+    convert_cond в ldm_patched сам перенесет mask/strength в итоговый словарь,
+    и они будут применены нативно.
     """
     final_conditioning = []
     
     for i, cond in enumerate(bag_of_conditions):
         is_global = (i == 0)
         
-        # Формируем промпт для региона
         if is_global:
             full_prompt = ", ".join(cond['prefixes'] + cond['suffixes'])
         else:
-            # Для регионов пропускаем глобальный префикс
             full_prompt = ", ".join(cond['prefixes'][1:] + cond['suffixes'])
         
-        # Кодируем через стандартную функцию Fooocus
         encoded = pipeline.clip_encode([full_prompt], pool_top_k=1)
         
         if not encoded or len(encoded) == 0:
@@ -91,23 +90,27 @@ def build_regional_conditioning(bag_of_conditions, global_strength=0.2, region_s
         cond_tensor = encoded[0][0]
         pooled_output = encoded[0][1]["pooled_output"]
         
-        # Маска из Omost (numpy 90x90) -> torch tensor
         mask = torch.from_numpy(np.ascontiguousarray(cond['mask'])).float()
+        mask_sum = float(mask.sum())
+        print(f"[Omost] Region {i}: mask sum = {mask_sum:.1f}, strength = {global_strength if is_global else region_strength}")
+        
+        # Защита от пустых масок (иногда LLM выдает битые rect)
+        if mask_sum <= 0.0 and not is_global:
+            print(f"[Omost] WARNING: region {i} has EMPTY mask, skipping it")
+            continue
         
         strength = global_strength if is_global else region_strength
         
-        # Формат словаря для ldm_patched
-        # resolve_areas_and_cond_masks обработает mask и strength
-        # encode_model_conds сконвертирует c_crossattn в model_conds
-        entry = {
-            "c_crossattn": cond_tensor,
-            "pooled_output": pooled_output,
-            "mask": mask,
-            "strength": strength,
-        }
-        
+        # Формат Fooocus: пара [tensor, dict] + mask/strength внутри dict
+        entry = [
+            cond_tensor,
+            {
+                "pooled_output": pooled_output,
+                "mask": mask,
+                "strength": strength,
+            }
+        ]
         final_conditioning.append(entry)
-        print(f"[Omost] Region {i} encoded. Mask shape: {tuple(mask.shape)}, strength: {strength}")
     
     print(f"[Omost] Built regional conditioning with {len(final_conditioning)} regions")
     return final_conditioning
