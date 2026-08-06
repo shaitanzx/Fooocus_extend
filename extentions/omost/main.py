@@ -1,6 +1,7 @@
 import gradio as gr
 from extentions.omost.chat_interface import ChatInterface
 import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
 
 llm_model = None
