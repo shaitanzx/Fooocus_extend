@@ -64,8 +64,8 @@ class ChatInterface(Blocks):
         *,
         post_fn_kwargs: dict = None,
         pre_fn_kwargs: dict = None,
-        multimodal: bool = False,
-        textbox: Textbox | MultimodalTextbox | None = None,
+        # multimodal: bool = False,
+        textbox: Textbox | None = None,
         additional_inputs: str | Component | list[str | Component] | None = None,
         additional_inputs_accordion_name: str | None = None,
         additional_inputs_accordion: str | Accordion | None = None,
@@ -188,7 +188,7 @@ class ChatInterface(Blocks):
                             scale=7,
                             autofocus=autofocus,
                         )
-                    if submit_btn is not None and not multimodal:
+                    if submit_btn is not None:
                         if isinstance(submit_btn, Button):
                             submit_btn.render()
                         elif isinstance(submit_btn, str):
@@ -319,46 +319,7 @@ class ChatInterface(Blocks):
             self._setup_stop_events_for_event(submit_event)
     
         # Остальной код для retry, undo, clear без изменений
-        if self.retry_btn:
-            retry_event = (
-                self.retry_btn.click(
-                    self._delete_prev_fn,
-                    [self.saved_input, self.chatbot_state],
-                    [self.chatbot, self.saved_input, self.chatbot_state],
-                    # show_api=False,
-                    queue=False,
-                )
-                .then(
-                    self.pre_fn,
-                    **self.pre_fn_kwargs,
-                    # show_api=False,
-                    queue=False,
-                )
-                .then(
-                    self._display_input,
-                    [self.saved_input, self.chatbot_state],
-                    [self.chatbot, self.chatbot_state],
-                    # show_api=False,
-                    queue=False,
-                )
-                .then(
-                    submit_fn,
-                    [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                    [self.chatbot, self.chatbot_state],
-                    # show_api=False,
-                    concurrency_limit=cast(
-                        Union[int, Literal["default"], None], self.concurrency_limit
-                    ),
-                ).then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                    # show_api=False,
-                    concurrency_limit=cast(
-                        Union[int, Literal["default"], None], self.concurrency_limit
-                    ),
-                )
-            )
-            self._setup_stop_events_for_event(retry_event)
+
         # Retry кнопка
         if self.retry_btn:
             retry_event = (
