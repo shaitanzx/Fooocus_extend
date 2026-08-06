@@ -282,12 +282,13 @@ def gui():
         fn=model_loading,
         outputs=[load_model]
     )
-    render_button.click(
-         fn=diffusion_fn, inputs=[
-             chatInterface.chatbot, canvas_state,
-             num_samples, seed, image_width, image_height, highres_scale,
-             steps, cfg, highres_steps, highres_denoise, n_prompt
-         ], outputs=[chatInterface.chatbot]).then(
-         fn=lambda x: x, inputs=[
-             chatInterface.chatbot
-         ], outputs=[chatInterface.chatbot_state])
+    # render_button.click(
+    #      fn=diffusion_fn, inputs=[
+    #          chatInterface.chatbot, canvas_state,
+    #          num_samples, seed, image_width, image_height, highres_scale,
+    #          steps, cfg, highres_steps, highres_denoise, n_prompt
+    #      ], outputs=[chatInterface.chatbot]).then(
+    #      fn=lambda x: x, inputs=[
+    #          chatInterface.chatbot
+    #      ], outputs=[chatInterface.chatbot_state])
+    return render_button, canvas_state, n_prompt

@@ -85,7 +85,33 @@ def html_load(url,file):
                                 src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
+def omost_gen(currentTask, canvas_outputs, omost_negative):
+    if canvas_outputs is None:
+        gr.Warning('Omost: canvas is empty. Generate a scene in the chat first.')
+        return
 
+    if not canvas_outputs.get('bag_of_conditions'):
+        gr.Warning('Omost: canvas has no conditions.')
+        return
+
+    p = copy.deepcopy(currentTask)
+
+    # Главный payload: canvas уходит в ядро через атрибут задачи
+    currentTask.omost_canvas = canvas_outputs
+
+    # Негатив из omost, если он задан
+    if omost_negative:
+        currentTask.negative_prompt = omost_negative
+
+    print(f"\033[91m[Omost] Starting generation via Fooocus core\033[0m")
+    gr.Info('[Omost] Rendering via Fooocus core')
+
+    yield from generate_clicked(currentTask)
+
+    if currentTask.last_stop == 'stop':
+        print('User stopped')
+
+    currentTask.__dict__ = p.__dict__.copy()
 
 
 def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random):
@@ -782,7 +808,10 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='omost'):
-                            omost.gui()
+                            omost_render, omost_canvas, omost_negative = omost.gui()
+                            
+                            
+
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
                             def toggle_html(current_html):
@@ -1942,6 +1971,7 @@ with shared.gradio_root:
 
         ctrls += [uov_model]
 
+
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
@@ -2055,7 +2085,20 @@ with shared.gradio_root:
                   outputs=[xyz_start,generate_button, stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
- 
+        omost_render.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
+                              outputs=[omost_start, stop_button, generate_button, gallery, state_is_generating]) \
+            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+            .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
+            .then(fn=omost_gen, inputs=[currentTask, omost_canvas, omost_negative], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
+                  outputs=[omost_start,generate_button, stop_button, state_is_generating]) \
+            .then(fn=update_history_link, outputs=history_link) \
+            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+
+
+
+
+            
         generate_button.click(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
