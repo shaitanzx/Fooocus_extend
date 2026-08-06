@@ -2086,12 +2086,12 @@ with shared.gradio_root:
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
         omost_render.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[omost_start, stop_button, generate_button, gallery, state_is_generating]) \
+                              outputs=[omost_render, stop_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
             .then(fn=omost_gen, inputs=[currentTask, omost_canvas, omost_negative], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
             .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
-                  outputs=[omost_start,generate_button, stop_button, state_is_generating]) \
+                  outputs=[omost_render,generate_button, stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
 
