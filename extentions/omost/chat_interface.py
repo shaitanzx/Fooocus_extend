@@ -261,7 +261,7 @@ class ChatInterface(Blocks):
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
-                show_api=False,
+                # show_api=False,
             )
     def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
@@ -273,27 +273,27 @@ class ChatInterface(Blocks):
                     self._clear_and_save_textbox,
                     [self.textbox],
                     [self.textbox, self.saved_input],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state, self.interrupter],
-                    show_api=False,
+                    # show_api=False,
                     concurrency_limit=cast(
                         Union[int, Literal["default"], None], self.concurrency_limit
                     ),
@@ -301,7 +301,7 @@ class ChatInterface(Blocks):
                 .then(
                     self.post_fn,
                     **self.post_fn_kwargs,
-                    show_api=False,
+                    # show_api=False,
                     concurrency_limit=cast(
                         Union[int, Literal["default"], None], self.concurrency_limit
                     ),
@@ -325,34 +325,34 @@ class ChatInterface(Blocks):
                     self._delete_prev_fn,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.saved_input, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     concurrency_limit=cast(
                         Union[int, Literal["default"], None], self.concurrency_limit
                     ),
                 ).then(
                     self.post_fn,
                     **self.post_fn_kwargs,
-                    show_api=False,
+                    # show_api=False,
                     concurrency_limit=cast(
                         Union[int, Literal["default"], None], self.concurrency_limit
                     ),
@@ -366,27 +366,27 @@ class ChatInterface(Blocks):
                     self._delete_prev_fn,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.saved_input, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     concurrency_limit=cast(
                         Union[int, Literal["default"], None], self.concurrency_limit
                     ),
@@ -394,7 +394,7 @@ class ChatInterface(Blocks):
                 .then(
                     self.post_fn,
                     **self.post_fn_kwargs,
-                    show_api=False,
+                    # show_api=False,
                     concurrency_limit=cast(
                         Union[int, Literal["default"], None], self.concurrency_limit
                     ),
@@ -408,23 +408,23 @@ class ChatInterface(Blocks):
                 self._delete_prev_fn,
                 [self.saved_input, self.chatbot_state],
                 [self.chatbot, self.saved_input, self.chatbot_state],
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 async_lambda(lambda x: x),
                 [self.saved_input],
                 [self.textbox],
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
-                show_api=False,
+                # show_api=False,
                 concurrency_limit=cast(
                     Union[int, Literal["default"], None], self.concurrency_limit
                 ),
@@ -437,16 +437,16 @@ class ChatInterface(Blocks):
                 None,
                 [self.chatbot, self.chatbot_state, self.saved_input],
                 queue=False,
-                show_api=False,
+                # show_api=False,
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
-                show_api=False,
+                # show_api=False,
                 concurrency_limit=cast(
                     Union[int, Literal["default"], None], self.concurrency_limit
                 ),
@@ -472,14 +472,14 @@ class ChatInterface(Blocks):
                         ),
                         None,
                         [self.submit_btn, self.stop_btn],
-                        show_api=False,
+                        # show_api=False,
                         queue=False,
                     )
                 event_to_cancel.then(
                     async_lambda(lambda: (Button(visible=True), Button(visible=False))),
                     None,
                     [self.submit_btn, self.stop_btn],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
             else:
@@ -488,21 +488,21 @@ class ChatInterface(Blocks):
                         async_lambda(lambda: Button(visible=True)),
                         None,
                         [self.stop_btn],
-                        show_api=False,
+                        # show_api=False,
                         queue=False,
                     )
                 event_to_cancel.then(
                     async_lambda(lambda: Button(visible=False)),
                     None,
                     [self.stop_btn],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
-                show_api=False,
+                # show_api=False,
             )
 
     def _setup_api(self) -> None:
