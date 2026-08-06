@@ -50,7 +50,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     input_ids = llm_tokenizer.apply_chat_template(
         conversation, return_tensors="pt", add_generation_prompt=True).to(llm_model.device)
 
-    streamer = TextIteratorStreamer(llm_tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True)
+    streamer = TextIteratorStreamer(llm_tokenizer, timeout=None, skip_prompt=True, skip_special_tokens=True)
 
     def interactive_stopping_criteria(*args, **kwargs) -> bool:
         if getattr(streamer, 'user_interrupted', False):
@@ -81,10 +81,19 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
 
     outputs = []
-    for text in streamer:
-        outputs.append(text)
-        # print(outputs)
-        yield "".join(outputs), interrupter
+    try:
+        for text in streamer:
+            outputs.append(text)
+            yield "".join(outputs), interrupter
+    except Exception as e:
+        print(f"Generation error: {e}")
+        # Возвращаем сообщение об ошибке
+        error_msg = f"❌ Ошибка генерации: {str(e)}"
+        yield error_msg, interrupter
+    finally:
+        # Убеждаемся, что поток завершился
+        if thread.is_alive():
+            thread.join(timeout=1.0)
 
     return
 def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):    
