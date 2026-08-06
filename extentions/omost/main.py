@@ -5,7 +5,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
-import extentions.omost.lib_omost.memory_management as memory_management
+#import extentions.omost.lib_omost.memory_management as memory_management
 from transformers.generation.stopping_criteria import StoppingCriteriaList
 from threading import Thread
 
@@ -45,12 +45,11 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     conversation.append({"role": "user", "content": message})
 
-    memory_management.load_models_to_gpu(llm_model)
 
     input_ids = llm_tokenizer.apply_chat_template(
         conversation, return_tensors="pt", add_generation_prompt=True).to(llm_model.device)
 
-    streamer = TextIteratorStreamer(llm_tokenizer, timeout=None, skip_prompt=True, skip_special_tokens=True)
+    streamer = TextIteratorStreamer(llm_tokenizer, timeout=, skip_prompt=True, skip_special_tokens=True)
 
     def interactive_stopping_criteria(*args, **kwargs) -> bool:
         if getattr(streamer, 'user_interrupted', False):
@@ -78,30 +77,13 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     if temperature == 0:
         generate_kwargs['do_sample'] = False
 
-    # Объявляем thread до try блока
-    thread = None
-    try:
-        thread = Thread(target=llm_model.generate, kwargs=generate_kwargs)
-        thread.start()
+    Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
 
-        outputs = []
-        has_output = False
-        
-        for text in streamer:
-            outputs.append(text)
-            has_output = True
-            yield "".join(outputs), interrupter
-            
-    except Exception as e:
-        print(f"Stream error: {e}")
-        if 'outputs' in locals() and outputs:
-            yield "".join(outputs), interrupter
-        else:
-            yield f"❌ Ошибка генерации: {str(e)}", interrupter
-    finally:
-        # Убеждаемся, что поток завершился
-        if thread is not None and thread.is_alive():
-            thread.join(timeout=1.0)
+    outputs = []
+    for text in streamer:
+        outputs.append(text)
+        # print(outputs)
+        yield "".join(outputs), interrupter
 
     return
 def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):    
@@ -126,7 +108,6 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         token=None
     )
     #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
-    memory_management.unload_all_models(llm_model)
     return gr.update(visible=False)
 
 
