@@ -16,7 +16,7 @@ from gradio.components import (
     Chatbot,
     Component,
     Markdown,
-    MultimodalTextbox,
+    #MultimodalTextbox,
     State,
     Textbox,
     get_component_instance,
@@ -60,7 +60,7 @@ class ChatInterface(Blocks):
         post_fn_kwargs: dict = None,
         pre_fn_kwargs: dict = None,
         multimodal: bool = False,
-        textbox: Textbox | MultimodalTextbox | None = None,
+        textbox: Textbox | Textbox | None = None,
         additional_inputs: str | Component | list[str | Component] | None = None,
         additional_inputs_accordion_name: str | None = None,
         additional_inputs_accordion: str | Accordion | None = None,
@@ -172,14 +172,14 @@ class ChatInterface(Blocks):
                             textbox.container = False
                         textbox.show_label = False
                         textbox_ = textbox.render()
-                        if not isinstance(textbox_, (Textbox, MultimodalTextbox)):
+                        if not isinstance(textbox_, (Textbox, Textbox)):
                             raise TypeError(
                                 f"Expected a gr.Textbox or gr.MultimodalTextbox component, but got {type(textbox_)}"
                             )
                         self.textbox = textbox_
                     elif self.multimodal:
                         submit_btn = None
-                        self.textbox = MultimodalTextbox(
+                        self.textbox = Textbox(
                             show_label=False,
                             label="Message",
                             placeholder="Type a message...",
