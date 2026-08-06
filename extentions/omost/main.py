@@ -98,7 +98,7 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         llm_name,
         cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
         torch_dtype=torch.bfloat16,
-        device_map="auto",
+        device_map="cpu",
         token=None,
         
     )
