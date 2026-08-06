@@ -11,58 +11,11 @@ from threading import Thread
 
 # Phi3 Hijack
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
-from contextlib import contextmanager
 
 Phi3PreTrainedModel._supports_sdpa = True
 
 llm_model = None
 llm_tokenizer = None
-llm_device = None
-
-
-def load_llm_to_gpu():
-    global llm_device
-    if llm_model is None:
-        return
-    if llm_device == 'gpu':
-        return
-    with movable_bnb_model(llm_model):
-        llm_model.to('cuda')
-    llm_device = 'gpu'
-    torch.cuda.empty_cache()
-def unload_llm_to_cpu():
-    global llm_device
-    if llm_model is None:
-        return
-    if llm_device == 'cpu':
-        return
-    with movable_bnb_model(llm_model):
-        llm_model.to('cpu')
-    llm_device = 'cpu'
-    torch.cuda.empty_cache()
-    gc.collect()
-def destroy_llm():
-    global llm_model, llm_tokenizer, llm_device
-    if llm_model is not None:
-        del llm_model
-        del llm_tokenizer
-        llm_model = None
-        llm_tokenizer = None
-        llm_device = None
-        gc.collect()
-        torch.cuda.empty_cache()
-
-@contextmanager
-def movable_bnb_model(m):
-    if hasattr(m, 'quantization_method'):
-        m.quantization_method_backup = m.quantization_method
-        del m.quantization_method
-    try:
-        yield None
-    finally:
-        if hasattr(m, 'quantization_method_backup'):
-            m.quantization_method = m.quantization_method_backup
-            del m.quantization_method_backup
 @torch.inference_mode()
 def post_chat(history):
     canvas_outputs = None
@@ -80,13 +33,9 @@ def post_chat(history):
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int) -> str:
-
-    if llm_model is None or llm_tokenizer is None:
-        yield "⚠️ Please click 'Load Model' first!", None
-        return
     np.random.seed(int(seed))
     torch.manual_seed(int(seed))
-    load_llm_to_gpu()
+
     conversation = [{"role": "system", "content": omost_canvas.system_prompt}]
 
     for user, assistant in history:
@@ -138,7 +87,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     return
 def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):    
-    global llm_model, llm_tokenizer,llm_device
+    global llm_model, llm_tokenizer
         
     print(f"[Omost] Loading LLM: {llm_name}...")
     
@@ -149,7 +98,7 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         llm_name,
         cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
         torch_dtype=torch.bfloat16,
-        device_map="cpu",
+        device_map="auto",
         token=None,
         
     )
@@ -159,9 +108,99 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         token=None
     )
     #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
-    llm_device = 'cpu'
     return gr.update(visible=False)
+@torch.inference_mode()
+def diffusion_fn(chatbot, canvas_outputs, num_samples, seed, image_width, image_height,
+                 highres_scale, steps, cfg, highres_steps, highres_denoise, negative_prompt):
 
+    use_initial_latent = False
+    eps = 0.05
+
+    image_width, image_height = int(image_width // 64) * 64, int(image_height // 64) * 64
+
+    rng = torch.Generator(device=memory_management.gpu).manual_seed(seed)
+
+    memory_management.load_models_to_gpu([text_encoder, text_encoder_2])
+
+    positive_cond, positive_pooler, negative_cond, negative_pooler = pipeline.all_conds_from_canvas(canvas_outputs, negative_prompt)
+
+    if use_initial_latent:
+        memory_management.load_models_to_gpu([vae])
+        initial_latent = torch.from_numpy(canvas_outputs['initial_latent'])[None].movedim(-1, 1) / 127.5 - 1.0
+        initial_latent_blur = 40
+        initial_latent = torch.nn.functional.avg_pool2d(
+            torch.nn.functional.pad(initial_latent, (initial_latent_blur,) * 4, mode='reflect'),
+            kernel_size=(initial_latent_blur * 2 + 1,) * 2, stride=(1, 1))
+        initial_latent = torch.nn.functional.interpolate(initial_latent, (image_height, image_width))
+        initial_latent = initial_latent.to(dtype=vae.dtype, device=vae.device)
+        initial_latent = vae.encode(initial_latent).latent_dist.mode() * vae.config.scaling_factor
+    else:
+        initial_latent = torch.zeros(size=(num_samples, 4, image_height // 8, image_width // 8), dtype=torch.float32)
+
+    memory_management.load_models_to_gpu([unet])
+
+    initial_latent = initial_latent.to(dtype=unet.dtype, device=unet.device)
+
+    latents = pipeline(
+        initial_latent=initial_latent,
+        strength=1.0,
+        num_inference_steps=int(steps),
+        batch_size=num_samples,
+        prompt_embeds=positive_cond,
+        negative_prompt_embeds=negative_cond,
+        pooled_prompt_embeds=positive_pooler,
+        negative_pooled_prompt_embeds=negative_pooler,
+        generator=rng,
+        guidance_scale=float(cfg),
+    ).images
+
+    memory_management.load_models_to_gpu([vae])
+    latents = latents.to(dtype=vae.dtype, device=vae.device) / vae.config.scaling_factor
+    pixels = vae.decode(latents).sample
+    B, C, H, W = pixels.shape
+    pixels = pytorch2numpy(pixels)
+
+    if highres_scale > 1.0 + eps:
+        pixels = [
+            resize_without_crop(
+                image=p,
+                target_width=int(round(W * highres_scale / 64.0) * 64),
+                target_height=int(round(H * highres_scale / 64.0) * 64)
+            ) for p in pixels
+        ]
+
+        pixels = numpy2pytorch(pixels).to(device=vae.device, dtype=vae.dtype)
+        latents = vae.encode(pixels).latent_dist.mode() * vae.config.scaling_factor
+
+        memory_management.load_models_to_gpu([unet])
+        latents = latents.to(device=unet.device, dtype=unet.dtype)
+
+        latents = pipeline(
+            initial_latent=latents,
+            strength=highres_denoise,
+            num_inference_steps=highres_steps,
+            batch_size=num_samples,
+            prompt_embeds=positive_cond,
+            negative_prompt_embeds=negative_cond,
+            pooled_prompt_embeds=positive_pooler,
+            negative_pooled_prompt_embeds=negative_pooler,
+            generator=rng,
+            guidance_scale=float(cfg),
+        ).images
+
+        memory_management.load_models_to_gpu([vae])
+        latents = latents.to(dtype=vae.dtype, device=vae.device) / vae.config.scaling_factor
+        pixels = vae.decode(latents).sample
+        pixels = pytorch2numpy(pixels)
+
+    for i in range(len(pixels)):
+        unique_hex = uuid.uuid4().hex
+        image_path = os.path.join(gradio_temp_dir, f"{unique_hex}_{i}.png")
+        image = Image.fromarray(pixels[i])
+        image.save(image_path)
+        chatbot = chatbot + [(None, (image_path, 'image'))]
+
+    return chatbot
 
 def gui():
     with gr.Row(elem_classes='outer_parent'):
@@ -243,12 +282,12 @@ def gui():
         fn=model_loading,
         outputs=[load_model]
     )
-    # render_button.click(
-    #     fn=diffusion_fn, inputs=[
-    #         chatInterface.chatbot, canvas_state,
-    #         num_samples, seed, image_width, image_height, highres_scale,
-    #         steps, cfg, highres_steps, highres_denoise, n_prompt
-    #     ], outputs=[chatInterface.chatbot]).then(
-    #     fn=lambda x: x, inputs=[
-    #         chatInterface.chatbot
-    #     ], outputs=[chatInterface.chatbot_state])
+    render_button.click(
+         fn=diffusion_fn, inputs=[
+             chatInterface.chatbot, canvas_state,
+             num_samples, seed, image_width, image_height, highres_scale,
+             steps, cfg, highres_steps, highres_denoise, n_prompt
+         ], outputs=[chatInterface.chatbot]).then(
+         fn=lambda x: x, inputs=[
+             chatInterface.chatbot
+         ], outputs=[chatInterface.chatbot_state])
