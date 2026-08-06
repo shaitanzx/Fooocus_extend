@@ -4,6 +4,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 import os
 import numpy as np
+import extentions.omost.lib_omost.canvas as omost_canvas
 
 llm_model = None
 llm_tokenizer = None
