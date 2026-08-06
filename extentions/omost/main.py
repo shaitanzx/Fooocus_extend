@@ -2,6 +2,9 @@ import gradio as gr
 from extentions.omost.chat_interface import ChatInterface
 import torch
 
+
+llm_model = None
+llm_tokenizer = None
 @torch.inference_mode()
 def post_chat(history):
     canvas_outputs = None
@@ -73,14 +76,47 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         yield "".join(outputs), interrupter
 
     return
+def loading_model(llm_name="lllyasviel/omost-llama-3-8b-4bits"):    
+    global llm_model, llm_tokenizer
+        
+    print(f"[Omost] Loading LLM: {llm_name}...")
+    
+
+    
+  
+    llm_model = AutoModelForCausalLM.from_pretrained(
+        llm_name,
+        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
+        torch_dtype=torch.bfloat16,
+        device_map="auto",
+        token=None,
+        
+    )
+    llm_tokenizer = AutoTokenizer.from_pretrained(
+        llm_name,
+        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
+        token=HF_TOKEN
+    )
+    #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
+    return gr.update(visible=False)
+
+
+llm_tokenizer = AutoTokenizer.from_pretrained(
+    llm_name,
+    token=HF_TOKEN
+)
+
+
 def gui():
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
             with gr.Row():
+                load_model = gr.Button("Load Model", variant="secondary", size="sm", min_width=60)
+            with gr.Row():
                 clear_btn = gr.Button("➕ New Chat", variant="secondary", size="sm", min_width=60)
                 retry_btn = gr.Button("Retry", variant="secondary", size="sm", min_width=60, visible=False)
                 undo_btn = gr.Button("✏️️ Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)
-
+        
             seed = gr.Number(label="Random Seed", value=12345, precision=0)
 
             with gr.Accordion(open=True, label='Language Model'):
@@ -147,7 +183,10 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens],
                 examples=examples
             )
-
+    load_model.click(
+        fn=model_loading,
+        outputs=[load_model]
+    )
     # render_button.click(
     #     fn=diffusion_fn, inputs=[
     #         chatInterface.chatbot, canvas_state,
