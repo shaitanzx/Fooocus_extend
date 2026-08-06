@@ -102,12 +102,6 @@ def loading_model(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
     return gr.update(visible=False)
 
 
-llm_tokenizer = AutoTokenizer.from_pretrained(
-    llm_name,
-    token=HF_TOKEN
-)
-
-
 def gui():
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
