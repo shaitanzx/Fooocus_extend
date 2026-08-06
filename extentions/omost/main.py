@@ -1,0 +1,86 @@
+import gradio as gr
+
+def gui():
+    with gr.Row(elem_classes='outer_parent'):
+        with gr.Column(scale=25):
+            with gr.Row():
+                clear_btn = gr.Button("➕ New Chat", variant="secondary", size="sm", min_width=60)
+                retry_btn = gr.Button("Retry", variant="secondary", size="sm", min_width=60, visible=False)
+                undo_btn = gr.Button("✏️️ Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)
+
+            seed = gr.Number(label="Random Seed", value=12345, precision=0)
+
+            with gr.Accordion(open=True, label='Language Model'):
+                with gr.Group():
+                    with gr.Row():
+                        temperature = gr.Slider(
+                            minimum=0.0,
+                            maximum=2.0,
+                            step=0.01,
+                            value=0.6,
+                            label="Temperature")
+                        top_p = gr.Slider(
+                            minimum=0.0,
+                            maximum=1.0,
+                            step=0.01,
+                            value=0.9,
+                            label="Top P")
+                    max_new_tokens = gr.Slider(
+                        minimum=128,
+                        maximum=4096,
+                        step=1,
+                        value=4096,
+                        label="Max New Tokens")
+            with gr.Accordion(open=True, label='Image Diffusion Model'):
+                with gr.Group():
+                    with gr.Row():
+                        image_width = gr.Slider(label="Image Width", minimum=256, maximum=2048, value=896, step=64)
+                        image_height = gr.Slider(label="Image Height", minimum=256, maximum=2048, value=1152, step=64)
+
+                    with gr.Row():
+                        num_samples = gr.Slider(label="Image Number", minimum=1, maximum=12, value=1, step=1)
+                        steps = gr.Slider(label="Sampling Steps", minimum=1, maximum=100, value=25, step=1)
+
+            with gr.Accordion(open=False, label='Advanced'):
+                cfg = gr.Slider(label="CFG Scale", minimum=1.0, maximum=32.0, value=5.0, step=0.01)
+                highres_scale = gr.Slider(label="HR-fix Scale (\"1\" is disabled)", minimum=1.0, maximum=2.0, value=1.0, step=0.01)
+                highres_steps = gr.Slider(label="Highres Fix Steps", minimum=1, maximum=100, value=20, step=1)
+                highres_denoise = gr.Slider(label="Highres Fix Denoise", minimum=0.1, maximum=1.0, value=0.4, step=0.01)
+                n_prompt = gr.Textbox(label="Negative Prompt", value='lowres, bad anatomy, bad hands, cropped, worst quality')
+
+            render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
+
+            examples = gr.Dataset(
+                samples=[
+                    ['generate an image of the fierce battle of warriors and a dragon'],
+                    ['change the dragon to a dinosaur']
+                ],
+                components=[gr.Textbox(visible=False)],
+                label='Quick Prompts'
+            )
+        with gr.Column(scale=75, elem_classes='inner_parent'):
+            canvas_state = gr.State(None)
+            chatbot = gr.Chatbot(label='Omost', scale=1, show_copy_button=True, layout="panel", render=False)
+            chatInterface = ChatInterface(
+                fn=chat_fn,
+                post_fn=post_chat,
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn]),
+                pre_fn=lambda: gr.update(visible=False),
+                pre_fn_kwargs=dict(outputs=[render_button]),
+                chatbot=chatbot,
+                retry_btn=retry_btn,
+                undo_btn=undo_btn,
+                clear_btn=clear_btn,
+                additional_inputs=[seed, temperature, top_p, max_new_tokens],
+                examples=examples
+            )
+
+    render_button.click(
+        fn=diffusion_fn, inputs=[
+            chatInterface.chatbot, canvas_state,
+            num_samples, seed, image_width, image_height, highres_scale,
+            steps, cfg, highres_steps, highres_denoise, n_prompt
+        ], outputs=[chatInterface.chatbot]).then(
+        fn=lambda x: x, inputs=[
+            chatInterface.chatbot
+        ], outputs=[chatInterface.chatbot_state])
