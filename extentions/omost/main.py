@@ -3,6 +3,7 @@ from extentions.omost.chat_interface import ChatInterface
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 import os
+import numpy as np
 
 llm_model = None
 llm_tokenizer = None
