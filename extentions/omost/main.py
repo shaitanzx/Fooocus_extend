@@ -1,5 +1,7 @@
 import gradio as gr
 from extentions.omost.chat_interface import ChatInterface
+import torch
+
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int) -> str:
     np.random.seed(int(seed))
