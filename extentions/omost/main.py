@@ -49,7 +49,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     input_ids = llm_tokenizer.apply_chat_template(
         conversation, return_tensors="pt", add_generation_prompt=True).to(llm_model.device)
 
-    streamer = TextIteratorStreamer(llm_tokenizer, timeout=, skip_prompt=True, skip_special_tokens=True)
+    streamer = TextIteratorStreamer(llm_tokenizer, timeout=None, skip_prompt=True, skip_special_tokens=True)
 
     def interactive_stopping_criteria(*args, **kwargs) -> bool:
         if getattr(streamer, 'user_interrupted', False):
