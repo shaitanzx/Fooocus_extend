@@ -78,21 +78,29 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     if temperature == 0:
         generate_kwargs['do_sample'] = False
 
-    Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
-
-    outputs = []
+    # Объявляем thread до try блока
+    thread = None
     try:
+        thread = Thread(target=llm_model.generate, kwargs=generate_kwargs)
+        thread.start()
+
+        outputs = []
+        has_output = False
+        
         for text in streamer:
             outputs.append(text)
+            has_output = True
             yield "".join(outputs), interrupter
+            
     except Exception as e:
-        print(f"Generation error: {e}")
-        # Возвращаем сообщение об ошибке
-        error_msg = f"❌ Ошибка генерации: {str(e)}"
-        yield error_msg, interrupter
+        print(f"Stream error: {e}")
+        if 'outputs' in locals() and outputs:
+            yield "".join(outputs), interrupter
+        else:
+            yield f"❌ Ошибка генерации: {str(e)}", interrupter
     finally:
         # Убеждаемся, что поток завершился
-        if thread.is_alive():
+        if thread is not None and thread.is_alive():
             thread.join(timeout=1.0)
 
     return
