@@ -318,97 +318,7 @@ class ChatInterface(Blocks):
         for submit_event in submit_events:
             self._setup_stop_events_for_event(submit_event)
     
-    # Остальной код для retry, undo, clear без изменений
-    if self.retry_btn:
-        retry_event = (
-            self.retry_btn.click(
-                self._delete_prev_fn,
-                [self.saved_input, self.chatbot_state],
-                [self.chatbot, self.saved_input, self.chatbot_state],
-                show_api=False,
-                queue=False,
-            )
-            .then(
-                self.pre_fn,
-                **self.pre_fn_kwargs,
-                show_api=False,
-                queue=False,
-            )
-            .then(
-                self._display_input,
-                [self.saved_input, self.chatbot_state],
-                [self.chatbot, self.chatbot_state],
-                show_api=False,
-                queue=False,
-            )
-            .then(
-                submit_fn,
-                [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                [self.chatbot, self.chatbot_state],
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
-            ).then(
-                self.post_fn,
-                **self.post_fn_kwargs,
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
-            )
-        )
-        self._setup_stop_events_for_event(retry_event)
-    
-    # undo и clear остаются без изменений
-    if self.undo_btn:
-        self.undo_btn.click(
-            self._delete_prev_fn,
-            [self.saved_input, self.chatbot_state],
-            [self.chatbot, self.saved_input, self.chatbot_state],
-            show_api=False,
-            queue=False,
-        ).then(
-            self.pre_fn,
-            **self.pre_fn_kwargs,
-            show_api=False,
-            queue=False,
-        ).then(
-            async_lambda(lambda x: x),
-            [self.saved_input],
-            [self.textbox],
-            show_api=False,
-            queue=False,
-        ).then(
-            self.post_fn,
-            **self.post_fn_kwargs,
-            show_api=False,
-            concurrency_limit=cast(
-                Union[int, Literal["default"], None], self.concurrency_limit
-            ),
-        )
-    
-    if self.clear_btn:
-        self.clear_btn.click(
-            async_lambda(lambda: ([], [], None)),
-            None,
-            [self.chatbot, self.chatbot_state, self.saved_input],
-            queue=False,
-            show_api=False,
-        ).then(
-            self.pre_fn,
-            **self.pre_fn_kwargs,
-            show_api=False,
-            queue=False,
-        ).then(
-            self.post_fn,
-            **self.post_fn_kwargs,
-            show_api=False,
-            concurrency_limit=cast(
-                Union[int, Literal["default"], None], self.concurrency_limit
-            ),
-        )
-
+        # Остальной код для retry, undo, clear без изменений
         if self.retry_btn:
             retry_event = (
                 self.retry_btn.click(
@@ -440,16 +350,59 @@ class ChatInterface(Blocks):
                         Union[int, Literal["default"], None], self.concurrency_limit
                     ),
                 ).then(
-                self.post_fn,
-                **self.post_fn_kwargs,
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    show_api=False,
+                    concurrency_limit=cast(
+                        Union[int, Literal["default"], None], self.concurrency_limit
+                    ),
+                )
             )
+            self._setup_stop_events_for_event(retry_event)
+        # Retry кнопка
+        if self.retry_btn:
+            retry_event = (
+                self.retry_btn.click(
+                    self._delete_prev_fn,
+                    [self.saved_input, self.chatbot_state],
+                    [self.chatbot, self.saved_input, self.chatbot_state],
+                    show_api=False,
+                    queue=False,
+                )
+                .then(
+                    self.pre_fn,
+                    **self.pre_fn_kwargs,
+                    show_api=False,
+                    queue=False,
+                )
+                .then(
+                    self._display_input,
+                    [self.saved_input, self.chatbot_state],
+                    [self.chatbot, self.chatbot_state],
+                    show_api=False,
+                    queue=False,
+                )
+                .then(
+                    submit_fn,
+                    [self.saved_input, self.chatbot_state] + self.additional_inputs,
+                    [self.chatbot, self.chatbot_state],
+                    show_api=False,
+                    concurrency_limit=cast(
+                        Union[int, Literal["default"], None], self.concurrency_limit
+                    ),
+                )
+                .then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    show_api=False,
+                    concurrency_limit=cast(
+                        Union[int, Literal["default"], None], self.concurrency_limit
+                    ),
+                )
             )
-            self._setup_stop_events([self.retry_btn.click], retry_event)
-
+            self._setup_stop_events_for_event(retry_event)
+    
+        # Undo кнопка
         if self.undo_btn:
             self.undo_btn.click(
                 self._delete_prev_fn,
@@ -476,7 +429,8 @@ class ChatInterface(Blocks):
                     Union[int, Literal["default"], None], self.concurrency_limit
                 ),
             )
-
+    
+        # Clear кнопка
         if self.clear_btn:
             self.clear_btn.click(
                 async_lambda(lambda: ([], [], None)),
