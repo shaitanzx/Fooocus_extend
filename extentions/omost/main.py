@@ -1,4 +1,5 @@
 import gradio as gr
+from extentions.omost.chat_interface import ChatInterface
 
 def gui():
     with gr.Row(elem_classes='outer_parent'):
