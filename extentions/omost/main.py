@@ -3,6 +3,21 @@ from extentions.omost.chat_interface import ChatInterface
 import torch
 
 @torch.inference_mode()
+def post_chat(history):
+    canvas_outputs = None
+
+    try:
+        if history:
+            history = [(user, assistant) for user, assistant in history if isinstance(user, str) and isinstance(assistant, str)]
+            last_assistant = history[-1][1] if len(history) > 0 else None
+            canvas = omost_canvas.Canvas.from_bot_response(last_assistant)
+            canvas_outputs = canvas.process()
+    except Exception as e:
+        print('Last assistant response is not valid canvas:', e)
+
+    return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
+
+@torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int) -> str:
     np.random.seed(int(seed))
     torch.manual_seed(int(seed))
