@@ -77,7 +77,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         yield "".join(outputs), interrupter
 
     return
-def loading_model(llm_name="lllyasviel/omost-llama-3-8b-4bits"):    
+def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):    
     global llm_model, llm_tokenizer
         
     print(f"[Omost] Loading LLM: {llm_name}...")
