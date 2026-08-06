@@ -294,17 +294,17 @@ class ChatInterface(Blocks):
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state, self.interrupter],
                     # show_api=False,
-                    concurrency_limit=cast(
-                        Union[int, Literal["default"], None], self.concurrency_limit
-                    ),
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
                 )
                 .then(
                     self.post_fn,
                     **self.post_fn_kwargs,
                     # show_api=False,
-                    concurrency_limit=cast(
-                        Union[int, Literal["default"], None], self.concurrency_limit
-                    ),
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
                 )
             )
     
@@ -348,17 +348,17 @@ class ChatInterface(Blocks):
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
                     # show_api=False,
-                    concurrency_limit=cast(
-                        Union[int, Literal["default"], None], self.concurrency_limit
-                    ),
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
                 )
                 .then(
                     self.post_fn,
                     **self.post_fn_kwargs,
                     # show_api=False,
-                    concurrency_limit=cast(
-                        Union[int, Literal["default"], None], self.concurrency_limit
-                    ),
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
                 )
             )
             self._setup_stop_events_for_event(retry_event)
@@ -386,9 +386,9 @@ class ChatInterface(Blocks):
                 self.post_fn,
                 **self.post_fn_kwargs,
                 # show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
     
         # Clear кнопка
@@ -408,9 +408,9 @@ class ChatInterface(Blocks):
                 self.post_fn,
                 **self.post_fn_kwargs,
                 # show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
 
     def _setup_stop_events(
@@ -474,9 +474,9 @@ class ChatInterface(Blocks):
             [self.textbox, self.chatbot_state] + self.additional_inputs,
             [self.textbox, self.chatbot_state],
             api_name="chat",
-            concurrency_limit=cast(
-                Union[int, Literal["default"], None], self.concurrency_limit
-            ),
+            # concurrency_limit=cast(
+            #     Union[int, Literal["default"], None], self.concurrency_limit
+            # ),
         )
 
     def _clear_and_save_textbox(self, message: str) -> tuple[str, str]:
