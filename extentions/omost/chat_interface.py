@@ -26,7 +26,13 @@ from gradio.helpers import special_args
 from gradio.layouts import Accordion, Group, Row
 from gradio.routes import Request
 from gradio.themes import ThemeClass as Theme
-from gradio.utils import SyncToAsyncIterator, async_iteration, async_lambda
+from gradio.utils import SyncToAsyncIterator, async_iteration
+
+def async_lambda(fn):
+            """Convert a synchronous function to an async function."""
+            async def wrapper(*args, **kwargs):
+                return fn(*args, **kwargs)
+            return wrapper
 
 
 @document()
