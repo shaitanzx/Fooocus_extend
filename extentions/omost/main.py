@@ -5,6 +5,14 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
+import extentions.omost.lib_omost.memory_management as memory_management
+from transformers.generation.stopping_criteria import StoppingCriteriaList
+from threading import Thread
+
+# Phi3 Hijack
+from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
+
+Phi3PreTrainedModel._supports_sdpa = True
 
 llm_model = None
 llm_tokenizer = None
@@ -101,6 +109,7 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         token=None
     )
     #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
+    memory_management.unload_all_models(llm_model)
     return gr.update(visible=False)
 
 
