@@ -96,7 +96,7 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
     llm_tokenizer = AutoTokenizer.from_pretrained(
         llm_name,
         cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
-        token=HF_TOKEN
+        token=None
     )
     #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
     return gr.update(visible=False)
