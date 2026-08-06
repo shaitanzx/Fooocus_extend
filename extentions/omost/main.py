@@ -11,11 +11,58 @@ from threading import Thread
 
 # Phi3 Hijack
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
+from contextlib import contextmanager
 
 Phi3PreTrainedModel._supports_sdpa = True
 
 llm_model = None
 llm_tokenizer = None
+llm_device = None
+
+
+def load_llm_to_gpu():
+    global llm_device
+    if llm_model is None:
+        return
+    if llm_device == 'gpu':
+        return
+    with movable_bnb_model(llm_model):
+        llm_model.to('cuda')
+    llm_device = 'gpu'
+    torch.cuda.empty_cache()
+def unload_llm_to_cpu():
+    global llm_device
+    if llm_model is None:
+        return
+    if llm_device == 'cpu':
+        return
+    with movable_bnb_model(llm_model):
+        llm_model.to('cpu')
+    llm_device = 'cpu'
+    torch.cuda.empty_cache()
+    gc.collect()
+def destroy_llm():
+    global llm_model, llm_tokenizer, llm_device
+    if llm_model is not None:
+        del llm_model
+        del llm_tokenizer
+        llm_model = None
+        llm_tokenizer = None
+        llm_device = None
+        gc.collect()
+        torch.cuda.empty_cache()
+
+@contextmanager
+def movable_bnb_model(m):
+    if hasattr(m, 'quantization_method'):
+        m.quantization_method_backup = m.quantization_method
+        del m.quantization_method
+    try:
+        yield None
+    finally:
+        if hasattr(m, 'quantization_method_backup'):
+            m.quantization_method = m.quantization_method_backup
+            del m.quantization_method_backup
 @torch.inference_mode()
 def post_chat(history):
     canvas_outputs = None
@@ -33,9 +80,13 @@ def post_chat(history):
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int) -> str:
+
+    if llm_model is None or llm_tokenizer is None:
+        yield "⚠️ Please click 'Load Model' first!", None
+        return
     np.random.seed(int(seed))
     torch.manual_seed(int(seed))
-
+    load_llm_to_gpu()
     conversation = [{"role": "system", "content": omost_canvas.system_prompt}]
 
     for user, assistant in history:
@@ -87,7 +138,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     return
 def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):    
-    global llm_model, llm_tokenizer
+    global llm_model, llm_tokenizer,llm_device
         
     print(f"[Omost] Loading LLM: {llm_name}...")
     
@@ -98,7 +149,7 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         llm_name,
         cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
         torch_dtype=torch.bfloat16,
-        device_map="auto",
+        device_map="cpu",
         token=None,
         
     )
@@ -108,6 +159,7 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         token=None
     )
     #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
+    llm_device = 'cpu'
     return gr.update(visible=False)
 
 
