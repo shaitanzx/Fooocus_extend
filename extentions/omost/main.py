@@ -26,8 +26,13 @@ def get_vram_info():
     
     allocated = torch.cuda.memory_allocated() / (1024**3)
     reserved = torch.cuda.memory_reserved() / (1024**3)
-    total = torch.cuda.get_device_properties(0).total_mem / (1024**3)
-    free = total - reserved
+    
+    # ИСПРАВЛЕНИЕ: total_memory вместо total_mem
+    total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+    
+    # Более точный способ получить свободную память
+    free, total_from_cuda = torch.cuda.mem_get_info()
+    free = free / (1024**3)
     
     return (allocated, reserved, total, free)
 
