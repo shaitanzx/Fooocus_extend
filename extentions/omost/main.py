@@ -13,24 +13,67 @@ from threading import Thread
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
 
 Phi3PreTrainedModel._supports_sdpa = True
+import gc
 
 llm_model = None
 llm_tokenizer = None
+
+
+def get_vram_info():
+    """Возвращает кортеж: (allocated_gb, reserved_gb, total_gb, free_gb)"""
+    if not torch.cuda.is_available():
+        return (0.0, 0.0, 0.0, 0.0)
+    
+    allocated = torch.cuda.memory_allocated() / (1024**3)
+    reserved = torch.cuda.memory_reserved() / (1024**3)
+    total = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+    free = total - reserved
+    
+    return (allocated, reserved, total, free)
+
+
+def format_vram_info(prefix=""):
+    """Форматирует VRAM инфо в красивую строку для лога."""
+    allocated, reserved, total, free = get_vram_info()
+    return (
+        f"{prefix}VRAM: "
+        f"allocated={allocated:.2f}GB | "
+        f"reserved={reserved:.2f}GB | "
+        f"free={free:.2f}GB / {total:.2f}GB total"
+    )
+
+
 @torch.inference_mode()
 def unload_model():
     """Принудительная выгрузка LLM из VRAM перед запуском диффузии"""
     global llm_model, llm_tokenizer
+    
+    # Запоминаем VRAM ДО
+    allocated_before, reserved_before, total, _ = get_vram_info()
+    print(f"\033[93m[Omost] BEFORE unload:\033[0m allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB / {total:.2f}GB")
+    
     if llm_model is not None:
-        print("[Omost] Unloading LLM from VRAM...")
+        print("\033[92m[Omost] Unloading LLM from VRAM...\033[0m")
         del llm_model
         del llm_tokenizer
         llm_model = None
         llm_tokenizer = None
+        
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-            print("[Omost] VRAM cleared.")
             
+            # Считаем VRAM ПОСЛЕ
+            allocated_after, reserved_after, _, _ = get_vram_info()
+            freed_allocated = allocated_before - allocated_after
+            freed_reserved = reserved_before - reserved_after
+            
+            print(f"\033[92m[Omost] AFTER  unload:\033[0m  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB / {total:.2f}GB")
+            print(f"\033[96m[Omost] FREED:\033[0m allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
+            print("\033[92m[Omost] ✓ VRAM cleared successfully.\033[0m")
+    else:
+        print("[Omost] LLM was not loaded, nothing to unload.")
+
 def post_chat(history):
     canvas_outputs = None
 
@@ -268,6 +311,8 @@ def gui():
 
             render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
 
+            clear_llm = gr.Button("CLEAR LLM", size='lg', variant="primary", visible=True)
+
             examples = gr.Dataset(
                 samples=[
                     ['generate an image of the fierce battle of warriors and a dragon'],
@@ -297,6 +342,8 @@ def gui():
         outputs=[load_model]
     )
     render_button.click(unload_model)
+
+    clear_llm.click(unload_model)
     # render_button.click(
     #      fn=diffusion_fn, inputs=[
     #          chatInterface.chatbot, canvas_state,
