@@ -17,6 +17,20 @@ Phi3PreTrainedModel._supports_sdpa = True
 llm_model = None
 llm_tokenizer = None
 @torch.inference_mode()
+def unload_model():
+    """Принудительная выгрузка LLM из VRAM перед запуском диффузии"""
+    global llm_model, llm_tokenizer
+    if llm_model is not None:
+        print("[Omost] Unloading LLM from VRAM...")
+        del llm_model
+        del llm_tokenizer
+        llm_model = None
+        llm_tokenizer = None
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            print("[Omost] VRAM cleared.")
+            
 def post_chat(history):
     canvas_outputs = None
 
@@ -282,6 +296,7 @@ def gui():
         fn=model_loading,
         outputs=[load_model]
     )
+    render_button.click(unload_model)
     # render_button.click(
     #      fn=diffusion_fn, inputs=[
     #          chatInterface.chatbot, canvas_state,

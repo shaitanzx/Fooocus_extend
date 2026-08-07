@@ -1623,14 +1623,32 @@ def worker():
                 from extentions.omost.cond_builder import all_conds_from_canvas
                 
                 # Ищем объект CLIP в загруженной модели Fooocus (используем уже импортированный pipeline)
+                # Ищем объект CLIP в загруженной модели Fooocus
                 clip = None
-                if hasattr(pipeline, 'xl_base_patched') and pipeline.xl_base_patched is not None:
+                
+                # Перебираем самые частые варианты именования CLIP в форках Fooocus
+                possible_clip_names = ['final_clip', 'clip', 'final_clip_patched']
+                for name in possible_clip_names:
+                    if hasattr(pipeline, name) and getattr(pipeline, name) is not None:
+                        clip = getattr(pipeline, name)
+                        print(f"[Omost] Found CLIP as pipeline.{name}")
+                        break
+                        
+                # Если не нашли напрямую, ищем внутри патченных моделей
+                if clip is None and hasattr(pipeline, 'xl_base_patched') and pipeline.xl_base_patched is not None:
                     clip = getattr(pipeline.xl_base_patched, 'clip', None)
+                    if clip: print("[Omost] Found CLIP inside pipeline.xl_base_patched.clip")
+                    
                 if clip is None and hasattr(pipeline, 'xl_base') and pipeline.xl_base is not None:
                     clip = getattr(pipeline.xl_base, 'clip', None)
+                    if clip: print("[Omost] Found CLIP inside pipeline.xl_base.clip")
                 
                 if clip is None:
-                    print("\033[91m[Omost] ERROR: Could not find CLIP model in pipeline. Falling back to standard prompt.\033[0m")
+                    # ДИАГНОСТИКА: Печатаем все атрибуты pipeline, чтобы найти CLIP вручную
+                    attrs = [attr for attr in dir(pipeline) if not attr.startswith('_')]
+                    print(f"\033[91m[Omost] ERROR: Could not find CLIP model in pipeline.\033[0m")
+                    print(f"\033[93m[Omost] Available pipeline attributes: {attrs}\033[0m")
+                    print("\033[91m[Omost] Falling back to standard prompt.\033[0m")
                 else:
                     print(f"[Omost] CLIP found ({type(clip).__name__}). Building regional conditions...")
                     
