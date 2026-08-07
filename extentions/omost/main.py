@@ -8,8 +8,7 @@ import extentions.omost.lib_omost.canvas as omost_canvas
 #import extentions.omost.lib_omost.memory_management as memory_management
 from transformers.generation.stopping_criteria import StoppingCriteriaList
 from threading import Thread
-import warnings
-warnings.filterwarnings("ignore", message="MatMul8bitLt")
+
 
 # Phi3 Hijack
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
@@ -150,9 +149,9 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         yield "".join(outputs), interrupter
 
     return
-#def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
+def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
 #def model_loading(llm_name="lllyasviel/omost-dolphin-2.9-llama3-8b-4bits"):  
-def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k-8bits"):  
+#def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k-8bits"):  
 #def model_loading(llm_name="lllyasviel/omost-llama-3-8b"):  
 #def model_loading(llm_name="lllyasviel/omost-dolphin-2.9-llama3-8b"):  
 #def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k"):  
