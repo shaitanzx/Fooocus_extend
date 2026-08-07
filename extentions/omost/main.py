@@ -150,8 +150,8 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     return
 #def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
 #def model_loading(llm_name="lllyasviel/omost-dolphin-2.9-llama3-8b-4bits"):  
-def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k-8bits"):  
-#def model_loading(llm_name="lllyasviel/omost-llama-3-8b"):  
+#def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k-8bits"):  
+def model_loading(llm_name="lllyasviel/omost-llama-3-8b"):  
 #def model_loading(llm_name="lllyasviel/omost-dolphin-2.9-llama3-8b"):  
 #def model_loading(llm_name="omost-phi-3-mini-128k"):  
  
