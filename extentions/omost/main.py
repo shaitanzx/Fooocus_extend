@@ -8,6 +8,8 @@ import extentions.omost.lib_omost.canvas as omost_canvas
 #import extentions.omost.lib_omost.memory_management as memory_management
 from transformers.generation.stopping_criteria import StoppingCriteriaList
 from threading import Thread
+import warnings
+warnings.filterwarnings("ignore", message="MatMul8bitLt")
 
 # Phi3 Hijack
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
