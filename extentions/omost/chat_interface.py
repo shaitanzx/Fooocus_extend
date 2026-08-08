@@ -34,7 +34,7 @@ def async_lambda(fn):
     Useful for internal event handlers defined as lambda functions used in the codebase
     """
 
-    @wraps(f)
+    @wraps(fn)
     async def function_wrapper(*args, **kwargs):
         return f(*args, **kwargs)
 
