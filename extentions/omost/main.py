@@ -105,7 +105,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     global llm_model, llm_tokenizer, llm_name
     print(f'[OMOST] model_base {model_base}')
     print(f'[OMOST] llm_name {llm_name}')
-    if llm_name not None and llm_name != model_base:
+    if llm_name is not None and llm_name != model_base:
         unload_model()
     if llm_name == None:
         print(f"[Omost] Loading LLM: {model_base}...")
