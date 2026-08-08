@@ -259,45 +259,45 @@ class ChatInterface(Blocks):
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
 
-    def _setup_events(self) -> None:
-        submit_fn = self._stream_fn if self.is_generator else self._submit_fn
-        submit_triggers = (
-            [self.textbox.submit, self.submit_btn.click]
-            if self.submit_btn
-            else [self.textbox.submit]
-        )
-        submit_event = (
-            on(
-                submit_triggers,
-                self._clear_and_save_textbox,
-                [self.textbox],
-                [self.textbox, self.saved_input],
-                # show_api=False,
-                queue=False,
-            )
-            .then(
-                self.pre_fn,
-                **self.pre_fn_kwargs,
-                # show_api=False,
-                queue=False,
-            )
-            .then(
-                self._display_input,
-                [self.saved_input, self.chatbot_state],
-                [self.chatbot, self.chatbot_state],
-                # show_api=False,
-                queue=False,
-            )
-            .then(
-                submit_fn,
-                [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                [self.chatbot, self.chatbot_state, self.interrupter],
-                # show_api=False,
-                # concurrency_limit=cast(
-                #     Union[int, Literal["default"], None], self.concurrency_limit
-                # ),
-            ).then(
-                self.post_fn,
+    # def _setup_events(self) -> None:
+    #     submit_fn = self._stream_fn if self.is_generator else self._submit_fn
+    #     submit_triggers = (
+    #         [self.textbox.submit, self.submit_btn.click]
+    #         if self.submit_btn
+    #         else [self.textbox.submit]
+    #     )
+    #     submit_event = (
+    #         on(
+    #             submit_triggers,
+    #             self._clear_and_save_textbox,
+    #             [self.textbox],
+    #             [self.textbox, self.saved_input],
+    #             # show_api=False,
+    #             queue=False,
+    #         )
+    #         .then(
+    #             self.pre_fn,
+    #             **self.pre_fn_kwargs,
+    #             # show_api=False,
+    #             queue=False,
+    #         )
+    #         .then(
+    #             self._display_input,
+    #             [self.saved_input, self.chatbot_state],
+    #             [self.chatbot, self.chatbot_state],
+    #             # show_api=False,
+    #             queue=False,
+    #         )
+    #         .then(
+    #             submit_fn,
+    #             [self.saved_input, self.chatbot_state] + self.additional_inputs,
+    #             [self.chatbot, self.chatbot_state, self.interrupter],
+    #             # show_api=False,
+    #             # concurrency_limit=cast(
+    #             #     Union[int, Literal["default"], None], self.concurrency_limit
+    #             # ),
+    #         ).then(
+    #             self.post_fn,
         #         **self.post_fn_kwargs,
         #         # show_api=False,
         #         # concurrency_limit=cast(
