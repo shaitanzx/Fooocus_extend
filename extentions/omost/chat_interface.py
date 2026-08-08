@@ -252,62 +252,64 @@ class ChatInterface(Blocks):
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
-                # show_api=False,
+            )
+            
+            # 3. При отмене генерации тоже возвращаем кнопки в исходное состояние
+            event_to_cancel.then(
+                lambda: (gr.update(visible=True), gr.update(visible=False)),
+                None,
+                [self.submit_btn, self.stop_btn],
+                queue=False,
             )
     def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
     
         # Вспомогательная функция для создания цепочки событий
         def create_submit_chain(trigger):
+            # 1. При клике: скрываем Submit, показываем Stop
+            event_chain = trigger(
+                lambda: (gr.update(visible=False), gr.update(visible=True)),
+                None,
+                [self.submit_btn, self.stop_btn],
+                queue=False,
+            )
+            
             return (
-                trigger(
+                event_chain
+                .then(
                     self._clear_and_save_textbox,
                     [self.textbox],
                     [self.textbox, self.saved_input],
-                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
-                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state, self.interrupter],
-                    # show_api=False,
-                    # concurrency_limit=cast(
-                    #     Union[int, Literal["default"], None], self.concurrency_limit
-                    # ),
                 )
                 .then(
                     self.post_fn,
                     **self.post_fn_kwargs,
-                    # show_api=False,
-                    # concurrency_limit=cast(
-                    #     Union[int, Literal["default"], None], self.concurrency_limit
-                    # ),
+                )
+                # 2. После завершения: возвращаем Submit, скрываем Stop
+                .then(
+                    lambda: (gr.update(visible=True), gr.update(visible=False)),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    queue=False,
                 )
             )
-    
-        # Создаем события для каждого триггера отдельно
-        submit_events = []
-        if self.submit_btn:
-            submit_events.append(create_submit_chain(self.submit_btn.click))
-        submit_events.append(create_submit_chain(self.textbox.submit))
-    
-        # Настраиваем stop для каждого события
-        for submit_event in submit_events:
-            self._setup_stop_events_for_event(submit_event)
     
         # Остальной код для retry, undo, clear без изменений
 
@@ -315,41 +317,30 @@ class ChatInterface(Blocks):
         if self.retry_btn:
             retry_event = (
                 self.retry_btn.click(
+                    lambda: (gr.update(visible=False), gr.update(visible=True)),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    queue=False,
+                )
+                .then(
                     self._delete_prev_fn,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.saved_input, self.chatbot_state],
-                    # show_api=False,
                     queue=False,
                 )
-                .then(
-                    self.pre_fn,
-                    **self.pre_fn_kwargs,
-                    # show_api=False,
-                    queue=False,
-                )
-                .then(
-                    self._display_input,
-                    [self.saved_input, self.chatbot_state],
-                    [self.chatbot, self.chatbot_state],
-                    # show_api=False,
-                    queue=False,
-                )
+                .then(self.pre_fn, **self.pre_fn_kwargs, queue=False)
+                .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], queue=False)
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                    [self.chatbot, self.chatbot_state],
-                    # show_api=False,
-                    # concurrency_limit=cast(
-                    #     Union[int, Literal["default"], None], self.concurrency_limit
-                    # ),
+                    [self.chatbot, self.chatbot_state, self.interrupter],
                 )
+                .then(self.post_fn, **self.post_fn_kwargs)
                 .then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                    # show_api=False,
-                    # concurrency_limit=cast(
-                    #     Union[int, Literal["default"], None], self.concurrency_limit
-                    # ),
+                    lambda: (gr.update(visible=True), gr.update(visible=False)),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    queue=False,
                 )
             )
             self._setup_stop_events_for_event(retry_event)
