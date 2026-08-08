@@ -252,9 +252,9 @@ class ChatInterface(Blocks):
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
+                queue=True,  # ← ДОБАВИЛИ queue=True
             )
             
-            # 3. При отмене генерации тоже возвращаем кнопки в исходное состояние
             event_to_cancel.then(
                 lambda: (gr.update(visible=True), gr.update(visible=False)),
                 None,
