@@ -39,7 +39,34 @@ def async_lambda(fn):
         return f(*args, **kwargs)
 
     return function_wrapper
-
+def on(triggers, fn, inputs=None, outputs=None, **kwargs):
+    """
+    Замена функции gradio.events.on для старых версий Gradio.
+    
+    Навешивает один обработчик на несколько триггеров одновременно.
+    Возвращает Dependency от первого триггера для поддержки цепочки .then().
+    
+    Args:
+        triggers: список триггеров (например, [textbox.submit, button.click])
+        fn: функция-обработчик
+        inputs: список входных компонентов
+        outputs: список выходных компонентов
+        **kwargs: дополнительные параметры (queue, show_api и т.д.)
+    
+    Returns:
+        Dependency объект от первого триггера
+    """
+    if not isinstance(triggers, (list, tuple)):
+        triggers = [triggers]
+    
+    # Вызываем каждый триггер с одинаковыми параметрами
+    dependencies = []
+    for trigger in triggers:
+        dep = trigger(fn, inputs=inputs, outputs=outputs, **kwargs)
+        dependencies.append(dep)
+    
+    # Возвращаем Dependency от первого триггера для цепочки .then()
+    return dependencies[0] if dependencies else None
 
 @document()
 class ChatInterface(Blocks):
