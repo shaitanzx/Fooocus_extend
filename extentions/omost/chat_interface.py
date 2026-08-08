@@ -16,6 +16,7 @@ from gradio.components import (
     Chatbot,
     Component,
     Markdown,
+    # MultimodalTextbox,  # [OMOST] Multimodal убран
     State,
     Textbox,
     get_component_instance,
@@ -58,8 +59,8 @@ class ChatInterface(Blocks):
         *,
         post_fn_kwargs: dict = None,
         pre_fn_kwargs: dict = None,
-        #multimodal: bool = False,
-        textbox: Textbox | None = None,
+        # multimodal: bool = False,  # [OMOST] Multimodal убран
+        textbox: Textbox | None = None,  # [OMOST] Было: Textbox | MultimodalTextbox | None
         additional_inputs: str | Component | list[str | Component] | None = None,
         additional_inputs_accordion_name: str | None = None,
         additional_inputs_accordion: str | Accordion | None = None,
@@ -75,7 +76,7 @@ class ChatInterface(Blocks):
         undo_btn: str | None | Button = "↩️ Undo",
         clear_btn: str | None | Button = "🗑️  Clear",
         autofocus: bool = True,
-        concurrency_limit: int | None | Literal["default"] = "default",
+        #concurrency_limit: int | None | Literal["default"] = "default",
     ):
         super().__init__(
             analytics_enabled=analytics_enabled,
@@ -96,8 +97,10 @@ class ChatInterface(Blocks):
 
         self.interrupter = State(None)
 
-        #self.multimodal = multimodal
-        self.concurrency_limit = concurrency_limit
+        # self.multimodal = multimodal  # [OMOST] Multimodal убран
+        self.multimodal = False  # [OMOST] Всегда False, ветки multimodal не выполняются
+
+        #self.concurrency_limit = concurrency_limit
         self.fn = fn
         self.is_async = inspect.iscoroutinefunction(
             self.fn
@@ -157,26 +160,32 @@ class ChatInterface(Blocks):
             with Group():
                 with Row():
                     if textbox:
-                        if self.multimodal:
-                            submit_btn = None
-                        else:
-                            textbox.container = False
+                        # [OMOST] Multimodal ветка убрана
+                        # if self.multimodal:
+                        #     submit_btn = None
+                        # else:
+                        #     textbox.container = False
+                        textbox.container = False
                         textbox.show_label = False
                         textbox_ = textbox.render()
-                        if not isinstance(textbox_, (Textbox, MultimodalTextbox)):
+                        # [OMOST] Проверка типа упрощена
+                        # if not isinstance(textbox_, (Textbox, MultimodalTextbox)):
+                        if not isinstance(textbox_, Textbox):
                             raise TypeError(
-                                f"Expected a gr.Textbox or gr.MultimodalTextbox component, but got {type(textbox_)}"
+                                # f"Expected a gr.Textbox or gr.MultimodalTextbox component, but got {type(textbox_)}"
+                                f"Expected a gr.Textbox component, but got {type(textbox_)}"
                             )
                         self.textbox = textbox_
-                    elif self.multimodal:
-                        submit_btn = None
-                        self.textbox = MultimodalTextbox(
-                            show_label=False,
-                            label="Message",
-                            placeholder="Type a message...",
-                            scale=7,
-                            autofocus=autofocus,
-                        )
+                    # [OMOST] Multimodal ветка убрана
+                    # elif self.multimodal:
+                    #     submit_btn = None
+                    #     self.textbox = MultimodalTextbox(
+                    #         show_label=False,
+                    #         label="Message",
+                    #         placeholder="Type a message...",
+                    #         scale=7,
+                    #         autofocus=autofocus,
+                    #     )
                     else:
                         self.textbox = Textbox(
                             container=False,
@@ -186,7 +195,9 @@ class ChatInterface(Blocks):
                             scale=7,
                             autofocus=autofocus,
                         )
-                    if submit_btn is not None and not multimodal:
+                    # [OMOST] Убрана проверка "and not multimodal"
+                    # if submit_btn is not None and not multimodal:
+                    if submit_btn is not None:
                         if isinstance(submit_btn, Button):
                             submit_btn.render()
                         elif isinstance(submit_btn, str):
@@ -261,37 +272,37 @@ class ChatInterface(Blocks):
                 self._clear_and_save_textbox,
                 [self.textbox],
                 [self.textbox, self.saved_input],
-                show_api=False,
+                # show_api=False,
                 queue=False,
             )
             .then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                # show_api=False,
                 queue=False,
             )
             .then(
                 self._display_input,
                 [self.saved_input, self.chatbot_state],
                 [self.chatbot, self.chatbot_state],
-                show_api=False,
+                # show_api=False,
                 queue=False,
             )
             .then(
                 submit_fn,
                 [self.saved_input, self.chatbot_state] + self.additional_inputs,
                 [self.chatbot, self.chatbot_state, self.interrupter],
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
         )
         self._setup_stop_events(submit_triggers, submit_event)
@@ -302,37 +313,37 @@ class ChatInterface(Blocks):
                     self._delete_prev_fn,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.saved_input, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
-                    show_api=False,
-                    concurrency_limit=cast(
-                        Union[int, Literal["default"], None], self.concurrency_limit
-                    ),
+                    # show_api=False,
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
                 ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
             )
             self._setup_stop_events([self.retry_btn.click], retry_event)
@@ -342,26 +353,26 @@ class ChatInterface(Blocks):
                 self._delete_prev_fn,
                 [self.saved_input, self.chatbot_state],
                 [self.chatbot, self.saved_input, self.chatbot_state],
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 async_lambda(lambda x: x),
                 [self.saved_input],
                 [self.textbox],
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
 
         if self.clear_btn:
@@ -370,19 +381,19 @@ class ChatInterface(Blocks):
                 None,
                 [self.chatbot, self.chatbot_state, self.saved_input],
                 queue=False,
-                show_api=False,
+                # show_api=False,
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                # show_api=False,
                 queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
-                show_api=False,
-                concurrency_limit=cast(
-                    Union[int, Literal["default"], None], self.concurrency_limit
-                ),
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
 
     def _setup_stop_events(
@@ -405,14 +416,14 @@ class ChatInterface(Blocks):
                         ),
                         None,
                         [self.submit_btn, self.stop_btn],
-                        show_api=False,
+                        # show_api=False,
                         queue=False,
                     )
                 event_to_cancel.then(
                     async_lambda(lambda: (Button(visible=True), Button(visible=False))),
                     None,
                     [self.submit_btn, self.stop_btn],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
             else:
@@ -421,21 +432,21 @@ class ChatInterface(Blocks):
                         async_lambda(lambda: Button(visible=True)),
                         None,
                         [self.stop_btn],
-                        show_api=False,
+                        # show_api=False,
                         queue=False,
                     )
                 event_to_cancel.then(
                     async_lambda(lambda: Button(visible=False)),
                     None,
                     [self.stop_btn],
-                    show_api=False,
+                    # show_api=False,
                     queue=False,
                 )
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
-                show_api=False,
+                # show_api=False,
             )
 
     def _setup_api(self) -> None:
@@ -446,38 +457,44 @@ class ChatInterface(Blocks):
             [self.textbox, self.chatbot_state] + self.additional_inputs,
             [self.textbox, self.chatbot_state],
             api_name="chat",
-            concurrency_limit=cast(
-                Union[int, Literal["default"], None], self.concurrency_limit
-            ),
+            # concurrency_limit=cast(
+            #     Union[int, Literal["default"], None], self.concurrency_limit
+            # ),
         )
 
     def _clear_and_save_textbox(self, message: str) -> tuple[str | dict, str]:
-        if self.multimodal:
-            return {"text": "", "files": []}, message
-        else:
-            return "", message
+        # [OMOST] Multimodal ветка убрана
+        # if self.multimodal:
+        #     return {"text": "", "files": []}, message
+        # else:
+        #     return "", message
+        return "", message
 
-    def _append_multimodal_history(
-        self,
-        message: dict[str, list],
-        response: str | None,
-        history: list[list[str | tuple | None]],
-    ):
-        for x in message["files"]:
-            history.append([(x,), None])
-        if message["text"] is None or not isinstance(message["text"], str):
-            return
-        elif message["text"] == "" and message["files"] != []:
-            history.append([None, response])
-        else:
-            history.append([message["text"], response])
+    # [OMOST] Multimodal метод закомментирован целиком
+    # def _append_multimodal_history(
+    #     self,
+    #     message: dict[str, list],
+    #     response: str | None,
+    #     history: list[list[str | tuple | None]],
+    # ):
+    #     for x in message["files"]:
+    #         history.append([(x,), None])
+    #     if message["text"] is None or not isinstance(message["text"], str):
+    #         return
+    #     elif message["text"] == "" and message["files"] != []:
+    #         history.append([None, response])
+    #     else:
+    #         history.append([message["text"], response])
 
     async def _display_input(
         self, message: str | dict[str, list], history: list[list[str | tuple | None]]
     ) -> tuple[list[list[str | tuple | None]], list[list[str | tuple | None]]]:
-        if self.multimodal and isinstance(message, dict):
-            self._append_multimodal_history(message, None, history)
-        elif isinstance(message, str):
+        # [OMOST] Multimodal ветка убрана
+        # if self.multimodal and isinstance(message, dict):
+        #     self._append_multimodal_history(message, None, history)
+        # elif isinstance(message, str):
+        #     history.append([message, None])
+        if isinstance(message, str):
             history.append([message, None])
         return history, history
 
@@ -488,15 +505,17 @@ class ChatInterface(Blocks):
         request: Request,
         *args,
     ) -> tuple[list[list[str | tuple | None]], list[list[str | tuple | None]]]:
-        if self.multimodal and isinstance(message, dict):
-            remove_input = (
-                len(message["files"]) + 1
-                if message["text"] is not None
-                else len(message["files"])
-            )
-            history = history_with_input[:-remove_input]
-        else:
-            history = history_with_input[:-1]
+        # [OMOST] Multimodal ветка убрана
+        # if self.multimodal and isinstance(message, dict):
+        #     remove_input = (
+        #         len(message["files"]) + 1
+        #         if message["text"] is not None
+        #         else len(message["files"])
+        #     )
+        #     history = history_with_input[:-remove_input]
+        # else:
+        #     history = history_with_input[:-1]
+        history = history_with_input[:-1]
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
         )
@@ -508,9 +527,12 @@ class ChatInterface(Blocks):
                 self.fn, *inputs, limiter=self.limiter
             )
 
-        if self.multimodal and isinstance(message, dict):
-            self._append_multimodal_history(message, response, history)
-        elif isinstance(message, str):
+        # [OMOST] Multimodal ветка убрана
+        # if self.multimodal and isinstance(message, dict):
+        #     self._append_multimodal_history(message, response, history)
+        # elif isinstance(message, str):
+        #     history.append([message, response])
+        if isinstance(message, str):
             history.append([message, response])
         return history, history
 
@@ -521,15 +543,17 @@ class ChatInterface(Blocks):
         request: Request,
         *args,
     ) -> AsyncGenerator:
-        if self.multimodal and isinstance(message, dict):
-            remove_input = (
-                len(message["files"]) + 1
-                if message["text"] is not None
-                else len(message["files"])
-            )
-            history = history_with_input[:-remove_input]
-        else:
-            history = history_with_input[:-1]
+        # [OMOST] Multimodal ветка убрана
+        # if self.multimodal and isinstance(message, dict):
+        #     remove_input = (
+        #         len(message["files"]) + 1
+        #         if message["text"] is not None
+        #         else len(message["files"])
+        #     )
+        #     history = history_with_input[:-remove_input]
+        # else:
+        #     history = history_with_input[:-1]
+        history = history_with_input[:-1]
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
         )
@@ -543,28 +567,37 @@ class ChatInterface(Blocks):
             generator = SyncToAsyncIterator(generator, self.limiter)
         try:
             first_response, first_interrupter = await async_iteration(generator)
-            if self.multimodal and isinstance(message, dict):
-                for x in message["files"]:
-                    history.append([(x,), None])
-                update = history + [[message["text"], first_response]]
-                yield update, update
-            else:
-                update = history + [[message, first_response]]
-                yield update, update, first_interrupter
+            # [OMOST] Multimodal ветка убрана
+            # if self.multimodal and isinstance(message, dict):
+            #     for x in message["files"]:
+            #         history.append([(x,), None])
+            #     update = history + [[message["text"], first_response]]
+            #     yield update, update
+            # else:
+            #     update = history + [[message, first_response]]
+            #     yield update, update, first_interrupter
+            update = history + [[message, first_response]]
+            yield update, update, first_interrupter
         except StopIteration:
-            if self.multimodal and isinstance(message, dict):
-                self._append_multimodal_history(message, None, history)
-                yield history, history
-            else:
-                update = history + [[message, None]]
-                yield update, update, first_interrupter
+            # [OMOST] Multimodal ветка убрана
+            # if self.multimodal and isinstance(message, dict):
+            #     self._append_multimodal_history(message, None, history)
+            #     yield history, history
+            # else:
+            #     update = history + [[message, None]]
+            #     yield update, update, first_interrupter
+            update = history + [[message, None]]
+            yield update, update, first_interrupter
         async for response, interrupter in generator:
-            if self.multimodal and isinstance(message, dict):
-                update = history + [[message["text"], response]]
-                yield update, update
-            else:
-                update = history + [[message, response]]
-                yield update, update, interrupter
+            # [OMOST] Multimodal ветка убрана
+            # if self.multimodal and isinstance(message, dict):
+            #     update = history + [[message["text"], response]]
+            #     yield update, update
+            # else:
+            #     update = history + [[message, response]]
+            #     yield update, update, interrupter
+            update = history + [[message, response]]
+            yield update, update, interrupter
 
     async def _api_submit_fn(
         self, message: str, history: list[list[str | None]], request: Request, *args
@@ -613,17 +646,23 @@ class ChatInterface(Blocks):
         str | dict[str, list],
         list[list[str | tuple | None]],
     ]:
-        if self.multimodal and isinstance(message, dict):
-            remove_input = (
-                len(message["files"]) + 1
-                if message["text"] is not None
-                else len(message["files"])
-            )
-            history = history[:-remove_input]
-        else:
-            while history:
-                deleted_a, deleted_b = history[-1]
-                history = history[:-1]
-                if isinstance(deleted_a, str) and isinstance(deleted_b, str):
-                    break
+        # [OMOST] Multimodal ветка убрана
+        # if self.multimodal and isinstance(message, dict):
+        #     remove_input = (
+        #         len(message["files"]) + 1
+        #         if message["text"] is not None
+        #         else len(message["files"])
+        #     )
+        #     history = history[:-remove_input]
+        # else:
+        #     while history:
+        #         deleted_a, deleted_b = history[-1]
+        #         history = history[:-1]
+        #         if isinstance(deleted_a, str) and isinstance(deleted_b, str):
+        #             break
+        while history:
+            deleted_a, deleted_b = history[-1]
+            history = history[:-1]
+            if isinstance(deleted_a, str) and isinstance(deleted_b, str):
+                break
         return history, message or "", history
