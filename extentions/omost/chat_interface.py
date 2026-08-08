@@ -16,13 +16,12 @@ from gradio.components import (
     Chatbot,
     Component,
     Markdown,
-    # MultimodalTextbox,  # [OMOST] Multimodal убран
     State,
     Textbox,
     get_component_instance,
     Dataset,
 )
-from gradio.events import Dependency #, on
+from gradio.events import Dependency
 from gradio.helpers import special_args
 from gradio.layouts import Accordion, Group, Row
 from gradio.routes import Request
@@ -30,40 +29,11 @@ from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration
 
 def async_lambda(fn):
-    """Convert a synchronous function to an async function."""
-    async def wrapper(*args, **kwargs):
-        return fn(*args, **kwargs)
-    return wrapper
+            """Convert a synchronous function to an async function."""
+            async def wrapper(*args, **kwargs):
+                return fn(*args, **kwargs)
+            return wrapper
 
-    return function_wrapper
-def on(triggers, fn, inputs=None, outputs=None, **kwargs):
-    """
-    Замена функции gradio.events.on для старых версий Gradio.
-    
-    Навешивает один обработчик на несколько триггеров одновременно.
-    Возвращает Dependency от первого триггера для поддержки цепочки .then().
-    
-    Args:
-        triggers: список триггеров (например, [textbox.submit, button.click])
-        fn: функция-обработчик
-        inputs: список входных компонентов
-        outputs: список выходных компонентов
-        **kwargs: дополнительные параметры (queue, show_api и т.д.)
-    
-    Returns:
-        Dependency объект от первого триггера
-    """
-    if not isinstance(triggers, (list, tuple)):
-        triggers = [triggers]
-    
-    # Вызываем каждый триггер с одинаковыми параметрами
-    dependencies = []
-    for trigger in triggers:
-        dep = trigger(fn, inputs=inputs, outputs=outputs, **kwargs)
-        dependencies.append(dep)
-    
-    # Возвращаем Dependency от первого триггера для цепочки .then()
-    return dependencies[0] if dependencies else None
 
 @document()
 class ChatInterface(Blocks):
@@ -94,8 +64,8 @@ class ChatInterface(Blocks):
         *,
         post_fn_kwargs: dict = None,
         pre_fn_kwargs: dict = None,
-        # multimodal: bool = False,  # [OMOST] Multimodal убран
-        textbox: Textbox | None = None,  # [OMOST] Было: Textbox | MultimodalTextbox | None
+        # multimodal: bool = False,
+        textbox: Textbox | None = None,
         additional_inputs: str | Component | list[str | Component] | None = None,
         additional_inputs_accordion_name: str | None = None,
         additional_inputs_accordion: str | Accordion | None = None,
@@ -111,7 +81,8 @@ class ChatInterface(Blocks):
         undo_btn: str | None | Button = "↩️ Undo",
         clear_btn: str | None | Button = "🗑️  Clear",
         autofocus: bool = True,
-        #concurrency_limit: int | None | Literal["default"] = "default",
+        concurrency_limit: int | None | Literal["default"] = "default",
+
     ):
         super().__init__(
             analytics_enabled=analytics_enabled,
@@ -119,6 +90,7 @@ class ChatInterface(Blocks):
             css=css,
             title=title or "Gradio",
             theme=theme,
+
         )
 
         if post_fn_kwargs is None:
@@ -132,10 +104,8 @@ class ChatInterface(Blocks):
 
         self.interrupter = State(None)
 
-        # self.multimodal = multimodal  # [OMOST] Multimodal убран
-        self.multimodal = False  # [OMOST] Всегда False, ветки multimodal не выполняются
-
-        #self.concurrency_limit = concurrency_limit
+        #self.multimodal = multimodal
+        self.concurrency_limit = concurrency_limit
         self.fn = fn
         self.is_async = inspect.iscoroutinefunction(
             self.fn
@@ -195,32 +165,14 @@ class ChatInterface(Blocks):
             with Group():
                 with Row():
                     if textbox:
-                        # [OMOST] Multimodal ветка убрана
-                        # if self.multimodal:
-                        #     submit_btn = None
-                        # else:
-                        #     textbox.container = False
                         textbox.container = False
                         textbox.show_label = False
                         textbox_ = textbox.render()
-                        # [OMOST] Проверка типа упрощена
-                        # if not isinstance(textbox_, (Textbox, MultimodalTextbox)):
                         if not isinstance(textbox_, Textbox):
                             raise TypeError(
-                                # f"Expected a gr.Textbox or gr.MultimodalTextbox component, but got {type(textbox_)}"
                                 f"Expected a gr.Textbox component, but got {type(textbox_)}"
                             )
                         self.textbox = textbox_
-                    # [OMOST] Multimodal ветка убрана
-                    # elif self.multimodal:
-                    #     submit_btn = None
-                    #     self.textbox = MultimodalTextbox(
-                    #         show_label=False,
-                    #         label="Message",
-                    #         placeholder="Type a message...",
-                    #         scale=7,
-                    #         autofocus=autofocus,
-                    #     )
                     else:
                         self.textbox = Textbox(
                             container=False,
@@ -230,8 +182,6 @@ class ChatInterface(Blocks):
                             scale=7,
                             autofocus=autofocus,
                         )
-                    # [OMOST] Убрана проверка "and not multimodal"
-                    # if submit_btn is not None and not multimodal:
                     if submit_btn is not None:
                         if isinstance(submit_btn, Button):
                             submit_btn.render()
@@ -293,55 +243,78 @@ class ChatInterface(Blocks):
 
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
+    def _setup_stop_events_for_event(self, event_to_cancel: Dependency) -> None:
+        """Настройка stop для одного события"""
+        def perform_interrupt(ipc):
+            if ipc is not None:
+                ipc()
+            return
 
+        if self.stop_btn and self.is_generator:
+            self.stop_btn.click(
+                fn=perform_interrupt,
+                inputs=[self.interrupter],
+                cancels=event_to_cancel,
+                # show_api=False,
+            )
     def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
-        submit_triggers = (
-            [self.textbox.submit, self.submit_btn.click]
-            if self.submit_btn
-            else [self.textbox.submit]
-        )
-        submit_event = (
-            on(
-                submit_triggers,
-                self._clear_and_save_textbox,
-                [self.textbox],
-                [self.textbox, self.saved_input],
-                # show_api=False,
-                queue=False,
+    
+        # Вспомогательная функция для создания цепочки событий
+        def create_submit_chain(trigger):
+            return (
+                trigger(
+                    self._clear_and_save_textbox,
+                    [self.textbox],
+                    [self.textbox, self.saved_input],
+                    # show_api=False,
+                    queue=False,
+                )
+                .then(
+                    self.pre_fn,
+                    **self.pre_fn_kwargs,
+                    # show_api=False,
+                    queue=False,
+                )
+                .then(
+                    self._display_input,
+                    [self.saved_input, self.chatbot_state],
+                    [self.chatbot, self.chatbot_state],
+                    # show_api=False,
+                    queue=False,
+                )
+                .then(
+                    submit_fn,
+                    [self.saved_input, self.chatbot_state] + self.additional_inputs,
+                    [self.chatbot, self.chatbot_state, self.interrupter],
+                    # show_api=False,
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
+                )
+                .then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    # show_api=False,
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
+                )
             )
-            .then(
-                self.pre_fn,
-                **self.pre_fn_kwargs,
-                # show_api=False,
-                queue=False,
-            )
-            .then(
-                self._display_input,
-                [self.saved_input, self.chatbot_state],
-                [self.chatbot, self.chatbot_state],
-                # show_api=False,
-                queue=False,
-            )
-            .then(
-                submit_fn,
-                [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                [self.chatbot, self.chatbot_state, self.interrupter],
-                # show_api=False,
-                # concurrency_limit=cast(
-                #     Union[int, Literal["default"], None], self.concurrency_limit
-                # ),
-            ).then(
-                self.post_fn,
-                **self.post_fn_kwargs,
-                # show_api=False,
-                # concurrency_limit=cast(
-                #     Union[int, Literal["default"], None], self.concurrency_limit
-                # ),
-            )
-        )
-        self._setup_stop_events(submit_triggers, submit_event)
+    
+        # Создаем события для каждого триггера отдельно
+        submit_events = []
+        if self.submit_btn:
+            submit_events.append(create_submit_chain(self.submit_btn.click))
+        submit_events.append(create_submit_chain(self.textbox.submit))
+    
+        # Настраиваем stop для каждого события
+        for submit_event in submit_events:
+            self._setup_stop_events_for_event(submit_event)
+    
+        # Остальной код для retry, undo, clear без изменений
 
+        # Retry кнопка
         if self.retry_btn:
             retry_event = (
                 self.retry_btn.click(
@@ -372,17 +345,19 @@ class ChatInterface(Blocks):
                     # concurrency_limit=cast(
                     #     Union[int, Literal["default"], None], self.concurrency_limit
                     # ),
-                ).then(
-                self.post_fn,
-                **self.post_fn_kwargs,
-                # show_api=False,
-                # concurrency_limit=cast(
-                #     Union[int, Literal["default"], None], self.concurrency_limit
-                # ),
+                )
+                .then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    # show_api=False,
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
+                )
             )
-            )
-            self._setup_stop_events([self.retry_btn.click], retry_event)
-
+            self._setup_stop_events_for_event(retry_event)
+    
+        # Undo кнопка
         if self.undo_btn:
             self.undo_btn.click(
                 self._delete_prev_fn,
@@ -409,7 +384,8 @@ class ChatInterface(Blocks):
                 #     Union[int, Literal["default"], None], self.concurrency_limit
                 # ),
             )
-
+    
+        # Clear кнопка
         if self.clear_btn:
             self.clear_btn.click(
                 async_lambda(lambda: ([], [], None)),
@@ -497,15 +473,9 @@ class ChatInterface(Blocks):
             # ),
         )
 
-    def _clear_and_save_textbox(self, message: str) -> tuple[str | dict, str]:
-        # [OMOST] Multimodal ветка убрана
-        # if self.multimodal:
-        #     return {"text": "", "files": []}, message
-        # else:
-        #     return "", message
+    def _clear_and_save_textbox(self, message: str) -> tuple[str, str]:
         return "", message
 
-    # [OMOST] Multimodal метод закомментирован целиком
     # def _append_multimodal_history(
     #     self,
     #     message: dict[str, list],
@@ -522,34 +492,18 @@ class ChatInterface(Blocks):
     #         history.append([message["text"], response])
 
     async def _display_input(
-        self, message: str | dict[str, list], history: list[list[str | tuple | None]]
-    ) -> tuple[list[list[str | tuple | None]], list[list[str | tuple | None]]]:
-        # [OMOST] Multimodal ветка убрана
-        # if self.multimodal and isinstance(message, dict):
-        #     self._append_multimodal_history(message, None, history)
-        # elif isinstance(message, str):
-        #     history.append([message, None])
-        if isinstance(message, str):
-            history.append([message, None])
+        self, message: str, history: list[list[str | None]]
+    ) -> tuple[list[list[str | None]], list[list[str | None]]]:
+        history.append([message, None])
         return history, history
 
     async def _submit_fn(
         self,
-        message: str | dict[str, list],
-        history_with_input: list[list[str | tuple | None]],
+        message: str,
+        history_with_input: list[list[str | None]],
         request: Request,
         *args,
-    ) -> tuple[list[list[str | tuple | None]], list[list[str | tuple | None]]]:
-        # [OMOST] Multimodal ветка убрана
-        # if self.multimodal and isinstance(message, dict):
-        #     remove_input = (
-        #         len(message["files"]) + 1
-        #         if message["text"] is not None
-        #         else len(message["files"])
-        #     )
-        #     history = history_with_input[:-remove_input]
-        # else:
-        #     history = history_with_input[:-1]
+    ) -> tuple[list[list[str | None]], list[list[str | None]]]:
         history = history_with_input[:-1]
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
@@ -562,32 +516,16 @@ class ChatInterface(Blocks):
                 self.fn, *inputs, limiter=self.limiter
             )
 
-        # [OMOST] Multimodal ветка убрана
-        # if self.multimodal and isinstance(message, dict):
-        #     self._append_multimodal_history(message, response, history)
-        # elif isinstance(message, str):
-        #     history.append([message, response])
-        if isinstance(message, str):
-            history.append([message, response])
+        history.append([message, response])
         return history, history
 
     async def _stream_fn(
         self,
-        message: str | dict[str, list],
-        history_with_input: list[list[str | tuple | None]],
+        message: str,
+        history_with_input: list[list[str | None]],
         request: Request,
         *args,
     ) -> AsyncGenerator:
-        # [OMOST] Multimodal ветка убрана
-        # if self.multimodal and isinstance(message, dict):
-        #     remove_input = (
-        #         len(message["files"]) + 1
-        #         if message["text"] is not None
-        #         else len(message["files"])
-        #     )
-        #     history = history_with_input[:-remove_input]
-        # else:
-        #     history = history_with_input[:-1]
         history = history_with_input[:-1]
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
@@ -602,35 +540,12 @@ class ChatInterface(Blocks):
             generator = SyncToAsyncIterator(generator, self.limiter)
         try:
             first_response, first_interrupter = await async_iteration(generator)
-            # [OMOST] Multimodal ветка убрана
-            # if self.multimodal and isinstance(message, dict):
-            #     for x in message["files"]:
-            #         history.append([(x,), None])
-            #     update = history + [[message["text"], first_response]]
-            #     yield update, update
-            # else:
-            #     update = history + [[message, first_response]]
-            #     yield update, update, first_interrupter
             update = history + [[message, first_response]]
             yield update, update, first_interrupter
         except StopIteration:
-            # [OMOST] Multimodal ветка убрана
-            # if self.multimodal and isinstance(message, dict):
-            #     self._append_multimodal_history(message, None, history)
-            #     yield history, history
-            # else:
-            #     update = history + [[message, None]]
-            #     yield update, update, first_interrupter
             update = history + [[message, None]]
             yield update, update, first_interrupter
         async for response, interrupter in generator:
-            # [OMOST] Multimodal ветка убрана
-            # if self.multimodal and isinstance(message, dict):
-            #     update = history + [[message["text"], response]]
-            #     yield update, update
-            # else:
-            #     update = history + [[message, response]]
-            #     yield update, update, interrupter
             update = history + [[message, response]]
             yield update, update, interrupter
 
@@ -674,27 +589,13 @@ class ChatInterface(Blocks):
 
     async def _delete_prev_fn(
         self,
-        message: str | dict[str, list],
-        history: list[list[str | tuple | None]],
+        message: str,
+        history: list[list[str | None]],
     ) -> tuple[
-        list[list[str | tuple | None]],
-        str | dict[str, list],
-        list[list[str | tuple | None]],
+        list[list[str | None]],
+        str,
+        list[list[str | None]],
     ]:
-        # [OMOST] Multimodal ветка убрана
-        # if self.multimodal and isinstance(message, dict):
-        #     remove_input = (
-        #         len(message["files"]) + 1
-        #         if message["text"] is not None
-        #         else len(message["files"])
-        #     )
-        #     history = history[:-remove_input]
-        # else:
-        #     while history:
-        #         deleted_a, deleted_b = history[-1]
-        #         history = history[:-1]
-        #         if isinstance(deleted_a, str) and isinstance(deleted_b, str):
-        #             break
         while history:
             deleted_a, deleted_b = history[-1]
             history = history[:-1]
