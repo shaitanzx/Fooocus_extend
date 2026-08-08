@@ -74,8 +74,6 @@ class ChatInterface(Blocks):
         description: str | None = None,
         theme: Theme | str | None = None,
         css: str | None = None,
-        js: str | None = None,
-        head: str | None = None,
         analytics_enabled: bool | None = None,
         submit_btn: str | None | Button = "Submit",
         stop_btn: str | None | Button = "Stop",
@@ -84,8 +82,6 @@ class ChatInterface(Blocks):
         clear_btn: str | None | Button = "🗑️  Clear",
         autofocus: bool = True,
         concurrency_limit: int | None | Literal["default"] = "default",
-        fill_height: bool = True,
-        delete_cache: tuple[int, int] | None = None,
     ):
         super().__init__(
             analytics_enabled=analytics_enabled,
