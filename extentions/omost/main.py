@@ -18,6 +18,7 @@ import gc
 
 llm_model = None
 llm_tokenizer = None
+llm_name = None
 
 
 def get_vram_info():
@@ -52,7 +53,7 @@ def format_vram_info(prefix=""):
 @torch.inference_mode()
 def unload_model():
     """Принудительная выгрузка LLM из VRAM перед запуском диффузии"""
-    global llm_model, llm_tokenizer
+    global llm_model, llm_tokenizer,llm_name
     
     # Запоминаем VRAM ДО
     allocated_before, reserved_before, total, _ = get_vram_info()
@@ -62,9 +63,11 @@ def unload_model():
         print("\033[92m[Omost] Unloading LLM from VRAM...\033[0m")
         del llm_model
         del llm_tokenizer
+        del llm_name
         llm_model = None
         llm_tokenizer = None
-        
+        llm_name = None
+
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -99,23 +102,28 @@ def post_chat(history):
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str) -> str:
+    global llm_model, llm_tokenizer, llm_name
     print(f'[OMOST] model_base {model_base}')
-    global llm_model, llm_tokenizer
-    if llm_model == None:
+    print(f'[OMOST] llm_name {llm_name}')
+    if llm_name not None and llm_name != model_base:
+        unload_model()
+    if llm_name == None:
         print(f"[Omost] Loading LLM: {model_base}...")
 
         llm_model = AutoModelForCausalLM.from_pretrained(
-            model_base,
+            f"lllyasviel/{model_base}",
             cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
             torch_dtype=torch.bfloat16,
             device_map="auto",
             token=None,        
         )
         llm_tokenizer = AutoTokenizer.from_pretrained(
-            model_base,
+            f"lllyasviel/{model_base}",
             cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
             token=None
         )
+        llm_name = model_base
+
 
 
     np.random.seed(int(seed))
