@@ -27,12 +27,19 @@ from gradio.helpers import special_args
 from gradio.layouts import Accordion, Group, Row
 from gradio.routes import Request
 from gradio.themes import ThemeClass as Theme
-from gradio.utils import SyncToAsyncIterator, async_iteration #, async_lambda
+from gradio.utils import SyncToAsyncIterator, async_iteration
+
 def async_lambda(fn):
-    """Convert a synchronous function to an async function."""
-    async def wrapper(*args, **kwargs):
-        return fn(*args, **kwargs)
-    return wrapper
+    """Turn a function into an async function.
+    Useful for internal event handlers defined as lambda functions used in the codebase
+    """
+
+    @wraps(f)
+    async def function_wrapper(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    return function_wrapper
+
 
 @document()
 class ChatInterface(Blocks):
@@ -263,352 +270,196 @@ class ChatInterface(Blocks):
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
 
-    # def _setup_events(self) -> None:
-    #     submit_fn = self._stream_fn if self.is_generator else self._submit_fn
-    #     submit_triggers = (
-    #         [self.textbox.submit, self.submit_btn.click]
-    #         if self.submit_btn
-    #         else [self.textbox.submit]
-    #     )
-    #     submit_event = (
-    #         on(
-    #             submit_triggers,
-    #             self._clear_and_save_textbox,
-    #             [self.textbox],
-    #             [self.textbox, self.saved_input],
-    #             # show_api=False,
-    #             queue=False,
-    #         )
-    #         .then(
-    #             self.pre_fn,
-    #             **self.pre_fn_kwargs,
-    #             # show_api=False,
-    #             queue=False,
-    #         )
-    #         .then(
-    #             self._display_input,
-    #             [self.saved_input, self.chatbot_state],
-    #             [self.chatbot, self.chatbot_state],
-    #             # show_api=False,
-    #             queue=False,
-    #         )
-    #         .then(
-    #             submit_fn,
-    #             [self.saved_input, self.chatbot_state] + self.additional_inputs,
-    #             [self.chatbot, self.chatbot_state, self.interrupter],
-    #             # show_api=False,
-    #             # concurrency_limit=cast(
-    #             #     Union[int, Literal["default"], None], self.concurrency_limit
-    #             # ),
-    #         ).then(
-    #             self.post_fn,
-        #         **self.post_fn_kwargs,
-        #         # show_api=False,
-        #         # concurrency_limit=cast(
-        #         #     Union[int, Literal["default"], None], self.concurrency_limit
-        #         # ),
-        #     )
-        # )
-        # self._setup_stop_events(submit_triggers, submit_event)
-
-        # if self.retry_btn:
-        #     retry_event = (
-        #         self.retry_btn.click(
-        #             self._delete_prev_fn,
-        #             [self.saved_input, self.chatbot_state],
-        #             [self.chatbot, self.saved_input, self.chatbot_state],
-        #             # show_api=False,
-        #             queue=False,
-        #         )
-        #         .then(
-        #             self.pre_fn,
-        #             **self.pre_fn_kwargs,
-        #             # show_api=False,
-        #             queue=False,
-        #         )
-        #         .then(
-        #             self._display_input,
-        #             [self.saved_input, self.chatbot_state],
-        #             [self.chatbot, self.chatbot_state],
-        #             # show_api=False,
-        #             queue=False,
-        #         )
-        #         .then(
-        #             submit_fn,
-        #             [self.saved_input, self.chatbot_state] + self.additional_inputs,
-        #             [self.chatbot, self.chatbot_state],
-        #             # show_api=False,
-        #             # concurrency_limit=cast(
-        #             #     Union[int, Literal["default"], None], self.concurrency_limit
-        #             # ),
-        #         ).then(
-        #         self.post_fn,
-        #         **self.post_fn_kwargs,
-        #         # show_api=False,
-        #         # concurrency_limit=cast(
-        #         #     Union[int, Literal["default"], None], self.concurrency_limit
-        #         # ),
-        #     )
-        #     )
-        #     self._setup_stop_events([self.retry_btn.click], retry_event)
-
-        # if self.undo_btn:
-        #     self.undo_btn.click(
-        #         self._delete_prev_fn,
-        #         [self.saved_input, self.chatbot_state],
-        #         [self.chatbot, self.saved_input, self.chatbot_state],
-        #         # show_api=False,
-        #         queue=False,
-        #     ).then(
-        #         self.pre_fn,
-        #         **self.pre_fn_kwargs,
-        #         # show_api=False,
-        #         queue=False,
-        #     ).then(
-        #         async_lambda(lambda x: x),
-        #         [self.saved_input],
-        #         [self.textbox],
-        #         # show_api=False,
-        #         queue=False,
-        #     ).then(
-        #         self.post_fn,
-        #         **self.post_fn_kwargs,
-        #         # show_api=False,
-        #         # concurrency_limit=cast(
-        #         #     Union[int, Literal["default"], None], self.concurrency_limit
-        #         # ),
-        #     )
-
-        # if self.clear_btn:
-        #     self.clear_btn.click(
-        #         async_lambda(lambda: ([], [], None)),
-        #         None,
-        #         [self.chatbot, self.chatbot_state, self.saved_input],
-        #         queue=False,
-        #         # show_api=False,
-        #     ).then(
-        #         self.pre_fn,
-        #         **self.pre_fn_kwargs,
-        #         # show_api=False,
-        #         queue=False,
-        #     ).then(
-        #         self.post_fn,
-        #         **self.post_fn_kwargs,
-        #         # show_api=False,
-        #         # concurrency_limit=cast(
-        #         #     Union[int, Literal["default"], None], self.concurrency_limit
-        #         # ),
-        #     )
     def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
-
-        # Вспомогательная функция: строит цепочку событий для ОДНОГО триггера.
-        # Это замена on(), которая вешает одну цепочку на несколько триггеров.
-        def create_submit_chain(trigger):
-            return (
-                trigger(
-                    async_lambda(lambda: (Button(visible=False), Button(visible=True))),
-                    None,
-                    [self.submit_btn, self.stop_btn],
-                    queue=False,
-                )
-                .then(
-                    self._clear_and_save_textbox,
-                    [self.textbox],
-                    [self.textbox, self.saved_input],
-                    queue=False,
-                )
-                .then(
-                    self.pre_fn,
-                    **self.pre_fn_kwargs,
-                    queue=False,
-                )
-                .then(
-                    self._display_input,
-                    [self.saved_input, self.chatbot_state],
-                    [self.chatbot, self.chatbot_state],
-                    queue=False,
-                )
-                .then(
-                    submit_fn,
-                    [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                    [self.chatbot, self.chatbot_state, self.interrupter],
-                )
-                .then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                )
-                .then(
-                    async_lambda(lambda: (Button(visible=True), Button(visible=False))),
-                    None,
-                    [self.submit_btn, self.stop_btn],
-                    queue=False,
-                )
+        submit_triggers = (
+            [self.textbox.submit, self.submit_btn.click]
+            if self.submit_btn
+            else [self.textbox.submit]
+        )
+        submit_event = (
+            on(
+                submit_triggers,
+                self._clear_and_save_textbox,
+                [self.textbox],
+                [self.textbox, self.saved_input],
+                # show_api=False,
+                queue=False,
             )
+            .then(
+                self.pre_fn,
+                **self.pre_fn_kwargs,
+                # show_api=False,
+                queue=False,
+            )
+            .then(
+                self._display_input,
+                [self.saved_input, self.chatbot_state],
+                [self.chatbot, self.chatbot_state],
+                # show_api=False,
+                queue=False,
+            )
+            .then(
+                submit_fn,
+                [self.saved_input, self.chatbot_state] + self.additional_inputs,
+                [self.chatbot, self.chatbot_state, self.interrupter],
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
+            ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
+            )
+        )
+        self._setup_stop_events(submit_triggers, submit_event)
 
-        # Создаём отдельную цепочку для каждого триггера (замена on())
-        submit_events = []
-        if self.submit_btn:
-            submit_events.append(create_submit_chain(self.submit_btn.click))
-        submit_events.append(create_submit_chain(self.textbox.submit))
-
-        # Настраиваем Stop для каждой цепочки
-        for submit_event in submit_events:
-            self._setup_stop_events_for_event(submit_event)
-
-        # Кнопка Retry
         if self.retry_btn:
             retry_event = (
                 self.retry_btn.click(
-                    async_lambda(lambda: (Button(visible=False), Button(visible=True))),
-                    None,
-                    [self.submit_btn, self.stop_btn],
-                    queue=False,
-                )
-                .then(
                     self._delete_prev_fn,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.saved_input, self.chatbot_state],
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
+                    # show_api=False,
                     queue=False,
                 )
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
-                )
-                .then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                )
-                .then(
-                    async_lambda(lambda: (Button(visible=True), Button(visible=False))),
-                    None,
-                    [self.submit_btn, self.stop_btn],
-                    queue=False,
-                )
+                    # show_api=False,
+                    # concurrency_limit=cast(
+                    #     Union[int, Literal["default"], None], self.concurrency_limit
+                    # ),
+                ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
-            self._setup_stop_events_for_event(retry_event)
+            )
+            self._setup_stop_events([self.retry_btn.click], retry_event)
 
-        # Кнопка Undo (без изменений)
         if self.undo_btn:
             self.undo_btn.click(
                 self._delete_prev_fn,
                 [self.saved_input, self.chatbot_state],
                 [self.chatbot, self.saved_input, self.chatbot_state],
+                # show_api=False,
                 queue=False,
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
+                # show_api=False,
                 queue=False,
             ).then(
                 async_lambda(lambda x: x),
                 [self.saved_input],
                 [self.textbox],
+                # show_api=False,
                 queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
 
-        # Кнопка Clear (без изменений)
         if self.clear_btn:
             self.clear_btn.click(
                 async_lambda(lambda: ([], [], None)),
                 None,
                 [self.chatbot, self.chatbot_state, self.saved_input],
                 queue=False,
+                # show_api=False,
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
+                # show_api=False,
                 queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
+                # show_api=False,
+                # concurrency_limit=cast(
+                #     Union[int, Literal["default"], None], self.concurrency_limit
+                # ),
             )
 
-    # def _setup_stop_events(
-    #     self, event_triggers: list[Callable], event_to_cancel: Dependency
-    # ) -> None:
-    #     def perform_interrupt(ipc):
-    #         if ipc is not None:
-    #             ipc()
-    #         return
-
-    #     if self.stop_btn and self.is_generator:
-    #         if self.submit_btn:
-    #             for event_trigger in event_triggers:
-    #                 event_trigger(
-    #                     async_lambda(
-    #                         lambda: (
-    #                             Button(visible=False),
-    #                             Button(visible=True),
-    #                         )
-    #                     ),
-    #                     None,
-    #                     [self.submit_btn, self.stop_btn],
-    #                     # show_api=False,
-    #                     queue=False,
-    #                 )
-    #             event_to_cancel.then(
-    #                 async_lambda(lambda: (Button(visible=True), Button(visible=False))),
-    #                 None,
-    #                 [self.submit_btn, self.stop_btn],
-    #                 # show_api=False,
-    #                 queue=False,
-    #             )
-    #         else:
-    #             for event_trigger in event_triggers:
-    #                 event_trigger(
-    #                     async_lambda(lambda: Button(visible=True)),
-    #                     None,
-    #                     [self.stop_btn],
-    #                     # show_api=False,
-    #                     queue=False,
-    #                 )
-    #             event_to_cancel.then(
-    #                 async_lambda(lambda: Button(visible=False)),
-    #                 None,
-    #                 [self.stop_btn],
-    #                 # show_api=False,
-    #                 queue=False,
-    #             )
-    #         self.stop_btn.click(
-    #             fn=perform_interrupt,
-    #             inputs=[self.interrupter],
-    #             cancels=event_to_cancel,
-    #             # show_api=False,
-    #         )
-    def _setup_stop_events_for_event(self, event_to_cancel: Dependency) -> None:
-        """Настройка кнопки Stop для одного события."""
+    def _setup_stop_events(
+        self, event_triggers: list[Callable], event_to_cancel: Dependency
+    ) -> None:
         def perform_interrupt(ipc):
             if ipc is not None:
                 ipc()
             return
 
         if self.stop_btn and self.is_generator:
-            # Убрали cancels=event_to_cancel, чтобы не требовать queue.
-            # Генерация всё равно остановится через interrupter.
+            if self.submit_btn:
+                for event_trigger in event_triggers:
+                    event_trigger(
+                        async_lambda(
+                            lambda: (
+                                Button(visible=False),
+                                Button(visible=True),
+                            )
+                        ),
+                        None,
+                        [self.submit_btn, self.stop_btn],
+                        # show_api=False,
+                        queue=False,
+                    )
+                event_to_cancel.then(
+                    async_lambda(lambda: (Button(visible=True), Button(visible=False))),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    # show_api=False,
+                    queue=False,
+                )
+            else:
+                for event_trigger in event_triggers:
+                    event_trigger(
+                        async_lambda(lambda: Button(visible=True)),
+                        None,
+                        [self.stop_btn],
+                        # show_api=False,
+                        queue=False,
+                    )
+                event_to_cancel.then(
+                    async_lambda(lambda: Button(visible=False)),
+                    None,
+                    [self.stop_btn],
+                    # show_api=False,
+                    queue=False,
+                )
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
-                queue=False,
-            ).then(
-                async_lambda(lambda: (Button(visible=True), Button(visible=False))),
-                None,
-                [self.submit_btn, self.stop_btn],
-                queue=False,
+                cancels=event_to_cancel,
+                # show_api=False,
             )
+
     def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
 
