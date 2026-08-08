@@ -105,14 +105,14 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         print(f"[Omost] Loading LLM: {model_base}...")
 
         llm_model = AutoModelForCausalLM.from_pretrained(
-            llm_name,
+            model_base,
             cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
             torch_dtype=torch.bfloat16,
             device_map="auto",
             token=None,        
         )
         llm_tokenizer = AutoTokenizer.from_pretrained(
-            llm_name,
+            model_base,
             cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
             token=None
         )
