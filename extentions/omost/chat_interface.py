@@ -30,13 +30,10 @@ from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration
 
 def async_lambda(fn):
-    """Turn a function into an async function.
-    Useful for internal event handlers defined as lambda functions used in the codebase
-    """
-
-    @wraps(fn)
-    async def function_wrapper(*args, **kwargs):
-        return f(*args, **kwargs)
+    """Convert a synchronous function to an async function."""
+    async def wrapper(*args, **kwargs):
+        return fn(*args, **kwargs)
+    return wrapper
 
     return function_wrapper
 def on(triggers, fn, inputs=None, outputs=None, **kwargs):
