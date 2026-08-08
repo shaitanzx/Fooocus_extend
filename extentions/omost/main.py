@@ -94,8 +94,30 @@ def post_chat(history):
 
     return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
 
+
+
+
 @torch.inference_mode()
-def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int) -> str:
+def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str) -> str:
+    print(f'[OMOST] model_base {model_base}')
+    global llm_model, llm_tokenizer
+    if llm_model == None:
+        print(f"[Omost] Loading LLM: {model_base}...")
+
+        llm_model = AutoModelForCausalLM.from_pretrained(
+            llm_name,
+            cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            token=None,        
+        )
+        llm_tokenizer = AutoTokenizer.from_pretrained(
+            llm_name,
+            cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
+            token=None
+        )
+
+
     np.random.seed(int(seed))
     torch.manual_seed(int(seed))
 
@@ -273,8 +295,11 @@ def diffusion_fn(chatbot, canvas_outputs, num_samples, seed, image_width, image_
     return chatbot
 
 def gui():
+    models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
+            with gr.Row():
+                model_base = gr.Dropdown(choices=models_name, value=models_name[0], label='LLM model')
             with gr.Row():
                 load_model = gr.Button("Load Model", variant="secondary", size="sm", min_width=60)
             with gr.Row():
@@ -284,7 +309,7 @@ def gui():
         
             seed = gr.Number(label="Random Seed", value=12345, precision=0)
 
-            with gr.Accordion(open=True, label='Language Model'):
+            with gr.Accordion(open=True, label='LLM settings'):
                 with gr.Group():
                     with gr.Row():
                         temperature = gr.Slider(
@@ -347,7 +372,7 @@ def gui():
                 retry_btn=retry_btn,
                 undo_btn=undo_btn,
                 clear_btn=clear_btn,
-                additional_inputs=[seed, temperature, top_p, max_new_tokens],
+                additional_inputs=[seed, temperature, top_p, max_new_tokens,model_base],
                 examples=examples
             )
     load_model.click(
