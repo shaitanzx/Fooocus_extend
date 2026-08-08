@@ -88,11 +88,6 @@ class ChatInterface(Blocks):
             mode="chat_interface",
             css=css,
             title=title or "Gradio",
-            theme=theme,
-            js=js,
-            head=head,
-            fill_height=fill_height,
-            delete_cache=delete_cache,
         )
 
         if post_fn_kwargs is None:
