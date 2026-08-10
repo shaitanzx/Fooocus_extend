@@ -242,40 +242,40 @@ class ChatInterface(Blocks):
 
     def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
-        submit_event = (
-            self.textbox.submit(
-                self._clear_and_save_textbox,
-                [self.textbox],
-                [self.textbox, self.saved_input],
-                api_name=False,
-                queue=False,
-            )
-            .then(
-                self.pre_fn,
-                **self.pre_fn_kwargs,
-                api_name=False,
-                queue=False,
-            )
-            .then(
-                self._display_input,
-                [self.saved_input, self.chatbot_state],
-                [self.chatbot, self.chatbot_state],
-                api_name=False,
-                queue=False,
-            )
-            .then(
-                submit_fn,
-                [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                [self.chatbot, self.chatbot_state],
-                api_name=False,
-            )
-            .then(
-                self.post_fn,
-                **self.post_fn_kwargs,
-                api_name=False,
-            )
-        )
-        self._setup_stop_events(self.textbox.submit, submit_event)
+        # submit_event = (
+        #     self.textbox.submit(
+        #         self._clear_and_save_textbox,
+        #         [self.textbox],
+        #         [self.textbox, self.saved_input],
+        #         api_name=False,
+        #         queue=False,
+        #     )
+        #     .then(
+        #         self.pre_fn,
+        #         **self.pre_fn_kwargs,
+        #         api_name=False,
+        #         queue=False,
+        #     )
+        #     .then(
+        #         self._display_input,
+        #         [self.saved_input, self.chatbot_state],
+        #         [self.chatbot, self.chatbot_state],
+        #         api_name=False,
+        #         queue=False,
+        #     )
+        #     .then(
+        #         submit_fn,
+        #         [self.saved_input, self.chatbot_state] + self.additional_inputs,
+        #         [self.chatbot, self.chatbot_state],
+        #         api_name=False,
+        #     )
+        #     .then(
+        #         self.post_fn,
+        #         **self.post_fn_kwargs,
+        #         api_name=False,
+        #     )
+        # )
+        # self._setup_stop_events(self.textbox.submit, submit_event)
 
         if self.submit_btn:
             click_event = (
@@ -286,12 +286,12 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
-                # .then(
-                #     self.pre_fn,
-                #     **self.pre_fn_kwargs,
-                #     api_name=False,
-                #     queue=False,
-                # )
+                .then(
+                    self.pre_fn,
+                    **self.pre_fn_kwargs,
+                    api_name=False,
+                    queue=False,
+                )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
@@ -305,11 +305,11 @@ class ChatInterface(Blocks):
                     [self.chatbot, self.chatbot_state],
                     api_name=False,
                 )
-                # .then(
-                #     self.post_fn,
-                #     **self.post_fn_kwargs,
-                #     api_name=False,
-                # )
+                .then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    api_name=False,
+                )
             )
             self._setup_stop_events(self.submit_btn.click, click_event)
 
