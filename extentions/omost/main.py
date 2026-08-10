@@ -178,9 +178,9 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     # stopping_criteria = StoppingCriteriaList([interactive_stopping_criteria])
 
-    def interrupter():
-        streamer.user_interrupted = True
-        return
+    # def interrupter():
+    #     streamer.user_interrupted = True
+    #     return
 
     generate_kwargs = dict(
         input_ids=input_ids,
@@ -201,7 +201,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     for text in streamer:
         outputs.append(text)
         # print(outputs)
-        yield "".join(outputs), interrupter
+        yield "".join(outputs) #, interrupter
 
     return
 def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
