@@ -185,7 +185,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     generate_kwargs = dict(
         input_ids=input_ids,
         streamer=streamer,
-        stopping_criteria=stopping_criteria,
+        #stopping_criteria=stopping_criteria,
         max_new_tokens=max_new_tokens,
         do_sample=True,
         temperature=temperature,
