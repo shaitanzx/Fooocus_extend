@@ -286,12 +286,12 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
-                .then(
-                    self.pre_fn,
-                    **self.pre_fn_kwargs,
-                    api_name=False,
-                    queue=False,
-                )
+                # .then(
+                #     self.pre_fn,
+                #     **self.pre_fn_kwargs,
+                #     api_name=False,
+                #     queue=False,
+                # )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
@@ -305,11 +305,11 @@ class ChatInterface(Blocks):
                     [self.chatbot, self.chatbot_state],
                     api_name=False,
                 )
-                .then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                    api_name=False,
-                )
+                # .then(
+                #     self.post_fn,
+                #     **self.post_fn_kwargs,
+                #     api_name=False,
+                # )
             )
             self._setup_stop_events(self.submit_btn.click, click_event)
 
@@ -322,12 +322,12 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
-                .then(
-                    self.pre_fn,
-                    **self.pre_fn_kwargs,
-                    api_name=False,
-                    queue=False,
-                )
+                # .then(
+                #     self.pre_fn,
+                #     **self.pre_fn_kwargs,
+                #     api_name=False,
+                #     queue=False,
+                # )
                 .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
@@ -341,11 +341,11 @@ class ChatInterface(Blocks):
                     [self.chatbot, self.chatbot_state],
                     api_name=False,
                 )
-                .then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                    api_name=False,
-                )
+                # .then(
+                #     self.post_fn,
+                #     **self.post_fn_kwargs,
+                #     api_name=False,
+                # )
             )
             self._setup_stop_events(self.retry_btn.click, retry_event)
 
@@ -356,21 +356,21 @@ class ChatInterface(Blocks):
                 [self.chatbot, self.saved_input, self.chatbot_state],
                 api_name=False,
                 queue=False,
-            ).then(
-                    self.pre_fn,
-                    **self.pre_fn_kwargs,
-                    api_name=False,
-                    queue=False,
+            # ).then(
+            #         self.pre_fn,
+            #         **self.pre_fn_kwargs,
+            #         api_name=False,
+            #         queue=False,
             ).then(
                 lambda x: x,
                 [self.saved_input],
                 [self.textbox],
                 api_name=False,
                 queue=False,
-            ).then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                    api_name=False,
+            # ).then(
+            #         self.post_fn,
+            #         **self.post_fn_kwargs,
+            #         api_name=False,
             )
 
         if self.clear_btn:
@@ -380,15 +380,15 @@ class ChatInterface(Blocks):
                 [self.chatbot, self.chatbot_state, self.saved_input],
                 queue=False,
                 api_name=False,
-            ).then(
-                self.pre_fn,
-                **self.pre_fn_kwargs,
-                api_name=False,
-                queue=False,
-            ).then(
-                self.post_fn,
-                **self.post_fn_kwargs,
-                api_name=False,
+            # ).then(
+            #     self.pre_fn,
+            #     **self.pre_fn_kwargs,
+            #     api_name=False,
+            #     queue=False,
+            # ).then(
+            #     self.post_fn,
+            #     **self.post_fn_kwargs,
+            #     api_name=False,
             )
 
     def _setup_stop_events(
