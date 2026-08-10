@@ -406,7 +406,7 @@ def gui():
                 undo_btn=None,
                 clear_btn=None,
                 additional_inputs=[seed, temperature, top_p, max_new_tokens,model_base],
-                examples=None
+                examples=examples
             )
     load_model.click(
         fn=model_loading,
