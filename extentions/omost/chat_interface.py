@@ -211,18 +211,18 @@ class ChatInterface(Blocks):
                         self.clear_btn,
                     ) = self.buttons
 
-            if examples:
-                if self.is_generator:
-                    examples_fn = self._examples_stream_fn
-                else:
-                    examples_fn = self._examples_fn
+            # if examples:
+            #     if self.is_generator:
+            #         examples_fn = self._examples_stream_fn
+            #     else:
+            #         examples_fn = self._examples_fn
 
-                self.examples_handler = Examples(
-                    examples=examples,
-                    inputs=[self.textbox] + self.additional_inputs,
-                    outputs=self.chatbot,
-                    fn=examples_fn,
-                )
+            #     self.examples_handler = Examples(
+            #         examples=examples,
+            #         inputs=[self.textbox] + self.additional_inputs,
+            #         outputs=self.chatbot,
+            #         fn=examples_fn,
+            #     )
 
             any_unrendered_inputs = any(
                 not inp.is_rendered for inp in self.additional_inputs
@@ -244,7 +244,7 @@ class ChatInterface(Blocks):
             self._setup_api()
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
-            
+
     def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
         submit_event = (
