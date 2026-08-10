@@ -335,9 +335,9 @@ def gui():
             with gr.Row():
                 load_model = gr.Button("Load Model", variant="secondary", size="sm", min_width=60)
             with gr.Row():
-                clear_btn = gr.Button("➕ New Chat", variant="secondary", size="sm", min_width=60)
+                clear_btn = gr.Button("New Chat", variant="secondary", size="sm", min_width=60)
                 retry_btn = gr.Button("Retry", variant="secondary", size="sm", min_width=60, visible=False)
-                undo_btn = gr.Button("✏️️ Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)
+                undo_btn = gr.Button("Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)
         
             seed = gr.Number(label="Random Seed", value=12345, precision=0)
 
