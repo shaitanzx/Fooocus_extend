@@ -251,6 +251,12 @@ class ChatInterface(Blocks):
                 queue=False,
             )
             .then(
+                self.pre_fn,
+                **self.pre_fn_kwargs,
+                show_api=False,
+                queue=False,
+            )
+            .then(
                 self._display_input,
                 [self.saved_input, self.chatbot_state],
                 [self.chatbot, self.chatbot_state],
@@ -261,6 +267,11 @@ class ChatInterface(Blocks):
                 submit_fn,
                 [self.saved_input, self.chatbot_state] + self.additional_inputs,
                 [self.chatbot, self.chatbot_state],
+                api_name=False,
+            )
+            .then(
+                self.post_fn,
+                **self.post_fn_kwargs,
                 api_name=False,
             )
         )
@@ -276,6 +287,12 @@ class ChatInterface(Blocks):
                     queue=False,
                 )
                 .then(
+                    self.pre_fn,
+                    **self.pre_fn_kwargs,
+                    show_api=False,
+                    queue=False,
+                )
+                .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
@@ -286,6 +303,11 @@ class ChatInterface(Blocks):
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
+                    api_name=False,
+                )
+                .then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
                     api_name=False,
                 )
             )
@@ -301,6 +323,12 @@ class ChatInterface(Blocks):
                     queue=False,
                 )
                 .then(
+                    self.pre_fn,
+                    **self.pre_fn_kwargs,
+                    show_api=False,
+                    queue=False,
+                )
+                .then(
                     self._display_input,
                     [self.saved_input, self.chatbot_state],
                     [self.chatbot, self.chatbot_state],
@@ -311,6 +339,11 @@ class ChatInterface(Blocks):
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
+                    api_name=False,
+                )
+                .then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
                     api_name=False,
                 )
             )
@@ -324,11 +357,20 @@ class ChatInterface(Blocks):
                 api_name=False,
                 queue=False,
             ).then(
+                    self.pre_fn,
+                    **self.pre_fn_kwargs,
+                    show_api=False,
+                    queue=False,
+            ).then(
                 lambda x: x,
                 [self.saved_input],
                 [self.textbox],
                 api_name=False,
                 queue=False,
+            ).then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    api_name=False,
             )
 
         if self.clear_btn:
@@ -337,6 +379,15 @@ class ChatInterface(Blocks):
                 None,
                 [self.chatbot, self.chatbot_state, self.saved_input],
                 queue=False,
+                api_name=False,
+            ).then(
+                self.pre_fn,
+                **self.pre_fn_kwargs,
+                show_api=False,
+                queue=False,
+            ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
                 api_name=False,
             )
 
