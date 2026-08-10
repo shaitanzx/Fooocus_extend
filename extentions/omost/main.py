@@ -405,7 +405,7 @@ def gui():
                 retry_btn=retry_btn,
                 undo_btn=undo_btn,
                 clear_btn=clear_btn,
-                additional_inputs=[seed, temperature, top_p, max_new_tokens],
+                additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base],
                 examples=examples
             )
     load_model.click(
