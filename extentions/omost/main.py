@@ -397,15 +397,15 @@ def gui():
             chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
             chatInterface = ChatInterface(
                 fn=chat_fn,
-                #post_fn=post_chat,
-                #post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn]),
-                #pre_fn=lambda: gr.update(visible=False),
-                #pre_fn_kwargs=dict(outputs=[render_button]),
+                post_fn=post_chat,
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn]),
+                pre_fn=lambda: gr.update(visible=False),
+                pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
-                retry_btn=None,
-                undo_btn=None,
-                clear_btn=None,
-                additional_inputs=[seed, temperature, top_p, max_new_tokens,model_base],
+                retry_btn=retry_btn,
+                undo_btn=undo_btn,
+                clear_btn=clear_btn,
+                additional_inputs=[seed, temperature, top_p, max_new_tokens],
                 examples=examples
             )
     load_model.click(
