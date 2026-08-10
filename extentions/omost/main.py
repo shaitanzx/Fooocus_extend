@@ -6,7 +6,7 @@ import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
 #import extentions.omost.lib_omost.memory_management as memory_management
-from transformers.generation.stopping_criteria import StoppingCriteriaList
+#from transformers.generation.stopping_criteria import StoppingCriteriaList
 from threading import Thread
 
 
@@ -169,14 +169,14 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     streamer = TextIteratorStreamer(llm_tokenizer, timeout=None, skip_prompt=True, skip_special_tokens=True)
 
-    def interactive_stopping_criteria(*args, **kwargs) -> bool:
-        if getattr(streamer, 'user_interrupted', False):
-            print('User stopped generation')
-            return True
-        else:
-            return False
+    # def interactive_stopping_criteria(*args, **kwargs) -> bool:
+    #     if getattr(streamer, 'user_interrupted', False):
+    #         print('User stopped generation')
+    #         return True
+    #     else:
+    #         return False
 
-    stopping_criteria = StoppingCriteriaList([interactive_stopping_criteria])
+    # stopping_criteria = StoppingCriteriaList([interactive_stopping_criteria])
 
     def interrupter():
         streamer.user_interrupted = True
