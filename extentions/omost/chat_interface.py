@@ -60,7 +60,7 @@ class ChatInterface(Blocks):
         additional_inputs: str | IOComponent | list[str | IOComponent] | None = None,
         additional_inputs_accordion_name: str = "Additional Inputs",
         examples: Dataset = None,
-        cache_examples: bool | None = None,
+        #cache_examples: bool | None = None,
         title: str | None = None,
         description: str | None = None,
         theme: Theme | str | None = None,
@@ -109,10 +109,10 @@ class ChatInterface(Blocks):
             self.fn
         ) or inspect.isasyncgenfunction(self.fn)
         self.examples = examples
-        if self.space_id and cache_examples is None:
-            self.cache_examples = True
-        else:
-            self.cache_examples = cache_examples or False
+        # if self.space_id and cache_examples is None:
+        #     self.cache_examples = True
+        # else:
+        #     self.cache_examples = cache_examples or False
         self.buttons: list[Button] = []
 
         if additional_inputs:
@@ -234,8 +234,8 @@ class ChatInterface(Blocks):
                             input_component.render()
 
             # The example caching must happen after the input components have rendered
-            if cache_examples:
-                client_utils.synchronize_async(self.examples_handler.cache)
+            # if cache_examples:
+            #     client_utils.synchronize_async(self.examples_handler.cache)
 
             self.saved_input = State()
             self.chatbot_state = State([])
