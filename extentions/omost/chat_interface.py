@@ -305,13 +305,16 @@ class ChatInterface(Blocks):
                     [self.chatbot, self.chatbot_state],
                     api_name=False,
                 )
-                .then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                    api_name=False,
-                )
             )
-            self._setup_stop_events(self.submit_btn.click, click_event)
+            # Сохраняем событие генерации ДО добавления post_fn
+            click_generation_event = click_event
+            click_event = click_event.then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                api_name=False,
+            )
+            # Отменяем именно генерацию, а не post_fn
+            self._setup_stop_events(self.submit_btn.click, click_generation_event)
 
         if self.retry_btn:
             retry_event = (

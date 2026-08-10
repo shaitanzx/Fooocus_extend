@@ -109,6 +109,7 @@ def unload_model():
         print("[Omost] LLM was not loaded, nothing to unload.")
 
 def post_chat(history):
+    print('post ---------------------------------------------------------')
     canvas_outputs = None
 
     try:
