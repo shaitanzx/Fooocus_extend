@@ -394,7 +394,7 @@ def gui():
             )
         with gr.Column(scale=75, elem_classes='inner_parent'):
             canvas_state = gr.State(None)
-            chatbot = gr.Chatbot(label='Omost', scale=1, show_copy_button=True, render=False)
+            chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
             chatInterface = gr.ChatInterface(
                 fn=chat_fn,
                 #post_fn=post_chat,
@@ -402,11 +402,11 @@ def gui():
                 #pre_fn=lambda: gr.update(visible=False),
                 #pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
-                #retry_btn=retry_btn,
-                #undo_btn=undo_btn,
-                #clear_btn=clear_btn,
+                retry_btn=None,
+                undo_btn=None,
+                clear_btn=None,
                 additional_inputs=[seed, temperature, top_p, max_new_tokens,model_base],
-                #examples=examples
+                examples=None
             )
     load_model.click(
         fn=model_loading,
