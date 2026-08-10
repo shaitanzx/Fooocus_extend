@@ -402,9 +402,9 @@ def gui():
                 #pre_fn=lambda: gr.update(visible=False),
                 #pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
-                retry_btn=retry_btn,
-                undo_btn=undo_btn,
-                clear_btn=clear_btn,
+                #retry_btn=retry_btn,
+                #undo_btn=undo_btn,
+                #clear_btn=clear_btn,
                 additional_inputs=[seed, temperature, top_p, max_new_tokens,model_base],
                 examples=examples
             )
