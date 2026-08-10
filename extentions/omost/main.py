@@ -1,5 +1,5 @@
 import gradio as gr
-from extentions.omost.chat_interface import ChatInterface
+#from extentions.omost.chat_interface import ChatInterface
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 import os
@@ -395,12 +395,12 @@ def gui():
         with gr.Column(scale=75, elem_classes='inner_parent'):
             canvas_state = gr.State(None)
             chatbot = gr.Chatbot(label='Omost', scale=1, show_copy_button=True, render=False)
-            chatInterface = ChatInterface(
+            chatInterface = gr.ChatInterface(
                 fn=chat_fn,
-                post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn]),
-                pre_fn=lambda: gr.update(visible=False),
-                pre_fn_kwargs=dict(outputs=[render_button]),
+                #post_fn=post_chat,
+                #post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn]),
+                #pre_fn=lambda: gr.update(visible=False),
+                #pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
                 retry_btn=retry_btn,
                 undo_btn=undo_btn,
