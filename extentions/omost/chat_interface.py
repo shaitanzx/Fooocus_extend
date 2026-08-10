@@ -299,6 +299,7 @@ class ChatInterface(Blocks):
                     **self.post_fn_kwargs,
                     api_name=False,
                 )
+            )
             self._setup_stop_events(self.submit_btn.click, click_event)
 
         if self.retry_btn:
@@ -349,7 +350,7 @@ class ChatInterface(Blocks):
                 **self.pre_fn_kwargs,
                 show_api=False,
                 queue=False,
-            )..then(
+            ).then(
                     self.post_fn,
                     **self.post_fn_kwargs,
                     api_name=False,
