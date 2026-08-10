@@ -348,12 +348,12 @@ class ChatInterface(Blocks):
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                api_name=False,
                 queue=False,
             ).then(
-                    self.post_fn,
-                    **self.post_fn_kwargs,
-                    api_name=False,
+                self.post_fn,
+                **self.post_fn_kwargs,
+                api_name=False,
             ) 
 
         if self.clear_btn:
