@@ -253,7 +253,7 @@ class ChatInterface(Blocks):
             .then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                api_name=False,
                 queue=False,
             )
             .then(
@@ -289,7 +289,7 @@ class ChatInterface(Blocks):
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    show_api=False,
+                    api_name=False,
                     queue=False,
                 )
                 .then(
@@ -325,7 +325,7 @@ class ChatInterface(Blocks):
                 .then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    show_api=False,
+                    api_name=False,
                     queue=False,
                 )
                 .then(
@@ -359,7 +359,7 @@ class ChatInterface(Blocks):
             ).then(
                     self.pre_fn,
                     **self.pre_fn_kwargs,
-                    show_api=False,
+                    api_name=False,
                     queue=False,
             ).then(
                 lambda x: x,
@@ -383,7 +383,7 @@ class ChatInterface(Blocks):
             ).then(
                 self.pre_fn,
                 **self.pre_fn_kwargs,
-                show_api=False,
+                api_name=False,
                 queue=False,
             ).then(
                 self.post_fn,
