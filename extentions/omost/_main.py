@@ -6,6 +6,7 @@ import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
 import ldm_patched.modules.model_management as mm
+from contextlib import contextmanager
 #import extentions.omost.lib_omost.memory_management as memory_management
 #from transformers.generation.stopping_criteria import StoppingCriteriaList
 from threading import Thread
@@ -20,12 +21,48 @@ import gc
 llm_model = None
 llm_tokenizer = None
 llm_name = None
+llm_device = None
+
+@contextmanager
+def movable_bnb_model(m):
+    if hasattr(m, 'quantization_method'):
+        m.quantization_method_backup = m.quantization_method
+        del m.quantization_method
+    try:
+        yield None
+    finally:
+        if hasattr(m, 'quantization_method_backup'):
+            m.quantization_method = m.quantization_method_backup
+            del m.quantization_method_backup
+    return
+
+def get_vram_info():
+    """Возвращает кортеж: (allocated_gb, reserved_gb, total_gb, free_gb)"""
+    if not torch.cuda.is_available():
+        return (0.0, 0.0, 0.0, 0.0)
+    
+    allocated = torch.cuda.memory_allocated() / (1024**3)
+    reserved = torch.cuda.memory_reserved() / (1024**3)
+    
+    # ИСПРАВЛЕНИЕ: total_memory вместо total_mem
+    total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+    
+    # Более точный способ получить свободную память
+    free, total_from_cuda = torch.cuda.mem_get_info()
+    free = free / (1024**3)
+    
+    return (allocated, reserved, total, free)
 
 
-
-
-
-
+def format_vram_info(prefix=""):
+    """Форматирует VRAM инфо в красивую строку для лога."""
+    allocated, reserved, total, free = get_vram_info()
+    return (
+        f"{prefix}VRAM: "
+        f"allocated={allocated:.2f}GB | "
+        f"reserved={reserved:.2f}GB | "
+        f"free={free:.2f}GB / {total:.2f}GB total"
+    )
 
 
 @torch.inference_mode()
@@ -88,9 +125,13 @@ def unload_model():
 
 
 
+def get_mem():
+        allocated_before, reserved_before, total, free = get_vram_info()
+        print(f"\033[93m[MEMORY] \033[0m allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB / {total:.2f}GB / {free:.2f}GB")    
 
 
 def post_chat(history):
+    global llm_model, llm_device
     canvas_outputs = None
     try:
         if history:
@@ -101,64 +142,64 @@ def post_chat(history):
     except Exception as e:
         print('Last assistant response is not valid canvas:', e)
 
-    unload_model()
+    llm_device = 'cpu'
+    with movable_bnb_model(llm_model):
+        llm_model.to(llm_device)
+
     return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
-def unload_unet():
-    """Выгружает только UNet (BaseModel) из GPU, оставляя CLIP и остальное."""
+def show_gpu_models():
+    """Показывает все модели из model_management и их реальное устройство."""
 
     
-    if not torch.cuda.is_available():
-        print("[Omost] CUDA not available, nothing to unload")
-        return
+    gpu_device = mm.get_torch_device()
+    print(f"\n[Omost] ===== Loaded models: {len(mm.current_loaded_models)} | GPU device: {gpu_device} =====")
     
-    # Сохраняем список ДО выгрузки
-    models_before = list(mm.current_loaded_models)
-    unloaded_names = []
-    
-    # Ищем и выгружаем UNet-подобные модели
-    unet_class_names = ['BaseModel', 'BaseModel_Dev', 'SDXL', 'SDXLRefiner', 
-                        'SD15', 'SVD_img2vid', 'model']
-    
-    for i in range(len(mm.current_loaded_models) - 1, -1, -1):
-        lm = mm.current_loaded_models[i]
+    for i, lm in enumerate(mm.current_loaded_models):
+        # Имя модели
         try:
-            # Получаем имя класса реальной модели
             if hasattr(lm.model, 'model'):
                 name = lm.model.model.__class__.__name__
             else:
                 name = lm.model.__class__.__name__
-            
-            # Проверяем, является ли это UNet
-            if name in unet_class_names:
-                # Проверяем, что это на GPU (не трогаем CPU-модели)
-                if hasattr(lm.model, 'current_device') and lm.model.current_device != torch.device('cpu'):
-                    size_gb = lm.model_memory() / (1024**3)
-                    print(f"[Omost] Unloading UNet: {name} | {size_gb:.2f} GB")
-                    
-                    # Выгружаем
-                    removed = mm.current_loaded_models.pop(i)
-                    removed.model_unload()
-                    del removed
-                    
-                    unloaded_names.append(name)
-        except Exception as e:
-            print(f"[Omost] Error unloading model at index {i}: {e}")
+        except:
+            name = "Unknown"
+        
+        # Размер
+        try:
+            size_gb = lm.model_memory() / (1024**3)
+        except:
+            size_gb = 0.0
+        
+        # Реальное устройство (где модель сейчас)
+        try:
+            current_dev = lm.model.current_device
+        except:
+            current_dev = "unknown"
+        
+        # На GPU ли модель
+        on_gpu = (str(current_dev) == str(gpu_device))
+        marker = "\033[92m[GPU]\033[0m" if on_gpu else "\033[93m[CPU]\033[0m"
+        
+        print(f"[Omost]   [{i}] {marker} {name} | {size_gb:.2f} GB | current: {current_dev} | target: {lm.device}")
     
-    if unloaded_names:
-        mm.soft_empty_cache()
-        defragment_vram()  # твоя функция дефрагментации
-        print(f"[Omost] ✓ Unloaded UNet models: {unloaded_names}")
-    else:
-        print("[Omost] No UNet models found in GPU")
+    print(f"[Omost] ============================================================\n")
+
+
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str) -> str:
-    global llm_model, llm_tokenizer, llm_name
+    global llm_model, llm_tokenizer, llm_name, llm_device
     print(f'[OMOST] model_base {model_base}')
     print(f'[OMOST] llm_name {llm_name}')
     print(f'[OMOST] llm_device {llm_device}')
 
-
+    if llm_device == None:
+        show_gpu_models()
+        mm.unload_all_models()
+    if llm_device == 'cpu':
+        llm_device = 'gpu'
+        with movable_bnb_model(llm_model):
+            llm_model.to(llm_device)
 
 
 
@@ -354,10 +395,10 @@ def gui():
         fn=model_loading,
         outputs=[load_model]
     )
-    #render_button.click(unload_model)
+    render_button.click(unload_model)
 
     clear_llm.click(unload_model)
-    mem_llm.click(unload_unet)
+    mem_llm.click(get_mem)
     # render_button.click(
     #      fn=diffusion_fn, inputs=[
     #          chatInterface.chatbot, canvas_state,
