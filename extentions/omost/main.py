@@ -147,7 +147,42 @@ def post_chat(history):
         llm_model.to(llm_device)
 
     return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
+def show_gpu_models():
+    """Показывает все модели из model_management и их реальное устройство."""
 
+    
+    gpu_device = mm.get_torch_device()
+    print(f"\n[Omost] ===== Loaded models: {len(mm.current_loaded_models)} | GPU device: {gpu_device} =====")
+    
+    for i, lm in enumerate(mm.current_loaded_models):
+        # Имя модели
+        try:
+            if hasattr(lm.model, 'model'):
+                name = lm.model.model.__class__.__name__
+            else:
+                name = lm.model.__class__.__name__
+        except:
+            name = "Unknown"
+        
+        # Размер
+        try:
+            size_gb = lm.model_memory() / (1024**3)
+        except:
+            size_gb = 0.0
+        
+        # Реальное устройство (где модель сейчас)
+        try:
+            current_dev = lm.model.current_device
+        except:
+            current_dev = "unknown"
+        
+        # На GPU ли модель
+        on_gpu = (str(current_dev) == str(gpu_device))
+        marker = "\033[92m[GPU]\033[0m" if on_gpu else "\033[93m[CPU]\033[0m"
+        
+        print(f"[Omost]   [{i}] {marker} {name} | {size_gb:.2f} GB | current: {current_dev} | target: {lm.device}")
+    
+    print(f"[Omost] ============================================================\n")
 
 
 
@@ -159,10 +194,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     print(f'[OMOST] llm_device {llm_device}')
 
     if llm_device == None:
-        print(f"[Debug] Loaded models: {len(mm.current_loaded_models)}")
-        for i, lm in enumerate(mm.current_loaded_models):
-            name = lm.model.model.__class__.__name__ if hasattr(lm.model, 'model') else lm.model.__class__.__name__
-            print(f"  [{i}] {name} | {lm.model_memory() / (1024**3):.2f} GB | {lm.device}")
+        show_gpu_models()
         mm.unload_all_models()
     if llm_device == 'cpu':
         llm_device = 'gpu'
