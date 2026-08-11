@@ -163,53 +163,63 @@ def debug_loaded_models():
     free_gb = mm.get_free_memory(mm.get_torch_device()) / (1024**3)
     print(f"[Omost] Final free VRAM: {free_gb:.2f}GB")
     print(f"[Omost DEBUG] ===================================\n")
-def unload_unet():
-    """Выгружает только UNet (BaseModel) из GPU, оставляя CLIP и остальное."""
-
+@torch.inference_mode()
+def unload_model():
+    """Принудительная выгрузка LLM из VRAM перед запуском диффузии или сменой модели"""
+    global llm_model, llm_tokenizer, llm_name
     
-    if not torch.cuda.is_available():
-        print("[Omost] CUDA not available, nothing to unload")
-        return
+    # Запоминаем VRAM ДО
+    allocated_before, reserved_before, total, _ = get_vram_info()
+    print(f"\033[93m[Omost] BEFORE unload:\033[0m allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB / {total:.2f}GB")
     
-    # Сохраняем список ДО выгрузки
-    models_before = list(mm.current_loaded_models)
-    unloaded_names = []
-    
-    # Ищем и выгружаем UNet-подобные модели
-    unet_class_names = ['BaseModel', 'BaseModel_Dev', 'SDXL', 'SDXLRefiner', 
-                        'SD15', 'SVD_img2vid', 'model']
-    
-    for i in range(len(mm.current_loaded_models) - 1, -1, -1):
-        lm = mm.current_loaded_models[i]
+    if llm_model is not None:
+        print("\033[92m[Omost] Unloading LLM from VRAM...\033[0m")
+        
+        # === КРИТИЧЕСКИ ВАЖНО: Удаляем хуки accelerate ===
         try:
-            # Получаем имя класса реальной модели
-            if hasattr(lm.model, 'model'):
-                name = lm.model.model.__class__.__name__
-            else:
-                name = lm.model.__class__.__name__
-            
-            # Проверяем, является ли это UNet
-            if name in unet_class_names:
-                # Проверяем, что это на GPU (не трогаем CPU-модели)
-                if hasattr(lm.model, 'current_device') and lm.model.current_device != torch.device('cpu'):
-                    size_gb = lm.model_memory() / (1024**3)
-                    print(f"[Omost] Unloading UNet: {name} | {size_gb:.2f} GB")
-                    
-                    # Выгружаем
-                    removed = mm.current_loaded_models.pop(i)
-                    removed.model_unload()
-                    del removed
-                    
-                    unloaded_names.append(name)
+            from accelerate.hooks import remove_hook_from_module
+            remove_hook_from_module(llm_model, recurse=True)
+            print("[Omost] Accelerate hooks removed")
         except Exception as e:
-            print(f"[Omost] Error unloading model at index {i}: {e}")
-    
-    if unloaded_names:
-        mm.soft_empty_cache()
-        defragment_vram()  # твоя функция дефрагментации
-        print(f"[Omost] ✓ Unloaded UNet models: {unloaded_names}")
+            print(f"[Omost] Warning: Could not remove hooks: {e}")
+        
+        # Удаляем модели
+        del llm_model
+        del llm_tokenizer
+        
+        # НЕ используем del llm_name — просто присваиваем None
+        llm_model = None
+        llm_tokenizer = None
+        llm_name = None
+        
+        # Агрессивная очистка
+        import gc
+        gc.collect()
+        
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            
+            # Дополнительная очистка через CUDA allocator
+            try:
+                torch.cuda.synchronize()
+                torch.cuda.reset_peak_memory_stats()
+            except:
+                pass
+            
+            # Считаем VRAM ПОСЛЕ
+            allocated_after, reserved_after, _, _ = get_vram_info()
+            freed_allocated = allocated_before - allocated_after
+            freed_reserved = reserved_before - reserved_after
+            
+            print(f"\033[92m[Omost] AFTER  unload:\033[0m  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB / {total:.2f}GB")
+            print(f"\033[96m[Omost] FREED:\033[0m allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
+            
+            if freed_allocated < 1.0:
+                print(f"\033[91m[Omost] WARNING: Freed less than 1GB! Possible memory leak.\033[0m")
+            
+            print("\033[92m[Omost] ✓ VRAM cleared successfully.\033[0m")
     else:
-        print("[Omost] No UNet models found in GPU")
+        print("[Omost] LLM was not loaded, nothing to unload.")
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str) -> str:
