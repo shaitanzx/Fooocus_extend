@@ -24,7 +24,33 @@ llm_name = None
 
 
 
+def get_vram_info():
+    """Возвращает кортеж: (allocated_gb, reserved_gb, total_gb, free_gb)"""
+    if not torch.cuda.is_available():
+        return (0.0, 0.0, 0.0, 0.0)
+    
+    allocated = torch.cuda.memory_allocated() / (1024**3)
+    reserved = torch.cuda.memory_reserved() / (1024**3)
+    
+    # ИСПРАВЛЕНИЕ: total_memory вместо total_mem
+    total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+    
+    # Более точный способ получить свободную память
+    free, total_from_cuda = torch.cuda.mem_get_info()
+    free = free / (1024**3)
+    
+    return (allocated, reserved, total, free)
 
+
+def format_vram_info(prefix=""):
+    """Форматирует VRAM инфо в красивую строку для лога."""
+    allocated, reserved, total, free = get_vram_info()
+    return (
+        f"{prefix}VRAM: "
+        f"allocated={allocated:.2f}GB | "
+        f"reserved={reserved:.2f}GB | "
+        f"free={free:.2f}GB / {total:.2f}GB total"
+    )
 
 
 
@@ -190,11 +216,6 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     global llm_model, llm_tokenizer, llm_name
     print(f'[OMOST] model_base {model_base}')
     print(f'[OMOST] llm_name {llm_name}')
-    print(f'[OMOST] llm_device {llm_device}')
-
-
-
-
 
     if llm_name is not None and llm_name != model_base:
         unload_model()
@@ -214,7 +235,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
             token=None
         )
         llm_name = model_base
-        llm_device='gpu'
+
 
 
     np.random.seed(int(seed))
