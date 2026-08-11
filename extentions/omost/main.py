@@ -108,6 +108,21 @@ def unload_model():
     else:
         print("[Omost] LLM was not loaded, nothing to unload.")
 
+
+
+def get_mem():
+            allocated_after, reserved_after, _, _ = get_vram_info()
+            freed_allocated = allocated_before - allocated_after
+            freed_reserved = reserved_before - reserved_after
+            
+            print(f"\033[92m[Omost] memory:\033[0m  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB / {total:.2f}GB")
+            print(f"\033[96m[Omost] FREED:\033[0m allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
+            
+            if freed_allocated < 1.0:
+                print(f"\033[91m[Omost] WARNING: Freed less than 1GB! Possible memory leak.\033[0m")
+            
+            print("\033[92m[Omost] ✓ VRAM cleared successfully.\033[0m")
+
 def post_chat(history):
     canvas_outputs = None
     try:
@@ -382,6 +397,7 @@ def gui():
             render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
 
             clear_llm = gr.Button("CLEAR LLM", size='lg', variant="primary", visible=True)
+            mem_llm = gr.Button("memory", size='lg', variant="primary", visible=True)
 
             examples = gr.Dataset(
                 samples=[
@@ -414,6 +430,7 @@ def gui():
     render_button.click(unload_model)
 
     clear_llm.click(unload_model)
+    mem_llm.click(get_mem)
     # render_button.click(
     #      fn=diffusion_fn, inputs=[
     #          chatInterface.chatbot, canvas_state,
