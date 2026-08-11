@@ -111,17 +111,9 @@ def unload_model():
 
 
 def get_mem():
-            allocated_after, reserved_after, _, _ = get_vram_info()
-            freed_allocated = allocated_before - allocated_after
-            freed_reserved = reserved_before - reserved_after
-            
-            print(f"\033[92m[Omost] memory:\033[0m  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB / {total:.2f}GB")
-            print(f"\033[96m[Omost] FREED:\033[0m allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
-            
-            if freed_allocated < 1.0:
-                print(f"\033[91m[Omost] WARNING: Freed less than 1GB! Possible memory leak.\033[0m")
-            
-            print("\033[92m[Omost] ✓ VRAM cleared successfully.\033[0m")
+        allocated_before, reserved_before, total, free = get_vram_info()
+        print(f"\033[93m[MEMORY] \033[0m allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB / {total:.2f}GB / {free:.2f}GB")    
+
 
 def post_chat(history):
     canvas_outputs = None
