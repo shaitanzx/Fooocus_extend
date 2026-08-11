@@ -104,43 +104,12 @@ def post_chat(history):
     unload_model()
     return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
 def debug_loaded_models():
-    """Показывает все модели с их реальными именами классов и устройствами."""
-
+    mm.unload_all_models()
+    mm.soft_empty_cache()
+    defragment_vram()
     
-    print(f"\n[Omost DEBUG] === Loaded models ({len(mm.current_loaded_models)}) ===")
-    for i, lm in enumerate(mm.current_loaded_models):
-        # Реальное имя класса
-        try:
-            if hasattr(lm.model, 'model'):
-                inner_name = lm.model.model.__class__.__name__
-            else:
-                inner_name = lm.model.__class__.__name__
-        except:
-            inner_name = "?"
-        
-        # Имя внешнего класса (ModelPatcher)
-        try:
-            outer_name = lm.model.__class__.__name__
-        except:
-            outer_name = "?"
-        
-        # Размер
-        try:
-            size_gb = lm.model_memory() / (1024**3)
-        except:
-            size_gb = 0.0
-        
-        # Устройства
-        try:
-            current_dev = str(lm.model.current_device)
-        except:
-            current_dev = "?"
-        try:
-            target_dev = str(lm.device)
-        except:
-            target_dev = "?"
-        
-        print(f"  [{i}] outer={outer_name} | inner={inner_name} | {size_gb:.2f}GB | current={current_dev} | target={target_dev}")
+    free_gb = mm.get_free_memory(mm.get_torch_device()) / (1024**3)
+    print(f"[Omost] Final free VRAM: {free_gb:.2f}GB")
     print(f"[Omost DEBUG] ===================================\n")
 def unload_unet():
     """Выгружает только UNet (BaseModel) из GPU, оставляя CLIP и остальное."""
