@@ -103,6 +103,32 @@ def post_chat(history):
 
     unload_model()
     return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
+
+def defragment_vram():
+    if not torch.cuda.is_available():
+        return
+    
+    # Замер ДО
+    before = torch.cuda.memory_reserved() / (1024**3)
+    
+    try:
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.synchronize()
+        
+        # Замер ПОСЛЕ
+        after = torch.cuda.memory_reserved() / (1024**3)
+        freed = before - after
+        
+        if freed > 0.01:
+            print(f"[Omost] ✓ VRAM defragmented. Freed reserved: {freed:.2f} GB")
+        else:
+            print(f"[Omost] ✓ VRAM defragmented (reserved was already minimal).")
+    except Exception as e:
+        print(f"[Omost] Warning during VRAM defragmentation: {e}")
+
 def debug_loaded_models():
     mm.unload_all_models()
     mm.soft_empty_cache()
