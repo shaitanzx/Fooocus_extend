@@ -19,7 +19,8 @@ from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
 
 Phi3PreTrainedModel._supports_sdpa = True
 import gc
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+
+
 llm_model = None
 llm_tokenizer = None
 llm_name = None
