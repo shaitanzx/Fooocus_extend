@@ -281,12 +281,12 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
     return
 
 
-# refresh_everything(
-#     refiner_model_name=modules.config.default_refiner_model_name,
-#     base_model_name=modules.config.default_base_model_name,
-#     loras=get_enabled_loras(modules.config.default_loras),
-#     vae_name=modules.config.default_vae,
-# )
+refresh_everything(
+    refiner_model_name=modules.config.default_refiner_model_name,
+    base_model_name=modules.config.default_base_model_name,
+    loras=get_enabled_loras(modules.config.default_loras),
+    vae_name=modules.config.default_vae,
+)
 
 
 @torch.no_grad()
