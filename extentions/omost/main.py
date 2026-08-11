@@ -197,15 +197,13 @@ def unload_model():
         gc.collect()
         
         if torch.cuda.is_available():
+            torch.cuda.synchronize()
             torch.cuda.empty_cache()
-            
-            # Дополнительная очистка через CUDA allocator
-            try:
-                torch.cuda.synchronize()
-                torch.cuda.reset_peak_memory_stats()
-            except:
-                pass
-            
+            torch.cuda.ipc_collect()
+            torch.cuda.reset_peak_memory_stats()
+            torch.cuda.synchronize() 
+
+       
             # Считаем VRAM ПОСЛЕ
             allocated_after, reserved_after, _, _ = get_vram_info()
             freed_allocated = allocated_before - allocated_after
