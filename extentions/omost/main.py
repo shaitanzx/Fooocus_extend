@@ -159,6 +159,10 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     print(f'[OMOST] llm_device {llm_device}')
 
     if llm_device == None:
+        print(f"[Debug] Loaded models: {len(mm.current_loaded_models)}")
+        for i, lm in enumerate(mm.current_loaded_models):
+            name = lm.model.model.__class__.__name__ if hasattr(lm.model, 'model') else lm.model.__class__.__name__
+            print(f"  [{i}] {name} | {lm.model_memory() / (1024**3):.2f} GB | {lm.device}")
         mm.unload_all_models()
     if llm_device == 'cpu':
         llm_device = 'gpu'
