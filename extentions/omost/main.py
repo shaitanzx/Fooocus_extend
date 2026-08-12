@@ -362,7 +362,7 @@ def gui():
                         minimum=128,
                         maximum=4096,
                         step=1,
-                        value=1024,
+                        value=4096,
                         label="Max New Tokens")
 
             with gr.Accordion(open=False, label='Advanced'):
