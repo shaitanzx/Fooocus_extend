@@ -286,7 +286,8 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     if temperature == 0:
         generate_kwargs['do_sample'] = False
 
-    Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
+    thread = threading.Thread(target=llm.generate, kwargs=generation_kwargs)
+    thread.start()
 
     outputs = []
     for text in streamer:
