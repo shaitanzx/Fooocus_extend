@@ -5,7 +5,6 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
-import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
 import modules.core as core
 
