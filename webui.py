@@ -71,7 +71,7 @@ import extentions.watermark as watermark
 
 import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
-import extentions.omost.main as omost
+# import extentions.omost.main as omost
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -807,8 +807,8 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='omost'):
-                            omost_render, omost_canvas, omost_negative = omost.gui()
+                        # with gr.TabItem(label='omost'):
+                        #     omost_render, omost_canvas, omost_negative = omost.gui()
                             
                             
 
@@ -2085,15 +2085,15 @@ with shared.gradio_root:
                   outputs=[xyz_start,generate_button, stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        omost_render.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True),gr.update(visible=False, interactive=False), [], True),
-                              outputs=[omost_render, skip_button, stop_button, generate_button, gallery, state_is_generating]) \
-            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-            .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=omost_gen, inputs=[currentTask, omost_canvas, omost_negative], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
-                  outputs=[omost_render,generate_button, stop_button, state_is_generating]) \
-            .then(fn=update_history_link, outputs=history_link) \
-            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+        # omost_render.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True),gr.update(visible=False, interactive=False), [], True),
+        #                       outputs=[omost_render, skip_button, stop_button, generate_button, gallery, state_is_generating]) \
+        #     .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+        #     .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
+        #     .then(fn=omost_gen, inputs=[currentTask, omost_canvas, omost_negative], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+        #     .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
+        #           outputs=[omost_render,generate_button, stop_button, state_is_generating]) \
+        #     .then(fn=update_history_link, outputs=history_link) \
+        #     .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
 
 
 
