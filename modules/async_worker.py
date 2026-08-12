@@ -384,7 +384,7 @@ def worker():
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
 
-    for _ in range(600):  # максимум 60 секунд ожидания
+    for _ in range(50):  # максимум 60 секунд ожидания
         try:
             async_gradio_app = shared.gradio_root
             if async_gradio_app is not None and hasattr(async_gradio_app, 'local_url'):
