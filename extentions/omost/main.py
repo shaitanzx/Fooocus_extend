@@ -375,7 +375,7 @@ def gui():
             render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
 
             clear_llm = gr.Button("CLEAR LLM", size='lg', variant="primary", visible=True)
-            mem_llm = gr.Button("memory", size='lg', variant="primary", visible=True)
+
 
             examples = gr.Dataset(
                 samples=[
@@ -407,6 +407,5 @@ def gui():
     )
 
     clear_llm.click(unload_model)
-    mem_llm.click(debug_loaded_models)
 
     return render_button, canvas_state, n_prompt
