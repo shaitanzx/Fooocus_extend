@@ -9,8 +9,6 @@ import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
 import modules.core as core
 
-#import extentions.omost.lib_omost.memory_management as memory_management
-#from transformers.generation.stopping_criteria import StoppingCriteriaList
 from threading import Thread
 
 
@@ -56,70 +54,6 @@ def format_vram_info(prefix=""):
         f"free={free:.2f}GB / {total:.2f}GB total"
     )
 
-
-
-# @torch.inference_mode()
-# def unload_model():
-#     """Принудительная выгрузка LLM из VRAM перед запуском диффузии или сменой модели"""
-#     global llm_model, llm_tokenizer, llm_name
-    
-#     # Запоминаем VRAM ДО
-#     allocated_before, reserved_before, total, _ = get_vram_info()
-#     print(f"\033[93m[Omost] BEFORE unload:\033[0m allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB / {total:.2f}GB")
-    
-#     if llm_model is not None:
-#         print("\033[92m[Omost] Unloading LLM from VRAM...\033[0m")
-        
-#         # === КРИТИЧЕСКИ ВАЖНО: Удаляем хуки accelerate ===
-#         try:
-#             from accelerate.hooks import remove_hook_from_module
-#             remove_hook_from_module(llm_model, recurse=True)
-#             print("[Omost] Accelerate hooks removed")
-#         except Exception as e:
-#             print(f"[Omost] Warning: Could not remove hooks: {e}")
-        
-#         # Удаляем модели
-#         del llm_model
-#         del llm_tokenizer
-        
-#         # НЕ используем del llm_name — просто присваиваем None
-#         llm_model = None
-#         llm_tokenizer = None
-#         llm_name = None
-        
-#         # Агрессивная очистка
-#         import gc
-#         gc.collect()
-        
-#         if torch.cuda.is_available():
-#             torch.cuda.empty_cache()
-            
-#             # Дополнительная очистка через CUDA allocator
-#             try:
-#                 torch.cuda.synchronize()
-#                 torch.cuda.reset_peak_memory_stats()
-#             except:
-#                 pass
-            
-#             # Считаем VRAM ПОСЛЕ
-#             allocated_after, reserved_after, _, _ = get_vram_info()
-#             freed_allocated = allocated_before - allocated_after
-#             freed_reserved = reserved_before - reserved_after
-            
-#             print(f"\033[92m[Omost] AFTER  unload:\033[0m  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB / {total:.2f}GB")
-#             print(f"\033[96m[Omost] FREED:\033[0m allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
-            
-#             if freed_allocated < 1.0:
-#                 print(f"\033[91m[Omost] WARNING: Freed less than 1GB! Possible memory leak.\033[0m")
-            
-#             print("\033[92m[Omost] ✓ VRAM cleared successfully.\033[0m")
-#     else:
-#         print("[Omost] LLM was not loaded, nothing to unload.")
-
-
-
-
-
 def post_chat(history):
     canvas_outputs = None
     try:
@@ -158,16 +92,6 @@ def defragment_vram():
             print(f"[Omost] ✓ VRAM defragmented (reserved was already minimal).")
     except Exception as e:
         print(f"[Omost] Warning during VRAM defragmentation: {e}")
-
-def debug_loaded_models():
-    mm.unload_all_models()
-    mm.soft_empty_cache()
-    defragment_vram()
-    
-    free_gb = mm.get_free_memory(mm.get_torch_device()) / (1024**3)
-    print(f"[Omost] Final free VRAM: {free_gb:.2f}GB")
-    print(f"[Omost DEBUG] ===================================\n")
-
 
 def unload_fooocus_completely():
     """
@@ -215,26 +139,18 @@ def unload_fooocus_completely():
     
     # Первый проход сборщика мусора
     gc.collect()
-    
-    if torch.cuda.is_available():
-        # Синхронизация GPU
-        torch.cuda.synchronize()
-        
-        # Очистка кэша PyTorch
-        torch.cuda.empty_cache()
-        
-        # Сборка IPC памяти
-        torch.cuda.ipc_collect()
-        
-        # Сброс пиковых статистик
-        torch.cuda.reset_peak_memory_stats()
-        
-        # Второй проход сборщика мусора
-        gc.collect()
-        
-        # Повторная синхронизация
-        torch.cuda.synchronize()
-    
+    # Синхронизация GPU
+    torch.cuda.synchronize()    
+    # Очистка кэша PyTorch
+    torch.cuda.empty_cache()    
+    # Сборка IPC памяти
+    torch.cuda.ipc_collect()
+    # Сброс пиковых статистик
+    torch.cuda.reset_peak_memory_stats()
+    # Второй проход сборщика мусора
+    gc.collect()
+    # Повторная синхронизация
+    torch.cuda.synchronize()
     # === Шаг 5: Дефрагментация ===
     defragment_vram()
     
@@ -254,9 +170,10 @@ def unload_model():
     """Принудительная выгрузка LLM из VRAM перед запуском диффузии или сменой модели"""
     global llm_model, llm_tokenizer, llm_name
     try:
-        allocator_conf = os.environ.get('PYTORCH_CUDA_ALLOC_CONF', 'not set')
-        print(f"[Omost] PYTORCH_CUDA_ALLOC_CONF = {allocator_conf}")
-    
+        print(f"[Omost] PyTorch version: {torch.__version__}")
+        print(f"[Omost] PYTORCH_CUDA_ALLOC_CONF = {os.environ.get('PYTORCH_CUDA_ALLOC_CONF', 'not set')}")
+        print(f"[Omost] CUDA version: {torch.version.cuda}")
+        print(f"[Omost] Allocator backend: {torch.cuda.get_allocator_backend()}")
         # Проверяем backend аллокатора
         backend = torch.cuda.get_allocator_backend()
         print(f"[Omost] CUDA allocator backend: {backend}")
@@ -318,11 +235,10 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     global llm_model, llm_tokenizer, llm_name
     print(f'[OMOST] model_base {model_base}')
     print(f'[OMOST] llm_name {llm_name}')
-    if llm_name == None:
-        unload_fooocus_completely()
     if llm_name is not None and llm_name != model_base:
         unload_model()
     if llm_name == None:
+        unload_fooocus_completely()
         print(f"[Omost] Loading LLM: {model_base}...")
 
         llm_model = AutoModelForCausalLM.from_pretrained(
@@ -359,23 +275,9 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     streamer = TextIteratorStreamer(llm_tokenizer, timeout=None, skip_prompt=True, skip_special_tokens=True)
 
-    # def interactive_stopping_criteria(*args, **kwargs) -> bool:
-    #     if getattr(streamer, 'user_interrupted', False):
-    #         print('User stopped generation')
-    #         return True
-    #     else:
-    #         return False
-
-    # stopping_criteria = StoppingCriteriaList([interactive_stopping_criteria])
-
-    # def interrupter():
-    #     streamer.user_interrupted = True
-    #     return
-
     generate_kwargs = dict(
         input_ids=input_ids,
         streamer=streamer,
-        #stopping_criteria=stopping_criteria,
         max_new_tokens=max_new_tokens,
         do_sample=True,
         temperature=temperature,
@@ -390,11 +292,12 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     outputs = []
     for text in streamer:
         outputs.append(text)
-        # print(outputs)
-        yield "".join(outputs) #, interrupter
+
+        yield "".join(outputs)
 
     return
-def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
+def model_loading(llm_name):
+#def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
 #def model_loading(llm_name="lllyasviel/omost-dolphin-2.9-llama3-8b-4bits"):  
 #def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k-8bits"):  
 #def model_loading(llm_name="lllyasviel/omost-llama-3-8b"):  
@@ -422,7 +325,6 @@ def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):
         cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
         token=None
     )
-    #print(f"[Omost] LLM loaded successfully. Cached in: {cache_dir}")
     return gr.update(visible=False)
 
 
@@ -460,17 +362,8 @@ def gui():
                         minimum=128,
                         maximum=4096,
                         step=1,
-                        value=4096,
+                        value=1024,
                         label="Max New Tokens")
-            # with gr.Accordion(open=True, label='Image Diffusion Model'):
-            #     with gr.Group():
-            #         with gr.Row():
-            #             image_width = gr.Slider(label="Image Width", minimum=256, maximum=2048, value=896, step=64)
-            #             image_height = gr.Slider(label="Image Height", minimum=256, maximum=2048, value=1152, step=64)
-
-            #         with gr.Row():
-            #             num_samples = gr.Slider(label="Image Number", minimum=1, maximum=12, value=1, step=1)
-            #             steps = gr.Slider(label="Sampling Steps", minimum=1, maximum=100, value=25, step=1)
 
             with gr.Accordion(open=False, label='Advanced'):
                 cfg = gr.Slider(label="CFG Scale", minimum=1.0, maximum=32.0, value=5.0, step=0.01)
@@ -512,17 +405,8 @@ def gui():
         fn=model_loading,
         outputs=[load_model]
     )
-    #render_button.click(unload_model)
 
     clear_llm.click(unload_model)
     mem_llm.click(debug_loaded_models)
-    # render_button.click(
-    #      fn=diffusion_fn, inputs=[
-    #          chatInterface.chatbot, canvas_state,
-    #          num_samples, seed, image_width, image_height, highres_scale,
-    #          steps, cfg, highres_steps, highres_denoise, n_prompt
-    #      ], outputs=[chatInterface.chatbot]).then(
-    #      fn=lambda x: x, inputs=[
-    #          chatInterface.chatbot
-    #      ], outputs=[chatInterface.chatbot_state])
+
     return render_button, canvas_state, n_prompt
