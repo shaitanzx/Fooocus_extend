@@ -294,7 +294,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         outputs.append(text)
 
         yield "".join(outputs)
-
+    thread.join(timeout=5.0)
     return
 def model_loading(llm_name):
 #def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
