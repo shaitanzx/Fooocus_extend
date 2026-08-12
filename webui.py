@@ -7,7 +7,6 @@ import shared
 import modules.config
 import fooocus_version
 import modules.html
-import extentions.omost.main as omost
 import modules.async_worker as worker
 import modules.constants as constants
 import modules.flags as flags
@@ -72,7 +71,7 @@ import extentions.watermark as watermark
 
 import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
-
+import extentions.omost.main as omost
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
