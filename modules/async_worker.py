@@ -384,14 +384,18 @@ def worker():
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
 
-    try:
-        async_gradio_app = shared.gradio_root
-        flag = f'''App started successful. Use the app with {str(async_gradio_app.local_url)} or {str(async_gradio_app.server_name)}:{str(async_gradio_app.server_port)}'''
-        if async_gradio_app.share:
-            flag += f''' or {async_gradio_app.share_url}'''
-        print(flag)
-    except Exception as e:
-        print(e)
+    for _ in range(600):  # максимум 60 секунд ожидания
+        try:
+            async_gradio_app = shared.gradio_root
+            if async_gradio_app is not None and hasattr(async_gradio_app, 'local_url'):
+                flag = f'App started successful. Use the app with {async_gradio_app.local_url} or {async_gradio_app.server_name}:{async_gradio_app.server_port}'
+                if async_gradio_app.share:
+                    flag += f' or {async_gradio_app.share_url}'
+                print(flag)
+                break
+        except Exception:
+            pass
+        time.sleep(0.1)
 
     def progressbar(async_task, number, text):
         print(f'[Fooocus] {text}')

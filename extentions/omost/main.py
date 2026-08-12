@@ -286,15 +286,14 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     if temperature == 0:
         generate_kwargs['do_sample'] = False
 
-    thread = threading.Thread(target=llm.generate, kwargs=generation_kwargs)
-    thread.start()
+    Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
 
     outputs = []
     for text in streamer:
         outputs.append(text)
 
         yield "".join(outputs)
-    thread.join(timeout=5.0)
+
     return
 def model_loading(llm_name):
 #def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
