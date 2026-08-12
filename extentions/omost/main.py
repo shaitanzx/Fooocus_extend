@@ -253,7 +253,15 @@ def unload_fooocus_completely():
 def unload_model():
     """Принудительная выгрузка LLM из VRAM перед запуском диффузии или сменой модели"""
     global llm_model, llm_tokenizer, llm_name
+    try:
+        allocator_conf = os.environ.get('PYTORCH_CUDA_ALLOC_CONF', 'not set')
+        print(f"[Omost] PYTORCH_CUDA_ALLOC_CONF = {allocator_conf}")
     
+        # Проверяем backend аллокатора
+        backend = torch.cuda.get_allocator_backend()
+        print(f"[Omost] CUDA allocator backend: {backend}")
+    except Exception as e:
+        print(f"[Omost] Could not check allocator: {e}")    
     # Запоминаем VRAM ДО
     allocated_before, reserved_before, total, _ = get_vram_info()
     print(f"\033[93m[Omost] BEFORE unload:\033[0m allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB / {total:.2f}GB")
