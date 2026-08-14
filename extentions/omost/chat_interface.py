@@ -60,6 +60,9 @@ class ChatInterface(Blocks):
         *,
         post_fn_kwargs: dict = None,
         pre_fn_kwargs: dict = None,
+        on_stop_fn: Callable | None = None,          # ← НОВОЕ: твоя функция при Stop
+        on_stop_fn_kwargs: dict = None,               # ← НОВОЕ: её аргументы
+        undo_after_stop: bool = True,                 # ← НОВОЕ: делать ли undo после Stop
         # multimodal: bool = False,
         textbox: Textbox | None = None,
         additional_inputs: str | Component | list[str | Component] | None = None,
@@ -432,13 +435,34 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
-            self.stop_btn.click(
+            
+            # === ИЗМЕНЕНИЕ: цепочка Stop → on_stop_fn → Undo ===
+            stop_event = self.stop_btn.click(
                 None,
                 None,
                 None,
                 cancels=event_to_cancel,
                 api_name=False,
             )
+            
+            # Шаг 2: пользовательская функция при Stop
+            if self.on_stop_fn is not None:
+                stop_event = stop_event.then(
+                    self.on_stop_fn,
+                    **self.on_stop_fn_kwargs,
+                    api_name=False,
+                    queue=False,
+                )
+            
+            # Шаг 3: Undo — удаляем незавершённое сообщение
+            if self.undo_after_stop:
+                stop_event = stop_event.then(
+                    self._delete_prev_fn,
+                    [self.chatbot_state],
+                    [self.chatbot, self.saved_input, self.chatbot_state],
+                    api_name=False,
+                    queue=False,
+                )
 
     def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn

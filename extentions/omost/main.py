@@ -255,7 +255,11 @@ def model_loading(llm_name):
         token=None
     )
     return gr.update(visible=False)
-
+def on_stop_handler():
+    """Вызывается при нажатии Stop: выгружает LLM из памяти."""
+    print("[Omost] Stop clicked — unloading LLM...")
+    unload_model()
+    return gr.update()
 
 def gui():
     models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
@@ -321,6 +325,9 @@ def gui():
                 post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn]),
                 pre_fn=lambda: gr.update(visible=False),
                 pre_fn_kwargs=dict(outputs=[render_button]),
+                on_stop_fn=on_stop_handler,              # ← НОВОЕ
+                on_stop_fn_kwargs=dict(inputs=[], outputs=[]),  # ← НОВОЕ
+                undo_after_stop=True,                     # ← НОВОЕ
                 chatbot=chatbot,
                 retry_btn=retry_btn,
                 undo_btn=undo_btn,
