@@ -397,7 +397,6 @@ class ChatInterface(Blocks):
                 **self.post_fn_kwargs,
                 api_name=False,
             )
-
     def _setup_stop_events(
         self, event_trigger: EventListenerMethod, event_to_cancel: Dependency
     ) -> None:
@@ -432,13 +431,36 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
-            self.stop_btn.click(
-                None,
-                None,
-                None,
-                cancels=event_to_cancel,
-                api_name=False,
-            )
+            
+            # === ИЗМЕНЕНИЕ: после отмены генерации сразу выполняем undo ===
+            if self.submit_btn:
+                self.stop_btn.click(
+                    lambda: (Button.update(visible=True), Button.update(visible=False)),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    cancels=event_to_cancel,
+                    api_name=False,
+                ).then(
+                    self._delete_prev_fn,
+                    [self.chatbot_state],
+                    [self.chatbot, self.saved_input, self.chatbot_state],
+                    api_name=False,
+                    queue=False,
+                )
+            else:
+                self.stop_btn.click(
+                    lambda: Button.update(visible=False),
+                    None,
+                    [self.stop_btn],
+                    cancels=event_to_cancel,
+                    api_name=False,
+                ).then(
+                    self._delete_prev_fn,
+                    [self.chatbot_state],
+                    [self.chatbot, self.saved_input, self.chatbot_state],
+                    api_name=False,
+                    queue=False,
+                )
 
     def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
