@@ -88,17 +88,7 @@ def unload_fooocus_completely():
     пока не будет вызван refresh_everything() заново.
     """
     
-    print(f"\n[Omost] === Unloading ALL Fooocus models ===")
-    
-    # Запоминаем память ДО
-    allocated_before, reserved_before, total, _ = get_vram_info()
-    print(f"[Omost] BEFORE: allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB")
-    
-    # === Шаг 1: Выгружаем всё из GPU через model_management ===
-    print(f"[Omost] Step 1: Unloading from GPU via model_management...")
-       
-    # === Шаг 2: Обнуляем ссылки в pipeline ===
-    print(f"[Omost] Step 2: Clearing pipeline references...")
+
     try:
         pipeline.final_unet = None
         pipeline.final_clip = None
@@ -112,17 +102,15 @@ def unload_fooocus_completely():
         print(f"[Omost] Warning: {e}")
     
     # === Шаг 3: Пересоздаём model_base и model_refiner как пустые ===
-    print(f"[Omost] Step 3: Resetting model_base and model_refiner...")
+
     try:
         pipeline.model_base = core.StableDiffusionModel()
         pipeline.model_refiner = core.StableDiffusionModel()
-        print(f"[Omost] ✓ model_base and model_refiner reset")
     except Exception as e:
         print(f"[Omost] Warning: {e}")
     
     # === Шаг 4: Агрессивная очистка памяти ===
-    print(f"[Omost] Step 4: Aggressive memory cleanup...")
-    import gc
+
     
     # Первый проход сборщика мусора
     gc.collect()
@@ -147,13 +135,13 @@ def unload_model():
     global llm_model, llm_tokenizer, llm_name
     
     if llm_model is not None:
-        print("\033[92m[Omost] Unloading LLM from VRAM...\033[0m")
+        
         
         # === КРИТИЧЕСКИ ВАЖНО: Удаляем хуки accelerate ===
         try:
             from accelerate.hooks import remove_hook_from_module
             remove_hook_from_module(llm_model, recurse=True)
-            print("[Omost] Accelerate hooks removed")
+
         except Exception as e:
             print(f"[Omost] Warning: Could not remove hooks: {e}")
         
