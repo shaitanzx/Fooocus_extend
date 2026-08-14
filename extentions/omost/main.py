@@ -168,7 +168,7 @@ def unload_model():
         print("[Omost] LLM was not loaded, nothing to unload.")
 
 @torch.inference_mode()
-def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str) -> str:
+def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool) -> str:
     global llm_model, llm_tokenizer, llm_name
     print(f'[OMOST] model_base {model_base}')
     print(f'[OMOST] llm_name {llm_name}')
@@ -198,8 +198,11 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     torch.manual_seed(int(seed))
 
     conversation = [{"role": "system", "content": omost_canvas.system_prompt}]
-
-    for user, assistant in history:
+    if full_history == False:
+        select_history = history[-1:]
+    else:
+        select_history = history
+    for user, assistant in select_history:
         if isinstance(user, str) and isinstance(assistant, str):
             if len(user) > 0 and len(assistant) > 0:
                 conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant}])
@@ -282,12 +285,15 @@ def gui():
                             step=0.01,
                             value=0.9,
                             label="Top P")
-                    max_new_tokens = gr.Slider(
-                        minimum=128,
-                        maximum=4096,
-                        step=1,
-                        value=4096,
-                        label="Max New Tokens")
+                    with gr.Row():
+                        max_new_tokens = gr.Slider(
+                            minimum=128,
+                            maximum=4096,
+                            step=1,
+                            value=4096,
+                            label="Max New Tokens")
+                    with gr.Row():
+                        full_history = gr.Checkbox(label='Use full history', value=False, elem_classes='min_check')
 
             with gr.Accordion(open=False, label='Advanced'):
                 cfg = gr.Slider(label="CFG Scale", minimum=1.0, maximum=32.0, value=5.0, step=0.01)
@@ -319,7 +325,7 @@ def gui():
                 retry_btn=retry_btn,
                 undo_btn=undo_btn,
                 clear_btn=clear_btn,
-                additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base],
+                additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history],
                 examples=examples
             )
 
