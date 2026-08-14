@@ -5,6 +5,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
+from transformers.generation.stopping_criteria import StoppingCriteriaList
 
 import modules.default_pipeline as pipeline
 import modules.core as core
@@ -180,28 +181,28 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
         llm_model = AutoModelForCausalLM.from_pretrained(
             f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
+            cache_dir=os.path.join("models","omost"),
             torch_dtype=torch.bfloat16,
             device_map="auto",
             token=None,        
         )
         llm_tokenizer = AutoTokenizer.from_pretrained(
             f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
+            cache_dir=os.path.join("models","omost"),
             token=None
         )
         llm_name = model_base
-
-
 
     np.random.seed(int(seed))
     torch.manual_seed(int(seed))
 
     conversation = [{"role": "system", "content": omost_canvas.system_prompt}]
+    
     if full_history == False:
         select_history = history[-1:]
     else:
         select_history = history
+    
     for user, assistant in select_history:
         if isinstance(user, str) and isinstance(assistant, str):
             if len(user) > 0 and len(assistant) > 0:
@@ -209,15 +210,30 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     conversation.append({"role": "user", "content": message})
 
-
     input_ids = llm_tokenizer.apply_chat_template(
         conversation, return_tensors="pt", add_generation_prompt=True).to(llm_model.device)
 
-    streamer = TextIteratorStreamer(llm_tokenizer, timeout=None, skip_prompt=True, skip_special_tokens=True)
+    # === НОВОЕ: streamer с флагом прерывания ===
+    streamer = TextIteratorStreamer(llm_tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True)
+
+    # === НОВОЕ: критерий остановки ===
+    def interactive_stopping_criteria(*args, **kwargs) -> bool:
+        if getattr(streamer, 'user_interrupted', False):
+            print('[Omost] User stopped generation')
+            return True
+        return False
+
+    stopping_criteria = StoppingCriteriaList([interactive_stopping_criteria])
+
+    # === НОВОЕ: interrupter функция, возвращается в ChatInterface ===
+    def interrupter():
+        streamer.user_interrupted = True
+        return
 
     generate_kwargs = dict(
         input_ids=input_ids,
         streamer=streamer,
+        stopping_criteria=stopping_criteria,  # ← ВАЖНО: передаём критерий
         max_new_tokens=max_new_tokens,
         do_sample=True,
         temperature=temperature,
@@ -232,8 +248,8 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     outputs = []
     for text in streamer:
         outputs.append(text)
-
-        yield "".join(outputs)
+        # === ВАЖНО: возвращаем TUPLE (текст, interrupter) ===
+        yield "".join(outputs), interrupter
 
     return
 def model_loading(llm_name):

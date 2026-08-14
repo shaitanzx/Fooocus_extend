@@ -267,18 +267,17 @@ class ChatInterface(Blocks):
             .then(
                 submit_fn,
                 [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                [self.chatbot, self.chatbot_state],
+                # === ИЗМЕНЕНО: добавляем self.interrupter в outputs ===
+                [self.chatbot, self.chatbot_state, self.interrupter],
                 api_name=False,
             )
         )
-        # Сохраняем событие генерации ДО добавления post_fn
         submit_generation_event = submit_event
         submit_event = submit_event.then(
             self.post_fn,
             **self.post_fn_kwargs,
             api_name=False,
         )
-        # Отменяем именно генерацию, а не post_fn
         self._setup_stop_events(self.textbox.submit, submit_generation_event)
 
         if self.submit_btn:
@@ -306,19 +305,20 @@ class ChatInterface(Blocks):
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                    [self.chatbot, self.chatbot_state],
+                    # === ИЗМЕНЕНО: добавляем self.interrupter в outputs ===
+                    [self.chatbot, self.chatbot_state, self.interrupter],
                     api_name=False,
                 )
             )
-            # Сохраняем событие генерации ДО добавления post_fn
             click_generation_event = click_event
             click_event = click_event.then(
                 self.post_fn,
                 **self.post_fn_kwargs,
                 api_name=False,
             )
-            # Отменяем именно генерацию, а не post_fn
             self._setup_stop_events(self.submit_btn.click, click_generation_event)
+
+    # ... остальной код (retry_btn, undo_btn, clear_btn) оставь как есть ...
 
         if self.retry_btn:
             retry_event = (
@@ -400,6 +400,12 @@ class ChatInterface(Blocks):
     def _setup_stop_events(
         self, event_trigger: EventListenerMethod, event_to_cancel: Dependency
     ) -> None:
+        # === НОВОЕ: функция, которая вызывает interrupter ===
+        def perform_interrupt(ipc):
+            if ipc is not None:
+                ipc()
+            return
+
         if self.stop_btn and self.is_generator:
             if self.submit_btn:
                 event_trigger(
@@ -431,8 +437,8 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
-            
-            # === ИЗМЕНЕНИЕ: после отмены генерации сразу выполняем undo ===
+        
+            # === ИЗМЕНЕНО: при Stop вызываем perform_interrupt + отменяем событие + удаляем незавершённое сообщение ===
             if self.submit_btn:
                 self.stop_btn.click(
                     lambda: (Button.update(visible=True), Button.update(visible=False)),
@@ -440,6 +446,11 @@ class ChatInterface(Blocks):
                     [self.submit_btn, self.stop_btn],
                     cancels=event_to_cancel,
                     api_name=False,
+                ).then(
+                    perform_interrupt,
+                    inputs=[self.interrupter],
+                    api_name=False,
+                    queue=False,
                 ).then(
                     self._delete_prev_fn,
                     [self.chatbot_state],
@@ -454,6 +465,11 @@ class ChatInterface(Blocks):
                     [self.stop_btn],
                     cancels=event_to_cancel,
                     api_name=False,
+                ).then(
+                    perform_interrupt,
+                    inputs=[self.interrupter],
+                    api_name=False,
+                    queue=False,
                 ).then(
                     self._delete_prev_fn,
                     [self.chatbot_state],
@@ -512,15 +528,17 @@ class ChatInterface(Blocks):
             )
             generator = SyncToAsyncIterator(generator, self.limiter)
         try:
-            first_response = await async_iteration(generator)
+            # === ИЗМЕНЕНО: распаковываем tuple (response, interrupter) ===
+            first_response, first_interrupter = await async_iteration(generator)
             update = history + [[message, first_response]]
-            yield update, update
+            yield update, update, first_interrupter
         except StopIteration:
             update = history + [[message, None]]
-            yield update, update
-        async for response in generator:
+            yield update, update, None
+        # === ИЗМЕНЕНО: распаковываем tuple (response, interrupter) ===
+        async for response, interrupter in generator:
             update = history + [[message, response]]
-            yield update, update
+            yield update, update, interrupter
 
     async def _api_submit_fn(
         self, message: str, history: list[list[str | None]], *args
