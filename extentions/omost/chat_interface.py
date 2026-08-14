@@ -101,6 +101,11 @@ class ChatInterface(Blocks):
         self.pre_fn = pre_fn
         self.pre_fn_kwargs = pre_fn_kwargs
 
+        # === НОВЫЕ АТРИБУТЫ - добавь их СЮДА ===
+        self.on_stop_fn = on_stop_fn
+        self.on_stop_fn_kwargs = on_stop_fn_kwargs or {}
+        self.undo_after_stop = undo_after_stop
+
         self.interrupter = State(None)
 
         #self.multimodal = multimodal
