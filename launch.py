@@ -130,7 +130,7 @@ def prepare_environment():
                     if platform.system() == 'Darwin':
                         continue
                 if 'bitsandbytes' in line:
-                    line=f'bitsandbytes=={get_required_bitsandbytes}'
+                    line=f'bitsandbytes=={get_required_bitsandbytes()}'
 
                 run_pip(f"install {line}", desc=line)
     if REINSTALL_ALL or not requirements_met(requirements_file):
