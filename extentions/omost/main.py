@@ -1,7 +1,7 @@
 import gradio as gr
 from extentions.omost.chat_interface import ChatInterface
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer, StoppingCriteria, StoppingCriteriaList
 import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
@@ -23,7 +23,13 @@ llm_model = None
 llm_tokenizer = None
 llm_name = None
 
-
+class StopOnFlag(StoppingCriteria):
+    def __init__(self, stop_flag):
+        super().__init__()
+        self.stop_flag = stop_flag
+    
+    def __call__(self, input_ids, scores, **kwargs):
+        return self.stop_flag[0]
 
 
 def get_vram_info():
@@ -169,6 +175,10 @@ def unload_model():
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool) -> str:
+
+    stop_flag = [False]  # Мутабельный флаг
+
+
     global llm_model, llm_tokenizer, llm_name
     print(f'[OMOST] model_base {model_base}')
     print(f'[OMOST] llm_name {llm_name}')
@@ -227,13 +237,23 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
     if temperature == 0:
         generate_kwargs['do_sample'] = False
 
-    Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
+    generation_thread = Thread(target=llm_model.generate, kwargs=generate_kwargs)
+    generation_thread.start()
 
     outputs = []
-    for text in streamer:
-        outputs.append(text)
-
-        yield "".join(outputs)
+    try:
+        for text in streamer:
+            outputs.append(text)
+            yield "".join(outputs)
+    finally:
+        # Устанавливаем флаг остановки
+        stop_flag[0] = True
+        generation_thread.join(timeout=5.0)
+    
+        del input_ids, streamer, generate_kwargs, outputs
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
 
     return
 def model_loading(llm_name):
