@@ -86,7 +86,7 @@ def get_required_bitsandbytes():
 
 
 
-REINSTALL_ALL = False
+REINSTALL_ALL = True
 TRY_INSTALL_XFORMERS = False
 
 
