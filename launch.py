@@ -24,6 +24,68 @@ from modules.launch_util import is_installed, run, python, run_pip, requirements
 from modules.model_loader import load_file_from_url
 import torch
 
+
+
+def _parse_version(version_str):
+    """Парсит строку версии в кортеж чисел для сравнения."""
+    if not version_str:
+        return None
+    try:
+        clean_version = version_str.split('+')[0]
+        parts = clean_version.split('.')
+        return tuple(int(p) for p in parts[:3])
+    except Exception:
+        return None
+
+
+def get_required_bitsandbytes():
+    """
+    Возвращает строку с необходимой версией bitsandbytes
+    на основе установленных PyTorch и CUDA.
+    
+    Returns:
+        str: версия bitsandbytes (например, '0.41.1')
+        None: если не удалось определить
+    """
+    try:
+        pytorch_version = torch.__version__
+        cuda_version = torch.version.cuda
+    except Exception as e:
+        print(f"[BitsDetector] ERROR: PyTorch not available: {e}")
+        return None
+    
+    pytorch_tuple = _parse_version(pytorch_version)
+    cuda_tuple = _parse_version(cuda_version) if cuda_version else None
+    
+    if pytorch_tuple is None:
+        print(f"[BitsDetector] ERROR: Cannot parse PyTorch version: {pytorch_version}")
+        return None
+    
+    # === Логика определения версии ===
+    
+    # PyTorch 2.4+ требует bitsandbytes 0.44+
+    if pytorch_tuple >= (2, 4, 0):
+        required = '0.44.1'
+    
+    # PyTorch 2.1 - 2.3
+    elif pytorch_tuple >= (2, 1, 0):
+        if cuda_tuple and cuda_tuple >= (12, 4, 0):
+            required = '0.43.3'
+        else:
+            required = '0.41.1'
+    
+    # PyTorch 2.0
+    elif pytorch_tuple >= (2, 0, 0):
+        required = '0.42.0'
+    
+    # Старые версии PyTorch
+    else:
+        required = '0.41.1'
+    
+    return required
+
+
+
 REINSTALL_ALL = False
 TRY_INSTALL_XFORMERS = False
 
@@ -67,6 +129,9 @@ def prepare_environment():
                 if 'onnxruntime-gpu' in line:
                     if platform.system() == 'Darwin':
                         continue
+                if 'bitsandbytes' in line:
+                    line=f'bitsandbytes=={get_required_bitsandbytes}'
+
                 run_pip(f"install {line}", desc=line)
     if REINSTALL_ALL or not requirements_met(requirements_file):
         install_requirements(requirements_file)

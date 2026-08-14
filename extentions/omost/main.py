@@ -261,8 +261,6 @@ def gui():
             with gr.Row():
                 model_base = gr.Dropdown(choices=models_name, value=models_name[0], label='LLM model')
             with gr.Row():
-                load_model = gr.Button("Load Model", variant="secondary", size="sm", min_width=60)
-            with gr.Row():
                 clear_btn = gr.Button("New Chat", variant="secondary", size="sm", min_width=60)
                 retry_btn = gr.Button("Retry", variant="secondary", size="sm", min_width=60, visible=False)
                 undo_btn = gr.Button("Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)

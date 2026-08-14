@@ -1,4 +1,5 @@
 torchsde==0.2.6
+bitsandbytes
 einops==0.8.0
 safetensors==0.4.3
 accelerate==0.32.1
@@ -53,5 +54,5 @@ fvcore==0.1.5.post20221221
 matplotlib==3.7.2
 fairscale==0.4.13
 
-bitsandbytes
+
 #openai
