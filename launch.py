@@ -23,17 +23,30 @@ from build_launcher import build_launcher
 from modules.launch_util import is_installed, run, python, run_pip, requirements_met, delete_folder_content
 from modules.model_loader import load_file_from_url
 import torch
-
-
+import re
 
 def _parse_version(version_str):
-    """Парсит строку версии в кортеж чисел для сравнения."""
+    """
+    Парсит строку версии в кортеж чисел для сравнения.
+    Поддерживает dev, alpha, beta, rc, git-суффиксы.
+    """
     if not version_str:
         return None
     try:
+        # Убираем CUDA/git суффикс (+cu118, +cu121, +cpu, +git123abc)
         clean_version = version_str.split('+')[0]
-        parts = clean_version.split('.')
-        return tuple(int(p) for p in parts[:3])
+        
+        # Извлекаем числа из начала строки через regex
+        # Останавливаемся при встрече dev/a/b/rc/git суффикса
+        match = re.match(r'^(\d+)(?:\.(\d+))?(?:\.(\d+))?', clean_version)
+        if not match:
+            return None
+        
+        major = int(match.group(1))
+        minor = int(match.group(2)) if match.group(2) else 0
+        patch = int(match.group(3)) if match.group(3) else 0
+        
+        return (major, minor, patch)
     except Exception:
         return None
 
