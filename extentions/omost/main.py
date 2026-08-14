@@ -214,7 +214,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         conversation, return_tensors="pt", add_generation_prompt=True).to(llm_model.device)
 
     # === НОВОЕ: streamer с флагом прерывания ===
-    streamer = TextIteratorStreamer(llm_tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True)
+    streamer = TextIteratorStreamer(llm_tokenizer, timeout=100.0, skip_prompt=True, skip_special_tokens=True)
 
     # === НОВОЕ: критерий остановки ===
     def interactive_stopping_criteria(*args, **kwargs) -> bool:
