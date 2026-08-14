@@ -70,26 +70,13 @@ def post_chat(history):
 
 def defragment_vram():
     if not torch.cuda.is_available():
-        return
-    
-    # Замер ДО
-    before = torch.cuda.memory_reserved() / (1024**3)
-    
+        return    
     try:
         torch.cuda.synchronize()
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.reset_peak_memory_stats()
         torch.cuda.synchronize()
-        
-        # Замер ПОСЛЕ
-        after = torch.cuda.memory_reserved() / (1024**3)
-        freed = before - after
-        
-        if freed > 0.01:
-            print(f"[Omost] ✓ VRAM defragmented. Freed reserved: {freed:.2f} GB")
-        else:
-            print(f"[Omost] ✓ VRAM defragmented (reserved was already minimal).")
     except Exception as e:
         print(f"[Omost] Warning during VRAM defragmentation: {e}")
 
@@ -153,35 +140,11 @@ def unload_fooocus_completely():
     torch.cuda.synchronize()
     # === Шаг 5: Дефрагментация ===
     defragment_vram()
-    
-    # Запоминаем память ПОСЛЕ
-    allocated_after, reserved_after, _, _ = get_vram_info()
-    freed_allocated = allocated_before - allocated_after
-    freed_reserved = reserved_before - reserved_after
-    
-    print(f"[Omost] AFTER:  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB")
-    print(f"[Omost] FREED:  allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
-    print(f"[Omost] ✓ ALL Fooocus models unloaded")
-    print(f"[Omost] ===================================\n")
-
 
 @torch.inference_mode()
 def unload_model():
     """Принудительная выгрузка LLM из VRAM перед запуском диффузии или сменой модели"""
     global llm_model, llm_tokenizer, llm_name
-    try:
-        print(f"[Omost] PyTorch version: {torch.__version__}")
-        print(f"[Omost] PYTORCH_CUDA_ALLOC_CONF = {os.environ.get('PYTORCH_CUDA_ALLOC_CONF', 'not set')}")
-        print(f"[Omost] CUDA version: {torch.version.cuda}")
-        print(f"[Omost] Allocator backend: {torch.cuda.get_allocator_backend()}")
-        # Проверяем backend аллокатора
-        backend = torch.cuda.get_allocator_backend()
-        print(f"[Omost] CUDA allocator backend: {backend}")
-    except Exception as e:
-        print(f"[Omost] Could not check allocator: {e}")    
-    # Запоминаем VRAM ДО
-    allocated_before, reserved_before, total, _ = get_vram_info()
-    print(f"\033[93m[Omost] BEFORE unload:\033[0m allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB / {total:.2f}GB")
     
     if llm_model is not None:
         print("\033[92m[Omost] Unloading LLM from VRAM...\033[0m")
@@ -204,7 +167,7 @@ def unload_model():
         llm_name = None
         
         # Агрессивная очистка
-        import gc
+        
         gc.collect()
         
         if torch.cuda.is_available():
@@ -213,20 +176,6 @@ def unload_model():
             torch.cuda.ipc_collect()
             torch.cuda.reset_peak_memory_stats()
             torch.cuda.synchronize() 
-
-       
-            # Считаем VRAM ПОСЛЕ
-            allocated_after, reserved_after, _, _ = get_vram_info()
-            freed_allocated = allocated_before - allocated_after
-            freed_reserved = reserved_before - reserved_after
-            
-            print(f"\033[92m[Omost] AFTER  unload:\033[0m  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB / {total:.2f}GB")
-            print(f"\033[96m[Omost] FREED:\033[0m allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
-            
-            if freed_allocated < 1.0:
-                print(f"\033[91m[Omost] WARNING: Freed less than 1GB! Possible memory leak.\033[0m")
-            
-            print("\033[92m[Omost] ✓ VRAM cleared successfully.\033[0m")
     else:
         print("[Omost] LLM was not loaded, nothing to unload.")
 
@@ -297,21 +246,10 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
     return
 def model_loading(llm_name):
-#def model_loading(llm_name="lllyasviel/omost-llama-3-8b-4bits"):  
-#def model_loading(llm_name="lllyasviel/omost-dolphin-2.9-llama3-8b-4bits"):  
-#def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k-8bits"):  
-#def model_loading(llm_name="lllyasviel/omost-llama-3-8b"):  
-#def model_loading(llm_name="lllyasviel/omost-dolphin-2.9-llama3-8b"):  
-#def model_loading(llm_name="lllyasviel/omost-phi-3-mini-128k"):  
- 
-
     global llm_model, llm_tokenizer
         
     print(f"[Omost] Loading LLM: {llm_name}...")
-    
-
-    
-  
+ 
     llm_model = AutoModelForCausalLM.from_pretrained(
         llm_name,
         cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
@@ -374,9 +312,6 @@ def gui():
 
             render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
 
-            clear_llm = gr.Button("CLEAR LLM", size='lg', variant="primary", visible=True)
-
-
             examples = gr.Dataset(
                 samples=[
                     ['generate an image of the fierce battle of warriors and a dragon'],
@@ -401,11 +336,5 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base],
                 examples=examples
             )
-    load_model.click(
-        fn=model_loading,
-        outputs=[load_model]
-    )
-
-    clear_llm.click(unload_model)
 
     return render_button, canvas_state, n_prompt
