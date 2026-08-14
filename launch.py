@@ -37,7 +37,6 @@ def _parse_version(version_str):
         clean_version = version_str.split('+')[0]
         
         # Извлекаем числа из начала строки через regex
-        # Останавливаемся при встрече dev/a/b/rc/git суффикса
         match = re.match(r'^(\d+)(?:\.(\d+))?(?:\.(\d+))?', clean_version)
         if not match:
             return None
@@ -57,7 +56,7 @@ def get_required_bitsandbytes():
     на основе установленных PyTorch и CUDA.
     
     Returns:
-        str: версия bitsandbytes (например, '0.41.1')
+        str: версия bitsandbytes (например, '0.50.1')
         None: если не удалось определить
     """
     try:
@@ -74,23 +73,11 @@ def get_required_bitsandbytes():
         print(f"[BitsDetector] ERROR: Cannot parse PyTorch version: {pytorch_version}")
         return None
     
-    # === Логика определения версии ===
+    # === ОБНОВЛЁННАЯ ЛОГИКА (на основе официальной документации) ===
     
-    # PyTorch 2.4+ требует bitsandbytes 0.44+
+    # PyTorch 2.4+ требует bitsandbytes 0.50+ (стабильная версия 0.50.1)
     if pytorch_tuple >= (2, 4, 0):
-        required = '0.44.1'
-    
-    # PyTorch 2.1 - 2.3
-    elif pytorch_tuple >= (2, 1, 0):
-        if cuda_tuple and cuda_tuple >= (12, 4, 0):
-            required = '0.43.3'
-        else:
-            required = '0.41.1'
-    
-    # PyTorch 2.0
-    elif pytorch_tuple >= (2, 0, 0):
-        required = '0.42.0'
-    
+        required = '0.50.1'
     # Старые версии PyTorch
     else:
         required = '0.41.1'
