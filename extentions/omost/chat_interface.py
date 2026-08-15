@@ -267,7 +267,6 @@ class ChatInterface(Blocks):
             .then(
                 submit_fn,
                 [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                # === ИЗМЕНЕНО: добавляем self.interrupter в outputs ===
                 [self.chatbot, self.chatbot_state, self.interrupter],
                 api_name=False,
             )
@@ -305,7 +304,6 @@ class ChatInterface(Blocks):
                 .then(
                     submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
-                    # === ИЗМЕНЕНО: добавляем self.interrupter в outputs ===
                     [self.chatbot, self.chatbot_state, self.interrupter],
                     api_name=False,
                 )
@@ -317,8 +315,6 @@ class ChatInterface(Blocks):
                 api_name=False,
             )
             self._setup_stop_events(self.submit_btn.click, click_generation_event)
-
-    # ... остальной код (retry_btn, undo_btn, clear_btn) оставь как есть ...
 
         if self.retry_btn:
             retry_event = (
@@ -397,15 +393,30 @@ class ChatInterface(Blocks):
                 **self.post_fn_kwargs,
                 api_name=False,
             )
-    def _setup_stop_events(
-        self, event_trigger: EventListenerMethod, event_to_cancel: Dependency
-    ) -> None:
-        # === НОВОЕ: функция, которая вызывает interrupter ===
+
+        # === ЕДИНСТВЕННЫЙ обработчик Stop для interrupt + удаления последней пары ===
+        # Вызывается ОДИН раз, независимо от того, сколько триггеров генерации существует
         def perform_interrupt(ipc):
             if ipc is not None:
                 ipc()
             return
 
+        if self.stop_btn and self.is_generator:
+            self.stop_btn.click(
+                perform_interrupt,
+                inputs=[self.interrupter],
+                api_name=False,
+                queue=False,
+            ).then(
+                self._delete_prev_fn,
+                [self.chatbot_state],
+                [self.chatbot, self.saved_input, self.chatbot_state],
+                api_name=False,
+                queue=False,
+            )
+    def _setup_stop_events(
+        self, event_trigger: EventListenerMethod, event_to_cancel: Dependency
+    ) -> None:
         if self.stop_btn and self.is_generator:
             if self.submit_btn:
                 event_trigger(
@@ -437,8 +448,9 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
-        
-            # === ИЗМЕНЕНО: при Stop вызываем perform_interrupt + отменяем событие + удаляем незавершённое сообщение ===
+
+            # === ИЗМЕНЕНО: только cancels, БЕЗ perform_interrupt и _delete_prev_fn ===
+            # Они теперь вызываются ОДИН раз в конце _setup_events
             if self.submit_btn:
                 self.stop_btn.click(
                     lambda: (Button.update(visible=True), Button.update(visible=False)),
@@ -446,17 +458,6 @@ class ChatInterface(Blocks):
                     [self.submit_btn, self.stop_btn],
                     cancels=event_to_cancel,
                     api_name=False,
-                ).then(
-                    perform_interrupt,
-                    inputs=[self.interrupter],
-                    api_name=False,
-                    queue=False,
-                ).then(
-                    self._delete_prev_fn,
-                    [self.chatbot_state],
-                    [self.chatbot, self.saved_input, self.chatbot_state],
-                    api_name=False,
-                    queue=False,
                 )
             else:
                 self.stop_btn.click(
@@ -465,17 +466,6 @@ class ChatInterface(Blocks):
                     [self.stop_btn],
                     cancels=event_to_cancel,
                     api_name=False,
-                ).then(
-                    perform_interrupt,
-                    inputs=[self.interrupter],
-                    api_name=False,
-                    queue=False,
-                ).then(
-                    self._delete_prev_fn,
-                    [self.chatbot_state],
-                    [self.chatbot, self.saved_input, self.chatbot_state],
-                    api_name=False,
-                    queue=False,
                 )
 
     def _setup_api(self) -> None:
