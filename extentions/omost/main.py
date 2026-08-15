@@ -329,12 +329,12 @@ def gui():
                     with gr.Row():
                         full_history = gr.Checkbox(label='Use full history', value=False, elem_classes='min_check')
 
-            with gr.Accordion(open=False, label='Advanced'):
-                cfg = gr.Slider(label="CFG Scale", minimum=1.0, maximum=32.0, value=5.0, step=0.01)
-                highres_scale = gr.Slider(label="HR-fix Scale (\"1\" is disabled)", minimum=1.0, maximum=2.0, value=1.0, step=0.01)
-                highres_steps = gr.Slider(label="Highres Fix Steps", minimum=1, maximum=100, value=20, step=1)
-                highres_denoise = gr.Slider(label="Highres Fix Denoise", minimum=0.1, maximum=1.0, value=0.4, step=0.01)
-                n_prompt = gr.Textbox(label="Negative Prompt", value='lowres, bad anatomy, bad hands, cropped, worst quality')
+            # with gr.Accordion(open=False, label='Advanced'):
+            #     cfg = gr.Slider(label="CFG Scale", minimum=1.0, maximum=32.0, value=5.0, step=0.01)
+            #     highres_scale = gr.Slider(label="HR-fix Scale (\"1\" is disabled)", minimum=1.0, maximum=2.0, value=1.0, step=0.01)
+            #     highres_steps = gr.Slider(label="Highres Fix Steps", minimum=1, maximum=100, value=20, step=1)
+            #     highres_denoise = gr.Slider(label="Highres Fix Denoise", minimum=0.1, maximum=1.0, value=0.4, step=0.01)
+            #     n_prompt = gr.Textbox(label="Negative Prompt", value='lowres, bad anatomy, bad hands, cropped, worst quality')
 
             render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
 
@@ -363,4 +363,4 @@ def gui():
                 examples=examples
             )
 
-    return render_button, canvas_state, n_prompt
+    return render_button, canvas_state
