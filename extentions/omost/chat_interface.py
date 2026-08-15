@@ -601,4 +601,5 @@ class ChatInterface(Blocks):
             message, _ = history.pop()
         except IndexError:
             message = ""
+        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
         return history, message or "", history
