@@ -107,7 +107,8 @@ def unload_fooocus_completely():
     
 
     try:
-        unload_model_by_name('GPT2LMHeadModel')
+        ldm_patched.modules.model_management.unload_all_models()
+        #unload_model_by_name('GPT2LMHeadModel')
         pipeline.final_unet = None
         pipeline.final_clip = None
         pipeline.final_vae = None
