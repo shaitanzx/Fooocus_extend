@@ -6,7 +6,7 @@ import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
 from transformers.generation.stopping_criteria import StoppingCriteriaList
-
+import ldm_patched.modules.model_management
 import modules.default_pipeline as pipeline
 import modules.core as core
 
@@ -82,7 +82,7 @@ def defragment_vram():
         print(f"[Omost] Warning during VRAM defragmentation: {e}")
 def unload_model_by_name(target_name):
     """Удаляет модель по имени класса через существующую unload_model_clones."""
-    for lm in current_loaded_models:
+    for lm in ldm_patched.modules.model_management.current_loaded_models:
         try:
             name = lm.model.model.__class__.__name__
         except:
@@ -90,8 +90,8 @@ def unload_model_by_name(target_name):
         
         if name == target_name:
             print(f"[ModelMgmt] Unloading: {name}")
-            unload_model_clones(lm.model)
-            soft_empty_cache()
+            ldm_patched.modules.model_management.unload_model_clones(lm.model)
+            ldm_patched.modules.model_management.soft_empty_cache()
             return True
     
     print(f"[ModelMgmt] Model '{target_name}' not found")
