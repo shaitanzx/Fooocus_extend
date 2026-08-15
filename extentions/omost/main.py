@@ -80,6 +80,22 @@ def defragment_vram():
         torch.cuda.synchronize()
     except Exception as e:
         print(f"[Omost] Warning during VRAM defragmentation: {e}")
+def unload_model_by_name(target_name):
+    """Удаляет модель по имени класса через существующую unload_model_clones."""
+    for lm in current_loaded_models:
+        try:
+            name = lm.model.model.__class__.__name__
+        except:
+            name = "?"
+        
+        if name == target_name:
+            print(f"[ModelMgmt] Unloading: {name}")
+            unload_model_clones(lm.model)
+            soft_empty_cache()
+            return True
+    
+    print(f"[ModelMgmt] Model '{target_name}' not found")
+    return False
 
 def unload_fooocus_completely():
     """
@@ -91,6 +107,7 @@ def unload_fooocus_completely():
     
 
     try:
+        unload_model_by_name('GPT2LMHeadModel')
         pipeline.final_unet = None
         pipeline.final_clip = None
         pipeline.final_vae = None
