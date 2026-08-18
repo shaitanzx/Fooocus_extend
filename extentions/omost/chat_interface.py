@@ -247,12 +247,12 @@ class ChatInterface(Blocks):
                 cancels=event_to_cancel,
                 api_name=False,
                 queue=False,
-            # ).then(
-            #     fn=self._delete_prev_fn,
-            #     inputs=[self.saved_input, self.chatbot_state],
-            #     outputs=[self.chatbot, self.saved_input, self.chatbot_state],
-            #     api_name=False,
-            #     queue=False,
+            ).then(
+                fn=self._delete_prev_fn,
+                inputs=[self.saved_input, self.chatbot_state],
+                outputs=[self.chatbot, self.saved_input, self.chatbot_state],
+                api_name=False,
+                queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
@@ -326,8 +326,11 @@ class ChatInterface(Blocks):
         message: str,
         history: list[list[str | None]],
     ) -> tuple[list[list[str | None]], str, list[list[str | None]]]:
+        print(f"[DEBUG _delete_prev_fn] Input history length: {len(history) if history else 0}")
         if history:
+            print(f"[DEBUG _delete_prev_fn] Input history: {history}")
             history = history[:-1]
+            print(f"[DEBUG _delete_prev_fn] After deletion length: {len(history) if history else 0}")
+            print(f"[DEBUG _delete_prev_fn] After deletion: {history}")
         return history, message or "", history
-
 

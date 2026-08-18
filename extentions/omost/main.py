@@ -59,15 +59,20 @@ def post_chat(history):
     global omost_seed
     import traceback
     print(f"\n[Omost post_chat] CALLED")
-    print(f"[Omost post_chat] History length: {len(history) if history else 0}")
+    print(f"[Omost post_chat] Input history length: {len(history) if history else 0}")
+    if history:
+        print(f"[Omost post_chat] Input history: {history}")
     
     canvas_outputs = None
     try:
         if history:
             history = [(user, assistant) for user, assistant in history if isinstance(user, str) and isinstance(assistant, str)]
-            last_assistant = history[-1][1] if len(history) > 0 else None
-            canvas = omost_canvas.Canvas.from_bot_response(last_assistant)
-            canvas_outputs = canvas.process()
+            print(f"[Omost post_chat] Filtered history length: {len(history) if history else 0}")
+            if history:
+                print(f"[Omost post_chat] Filtered history: {history}")
+                last_assistant = history[-1][1] if len(history) > 0 else None
+                canvas = omost_canvas.Canvas.from_bot_response(last_assistant)
+                canvas_outputs = canvas.process()
     except Exception as e:
         print('Last assistant response is not valid canvas:', e)
 
@@ -75,11 +80,10 @@ def post_chat(history):
     
     render_visible = canvas_outputs is not None
     print(f"[Omost post_chat] Render visible: {render_visible}")
-    print(f"[Omost post_chat] Stack trace:")
-    traceback.print_stack()
-    print()
     
-    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(interactive=len(history) > 0)
+    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
+
+
 def defragment_vram():
     if not torch.cuda.is_available():
         return    
