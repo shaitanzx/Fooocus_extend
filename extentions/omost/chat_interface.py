@@ -1,6 +1,6 @@
 
 from __future__ import annotations
-
+from functools import wraps
 import inspect
 from typing import AsyncGenerator, Callable
 
@@ -23,8 +23,17 @@ from gradio.helpers import special_args
 from gradio.layouts import Accordion, Group, Row
 from gradio.routes import Request
 from gradio.themes import ThemeClass as Theme
-from gradio.utils import SyncToAsyncIterator, async_iteration, async_lambda
+from gradio.utils import SyncToAsyncIterator, async_iteration
+def async_lambda(f: Callable) -> Callable:
+    """Turn a function into an async function.
+    Useful for internal event handlers defined as lambda functions used in the codebase
+    """
 
+    @wraps(f)
+    async def function_wrapper(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    return function_wrapper
 
 @document()
 class ChatInterface(Blocks):
