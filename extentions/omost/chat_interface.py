@@ -9,7 +9,7 @@ import inspect
 from typing import AsyncGenerator, Callable
 
 import anyio
-from gradio.documentation import document
+
 
 from gradio.blocks import Blocks
 from gradio.components import (
