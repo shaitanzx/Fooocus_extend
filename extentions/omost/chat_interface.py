@@ -183,7 +183,8 @@ class ChatInterface(Blocks):
         if self.retry_btn:
             retry_event = (
                 self.retry_btn.click(
-                    self._delete_prev_fn, [self.saved_input, self.chatbot_state], [self.chatbot, self.saved_input, self.chatbot_state],
+                    self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
+                    [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  # <-- добавлен self.textbox
                     api_name=False, queue=False,
                 )
                 .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
@@ -195,14 +196,13 @@ class ChatInterface(Blocks):
 
         if self.undo_btn:
             self.undo_btn.click(
-                self._delete_prev_fn, [self.saved_input, self.chatbot_state], [self.chatbot, self.saved_input, self.chatbot_state],
+                self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
+                [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  # <-- добавлен self.textbox
                 api_name=False, queue=False,
             ).then(
                 self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
             ).then(
-                async_lambda(lambda x: x), [self.saved_input], [self.textbox], api_name=False, queue=False,
-            ).then(
-                self.post_fn, **self.post_fn_kwargs, api_name=False,
+                self.post_fn, **self.post_fn_kwargs, api_name=False,  # <-- убран async_lambda, так как textbox уже обновлён
             )
 
         if self.clear_btn:
@@ -304,9 +304,9 @@ class ChatInterface(Blocks):
                 api_name=False,
                 queue=False,
             ).then(
-                fn=self._stop_and_restore_fn,   # <-- было self._delete_prev_fn
+                fn=self._delete_prev_fn,
                 inputs=[self.saved_input, self.chatbot_state],
-                outputs=[self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  # <-- добавлен self.textbox
+                outputs=[self.chatbot, self.saved_input, self.chatbot_state, self.textbox],
                 api_name=False,
                 queue=False,
             ).then(
@@ -377,12 +377,12 @@ class ChatInterface(Blocks):
         async for response in generator:
             yield response, history + [[message, response]]
 
-    async def _stop_and_restore_fn(
+    async def _delete_prev_fn(
         self,
         message: str,
         history: list[list[str | None]],
     ) -> tuple[list[list[str | None]], str, list[list[str | None]], str]:
-        """Удаляет последний элемент из истории и возвращает прерванный запрос в textbox."""
+        """Удаляет последний элемент из истории и возвращает запрос."""
         if history:
             history = history[:-1]
         # Возвращаем: chatbot, saved_input, chatbot_state, textbox
