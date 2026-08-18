@@ -24,7 +24,6 @@ from gradio.components import (
 )
 from gradio.events import Dependency, EventListenerMethod
 from gradio.helpers import create_examples as Examples  # noqa: N812
-from gradio.helpers import special_args
 from gradio.layouts import Accordion, Column, Group, Row
 from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration
@@ -439,14 +438,10 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
-        request,  # <- изменили на строку
         *args,
     ) -> tuple[list[list[str | None]], list[list[str | None]]]:
-    # ... остальной код без изменений
         history = history_with_input[:-1]
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history] + list(args)
 
         if self.is_async:
             response = await self.fn(*inputs)
@@ -462,14 +457,10 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
-        request,  # <- изменили на строку
         *args,
     ) -> AsyncGenerator:
-    # ... остальной код без изменений
         history = history_with_input[:-1]
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history] + list(args)
 
         if self.is_async:
             generator = self.fn(*inputs)
@@ -478,24 +469,22 @@ class ChatInterface(Blocks):
                 self.fn, *inputs, limiter=self.limiter
             )
             generator = SyncToAsyncIterator(generator, self.limiter)
+        
         try:
             first_response, first_interrupter = await async_iteration(generator)
             update = history + [[message, first_response]]
             yield update, update, first_interrupter
         except StopIteration:
             update = history + [[message, None]]
-            yield update, update, first_interrupter
+            yield update, update, None
         async for response, interrupter in generator:
             update = history + [[message, response]]
             yield update, update, interrupter
 
     async def _api_submit_fn(
-        self, message: str, history: list[list[str | None]], request, *args  # <- изменили
+        self, message: str, history: list[list[str | None]], *args
     ) -> tuple[str, list[list[str | None]]]:
-    # ... остальной код без изменений
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history] + list(args)
 
         if self.is_async:
             response = await self.fn(*inputs)
@@ -507,12 +496,9 @@ class ChatInterface(Blocks):
         return response, history
 
     async def _api_stream_fn(
-        self, message: str, history: list[list[str | None]], request, *args  # <- изменили
+        self, message: str, history: list[list[str | None]], *args
     ) -> AsyncGenerator:
-    # ... остальной код без изменений
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history] + list(args)
 
         if self.is_async:
             generator = self.fn(*inputs)
@@ -522,11 +508,11 @@ class ChatInterface(Blocks):
             )
             generator = SyncToAsyncIterator(generator, self.limiter)
         try:
-            first_response = await async_iteration(generator)
+            first_response, _ = await async_iteration(generator)
             yield first_response, history + [[message, first_response]]
         except StopIteration:
             yield None, history + [[message, None]]
-        async for response in generator:
+        async for response, _ in generator:
             yield response, history + [[message, response]]
 
     async def _delete_prev_fn(
