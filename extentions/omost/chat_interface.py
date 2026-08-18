@@ -329,3 +329,5 @@ class ChatInterface(Blocks):
         if history:
             history = history[:-1]
         return history, message or "", history
+
+
