@@ -359,20 +359,17 @@ class ChatInterface(Blocks):
         self, event_trigger: Callable, event_to_cancel: Dependency
     ) -> None:
         print(f"[DEBUG] _setup_stop_events called")
-        print(f"[DEBUG]   stop_btn: {self.stop_btn}")
-        print(f"[DEBUG]   is_generator: {self.is_generator}")
-        print(f"[DEBUG]   event_to_cancel: {event_to_cancel}")
+        print(f"[DEBUG]   event_to_cancel type: {type(event_to_cancel)}")
 
         def perform_interrupt(ipc):
             print(f"[DEBUG] perform_interrupt called! ipc={ipc}")
-            if ipc is not None:
-                ipc()
+            # В Gradio само прерывание выполняется механизмом `cancels`, 
+            # эта функция нужна в основном для логирования или сброса State.
             return
 
         if self.stop_btn and self.is_generator:
             print("[DEBUG]   -> entering stop setup block")
             if self.submit_btn:
-                # Обработчик: при клике на Submit — скрыть Submit, показать Stop
                 def show_stop():
                     print("[DEBUG] show_stop() called - making Stop visible")
                     return (
@@ -388,7 +385,6 @@ class ChatInterface(Blocks):
                     queue=False,
                 )
                 
-                # После завершения генерации — вернуть Submit, скрыть Stop
                 def hide_stop():
                     print("[DEBUG] hide_stop() called - hiding Stop")
                     return (Button.update(visible=True), Button.update(visible=False))
@@ -416,12 +412,13 @@ class ChatInterface(Blocks):
                     queue=False,
                 )
             
-            print(f"[DEBUG]   -> registering stop_btn.click with cancels={event_to_cancel}")
+            print(f"[DEBUG]   -> registering stop_btn.click with cancels")
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
                 api_name=False,
+                queue=False,  # <-- КРИТИЧЕСКИ ВАЖНО: без этого клик ждет окончания генерации в очереди
             )
             print("[DEBUG]   -> stop_btn.click registered successfully")
         else:
