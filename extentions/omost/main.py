@@ -5,7 +5,7 @@ import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
 from transformers.generation.stopping_criteria import StoppingCriteriaList
-
+import random
 from threading import Thread
 import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
@@ -23,7 +23,7 @@ Phi3PreTrainedModel._supports_sdpa = True
 llm_model = None
 llm_tokenizer = None
 llm_name = None
-
+omost_seed = None
 
 
 
@@ -56,6 +56,7 @@ def format_vram_info(prefix=""):
     )
 
 def post_chat(history):
+    global omost_seed
     canvas_outputs = None
     try:
         if history:
@@ -67,7 +68,7 @@ def post_chat(history):
         print('Last assistant response is not valid canvas:', e)
 
     unload_model()
-    return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
+    return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0), gr.update(value=omost_seed)
 
 def defragment_vram():
     if not torch.cuda.is_available():
@@ -221,8 +222,8 @@ def unload_model():
         print("[Omost] LLM was not loaded, nothing to unload.")
 
 @torch.inference_mode()
-def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool) -> str:
-    global llm_model, llm_tokenizer, llm_name
+def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool, seed_random: bool) -> str:
+    global llm_model, llm_tokenizer, llm_name,omost_seed
     print(f'[OMOST] model_base {model_base}')
     print(f'[OMOST] llm_name {llm_name}')
     if llm_name is not None and llm_name != model_base:
@@ -244,7 +245,11 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
             token=None
         )
         llm_name = model_base
-
+    if seed_random:
+        seed = random.randint(0, 2**32 - 1)
+    omost_seed=seed
+    print(f'[OMOST] Using seed: {seed} (random={seed_random})')
+    
     np.random.seed(int(seed))
     torch.manual_seed(int(seed))
 
@@ -336,7 +341,9 @@ def gui():
                 retry_btn = gr.Button("Retry", variant="secondary", size="sm", min_width=60, visible=False)
                 undo_btn = gr.Button("Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)
         
-            seed = gr.Number(label="Random Seed", value=12345, precision=0)
+            with gr.Row():
+                seed_random = gr.Checkbox(label='Random Seed', value=True, container=False)
+                seed = gr.Number(label="Seed Value", value=12345, precision=0, visible=False)
 
             with gr.Accordion(open=True, label='LLM settings'):
                 with gr.Group():
@@ -386,15 +393,21 @@ def gui():
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn]),
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn,seed]),
                 pre_fn=lambda: gr.update(visible=False),
                 pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
                 retry_btn=retry_btn,
                 undo_btn=undo_btn,
                 clear_btn=clear_btn,
-                additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history],
+                additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
                 examples=examples
             )
-
+        seed_random.change(
+                lambda x: gr.update(visible=not x),
+                inputs=seed_random,
+                outputs=seed,
+                queue=False,
+                show_progress=False
+            )
     return render_button, canvas_state
