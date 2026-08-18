@@ -215,36 +215,92 @@ class ChatInterface(Blocks):
                 self.post_fn, **self.post_fn_kwargs, api_name=False,
             )
 
-    def _setup_stop_events(self, event_trigger: Callable, event_to_cancel: Dependency) -> None:
+    def _setup_events(self) -> None:
+        submit_fn = self._stream_fn if self.is_generator else self._submit_fn
+        
+        # Собираем все события, которые можно отменить через Stop
+        self._events_to_cancel = []
+
+        submit_event = (
+            self.submit_btn.click(
+                self._clear_and_save_textbox, [self.textbox], [self.textbox, self.saved_input],
+                api_name=False, queue=False,
+            )
+            .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
+            .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+            .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state, self.interrupter], api_name=False)
+            .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
+        )
+        self._events_to_cancel.append(submit_event)
+        self._setup_show_stop(self.submit_btn.click)
+
+        if self.retry_btn:
+            retry_event = (
+                self.retry_btn.click(
+                    self._delete_prev_fn, [self.saved_input, self.chatbot_state], [self.chatbot, self.saved_input, self.chatbot_state],
+                    api_name=False, queue=False,
+                )
+                .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
+                .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+                .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state], api_name=False)
+                .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
+            )
+            self._events_to_cancel.append(retry_event)
+            self._setup_show_stop(self.retry_btn.click)
+
+        if self.undo_btn:
+            self.undo_btn.click(
+                self._delete_prev_fn, [self.saved_input, self.chatbot_state], [self.chatbot, self.saved_input, self.chatbot_state],
+                api_name=False, queue=False,
+            ).then(
+                self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
+            ).then(
+                async_lambda(lambda x: x), [self.saved_input], [self.textbox], api_name=False, queue=False,
+            ).then(
+                self.post_fn, **self.post_fn_kwargs, api_name=False,
+            )
+
+        if self.clear_btn:
+            self.clear_btn.click(
+                async_lambda(lambda: ([], [], None)), None, [self.chatbot, self.chatbot_state, self.saved_input],
+                queue=False, api_name=False,
+            ).then(
+                self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
+            ).then(
+                self.post_fn, **self.post_fn_kwargs, api_name=False,
+            )
+        
+        # ВАЖНО: регистрируем stop_btn.click только ОДИН раз, после всех событий
+        self._register_stop_btn()
+
+    def _setup_show_stop(self, event_trigger: Callable) -> None:
+        """Регистрирует показ кнопки Stop при начале генерации"""
+        if self.stop_btn and self.is_generator and self.submit_btn:
+            event_trigger(
+                async_lambda(lambda: (Button.update(visible=False), Button.update(visible=True))),
+                None, [self.submit_btn, self.stop_btn], api_name=False, queue=False,
+            )
+
+    def _register_stop_btn(self) -> None:
+        """Регистрирует обработчик кнопки Stop ОДИН раз для всех событий"""
         def perform_interrupt(ipc):
             if ipc is not None and callable(ipc):
                 ipc()
             return
 
         if self.stop_btn and self.is_generator:
-            if self.submit_btn:
-                event_trigger(
-                    async_lambda(lambda: (Button.update(visible=False), Button.update(visible=True))),
-                    None, [self.submit_btn, self.stop_btn], api_name=False, queue=False,
-                )
-                event_to_cancel.then(
+            # После завершения любого события — скрываем Stop
+            for evt in self._events_to_cancel:
+                evt.then(
                     async_lambda(lambda: (Button.update(visible=True), Button.update(visible=False))),
                     None, [self.submit_btn, self.stop_btn], api_name=False, queue=False,
                 )
-            else:
-                event_trigger(
-                    async_lambda(lambda: Button.update(visible=True)),
-                    None, [self.stop_btn], api_name=False, queue=False,
-                )
-                event_to_cancel.then(
-                    async_lambda(lambda: Button.update(visible=False)),
-                    None, [self.stop_btn], api_name=False, queue=False,
-                )
             
+            # ОДИН обработчик Stop, который отменяет ВСЕ события и очищает историю
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
-                cancels=event_to_cancel,
+                cancels=self._events_to_cancel,  # Список всех событий для отмены
                 api_name=False,
                 queue=False,
             ).then(
