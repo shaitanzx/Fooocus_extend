@@ -64,8 +64,7 @@ class ChatInterface(Blocks):
         description: str | None = None,
         theme: Theme | str | None = None,
         css: str | None = None,
-        js: str | None = None,
-        head: str | None = None,
+
         analytics_enabled: bool | None = None,
         submit_btn: str | None | Button = "Submit",
         stop_btn: str | None | Button = "Stop",
@@ -73,8 +72,7 @@ class ChatInterface(Blocks):
         undo_btn: str | None | Button = "↩️ Undo",
         clear_btn: str | None | Button = "🗑️  Clear",
         autofocus: bool = True,
-        fill_height: bool = True,
-        delete_cache: tuple[int, int] | None = None,
+
     ):
         super().__init__(
             analytics_enabled=analytics_enabled,
@@ -82,10 +80,7 @@ class ChatInterface(Blocks):
             css=css,
             title=title or "Gradio",
             theme=theme,
-            js=js,
-            head=head,
-            fill_height=fill_height,
-            delete_cache=delete_cache,
+
         )
 
         if post_fn_kwargs is None:
