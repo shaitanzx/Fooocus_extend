@@ -9,28 +9,27 @@ import inspect
 from typing import AsyncGenerator, Callable
 
 import anyio
-
+from gradio_client import utils as client_utils
+from gradio_client.documentation import document, set_documentation_group
 
 from gradio.blocks import Blocks
 from gradio.components import (
     Button,
     Chatbot,
-    Component,
+    IOComponent,
     Markdown,
     State,
     Textbox,
     get_component_instance,
-    Dataset,
 )
-from gradio.events import Dependency
-from gradio.helpers import special_args
-from gradio.layouts import Accordion, Group, Row
-from gradio.routes import Request
+from gradio.events import Dependency, EventListenerMethod
+from gradio.helpers import create_examples as Examples  # noqa: N812
+from gradio.layouts import Accordion, Column, Group, Row
 from gradio.themes import ThemeClass as Theme
-from gradio.utils import SyncToAsyncIterator, async_iteration, async_lambda
+from gradio.utils import SyncToAsyncIterator, async_iteration
 
 
-
+@document()
 class ChatInterface(Blocks):
     """
     ChatInterface is Gradio's high-level abstraction for creating chatbot UIs...
