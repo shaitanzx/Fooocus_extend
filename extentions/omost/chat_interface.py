@@ -27,13 +27,14 @@ from gradio.helpers import create_examples as Examples  # noqa: N812
 from gradio.layouts import Accordion, Column, Group, Row
 from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration
+from functools import wraps
 
 def async_lambda(f: Callable) -> Callable:
     """Turn a function into an async function.
     Useful for internal event handlers defined as lambda functions used in the codebase
     """
 
-
+    @wraps(f)
     async def function_wrapper(*args, **kwargs):
         return f(*args, **kwargs)
 
