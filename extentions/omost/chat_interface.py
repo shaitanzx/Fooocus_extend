@@ -427,9 +427,10 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
-        request: Request,
+        request: "Request",  # <- изменили на строку
         *args,
     ) -> tuple[list[list[str | None]], list[list[str | None]]]:
+    # ... остальной код без изменений
         history = history_with_input[:-1]
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
@@ -449,9 +450,10 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
-        request: Request,
+        request: "Request",  # <- изменили на строку
         *args,
     ) -> AsyncGenerator:
+    # ... остальной код без изменений
         history = history_with_input[:-1]
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
@@ -476,8 +478,9 @@ class ChatInterface(Blocks):
             yield update, update, interrupter
 
     async def _api_submit_fn(
-        self, message: str, history: list[list[str | None]], request: Request, *args
+        self, message: str, history: list[list[str | None]], request: "Request", *args  # <- изменили
     ) -> tuple[str, list[list[str | None]]]:
+    # ... остальной код без изменений
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
         )
@@ -492,8 +495,9 @@ class ChatInterface(Blocks):
         return response, history
 
     async def _api_stream_fn(
-        self, message: str, history: list[list[str | None]], request: Request, *args
+        self, message: str, history: list[list[str | None]], request: "Request", *args  # <- изменили
     ) -> AsyncGenerator:
+    # ... остальной код без изменений
         inputs, _, _ = special_args(
             self.fn, inputs=[message, history, *args], request=request
         )
