@@ -1,429 +1,528 @@
-import gradio as gr
-from extentions.omost.chat_interface import ChatInterface
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
-import os
-import numpy as np
-import extentions.omost.lib_omost.canvas as omost_canvas
-from transformers.generation.stopping_criteria import StoppingCriteriaList
-import random
-from threading import Thread
-import ldm_patched.modules.model_management as mm
-import modules.default_pipeline as pipeline
-import modules.core as core
-import gc
-import torch
+from __future__ import annotations
+from functools import wraps
+import inspect
+from typing import AsyncGenerator, Callable
 
-# Phi3 Hijack
-from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
+import anyio
+from gradio_client import utils as client_utils
+from gradio_client.documentation import document, set_documentation_group
 
-Phi3PreTrainedModel._supports_sdpa = True
+from gradio.blocks import Blocks
+from gradio.components import (
+    Button,
+    Chatbot,
+    Component,
+    Dataset,
+    IOComponent,
+    Markdown,
+    State,
+    Textbox,
+    get_component_instance,
+)
+from gradio.events import Dependency, EventListenerMethod
+from gradio.helpers import create_examples as Examples
+from gradio.layouts import Accordion, Column, Group, Row
+from gradio.themes import ThemeClass as Theme
+from gradio.utils import SyncToAsyncIterator, async_iteration
 
-
-
-llm_model = None
-llm_tokenizer = None
-llm_name = None
-omost_seed = None
-
-
-
-def get_vram_info():
-    """Возвращает кортеж: (allocated_gb, reserved_gb, total_gb, free_gb)"""
-    if not torch.cuda.is_available():
-        return (0.0, 0.0, 0.0, 0.0)
-    
-    allocated = torch.cuda.memory_allocated() / (1024**3)
-    reserved = torch.cuda.memory_reserved() / (1024**3)
-    
-    # ИСПРАВЛЕНИЕ: total_memory вместо total_mem
-    total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-    
-    # Более точный способ получить свободную память
-    free, total_from_cuda = torch.cuda.mem_get_info()
-    free = free / (1024**3)
-    
-    return (allocated, reserved, total, free)
+set_documentation_group("chatinterface")
 
 
-def format_vram_info(prefix=""):
-    """Форматирует VRAM инфо в красивую строку для лога."""
-    allocated, reserved, total, free = get_vram_info()
-    return (
-        f"{prefix}VRAM: "
-        f"allocated={allocated:.2f}GB | "
-        f"reserved={reserved:.2f}GB | "
-        f"free={free:.2f}GB / {total:.2f}GB total"
-    )
+def async_lambda(f: Callable) -> Callable:
+    """Turn a function into an async function.
+    Useful for internal event handlers defined as lambda functions used in the codebase
+    """
 
-def post_chat(history):
-    global omost_seed
-    import traceback
-    print(f"\n[Omost post_chat] CALLED")
-    print(f"[Omost post_chat] History length: {len(history) if history else 0}")
-    
-    canvas_outputs = None
-    try:
-        if history:
-            history = [(user, assistant) for user, assistant in history if isinstance(user, str) and isinstance(assistant, str)]
-            last_assistant = history[-1][1] if len(history) > 0 else None
-            canvas = omost_canvas.Canvas.from_bot_response(last_assistant)
-            canvas_outputs = canvas.process()
-    except Exception as e:
-        print('Last assistant response is not valid canvas:', e)
+    @wraps(f)
+    async def function_wrapper(*args, **kwargs):
+        return f(*args, **kwargs)
 
-    unload_model()
-    
-    render_visible = canvas_outputs is not None
-    print(f"[Omost post_chat] Render visible: {render_visible}")
-    print(f"[Omost post_chat] Stack trace:")
-    traceback.print_stack()
-    print()
-    
-    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(interactive=len(history) > 0)
-def defragment_vram():
-    if not torch.cuda.is_available():
-        return    
-    try:
-        torch.cuda.synchronize()
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
-        torch.cuda.reset_peak_memory_stats()
-        torch.cuda.synchronize()
-    except Exception as e:
-        print(f"[Omost] Warning during VRAM defragmentation: {e}")
-def unload_model_by_name(target_name):
-    """Удаляет модель по имени класса через существующую unload_model_clones."""
-    for lm in ldm_patched.modules.model_management.current_loaded_models:
-        try:
-            name = lm.model.model.__class__.__name__
-        except:
-            name = "?"
-        
-        if name == target_name:
-            print(f"[ModelMgmt] Unloading: {name}")
-            ldm_patched.modules.model_management.unload_model_clones(lm.model)
-            ldm_patched.modules.model_management.soft_empty_cache()
-            return True
-    
-    print(f"[ModelMgmt] Model '{target_name}' not found")
-    return False
+    return function_wrapper
 
+@document()
+class ChatInterface(Blocks):
+    """
+    ChatInterface is Gradio's high-level abstraction for creating chatbot UIs, and allows you to create
+    a web-based demo around a chatbot model in a few lines of code. Only one parameter is required: fn, which
+    takes a function that governs the response of the chatbot based on the user input and chat history. Additional
+    parameters can be used to control the appearance and behavior of the demo.
+    """
 
-
-def unload_fooocus_completely():
-    """Правильная полная выгрузка Fooocus: GPU → ссылки → gc."""
-    
-    print(f"\n[Omost] === Unloading ALL Fooocus models ===")
-    
-    # Замер ДО
-    if torch.cuda.is_available():
-        allocated_before = torch.cuda.memory_allocated() / (1024**3)
-        reserved_before = torch.cuda.memory_reserved() / (1024**3)
-        print(f"[Omost] BEFORE: allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB")
-    
-    # === ШАГ 1: ПРАВИЛЬНАЯ выгрузка моделей из GPU ===
-    # Это вызывает model_unload() → unpatch_model() для каждой модели
-    print(f"[Omost] Step 1: Proper GPU unload via unload_all_models()...")
-    try:
-        mm.unload_all_models()
-        print(f"[Omost] ✓ Models properly unloaded from GPU")
-    except Exception as e:
-        print(f"[Omost] Warning during unload_all_models: {e}")
-    
-    # === ШАГ 2: Очистка current_loaded_models ===
-    # После unload_all_models список должен быть пуст, но проверим
-    print(f"[Omost] Step 2: Verifying current_loaded_models...")
-    if len(mm.current_loaded_models) > 0:
-        print(f"[Omost] ⚠ {len(mm.current_loaded_models)} models still in current_loaded_models, forcing removal...")
-        for i in range(len(mm.current_loaded_models) - 1, -1, -1):
-            try:
-                m = mm.current_loaded_models.pop(i)
-                m.model_unload()
-                del m
-            except Exception as e:
-                print(f"[Omost] Warning: {e}")
-    print(f"[Omost] ✓ current_loaded_models is now empty: {len(mm.current_loaded_models)}")
-    
-    # === ШАГ 3: Обнуление ссылок в pipeline ===
-    print(f"[Omost] Step 3: Clearing pipeline references...")
-    try:
-        pipeline.final_unet = None
-        pipeline.final_clip = None
-        pipeline.final_vae = None
-        pipeline.final_refiner_unet = None
-        pipeline.final_refiner_vae = None
-        pipeline.final_expansion = None
-        pipeline.loaded_ControlNets = {}
-        print(f"[Omost] ✓ Pipeline references cleared")
-    except Exception as e:
-        print(f"[Omost] Warning: {e}")
-    
-    # === ШАГ 4: Пересоздание model_base и model_refiner ===
-    print(f"[Omost] Step 4: Resetting model_base and model_refiner...")
-    try:
-        pipeline.model_base = core.StableDiffusionModel()
-        pipeline.model_refiner = core.StableDiffusionModel()
-        print(f"[Omost] ✓ model_base and model_refiner reset")
-    except Exception as e:
-        print(f"[Omost] Warning: {e}")
-    
-    # === ШАГ 5: Агрессивная очистка памяти ===
-    print(f"[Omost] Step 5: Aggressive memory cleanup...")
-    gc.collect()
-    
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
-        torch.cuda.reset_peak_memory_stats()
-        gc.collect()
-        torch.cuda.synchronize()
-    
-    # === ШАГ 6: Дефрагментация ===
-    defragment_vram()
-    
-    # Замер ПОСЛЕ
-    if torch.cuda.is_available():
-        allocated_after = torch.cuda.memory_allocated() / (1024**3)
-        reserved_after = torch.cuda.memory_reserved() / (1024**3)
-        freed_allocated = allocated_before - allocated_after
-        freed_reserved = reserved_before - reserved_after
-        print(f"[Omost] AFTER:  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB")
-        print(f"[Omost] FREED:  allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
-    print(f"[Omost] ✓ ALL Fooocus models unloaded")
-    print(f"[Omost] ===================================\n")
-
-@torch.inference_mode()
-def unload_model():
-    """Принудительная выгрузка LLM из VRAM перед запуском диффузии или сменой модели"""
-    global llm_model, llm_tokenizer, llm_name
-    
-    if llm_model is not None:
-        
-        
-        # === КРИТИЧЕСКИ ВАЖНО: Удаляем хуки accelerate ===
-        try:
-            from accelerate.hooks import remove_hook_from_module
-            remove_hook_from_module(llm_model, recurse=True)
-
-        except Exception as e:
-            print(f"[Omost] Warning: Could not remove hooks: {e}")
-        
-        # Удаляем модели
-        del llm_model
-        del llm_tokenizer
-        
-        # НЕ используем del llm_name — просто присваиваем None
-        llm_model = None
-        llm_tokenizer = None
-        llm_name = None
-        
-        # Агрессивная очистка
-        
-        gc.collect()
-        
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
-            torch.cuda.reset_peak_memory_stats()
-            torch.cuda.synchronize() 
-    else:
-        print("[Omost] LLM was not loaded, nothing to unload.")
-
-@torch.inference_mode()
-def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool, seed_random: bool) -> str:
-    
-
-    
-    
-    global llm_model, llm_tokenizer, llm_name,omost_seed
-    print(f'[OMOST] model_base {model_base}')
-    print(f'[OMOST] llm_name {llm_name}')
-    if llm_name is not None and llm_name != model_base:
-        unload_model()
-    if llm_name == None:
-        unload_fooocus_completely()
-        print(f"[Omost] Loading LLM: {model_base}...")
-
-        llm_model = AutoModelForCausalLM.from_pretrained(
-            f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
-            token=None,        
+    def __init__(
+        self,
+        fn: Callable,
+        post_fn: Callable,
+        pre_fn: Callable,
+        chatbot: Chatbot,
+        *,
+        post_fn_kwargs: dict = None,
+        pre_fn_kwargs: dict = None,
+        textbox: Textbox | None = None,
+        additional_inputs: str | Component | list[str | Component] | None = None,
+        additional_inputs_accordion_name: str | None = None,
+        additional_inputs_accordion: str | Accordion | None = None,
+        examples: Dataset = None,
+        title: str | None = None,
+        description: str | None = None,
+        theme: Theme | str | None = None,
+        css: str | None = None,
+        analytics_enabled: bool | None = None,
+        submit_btn: str | None | Button = "Submit",
+        stop_btn: str | None | Button = "Stop",
+        retry_btn: str | None | Button = "🔄  Retry",
+        undo_btn: str | None | Button = "↩️ Undo",
+        clear_btn: str | None | Button = "🗑️  Clear",
+        autofocus: bool = True,
+    ):
+        super().__init__(
+            analytics_enabled=analytics_enabled,
+            mode="chat_interface",
+            css=css,
+            title=title or "Gradio",
+            theme=theme,
         )
-        llm_tokenizer = AutoTokenizer.from_pretrained(
-            f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),
-            token=None
-        )
-        llm_name = model_base
-    if seed_random:
-        seed = random.randint(0, 2**32 - 1)
-    omost_seed=seed
-    print(f'[OMOST] Using seed: {seed} (random={seed_random})')
-    
-    np.random.seed(int(seed))
-    torch.manual_seed(int(seed))
 
-    conversation = [{"role": "system", "content": omost_canvas.system_prompt}]
-    
-    if full_history == False:
-        select_history = history[-1:]
-    else:
-        select_history = history
-    
-    for user, assistant in select_history:
-        if isinstance(user, str) and isinstance(assistant, str):
-            if len(user) > 0 and len(assistant) > 0:
-                conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant}])
+        if post_fn_kwargs is None:
+            post_fn_kwargs = {}
 
-    conversation.append({"role": "user", "content": message})
+        self.post_fn = post_fn
+        self.post_fn_kwargs = post_fn_kwargs
 
-    input_ids = llm_tokenizer.apply_chat_template(
-        conversation, return_tensors="pt", add_generation_prompt=True).to(llm_model.device)
+        self.pre_fn = pre_fn
+        self.pre_fn_kwargs = pre_fn_kwargs
 
-    # === НОВОЕ: streamer с флагом прерывания ===
-    streamer = TextIteratorStreamer(llm_tokenizer, timeout=100.0, skip_prompt=True, skip_special_tokens=True)
+        self.interrupter = State(None)
+        self.limiter = None  # <-- ИСПРАВЛЕНО: инициализация limiter
 
-    # === НОВОЕ: критерий остановки ===
-    def interactive_stopping_criteria(*args, **kwargs) -> bool:
-        if getattr(streamer, 'user_interrupted', False):
-            print('[Omost] User stopped generation')
-            return True
-        return False
+        self.fn = fn
+        self.is_async = inspect.iscoroutinefunction(
+            self.fn
+        ) or inspect.isasyncgenfunction(self.fn)
+        self.is_generator = inspect.isgeneratorfunction(
+            self.fn
+        ) or inspect.isasyncgenfunction(self.fn)
 
-    stopping_criteria = StoppingCriteriaList([interactive_stopping_criteria])
+        if additional_inputs:
+            if not isinstance(additional_inputs, list):
+                additional_inputs = [additional_inputs]
+            self.additional_inputs = [
+                get_component_instance(i)
+                for i in additional_inputs  # type: ignore
+            ]
+        else:
+            self.additional_inputs = []
 
-    # === НОВОЕ: interrupter функция, возвращается в ChatInterface ===
-    def interrupter():
-        streamer.user_interrupted = True
-        return
-
-    generate_kwargs = dict(
-        input_ids=input_ids,
-        streamer=streamer,
-        stopping_criteria=stopping_criteria,  # ← ВАЖНО: передаём критерий
-        max_new_tokens=max_new_tokens,
-        do_sample=True,
-        temperature=temperature,
-        top_p=top_p,
-    )
-
-    if temperature == 0:
-        generate_kwargs['do_sample'] = False
-
-    Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
-
-    outputs = []
-    for text in streamer:
-        outputs.append(text)
-        # === ВАЖНО: возвращаем TUPLE (текст, interrupter) ===
-        yield "".join(outputs), interrupter
-
-    return
-def model_loading(llm_name):
-    global llm_model, llm_tokenizer
-        
-    print(f"[Omost] Loading LLM: {llm_name}...")
- 
-    llm_model = AutoModelForCausalLM.from_pretrained(
-        llm_name,
-        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        token=None,
-        
-    )
-    llm_tokenizer = AutoTokenizer.from_pretrained(
-        llm_name,
-        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
-        token=None
-    )
-    return gr.update(visible=False)
-
-
-def gui():
-    models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
-    with gr.Row(elem_classes='outer_parent'):
-        with gr.Column(scale=25):
-            with gr.Row():
-                model_base = gr.Dropdown(choices=models_name, value=models_name[0], label='LLM model')
-            with gr.Row():
-                clear_btn = gr.Button("New Chat", variant="secondary", size="sm", min_width=60)
-                retry_btn = gr.Button("Retry", variant="secondary", size="sm", min_width=60, visible=False)
-                undo_btn = gr.Button("Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)
-        
-
-
-            with gr.Accordion(open=True, label='LLM settings'):
-                with gr.Group():
-                    with gr.Row():
-                        temperature = gr.Slider(
-                            minimum=0.0,
-                            maximum=2.0,
-                            step=0.01,
-                            value=0.6,
-                            label="Temperature")
-                        top_p = gr.Slider(
-                            minimum=0.0,
-                            maximum=1.0,
-                            step=0.01,
-                            value=0.9,
-                            label="Top P")
-                    with gr.Row():
-                        max_new_tokens = gr.Slider(
-                            minimum=128,
-                            maximum=4096,
-                            step=1,
-                            value=4096,
-                            label="Max New Tokens")
-                    with gr.Row():
-                        seed_random = gr.Checkbox(label='Random Seed', value=True, elem_classes='min_check')
-                    with gr.Row():
-                        seed = gr.Number(label="Seed Value", value=12345, precision=0, visible=False)
-                    with gr.Row():
-                        full_history = gr.Checkbox(label='Use full history', value=False, elem_classes='min_check')
-
-            # with gr.Accordion(open=False, label='Advanced'):
-            #     cfg = gr.Slider(label="CFG Scale", minimum=1.0, maximum=32.0, value=5.0, step=0.01)
-            #     highres_scale = gr.Slider(label="HR-fix Scale (\"1\" is disabled)", minimum=1.0, maximum=2.0, value=1.0, step=0.01)
-            #     highres_steps = gr.Slider(label="Highres Fix Steps", minimum=1, maximum=100, value=20, step=1)
-            #     highres_denoise = gr.Slider(label="Highres Fix Denoise", minimum=0.1, maximum=1.0, value=0.4, step=0.01)
-            #     n_prompt = gr.Textbox(label="Negative Prompt", value='lowres, bad anatomy, bad hands, cropped, worst quality')
-
-            render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
-
-            examples = gr.Dataset(
-                samples=[
-                    ['generate an image of the fierce battle of warriors and a dragon'],
-                    ['change the dragon to a dinosaur']
-                ],
-                components=[gr.Textbox(visible=False)],
-                label='Quick Prompts'
+        if additional_inputs_accordion_name is not None:
+            print(
+                "The `additional_inputs_accordion_name` parameter is deprecated and will be removed in a future version of Gradio. Use the `additional_inputs_accordion` parameter instead."
             )
-        with gr.Column(scale=75, elem_classes='inner_parent'):
-            canvas_state = gr.State(None)
-            chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
-            chatInterface = ChatInterface(
-                fn=chat_fn,
-                post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[seed, canvas_state, render_button, undo_btn]),
-                pre_fn=lambda: gr.update(visible=False),
-                pre_fn_kwargs=dict(outputs=[render_button]),
-                chatbot=chatbot,
-                retry_btn=retry_btn,
-                undo_btn=undo_btn,
-                clear_btn=clear_btn,
-                additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
-                examples=examples
+            self.additional_inputs_accordion_params = {
+                "label": additional_inputs_accordion_name
+            }
+        if additional_inputs_accordion is None:
+            self.additional_inputs_accordion_params = {
+                "label": "Additional Inputs",
+                "open": False,
+            }
+        elif isinstance(additional_inputs_accordion, str):
+            self.additional_inputs_accordion_params = {
+                "label": additional_inputs_accordion
+            }
+        elif isinstance(additional_inputs_accordion, Accordion):
+            self.additional_inputs_accordion_params = (
+                additional_inputs_accordion.recover_kwargs(
+                    additional_inputs_accordion.get_config()
+                )
             )
-        seed_random.change(
-                lambda x: gr.update(visible=not x),
-                inputs=seed_random,
-                outputs=seed,
+        else:
+            raise ValueError(
+                f"The `additional_inputs_accordion` parameter must be a string or gr.Accordion, not {type(additional_inputs_accordion)}"
+            )
+
+        with self:
+            if title:
+                Markdown(
+                    f"<h1 style='text-align: center; margin-bottom: 1rem'>{self.title}</h1>"
+                )
+            if description:
+                Markdown(description)
+
+            self.chatbot = chatbot.render()
+
+            self.buttons = [retry_btn, undo_btn, clear_btn]
+
+            with Group():
+                with Row():
+                    if textbox:
+                        textbox.container = False
+                        textbox.show_label = False
+                        textbox_ = textbox.render()
+                        if not isinstance(textbox_, Textbox):
+                            raise TypeError(
+                                f"Expected a gr.Textbox component, but got {type(textbox_)}"
+                            )
+                        self.textbox = textbox_
+                    else:
+                        self.textbox = Textbox(
+                            container=False,
+                            show_label=False,
+                            label="Message",
+                            placeholder="Type a message...",
+                            scale=7,
+                            autofocus=autofocus,
+                        )
+                    if submit_btn is not None:
+                        if isinstance(submit_btn, Button):
+                            submit_btn.render()
+                        elif isinstance(submit_btn, str):
+                            submit_btn = Button(
+                                submit_btn,
+                                variant="primary",
+                                scale=1,
+                                min_width=150,
+                            )
+                        else:
+                            raise ValueError(
+                                f"The submit_btn parameter must be a gr.Button, string, or None, not {type(submit_btn)}"
+                            )
+                    if stop_btn is not None:
+                        if isinstance(stop_btn, Button):
+                            stop_btn.visible = False
+                            stop_btn.render()
+                        elif isinstance(stop_btn, str):
+                            stop_btn = Button(
+                                stop_btn,
+                                variant="stop",
+                                visible=False,
+                                scale=1,
+                                min_width=150,
+                            )
+                        else:
+                            raise ValueError(
+                                f"The stop_btn parameter must be a gr.Button, string, or None, not {type(stop_btn)}"
+                            )
+                    self.buttons.extend([submit_btn, stop_btn])  # type: ignore
+
+                self.fake_api_btn = Button("Fake API", visible=False)
+                self.fake_response_textbox = Textbox(label="Response", visible=False)
+                (
+                    self.retry_btn,
+                    self.undo_btn,
+                    self.clear_btn,
+                    self.submit_btn,
+                    self.stop_btn,
+                ) = self.buttons
+
+            any_unrendered_inputs = any(
+                not inp.is_rendered for inp in self.additional_inputs
+            )
+            if self.additional_inputs and any_unrendered_inputs:
+                with Accordion(**self.additional_inputs_accordion_params):  # type: ignore
+                    for input_component in self.additional_inputs:
+                        if not input_component.is_rendered:
+                            input_component.render()
+
+            self.saved_input = State()
+            self.chatbot_state = (
+                State(self.chatbot.value) if self.chatbot.value else State([])
+            )
+
+            self._setup_events()
+            self._setup_api()
+
+        # <-- DEBUG: диагностика кнопки Stop
+        print(f"[DEBUG] stop_btn: {self.stop_btn}")
+        print(f"[DEBUG] is_generator: {self.is_generator}")
+        print(f"[DEBUG] is_async: {self.is_async}")
+        print(f"[DEBUG] fn: {self.fn}")
+
+        if examples:
+            examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
+
+    def _setup_events(self) -> None:
+        submit_fn = self._stream_fn if self.is_generator else self._submit_fn
+
+        submit_event = (
+            self.submit_btn.click(
+                self._clear_and_save_textbox,
+                [self.textbox],
+                [self.textbox, self.saved_input],
+                api_name=False,
                 queue=False,
-                show_progress=False
             )
-    return render_button, canvas_state
+            .then(
+                self.pre_fn,
+                **self.pre_fn_kwargs,
+                api_name=False,
+                queue=False,
+            )
+            .then(
+                self._display_input,
+                [self.saved_input, self.chatbot_state],
+                [self.chatbot, self.chatbot_state],
+                api_name=False,
+                queue=False,
+            )
+            .then(
+                submit_fn,
+                [self.saved_input, self.chatbot_state] + self.additional_inputs,
+                [self.chatbot, self.chatbot_state, self.interrupter],
+                api_name=False,
+            )
+            .then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                api_name=False,
+            )
+        )
+        self._setup_stop_events(self.submit_btn.click, submit_event)
+
+        if self.retry_btn:
+            retry_event = (
+                self.retry_btn.click(
+                    self._delete_prev_fn,
+                    [self.saved_input, self.chatbot_state],
+                    [self.chatbot, self.saved_input, self.chatbot_state],
+                    api_name=False,
+                    queue=False,
+                )
+                .then(
+                    self.pre_fn,
+                    **self.pre_fn_kwargs,
+                    api_name=False,
+                    queue=False,
+                )
+                .then(
+                    self._display_input,
+                    [self.saved_input, self.chatbot_state],
+                    [self.chatbot, self.chatbot_state],
+                    api_name=False,
+                    queue=False,
+                )
+                .then(
+                    submit_fn,
+                    [self.saved_input, self.chatbot_state] + self.additional_inputs,
+                    [self.chatbot, self.chatbot_state],
+                    api_name=False,
+                )
+                .then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    api_name=False,
+                )
+            )
+            self._setup_stop_events(self.retry_btn.click, retry_event)
+
+        if self.undo_btn:
+            self.undo_btn.click(
+                self._delete_prev_fn,
+                [self.saved_input, self.chatbot_state],
+                [self.chatbot, self.saved_input, self.chatbot_state],
+                api_name=False,
+                queue=False,
+            ).then(
+                self.pre_fn,
+                **self.pre_fn_kwargs,
+                api_name=False,
+                queue=False,
+            ).then(
+                async_lambda(lambda x: x),
+                [self.saved_input],
+                [self.textbox],
+                api_name=False,
+                queue=False,
+            ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                api_name=False,
+            )
+
+        if self.clear_btn:
+            self.clear_btn.click(
+                async_lambda(lambda: ([], [], None)),
+                None,
+                [self.chatbot, self.chatbot_state, self.saved_input],
+                queue=False,
+                api_name=False,
+            ).then(
+                self.pre_fn,
+                **self.pre_fn_kwargs,
+                api_name=False,
+                queue=False,
+            ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                api_name=False,
+            )
+
+    def _setup_stop_events(
+        self, event_trigger: Callable, event_to_cancel: Dependency
+    ) -> None:
+        # <-- DEBUG: диагностика настройки Stop
+        print(f"[DEBUG] _setup_stop_events called")
+        print(f"[DEBUG]   stop_btn: {self.stop_btn}")
+        print(f"[DEBUG]   is_generator: {self.is_generator}")
+
+        def perform_interrupt(ipc):
+            print(f"[DEBUG] perform_interrupt called! ipc={ipc}")
+            if ipc is not None:
+                ipc()
+            return
+
+        if self.stop_btn and self.is_generator:
+            print("[DEBUG]   -> entering stop setup block")
+            if self.submit_btn:
+                event_trigger(
+                    async_lambda(
+                        lambda: (
+                            Button.update(visible=False),
+                            Button.update(visible=True),
+                        )
+                    ),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
+                event_to_cancel.then(
+                    async_lambda(lambda: (Button.update(visible=True), Button.update(visible=False))),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
+            else:
+                event_trigger(
+                    async_lambda(lambda: Button.update(visible=True)),
+                    None,
+                    [self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
+                event_to_cancel.then(
+                    async_lambda(lambda: Button.update(visible=False)),
+                    None,
+                    [self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
+            self.stop_btn.click(
+                fn=perform_interrupt,
+                inputs=[self.interrupter],
+                cancels=event_to_cancel,
+                api_name=False,
+            )
+        else:
+            print("[DEBUG]   -> SKIPPED stop setup block (condition is False)")
+
+    def _setup_api(self) -> None:
+        api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
+
+        self.fake_api_btn.click(
+            api_fn,
+            [self.textbox, self.chatbot_state] + self.additional_inputs,
+            [self.textbox, self.chatbot_state],
+            api_name="chat",
+        )
+
+    def _clear_and_save_textbox(self, message: str) -> tuple[str, str]:
+        return "", message
+
+    async def _display_input(
+        self, message: str, history: list[list[str | None]]
+    ) -> tuple[list[list[str | None]], list[list[str | None]]]:
+        history.append([message, None])
+        return history, history
+
+    async def _submit_fn(
+        self,
+        message: str,
+        history_with_input: list[list[str | None]],
+        *args,
+    ) -> tuple[list[list[str | None]], list[list[str | None]]]:
+        history = history_with_input[:-1]
+        inputs = [message, history, *args]
+
+        if self.is_async:
+            response = await self.fn(*inputs)
+        else:
+            response = await anyio.to_thread.run_sync(
+                self.fn, *inputs, limiter=self.limiter
+            )
+
+        history.append([message, response])
+        return history, history
+
+    async def _stream_fn(
+        self,
+        message: str,
+        history_with_input: list[list[str | None]],
+        *args,
+    ) -> AsyncGenerator:
+        history = history_with_input[:-1]
+        inputs = [message, history, *args]
+
+        if self.is_async:
+            generator = self.fn(*inputs)
+        else:
+            generator = await anyio.to_thread.run_sync(
+                self.fn, *inputs, limiter=self.limiter
+            )
+            generator = SyncToAsyncIterator(generator, self.limiter)
+        try:
+            first_response, first_interrupter = await async_iteration(generator)
+            update = history + [[message, first_response]]
+            yield update, update, first_interrupter
+        except StopIteration:
+            update = history + [[message, None]]
+            yield update, update, None
+        async for response, interrupter in generator:
+            update = history + [[message, response]]
+            yield update, update, interrupter
+
+    async def _api_submit_fn(
+        self, message: str, history: list[list[str | None]], *args
+    ) -> tuple[str, list[list[str | None]]]:
+        inputs = [message, history, *args]
+
+        if self.is_async:
+            response = await self.fn(*inputs)
+        else:
+            response = await anyio.to_thread.run_sync(
+                self.fn, *inputs, limiter=self.limiter
+            )
+        history.append([message, response])
+        return response, history
+
+    async def _api_stream_fn(
+        self, message: str, history: list[list[str | None]], *args
+    ) -> AsyncGenerator:
+        inputs = [message, history, *args]
+
+        if self.is_async:
+            generator = self.fn(*inputs)
+        else:
+            generator = await anyio.to_thread.run_sync(
+                self.fn, *inputs, limiter=self.limiter
+            )
+            generator = SyncToAsyncIterator(generator, self.limiter)
+        try:
+            first_response = await async_iteration(generator)
+            yield first_response, history + [[message, first_response]]
+        except StopIteration:
+            yield None, history + [[message, None]]
+        async for response in generator:
+            yield response, history + [[message, response]]
+
+    async def _delete_prev_fn(
+        self,
+        message: str,
+        history: list[list[str | None]],
+    ) -> tuple[
+        list[list[str | None]],
+        str,
+        list[list[str | None]],
+    ]:
+        if history:
+            history = history[:-1]
+        return history, message or "", history

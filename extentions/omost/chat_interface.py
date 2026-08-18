@@ -228,7 +228,12 @@ class ChatInterface(Blocks):
 
             self._setup_events()
             self._setup_api()
-
+        print(f"[DEBUG] stop_btn: {self.stop_btn}")
+        print(f"[DEBUG] is_generator: {self.is_generator}")
+        print(f"[DEBUG] is_async: {self.is_async}")
+        print(f"[DEBUG] fn: {self.fn}")
+        
+        
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
 
