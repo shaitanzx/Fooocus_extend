@@ -395,7 +395,6 @@ class ChatInterface(Blocks):
             )
 
         # === ЕДИНСТВЕННЫЙ обработчик Stop для interrupt + удаления последней пары ===
-        # Вызывается ОДИН раз, независимо от того, сколько триггеров генерации существует
         def perform_interrupt(ipc):
             if ipc is not None:
                 ipc()
@@ -411,6 +410,11 @@ class ChatInterface(Blocks):
                 self._delete_prev_fn,
                 [self.chatbot_state],
                 [self.chatbot, self.saved_input, self.chatbot_state],
+                api_name=False,
+                queue=False,
+            ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
                 api_name=False,
                 queue=False,
             )
