@@ -31,7 +31,6 @@ from gradio.utils import SyncToAsyncIterator, async_iteration
 set_documentation_group("chatinterface")
 
 
-
 @document()
 class ChatInterface(Blocks):
     """

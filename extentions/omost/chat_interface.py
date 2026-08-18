@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 from functools import wraps
 import inspect
@@ -12,6 +11,8 @@ from gradio.blocks import Blocks
 from gradio.components import (
     Button,
     Chatbot,
+    Component,
+    Dataset,
     IOComponent,
     Markdown,
     State,
@@ -19,14 +20,12 @@ from gradio.components import (
     get_component_instance,
 )
 from gradio.events import Dependency, EventListenerMethod
-from gradio.helpers import create_examples as Examples  # noqa: N812
+from gradio.helpers import create_examples as Examples
 from gradio.layouts import Accordion, Column, Group, Row
 from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration
 
 set_documentation_group("chatinterface")
-
-
 
 
 def async_lambda(f: Callable) -> Callable:
@@ -47,17 +46,6 @@ class ChatInterface(Blocks):
     a web-based demo around a chatbot model in a few lines of code. Only one parameter is required: fn, which
     takes a function that governs the response of the chatbot based on the user input and chat history. Additional
     parameters can be used to control the appearance and behavior of the demo.
-
-    Example:
-        import gradio as gr
-
-        def echo(message, history):
-            return message
-
-        demo = gr.ChatInterface(fn=echo, examples=["hello", "hola", "merhaba"], title="Echo Bot")
-        demo.launch()
-    Demos: chatinterface_multimodal, chatinterface_random_response, chatinterface_streaming_echo
-    Guides: creating-a-chatbot-fast, sharing-your-app
     """
 
     def __init__(
@@ -78,7 +66,6 @@ class ChatInterface(Blocks):
         description: str | None = None,
         theme: Theme | str | None = None,
         css: str | None = None,
-
         analytics_enabled: bool | None = None,
         submit_btn: str | None | Button = "Submit",
         stop_btn: str | None | Button = "Stop",
@@ -86,7 +73,6 @@ class ChatInterface(Blocks):
         undo_btn: str | None | Button = "↩️ Undo",
         clear_btn: str | None | Button = "🗑️  Clear",
         autofocus: bool = True,
-
     ):
         super().__init__(
             analytics_enabled=analytics_enabled,
@@ -94,11 +80,10 @@ class ChatInterface(Blocks):
             css=css,
             title=title or "Gradio",
             theme=theme,
-
         )
 
         if post_fn_kwargs is None:
-            post_fn_kwargs = []
+            post_fn_kwargs = {}
 
         self.post_fn = post_fn
         self.post_fn_kwargs = post_fn_kwargs
@@ -437,13 +422,10 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
-        request: Request,
         *args,
     ) -> tuple[list[list[str | None]], list[list[str | None]]]:
         history = history_with_input[:-1]
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history, *args]
 
         if self.is_async:
             response = await self.fn(*inputs)
@@ -459,13 +441,10 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
-        request: Request,
         *args,
     ) -> AsyncGenerator:
         history = history_with_input[:-1]
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history, *args]
 
         if self.is_async:
             generator = self.fn(*inputs)
@@ -486,11 +465,9 @@ class ChatInterface(Blocks):
             yield update, update, interrupter
 
     async def _api_submit_fn(
-        self, message: str, history: list[list[str | None]], request: Request, *args
+        self, message: str, history: list[list[str | None]], *args
     ) -> tuple[str, list[list[str | None]]]:
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history, *args]
 
         if self.is_async:
             response = await self.fn(*inputs)
@@ -502,11 +479,9 @@ class ChatInterface(Blocks):
         return response, history
 
     async def _api_stream_fn(
-        self, message: str, history: list[list[str | None]], request: Request, *args
+        self, message: str, history: list[list[str | None]], *args
     ) -> AsyncGenerator:
-        inputs, _, _ = special_args(
-            self.fn, inputs=[message, history, *args], request=request
-        )
+        inputs = [message, history, *args]
 
         if self.is_async:
             generator = self.fn(*inputs)
