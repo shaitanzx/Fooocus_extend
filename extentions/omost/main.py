@@ -56,6 +56,7 @@ def format_vram_info(prefix=""):
     )
 
 def post_chat(history):
+    global omost_seed
     import traceback
     print(f"\n[Omost post_chat] CALLED")
     print(f"[Omost post_chat] History length: {len(history) if history else 0}")
@@ -78,7 +79,7 @@ def post_chat(history):
     traceback.print_stack()
     print()
     
-    return seed, canvas_outputs, gr.update(visible=render_visible), gr.update(interactive=len(history) > 0)
+    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(interactive=len(history) > 0)
 def defragment_vram():
     if not torch.cuda.is_available():
         return    
