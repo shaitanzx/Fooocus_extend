@@ -300,13 +300,13 @@ class ChatInterface(Blocks):
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
-                cancels=self._events_to_cancel,  # Список всех событий для отмены
+                cancels=self._events_to_cancel,
                 api_name=False,
                 queue=False,
             ).then(
-                fn=self._delete_prev_fn,
+                fn=self._stop_and_restore_fn,   # <-- было self._delete_prev_fn
                 inputs=[self.saved_input, self.chatbot_state],
-                outputs=[self.chatbot, self.saved_input, self.chatbot_state],
+                outputs=[self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  # <-- добавлен self.textbox
                 api_name=False,
                 queue=False,
             ).then(
@@ -377,16 +377,13 @@ class ChatInterface(Blocks):
         async for response in generator:
             yield response, history + [[message, response]]
 
-    async def _delete_prev_fn(
+    async def _stop_and_restore_fn(
         self,
         message: str,
         history: list[list[str | None]],
-    ) -> tuple[list[list[str | None]], str, list[list[str | None]]]:
-        print(f"[DEBUG _delete_prev_fn] Input history length: {len(history) if history else 0}")
+    ) -> tuple[list[list[str | None]], str, list[list[str | None]], str]:
+        """Удаляет последний элемент из истории и возвращает прерванный запрос в textbox."""
         if history:
-            print(f"[DEBUG _delete_prev_fn] Input history: {history}")
             history = history[:-1]
-            print(f"[DEBUG _delete_prev_fn] After deletion length: {len(history) if history else 0}")
-            print(f"[DEBUG _delete_prev_fn] After deletion: {history}")
-        return history, message or "", history
-
+        # Возвращаем: chatbot, saved_input, chatbot_state, textbox
+        return history, message or "", history, message or ""
