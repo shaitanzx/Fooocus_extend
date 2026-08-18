@@ -424,7 +424,7 @@ class ChatInterface(Blocks):
                     )
                 for event_to_cancel in events_to_cancel:
                     event_to_cancel.then(
-                        lambda: Button.update(visible=False)),
+                        lambda: Button.update(visible=False),
                         None,
                         [self.stop_btn],
                         api_name=False,
