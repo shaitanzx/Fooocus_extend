@@ -27,6 +27,9 @@ from gradio.helpers import create_examples as Examples  # noqa: N812
 from gradio.layouts import Accordion, Column, Group, Row
 from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration
+
+set_documentation_group("chatinterface")
+
 from functools import wraps
 
 def async_lambda(f: Callable) -> Callable:
