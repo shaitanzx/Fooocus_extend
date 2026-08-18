@@ -247,12 +247,12 @@ class ChatInterface(Blocks):
                 cancels=event_to_cancel,
                 api_name=False,
                 queue=False,
-            ).then(
-                fn=self._delete_prev_fn,
-                inputs=[self.saved_input, self.chatbot_state],
-                outputs=[self.chatbot, self.saved_input, self.chatbot_state],
-                api_name=False,
-                queue=False,
+            # ).then(
+            #     fn=self._delete_prev_fn,
+            #     inputs=[self.saved_input, self.chatbot_state],
+            #     outputs=[self.chatbot, self.saved_input, self.chatbot_state],
+            #     api_name=False,
+            #     queue=False,
             ).then(
                 self.post_fn,
                 **self.post_fn_kwargs,
