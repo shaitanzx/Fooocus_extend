@@ -1,23 +1,23 @@
 import gradio as gr
 from extentions.omost.chat_interface import ChatInterface
-import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 import os
 import numpy as np
 import extentions.omost.lib_omost.canvas as omost_canvas
 from transformers.generation.stopping_criteria import StoppingCriteriaList
-import ldm_patched.modules.model_management
-import modules.default_pipeline as pipeline
-import modules.core as core
 
 from threading import Thread
-
+import ldm_patched.modules.model_management as mm
+import modules.default_pipeline as pipeline
+import modules.core as core
+import gc
+import torch
 
 # Phi3 Hijack
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
 
 Phi3PreTrainedModel._supports_sdpa = True
-import gc
+
 
 
 llm_model = None
@@ -97,11 +97,7 @@ def unload_model_by_name(target_name):
     print(f"[ModelMgmt] Model '{target_name}' not found")
     return False
 
-import ldm_patched.modules.model_management as mm
-import modules.default_pipeline as pipeline
-import modules.core as core
-import gc
-import torch
+
 
 def unload_fooocus_completely():
     """Правильная полная выгрузка Fooocus: GPU → ссылки → gc."""
