@@ -53,8 +53,6 @@ class ChatInterface(Blocks):
         description: str | None = None,
         theme: Theme | str | None = None,
         css: str | None = None,
-        js: str | None = None,
-        head: str | None = None,
         analytics_enabled: bool | None = None,
         submit_btn: str | None | Button = "Submit",
         stop_btn: str | None | Button = "Stop",
@@ -68,8 +66,6 @@ class ChatInterface(Blocks):
             css=css,
             title=title or "Gradio",
             theme=theme,
-            js=js,
-            head=head,
         )
 
         if post_fn_kwargs is None:
