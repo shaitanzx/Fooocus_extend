@@ -56,7 +56,10 @@ def format_vram_info(prefix=""):
     )
 
 def post_chat(history):
-    global omost_seed
+    import traceback
+    print(f"\n[Omost post_chat] CALLED")
+    print(f"[Omost post_chat] History length: {len(history) if history else 0}")
+    
     canvas_outputs = None
     try:
         if history:
@@ -68,8 +71,14 @@ def post_chat(history):
         print('Last assistant response is not valid canvas:', e)
 
     unload_model()
-    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
-
+    
+    render_visible = canvas_outputs is not None
+    print(f"[Omost post_chat] Render visible: {render_visible}")
+    print(f"[Omost post_chat] Stack trace:")
+    traceback.print_stack()
+    print()
+    
+    return seed, canvas_outputs, gr.update(visible=render_visible), gr.update(interactive=len(history) > 0)
 def defragment_vram():
     if not torch.cuda.is_available():
         return    
