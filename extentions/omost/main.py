@@ -97,18 +97,49 @@ def unload_model_by_name(target_name):
     print(f"[ModelMgmt] Model '{target_name}' not found")
     return False
 
-def unload_fooocus_completely():
-    """
-    Полностью выгружает все модели Fooocus из GPU и RAM.
-    
-    После этого Fooocus не сможет генерировать картинки,
-    пока не будет вызван refresh_everything() заново.
-    """
-    
+import ldm_patched.modules.model_management as mm
+import modules.default_pipeline as pipeline
+import modules.core as core
+import gc
+import torch
 
+def unload_fooocus_completely():
+    """Правильная полная выгрузка Fooocus: GPU → ссылки → gc."""
+    
+    print(f"\n[Omost] === Unloading ALL Fooocus models ===")
+    
+    # Замер ДО
+    if torch.cuda.is_available():
+        allocated_before = torch.cuda.memory_allocated() / (1024**3)
+        reserved_before = torch.cuda.memory_reserved() / (1024**3)
+        print(f"[Omost] BEFORE: allocated={allocated_before:.2f}GB, reserved={reserved_before:.2f}GB")
+    
+    # === ШАГ 1: ПРАВИЛЬНАЯ выгрузка моделей из GPU ===
+    # Это вызывает model_unload() → unpatch_model() для каждой модели
+    print(f"[Omost] Step 1: Proper GPU unload via unload_all_models()...")
     try:
-        #ldm_patched.modules.model_management.unload_all_models()
-        #unload_model_by_name('GPT2LMHeadModel')
+        mm.unload_all_models()
+        print(f"[Omost] ✓ Models properly unloaded from GPU")
+    except Exception as e:
+        print(f"[Omost] Warning during unload_all_models: {e}")
+    
+    # === ШАГ 2: Очистка current_loaded_models ===
+    # После unload_all_models список должен быть пуст, но проверим
+    print(f"[Omost] Step 2: Verifying current_loaded_models...")
+    if len(mm.current_loaded_models) > 0:
+        print(f"[Omost] ⚠ {len(mm.current_loaded_models)} models still in current_loaded_models, forcing removal...")
+        for i in range(len(mm.current_loaded_models) - 1, -1, -1):
+            try:
+                m = mm.current_loaded_models.pop(i)
+                m.model_unload()
+                del m
+            except Exception as e:
+                print(f"[Omost] Warning: {e}")
+    print(f"[Omost] ✓ current_loaded_models is now empty: {len(mm.current_loaded_models)}")
+    
+    # === ШАГ 3: Обнуление ссылок в pipeline ===
+    print(f"[Omost] Step 3: Clearing pipeline references...")
+    try:
         pipeline.final_unet = None
         pipeline.final_clip = None
         pipeline.final_vae = None
@@ -120,33 +151,40 @@ def unload_fooocus_completely():
     except Exception as e:
         print(f"[Omost] Warning: {e}")
     
-    # === Шаг 3: Пересоздаём model_base и model_refiner как пустые ===
-
+    # === ШАГ 4: Пересоздание model_base и model_refiner ===
+    print(f"[Omost] Step 4: Resetting model_base and model_refiner...")
     try:
         pipeline.model_base = core.StableDiffusionModel()
         pipeline.model_refiner = core.StableDiffusionModel()
+        print(f"[Omost] ✓ model_base and model_refiner reset")
     except Exception as e:
         print(f"[Omost] Warning: {e}")
     
-    # === Шаг 4: Агрессивная очистка памяти ===
-
+    # === ШАГ 5: Агрессивная очистка памяти ===
+    print(f"[Omost] Step 5: Aggressive memory cleanup...")
+    gc.collect()
     
-    # Первый проход сборщика мусора
-    gc.collect()
-    # Синхронизация GPU
-    torch.cuda.synchronize()    
-    # Очистка кэша PyTorch
-    torch.cuda.empty_cache()    
-    # Сборка IPC памяти
-    torch.cuda.ipc_collect()
-    # Сброс пиковых статистик
-    torch.cuda.reset_peak_memory_stats()
-    # Второй проход сборщика мусора
-    gc.collect()
-    # Повторная синхронизация
-    torch.cuda.synchronize()
-    # === Шаг 5: Дефрагментация ===
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.reset_peak_memory_stats()
+        gc.collect()
+        torch.cuda.synchronize()
+    
+    # === ШАГ 6: Дефрагментация ===
     defragment_vram()
+    
+    # Замер ПОСЛЕ
+    if torch.cuda.is_available():
+        allocated_after = torch.cuda.memory_allocated() / (1024**3)
+        reserved_after = torch.cuda.memory_reserved() / (1024**3)
+        freed_allocated = allocated_before - allocated_after
+        freed_reserved = reserved_before - reserved_after
+        print(f"[Omost] AFTER:  allocated={allocated_after:.2f}GB, reserved={reserved_after:.2f}GB")
+        print(f"[Omost] FREED:  allocated={freed_allocated:.2f}GB, reserved={freed_reserved:.2f}GB")
+    print(f"[Omost] ✓ ALL Fooocus models unloaded")
+    print(f"[Omost] ===================================\n")
 
 @torch.inference_mode()
 def unload_model():
