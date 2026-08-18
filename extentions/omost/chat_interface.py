@@ -271,13 +271,12 @@ class ChatInterface(Blocks):
                 api_name=False,
             )
         )
-        submit_generation_event = submit_event
         submit_event = submit_event.then(
             self.post_fn,
             **self.post_fn_kwargs,
             api_name=False,
         )
-        self._setup_stop_events(self.textbox.submit, submit_generation_event)
+        self._setup_stop_events(self.textbox.submit, submit_event)
 
         if self.submit_btn:
             click_event = (
@@ -308,13 +307,13 @@ class ChatInterface(Blocks):
                     api_name=False,
                 )
             )
-            click_generation_event = click_event
+
             click_event = click_event.then(
                 self.post_fn,
                 **self.post_fn_kwargs,
                 api_name=False,
             )
-            self._setup_stop_events(self.submit_btn.click, click_generation_event)
+            self._setup_stop_events(self.submit_btn.click, click_event)
 
         if self.retry_btn:
             retry_event = (
