@@ -360,7 +360,7 @@ class ChatInterface(Blocks):
                 api_name=False,
             )
 
-        def _setup_stop_events(
+    def _setup_stop_events(
         self, event_triggers: list[Callable], events_to_cancel: list[Dependency]
     ) -> None:
         print(f"[DEBUG Stop] _setup_stop_events called")
