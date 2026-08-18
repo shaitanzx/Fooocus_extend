@@ -355,76 +355,53 @@ class ChatInterface(Blocks):
                 api_name=False,
             )
 
-    def _setup_stop_events(
-        self, event_trigger: Callable, event_to_cancel: Dependency
-    ) -> None:
-        print(f"[DEBUG] _setup_stop_events called")
-        print(f"[DEBUG]   event_to_cancel type: {type(event_to_cancel)}")
-
+    def _setup_stop_events(self, event_trigger: Callable, event_to_cancel: Dependency) -> None:
         def perform_interrupt(ipc):
-            print(f"[DEBUG] perform_interrupt called! ipc={ipc}")
-            # КРИТИЧЕСКИ ВАЖНО: вызываем функцию прерывания, если она передана
             if ipc is not None and callable(ipc):
-                print("[DEBUG] Вызываем ipc() для прерывания генерации...")
                 ipc()
             return
 
         if self.stop_btn and self.is_generator:
-            print("[DEBUG]   -> entering stop setup block")
             if self.submit_btn:
-                def show_stop():
-                    print("[DEBUG] show_stop() called - making Stop visible")
-                    return (
-                        Button.update(visible=False),
-                        Button.update(visible=True),
-                    )
-                
                 event_trigger(
-                    async_lambda(show_stop),
-                    None,
-                    [self.submit_btn, self.stop_btn],
-                    api_name=False,
-                    queue=False,
+                    async_lambda(lambda: (gr.update(visible=False), gr.update(visible=True))),
+                    None, [self.submit_btn, self.stop_btn], api_name=False, queue=False,
                 )
-                
-                def hide_stop():
-                    print("[DEBUG] hide_stop() called - hiding Stop")
-                    return (Button.update(visible=True), Button.update(visible=False))
-                
                 event_to_cancel.then(
-                    async_lambda(hide_stop),
-                    None,
-                    [self.submit_btn, self.stop_btn],
-                    api_name=False,
-                    queue=False,
+                    async_lambda(lambda: (gr.update(visible=True), gr.update(visible=False))),
+                    None, [self.submit_btn, self.stop_btn], api_name=False, queue=False,
                 )
             else:
                 event_trigger(
-                    async_lambda(lambda: Button.update(visible=True)),
-                    None,
-                    [self.stop_btn],
-                    api_name=False,
-                    queue=False,
+                    async_lambda(lambda: gr.update(visible=True)),
+                    None, [self.stop_btn], api_name=False, queue=False,
                 )
                 event_to_cancel.then(
-                    async_lambda(lambda: Button.update(visible=False)),
-                    None,
-                    [self.stop_btn],
-                    api_name=False,
-                    queue=False,
+                    async_lambda(lambda: gr.update(visible=False)),
+                    None, [self.stop_btn], api_name=False, queue=False,
                 )
             
-            print(f"[DEBUG]   -> registering stop_btn.click with cancels")
+            # Цепочка Stop:
+            # 1. perform_interrupt — вызывает ipc() и отменяет event_to_cancel
+            # 2. _delete_prev_fn — удаляет последний незавершённый элемент из истории
+            # 3. post_fn с post_fn_kwargs — завершающая обработка (как в submit/retry/undo/clear)
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
                 api_name=False,
-                queue=False,  # Обязательно для мгновенного срабатывания
+                queue=False,
+            ).then(
+                fn=self._delete_prev_fn,
+                inputs=[self.saved_input, self.chatbot_state],
+                outputs=[self.chatbot, self.saved_input, self.chatbot_state],
+                api_name=False,
+                queue=False,
+            ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                api_name=False,
             )
-            print("[DEBUG]   -> stop_btn.click registered successfully")
-        else:
-            print("[DEBUG]   -> SKIPPED stop setup block (condition is False)")
 
     def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
