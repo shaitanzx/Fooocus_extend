@@ -411,11 +411,6 @@ class ChatInterface(Blocks):
                 [self.chatbot, self.saved_input, self.chatbot_state],
                 api_name=False,
                 queue=False,
-            ).then(
-                self.post_fn,
-                **self.post_fn_kwargs,
-                api_name=False,
-                queue=False,
             )
     def _setup_stop_events(
         self, event_trigger: EventListenerMethod, event_to_cancel: Dependency
@@ -461,6 +456,11 @@ class ChatInterface(Blocks):
                     [self.submit_btn, self.stop_btn],
                     cancels=event_to_cancel,
                     api_name=False,
+                ).then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    api_name=False,
+                    queue=False,
                 )
             else:
                 self.stop_btn.click(
@@ -469,6 +469,11 @@ class ChatInterface(Blocks):
                     [self.stop_btn],
                     cancels=event_to_cancel,
                     api_name=False,
+                ).then(
+                    self.post_fn,
+                    **self.post_fn_kwargs,
+                    api_name=False,
+                    queue=False,
                 )
 
     def _setup_api(self) -> None:
