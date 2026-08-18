@@ -68,7 +68,7 @@ def post_chat(history):
         print('Last assistant response is not valid canvas:', e)
 
     unload_model()
-    return canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0), gr.update(value=omost_seed)
+    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=canvas_outputs is not None), gr.update(interactive=len(history) > 0)
 
 def defragment_vram():
     if not torch.cuda.is_available():
@@ -367,6 +367,7 @@ def gui():
                             label="Max New Tokens")
                     with gr.Row():
                         seed_random = gr.Checkbox(label='Random Seed', value=True, elem_classes='min_check')
+                    with gr.Row():
                         seed = gr.Number(label="Seed Value", value=12345, precision=0, visible=False)
                     with gr.Row():
                         full_history = gr.Checkbox(label='Use full history', value=False, elem_classes='min_check')
@@ -394,7 +395,7 @@ def gui():
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[canvas_state, render_button, undo_btn,seed]),
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[seed, canvas_state, render_button, undo_btn]),
                 pre_fn=lambda: gr.update(visible=False),
                 pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
