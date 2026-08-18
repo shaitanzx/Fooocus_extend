@@ -5,25 +5,30 @@ import inspect
 from typing import AsyncGenerator, Callable
 
 import anyio
-from gradio_client.documentation import document
+from gradio_client import utils as client_utils
+from gradio_client.documentation import document, set_documentation_group
 
 from gradio.blocks import Blocks
 from gradio.components import (
     Button,
     Chatbot,
-    Component,
+    IOComponent,
     Markdown,
     State,
     Textbox,
     get_component_instance,
-    Dataset,
 )
-from gradio.events import Dependency
-from gradio.helpers import special_args
-from gradio.layouts import Accordion, Group, Row
-from gradio.routes import Request
+from gradio.events import Dependency, EventListenerMethod
+from gradio.helpers import create_examples as Examples  # noqa: N812
+from gradio.layouts import Accordion, Column, Group, Row
 from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration
+
+set_documentation_group("chatinterface")
+
+
+
+
 def async_lambda(f: Callable) -> Callable:
     """Turn a function into an async function.
     Useful for internal event handlers defined as lambda functions used in the codebase
@@ -371,8 +376,8 @@ class ChatInterface(Blocks):
                 event_trigger(
                     async_lambda(
                         lambda: (
-                            Button(visible=False),
-                            Button(visible=True),
+                            Button.update(visible=False),
+                            Button.update(visible=True),
                         )
                     ),
                     None,
@@ -381,7 +386,7 @@ class ChatInterface(Blocks):
                     queue=False,
                 )
                 event_to_cancel.then(
-                    async_lambda(lambda: (Button(visible=True), Button(visible=False))),
+                    async_lambda(lambda: (Button.update(visible=True), Button.update(visible=False))),
                     None,
                     [self.submit_btn, self.stop_btn],
                     api_name=False,
@@ -389,14 +394,14 @@ class ChatInterface(Blocks):
                 )
             else:
                 event_trigger(
-                    async_lambda(lambda: Button(visible=True)),
+                    async_lambda(lambda: Button.update(visible=True)),
                     None,
                     [self.stop_btn],
                     api_name=False,
                     queue=False,
                 )
                 event_to_cancel.then(
-                    async_lambda(lambda: Button(visible=False)),
+                    async_lambda(lambda: Button.update(visible=False)),
                     None,
                     [self.stop_btn],
                     api_name=False,
