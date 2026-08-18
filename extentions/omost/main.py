@@ -341,9 +341,7 @@ def gui():
                 retry_btn = gr.Button("Retry", variant="secondary", size="sm", min_width=60, visible=False)
                 undo_btn = gr.Button("Edit Last Input", variant="secondary", size="sm", min_width=60, interactive=False)
         
-            with gr.Row():
-                seed_random = gr.Checkbox(label='Random Seed', value=True, container=False)
-                seed = gr.Number(label="Seed Value", value=12345, precision=0, visible=False)
+
 
             with gr.Accordion(open=True, label='LLM settings'):
                 with gr.Group():
@@ -367,6 +365,9 @@ def gui():
                             step=1,
                             value=4096,
                             label="Max New Tokens")
+                    with gr.Row():
+                        seed_random = gr.Checkbox(label='Random Seed', value=True, container=False)
+                        seed = gr.Number(label="Seed Value", value=12345, precision=0, visible=False)
                     with gr.Row():
                         full_history = gr.Checkbox(label='Use full history', value=False, elem_classes='min_check')
 
