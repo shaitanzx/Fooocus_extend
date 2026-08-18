@@ -358,10 +358,10 @@ class ChatInterface(Blocks):
     def _setup_stop_events(
         self, event_trigger: Callable, event_to_cancel: Dependency
     ) -> None:
-        # <-- DEBUG: диагностика настройки Stop
         print(f"[DEBUG] _setup_stop_events called")
         print(f"[DEBUG]   stop_btn: {self.stop_btn}")
         print(f"[DEBUG]   is_generator: {self.is_generator}")
+        print(f"[DEBUG]   event_to_cancel: {event_to_cancel}")
 
         def perform_interrupt(ipc):
             print(f"[DEBUG] perform_interrupt called! ipc={ipc}")
@@ -372,20 +372,29 @@ class ChatInterface(Blocks):
         if self.stop_btn and self.is_generator:
             print("[DEBUG]   -> entering stop setup block")
             if self.submit_btn:
+                # Обработчик: при клике на Submit — скрыть Submit, показать Stop
+                def show_stop():
+                    print("[DEBUG] show_stop() called - making Stop visible")
+                    return (
+                        Button.update(visible=False),
+                        Button.update(visible=True),
+                    )
+                
                 event_trigger(
-                    async_lambda(
-                        lambda: (
-                            Button.update(visible=False),
-                            Button.update(visible=True),
-                        )
-                    ),
+                    async_lambda(show_stop),
                     None,
                     [self.submit_btn, self.stop_btn],
                     api_name=False,
                     queue=False,
                 )
+                
+                # После завершения генерации — вернуть Submit, скрыть Stop
+                def hide_stop():
+                    print("[DEBUG] hide_stop() called - hiding Stop")
+                    return (Button.update(visible=True), Button.update(visible=False))
+                
                 event_to_cancel.then(
-                    async_lambda(lambda: (Button.update(visible=True), Button.update(visible=False))),
+                    async_lambda(hide_stop),
                     None,
                     [self.submit_btn, self.stop_btn],
                     api_name=False,
@@ -406,12 +415,15 @@ class ChatInterface(Blocks):
                     api_name=False,
                     queue=False,
                 )
+            
+            print(f"[DEBUG]   -> registering stop_btn.click with cancels={event_to_cancel}")
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
                 api_name=False,
             )
+            print("[DEBUG]   -> stop_btn.click registered successfully")
         else:
             print("[DEBUG]   -> SKIPPED stop setup block (condition is False)")
 
