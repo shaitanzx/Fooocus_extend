@@ -363,8 +363,10 @@ class ChatInterface(Blocks):
 
         def perform_interrupt(ipc):
             print(f"[DEBUG] perform_interrupt called! ipc={ipc}")
-            # В Gradio само прерывание выполняется механизмом `cancels`, 
-            # эта функция нужна в основном для логирования или сброса State.
+            # КРИТИЧЕСКИ ВАЖНО: вызываем функцию прерывания, если она передана
+            if ipc is not None and callable(ipc):
+                print("[DEBUG] Вызываем ipc() для прерывания генерации...")
+                ipc()
             return
 
         if self.stop_btn and self.is_generator:
@@ -418,7 +420,7 @@ class ChatInterface(Blocks):
                 inputs=[self.interrupter],
                 cancels=event_to_cancel,
                 api_name=False,
-                queue=False,  # <-- КРИТИЧЕСКИ ВАЖНО: без этого клик ждет окончания генерации в очереди
+                queue=False,  # Обязательно для мгновенного срабатывания
             )
             print("[DEBUG]   -> stop_btn.click registered successfully")
         else:
