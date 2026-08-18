@@ -30,7 +30,7 @@ from gradio.themes import ThemeClass as Theme
 from gradio.utils import SyncToAsyncIterator, async_iteration, async_lambda
 
 
-@document()
+
 class ChatInterface(Blocks):
     """
     ChatInterface is Gradio's high-level abstraction for creating chatbot UIs...
