@@ -92,6 +92,7 @@ class ChatInterface(Blocks):
         self.pre_fn_kwargs = pre_fn_kwargs
 
         self.interrupter = State(None)
+        self.limiter = None  # <-- ИСПРАВЛЕНО: инициализация limiter
 
         self.fn = fn
         self.is_async = inspect.iscoroutinefunction(
@@ -228,12 +229,13 @@ class ChatInterface(Blocks):
 
             self._setup_events()
             self._setup_api()
+
+        # <-- DEBUG: диагностика кнопки Stop
         print(f"[DEBUG] stop_btn: {self.stop_btn}")
         print(f"[DEBUG] is_generator: {self.is_generator}")
         print(f"[DEBUG] is_async: {self.is_async}")
         print(f"[DEBUG] fn: {self.fn}")
-        
-        
+
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
 
@@ -356,12 +358,19 @@ class ChatInterface(Blocks):
     def _setup_stop_events(
         self, event_trigger: Callable, event_to_cancel: Dependency
     ) -> None:
+        # <-- DEBUG: диагностика настройки Stop
+        print(f"[DEBUG] _setup_stop_events called")
+        print(f"[DEBUG]   stop_btn: {self.stop_btn}")
+        print(f"[DEBUG]   is_generator: {self.is_generator}")
+
         def perform_interrupt(ipc):
+            print(f"[DEBUG] perform_interrupt called! ipc={ipc}")
             if ipc is not None:
                 ipc()
             return
 
         if self.stop_btn and self.is_generator:
+            print("[DEBUG]   -> entering stop setup block")
             if self.submit_btn:
                 event_trigger(
                     async_lambda(
@@ -403,6 +412,8 @@ class ChatInterface(Blocks):
                 cancels=event_to_cancel,
                 api_name=False,
             )
+        else:
+            print("[DEBUG]   -> SKIPPED stop setup block (condition is False)")
 
     def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
