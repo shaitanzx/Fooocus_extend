@@ -234,15 +234,7 @@ def unload_model():
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool, seed_random: bool) -> str:
     
-    print(f"[DEBUG] chat_fn arguments:")
-    print(f"  message={message}")
-    print(f"  seed={seed} (type={type(seed).__name__})")
-    print(f"  temperature={temperature} (type={type(temperature).__name__})")
-    print(f"  top_p={top_p} (type={type(top_p).__name__})")
-    print(f"  max_new_tokens={max_new_tokens} (type={type(max_new_tokens).__name__})")
-    print(f"  model_base={model_base} (type={type(model_base).__name__})")
-    print(f"  full_history={full_history} (type={type(full_history).__name__})")
-    print(f"  seed_random={seed_random} (type={type(seed_random).__name__})")
+
     
     
     global llm_model, llm_tokenizer, llm_name,omost_seed

@@ -360,24 +360,46 @@ class ChatInterface(Blocks):
                 api_name=False,
             )
 
-    def _setup_stop_events(
+        def _setup_stop_events(
         self, event_triggers: list[Callable], events_to_cancel: list[Dependency]
     ) -> None:
+        print(f"[DEBUG Stop] _setup_stop_events called")
+        print(f"[DEBUG Stop] stop_btn exists: {self.stop_btn is not None}")
+        print(f"[DEBUG Stop] is_generator: {self.is_generator}")
+        print(f"[DEBUG Stop] events_to_cancel count: {len(events_to_cancel)}")
+        
         def perform_interrupt(ipc):
+            print(f"[DEBUG Stop] >>> perform_interrupt CALLED! <<<")
+            print(f"[DEBUG Stop] ipc value: {ipc}")
             if ipc is not None:
-                ipc()
+                print(f"[DEBUG Stop] Calling interrupter function...")
+                try:
+                    ipc()
+                    print(f"[DEBUG Stop] Interrupter called successfully")
+                except Exception as e:
+                    print(f"[DEBUG Stop] Error calling interrupter: {e}")
+            else:
+                print(f"[DEBUG Stop] ipc is None, nothing to interrupt")
             return
 
         if self.stop_btn and self.is_generator:
+            print(f"[DEBUG Stop] Setting up stop button click handler")
+            
+            # Ключевой момент: cancels=events_to_cancel прерывает выполнение цепочки Gradio
+            self.stop_btn.click(
+                fn=perform_interrupt,
+                inputs=[self.interrupter],
+                outputs=None,
+                cancels=events_to_cancel,
+                api_name=False,
+            )
+            print(f"[DEBUG Stop] Stop button click handler registered with cancels={events_to_cancel}")
+            
+            # Управление видимостью кнопок Submit и Stop
             if self.submit_btn:
                 for event_trigger in event_triggers:
                     event_trigger(
-                        async_lambda(
-                            lambda: (
-                                Button.update(visible=False),
-                                Button.update(visible=True),
-                            )
-                        ),
+                        lambda: (Button.update(visible=False), Button.update(visible=True)),
                         None,
                         [self.submit_btn, self.stop_btn],
                         api_name=False,
@@ -385,7 +407,7 @@ class ChatInterface(Blocks):
                     )
                 for event_to_cancel in events_to_cancel:
                     event_to_cancel.then(
-                        async_lambda(lambda: (Button.update(visible=True), Button.update(visible=False))),
+                        lambda: (Button.update(visible=True), Button.update(visible=False)),
                         None,
                         [self.submit_btn, self.stop_btn],
                         api_name=False,
@@ -394,7 +416,7 @@ class ChatInterface(Blocks):
             else:
                 for event_trigger in event_triggers:
                     event_trigger(
-                        async_lambda(lambda: Button.update(visible=True)),
+                        lambda: Button.update(visible=True),
                         None,
                         [self.stop_btn],
                         api_name=False,
@@ -402,18 +424,14 @@ class ChatInterface(Blocks):
                     )
                 for event_to_cancel in events_to_cancel:
                     event_to_cancel.then(
-                        async_lambda(lambda: Button.update(visible=False)),
+                        lambda: Button.update(visible=False)),
                         None,
                         [self.stop_btn],
                         api_name=False,
                         queue=False,
                     )
-            self.stop_btn.click(
-                fn=perform_interrupt,
-                inputs=[self.interrupter],
-                cancels=events_to_cancel,
-                api_name=False,
-            )
+        else:
+            print(f"[DEBUG Stop] Stop button setup SKIPPED (stop_btn={self.stop_btn}, is_generator={self.is_generator})")
 
     def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
