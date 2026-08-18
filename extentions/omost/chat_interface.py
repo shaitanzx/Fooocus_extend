@@ -205,9 +205,11 @@ class ChatInterface(Blocks):
                 self.post_fn, **self.post_fn_kwargs, api_name=False,  # <-- убран async_lambda, так как textbox уже обновлён
             )
 
+
         if self.clear_btn:
             self.clear_btn.click(
-                async_lambda(lambda: ([], [], None)), None, [self.chatbot, self.chatbot_state, self.saved_input],
+                async_lambda(lambda: ([], [], None, "")), None, 
+                [self.chatbot, self.chatbot_state, self.saved_input, self.textbox],  # <-- добавлен self.textbox
                 queue=False, api_name=False,
             ).then(
                 self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
