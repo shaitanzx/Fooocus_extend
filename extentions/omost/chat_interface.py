@@ -1,7 +1,3 @@
-"""
-This file defines a useful high-level abstraction to build Gradio chatbots: ChatInterface.
-Adapted for Gradio 3.x, text-only mode, without gradio.events.on
-"""
 
 from __future__ import annotations
 
@@ -9,41 +5,45 @@ import inspect
 from typing import AsyncGenerator, Callable
 
 import anyio
-from gradio_client import utils as client_utils
-from gradio_client.documentation import document, set_documentation_group
+from gradio_client.documentation import document
 
 from gradio.blocks import Blocks
 from gradio.components import (
     Button,
     Chatbot,
-    IOComponent,
+    Component,
     Markdown,
     State,
     Textbox,
     get_component_instance,
+    Dataset,
 )
-from gradio.events import Dependency, EventListenerMethod
-from gradio.helpers import create_examples as Examples  # noqa: N812
-from gradio.layouts import Accordion, Column, Group, Row
+from gradio.events import Dependency
+from gradio.helpers import special_args
+from gradio.layouts import Accordion, Group, Row
+from gradio.routes import Request
 from gradio.themes import ThemeClass as Theme
-from gradio.utils import SyncToAsyncIterator, async_iteration
-from functools import wraps
+from gradio.utils import SyncToAsyncIterator, async_iteration, async_lambda
 
-def async_lambda(f: Callable) -> Callable:
-    """Turn a function into an async function.
-    Useful for internal event handlers defined as lambda functions used in the codebase
-    """
-
-    @wraps(f)
-    async def function_wrapper(*args, **kwargs):
-        return f(*args, **kwargs)
-
-    return function_wrapper
 
 @document()
 class ChatInterface(Blocks):
     """
-    ChatInterface is Gradio's high-level abstraction for creating chatbot UIs...
+    ChatInterface is Gradio's high-level abstraction for creating chatbot UIs, and allows you to create
+    a web-based demo around a chatbot model in a few lines of code. Only one parameter is required: fn, which
+    takes a function that governs the response of the chatbot based on the user input and chat history. Additional
+    parameters can be used to control the appearance and behavior of the demo.
+
+    Example:
+        import gradio as gr
+
+        def echo(message, history):
+            return message
+
+        demo = gr.ChatInterface(fn=echo, examples=["hello", "hola", "merhaba"], title="Echo Bot")
+        demo.launch()
+    Demos: chatinterface_multimodal, chatinterface_random_response, chatinterface_streaming_echo
+    Guides: creating-a-chatbot-fast, sharing-your-app
     """
 
     def __init__(
@@ -64,6 +64,8 @@ class ChatInterface(Blocks):
         description: str | None = None,
         theme: Theme | str | None = None,
         css: str | None = None,
+        js: str | None = None,
+        head: str | None = None,
         analytics_enabled: bool | None = None,
         submit_btn: str | None | Button = "Submit",
         stop_btn: str | None | Button = "Stop",
@@ -71,12 +73,19 @@ class ChatInterface(Blocks):
         undo_btn: str | None | Button = "↩️ Undo",
         clear_btn: str | None | Button = "🗑️  Clear",
         autofocus: bool = True,
+        fill_height: bool = True,
+        delete_cache: tuple[int, int] | None = None,
     ):
         super().__init__(
             analytics_enabled=analytics_enabled,
+            mode="chat_interface",
             css=css,
             title=title or "Gradio",
             theme=theme,
+            js=js,
+            head=head,
+            fill_height=fill_height,
+            delete_cache=delete_cache,
         )
 
         if post_fn_kwargs is None:
@@ -103,7 +112,7 @@ class ChatInterface(Blocks):
                 additional_inputs = [additional_inputs]
             self.additional_inputs = [
                 get_component_instance(i)
-                for i in additional_inputs
+                for i in additional_inputs  # type: ignore
             ]
         else:
             self.additional_inputs = []
@@ -125,10 +134,11 @@ class ChatInterface(Blocks):
                 "label": additional_inputs_accordion
             }
         elif isinstance(additional_inputs_accordion, Accordion):
-            self.additional_inputs_accordion_params = {
-                "label": additional_inputs_accordion.label,
-                "open": additional_inputs_accordion.open,
-            }
+            self.additional_inputs_accordion_params = (
+                additional_inputs_accordion.recover_kwargs(
+                    additional_inputs_accordion.get_config()
+                )
+            )
         else:
             raise ValueError(
                 f"The `additional_inputs_accordion` parameter must be a string or gr.Accordion, not {type(additional_inputs_accordion)}"
@@ -151,7 +161,7 @@ class ChatInterface(Blocks):
                     if textbox:
                         textbox.container = False
                         textbox.show_label = False
-                        textbox_ = textbox
+                        textbox_ = textbox.render()
                         if not isinstance(textbox_, Textbox):
                             raise TypeError(
                                 f"Expected a gr.Textbox component, but got {type(textbox_)}"
@@ -168,7 +178,7 @@ class ChatInterface(Blocks):
                         )
                     if submit_btn is not None:
                         if isinstance(submit_btn, Button):
-                            pass
+                            submit_btn.render()
                         elif isinstance(submit_btn, str):
                             submit_btn = Button(
                                 submit_btn,
@@ -183,6 +193,7 @@ class ChatInterface(Blocks):
                     if stop_btn is not None:
                         if isinstance(stop_btn, Button):
                             stop_btn.visible = False
+                            stop_btn.render()
                         elif isinstance(stop_btn, str):
                             stop_btn = Button(
                                 stop_btn,
@@ -195,7 +206,7 @@ class ChatInterface(Blocks):
                             raise ValueError(
                                 f"The stop_btn parameter must be a gr.Button, string, or None, not {type(stop_btn)}"
                             )
-                    self.buttons.extend([submit_btn, stop_btn])
+                    self.buttons.extend([submit_btn, stop_btn])  # type: ignore
 
                 self.fake_api_btn = Button("Fake API", visible=False)
                 self.fake_response_textbox = Textbox(label="Response", visible=False)
@@ -211,7 +222,7 @@ class ChatInterface(Blocks):
                 not inp.is_rendered for inp in self.additional_inputs
             )
             if self.additional_inputs and any_unrendered_inputs:
-                with Accordion(**self.additional_inputs_accordion_params):
+                with Accordion(**self.additional_inputs_accordion_params):  # type: ignore
                     for input_component in self.additional_inputs:
                         if not input_component.is_rendered:
                             input_component.render()
@@ -227,12 +238,11 @@ class ChatInterface(Blocks):
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
 
-    def _create_submit_chain(self, trigger) -> Dependency:
-        """Создает цепочку событий для отправки сообщения"""
+    def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
-        
-        return (
-            trigger(
+
+        submit_event = (
+            self.submit_btn.click(
                 self._clear_and_save_textbox,
                 [self.textbox],
                 [self.textbox, self.saved_input],
@@ -264,25 +274,9 @@ class ChatInterface(Blocks):
                 api_name=False,
             )
         )
-
-    def _setup_events(self) -> None:
-        # Создаем цепочку для textbox.submit
-        submit_triggers = [self.textbox.submit]
-        submit_event_textbox = self._create_submit_chain(self.textbox.submit)
-        
-        # Создаем цепочку для submit_btn.click, если кнопка есть
-        if self.submit_btn:
-            submit_event_btn = self._create_submit_chain(self.submit_btn.click)
-            submit_triggers.append(self.submit_btn.click)
-            # Сохраняем обе цепочки для возможности отмены
-            self._submit_events = [submit_event_textbox, submit_event_btn]
-        else:
-            self._submit_events = [submit_event_textbox]
-        
-        self._setup_stop_events(submit_triggers, self._submit_events)
+        self._setup_stop_events(self.submit_btn.click, submit_event)
 
         if self.retry_btn:
-            retry_fn = self._stream_fn if self.is_generator else self._submit_fn
             retry_event = (
                 self.retry_btn.click(
                     self._delete_prev_fn,
@@ -305,7 +299,7 @@ class ChatInterface(Blocks):
                     queue=False,
                 )
                 .then(
-                    retry_fn,
+                    submit_fn,
                     [self.saved_input, self.chatbot_state] + self.additional_inputs,
                     [self.chatbot, self.chatbot_state],
                     api_name=False,
@@ -316,7 +310,7 @@ class ChatInterface(Blocks):
                     api_name=False,
                 )
             )
-            self._setup_stop_events([self.retry_btn.click], [retry_event])
+            self._setup_stop_events(self.retry_btn.click, retry_event)
 
         if self.undo_btn:
             self.undo_btn.click(
@@ -361,77 +355,55 @@ class ChatInterface(Blocks):
             )
 
     def _setup_stop_events(
-        self, event_triggers: list[Callable], events_to_cancel: list[Dependency]
+        self, event_trigger: Callable, event_to_cancel: Dependency
     ) -> None:
-        print(f"[DEBUG Stop] _setup_stop_events called")
-        print(f"[DEBUG Stop] stop_btn exists: {self.stop_btn is not None}")
-        print(f"[DEBUG Stop] is_generator: {self.is_generator}")
-        print(f"[DEBUG Stop] events_to_cancel count: {len(events_to_cancel)}")
-        
         def perform_interrupt(ipc):
-            print(f"[DEBUG Stop] >>> perform_interrupt CALLED! <<<")
-            print(f"[DEBUG Stop] ipc value: {ipc}")
             if ipc is not None:
-                print(f"[DEBUG Stop] Calling interrupter function...")
-                try:
-                    ipc()
-                    print(f"[DEBUG Stop] Interrupter called successfully")
-                except Exception as e:
-                    print(f"[DEBUG Stop] Error calling interrupter: {e}")
-            else:
-                print(f"[DEBUG Stop] ipc is None, nothing to interrupt")
+                ipc()
             return
 
         if self.stop_btn and self.is_generator:
-            print(f"[DEBUG Stop] Setting up stop button click handler")
-            
-            # Ключевой момент: cancels=events_to_cancel прерывает выполнение цепочки Gradio
+            if self.submit_btn:
+                event_trigger(
+                    async_lambda(
+                        lambda: (
+                            Button(visible=False),
+                            Button(visible=True),
+                        )
+                    ),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
+                event_to_cancel.then(
+                    async_lambda(lambda: (Button(visible=True), Button(visible=False))),
+                    None,
+                    [self.submit_btn, self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
+            else:
+                event_trigger(
+                    async_lambda(lambda: Button(visible=True)),
+                    None,
+                    [self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
+                event_to_cancel.then(
+                    async_lambda(lambda: Button(visible=False)),
+                    None,
+                    [self.stop_btn],
+                    api_name=False,
+                    queue=False,
+                )
             self.stop_btn.click(
                 fn=perform_interrupt,
                 inputs=[self.interrupter],
-                outputs=None,
-                cancels=events_to_cancel,
+                cancels=event_to_cancel,
                 api_name=False,
             )
-            print(f"[DEBUG Stop] Stop button click handler registered with cancels={events_to_cancel}")
-            
-            # Управление видимостью кнопок Submit и Stop
-            if self.submit_btn:
-                for event_trigger in event_triggers:
-                    event_trigger(
-                        lambda: (Button.update(visible=False), Button.update(visible=True)),
-                        None,
-                        [self.submit_btn, self.stop_btn],
-                        api_name=False,
-                        queue=False,
-                    )
-                for event_to_cancel in events_to_cancel:
-                    event_to_cancel.then(
-                        lambda: (Button.update(visible=True), Button.update(visible=False)),
-                        None,
-                        [self.submit_btn, self.stop_btn],
-                        api_name=False,
-                        queue=False,
-                    )
-            else:
-                for event_trigger in event_triggers:
-                    event_trigger(
-                        lambda: Button.update(visible=True),
-                        None,
-                        [self.stop_btn],
-                        api_name=False,
-                        queue=False,
-                    )
-                for event_to_cancel in events_to_cancel:
-                    event_to_cancel.then(
-                        lambda: Button.update(visible=False),
-                        None,
-                        [self.stop_btn],
-                        api_name=False,
-                        queue=False,
-                    )
-        else:
-            print(f"[DEBUG Stop] Stop button setup SKIPPED (stop_btn={self.stop_btn}, is_generator={self.is_generator})")
 
     def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
@@ -456,10 +428,13 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
+        request: Request,
         *args,
     ) -> tuple[list[list[str | None]], list[list[str | None]]]:
         history = history_with_input[:-1]
-        inputs = [message, history] + list(args)
+        inputs, _, _ = special_args(
+            self.fn, inputs=[message, history, *args], request=request
+        )
 
         if self.is_async:
             response = await self.fn(*inputs)
@@ -475,10 +450,13 @@ class ChatInterface(Blocks):
         self,
         message: str,
         history_with_input: list[list[str | None]],
+        request: Request,
         *args,
     ) -> AsyncGenerator:
         history = history_with_input[:-1]
-        inputs = [message, history] + list(args)
+        inputs, _, _ = special_args(
+            self.fn, inputs=[message, history, *args], request=request
+        )
 
         if self.is_async:
             generator = self.fn(*inputs)
@@ -487,7 +465,6 @@ class ChatInterface(Blocks):
                 self.fn, *inputs, limiter=self.limiter
             )
             generator = SyncToAsyncIterator(generator, self.limiter)
-        
         try:
             first_response, first_interrupter = await async_iteration(generator)
             update = history + [[message, first_response]]
@@ -500,9 +477,11 @@ class ChatInterface(Blocks):
             yield update, update, interrupter
 
     async def _api_submit_fn(
-        self, message: str, history: list[list[str | None]], *args
+        self, message: str, history: list[list[str | None]], request: Request, *args
     ) -> tuple[str, list[list[str | None]]]:
-        inputs = [message, history] + list(args)
+        inputs, _, _ = special_args(
+            self.fn, inputs=[message, history, *args], request=request
+        )
 
         if self.is_async:
             response = await self.fn(*inputs)
@@ -514,9 +493,11 @@ class ChatInterface(Blocks):
         return response, history
 
     async def _api_stream_fn(
-        self, message: str, history: list[list[str | None]], *args
+        self, message: str, history: list[list[str | None]], request: Request, *args
     ) -> AsyncGenerator:
-        inputs = [message, history] + list(args)
+        inputs, _, _ = special_args(
+            self.fn, inputs=[message, history, *args], request=request
+        )
 
         if self.is_async:
             generator = self.fn(*inputs)
@@ -526,11 +507,11 @@ class ChatInterface(Blocks):
             )
             generator = SyncToAsyncIterator(generator, self.limiter)
         try:
-            first_response, _ = await async_iteration(generator)
+            first_response = await async_iteration(generator)
             yield first_response, history + [[message, first_response]]
         except StopIteration:
             yield None, history + [[message, None]]
-        async for response, _ in generator:
+        async for response in generator:
             yield response, history + [[message, response]]
 
     async def _delete_prev_fn(
@@ -542,9 +523,6 @@ class ChatInterface(Blocks):
         str,
         list[list[str | None]],
     ]:
-        while history:
-            deleted_a, deleted_b = history[-1]
+        if history:
             history = history[:-1]
-            if isinstance(deleted_a, str) and isinstance(deleted_b, str):
-                break
         return history, message or "", history
