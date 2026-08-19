@@ -24,7 +24,6 @@ llm_model = None
 llm_tokenizer = None
 llm_name = None
 omost_seed = None
-last_assistant = None
 
 
 
@@ -57,7 +56,7 @@ def format_vram_info(prefix=""):
     )
 
 def post_chat(history):
-    global omost_seed,last_assistant
+    global omost_seed
     import traceback
     print(f"\n[Omost post_chat] CALLED")
     print(f"[Omost post_chat] Input history length: {len(history) if history else 0}")
@@ -82,7 +81,7 @@ def post_chat(history):
     render_visible = canvas_outputs is not None 
     print(f"[Omost post_chat] Render visible: {render_visible}")
     
-    return last_assistant, gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
+    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
 
 
 def defragment_vram():
@@ -352,7 +351,6 @@ def model_loading(llm_name):
 
 
 def gui():
-    global last_assistant
     models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
@@ -416,11 +414,12 @@ def gui():
             )
         with gr.Column(scale=75, elem_classes='inner_parent'):
             canvas_state = gr.State(None)
+            prompt_code = gr.State(None)
             chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[last_assistant, seed, canvas_state, render_button, prompt_button, undo_btn]),
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[prompt_code, seed, canvas_state, render_button, prompt_button, undo_btn]),
                 pre_fn=lambda: gr.update(visible=False),
                 pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
@@ -437,4 +436,4 @@ def gui():
                 queue=False,
                 show_progress=False
             )
-    return render_button, canvas_state, prompt_button, prompt_agress,last_assistant
+    return render_button, canvas_state, prompt_button, prompt_agress,prompt_code
