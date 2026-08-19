@@ -71,7 +71,6 @@ def post_chat(history):
             if history:
                 print(f"[Omost post_chat] Filtered history: {history}")
                 last_assistant = history[-1][1] if len(history) > 0 else None
-                print('&&&&&&&&&&&&&&&&&&&&&',last_assistant)
                 canvas = omost_canvas.Canvas.from_bot_response(last_assistant)
                 canvas_outputs = canvas.process()
     except Exception as e:
