@@ -402,6 +402,7 @@ def gui():
                 render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
             with gr.Row(visible=False) as prompt_button:
                 prompt_key = gr.Button("Convert to prompt!", size='lg', variant="primary")
+                prompt_agress = gr.Radio(choices=['normal','aggressive','short'], value='aggressive')
 
             examples = gr.Dataset(
                 samples=[
