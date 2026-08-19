@@ -78,10 +78,10 @@ def post_chat(history):
 
     unload_model()
     
-    render_visible = canvas_outputs is not None
+    render_visible = canvas_outputs is not None 
     print(f"[Omost post_chat] Render visible: {render_visible}")
     
-    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
+    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
 
 
 def defragment_vram():
@@ -398,8 +398,10 @@ def gui():
             #     highres_steps = gr.Slider(label="Highres Fix Steps", minimum=1, maximum=100, value=20, step=1)
             #     highres_denoise = gr.Slider(label="Highres Fix Denoise", minimum=0.1, maximum=1.0, value=0.4, step=0.01)
             #     n_prompt = gr.Textbox(label="Negative Prompt", value='lowres, bad anatomy, bad hands, cropped, worst quality')
-
-            render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
+            with gr.Row():
+                render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
+            with gr.Row(visible=False) as prompt_button:
+                prompt_key = gr.Button("Convert to prompt!", size='lg', variant="primary")
 
             examples = gr.Dataset(
                 samples=[
@@ -415,7 +417,7 @@ def gui():
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[seed, canvas_state, render_button, undo_btn]),
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[seed, canvas_state, render_button, prompt_button, undo_btn]),
                 pre_fn=lambda: gr.update(visible=False),
                 pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
