@@ -81,7 +81,7 @@ def post_chat(history):
     render_visible = canvas_outputs is not None 
     print(f"[Omost post_chat] Render visible: {render_visible}")
     
-    return gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
+    return gr.update(value=last_assistant),gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
 
 
 def defragment_vram():
