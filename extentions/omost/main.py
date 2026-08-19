@@ -351,6 +351,7 @@ def model_loading(llm_name):
 
 
 def gui():
+    prompt_code = ""
     models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
@@ -402,7 +403,7 @@ def gui():
                 render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
             with gr.Row(visible=False) as prompt_button:
                 prompt_key = gr.Button("Convert to prompt!", size='lg', variant="primary")
-                prompt_agress = gr.Radio(choices=['normal','aggressive','short'], value='aggressive')
+                prompt_agress = gr.Radio(choices=['normal','aggressive','short'], value='aggressive',interactive=True)
 
             examples = gr.Dataset(
                 samples=[
@@ -418,7 +419,7 @@ def gui():
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[seed, canvas_state, render_button, prompt_button, undo_btn]),
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[prompt_code, seed, canvas_state, render_button, prompt_button, undo_btn]),
                 pre_fn=lambda: gr.update(visible=False),
                 pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
@@ -435,4 +436,4 @@ def gui():
                 queue=False,
                 show_progress=False
             )
-    return render_button, canvas_state
+    return render_button, canvas_state, prompt_button, prompt_agress,prompt_code
