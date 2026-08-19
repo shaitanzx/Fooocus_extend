@@ -72,6 +72,7 @@ import extentions.watermark as watermark
 import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
 import extentions.omost.main as omost
+from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -808,7 +809,7 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='omost'):
-                            omost_render, omost_canvas = omost.gui()
+                            omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code = omost.gui()
                             
                             
 
@@ -2094,7 +2095,9 @@ with shared.gradio_root:
                   outputs=[omost_render,generate_button, skip_button,stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-
+        prompt_button.click(lambda: (gr.update(interactive=False)),outputs=[prompt_button]) \
+            .then(fn=omost2prompt,inputs=[prompt_agress,prompt_code],outputs=prompt) \ 
+            .then(lambda: (gr.update(interactive=False)),outputs=[prompt_button])
 
 
 

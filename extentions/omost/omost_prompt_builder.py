@@ -283,7 +283,7 @@ def flatten_to_prompt(layout, mode=DEFAULT_MODE, separator=", "):
 # ГЛАВНАЯ ФУНКЦИЯ (возвращает ТОЛЬКО текст промпта)
 # ============================================================
 
-def process_canvas(llm_response, mode=DEFAULT_MODE, separator=", ", verbose=True):
+def process_canvas(mode,llm_response, separator=", ", verbose=True):
     """
     Полная цепочка обработки canvas-кода в промпт.
 
