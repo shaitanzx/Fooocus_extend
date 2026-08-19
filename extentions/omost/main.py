@@ -24,6 +24,7 @@ llm_model = None
 llm_tokenizer = None
 llm_name = None
 omost_seed = None
+last_assistant = None
 
 
 
@@ -56,7 +57,7 @@ def format_vram_info(prefix=""):
     )
 
 def post_chat(history):
-    global omost_seed
+    global omost_seed,last_assistant
     import traceback
     print(f"\n[Omost post_chat] CALLED")
     print(f"[Omost post_chat] Input history length: {len(history) if history else 0}")
