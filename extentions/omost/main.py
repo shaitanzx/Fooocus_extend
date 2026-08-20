@@ -436,7 +436,7 @@ def gui():
                 queue=False,
                 show_progress=False
             )
-        prompt_code.change(
+        chatbot.change(
             lambda x: print(f"[DEBUG] prompt_code changed: {x[:100] if x else 'None'}..."),
             inputs=[prompt_code],
             outputs=None,
