@@ -436,11 +436,4 @@ def gui():
                 queue=False,
                 show_progress=False
             )
-        chatbot.change(
-            lambda x: print(f"[DEBUG] prompt_code changed: {x[:100] if x else 'None'}..."),
-            inputs=[prompt_code],
-            outputs=None,
-            queue=False,
-            show_progress=False
-            )
     return render_button, canvas_state, prompt_key, prompt_agress,prompt_code
