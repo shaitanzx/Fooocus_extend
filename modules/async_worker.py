@@ -380,6 +380,8 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
+    from extentions.omost.cond_builder import all_conds_from_canvas
+    from extentions.omost.omost_state import reset_llm_state  
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -389,7 +391,9 @@ def worker():
     def remove_llm_from_memory():
         """
         Автономная функция удаления LLM из памяти перед генерацией.
-        Работает через model_management + агрессивная очистка.
+    
+        После удаления модели обнуляет глобальные переменные в omost_state,
+        чтобы chat_fn знала, что модель нужно загрузить заново.
         """
         import gc
     
@@ -400,6 +404,8 @@ def worker():
     
         if models_count == 0:
             print(f"[MemoryPrep] Память свободна, удалять нечего")
+            # Даже если память пуста, обнуляем состояние на случай рассинхронизации
+            reset_llm_state()
             print(f"[MemoryPrep] === Проверка завершена ===\n")
             return
     
@@ -434,14 +440,15 @@ def worker():
     
         if not llm_found:
             print(f"[MemoryPrep] LLM в памяти не найдена")
+            # Обнуляем состояние на случай рассинхронизации
+            reset_llm_state()
             print(f"[MemoryPrep] === Проверка завершена ===\n")
             return
     
         # === Удаление LLM ===
         print(f"\n[MemoryPrep] LLM найдена, удаляем...")
     
-        # === КРИТИЧЕСКИ ВАЖНО: Явно вызываем unpatch_model ДО удаления из списка ===
-        # Это гарантирует, что веса будут перемещены на CPU
+        # Вызываем unpatch_model для очистки хуков
         if llm_patcher_to_remove is not None:
             try:
                 print(f"[MemoryPrep] Вызываем unpatch_model() явно...")
@@ -456,7 +463,6 @@ def worker():
             print(f"[MemoryPrep] ✓ LLM удалена через unload_model_clones")
         except Exception as e:
             print(f"[MemoryPrep] ⚠ Ошибка unload_model_clones: {e}")
-            # Ручное удаление
             try:
                 for i in range(len(ldm_patched.modules.model_management.current_loaded_models) - 1, -1, -1):
                     if ldm_patched.modules.model_management.current_loaded_models[i].model is llm_patcher_to_remove:
@@ -466,15 +472,22 @@ def worker():
             except Exception as e2:
                 print(f"[MemoryPrep] ⚠ Ошибка ручного удаления: {e2}")
     
+        # === КРИТИЧЕСКИ ВАЖНО: Обнуляем глобальные переменные в omost_state ===
+        # Это гарантирует, что chat_fn узнает о выгрузке и загрузит модель заново
+        
+        print(f"[MemoryPrep] Обнуляем глобальные переменные omost_state...")
+        reset_llm_state()
+        print(f"[MemoryPrep] ✓ omost_state обнулён")
+       
         # === Агрессивная очистка памяти ===
         print(f"[MemoryPrep] Агрессивная очистка памяти...")
     
-        # Обнуляем ссылку на патчер
         del llm_patcher_to_remove
     
-        # Сборщик мусора (первый проход)
-        gc.collect()
-        print(f"[MemoryPrep] ✓ gc.collect() (первый проход)")
+        # Три прохода сборщика — для гарантированного удаления 4-bit моделей
+        for i in range(3):
+            gc.collect()
+            print(f"[MemoryPrep] ✓ gc.collect() (проход {i+1}/3)")
     
         # Очистка CUDA
         if torch.cuda.is_available():
@@ -482,17 +495,9 @@ def worker():
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
             torch.cuda.reset_peak_memory_stats()
+            torch.cuda.synchronize()
             print(f"[MemoryPrep] ✓ CUDA кэш очищен")
     
-        # Второй проход сборщика
-        gc.collect()
-        print(f"[MemoryPrep] ✓ gc.collect() (второй проход)")
-    
-        # Финальная синхронизация
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-    
-        # Очищаем кэш через model_management
         try:
             ldm_patched.modules.model_management.soft_empty_cache(force=True)
             print(f"[MemoryPrep] ✓ soft_empty_cache() выполнен")
@@ -503,7 +508,6 @@ def worker():
         remaining = len(ldm_patched.modules.model_management.current_loaded_models)
         print(f"[MemoryPrep] После удаления моделей в памяти: {remaining}")
     
-        # Проверяем реальное состояние VRAM
         if torch.cuda.is_available():
             allocated = torch.cuda.memory_allocated() / (1024**3)
             reserved = torch.cuda.memory_reserved() / (1024**3)
@@ -513,8 +517,8 @@ def worker():
             print(f"[MemoryPrep]   Reserved:  {reserved:.2f} GB")
             print(f"[MemoryPrep]   Free:      {free/(1024**3):.2f} GB")
         
-            if allocated > 1.0:  # больше 1 GB — что-то осталось
-                print(f"[MemoryPrep] ⚠ ВНИМАНИЕ: allocated > 1GB, возможно LLM не полностью выгружена")
+            if allocated > 1.0:
+                print(f"[MemoryPrep] ⚠ ВНИМАНИЕ: allocated > 1GB")
             else:
                 print(f"[MemoryPrep] ✓ VRAM успешно освобождена")
     
@@ -1766,8 +1770,7 @@ def worker():
         if getattr(async_task, 'omost_canvas', None) is not None and not skip_prompt_processing and tasks:
             print(f"\033[92m[Omost] Canvas detected! Overriding standard conditioning...\033[0m")
             try:
-                from extentions.omost.cond_builder import all_conds_from_canvas
-                
+              
                 # Ищем объект CLIP в загруженной модели Fooocus (используем уже импортированный pipeline)
                 # Ищем объект CLIP в загруженной модели Fooocus
                 clip = None
