@@ -2097,7 +2097,7 @@ with shared.gradio_root:
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
         prompt_button.click(lambda: (gr.update(interactive=False)),outputs=[prompt_button]) \
             .then(fn=omost2prompt,inputs=[prompt_agress,prompt_code],outputs=prompt) \
-            .then(lambda: (gr.update(interactive=False)),outputs=[prompt_button])
+            .then(lambda: (gr.update(interactive=True)),outputs=[prompt_button])
 
 
 
