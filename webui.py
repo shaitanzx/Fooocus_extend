@@ -86,7 +86,7 @@ def html_load(url,file):
                                 src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
-def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed):
+def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model):
     if canvas_outputs is None:
         gr.Warning('Omost: canvas is empty. Generate a scene in the chat first.')
         return
@@ -103,6 +103,8 @@ def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_m
     currentTask.omost_top_p = omost_top_p
     currentTask.omost_max_new_tokens = omost_max_new_tokens
     currentTask.omost_seed = omost_seed
+    currentTask.omost_last_input = omost_last_input
+    currentTask.omost_model = omost_model
     # Негатив из omost, если он задан
     # if omost_negative:
     #     currentTask.negative_prompt = omost_negative
@@ -812,7 +814,7 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='omost'):
-                            omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed = omost.gui()
+                            omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model = omost.gui()
                             
                             
 

@@ -71,6 +71,7 @@ def post_chat(history):
             print(f"[Omost post_chat] Filtered history length: {len(history) if history else 0}")
             if history:
                 print(f"[Omost post_chat] Filtered history: {history}")
+                last_input = history[-1][0] if len(history) > 0 else ""
                 last_assistant = history[-1][1] if len(history) > 0 else None
                 canvas = omost_canvas.Canvas.from_bot_response(last_assistant)
                 canvas_outputs = canvas.process()
@@ -82,7 +83,7 @@ def post_chat(history):
     render_visible = canvas_outputs is not None 
     print(f"[Omost post_chat] Render visible: {render_visible}")
     
-    return gr.update(value=last_assistant),gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
+    return gr.update(value=last_input), gr.update(value=last_assistant),gr.update(value=omost_seed), canvas_outputs, gr.update(visible=render_visible), gr.update(visible=render_visible), gr.update(interactive=len(history) > 0 if history else False)
 
 
 def defragment_vram():
@@ -416,12 +417,13 @@ def gui():
         with gr.Column(scale=75, elem_classes='inner_parent'):
             canvas_state = gr.State(None)
             with gr.Row():
-                prompt_code=gr.Textbox(label="Answer", value='',visible=False)
+                prompt_code=gr.Textbox(value='',visible=False)
+                last_input=gr.Textbox(value='',visible=False)
             chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
-                post_fn_kwargs=dict(inputs=[chatbot], outputs=[prompt_code, seed, canvas_state, render_button, prompt_button, undo_btn]),
+                post_fn_kwargs=dict(inputs=[chatbot], outputs=[last_input,prompt_code, seed, canvas_state, render_button, prompt_button, undo_btn]),
                 pre_fn=lambda: gr.update(visible=False),
                 pre_fn_kwargs=dict(outputs=[render_button]),
                 chatbot=chatbot,
@@ -440,4 +442,4 @@ def gui():
                 show_progress=False
             )
 
-    return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed
+    return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed,last_input,model_base
