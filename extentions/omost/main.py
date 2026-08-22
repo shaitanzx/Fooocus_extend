@@ -428,6 +428,8 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
                 examples=examples
             )
+        with gr.Row():
+            prompt_code=gr.Textbox(label="Answer", value='',visible=True)    
         seed_random.change(
                 lambda x: gr.update(visible=not x),
                 inputs=seed_random,
@@ -435,6 +437,5 @@ def gui():
                 queue=False,
                 show_progress=False
             )
-    with gr.Row():
-        prompt_code=gr.Textbox(label="Answer", value='',visible=True)
+
     return render_button, canvas_state, prompt_key, prompt_agress,prompt_code
