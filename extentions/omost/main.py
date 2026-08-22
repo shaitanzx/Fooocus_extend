@@ -77,7 +77,7 @@ def post_chat(history):
     except Exception as e:
         print('Last assistant response is not valid canvas:', e)
 
-    unload_model()
+
     
     render_visible = canvas_outputs is not None 
     print(f"[Omost post_chat] Render visible: {render_visible}")
@@ -238,17 +238,12 @@ def unload_model():
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool, seed_random: bool) -> str:
-    
-
-    
-    
     global llm_model, llm_tokenizer, llm_name,omost_seed
+    unload_fooocus_completely()
     print(f'[OMOST] model_base {model_base}')
-    print(f'[OMOST] llm_name {llm_name}')
-    if llm_name is not None and llm_name != model_base:
+    print(f'[OMOST] llm_name {llm_name}')    
+    if (llm_name is not None and llm_name != model_base) or llm_model is None:
         unload_model()
-    if llm_name == None:
-        unload_fooocus_completely()
         print(f"[Omost] Loading LLM: {model_base}...")
 
         llm_model = AutoModelForCausalLM.from_pretrained(
@@ -263,7 +258,8 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
             cache_dir=os.path.join("models","omost"),
             token=None
         )
-        llm_name = model_base
+        llm_name = model_base         
+
     if seed_random:
         seed = random.randint(0, 2**32 - 1)
     omost_seed=seed
@@ -330,25 +326,7 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         yield "".join(outputs), interrupter
 
     return
-def model_loading(llm_name):
-    global llm_model, llm_tokenizer
-        
-    print(f"[Omost] Loading LLM: {llm_name}...")
- 
-    llm_model = AutoModelForCausalLM.from_pretrained(
-        llm_name,
-        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        token=None,
-        
-    )
-    llm_tokenizer = AutoTokenizer.from_pretrained(
-        llm_name,
-        cache_dir=os.path.join("models","omost"),  # Указываем папку для кэша
-        token=None
-    )
-    return gr.update(visible=False)
+
 
 
 def gui():
