@@ -56,29 +56,69 @@ class LLMModelPatcher:
             return next(self.model.parameters()).device
         except Exception:
             return self.offload_device
-    
+      
     def patch_model(self, device_to=None):
-        """
-        'Применение патчей' для модели из transformers.
-        Для нас это просто возврат модели (модель уже на устройстве).
-        """
-        # Модель из transformers с device_map="auto" уже на устройстве
-        # Ничего не делаем, просто возвращаем модель
+        """Применение патчей — для LLM ничего не делаем."""
         return self.model
     
     def unpatch_model(self, device_to=None):
         """
-        'Снятие патчей' для модели из transformers.
-        Для нас это просто возврат модели.
+        Снятие патчей — РЕАЛЬНО очищаем модель.
+        
+        1. Удаляем хуки accelerate (они удерживают веса в GPU)
+        2. Перемещаем модель на CPU (освобождает GPU память)
+        3. Сбрасываем кэш CUDA
         """
-        # Не перемещаем модель, просто возвращаем
-        # Модель будет удалена через del
+        print(f"[LLMModelPatcher] unpatch_model: начало очистки")
+        
+        if self.model is None:
+            print(f"[LLMModelPatcher] Модель уже None, пропуск")
+            return self.model
+        
+        # === Шаг 1: Удаление хуков accelerate ===
+        # Хуки accelerate удерживают ссылки на веса и управляют их перемещением
+        # Без удаления хуков веса могут остаться в GPU
+        try:
+            from accelerate.hooks import remove_hook_from_module
+            remove_hook_from_module(self.model, recurse=True)
+            print(f"[LLMModelPatcher] ✓ Хуки accelerate удалены")
+        except Exception as e:
+            print(f"[LLMModelPatcher] ⚠ Не удалось удалить хуки: {e}")
+        
+        # === Шаг 2: Перемещение модели на CPU ===
+        # Это освобождает GPU память, перемещая веса в RAM
+        try:
+            self.model.to('cpu')
+            print(f"[LLMModelPatcher] ✓ Модель перемещена на CPU")
+        except Exception as e:
+            print(f"[LLMModelPatcher] ⚠ Не удалось переместить на CPU: {e}")
+            # Пробуем хотя бы очистить параметры
+            try:
+                for param in self.model.parameters():
+                    param.data = torch.empty(0, device='cpu')
+                for buffer in self.model.buffers():
+                    buffer.data = torch.empty(0, device='cpu')
+                print(f"[LLMModelPatcher] ✓ Параметры очищены принудительно")
+            except Exception as e2:
+                print(f"[LLMModelPatcher] ⚠ Не удалось очистить параметры: {e2}")
+        
+        # === Шаг 3: Синхронизация и очистка кэша ===
+        if torch.cuda.is_available():
+            try:
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
+                print(f"[LLMModelPatcher] ✓ CUDA кэш очищен")
+            except Exception as e:
+                print(f"[LLMModelPatcher] ⚠ Ошибка очистки CUDA: {e}")
+        
+        print(f"[LLMModelPatcher] unpatch_model: очистка завершена")
         return self.model
     
     def model_patches_to(self, device):
-        """Для модели из transformers нет патчей, просто возвращаем себя."""
+        """Перемещение патчей — для LLM ничего не делаем."""
         return self
     
+    # ... остальные методы без изменений ...
     def model_dtype(self):
         """Тип данных модели."""
         try:
@@ -412,9 +452,7 @@ def load_llm_model(model_base):
 def unload_llm_model():
     """
     Выгружает модель из памяти через model_management.
-    
-    Returns:
-        bool: True если выгрузка успешна
+    Обнуляет глобальные ссылки и вызывает сборщик мусора.
     """
     global llm_patcher, llm_model, llm_tokenizer, llm_name
     
@@ -426,11 +464,8 @@ def unload_llm_model():
         return True
     
     # === Шаг 1: Удаляем из model_management ===
-    print(f"[LLM Unload] Шаг 1: Удаление из model_management...")
-    
     if llm_patcher is not None:
         try:
-            # Используем unload_model_clones для удаления из current_loaded_models
             mm.unload_model_clones(llm_patcher)
             print(f"[LLM Unload] ✓ Модель удалена из current_loaded_models")
         except Exception as e:
@@ -439,26 +474,23 @@ def unload_llm_model():
             try:
                 for i in range(len(mm.current_loaded_models) - 1, -1, -1):
                     if mm.current_loaded_models[i].model is llm_patcher:
-                        mm.current_loaded_models.pop(i)
-                        print(f"[LLM Unload] ✓ Модель удалена вручную из current_loaded_models")
+                        mm.current_loaded_models.pop(i).model_unload()
+                        print(f"[LLM Unload] ✓ Модель удалена вручную")
                         break
             except Exception as e2:
                 print(f"[LLM Unload] ⚠ Ошибка ручного удаления: {e2}")
     
-    # === Шаг 2: Удаляем хуки accelerate ===
-    print(f"[LLM Unload] Шаг 2: Удаление хуков accelerate...")
-    
-    if llm_model is not None:
+    # === Шаг 2: Явный вызов unpatch_model для реальной очистки ===
+    # unload_model_clones уже должен был это сделать, но вызываем ещё раз для надёжности
+    if llm_patcher is not None:
         try:
-            from accelerate.hooks import remove_hook_from_module
-            remove_hook_from_module(llm_model, recurse=True)
-            print(f"[LLM Unload] ✓ Хуки удалены")
+            llm_patcher.unpatch_model()
+            print(f"[LLM Unload] ✓ unpatch_model() вызван явно")
         except Exception as e:
-            print(f"[LLM Unload] ⚠ Не удалось удалить хуки: {e}")
+            print(f"[LLM Unload] ⚠ Ошибка unpatch_model: {e}")
     
-    # === Шаг 3: Удаляем ссылки ===
-    print(f"[LLM Unload] Шаг 3: Обнуление ссылок...")
-    
+    # === Шаг 3: Обнуление глобальных ссылок ===
+    # КРИТИЧЕСКИ ВАЖНО: пока ссылки существуют, gc не удалит объект
     del llm_patcher
     del llm_model
     del llm_tokenizer
@@ -468,21 +500,40 @@ def unload_llm_model():
     llm_tokenizer = None
     llm_name = None
     
-    print(f"[LLM Unload] ✓ Ссылки обнулены")
+    print(f"[LLM Unload] ✓ Глобальные ссылки обнулены")
     
-    # === Шаг 4: Очистка памяти ===
-    print(f"[LLM Unload] Шаг 4: Очистка памяти...")
+    # === Шаг 4: Агрессивная очистка памяти ===
+    import gc
     
+    # Первый проход сборщика
     gc.collect()
+    print(f"[LLM Unload] ✓ gc.collect() (первый проход)")
     
     if torch.cuda.is_available():
         torch.cuda.synchronize()
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.reset_peak_memory_stats()
-        torch.cuda.synchronize()
+        print(f"[LLM Unload] ✓ CUDA кэш очищен")
     
-    print(f"[LLM Unload] ✓ Память очищена")
+    # Второй проход сборщика (удаляет циклические ссылки)
+    gc.collect()
+    print(f"[LLM Unload] ✓ gc.collect() (второй проход)")
+    
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+        print(f"[LLM Unload] ✓ CUDA синхронизирован")
+    
+    # === Шаг 5: Проверка освобождения памяти ===
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated() / (1024**3)
+        reserved = torch.cuda.memory_reserved() / (1024**3)
+        free, total = torch.cuda.mem_get_info()
+        print(f"[LLM Unload] Состояние VRAM после выгрузки:")
+        print(f"[LLM Unload]   Allocated: {allocated:.2f} GB")
+        print(f"[LLM Unload]   Reserved:  {reserved:.2f} GB")
+        print(f"[LLM Unload]   Free:      {free/(1024**3):.2f} GB")
+    
     print(f"[LLM Unload] === Выгрузка завершена ===\n")
     
     return True
