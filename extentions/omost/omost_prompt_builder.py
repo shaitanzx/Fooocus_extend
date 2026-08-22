@@ -284,7 +284,7 @@ def flatten_to_prompt(layout, mode=DEFAULT_MODE, separator=", "):
 # ============================================================
 
 def process_canvas(mode,llm_response, separator=", ", verbose=True):
-    print('&&&&&&&&&&&&&&&&&&',llm_response)
+
     """
     Полная цепочка обработки canvas-кода в промпт.
 

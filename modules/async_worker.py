@@ -380,149 +380,9 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
-    from extentions.omost.cond_builder import all_conds_from_canvas
-    from extentions.omost.omost_state import reset_llm_state  
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
-
-
-
-    def remove_llm_from_memory():
-        """
-        Автономная функция удаления LLM из памяти перед генерацией.
-    
-        После удаления модели обнуляет глобальные переменные в omost_state,
-        чтобы chat_fn знала, что модель нужно загрузить заново.
-        """
-        import gc
-    
-        print(f"\n[MemoryPrep] === Проверка наличия LLM в памяти ===")
-    
-        models_count = len(ldm_patched.modules.model_management.current_loaded_models)
-        print(f"[MemoryPrep] Моделей в памяти: {models_count}")
-    
-        if models_count == 0:
-            print(f"[MemoryPrep] Память свободна, удалять нечего")
-            # Даже если память пуста, обнуляем состояние на случай рассинхронизации
-            reset_llm_state()
-            print(f"[MemoryPrep] === Проверка завершена ===\n")
-            return
-    
-        print(f"[MemoryPrep] Содержимое памяти:")
-        llm_found = False
-        llm_patcher_to_remove = None
-    
-        for i, lm in enumerate(ldm_patched.modules.model_management.current_loaded_models):
-            try:
-                name = lm.model.model.__class__.__name__
-            except:
-                name = "?"
-        
-            try:
-                size_mb = lm.model_memory() / (1024**2)
-            except:
-                size_mb = 0
-        
-            try:
-                device = str(lm.model.current_device)
-            except:
-                device = "?"
-        
-            is_llm = getattr(lm.model, 'is_omost_llm', False)
-            marker = "✓ LLM" if is_llm else "  Diff"
-        
-            print(f"[MemoryPrep]   [{i}] {name:30s} | {size_mb:8.1f}MB | {device:8s} | {marker}")
-        
-            if is_llm:
-                llm_found = True
-                llm_patcher_to_remove = lm.model
-    
-        if not llm_found:
-            print(f"[MemoryPrep] LLM в памяти не найдена")
-            # Обнуляем состояние на случай рассинхронизации
-            reset_llm_state()
-            print(f"[MemoryPrep] === Проверка завершена ===\n")
-            return
-    
-        # === Удаление LLM ===
-        print(f"\n[MemoryPrep] LLM найдена, удаляем...")
-    
-        # Вызываем unpatch_model для очистки хуков
-        if llm_patcher_to_remove is not None:
-            try:
-                print(f"[MemoryPrep] Вызываем unpatch_model() явно...")
-                llm_patcher_to_remove.unpatch_model()
-                print(f"[MemoryPrep] ✓ unpatch_model() выполнен")
-            except Exception as e:
-                print(f"[MemoryPrep] ⚠ Ошибка unpatch_model: {e}")
-    
-        # Удаляем через unload_model_clones
-        try:
-            ldm_patched.modules.model_management.unload_model_clones(llm_patcher_to_remove)
-            print(f"[MemoryPrep] ✓ LLM удалена через unload_model_clones")
-        except Exception as e:
-            print(f"[MemoryPrep] ⚠ Ошибка unload_model_clones: {e}")
-            try:
-                for i in range(len(ldm_patched.modules.model_management.current_loaded_models) - 1, -1, -1):
-                    if ldm_patched.modules.model_management.current_loaded_models[i].model is llm_patcher_to_remove:
-                        ldm_patched.modules.model_management.current_loaded_models.pop(i).model_unload()
-                        print(f"[MemoryPrep] ✓ LLM удалена вручную")
-                        break
-            except Exception as e2:
-                print(f"[MemoryPrep] ⚠ Ошибка ручного удаления: {e2}")
-    
-        # === КРИТИЧЕСКИ ВАЖНО: Обнуляем глобальные переменные в omost_state ===
-        # Это гарантирует, что chat_fn узнает о выгрузке и загрузит модель заново
-        
-        print(f"[MemoryPrep] Обнуляем глобальные переменные omost_state...")
-        reset_llm_state()
-        print(f"[MemoryPrep] ✓ omost_state обнулён")
-       
-        # === Агрессивная очистка памяти ===
-        print(f"[MemoryPrep] Агрессивная очистка памяти...")
-    
-        del llm_patcher_to_remove
-    
-        # Три прохода сборщика — для гарантированного удаления 4-bit моделей
-        for i in range(3):
-            gc.collect()
-            print(f"[MemoryPrep] ✓ gc.collect() (проход {i+1}/3)")
-    
-        # Очистка CUDA
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
-            torch.cuda.reset_peak_memory_stats()
-            torch.cuda.synchronize()
-            print(f"[MemoryPrep] ✓ CUDA кэш очищен")
-    
-        try:
-            ldm_patched.modules.model_management.soft_empty_cache(force=True)
-            print(f"[MemoryPrep] ✓ soft_empty_cache() выполнен")
-        except Exception as e:
-            print(f"[MemoryPrep] ⚠ Ошибка soft_empty_cache: {e}")
-    
-        # === Контрольная проверка ===
-        remaining = len(ldm_patched.modules.model_management.current_loaded_models)
-        print(f"[MemoryPrep] После удаления моделей в памяти: {remaining}")
-    
-        if torch.cuda.is_available():
-            allocated = torch.cuda.memory_allocated() / (1024**3)
-            reserved = torch.cuda.memory_reserved() / (1024**3)
-            free, total = torch.cuda.mem_get_info()
-            print(f"[MemoryPrep] Состояние VRAM после очистки:")
-            print(f"[MemoryPrep]   Allocated: {allocated:.2f} GB")
-            print(f"[MemoryPrep]   Reserved:  {reserved:.2f} GB")
-            print(f"[MemoryPrep]   Free:      {free/(1024**3):.2f} GB")
-        
-            if allocated > 1.0:
-                print(f"[MemoryPrep] ⚠ ВНИМАНИЕ: allocated > 1GB")
-            else:
-                print(f"[MemoryPrep] ✓ VRAM успешно освобождена")
-    
-        print(f"[MemoryPrep] === Проверка завершена ===\n")
 
     try:
         async_gradio_app = shared.gradio_root
@@ -1635,16 +1495,6 @@ def worker():
         
         async_task.processing = True
 
-        # === НОВОЕ: Удаление LLM из памяти перед генерацией ===
-        try:
-            remove_llm_from_memory()
-        except Exception as e:
-            print(f"[AsyncWorker] ⚠ Ошибка удаления LLM: {e}")
-            import traceback
-            traceback.print_exc()
-        # === КОНЕЦ НОВОГО БЛОКА ===
-
-
         async_task.outpaint_selections = [o.lower() for o in async_task.outpaint_selections]
         base_model_additional_loras = []
         async_task.uov_method = async_task.uov_method.casefold()
@@ -1770,7 +1620,8 @@ def worker():
         if getattr(async_task, 'omost_canvas', None) is not None and not skip_prompt_processing and tasks:
             print(f"\033[92m[Omost] Canvas detected! Overriding standard conditioning...\033[0m")
             try:
-              
+                from extentions.omost.cond_builder import all_conds_from_canvas
+                
                 # Ищем объект CLIP в загруженной модели Fooocus (используем уже импортированный pipeline)
                 # Ищем объект CLIP в загруженной модели Fooocus
                 clip = None
