@@ -416,7 +416,7 @@ def gui():
         with gr.Column(scale=75, elem_classes='inner_parent'):
             canvas_state = gr.State(None)
             with gr.Row():
-                prompt_code=gr.Textbox(label="Answer", value='',visible=True)
+                prompt_code=gr.Textbox(label="Answer", value='',visible=False)
             chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
             chatInterface = ChatInterface(
                 fn=chat_fn,
@@ -440,4 +440,4 @@ def gui():
                 show_progress=False
             )
 
-    return render_button, canvas_state, prompt_key, prompt_agress,prompt_code
+    return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed

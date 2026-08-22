@@ -468,23 +468,30 @@ def worker():
 
         # must use deep copy otherwise gradio is super laggy. Do not use list.append() .
         async_task.results = async_task.results + [wall]
-        d = [('', 'grid', 'GRID'),
-                 ('Prompt', 'prompt', async_task.prompt),
-                 ('Negative Prompt', 'negative_prompt', async_task.negative_prompt),
-                 ('Styles', 'styles',async_task.style_selections),
-                 ('Performance', 'performance', async_task.performance_selection.value),
-                 ('Steps', 'steps', async_task.steps),
-                 ('Resolution', 'resolution', async_task.aspect_ratios_selection),
-                 ('Guidance Scale', 'guidance_scale', async_task.cfg_scale),
-                 ('Sharpness', 'sharpness', async_task.sharpness),
-                 ('ADM Guidance', 'adm_guidance', str((
+        d = [('', 'grid', 'GRID')]
+        if getattr(async_task, 'omost_canvas', None) is not None:
+            d.append(('Omost Last Input', 'omost_last_input', "async_task."))
+            d.append(('Omost Temperature', 'omost_temperature', async_task.omost_temperature))
+            d.append(('Omost Top P', 'omost_top_p', async_task.omost_top_p))
+            d.append(('Omost Max New Tokens', 'omost_max_new_tokens', async_task.omost_max_new_tokens))
+            d.append(('Omost seed', 'omost_seed', async_task.omost_seed))
+        else: 
+            d.append(('Prompt', 'prompt', async_task.prompt))
+        d.append(('Negative Prompt', 'negative_prompt', async_task.negative_prompt))
+        d.append(('Styles', 'styles',async_task.style_selections))
+        d.append(('Performance', 'performance', async_task.performance_selection.value))
+        d.append(('Steps', 'steps', async_task.steps))
+        d.append(('Resolution', 'resolution', async_task.aspect_ratios_selection))
+        d.append(('Guidance Scale', 'guidance_scale', async_task.cfg_scale))
+        d.append(('Sharpness', 'sharpness', async_task.sharpness))
+        d.append(('ADM Guidance', 'adm_guidance', str((
                      async_task.adm_scaler_positive,
                      async_task.adm_scaler_negative,
-                     async_task.adm_scaler_end))),
-                 ('Base Model', 'base_model', async_task.base_model_name),
-                 ('VAE', 'vae', async_task.vae_name),
-                 ('Refiner Model', 'refiner_model', async_task.refiner_model_name),
-                 ('Refiner Switch', 'refiner_switch', async_task.refiner_switch)]
+                     async_task.adm_scaler_end))))
+        d.append(('Base Model', 'base_model', async_task.base_model_name))
+        d.append(('VAE', 'vae', async_task.vae_name))
+        d.append(('Refiner Model', 'refiner_model', async_task.refiner_model_name))
+        d.append(('Refiner Switch', 'refiner_switch', async_task.refiner_switch))
 
         if async_task.refiner_model_name != 'None':
                 if async_task.overwrite_switch > 0:
@@ -638,23 +645,34 @@ def worker():
     def save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image=True) -> list:
         img_paths = []
         for x in imgs:
-            d = [('Prompt', 'prompt', task['log_positive_prompt']),
-                 ('Negative Prompt', 'negative_prompt', task['log_negative_prompt']),
-                 ('Fooocus V2 Expansion', 'prompt_expansion', task['expansion']),
-                 ('Styles', 'styles',
-                  str(task['styles'] if not use_expansion else [fooocus_expansion] + task['styles'])),
-                 ('Performance', 'performance', async_task.performance_selection.value),
-                 ('Steps', 'steps', async_task.steps),
-                 ('Resolution', 'resolution', str((width, height))),
-                 ('Guidance Scale', 'guidance_scale', async_task.cfg_scale),
-                 ('Sharpness', 'sharpness', async_task.sharpness),
-                 ('ADM Guidance', 'adm_guidance', str((
+
+            d=[]
+            if getattr(async_task, 'omost_canvas', None) is not None:
+                d.append(('Omost Last Input', 'omost_last_input', "async_task."))
+                d.append(('Omost Temperature', 'omost_temperature', async_task.omost_temperature))
+                d.append(('Omost Top P', 'omost_top_p', async_task.omost_top_p))
+                d.append(('Omost Max New Tokens', 'omost_max_new_tokens', async_task.omost_max_new_tokens))
+                d.append(('Omost seed', 'omost_seed', async_task.omost_seed))
+            else: 
+                d.append(('Prompt', 'prompt', task['log_positive_prompt']))
+
+
+            d.append(('Negative Prompt', 'negative_prompt', task['log_negative_prompt']))
+            d.append(('Fooocus V2 Expansion', 'prompt_expansion', task['expansion']))
+            d.append(('Styles', 'styles',
+                  str(task['styles'] if not use_expansion else [fooocus_expansion] + task['styles'])))
+            d.append(('Performance', 'performance', async_task.performance_selection.value))
+            d.append(('Steps', 'steps', async_task.steps))
+            d.append(('Resolution', 'resolution', str((width, height))))
+            d.append(('Guidance Scale', 'guidance_scale', async_task.cfg_scale))
+            d.append(('Sharpness', 'sharpness', async_task.sharpness))
+            d.append(('ADM Guidance', 'adm_guidance', str((
                      modules.patch.patch_settings[pid].positive_adm_scale,
                      modules.patch.patch_settings[pid].negative_adm_scale,
-                     modules.patch.patch_settings[pid].adm_scaler_end))),
-                 ('Base Model', 'base_model', async_task.base_model_name),
-                 ('Refiner Model', 'refiner_model', async_task.refiner_model_name),
-                 ('Refiner Switch', 'refiner_switch', async_task.refiner_switch)]
+                     modules.patch.patch_settings[pid].adm_scaler_end))))
+            d.append(('Base Model', 'base_model', async_task.base_model_name))
+            d.append(('Refiner Model', 'refiner_model', async_task.refiner_model_name))
+            d.append(('Refiner Switch', 'refiner_switch', async_task.refiner_switch))
 
             if async_task.refiner_model_name != 'None':
                 if async_task.overwrite_switch > 0:

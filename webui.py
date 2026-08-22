@@ -86,7 +86,7 @@ def html_load(url,file):
                                 src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
-def omost_gen(currentTask, canvas_outputs):
+def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed):
     if canvas_outputs is None:
         gr.Warning('Omost: canvas is empty. Generate a scene in the chat first.')
         return
@@ -99,7 +99,10 @@ def omost_gen(currentTask, canvas_outputs):
 
     # Главный payload: canvas уходит в ядро через атрибут задачи
     currentTask.omost_canvas = canvas_outputs
-
+    currentTask.omost_temperature = omost_temperature
+    currentTask.omost_top_p = omost_top_p
+    currentTask.omost_max_new_tokens = omost_max_new_tokens
+    currentTask.omost_seed = omost_seed
     # Негатив из omost, если он задан
     # if omost_negative:
     #     currentTask.negative_prompt = omost_negative
@@ -109,10 +112,10 @@ def omost_gen(currentTask, canvas_outputs):
 
     yield from generate_clicked(currentTask)
 
-    if currentTask.last_stop == 'stop':
-        print('User stopped')
+    # if currentTask.last_stop == 'stop':
+    #     print('User stopped')
 
-    currentTask.__dict__ = p.__dict__.copy()
+    # currentTask.__dict__ = p.__dict__.copy()
 
 
 def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random):
@@ -809,7 +812,7 @@ with shared.gradio_root:
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
                         with gr.TabItem(label='omost'):
-                            omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code = omost.gui()
+                            omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed = omost.gui()
                             
                             
 
@@ -2090,7 +2093,7 @@ with shared.gradio_root:
                               outputs=[omost_render, skip_button, stop_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=omost_gen, inputs=[currentTask, omost_canvas], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(fn=omost_gen, inputs=[currentTask, omost_canvas, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
             .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False),gr.update(visible=False, interactive=False), False),
                   outputs=[omost_render,generate_button, skip_button,stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
