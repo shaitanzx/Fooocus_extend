@@ -58,6 +58,7 @@ def format_vram_info(prefix=""):
 def post_chat(history):
     global omost_seed
     import traceback
+    last_assistant = ""
     print(f"\n[Omost post_chat] CALLED")
     print(f"[Omost post_chat] Input history length: {len(history) if history else 0}")
     if history:
