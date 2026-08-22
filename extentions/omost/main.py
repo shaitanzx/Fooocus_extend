@@ -15,14 +15,97 @@ import torch
 
 # Phi3 Hijack
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
+# ============================================================
+# ОБЁРТКА ДЛЯ МОДЕЛИ ИЗ TRANSFORMERS
+# Реализует интерфейс, ожидаемый model_management
+# ============================================================
+
+class LLMModelPatcher:
+    """
+    Обёртка для модели из transformers, совместимая с model_management.
+    
+    Реализует минимальный интерфейс:
+    - load_device, offload_device
+    - model_size()
+    - current_device
+    - patch_model(), unpatch_model()
+    - model_patches_to(), model_dtype()
+    - is_clone()
+    """
+    
+    def __init__(self, model, tokenizer, load_device, offload_device, model_name="LLM"):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.load_device = load_device
+        self.offload_device = offload_device
+        self.model_name = model_name
+        # Маркер для идентификации в async_worker
+        self.is_omost_llm = True
+    
+    def model_size(self):
+        """Размер модели в байтах."""
+        try:
+            return sum(p.nelement() * p.element_size() for p in self.model.parameters())
+        except Exception:
+            return 0
+    
+    @property
+    def current_device(self):
+        """Текущее устройство модели."""
+        try:
+            return next(self.model.parameters()).device
+        except Exception:
+            return self.offload_device
+    
+    def patch_model(self, device_to=None):
+        """
+        'Применение патчей' для модели из transformers.
+        Для нас это просто возврат модели (модель уже на устройстве).
+        """
+        # Модель из transformers с device_map="auto" уже на устройстве
+        # Ничего не делаем, просто возвращаем модель
+        return self.model
+    
+    def unpatch_model(self, device_to=None):
+        """
+        'Снятие патчей' для модели из transformers.
+        Для нас это просто возврат модели.
+        """
+        # Не перемещаем модель, просто возвращаем
+        # Модель будет удалена через del
+        return self.model
+    
+    def model_patches_to(self, device):
+        """Для модели из transformers нет патчей, просто возвращаем себя."""
+        return self
+    
+    def model_dtype(self):
+        """Тип данных модели."""
+        try:
+            return next(self.model.parameters()).dtype
+        except Exception:
+            return torch.float32
+    
+    def is_clone(self, other):
+        """Проверка, является ли другая модель клоном этой."""
+        if hasattr(other, 'model'):
+            return self.model is other.model
+        return False
+
+
+
+
+
+
 
 Phi3PreTrainedModel._supports_sdpa = True
 
 
 
-llm_model = None
-llm_tokenizer = None
-llm_name = None
+llm_patcher = None       # Обёртка модели, зарегистрированная в model_management
+llm_model = None         # Прямая ссылка на модель (для удобства)
+llm_tokenizer = None     # Токенайзер
+llm_name = None          # Имя модели
 omost_seed = None
 
 
@@ -235,39 +318,222 @@ def unload_model():
             torch.cuda.synchronize() 
     else:
         print("[Omost] LLM was not loaded, nothing to unload.")
+def load_llm_model(model_base):
+    """
+    Загружает модель из transformers и регистрирует её в model_management.
+    
+    Args:
+        model_base: имя модели из списка (например, 'omost-llama-3-8b-4bits')
+    
+    Returns:
+        bool: True если загрузка успешна
+    """
+    global llm_patcher, llm_model, llm_tokenizer, llm_name
+    
+    print(f"\n[LLM Load] === Загрузка модели: {model_base} ===")
+    
+    # === Шаг 1: Загружаем модель через transformers ===
+    print(f"[LLM Load] Шаг 1: Загрузка модели через transformers...")
+    
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            f"lllyasviel/{model_base}",
+            cache_dir=os.path.join("models", "omost"),
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            token=None,
+        )
+        print(f"[LLM Load] ✓ Модель загружена")
+    except Exception as e:
+        print(f"[LLM Load] ✗ Ошибка загрузки модели: {e}")
+        return False
+    
+    # === Шаг 2: Загружаем токенайзер ===
+    print(f"[LLM Load] Шаг 2: Загрузка токенизатора...")
+    
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(
+            f"lllyasviel/{model_base}",
+            cache_dir=os.path.join("models", "omost"),
+            token=None,
+        )
+        print(f"[LLM Load] ✓ Токенайзер загружен")
+    except Exception as e:
+        print(f"[LLM Load] ✗ Ошибка загрузки токенизатора: {e}")
+        del model
+        return False
+    
+    # === Шаг 3: Создаём обёртку ===
+    print(f"[LLM Load] Шаг 3: Создание обёртки LLMModelPatcher...")
+    
+    try:
+        load_device = mm.get_torch_device()
+        offload_device = torch.device('cpu')
+        
+        patcher = LLMModelPatcher(
+            model=model,
+            tokenizer=tokenizer,
+            load_device=load_device,
+            offload_device=offload_device,
+            model_name=model_base,
+        )
+        
+        model_size_mb = patcher.model_size() / (1024**2)
+        print(f"[LLM Load] ✓ Обёртка создана, размер модели: {model_size_mb:.1f}MB")
+    except Exception as e:
+        print(f"[LLM Load] ✗ Ошибка создания обёртки: {e}")
+        del model, tokenizer
+        return False
+    
+    # === Шаг 4: Регистрируем в model_management ===
+    print(f"[LLM Load] Шаг 4: Регистрация в model_management...")
+    
+    try:
+        loaded_model = mm.LoadedModel(patcher)
+        mm.current_loaded_models.insert(0, loaded_model)
+        print(f"[LLM Load] ✓ Модель зарегистрирована в current_loaded_models")
+        print(f"[LLM Load] ✓ Всего моделей в памяти: {len(mm.current_loaded_models)}")
+    except Exception as e:
+        print(f"[LLM Load] ⚠ Ошибка регистрации в model_management: {e}")
+        # Продолжаем работу даже если регистрация не удалась
+        # Модель всё равно будет работать через llm_model
+    
+    # === Шаг 5: Обновляем глобальные переменные ===
+    llm_patcher = patcher
+    llm_model = model
+    llm_tokenizer = tokenizer
+    llm_name = model_base
+    
+    print(f"[LLM Load] ✓ Модель готова к работе")
+    print(f"[LLM Load] === Загрузка завершена ===\n")
+    
+    return True
+
+def unload_llm_model():
+    """
+    Выгружает модель из памяти через model_management.
+    
+    Returns:
+        bool: True если выгрузка успешна
+    """
+    global llm_patcher, llm_model, llm_tokenizer, llm_name
+    
+    print(f"\n[LLM Unload] === Выгрузка модели ===")
+    
+    if llm_patcher is None and llm_model is None:
+        print(f"[LLM Unload] Модель не загружена, нечего выгружать")
+        print(f"[LLM Unload] === Выгрузка завершена ===\n")
+        return True
+    
+    # === Шаг 1: Удаляем из model_management ===
+    print(f"[LLM Unload] Шаг 1: Удаление из model_management...")
+    
+    if llm_patcher is not None:
+        try:
+            # Используем unload_model_clones для удаления из current_loaded_models
+            mm.unload_model_clones(llm_patcher)
+            print(f"[LLM Unload] ✓ Модель удалена из current_loaded_models")
+        except Exception as e:
+            print(f"[LLM Unload] ⚠ Ошибка удаления из model_management: {e}")
+            # Пробуем удалить вручную
+            try:
+                for i in range(len(mm.current_loaded_models) - 1, -1, -1):
+                    if mm.current_loaded_models[i].model is llm_patcher:
+                        mm.current_loaded_models.pop(i)
+                        print(f"[LLM Unload] ✓ Модель удалена вручную из current_loaded_models")
+                        break
+            except Exception as e2:
+                print(f"[LLM Unload] ⚠ Ошибка ручного удаления: {e2}")
+    
+    # === Шаг 2: Удаляем хуки accelerate ===
+    print(f"[LLM Unload] Шаг 2: Удаление хуков accelerate...")
+    
+    if llm_model is not None:
+        try:
+            from accelerate.hooks import remove_hook_from_module
+            remove_hook_from_module(llm_model, recurse=True)
+            print(f"[LLM Unload] ✓ Хуки удалены")
+        except Exception as e:
+            print(f"[LLM Unload] ⚠ Не удалось удалить хуки: {e}")
+    
+    # === Шаг 3: Удаляем ссылки ===
+    print(f"[LLM Unload] Шаг 3: Обнуление ссылок...")
+    
+    del llm_patcher
+    del llm_model
+    del llm_tokenizer
+    
+    llm_patcher = None
+    llm_model = None
+    llm_tokenizer = None
+    llm_name = None
+    
+    print(f"[LLM Unload] ✓ Ссылки обнулены")
+    
+    # === Шаг 4: Очистка памяти ===
+    print(f"[LLM Unload] Шаг 4: Очистка памяти...")
+    
+    gc.collect()
+    
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.synchronize()
+    
+    print(f"[LLM Unload] ✓ Память очищена")
+    print(f"[LLM Unload] === Выгрузка завершена ===\n")
+    
+    return True
+
 
 @torch.inference_mode()
 def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: float, max_new_tokens: int, model_base: str, full_history: bool, seed_random: bool) -> str:
-    global llm_model, llm_tokenizer, llm_name,omost_seed
-    unload_fooocus_completely()
-    print(f'[OMOST] model_base {model_base}')
-    print(f'[OMOST] llm_name {llm_name}')    
-    if (llm_name is not None and llm_name != model_base) or llm_model is None:
-        unload_model()
-        print(f"[Omost] Loading LLM: {model_base}...")
-
-        llm_model = AutoModelForCausalLM.from_pretrained(
-            f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
-            token=None,        
-        )
-        llm_tokenizer = AutoTokenizer.from_pretrained(
-            f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),
-            token=None
-        )
-        llm_name = model_base         
-
+    global llm_model, llm_tokenizer, llm_name, omost_seed
+    
+    print(f'\n[Chat] === Начало генерации чата ===')
+    print(f'[Chat] Запрошенная модель: {model_base}')
+    print(f'[Chat] Текущая модель:     {llm_name}')
+    
+    # === Проверка и загрузка модели ===
+    need_reload = False
+    
+    if llm_model is None:
+        print(f'[Chat] Модель не загружена')
+        need_reload = True
+    elif llm_name != model_base:
+        print(f'[Chat] Модель изменилась: {llm_name} → {model_base}')
+        need_reload = True
+    else:
+        print(f'[Chat] Модель уже загружена, используем её')
+    
+    if need_reload:
+        # Выгружаем старую модель
+        if llm_model is not None:
+            print(f'[Chat] Выгружаем старую модель...')
+            unload_llm_model()
+        
+        # Выгружаем модели диффузии, чтобы освободить память
+        print(f'[Chat] Выгружаем модели диффузии...')
+        unload_fooocus_completely()
+        
+        # Загружаем новую модель
+        print(f'[Chat] Загружаем новую модель...')
+        if not load_llm_model(model_base):
+            print(f'[Chat] ✗ Не удалось загрузить модель')
+            yield "Ошибка загрузки модели", None
+            return
+    
+    # === Остальной код генерации без изменений ===
     if seed_random:
         seed = random.randint(0, 2**32 - 1)
-    omost_seed=seed
-    print(f'[OMOST] Using seed: {seed} (random={seed_random})')
+    omost_seed = seed
+    print(f'[Chat] Using seed: {seed} (random={seed_random})')
     
     np.random.seed(int(seed))
     torch.manual_seed(int(seed))
-
+    
     conversation = [{"role": "system", "content": omost_canvas.system_prompt}]
     
     if full_history == False:
@@ -279,52 +545,47 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
         if isinstance(user, str) and isinstance(assistant, str):
             if len(user) > 0 and len(assistant) > 0:
                 conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant}])
-
+    
     conversation.append({"role": "user", "content": message})
-
+    
     input_ids = llm_tokenizer.apply_chat_template(
         conversation, return_tensors="pt", add_generation_prompt=True).to(llm_model.device)
-
-    # === НОВОЕ: streamer с флагом прерывания ===
+    
     streamer = TextIteratorStreamer(llm_tokenizer, timeout=100.0, skip_prompt=True, skip_special_tokens=True)
-
-    # === НОВОЕ: критерий остановки ===
-
+    
     def interactive_stopping_criteria(*args, **kwargs) -> bool:
         if getattr(streamer, 'user_interrupted', False):
-            print('[Omost] User stopped generation')
+            print('[Chat] User stopped generation')
             return True
-        else:
-            return False
-            
+        return False
+    
     stopping_criteria = StoppingCriteriaList([interactive_stopping_criteria])
-
-    # === НОВОЕ: interrupter функция, возвращается в ChatInterface ===
+    
     def interrupter():
         streamer.user_interrupted = True
         return
-
+    
     generate_kwargs = dict(
         input_ids=input_ids,
         streamer=streamer,
-        stopping_criteria=stopping_criteria,  # ← ВАЖНО: передаём критерий
+        stopping_criteria=stopping_criteria,
         max_new_tokens=max_new_tokens,
         do_sample=True,
         temperature=temperature,
         top_p=top_p,
     )
-
+    
     if temperature == 0:
         generate_kwargs['do_sample'] = False
-
+    
     Thread(target=llm_model.generate, kwargs=generate_kwargs).start()
-
+    
     outputs = []
     for text in streamer:
         outputs.append(text)
-        # === ВАЖНО: возвращаем TUPLE (текст, interrupter) ===
         yield "".join(outputs), interrupter
-
+    
+    print(f'[Chat] === Генерация завершена ===\n')
     return
 
 
