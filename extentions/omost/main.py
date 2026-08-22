@@ -414,6 +414,8 @@ def gui():
             )
         with gr.Column(scale=75, elem_classes='inner_parent'):
             canvas_state = gr.State(None)
+            with gr.Row():
+                prompt_code=gr.Textbox(label="Answer", value='',visible=True)
             chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
             chatInterface = ChatInterface(
                 fn=chat_fn,
@@ -428,8 +430,7 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
                 examples=examples
             )
-        with gr.Row():
-            prompt_code=gr.Textbox(label="Answer", value='',visible=True)    
+            
         seed_random.change(
                 lambda x: gr.update(visible=not x),
                 inputs=seed_random,
