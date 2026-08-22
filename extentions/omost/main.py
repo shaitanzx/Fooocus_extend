@@ -60,6 +60,7 @@ def post_chat(history):
     import traceback
     print(f"\n[Omost post_chat] CALLED")
     print(f"[Omost post_chat] Input history length: {len(history) if history else 0}")
+    last_assistant=""
     if history:
         print(f"[Omost post_chat] Input history: {history}")
     
