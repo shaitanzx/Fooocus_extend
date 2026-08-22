@@ -383,6 +383,154 @@ def worker():
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
+    def remove_llm_from_memory():
+        """
+        Автономная функция удаления LLM из памяти перед генерацией изображения.
+    
+        Логика:
+        1. Проверяет current_loaded_models через model_management
+        2. Ищет модель с атрибутом is_omost_llm = True
+        3. Если найдена — удаляет через unload_model_clones()
+        4. Очищает кэш CUDA
+        5. Выполняет контрольную проверку
+    
+        Returns:
+            None (все операции через side effects)
+        """
+    
+        # ================================================================
+        # ШАГ 1: ИНИЦИАЛИЗАЦИЯ И ПРОВЕРКА КОЛИЧЕСТВА МОДЕЛЕЙ
+        # ================================================================
+    
+        print(f"\n[MemoryPrep] === Проверка наличия LLM в памяти ===")
+    
+        # Получаем количество моделей в глобальном списке model_management
+        # current_loaded_models — это список объектов LoadedModel, каждый содержит:
+        #   - .model: патчер модели (для Fooocus) или LLMModelPatcher (для Omost)
+        #   - .model_memory(): метод возврата размера в байтах
+        #   - .model_unload(): метод выгрузки из GPU
+        models_count = len(ldm_patched.modules.model_management.current_loaded_models)
+        print(f"[MemoryPrep] Моделей в памяти: {models_count}")
+    
+        # Ранний выход: если список пуст, нечего удалять
+        if models_count == 0:
+            print(f"[MemoryPrep] Память свободна, удалять нечего")
+            print(f"[MemoryPrep] === Проверка завершена ===\n")
+            return
+    
+        # ================================================================
+        # ШАГ 2: ПЕРЕБОР МОДЕЛЕЙ И ПОИСК LLM
+        # ================================================================
+    
+        print(f"[MemoryPrep] Содержимое памяти:")
+        llm_found = False              # Флаг: нашли ли LLM
+        llm_patcher_to_remove = None   # Ссылка на найденную LLM
+    
+        # Перебираем все загруженные модели
+        for i, lm in enumerate(ldm_patched.modules.model_management.current_loaded_models):
+        
+            # --- Извлечение имени класса модели ---
+            # lm.model — это патчер (ModelPatcher для Fooocus, LLMModelPatcher для Omost)
+            # lm.model.model — реальная модель (UNet/CLIP для Fooocus, transformers модель для Omost)
+            try:
+                name = lm.model.model.__class__.__name__
+            except:
+                name = "?"
+        
+            # --- Вычисление размера модели в МБ ---
+            # model_memory() возвращает размер в байтах
+            try:
+                size_mb = lm.model_memory() / (1024**2)
+            except:
+                size_mb = 0
+        
+            # --- Определение текущего устройства ---
+            # current_device — где сейчас находится модель (cuda:0, cpu, mps и т.д.)
+            try:
+                device = str(lm.model.current_device)
+            except:
+                device = "?"
+        
+            # === КЛЮЧЕВАЯ ПРОВЕРКА: атрибут is_omost_llm ===
+            # getattr(obj, 'attr', default) — безопасное получение атрибута
+            # Если атрибут не существует, возвращается False
+            # Это позволяет идентифицировать LLM без импорта из omost
+            is_llm = getattr(lm.model, 'is_omost_llm', False)
+        
+            # Маркер для лога: "✓ LLM" для LLM, "  Diff" для диффузионных моделей
+            marker = "✓ LLM" if is_llm else "  Diff"
+        
+            print(f"[MemoryPrep]   [{i}] {name:30s} | {size_mb:8.1f}MB | {device:8s} | {marker}")
+        
+            # Если нашли LLM — запоминаем ссылку на патчер
+            if is_llm:
+                llm_found = True
+                llm_patcher_to_remove = lm.model
+    
+        # Если LLM не найдена — выходим
+        if not llm_found:
+            print(f"[MemoryPrep] LLM в памяти не найдена")
+            print(f"[MemoryPrep] === Проверка завершена ===\n")
+            return
+    
+        # ================================================================
+        # ШАГ 3: УДАЛЕНИЕ LLM ИЗ ПАМЯТИ
+        # ================================================================
+    
+        print(f"\n[MemoryPrep] LLM найдена, удаляем...")
+    
+        # --- Попытка 1: Удаление через unload_model_clones ---
+        # Это стандартный способ Fooocus для удаления модели из current_loaded_models
+        # unload_model_clones:
+        #   1. Ищет все клоны модели через метод is_clone()
+        #   2. Удаляет их из current_loaded_models
+        #   3. Вызывает model_unload() для каждого
+        #   4. model_unload() вызывает unpatch_model() и перемещает веса на CPU
+        try:
+            ldm_patched.modules.model_management.unload_model_clones(llm_patcher_to_remove)
+            print(f"[MemoryPrep] ✓ LLM удалена через unload_model_clones")
+        except Exception as e:
+            print(f"[MemoryPrep] ⚠ Ошибка unload_model_clones: {e}")
+        
+            # --- Попытка 2: Ручное удаление ---
+            # Если unload_model_clones упал (например, из-за особенностей LLMModelPatcher),
+            # удаляем модель вручную из списка
+            try:
+                # Идём с конца, чтобы индексы не смещались при удалении
+                for i in range(len(ldm_patched.modules.model_management.current_loaded_models) - 1, -1, -1):
+                    if ldm_patched.modules.model_management.current_loaded_models[i].model is llm_patcher_to_remove:
+                        # pop(i) удаляет элемент и возвращает его
+                        # .model_unload() выгружает модель из GPU
+                        ldm_patched.modules.model_management.current_loaded_models.pop(i).model_unload()
+                        print(f"[MemoryPrep] ✓ LLM удалена вручную")
+                        break
+            except Exception as e2:
+                print(f"[MemoryPrep] ⚠ Ошибка ручного удаления: {e2}")
+    
+        # ================================================================
+        # ШАГ 4: ОЧИСТКА КЭША CUDA
+        # ================================================================
+    
+        # После выгрузки модели веса остаются в зарезервированной памяти CUDA
+        # soft_empty_cache(force=True) выполняет:
+        #   - torch.cuda.empty_cache() — освобождает зарезервированные блоки
+        #   - torch.cuda.ipc_collect() — собирает межпроцессную память
+        # Параметр force=True обходит проверку на режим HIGH_VRAM
+        try:
+            ldm_patched.modules.model_management.soft_empty_cache(force=True)
+            print(f"[MemoryPrep] ✓ Кэш очищен")
+        except Exception as e:
+            print(f"[MemoryPrep] ⚠ Ошибка очистки кэша: {e}")
+    
+        # ================================================================
+        # ШАГ 5: КОНТРОЛЬНАЯ ПРОВЕРКА
+        # ================================================================
+    
+        # Проверяем, что список current_loaded_models обновился
+        remaining = len(ldm_patched.modules.model_management.current_loaded_models)
+        print(f"[MemoryPrep] После удаления моделей в памяти: {remaining}")
+    
+        print(f"[MemoryPrep] === Проверка завершена ===\n")
 
     try:
         async_gradio_app = shared.gradio_root
@@ -1494,6 +1642,16 @@ def worker():
         preparation_start_time = time.perf_counter()
         
         async_task.processing = True
+
+        # === НОВОЕ: Удаление LLM из памяти перед генерацией ===
+        try:
+            remove_llm_from_memory()
+        except Exception as e:
+            print(f"[AsyncWorker] ⚠ Ошибка удаления LLM: {e}")
+            import traceback
+            traceback.print_exc()
+        # === КОНЕЦ НОВОГО БЛОКА ===
+
 
         async_task.outpaint_selections = [o.lower() for o in async_task.outpaint_selections]
         base_model_additional_loras = []
