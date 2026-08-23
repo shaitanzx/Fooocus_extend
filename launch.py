@@ -77,7 +77,7 @@ def get_required_bitsandbytes():
     
     # PyTorch 2.4+ требует bitsandbytes 0.50+ (стабильная версия 0.50.1)
     if pytorch_tuple >= (2, 4, 0):
-        required = '0.50.1'
+        required = '0.45.5'
     # Старые версии PyTorch
     else:
         required = '0.41.1'

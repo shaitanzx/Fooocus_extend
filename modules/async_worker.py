@@ -470,7 +470,12 @@ def worker():
         async_task.results = async_task.results + [wall]
         d = [('', 'grid', 'GRID')]
         if getattr(async_task, 'omost_canvas', None) is not None:
-            d.append(('Omost Last Input', 'prompt', async_task.omost_last_input))
+            d.append(('Omost Last Input', 'omost_last_input', async_task.omost_last_input))
+            d.append(('Omost model', 'omost_model', async_task.omost_last_input))
+            d.append(('Omost Temperature', 'omost_temperature', async_task.omost_temperature))
+            d.append(('Omost Top P', 'omost_top_p', async_task.omost_top_p))
+            d.append(('Omost Max New Tokens', 'omost_max_new_tokens', async_task.omost_max_new_tokens))
+            d.append(('Omost seed', 'omost_seed', async_task.omost_seed))
         else: 
             d.append(('Prompt', 'prompt', async_task.prompt))
         d.append(('Negative Prompt', 'negative_prompt', async_task.negative_prompt))
@@ -644,8 +649,7 @@ def worker():
 
             d=[]
             if getattr(async_task, 'omost_canvas', None) is not None:
-                d.append(('Omost Last Input', 'omost_last_input', async_task.omost_last_input))
-                d.append(('Omost model', 'omost_model', async_task.omost_model))
+                d.append(('Omost Last Input', 'omost_last_input', "async_task."))
                 d.append(('Omost Temperature', 'omost_temperature', async_task.omost_temperature))
                 d.append(('Omost Top P', 'omost_top_p', async_task.omost_top_p))
                 d.append(('Omost Max New Tokens', 'omost_max_new_tokens', async_task.omost_max_new_tokens))
