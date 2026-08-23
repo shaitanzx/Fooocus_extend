@@ -426,7 +426,7 @@ def gui():
                 post_fn=post_chat,
                 post_fn_kwargs=dict(inputs=[chatbot], outputs=[last_input,prompt_code, seed, canvas_state, render_button, prompt_button, undo_btn]),
                 pre_fn=lambda: gr.update(visible=False),
-                pre_fn_kwargs=dict(outputs=[render_button]),
+                pre_fn_kwargs=dict(outputs=[render_button,prompt_button]),
                 chatbot=chatbot,
                 retry_btn=retry_btn,
                 undo_btn=undo_btn,
