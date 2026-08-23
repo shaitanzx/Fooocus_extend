@@ -80,7 +80,7 @@ def get_required_bitsandbytes():
         required = '0.45.5'
     # Старые версии PyTorch
     else:
-        required = '0.41.1'
+        required = '0.45.5'
     
     return required
 
