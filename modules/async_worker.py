@@ -649,7 +649,7 @@ def worker():
 
             d=[]
             if getattr(async_task, 'omost_canvas', None) is not None:
-                d.append(('Omost Last Input', 'omost_last_input', "async_task."))
+                d.append(('Omost Last Input', 'omost_last_input', async_task.omost_last_input))
                 d.append(('Omost Temperature', 'omost_temperature', async_task.omost_temperature))
                 d.append(('Omost Top P', 'omost_top_p', async_task.omost_top_p))
                 d.append(('Omost Max New Tokens', 'omost_max_new_tokens', async_task.omost_max_new_tokens))
