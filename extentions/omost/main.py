@@ -368,7 +368,7 @@ def gui():
 
             with gr.Accordion(open=True, label='LLM settings'):
                 with gr.Group():
-                    with gr.Row():
+                    with gr.Column():
                         temperature = gr.Slider(
                             minimum=0.0,
                             maximum=2.0,
