@@ -404,8 +404,10 @@ def gui():
             with gr.Row():
                 render_button = gr.Button("Render the Image!", size='lg', variant="primary", visible=False)
             with gr.Row(visible=False) as prompt_button:
-                prompt_key = gr.Button("Convert to prompt!", size='lg', variant="primary")
-                prompt_agress = gr.Radio(label='Method',choices=['normal','aggressive','short'], value='aggressive',interactive=True)
+                with gr.Row():
+                    prompt_key = gr.Button("Convert to prompt!", size='lg', variant="primary")
+                with gr.Row():
+                    prompt_agress = gr.Radio(label='Method',choices=['normal','aggressive','short'], value='aggressive',interactive=True)
 
             examples = gr.Dataset(
                 samples=[
