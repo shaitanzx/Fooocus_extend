@@ -1640,14 +1640,12 @@ def worker():
             try:
                 from extentions.omost.cond_builder import all_conds_from_canvas
                 
-
                 clip = pipeline.final_clip
-
-                    
+                
                 pos_results, neg_results, pos_pooler, neg_pooler = all_conds_from_canvas(
                     clip, async_task.omost_canvas, async_task.negative_prompt
                 )
-                    
+                
                 for t in tasks:
                     t['c'] = []
                     for cond, mask in pos_results:
@@ -1659,7 +1657,7 @@ def worker():
                             "crop_w": 0, "crop_h": 0,
                             "target_width": width, "target_height": height,
                         }])
-                            
+                    
                     t['uc'] = []
                     for cond, mask in neg_results:
                         t['uc'].append([cond, {
@@ -1670,14 +1668,14 @@ def worker():
                             "crop_w": 0, "crop_h": 0,
                             "target_width": width, "target_height": height,
                         }])
-                            
+                    
                     print(f"[Omost] Task conditioned. Positive regions: {len(t['c'])}, Negative regions: {len(t['uc'])}")
-                        
-        except Exception as e:
-            print(f"\033[91m[Omost] ERROR during conditioning: {e}\033[0m")
-            import traceback
-            traceback.print_exc()
-            print("\033[91m[Omost] Falling back to standard prompt conditioning.\033[0m")
+            
+            except Exception as e:  # ← 12 пробелов, на одном уровне с try
+                print(f"\033[91m[Omost] ERROR during conditioning: {e}\033[0m")
+                import traceback
+                traceback.print_exc()
+                print("\033[91m[Omost] Falling back to standard prompt conditioning.\033[0m")
 
 
 
