@@ -1635,80 +1635,50 @@ def worker():
                                                          base_model_additional_loras, async_task.image_number,
                                                          async_task.disable_seed_increment, use_expansion, use_style,
                                                          use_synthetic_refiner, current_progress, advance_progress=True)
-        # --- OMOST INTEGRATION START ---
         if getattr(async_task, 'omost_canvas', None) is not None and not skip_prompt_processing and tasks:
             print(f"\033[92m[Omost] Canvas detected! Overriding standard conditioning...\033[0m")
             try:
                 from extentions.omost.cond_builder import all_conds_from_canvas
                 
-                # Ищем объект CLIP в загруженной модели Fooocus (используем уже импортированный pipeline)
-                # Ищем объект CLIP в загруженной модели Fooocus
-                clip = None
-                
-                # Перебираем самые частые варианты именования CLIP в форках Fooocus
-                possible_clip_names = ['final_clip', 'clip', 'final_clip_patched']
-                for name in possible_clip_names:
-                    if hasattr(pipeline, name) and getattr(pipeline, name) is not None:
-                        clip = getattr(pipeline, name)
-                        print(f"[Omost] Found CLIP as pipeline.{name}")
-                        break
-                        
-                # Если не нашли напрямую, ищем внутри патченных моделей
-                if clip is None and hasattr(pipeline, 'xl_base_patched') and pipeline.xl_base_patched is not None:
-                    clip = getattr(pipeline.xl_base_patched, 'clip', None)
-                    if clip: print("[Omost] Found CLIP inside pipeline.xl_base_patched.clip")
+
+                clip = pipeline.final_clip
+
                     
-                if clip is None and hasattr(pipeline, 'xl_base') and pipeline.xl_base is not None:
-                    clip = getattr(pipeline.xl_base, 'clip', None)
-                    if clip: print("[Omost] Found CLIP inside pipeline.xl_base.clip")
-                
-                if clip is None:
-                    # ДИАГНОСТИКА: Печатаем все атрибуты pipeline, чтобы найти CLIP вручную
-                    attrs = [attr for attr in dir(pipeline) if not attr.startswith('_')]
-                    print(f"\033[91m[Omost] ERROR: Could not find CLIP model in pipeline.\033[0m")
-                    print(f"\033[93m[Omost] Available pipeline attributes: {attrs}\033[0m")
-                    print("\033[91m[Omost] Falling back to standard prompt.\033[0m")
-                else:
-                    print(f"[Omost] CLIP found ({type(clip).__name__}). Building regional conditions...")
+                pos_results, neg_results, pos_pooler, neg_pooler = all_conds_from_canvas(
+                    clip, async_task.omost_canvas, async_task.negative_prompt
+                )
                     
-                    pos_results, neg_results, pos_pooler, neg_pooler = all_conds_from_canvas(
-                        clip, async_task.omost_canvas, async_task.negative_prompt
-                    )
-                    
-                    # Перебираем все задачи (если image_number > 1)
-                    for t in tasks:
-                        # Формируем Positive conditioning
-                        t['c'] = []
-                        for cond, mask in pos_results:
-                            t['c'].append([cond, {
-                                "pooled_output": pos_pooler,
-                                "mask": mask,
-                                "width": width,
-                                "height": height,
-                                "crop_w": 0, "crop_h": 0,
-                                "target_width": width, "target_height": height,
-                            }])
+                for t in tasks:
+                    t['c'] = []
+                    for cond, mask in pos_results:
+                        t['c'].append([cond, {
+                            "pooled_output": pos_pooler,
+                            "mask": mask,
+                            "width": width,
+                            "height": height,
+                            "crop_w": 0, "crop_h": 0,
+                            "target_width": width, "target_height": height,
+                        }])
                             
-                        # Формируем Negative conditioning
-                        t['uc'] = []
-                        for cond, mask in neg_results:
-                            t['uc'].append([cond, {
-                                "pooled_output": neg_pooler,
-                                "mask": mask,
-                                "width": width,
-                                "height": height,
-                                "crop_w": 0, "crop_h": 0,
-                                "target_width": width, "target_height": height,
-                            }])
+                    t['uc'] = []
+                    for cond, mask in neg_results:
+                        t['uc'].append([cond, {
+                            "pooled_output": neg_pooler,
+                            "mask": mask,
+                            "width": width,
+                            "height": height,
+                            "crop_w": 0, "crop_h": 0,
+                            "target_width": width, "target_height": height,
+                        }])
                             
-                        print(f"[Omost] Task conditioned. Positive regions: {len(t['c'])}, Negative regions: {len(t['uc'])}")
+                    print(f"[Omost] Task conditioned. Positive regions: {len(t['c'])}, Negative regions: {len(t['uc'])}")
                         
-            except Exception as e:
-                print(f"\033[91m[Omost] ERROR during conditioning: {e}\033[0m")
-                import traceback
-                traceback.print_exc()
-                print("\033[91m[Omost] Falling back to standard prompt conditioning.\033[0m")
-        # --- OMOST INTEGRATION END ---
+        except Exception as e:
+            print(f"\033[91m[Omost] ERROR during conditioning: {e}\033[0m")
+            import traceback
+            traceback.print_exc()
+            print("\033[91m[Omost] Falling back to standard prompt conditioning.\033[0m")
+
 
 
         if len(goals) > 0:
