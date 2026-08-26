@@ -76,3 +76,4 @@ modelscope>=1.19.0
 #pillow>=10.4.0
 #requests==2.32.3
 #tqdm==4.66.5
+flash_attn
