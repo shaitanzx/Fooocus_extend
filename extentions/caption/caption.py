@@ -13,7 +13,7 @@ from .utils.inference import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT_WITHOUT_
 from .utils.inference import get_caption_file_path, LLM, Tagger
 from .utils.logger import Logger, print_title
 
-DEFAULT_MODELS_SAVE_PATH = str(os.path.join(os.getcwd(), "models"))
+DEFAULT_MODELS_SAVE_PATH = os.path.join("models","caption")
 
 
 class Caption:
@@ -753,18 +753,18 @@ def setup_args() -> argparse.Namespace:
         help='max tokens for LLM model output, default is `0`, means use llm own default value.'
     )
 
-    gradio_args = args.add_argument_group("Gradio dummy args, no effects")
-    gradio_args.add_argument('--theme', type=str, default="default", choices=["default", "ocean", "origin"],
-                             help="set themes")
-    gradio_args.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
-    gradio_args.add_argument('--listen', action='store_true', help="allow remote connections")
-    gradio_args.add_argument('--share', action='store_true', help="allow gradio share")
-    gradio_args.add_argument('--inbrowser', action='store_true', help="auto open in browser")
+    # gradio_args = args.add_argument_group("Gradio dummy args, no effects")
+    # gradio_args.add_argument('--theme', type=str, default="default", choices=["default", "ocean", "origin"],
+    #                          help="set themes")
+    # gradio_args.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
+    # gradio_args.add_argument('--listen', action='store_true', help="allow remote connections")
+    # gradio_args.add_argument('--share', action='store_true', help="allow gradio share")
+    # gradio_args.add_argument('--inbrowser', action='store_true', help="auto open in browser")
     return args.parse_args()
 
 
 def main():
-    print_title()
+    #print_title()
     get_args = setup_args()
     my_caption = Caption()
     my_caption.check_path(get_args)

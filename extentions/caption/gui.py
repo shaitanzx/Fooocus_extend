@@ -1,4 +1,4 @@
-import argparse
+#import argparse
 import json
 import os
 import time
@@ -22,7 +22,7 @@ SKIP_DOWNLOAD = True
 IS_MODEL_LOAD = False
 ARGS = None
 CAPTION_FN = None
-
+MODELS_PATH=os.path.join("models","caption")
 
 def read_json(config_file):
     with open(config_file, 'r', encoding='utf-8') as config_json:
@@ -30,20 +30,20 @@ def read_json(config_file):
         return list(datas.keys())
 
 
-def gui_setup_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--theme', type=str, default="base", choices=["base", "ocean", "origin"],
-                        help="set themes")
-    parser.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
-    parser.add_argument('--listen', action='store_true', help="allow remote connections")
-    parser.add_argument('--share', action='store_true', help="allow gradio share")
-    parser.add_argument('--inbrowser', action='store_true', help="auto open in browser")
-    parser.add_argument('--log_level', type=str, choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                        default='INFO', help="set log level, default is `INFO`")
-    parser.add_argument('--models_save_path', type=str, default=caption.DEFAULT_MODELS_SAVE_PATH,
-                        help='path to save models, default is `models`.')
+# def gui_setup_args():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--theme', type=str, default="base", choices=["base", "ocean", "origin"],
+#                         help="set themes")
+#     parser.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
+#     parser.add_argument('--listen', action='store_true', help="allow remote connections")
+#     parser.add_argument('--share', action='store_true', help="allow gradio share")
+#     parser.add_argument('--inbrowser', action='store_true', help="auto open in browser")
+#     parser.add_argument('--log_level', type=str, choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+#                         default='INFO', help="set log level, default is `INFO`")
+#     parser.add_argument('--models_save_path', type=str, default=caption.DEFAULT_MODELS_SAVE_PATH,
+#                         help='path to save models, default is `models`.')
 
-    return parser.parse_args()
+#     return parser.parse_args()
 
 
 def gui():
@@ -577,9 +577,9 @@ def gui():
                 if huggingface_token_value != "" and str(huggingface_token_value).startswith("hf"):
                     os.environ["HF_TOKEN"] = str(huggingface_token_value)
 
-                get_gradio_args = gui_setup_args()
-                args.models_save_path = str(get_gradio_args.models_save_path)
-                args.log_level = str(get_gradio_args.log_level)
+                #get_gradio_args = gui_setup_args()
+                args.models_save_path = MODELS_PATH
+                args.log_level = "INFO"
                 args.caption_method = str(caption_method_value).lower()
                 args.llm_choice = str(llm_choice_value).lower()
 
