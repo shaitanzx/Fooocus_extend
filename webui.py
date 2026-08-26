@@ -97,7 +97,6 @@ def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_m
 
     p = copy.deepcopy(currentTask)
 
-    # Главный payload: canvas уходит в ядро через атрибут задачи
     currentTask.omost_canvas = canvas_outputs
     currentTask.omost_temperature = omost_temperature
     currentTask.omost_top_p = omost_top_p
@@ -105,19 +104,13 @@ def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_m
     currentTask.omost_seed = omost_seed
     currentTask.omost_last_input = omost_last_input
     currentTask.omost_model = omost_model
-    # Негатив из omost, если он задан
-    # if omost_negative:
-    #     currentTask.negative_prompt = omost_negative
+
 
     print(f"\033[91m[Omost] Starting generation via Fooocus core\033[0m")
     gr.Info('[Omost] Rendering via Fooocus core')
 
     yield from generate_clicked(currentTask)
 
-    # if currentTask.last_stop == 'stop':
-    #     print('User stopped')
-
-    # currentTask.__dict__ = p.__dict__.copy()
 
 
 def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random):
