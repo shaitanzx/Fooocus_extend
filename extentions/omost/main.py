@@ -367,14 +367,15 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
                 examples=examples
             )
+    with gr.Row():
         gr.HTML('* \"omost\" is powered by lllyasviel. <a href="https://github.com/lllyasviel/Omost" target="_blank">\U0001F4D4 Document</a>')
             
-        seed_random.change(
-                lambda x: gr.update(visible=not x),
-                inputs=seed_random,
-                outputs=seed,
-                queue=False,
-                show_progress=False
-            )
+    seed_random.change(
+            lambda x: gr.update(visible=not x),
+            inputs=seed_random,
+            outputs=seed,
+            queue=False,
+            show_progress=False
+        )
 
     return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed,last_input,model_base
