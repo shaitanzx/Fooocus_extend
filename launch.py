@@ -23,68 +23,6 @@ from build_launcher import build_launcher
 from modules.launch_util import is_installed, run, python, run_pip, requirements_met, delete_folder_content
 from modules.model_loader import load_file_from_url
 import torch
-import re
-
-def _parse_version(version_str):
-    """
-    Парсит строку версии в кортеж чисел для сравнения.
-    Поддерживает dev, alpha, beta, rc, git-суффиксы.
-    """
-    if not version_str:
-        return None
-    try:
-        # Убираем CUDA/git суффикс (+cu118, +cu121, +cpu, +git123abc)
-        clean_version = version_str.split('+')[0]
-        
-        # Извлекаем числа из начала строки через regex
-        match = re.match(r'^(\d+)(?:\.(\d+))?(?:\.(\d+))?', clean_version)
-        if not match:
-            return None
-        
-        major = int(match.group(1))
-        minor = int(match.group(2)) if match.group(2) else 0
-        patch = int(match.group(3)) if match.group(3) else 0
-        
-        return (major, minor, patch)
-    except Exception:
-        return None
-
-
-def get_required_bitsandbytes():
-    """
-    Возвращает строку с необходимой версией bitsandbytes
-    на основе установленных PyTorch и CUDA.
-    
-    Returns:
-        str: версия bitsandbytes (например, '0.50.1')
-        None: если не удалось определить
-    """
-    try:
-        pytorch_version = torch.__version__
-        cuda_version = torch.version.cuda
-    except Exception as e:
-        print(f"[BitsDetector] ERROR: PyTorch not available: {e}")
-        return None
-    
-    pytorch_tuple = _parse_version(pytorch_version)
-    cuda_tuple = _parse_version(cuda_version) if cuda_version else None
-    
-    if pytorch_tuple is None:
-        print(f"[BitsDetector] ERROR: Cannot parse PyTorch version: {pytorch_version}")
-        return None
-    
-    # === ОБНОВЛЁННАЯ ЛОГИКА (на основе официальной документации) ===
-    
-    # PyTorch 2.4+ требует bitsandbytes 0.50+ (стабильная версия 0.50.1)
-    if pytorch_tuple >= (2, 4, 0):
-        required = '0.45.5'
-    # Старые версии PyTorch
-    else:
-        required = '0.45.5'
-    
-    return required
-
-
 
 REINSTALL_ALL = False
 TRY_INSTALL_XFORMERS = False
@@ -129,8 +67,7 @@ def prepare_environment():
                 if 'onnxruntime-gpu' in line:
                     if platform.system() == 'Darwin':
                         continue
-                if 'bitsandbytes' in line:
-                    line=f'bitsandbytes=={get_required_bitsandbytes()}'
+
 
                 run_pip(f"install {line}", desc=line)
     if REINSTALL_ALL or not requirements_met(requirements_file):
