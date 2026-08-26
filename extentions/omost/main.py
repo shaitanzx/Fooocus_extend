@@ -367,6 +367,7 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
                 examples=examples
             )
+        gr.HTML('* \"omost\" is powered by lllyasviel. <a href="https://github.com/lllyasviel/Omost" target="_blank">\U0001F4D4 Document</a>')
             
         seed_random.change(
                 lambda x: gr.update(visible=not x),
