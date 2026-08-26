@@ -66,6 +66,8 @@ def prepare_environment():
                 if 'onnxruntime-gpu' in line:
                     if platform.system() == 'Darwin':
                         continue
+
+
                 run_pip(f"install {line}", desc=line)
     if REINSTALL_ALL or not requirements_met(requirements_file):
         install_requirements(requirements_file)

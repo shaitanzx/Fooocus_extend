@@ -112,6 +112,15 @@ class FooocusExpansion:
         max_token_length = 75 * int(math.ceil(float(current_token_length) / 75.0))
         max_new_tokens = max_token_length - current_token_length
 
+        model_max = self.model.config.n_positions
+        if current_token_length >= model_max:
+            print(f'[Expansion] Skipping: input {current_token_length} >= limit {model_max}')
+            return prompt[:-1] 
+        
+        if current_token_length + max_new_tokens > model_max:
+            max_new_tokens = model_max - current_token_length - 1
+            print(f'[Expansion] Limited max_new_tokens to {max_new_tokens} to stay within limit')
+
         if max_new_tokens == 0:
             return prompt[:-1]
 

@@ -71,6 +71,8 @@ import extentions.watermark as watermark
 
 import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
+import extentions.omost.main as omost
+from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -84,6 +86,30 @@ def html_load(url,file):
                                 src = '{url}/file={file}'
                                 width = '100%'
                                 height = '1080px'></iframe>''')
+def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model):
+    if canvas_outputs is None:
+        gr.Warning('Omost: canvas is empty. Generate a scene in the chat first.')
+        return
+
+    if not canvas_outputs.get('bag_of_conditions'):
+        gr.Warning('Omost: canvas has no conditions.')
+        return
+
+    p = copy.deepcopy(currentTask)
+
+    currentTask.omost_canvas = canvas_outputs
+    currentTask.omost_temperature = omost_temperature
+    currentTask.omost_top_p = omost_top_p
+    currentTask.omost_max_new_tokens = omost_max_new_tokens
+    currentTask.omost_seed = omost_seed
+    currentTask.omost_last_input = omost_last_input
+    currentTask.omost_model = omost_model
+
+
+    print(f"\033[91m[Omost] Starting generation via Fooocus core\033[0m")
+    gr.Info('[Omost] Rendering via Fooocus core')
+
+    yield from generate_clicked(currentTask)
 
 
 
@@ -780,6 +806,8 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+                         
+                            
 
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
@@ -894,6 +922,10 @@ with shared.gradio_root:
                 enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
                 with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
+
+                  with gr.TabItem(label='omost'):
+                        omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model = omost.gui()
+   
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def clear_single(image):
                             return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
@@ -1940,6 +1972,7 @@ with shared.gradio_root:
 
         ctrls += [uov_model]
 
+
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
@@ -2053,7 +2086,22 @@ with shared.gradio_root:
                   outputs=[xyz_start,generate_button, stop_button, state_is_generating]) \
             .then(fn=update_history_link, outputs=history_link) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
- 
+        omost_render.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True),gr.update(visible=False, interactive=False), [], True),
+                              outputs=[omost_render, skip_button, stop_button, generate_button, gallery, state_is_generating]) \
+            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
+            .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
+            .then(fn=omost_gen, inputs=[currentTask, omost_canvas, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False),gr.update(visible=False, interactive=False), False),
+                  outputs=[omost_render,generate_button, skip_button,stop_button, state_is_generating]) \
+            .then(fn=update_history_link, outputs=history_link) \
+            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+        prompt_button.click(lambda: (gr.update(interactive=False)),outputs=[prompt_button]) \
+            .then(fn=omost2prompt,inputs=[prompt_agress,prompt_code],outputs=prompt) \
+            .then(lambda: (gr.update(interactive=True)),outputs=[prompt_button])
+
+
+
+            
         generate_button.click(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
                               outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating]) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
