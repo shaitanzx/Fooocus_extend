@@ -1,0 +1,182 @@
+{
+  "Llama-3.2-11B-Vision-Instruct": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "chat_template.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/chat_template.json",
+          "config.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/generation_config.json",
+          "preprocessor_config.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/tokenizer_config.json",
+          "special_tokens_map.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/special_tokens_map.json",
+          "model.safetensors.index.json": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/model.safetensors.index.json",
+          "model-00001-of-00005.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/model-00001-of-00005.safetensors",
+          "model-00002-of-00005.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/model-00002-of-00005.safetensors",
+          "model-00003-of-00005.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/model-00003-of-00005.safetensors",
+          "model-00004-of-00005.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/model-00004-of-00005.safetensors",
+          "model-00005-of-00005.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/resolve/main/model-00005-of-00005.safetensors"
+        }
+      },
+      "patch": {
+        "repo_id": "Guilherme34/Llama-3.2-11b-vision-uncensored",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "adapter_config.json": "https://huggingface.co/Guilherme34/Llama-3.2-11b-vision-uncensored/resolve/main/adapter_config.json",
+          "adapter_model.safetensors": "https://huggingface.co/Guilherme34/Llama-3.2-11b-vision-uncensored/resolve/main/adapter_model.safetensors"
+        }
+      }
+    },
+    "modelscope": {
+      "llm": {
+        "repo_id": "fireicewolf/Llama-3.2-11B-Vision-Instruct",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "chat_template.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/chat_template.json",
+          "config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/config.json",
+          "generation_config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/generation_config.json",
+          "preprocessor_config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/preprocessor_config.json",
+          "tokenizer.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/tokenizer.json",
+          "tokenizer_config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/tokenizer_config.json",
+          "special_tokens_map.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/special_tokens_map.json",
+          "model.safetensors.index.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/model.safetensors.index.json",
+          "model-00001-of-00005.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/model-00001-of-00005.safetensors",
+          "model-00002-of-00005.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/model-00002-of-00005.safetensors",
+          "model-00003-of-00005.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/model-00003-of-00005.safetensors",
+          "model-00004-of-00005.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/model-00004-of-00005.safetensors",
+          "model-00005-of-00005.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11B-Vision-Instruct/resolve/master/model-00005-of-00005.safetensors"
+        }
+      },
+      "patch": {
+        "repo_id": "fireicewolf/Llama-3.2-11b-vision-uncensored",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "adapter_config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11b-vision-uncensored/resolve/master/adapter_config.json",
+          "adapter_model.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-11b-vision-uncensored/resolve/master/adapter_model.safetensors"
+        }
+      }
+    }
+  },
+  "Llama-3.2-90B-Vision-Instruct": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "chat_template.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/chat_template.json",
+          "config.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/generation_config.json",
+          "preprocessor_config.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/tokenizer_config.json",
+          "special_tokens_map.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/special_tokens_map.json",
+          "model.safetensors.index.json": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model.safetensors.index.json",
+          "model-00001-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00001-of-00037.safetensors",
+          "model-00002-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00002-of-00037.safetensors",
+          "model-00003-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00003-of-00037.safetensors",
+          "model-00004-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00004-of-00037.safetensors",
+          "model-00005-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00005-of-00037.safetensors",
+          "model-00006-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00006-of-00037.safetensors",
+          "model-00007-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00007-of-00037.safetensors",
+          "model-00008-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00008-of-00037.safetensors",
+          "model-00009-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00009-of-00037.safetensors",
+          "model-00010-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00010-of-00037.safetensors",
+          "model-00011-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00011-of-00037.safetensors",
+          "model-00012-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00012-of-00037.safetensors",
+          "model-00013-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00013-of-00037.safetensors",
+          "model-00014-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00014-of-00037.safetensors",
+          "model-00015-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00015-of-00037.safetensors",
+          "model-00016-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00016-of-00037.safetensors",
+          "model-00017-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00017-of-00037.safetensors",
+          "model-00018-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00018-of-00037.safetensors",
+          "model-00019-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00019-of-00037.safetensors",
+          "model-00020-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00020-of-00037.safetensors",
+          "model-00021-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00021-of-00037.safetensors",
+          "model-00022-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00022-of-00037.safetensors",
+          "model-00023-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00023-of-00037.safetensors",
+          "model-00024-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00024-of-00037.safetensors",
+          "model-00025-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00025-of-00037.safetensors",
+          "model-00026-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00026-of-00037.safetensors",
+          "model-00027-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00027-of-00037.safetensors",
+          "model-00028-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00028-of-00037.safetensors",
+          "model-00029-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00029-of-00037.safetensors",
+          "model-00030-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00030-of-00037.safetensors",
+          "model-00031-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00031-of-00037.safetensors",
+          "model-00032-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00032-of-00037.safetensors",
+          "model-00033-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00033-of-00037.safetensors",
+          "model-00034-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00034-of-00037.safetensors",
+          "model-00035-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00035-of-00037.safetensors",
+          "model-00036-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00036-of-00037.safetensors",
+          "model-00037-of-00037.safetensors": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct/resolve/main/model-00037-of-00037.safetensors"
+        }
+      }
+    },
+    "modelscope": {
+      "llm": {
+        "repo_id": "fireicewolf/Llama-3.2-90B-Vision-Instruct",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "chat_template.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/chat_template.json",
+          "config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/config.json",
+          "generation_config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/generation_config.json",
+          "preprocessor_config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/preprocessor_config.json",
+          "tokenizer.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/tokenizer.json",
+          "tokenizer_config.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/tokenizer_config.json",
+          "special_tokens_map.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/special_tokens_map.json",
+          "model.safetensors.index.json": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model.safetensors.index.json",
+          "model-00001-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00001-of-00037.safetensors",
+          "model-00002-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00002-of-00037.safetensors",
+          "model-00003-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00003-of-00037.safetensors",
+          "model-00004-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00004-of-00037.safetensors",
+          "model-00005-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00005-of-00037.safetensors",
+          "model-00006-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00006-of-00037.safetensors",
+          "model-00007-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00007-of-00037.safetensors",
+          "model-00008-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00008-of-00037.safetensors",
+          "model-00009-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00009-of-00037.safetensors",
+          "model-00010-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00010-of-00037.safetensors",
+          "model-00011-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00011-of-00037.safetensors",
+          "model-00012-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00012-of-00037.safetensors",
+          "model-00013-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00013-of-00037.safetensors",
+          "model-00014-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00014-of-00037.safetensors",
+          "model-00015-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00015-of-00037.safetensors",
+          "model-00016-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00016-of-00037.safetensors",
+          "model-00017-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00017-of-00037.safetensors",
+          "model-00018-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00018-of-00037.safetensors",
+          "model-00019-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00019-of-00037.safetensors",
+          "model-00020-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00020-of-00037.safetensors",
+          "model-00021-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00021-of-00037.safetensors",
+          "model-00022-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00022-of-00037.safetensors",
+          "model-00023-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00023-of-00037.safetensors",
+          "model-00024-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00024-of-00037.safetensors",
+          "model-00025-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00025-of-00037.safetensors",
+          "model-00026-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00026-of-00037.safetensors",
+          "model-00027-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00027-of-00037.safetensors",
+          "model-00028-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00028-of-00037.safetensors",
+          "model-00029-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00029-of-00037.safetensors",
+          "model-00030-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00030-of-00037.safetensors",
+          "model-00031-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00031-of-00037.safetensors",
+          "model-00032-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00032-of-00037.safetensors",
+          "model-00033-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00033-of-00037.safetensors",
+          "model-00034-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00034-of-00037.safetensors",
+          "model-00035-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00035-of-00037.safetensors",
+          "model-00036-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00036-of-00037.safetensors",
+          "model-00037-of-00037.safetensors": "https://www.modelscope.cn/models/fireicewolf/Llama-3.2-90B-Vision-Instruct/resolve/master/model-00037-of-00037.safetensors"
+        }
+      }
+    }
+  }
+}
