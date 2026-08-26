@@ -12,6 +12,7 @@ Let's look at everything in order.
    - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
    - Vector - vector image generation
 2. Additional modules
+   - omost - LLM code generation module for image generation
    - Image Batch - generation with a batch of reference images
    - Prompt Batch - generating a prompt batch
    - X/Y/Z Plot - a module that allows you to generate images by changing various parameters
@@ -183,6 +184,26 @@ Threshold - line curvature threshold
 
 
 **“modules”** panel
+
+**omost**
+
+<img width="953" height="583" alt="image" src="https://github.com/user-attachments/assets/f87930f3-52c9-4a90-a942-fb679b234310" />
+
+Omost is a module aimed at transforming LLM programming capabilities into image generation (or, more precisely, image composition) capabilities.
+
+Omost provides LLM models that will write code for composing image visual content using Omost's Canvas virtual agent. This Canvas can be drawn by specific image generator implementations to actually generate images.
+
+Immediately after the code is generated, two buttons will appear: 'Render the Image' and 'Convert to Prompt'.
+
+Clicking 'Render the Image' generates the image exactly according to the generated code, taking into account the description of each region.
+
+Three modes of code processing aggressiveness are available for conversion; these affect the length of the prompt and the repetition of phrases within it.
+
+You can also configure LLM parameters, which affect the speed and video memory usage.
+
+You can also select random or manual seed, as well as the history view depth for the next request. If enabled, the entire history will be viewed, but this can require a significant amount of video memory.
+
+For more information about this module, please refer to the original project description at https://github.com/lllyasviel/Omost
 
 **Image Batch** (batch image processing)
 
@@ -575,6 +596,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.3.4
+ 1. Add omost module
 
 v9.3.3
  1. Add DoRA models support
