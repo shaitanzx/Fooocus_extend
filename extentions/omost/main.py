@@ -26,35 +26,6 @@ llm_name = None
 omost_seed = None
 
 
-
-# def get_vram_info():
-#     """Возвращает кортеж: (allocated_gb, reserved_gb, total_gb, free_gb)"""
-#     if not torch.cuda.is_available():
-#         return (0.0, 0.0, 0.0, 0.0)
-    
-#     allocated = torch.cuda.memory_allocated() / (1024**3)
-#     reserved = torch.cuda.memory_reserved() / (1024**3)
-    
-#     # ИСПРАВЛЕНИЕ: total_memory вместо total_mem
-#     total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-    
-#     # Более точный способ получить свободную память
-#     free, total_from_cuda = torch.cuda.mem_get_info()
-#     free = free / (1024**3)
-    
-#     return (allocated, reserved, total, free)
-
-
-# def format_vram_info(prefix=""):
-#     """Форматирует VRAM инфо в красивую строку для лога."""
-#     allocated, reserved, total, free = get_vram_info()
-#     return (
-#         f"{prefix}VRAM: "
-#         f"allocated={allocated:.2f}GB | "
-#         f"reserved={reserved:.2f}GB | "
-#         f"free={free:.2f}GB / {total:.2f}GB total"
-#     )
-
 def post_chat(history):
     global omost_seed
     import traceback
@@ -91,24 +62,6 @@ def defragment_vram():
         torch.cuda.synchronize()
     except Exception as e:
         print(f"[Omost] Warning during VRAM defragmentation: {e}")
-# def unload_model_by_name(target_name):
-#     """Удаляет модель по имени класса через существующую unload_model_clones."""
-#     for lm in ldm_patched.modules.model_management.current_loaded_models:
-#         try:
-#             name = lm.model.model.__class__.__name__
-#         except:
-#             name = "?"
-        
-#         if name == target_name:
-#             print(f"[ModelMgmt] Unloading: {name}")
-#             ldm_patched.modules.model_management.unload_model_clones(lm.model)
-#             ldm_patched.modules.model_management.soft_empty_cache()
-#             return True
-    
-#     print(f"[ModelMgmt] Model '{target_name}' not found")
-#     return False
-
-
 
 def unload_fooocus_completely():
     print(f"\n[Omost] === Unloading ALL Fooocus models ===")
