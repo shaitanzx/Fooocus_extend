@@ -73,6 +73,7 @@ import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
 import extentions.omost.main as omost
 from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
+import extentions.caption.gui as caption
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -813,6 +814,9 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
+                        with gr.TabItem(label='Caption'):
+                            caption.gui()
+
                         with gr.TabItem(label='omost'):
                             omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model = omost.gui()
                             
