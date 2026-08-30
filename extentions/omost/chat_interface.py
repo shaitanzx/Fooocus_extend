@@ -64,8 +64,9 @@ def async_lambda(f: Callable) -> Callable:
 
 @document()
 class ChatInterface(Blocks):
-    server_name = "127.0.0.1"
-    local_url = "http://127.0.0.1:7865"
+    server_name = "fake"
+    local_url = "fake_and_port"
+    server_port = 0
     share_url = None    
     def __init__(
         self,
