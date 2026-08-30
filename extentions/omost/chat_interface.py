@@ -37,6 +37,9 @@ def async_lambda(f: Callable) -> Callable:
 
 @document()
 class ChatInterface(Blocks):
+    server_name = "127.0.0.1"
+    local_url = "http://127.0.0.1:7865"
+    share_url = None    
     def __init__(
         self,
         fn: Callable,
@@ -70,9 +73,6 @@ class ChatInterface(Blocks):
             title=title or "Gradio",
             theme=theme,
         )
-        self.server_name = ""
-        self.local_url = ""
-        self.share_url = None
 
         if post_fn_kwargs is None:
             post_fn_kwargs = {}
