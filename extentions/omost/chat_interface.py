@@ -1,3 +1,4 @@
+from __future__ import annotations
 import traceback
 import sys
 
@@ -9,7 +10,7 @@ def exception_handler(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = exception_handler
 
-from __future__ import annotations
+
 from functools import wraps
 import inspect
 from typing import AsyncGenerator, Callable
