@@ -20,6 +20,21 @@ from gradio_client import utils as client_utils
 from gradio_client.documentation import document, set_documentation_group
 
 from gradio.blocks import Blocks
+class TrackedAttribute:
+    def __init__(self, name):
+        self.name = name
+    
+    def __get__(self, obj, objtype=None):
+        import traceback
+        print(f"\n=== ОБРАЩЕНИЕ К {self.name} ===")
+        traceback.print_stack()
+        print("=" * 40)
+        return "127.0.0.1" if self.name == 'server_name' else "http://127.0.0.1:7865"
+
+# Добавляем отслеживание к классу Blocks
+Blocks.server_name = TrackedAttribute('server_name')
+Blocks.local_url = TrackedAttribute('local_url')
+Blocks.share_url = None
 from gradio.components import (
     Button,
     Chatbot,
