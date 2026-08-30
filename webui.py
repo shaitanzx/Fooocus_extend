@@ -106,7 +106,7 @@ def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_m
     currentTask.omost_model = omost_model
 
 
-    print(f"\033[91m[Omost] Starting generation via Fooocus core\033[0m")
+    print(f"[Omost] Starting generation via Fooocus core")
     gr.Info('[Omost] Rendering via Fooocus core')
 
     yield from generate_clicked(currentTask)
