@@ -3,7 +3,7 @@ from extentions.omost.chat_interface import ChatInterface
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 import os
 import numpy as np
-import extentions.omost.lib_omost.canvas as omost_canvas
+import extentions.omost.canvas as omost_canvas
 from transformers.generation.stopping_criteria import StoppingCriteriaList
 import random
 from threading import Thread

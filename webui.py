@@ -106,7 +106,7 @@ def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_m
     currentTask.omost_model = omost_model
 
 
-    print(f"\033[91m[Omost] Starting generation via Fooocus core\033[0m")
+    print(f"[Omost] Starting generation via Fooocus core")
     gr.Info('[Omost] Rendering via Fooocus core')
 
     yield from generate_clicked(currentTask)
@@ -2203,7 +2203,7 @@ with shared.gradio_root:
     """)
     gr.HTML("""
         <div style="text-align: center;">
-            <p>Original code by <a href="https://github.com/lllyasviel/Fooocus" target="_blank">lllyasviel and other contributors.</a> Forked and extended by <a href="https://github.com/shaitanzx">Shahmatist^RMDA.</a> Logo by ‎⁨𝓐𝓵𝓮𝔁 ☭ 𝓜𝓮⁩</p>        
+            <p>Original code by <a href="https://github.com/lllyasviel/Fooocus" target="_blank">lllyasviel and other contributors.</a> Forked and extended by <a href="https://github.com/shaitanzx">Shahmatist^RMDA.</a> Logo by 𝓐𝓵𝓮𝔁 ☭ 𝓜𝓮</p>        
         </div>
         """)
 
