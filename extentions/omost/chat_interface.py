@@ -118,17 +118,18 @@ class ChatInterface:
         if self.description:
             components['description'] = Markdown(self.description)
 
-        components['chatbot'] = self.chatbot.render()
+        components['chatbot'] = self.chatbot
+        if not self.chatbot.is_rendered:
+            self.chatbot.render()
         
         with Group():
             with Row():
                 if self.textbox_param:
-                    self.textbox_param.container = False
-                    self.textbox_param.show_label = False
-                    textbox_ = self.textbox_param.render()
-                    if not isinstance(textbox_, Textbox):
-                        raise TypeError(f"Expected a gr.Textbox component, but got {type(textbox_)}")
-                    components['textbox'] = textbox_
+                    components['textbox'] = self.textbox_param
+                    if not self.textbox_param.is_rendered:
+                        self.textbox_param.container = False
+                        self.textbox_param.show_label = False
+                        self.textbox_param.render()
                 else:
                     components['textbox'] = Textbox(
                         container=False, show_label=False, label="Message",
@@ -137,31 +138,41 @@ class ChatInterface:
                 
                 if self.submit_btn_param is not None:
                     if isinstance(self.submit_btn_param, Button):
-                        components['submit_btn'] = self.submit_btn_param.render()
+                        components['submit_btn'] = self.submit_btn_param
+                        if not self.submit_btn_param.is_rendered:
+                            self.submit_btn_param.render()
                     elif isinstance(self.submit_btn_param, str):
                         components['submit_btn'] = Button(self.submit_btn_param, variant="primary", scale=1, min_width=150)
                 
                 if self.stop_btn_param is not None:
                     if isinstance(self.stop_btn_param, Button):
-                        components['stop_btn'] = self.stop_btn_param.render()
+                        components['stop_btn'] = self.stop_btn_param
+                        if not self.stop_btn_param.is_rendered:
+                            self.stop_btn_param.render()
                     elif isinstance(self.stop_btn_param, str):
                         components['stop_btn'] = Button(self.stop_btn_param, variant="stop", visible=False, scale=1, min_width=150)
                 
                 if self.retry_btn_param is not None:
                     if isinstance(self.retry_btn_param, Button):
-                        components['retry_btn'] = self.retry_btn_param.render()
+                        components['retry_btn'] = self.retry_btn_param
+                        if not self.retry_btn_param.is_rendered:
+                            self.retry_btn_param.render()
                     elif isinstance(self.retry_btn_param, str):
                         components['retry_btn'] = Button(self.retry_btn_param, variant="secondary", scale=1, min_width=150)
                 
                 if self.undo_btn_param is not None:
                     if isinstance(self.undo_btn_param, Button):
-                        components['undo_btn'] = self.undo_btn_param.render()
+                        components['undo_btn'] = self.undo_btn_param
+                        if not self.undo_btn_param.is_rendered:
+                            self.undo_btn_param.render()
                     elif isinstance(self.undo_btn_param, str):
                         components['undo_btn'] = Button(self.undo_btn_param, variant="secondary", scale=1, min_width=150)
                 
                 if self.clear_btn_param is not None:
                     if isinstance(self.clear_btn_param, Button):
-                        components['clear_btn'] = self.clear_btn_param.render()
+                        components['clear_btn'] = self.clear_btn_param
+                        if not self.clear_btn_param.is_rendered:
+                            self.clear_btn_param.render()
                     elif isinstance(self.clear_btn_param, str):
                         components['clear_btn'] = Button(self.clear_btn_param, variant="secondary", scale=1, min_width=150)
 
