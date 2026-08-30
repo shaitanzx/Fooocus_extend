@@ -307,6 +307,8 @@ def gui():
                 prompt_code=gr.Textbox(value='',visible=False)
                 last_input=gr.Textbox(value='',visible=False)
             chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
+            
+            # Создаем ChatInterface
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
@@ -320,6 +322,10 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
                 examples=examples
             )
+            
+            # Рендерим компоненты
+            chatInterface.render()
+
     with gr.Row():
         gr.HTML('* \"omost\" is powered by lllyasviel. <a href="https://github.com/lllyasviel/Omost" target="_blank">\U0001F4D4 Document</a>')
             
@@ -330,5 +336,5 @@ def gui():
             queue=False,
             show_progress=False
         )
-
+    chatInterface.setup_events()
     return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed,last_input,model_base
