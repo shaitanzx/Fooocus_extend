@@ -1,16 +1,4 @@
 from __future__ import annotations
-import traceback
-import sys
-
-def exception_handler(exc_type, exc_value, exc_traceback):
-    print("\n=== ПОЛНЫЙ TRACEBACK ===")
-    traceback.print_exception(exc_type, exc_value, exc_traceback)
-    print("========================\n")
-    sys.__excepthook__(exc_type, exc_value, exc_traceback)
-
-sys.excepthook = exception_handler
-
-
 from functools import wraps
 import inspect
 from typing import AsyncGenerator, Callable
@@ -20,21 +8,6 @@ from gradio_client import utils as client_utils
 from gradio_client.documentation import document, set_documentation_group
 
 from gradio.blocks import Blocks
-class TrackedAttribute:
-    def __init__(self, name):
-        self.name = name
-    
-    def __get__(self, obj, objtype=None):
-        import traceback
-        print(f"\n=== ОБРАЩЕНИЕ К {self.name} ===")
-        traceback.print_stack()
-        print("=" * 40)
-        return "127.0.0.1" if self.name == 'server_name' else "http://127.0.0.1:7865"
-
-# Добавляем отслеживание к классу Blocks
-Blocks.server_name = TrackedAttribute('server_name')
-Blocks.local_url = TrackedAttribute('local_url')
-Blocks.share_url = None
 from gradio.components import (
     Button,
     Chatbot,
@@ -64,10 +37,6 @@ def async_lambda(f: Callable) -> Callable:
 
 @document()
 class ChatInterface(Blocks):
-    server_name = "fake"
-    local_url = "fake_and_port"
-    server_port = 0
-    share_url = None    
     def __init__(
         self,
         fn: Callable,
@@ -196,57 +165,57 @@ class ChatInterface(Blocks):
         if examples:
             examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
 
-    # def _setup_events(self) -> None:
-    #     submit_fn = self._stream_fn if self.is_generator else self._submit_fn
+    def _setup_events(self) -> None:
+        submit_fn = self._stream_fn if self.is_generator else self._submit_fn
 
-    #     submit_event = (
-    #         self.submit_btn.click(
-    #             self._clear_and_save_textbox, [self.textbox], [self.textbox, self.saved_input],
-    #             api_name=False, queue=False,
-    #         )
-    #         .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
-    #         .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
-    #         .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state, self.interrupter], api_name=False)
-    #         .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
-    #     )
-    #     self._setup_stop_events(self.submit_btn.click, submit_event)
+        submit_event = (
+            self.submit_btn.click(
+                self._clear_and_save_textbox, [self.textbox], [self.textbox, self.saved_input],
+                api_name=False, queue=False,
+            )
+            .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
+            .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+            .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state, self.interrupter], api_name=False)
+            .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
+        )
+        self._setup_stop_events(self.submit_btn.click, submit_event)
 
-    #     if self.retry_btn:
-    #         retry_event = (
-    #             self.retry_btn.click(
-    #                 self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
-    #                 [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  
-    #                 api_name=False, queue=False,
-    #             )
-    #             .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
-    #             .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
-    #             .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state], api_name=False)
-    #             .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
-    #         )
-    #         self._setup_stop_events(self.retry_btn.click, retry_event)
+        if self.retry_btn:
+            retry_event = (
+                self.retry_btn.click(
+                    self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
+                    [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  
+                    api_name=False, queue=False,
+                )
+                .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
+                .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+                .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state], api_name=False)
+                .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
+            )
+            self._setup_stop_events(self.retry_btn.click, retry_event)
 
-    #     if self.undo_btn:
-    #         self.undo_btn.click(
-    #             self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
-    #             [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  
-    #             api_name=False, queue=False,
-    #         ).then(
-    #             self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
-    #         ).then(
-    #             self.post_fn, **self.post_fn_kwargs, api_name=False, 
-    #         )
+        if self.undo_btn:
+            self.undo_btn.click(
+                self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
+                [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  
+                api_name=False, queue=False,
+            ).then(
+                self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
+            ).then(
+                self.post_fn, **self.post_fn_kwargs, api_name=False, 
+            )
 
 
-    #     if self.clear_btn:
-    #         self.clear_btn.click(
-    #             async_lambda(lambda: ([], [], None, "")), None, 
-    #             [self.chatbot, self.chatbot_state, self.saved_input, self.textbox], 
-    #             queue=False, api_name=False,
-    #         ).then(
-    #             self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
-    #         ).then(
-    #             self.post_fn, **self.post_fn_kwargs, api_name=False,
-    #         )
+        if self.clear_btn:
+            self.clear_btn.click(
+                async_lambda(lambda: ([], [], None, "")), None, 
+                [self.chatbot, self.chatbot_state, self.saved_input, self.textbox], 
+                queue=False, api_name=False,
+            ).then(
+                self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
+            ).then(
+                self.post_fn, **self.post_fn_kwargs, api_name=False,
+            )
 
     def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
