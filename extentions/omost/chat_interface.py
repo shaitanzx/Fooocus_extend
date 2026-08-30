@@ -7,7 +7,7 @@ import anyio
 from gradio_client import utils as client_utils
 from gradio_client.documentation import document, set_documentation_group
 
-import gradio as gr
+from gradio.blocks import Blocks
 from gradio.components import (
     Button,
     Chatbot,
@@ -18,6 +18,7 @@ from gradio.components import (
     Textbox,
     get_component_instance,
 )
+from gradio.events import Dependency
 from gradio.helpers import create_examples as Examples
 from gradio.layouts import Accordion, Group, Row
 from gradio.themes import ThemeClass as Theme
@@ -35,7 +36,7 @@ def async_lambda(f: Callable) -> Callable:
 
 
 @document()
-class ChatInterface:
+class ChatInterface(Blocks):
     def __init__(
         self,
         fn: Callable,
@@ -59,10 +60,16 @@ class ChatInterface:
         stop_btn: str | None | Button = "Stop",
         retry_btn: str | None | Button = "🔄  Retry",
         undo_btn: str | None | Button = "↩️ Undo",
-        clear_btn: str | None | Button = "️  Clear",
+        clear_btn: str | None | Button = "🗑️  Clear",
         autofocus: bool = True,
     ):
-        # Не вызываем super().__init__(), так как мы не наследуем от Blocks
+        super().__init__(
+            analytics_enabled=analytics_enabled,
+            mode="chat_interface",
+            css=css,
+            title=title or "Gradio",
+            theme=theme,
+        )
 
         if post_fn_kwargs is None:
             post_fn_kwargs = {}
@@ -71,6 +78,9 @@ class ChatInterface:
         self.post_fn_kwargs = post_fn_kwargs
         self.pre_fn = pre_fn
         self.pre_fn_kwargs = pre_fn_kwargs
+
+        self.interrupter = State(None)
+        self.limiter = None
 
         self.fn = fn
         self.is_async = inspect.iscoroutinefunction(self.fn) or inspect.isasyncgenfunction(self.fn)
@@ -96,159 +106,98 @@ class ChatInterface:
         else:
             raise ValueError(f"Invalid additional_inputs_accordion type: {type(additional_inputs_accordion)}")
 
-        # Сохраняем параметры для создания компонентов
-        self.title = title
-        self.description = description
-        self.chatbot = chatbot
-        self.textbox_param = textbox
-        self.submit_btn_param = submit_btn
-        self.stop_btn_param = stop_btn
-        self.retry_btn_param = retry_btn
-        self.undo_btn_param = undo_btn
-        self.clear_btn_param = clear_btn
-        self.autofocus = autofocus
-        self.examples = examples
+        with self:
+            if title:
+                Markdown(f"<h1 style='text-align: center; margin-bottom: 1rem'>{self.title}</h1>")
+            if description:
+                Markdown(description)
 
-    def render(self):
-        """Создает и возвращает все компоненты интерфейса."""
-        components = {}
-        
-        if self.title:
-            components['title'] = Markdown(f"<h1 style='text-align: center; margin-bottom: 1rem'>{self.title}</h1>")
-        if self.description:
-            components['description'] = Markdown(self.description)
+            self.chatbot = chatbot.render()
+            self.buttons = [retry_btn, undo_btn, clear_btn]
 
-        components['chatbot'] = self.chatbot
-        if not self.chatbot.is_rendered:
-            self.chatbot.render()
-        
-        with Group():
-            with Row():
-                if self.textbox_param:
-                    components['textbox'] = self.textbox_param
-                    if not self.textbox_param.is_rendered:
-                        self.textbox_param.container = False
-                        self.textbox_param.show_label = False
-                        self.textbox_param.render()
-                else:
-                    components['textbox'] = Textbox(
-                        container=False, show_label=False, label="Message",
-                        placeholder="Type a message...", scale=7, autofocus=self.autofocus,
-                    )
-                
-                if self.submit_btn_param is not None:
-                    if isinstance(self.submit_btn_param, Button):
-                        components['submit_btn'] = self.submit_btn_param
-                        if not self.submit_btn_param.is_rendered:
-                            self.submit_btn_param.render()
-                    elif isinstance(self.submit_btn_param, str):
-                        components['submit_btn'] = Button(self.submit_btn_param, variant="primary", scale=1, min_width=150)
-                
-                if self.stop_btn_param is not None:
-                    if isinstance(self.stop_btn_param, Button):
-                        components['stop_btn'] = self.stop_btn_param
-                        if not self.stop_btn_param.is_rendered:
-                            self.stop_btn_param.render()
-                    elif isinstance(self.stop_btn_param, str):
-                        components['stop_btn'] = Button(self.stop_btn_param, variant="stop", visible=False, scale=1, min_width=150)
-                
-                if self.retry_btn_param is not None:
-                    if isinstance(self.retry_btn_param, Button):
-                        components['retry_btn'] = self.retry_btn_param
-                        if not self.retry_btn_param.is_rendered:
-                            self.retry_btn_param.render()
-                    elif isinstance(self.retry_btn_param, str):
-                        components['retry_btn'] = Button(self.retry_btn_param, variant="secondary", scale=1, min_width=150)
-                
-                if self.undo_btn_param is not None:
-                    if isinstance(self.undo_btn_param, Button):
-                        components['undo_btn'] = self.undo_btn_param
-                        if not self.undo_btn_param.is_rendered:
-                            self.undo_btn_param.render()
-                    elif isinstance(self.undo_btn_param, str):
-                        components['undo_btn'] = Button(self.undo_btn_param, variant="secondary", scale=1, min_width=150)
-                
-                if self.clear_btn_param is not None:
-                    if isinstance(self.clear_btn_param, Button):
-                        components['clear_btn'] = self.clear_btn_param
-                        if not self.clear_btn_param.is_rendered:
-                            self.clear_btn_param.render()
-                    elif isinstance(self.clear_btn_param, str):
-                        components['clear_btn'] = Button(self.clear_btn_param, variant="secondary", scale=1, min_width=150)
+            with Group():
+                with Row():
+                    if textbox:
+                        textbox.container = False
+                        textbox.show_label = False
+                        textbox_ = textbox.render()
+                        if not isinstance(textbox_, Textbox):
+                            raise TypeError(f"Expected a gr.Textbox component, but got {type(textbox_)}")
+                        self.textbox = textbox_
+                    else:
+                        self.textbox = Textbox(
+                            container=False, show_label=False, label="Message",
+                            placeholder="Type a message...", scale=7, autofocus=autofocus,
+                        )
+                    
+                    if submit_btn is not None:
+                        if isinstance(submit_btn, Button):
+                            submit_btn.render()
+                        elif isinstance(submit_btn, str):
+                            submit_btn = Button(submit_btn, variant="primary", scale=1, min_width=150)
+                    
+                    if stop_btn is not None:
+                        if isinstance(stop_btn, Button):
+                            stop_btn.visible = False
+                            stop_btn.render()
+                        elif isinstance(stop_btn, str):
+                            stop_btn = Button(stop_btn, variant="stop", visible=False, scale=1, min_width=150)
+                    
+                    self.buttons.extend([submit_btn, stop_btn])
+                    (self.retry_btn, self.undo_btn, self.clear_btn, self.submit_btn, self.stop_btn) = self.buttons
 
-        components['fake_api_btn'] = Button("Fake API", visible=False)
-        components['fake_response_textbox'] = Textbox(label="Response", visible=False)
+                self.fake_api_btn = Button("Fake API", visible=False)
+                self.fake_response_textbox = Textbox(label="Response", visible=False)
 
-        any_unrendered_inputs = any(not inp.is_rendered for inp in self.additional_inputs)
-        if self.additional_inputs and any_unrendered_inputs:
-            with Accordion(**self.additional_inputs_accordion_params):
-                for input_component in self.additional_inputs:
-                    if not input_component.is_rendered:
-                        input_component.render()
+            any_unrendered_inputs = any(not inp.is_rendered for inp in self.additional_inputs)
+            if self.additional_inputs and any_unrendered_inputs:
+                with Accordion(**self.additional_inputs_accordion_params):
+                    for input_component in self.additional_inputs:
+                        if not input_component.is_rendered:
+                            input_component.render()
 
-        components['saved_input'] = State()
-        components['chatbot_state'] = State(self.chatbot.value) if self.chatbot.value else State([])
-        components['interrupter'] = State(None)
+            self.saved_input = State()
+            self.chatbot_state = State(self.chatbot.value) if self.chatbot.value else State([])
 
-        # Сохраняем компоненты
-        self.components = components
-        
-        return components
+            self._setup_events()
+            self._setup_api()
 
-    def setup_events(self):
-        """Регистрирует все события. Должен вызываться после render()."""
-        if not hasattr(self, 'components'):
-            raise RuntimeError("Must call render() before setup_events()")
-        
-        c = self.components
+        if examples:
+            examples.click(lambda x: x[0], inputs=[examples], outputs=self.textbox, show_progress=False, queue=False)
+
+    def _setup_events(self) -> None:
         submit_fn = self._stream_fn if self.is_generator else self._submit_fn
 
-        # Submit event
         submit_event = (
-            c['submit_btn'].click(
-                self._clear_and_save_textbox, [c['textbox']], [c['textbox'], c['saved_input']],
+            self.submit_btn.click(
+                self._clear_and_save_textbox, [self.textbox], [self.textbox, self.saved_input],
                 api_name=False, queue=False,
             )
             .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
-            .then(self._display_input, [c['saved_input'], c['chatbot_state']], [c['chatbot'], c['chatbot_state']], api_name=False, queue=False)
-            .then(submit_fn, [c['saved_input'], c['chatbot_state']] + self.additional_inputs, [c['chatbot'], c['chatbot_state'], c['interrupter']], api_name=False)
+            .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+            .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state, self.interrupter], api_name=False)
             .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
         )
+        self._setup_stop_events(self.submit_btn.click, submit_event)
 
-        # Stop button
-        if c.get('stop_btn') and self.is_generator:
-            def perform_interrupt(ipc):
-                if ipc is not None and callable(ipc):
-                    ipc()
-                return
-
-            c['stop_btn'].click(
-                fn=perform_interrupt,
-                inputs=[c['interrupter']],
-                cancels=[submit_event],
-                api_name=False,
-                queue=False,
-            )
-
-        # Retry button
-        if c.get('retry_btn'):
+        if self.retry_btn:
             retry_event = (
-                c['retry_btn'].click(
-                    self._delete_prev_fn, [c['saved_input'], c['chatbot_state']], 
-                    [c['chatbot'], c['saved_input'], c['chatbot_state'], c['textbox']],  
+                self.retry_btn.click(
+                    self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
+                    [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  
                     api_name=False, queue=False,
                 )
                 .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
-                .then(self._display_input, [c['saved_input'], c['chatbot_state']], [c['chatbot'], c['chatbot_state']], api_name=False, queue=False)
-                .then(submit_fn, [c['saved_input'], c['chatbot_state']] + self.additional_inputs, [c['chatbot'], c['chatbot_state']], api_name=False)
+                .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+                .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state], api_name=False)
                 .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
             )
+            self._setup_stop_events(self.retry_btn.click, retry_event)
 
-        # Undo button
-        if c.get('undo_btn'):
-            c['undo_btn'].click(
-                self._delete_prev_fn, [c['saved_input'], c['chatbot_state']], 
-                [c['chatbot'], c['saved_input'], c['chatbot_state'], c['textbox']],  
+        if self.undo_btn:
+            self.undo_btn.click(
+                self._delete_prev_fn, [self.saved_input, self.chatbot_state], 
+                [self.chatbot, self.saved_input, self.chatbot_state, self.textbox],  
                 api_name=False, queue=False,
             ).then(
                 self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
@@ -256,11 +205,11 @@ class ChatInterface:
                 self.post_fn, **self.post_fn_kwargs, api_name=False, 
             )
 
-        # Clear button
-        if c.get('clear_btn'):
-            c['clear_btn'].click(
+
+        if self.clear_btn:
+            self.clear_btn.click(
                 async_lambda(lambda: ([], [], None, "")), None, 
-                [c['chatbot'], c['chatbot_state'], c['saved_input'], c['textbox']], 
+                [self.chatbot, self.chatbot_state, self.saved_input, self.textbox], 
                 queue=False, api_name=False,
             ).then(
                 self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
@@ -268,14 +217,103 @@ class ChatInterface:
                 self.post_fn, **self.post_fn_kwargs, api_name=False,
             )
 
-        # Examples
-        if self.examples:
-            self.examples.click(lambda x: x[0], inputs=[self.examples], outputs=c['textbox'], show_progress=False, queue=False)
+    def _setup_events(self) -> None:
+        submit_fn = self._stream_fn if self.is_generator else self._submit_fn
 
-        # API
+        self._events_to_cancel = []
+
+        submit_event = (
+            self.submit_btn.click(
+                self._clear_and_save_textbox, [self.textbox], [self.textbox, self.saved_input],
+                api_name=False, queue=False,
+            )
+            .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
+            .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+            .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state, self.interrupter], api_name=False)
+            .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
+        )
+        self._events_to_cancel.append(submit_event)
+        self._setup_show_stop(self.submit_btn.click)
+
+        if self.retry_btn:
+            retry_event = (
+                self.retry_btn.click(
+                    self._delete_prev_fn, [self.saved_input, self.chatbot_state], [self.chatbot, self.saved_input, self.chatbot_state],
+                    api_name=False, queue=False,
+                )
+                .then(self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False)
+                .then(self._display_input, [self.saved_input, self.chatbot_state], [self.chatbot, self.chatbot_state], api_name=False, queue=False)
+                .then(submit_fn, [self.saved_input, self.chatbot_state] + self.additional_inputs, [self.chatbot, self.chatbot_state], api_name=False)
+                .then(self.post_fn, **self.post_fn_kwargs, api_name=False)
+            )
+            self._events_to_cancel.append(retry_event)
+            self._setup_show_stop(self.retry_btn.click)
+
+        if self.undo_btn:
+            self.undo_btn.click(
+                self._delete_prev_fn, [self.saved_input, self.chatbot_state], [self.chatbot, self.saved_input, self.chatbot_state],
+                api_name=False, queue=False,
+            ).then(
+                self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
+            ).then(
+                async_lambda(lambda x: x), [self.saved_input], [self.textbox], api_name=False, queue=False,
+            ).then(
+                self.post_fn, **self.post_fn_kwargs, api_name=False,
+            )
+
+        if self.clear_btn:
+            self.clear_btn.click(
+                async_lambda(lambda: ([], [], None)), None, [self.chatbot, self.chatbot_state, self.saved_input],
+                queue=False, api_name=False,
+            ).then(
+                self.pre_fn, **self.pre_fn_kwargs, api_name=False, queue=False,
+            ).then(
+                self.post_fn, **self.post_fn_kwargs, api_name=False,
+            )
+        self._register_stop_btn()
+
+    def _setup_show_stop(self, event_trigger: Callable) -> None:
+        if self.stop_btn and self.is_generator and self.submit_btn:
+            event_trigger(
+                async_lambda(lambda: (Button.update(visible=False), Button.update(visible=True))),
+                None, [self.submit_btn, self.stop_btn], api_name=False, queue=False,
+            )
+
+    def _register_stop_btn(self) -> None:
+        def perform_interrupt(ipc):
+            if ipc is not None and callable(ipc):
+                ipc()
+            return
+
+        if self.stop_btn and self.is_generator:
+            for evt in self._events_to_cancel:
+                evt.then(
+                    async_lambda(lambda: (Button.update(visible=True), Button.update(visible=False))),
+                    None, [self.submit_btn, self.stop_btn], api_name=False, queue=False,
+                )
+            
+            self.stop_btn.click(
+                fn=perform_interrupt,
+                inputs=[self.interrupter],
+                cancels=self._events_to_cancel,
+                api_name=False,
+                queue=False,
+            ).then(
+                fn=self._delete_prev_fn,
+                inputs=[self.saved_input, self.chatbot_state],
+                outputs=[self.chatbot, self.saved_input, self.chatbot_state, self.textbox],
+                api_name=False,
+                queue=False,
+            ).then(
+                self.post_fn,
+                **self.post_fn_kwargs,
+                api_name=False,
+            )
+
+    def _setup_api(self) -> None:
         api_fn = self._api_stream_fn if self.is_generator else self._api_submit_fn
-        c['fake_api_btn'].click(
-            api_fn, [c['textbox'], c['chatbot_state']] + self.additional_inputs, [c['textbox'], c['chatbot_state']],
+        self.fake_api_btn.click(
+            api_fn, [self.textbox, self.chatbot_state] + self.additional_inputs, [self.textbox, self.chatbot_state],
             api_name="chat",
         )
 
@@ -289,7 +327,7 @@ class ChatInterface:
     async def _submit_fn(self, message: str, history_with_input: list[list[str | None]], *args) -> tuple[list[list[str | None]], list[list[str | None]]]:
         history = history_with_input[:-1]
         inputs = [message, history, *args]
-        response = await self.fn(*inputs) if self.is_async else await anyio.to_thread.run_sync(self.fn, *inputs)
+        response = await self.fn(*inputs) if self.is_async else await anyio.to_thread.run_sync(self.fn, *inputs, limiter=self.limiter)
         history.append([message, response])
         return history, history
 
@@ -300,8 +338,8 @@ class ChatInterface:
         if self.is_async:
             generator = self.fn(*inputs)
         else:
-            generator = await anyio.to_thread.run_sync(self.fn, *inputs)
-            generator = SyncToAsyncIterator(generator, None)
+            generator = await anyio.to_thread.run_sync(self.fn, *inputs, limiter=self.limiter)
+            generator = SyncToAsyncIterator(generator, self.limiter)
             
         try:
             first_response, first_interrupter = await async_iteration(generator)
@@ -314,7 +352,7 @@ class ChatInterface:
 
     async def _api_submit_fn(self, message: str, history: list[list[str | None]], *args) -> tuple[str, list[list[str | None]]]:
         inputs = [message, history, *args]
-        response = await self.fn(*inputs) if self.is_async else await anyio.to_thread.run_sync(self.fn, *inputs)
+        response = await self.fn(*inputs) if self.is_async else await anyio.to_thread.run_sync(self.fn, *inputs, limiter=self.limiter)
         history.append([message, response])
         return response, history
 
@@ -323,8 +361,8 @@ class ChatInterface:
         if self.is_async:
             generator = self.fn(*inputs)
         else:
-            generator = await anyio.to_thread.run_sync(self.fn, *inputs)
-            generator = SyncToAsyncIterator(generator, None)
+            generator = await anyio.to_thread.run_sync(self.fn, *inputs, limiter=self.limiter)
+            generator = SyncToAsyncIterator(generator, self.limiter)
             
         try:
             first_response = await async_iteration(generator)

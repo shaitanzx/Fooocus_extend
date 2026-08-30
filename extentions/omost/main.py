@@ -3,7 +3,7 @@ from extentions.omost.chat_interface import ChatInterface
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 import os
 import numpy as np
-import extentions.omost.canvas as omost_canvas
+import extentions.omost.lib_omost.canvas as omost_canvas
 from transformers.generation.stopping_criteria import StoppingCriteriaList
 import random
 from threading import Thread
@@ -245,6 +245,7 @@ def model_loading(llm_name):
 
 
 def gui():
+  with gr.Blocks():
     models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
@@ -307,8 +308,6 @@ def gui():
                 prompt_code=gr.Textbox(value='',visible=False)
                 last_input=gr.Textbox(value='',visible=False)
             chatbot = gr.Chatbot(label='Omost chat', scale=1, show_copy_button=True, render=False)
-            
-            # Создаем ChatInterface
             chatInterface = ChatInterface(
                 fn=chat_fn,
                 post_fn=post_chat,
@@ -322,10 +321,6 @@ def gui():
                 additional_inputs=[seed, temperature, top_p, max_new_tokens, model_base, full_history, seed_random],
                 examples=examples
             )
-            
-            # Рендерим компоненты
-            chatInterface.render()
-
     with gr.Row():
         gr.HTML('* \"omost\" is powered by lllyasviel. <a href="https://github.com/lllyasviel/Omost" target="_blank">\U0001F4D4 Document</a>')
             
@@ -336,5 +331,5 @@ def gui():
             queue=False,
             show_progress=False
         )
-    chatInterface.setup_events()
-    return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed,last_input,model_base
+
+  return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed,last_input,model_base
