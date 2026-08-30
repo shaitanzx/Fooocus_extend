@@ -2203,7 +2203,7 @@ with shared.gradio_root:
     """)
     gr.HTML("""
         <div style="text-align: center;">
-            <p>Original code by <a href="https://github.com/lllyasviel/Fooocus" target="_blank">lllyasviel and other contributors.</a> Forked and extended by <a href="https://github.com/shaitanzx">Shahmatist^RMDA.</a> Logo by ‎⁨𝓐𝓵𝓮𝔁 ☭ 𝓜𝓮⁩</p>        
+            <p>Original code by <a href="https://github.com/lllyasviel/Fooocus" target="_blank">lllyasviel and other contributors.</a> Forked and extended by <a href="https://github.com/shaitanzx">Shahmatist^RMDA.</a> Logo by 𝓐𝓵𝓮𝔁 ☭ 𝓜𝓮</p>        
         </div>
         """)
 
