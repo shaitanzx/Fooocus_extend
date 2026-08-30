@@ -11,7 +11,7 @@ from gradio.blocks import Blocks
 from gradio.components import (
     Button,
     Chatbot,
-    IOComponent,
+    Component,
     Dataset,
     Markdown,
     State,
@@ -47,7 +47,7 @@ class ChatInterface(Blocks):
         post_fn_kwargs: dict = None,
         pre_fn_kwargs: dict = None,
         textbox: Textbox | None = None,
-        additional_inputs: str | IOComponent | list[str | IOComponent] | None = None,
+        additional_inputs: str | Component | list[str | Component] | None = None,
         additional_inputs_accordion_name: str | None = None,
         additional_inputs_accordion: str | Accordion | None = None,
         examples: Dataset = None,
@@ -70,6 +70,9 @@ class ChatInterface(Blocks):
             title=title or "Gradio",
             theme=theme,
         )
+        self.server_name = ""
+        self.local_url = ""
+        self.share_url = None
 
         if post_fn_kwargs is None:
             post_fn_kwargs = {}
