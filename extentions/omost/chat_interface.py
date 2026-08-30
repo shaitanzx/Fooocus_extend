@@ -7,11 +7,11 @@ import anyio
 from gradio_client import utils as client_utils
 from gradio_client.documentation import document, set_documentation_group
 
-#from gradio.blocks import Blocks
+from gradio.blocks import Blocks
 from gradio.components import (
     Button,
     Chatbot,
-    Component,
+    IOComponent,
     Dataset,
     Markdown,
     State,
@@ -36,7 +36,7 @@ def async_lambda(f: Callable) -> Callable:
 
 
 @document()
-class ChatInterface(Row):
+class ChatInterface(Blocks):
     def __init__(
         self,
         fn: Callable,
@@ -47,7 +47,7 @@ class ChatInterface(Row):
         post_fn_kwargs: dict = None,
         pre_fn_kwargs: dict = None,
         textbox: Textbox | None = None,
-        additional_inputs: str | Component | list[str | Component] | None = None,
+        additional_inputs: str | IOComponent | list[str | IOComponent] | None = None,
         additional_inputs_accordion_name: str | None = None,
         additional_inputs_accordion: str | Accordion | None = None,
         examples: Dataset = None,
