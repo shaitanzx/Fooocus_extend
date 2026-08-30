@@ -245,7 +245,6 @@ def model_loading(llm_name):
 
 
 def gui():
-  with gr.Blocks():
     models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
@@ -332,4 +331,4 @@ def gui():
             show_progress=False
         )
 
-  return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed,last_input,model_base
+    return render_button, canvas_state, prompt_key, prompt_agress,prompt_code,temperature,top_p,max_new_tokens,seed,last_input,model_base

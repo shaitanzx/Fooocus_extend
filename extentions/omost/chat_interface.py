@@ -36,7 +36,7 @@ def async_lambda(f: Callable) -> Callable:
 
 
 @document()
-class ChatInterface(Blocks):
+class ChatInterface(Row):
     def __init__(
         self,
         fn: Callable,
