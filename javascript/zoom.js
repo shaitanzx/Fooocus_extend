@@ -22,7 +22,7 @@ onUiLoaded(async() => {
 
     // Create hotkey configuration with the provided options
     function createHotkeyConfig(defaultHotkeysConfig) {
-        const result = {};
+        const result = {}; // Resulting hotkey configuration
         for (const key in defaultHotkeysConfig) {
             result[key] = defaultHotkeysConfig[key];
         }
@@ -50,7 +50,6 @@ onUiLoaded(async() => {
 
     let isMoving = false;
     let activeElement;
-    let isErasing = false; // Состояние ластика
 
     const elemData = {};
 
@@ -71,113 +70,6 @@ onUiLoaded(async() => {
         };
 
         let fullScreenMode = false;
-
-        // === НОВОЕ: Создание кнопки ластика в стиле Gradio ===
-        function createEraserButton() {
-            const checkAndAddEraser = () => {
-                // Ищем контейнер с контролами (обычно это div с классом controls или tool-buttons)
-                const controlsContainer = targetElement.querySelector('.controls, .tool-buttons, [class*="controls"]');
-                
-                if (!controlsContainer) {
-                    // Если не нашли, пробуем найти по другим признакам
-                    const buttons = targetElement.querySelectorAll('button');
-                    if (buttons.length > 0) {
-                        // Берем родителя первой кнопки как контейнер
-                        const parentContainer = buttons[0].parentElement;
-                        addEraserToContainer(parentContainer);
-                    }
-                    return;
-                }
-                
-                addEraserToContainer(controlsContainer);
-            };
-            
-            function addEraserToContainer(container) {
-                // Проверяем, не добавили ли уже
-                if (container.querySelector('.eraser-tool-btn')) return;
-                
-                // Создаем кнопку в стиле Gradio
-                const eraserBtn = document.createElement('button');
-                eraserBtn.className = 'eraser-tool-btn';
-                eraserBtn.title = 'Eraser';
-                eraserBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2L22 11L20 20Z"/>
-                        <path d="M17 17L7 7"/>
-                    </svg>
-                `;
-                
-                // Стили в стиле Gradio
-                eraserBtn.style.cssText = `
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 32px;
-                    height: 32px;
-                    padding: 4px;
-                    background: transparent;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    color: #6b7280;
-                    transition: all 0.2s;
-                `;
-                
-                // Hover эффект как у остальных кнопок Gradio
-                eraserBtn.addEventListener('mouseenter', () => {
-                    if (!isErasing) {
-                        eraserBtn.style.color = '#1f2937';
-                        eraserBtn.style.background = '#f3f4f6';
-                    }
-                });
-                
-                eraserBtn.addEventListener('mouseleave', () => {
-                    if (!isErasing) {
-                        eraserBtn.style.color = '#6b7280';
-                        eraserBtn.style.background = 'transparent';
-                    }
-                });
-                
-                // Клик по кнопке
-                eraserBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    isErasing = !isErasing;
-                    
-                    if (isErasing) {
-                        eraserBtn.style.color = '#ffffff';
-                        eraserBtn.style.background = '#3b82f6'; // Синий как активная кнопка в Gradio
-                        targetElement.style.cursor = 'cell';
-                        console.log('[Eraser] ЛАСТИК ВКЛЮЧЕН');
-                    } else {
-                        eraserBtn.style.color = '#6b7280';
-                        eraserBtn.style.background = 'transparent';
-                        targetElement.style.cursor = 'crosshair';
-                        console.log('[Eraser] КИСТЬ ВКЛЮЧЕНА');
-                    }
-                });
-                
-                container.appendChild(eraserBtn);
-                console.log('[Eraser] Кнопка ластика добавлена в панель инструментов');
-            }
-            
-            // Пробуем добавить сразу
-            checkAndAddEraser();
-            
-            // Если не получилось, следим за изменениями DOM
-            const observer = new MutationObserver((mutations) => {
-                for (let mutation of mutations) {
-                    if (mutation.addedNodes.length > 0) {
-                        checkAndAddEraser();
-                    }
-                }
-            });
-            
-            observer.observe(targetElement, { childList: true, subtree: true });
-        }
-
-        // Создаем кнопку ластика
-        createEraserButton();
 
         // Create tooltip
         function createTooltip() {
@@ -367,11 +259,6 @@ onUiLoaded(async() => {
 
         // Change the zoom level based on user interaction
         function changeZoomLevel(operation, e) {
-            // === ИЗМЕНЕНО: Не зумим, если активен ластик ===
-            if (isErasing) {
-                return;
-            }
-            
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
 
@@ -640,141 +527,11 @@ onUiLoaded(async() => {
             }
         }
 
-        // === НОВОЕ: Функции для рисования ластиком ===
-        let eraserLastX = 0;
-        let eraserLastY = 0;
-        let isEraserDrawing = false;
-        
-        function getEraserCoordinates(e, canvas) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
-        }
-        
-        function startErasing(e) {
-            if (!isErasing) return;
-            
-            console.log('[Eraser] Начало стирания');
-            e.preventDefault();
-            e.stopPropagation();
-            
-            isEraserDrawing = true;
-            
-            // Находим canvas
-            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
-            
-            if (!maskCanvas || !drawingCanvas) {
-                console.warn('[Eraser] Canvas не найдены');
-                return;
-            }
-            
-            const maskCtx = maskCanvas.getContext('2d');
-            const drawingCtx = drawingCanvas.getContext('2d');
-            
-            const pos = getEraserCoordinates(e, drawingCanvas);
-            eraserLastX = pos.x;
-            eraserLastY = pos.y;
-            
-            // Стираем на mask canvas
-            maskCtx.save();
-            maskCtx.globalCompositeOperation = 'destination-out';
-            maskCtx.beginPath();
-            maskCtx.arc(eraserLastX, eraserLastY, 20, 0, Math.PI * 2);
-            maskCtx.fill();
-            maskCtx.restore();
-            
-            // Стираем на drawing canvas
-            drawingCtx.save();
-            drawingCtx.globalCompositeOperation = 'destination-out';
-            drawingCtx.beginPath();
-            drawingCtx.arc(eraserLastX, eraserLastY, 20, 0, Math.PI * 2);
-            drawingCtx.fill();
-            drawingCtx.restore();
-        }
-        
-        function continueErasing(e) {
-            if (!isErasing || !isEraserDrawing) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
-            
-            if (!maskCanvas || !drawingCanvas) return;
-            
-            const maskCtx = maskCanvas.getContext('2d');
-            const drawingCtx = drawingCanvas.getContext('2d');
-            
-            const pos = getEraserCoordinates(e, drawingCanvas);
-            
-            maskCtx.save();
-            maskCtx.globalCompositeOperation = 'destination-out';
-            maskCtx.beginPath();
-            maskCtx.moveTo(eraserLastX, eraserLastY);
-            maskCtx.lineTo(pos.x, pos.y);
-            maskCtx.lineWidth = 40;
-            maskCtx.lineCap = 'round';
-            maskCtx.lineJoin = 'round';
-            maskCtx.stroke();
-            maskCtx.restore();
-            
-            drawingCtx.save();
-            drawingCtx.globalCompositeOperation = 'destination-out';
-            drawingCtx.beginPath();
-            drawingCtx.moveTo(eraserLastX, eraserLastY);
-            drawingCtx.lineTo(pos.x, pos.y);
-            drawingCtx.lineWidth = 40;
-            drawingCtx.lineCap = 'round';
-            drawingCtx.lineJoin = 'round';
-            drawingCtx.stroke();
-            drawingCtx.restore();
-            
-            eraserLastX = pos.x;
-            eraserLastY = pos.y;
-        }
-        
-        function stopErasing(e) {
-            if (!isEraserDrawing) return;
-            
-            console.log('[Eraser] Конец стирания');
-            isEraserDrawing = false;
-            
-            // Триггерим обновление Gradio
-            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
-            
-            if (drawingCanvas) {
-                drawingCanvas.dispatchEvent(new Event('input', { bubbles: true }));
-                drawingCanvas.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            if (maskCanvas) {
-                maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
-                maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }
-        
-        // Добавляем обработчики для ластика
-        targetElement.addEventListener('pointerdown', startErasing, true);
-        targetElement.addEventListener('pointermove', continueErasing, true);
-        targetElement.addEventListener('pointerup', stopErasing, true);
-        targetElement.addEventListener('pointerleave', stopErasing, true);
-
         // Add mouse event handlers
         targetElement.addEventListener("mousemove", handleMouseMove);
         targetElement.addEventListener("mouseleave", handleMouseLeave);
 
         targetElement.addEventListener("wheel", e => {
-            // === ИЗМЕНЕНО: Если активен ластик - не зумим ===
-            if (isErasing) {
-                return;
-            }
-            
             // change zoom level
             const operation = e.deltaY > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
