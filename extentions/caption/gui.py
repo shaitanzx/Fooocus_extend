@@ -577,9 +577,9 @@ def gui():
             if huggingface_token_value != "" and str(huggingface_token_value).startswith("hf"):
                 os.environ["HF_TOKEN"] = str(huggingface_token_value)
 
-            get_gradio_args = gui_setup_args()
-            args.models_save_path = str(get_gradio_args.models_save_path)
-            args.log_level = str(get_gradio_args.log_level)
+            #get_gradio_args = gui_setup_args()
+            args.models_save_path = str(os.path.join("models","caption"))
+            args.log_level = "INFO"
             args.caption_method = str(caption_method_value).lower()
             args.llm_choice = str(llm_choice_value).lower()
 
