@@ -441,326 +441,326 @@ class Caption:
             self.my_llm.unload_model()
 
 
-def setup_args() -> argparse.Namespace:
-    args = argparse.ArgumentParser()
-    base_args = args.add_argument_group("Base")
-    base_args.add_argument(
-        '--data_path',
-        type=str,
-        help='path for data.'
-    )
-    base_args.add_argument(
-        '--recursive',
-        action='store_true',
-        help='Include recursive dirs'
-    )
+# def setup_args() -> argparse.Namespace:
+#     args = argparse.ArgumentParser()
+#     base_args = args.add_argument_group("Base")
+#     base_args.add_argument(
+#         '--data_path',
+#         type=str,
+#         help='path for data.'
+#     )
+#     base_args.add_argument(
+#         '--recursive',
+#         action='store_true',
+#         help='Include recursive dirs'
+#     )
 
-    log_args = args.add_argument_group("Logs")
-    log_args.add_argument(
-        '--log_level',
-        type=str,
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        default='INFO',
-        help='set log level, default is `INFO`'
-    )
-    log_args.add_argument(
-        '--save_logs',
-        action='store_true',
-        help='save log file.'
-    )
+#     log_args = args.add_argument_group("Logs")
+#     log_args.add_argument(
+#         '--log_level',
+#         type=str,
+#         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+#         default='INFO',
+#         help='set log level, default is `INFO`'
+#     )
+#     log_args.add_argument(
+#         '--save_logs',
+#         action='store_true',
+#         help='save log file.'
+#     )
 
-    download_args = args.add_argument_group("Download")
-    download_args.add_argument(
-        '--model_site',
-        type=str,
-        choices=['huggingface', 'modelscope'],
-        default='huggingface',
-        help='download models from model site huggingface or modelscope, default is `huggingface`.'
-    )
-    download_args.add_argument(
-        '--models_save_path',
-        type=str,
-        default=DEFAULT_MODELS_SAVE_PATH,
-        help='path to save models, default is `models`.'
-    )
-    download_args.add_argument(
-        '--use_sdk_cache',
-        action='store_true',
-        help='use sdk\'s cache dir to store models. \
-            if this option enabled, `--models_save_path` will be ignored.'
-    )
-    download_args.add_argument(
-        '--download_method',
-        type=str,
-        choices=["SDK", "URL"],
-        default='SDK',
-        help='download models via SDK or URL, default is `SDK`.'
-    )
-    download_args.add_argument(
-        '--force_download',
-        action='store_true',
-        help='force download even file exists.'
-    )
-    download_args.add_argument(
-        '--skip_download',
-        action='store_true',
-        help='skip download if exists.'
-    )
+#     download_args = args.add_argument_group("Download")
+#     download_args.add_argument(
+#         '--model_site',
+#         type=str,
+#         choices=['huggingface', 'modelscope'],
+#         default='huggingface',
+#         help='download models from model site huggingface or modelscope, default is `huggingface`.'
+#     )
+#     download_args.add_argument(
+#         '--models_save_path',
+#         type=str,
+#         default=DEFAULT_MODELS_SAVE_PATH,
+#         help='path to save models, default is `models`.'
+#     )
+#     download_args.add_argument(
+#         '--use_sdk_cache',
+#         action='store_true',
+#         help='use sdk\'s cache dir to store models. \
+#             if this option enabled, `--models_save_path` will be ignored.'
+#     )
+#     download_args.add_argument(
+#         '--download_method',
+#         type=str,
+#         choices=["SDK", "URL"],
+#         default='SDK',
+#         help='download models via SDK or URL, default is `SDK`.'
+#     )
+#     download_args.add_argument(
+#         '--force_download',
+#         action='store_true',
+#         help='force download even file exists.'
+#     )
+#     download_args.add_argument(
+#         '--skip_download',
+#         action='store_true',
+#         help='skip download if exists.'
+#     )
 
-    caption_args = args.add_argument_group("Caption")
-    caption_args.add_argument(
-        '--caption_method',
-        type=str,
-        default='wd+llm',
-        choices=['wd', 'llm', 'wd+llm'],
-        help='method for caption [`wd`, `llm`, `wd+llm`], select wd or llm, or both of them to caption, '
-             'default is `wd+llm`.',
-    )
-    caption_args.add_argument(
-        '--run_method',
-        type=str,
-        default='sync',
-        choices=['sync', 'queue'],
-        help='''running method for wd+llm caption[`sync`, `queue`], need `caption_method` set to `wd+llm`.
-             if sync, image will caption with wd models,
-             then caption with joy models while wd captions in joy user prompt.
-             if queue, all images will caption with wd models first,
-             then caption all of them with joy models while wd captions in joy user prompt.
-             default is `sync`.'''
-    )
-    caption_args.add_argument(
-        '--caption_extension',
-        type=str,
-        default='.txt',
-        help='extension of caption file, default is `.txt`. '
-             'If `caption_method` not `wd+llm`, it will be wd or llm caption file extension.'
-    )
-    caption_args.add_argument(
-        '--save_caption_together',
-        action='store_true',
-        help='Save WD tags and LLM captions in one file.'
-    )
-    caption_args.add_argument(
-        '--save_caption_together_seperator',
-        default='|',
-        help='Seperator between WD and LLM captions, if they are saved in one file.'
-    )
-    caption_args.add_argument(
-        '--image_size',
-        type=int,
-        default=1024,
-        help='resize image to suitable, default is `1024`.'
-    )
-    caption_args.add_argument(
-        '--skip_exists',
-        action='store_true',
-        help='not caption file if caption exists.'
-    )
-    caption_args.add_argument(
-        '--not_overwrite',
-        action='store_true',
-        help='not overwrite caption file if exists.'
-    )
-    caption_args.add_argument(
-        '--custom_caption_save_path',
-        type=str,
-        default=None,
-        help='custom caption file save path.'
-    )
+#     caption_args = args.add_argument_group("Caption")
+#     caption_args.add_argument(
+#         '--caption_method',
+#         type=str,
+#         default='wd+llm',
+#         choices=['wd', 'llm', 'wd+llm'],
+#         help='method for caption [`wd`, `llm`, `wd+llm`], select wd or llm, or both of them to caption, '
+#              'default is `wd+llm`.',
+#     )
+#     caption_args.add_argument(
+#         '--run_method',
+#         type=str,
+#         default='sync',
+#         choices=['sync', 'queue'],
+#         help='''running method for wd+llm caption[`sync`, `queue`], need `caption_method` set to `wd+llm`.
+#              if sync, image will caption with wd models,
+#              then caption with joy models while wd captions in joy user prompt.
+#              if queue, all images will caption with wd models first,
+#              then caption all of them with joy models while wd captions in joy user prompt.
+#              default is `sync`.'''
+#     )
+#     caption_args.add_argument(
+#         '--caption_extension',
+#         type=str,
+#         default='.txt',
+#         help='extension of caption file, default is `.txt`. '
+#              'If `caption_method` not `wd+llm`, it will be wd or llm caption file extension.'
+#     )
+#     caption_args.add_argument(
+#         '--save_caption_together',
+#         action='store_true',
+#         help='Save WD tags and LLM captions in one file.'
+#     )
+#     caption_args.add_argument(
+#         '--save_caption_together_seperator',
+#         default='|',
+#         help='Seperator between WD and LLM captions, if they are saved in one file.'
+#     )
+#     caption_args.add_argument(
+#         '--image_size',
+#         type=int,
+#         default=1024,
+#         help='resize image to suitable, default is `1024`.'
+#     )
+#     caption_args.add_argument(
+#         '--skip_exists',
+#         action='store_true',
+#         help='not caption file if caption exists.'
+#     )
+#     caption_args.add_argument(
+#         '--not_overwrite',
+#         action='store_true',
+#         help='not overwrite caption file if exists.'
+#     )
+#     caption_args.add_argument(
+#         '--custom_caption_save_path',
+#         type=str,
+#         default=None,
+#         help='custom caption file save path.'
+#     )
 
-    wd_args = args.add_argument_group("WD Caption")
-    wd_args.add_argument(
-        '--wd_config',
-        type=str,
-        help='configs json for wd tagger models, default is `default_wd.json`'
-    )
-    wd_args.add_argument(
-        '--wd_model_name',
-        type=str,
-        help='wd tagger model name will be used for caption inference, default is `wd-eva02-large-tagger-v3`.'
-    )
-    wd_args.add_argument(
-        '--wd_force_use_cpu',
-        action='store_true',
-        help='force use cpu for wd models inference.'
-    )
-    wd_args.add_argument(
-        '--wd_caption_extension',
-        type=str,
-        default=".wdcaption",
-        help='extension for wd captions files, default is `.wdcaption`.'
-    )
-    wd_args.add_argument(
-        '--wd_remove_underscore',
-        action='store_true',
-        help='replace underscores with spaces in the output tags.',
-    )
-    wd_args.add_argument(
-        "--wd_undesired_tags",
-        type=str,
-        default='',
-        help='comma-separated list of undesired tags to remove from the output.'
-    )
-    wd_args.add_argument(
-        '--wd_tags_frequency',
-        action='store_true',
-        help='Show frequency of tags for images.'
-    )
-    wd_args.add_argument(
-        '--wd_threshold',
-        type=float,
-        default=0.35,
-        help='threshold of confidence to add a tag, default value is `0.35`.'
-    )
-    wd_args.add_argument(
-        '--wd_general_threshold',
-        type=float,
-        default=None,
-        help='threshold of confidence to add a tag from general category, same as --threshold if omitted.'
-    )
-    wd_args.add_argument(
-        '--wd_character_threshold',
-        type=float,
-        default=None,
-        help='threshold of confidence to add a tag for character category, same as --threshold if omitted.'
-    )
-    # wd_args.add_argument(
-    #     '--wd_maximum_cut_threshold',
-    #     action = 'store_true',
-    #     help = 'Enable Maximum Cut Thresholding, will overwrite every threshold value by its calculate value.'
-    # )
-    wd_args.add_argument(
-        '--wd_add_rating_tags_to_first',
-        action='store_true',
-        help='Adds rating tags to the first.',
-    )
-    wd_args.add_argument(
-        '--wd_add_rating_tags_to_last',
-        action='store_true',
-        help='Adds rating tags to the last.',
-    )
-    wd_args.add_argument(
-        '--wd_character_tags_first',
-        action='store_true',
-        help='Always put character tags before the general tags.',
-    )
-    wd_args.add_argument(
-        '--wd_always_first_tags',
-        type=str,
-        default=None,
-        help='comma-separated list of tags to always put at the beginning, e.g. `1girl,solo`'
-    )
-    wd_args.add_argument(
-        '--wd_caption_separator',
-        type=str,
-        default=', ',
-        help='Separator for tags(include space if needed), default is `, `.'
-    )
-    wd_args.add_argument(
-        '--wd_tag_replacement',
-        type=str,
-        default=None,
-        help='tag replacement in the format of `source1,target1;source2,target2; ...`. '
-             'Escape `,` and `;` with `\\`. e.g. `tag1,tag2;tag3,tag4`',
-    )
-    wd_args.add_argument(
-        '--wd_character_tag_expand',
-        action='store_true',
-        help='expand tag tail parenthesis to another tag for character tags. e.g. '
-             '`character_name_(series)` will be expanded to `character_name, series`.',
-    )
+#     wd_args = args.add_argument_group("WD Caption")
+#     wd_args.add_argument(
+#         '--wd_config',
+#         type=str,
+#         help='configs json for wd tagger models, default is `default_wd.json`'
+#     )
+#     wd_args.add_argument(
+#         '--wd_model_name',
+#         type=str,
+#         help='wd tagger model name will be used for caption inference, default is `wd-eva02-large-tagger-v3`.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_force_use_cpu',
+#         action='store_true',
+#         help='force use cpu for wd models inference.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_caption_extension',
+#         type=str,
+#         default=".wdcaption",
+#         help='extension for wd captions files, default is `.wdcaption`.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_remove_underscore',
+#         action='store_true',
+#         help='replace underscores with spaces in the output tags.',
+#     )
+#     wd_args.add_argument(
+#         "--wd_undesired_tags",
+#         type=str,
+#         default='',
+#         help='comma-separated list of undesired tags to remove from the output.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_tags_frequency',
+#         action='store_true',
+#         help='Show frequency of tags for images.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_threshold',
+#         type=float,
+#         default=0.35,
+#         help='threshold of confidence to add a tag, default value is `0.35`.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_general_threshold',
+#         type=float,
+#         default=None,
+#         help='threshold of confidence to add a tag from general category, same as --threshold if omitted.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_character_threshold',
+#         type=float,
+#         default=None,
+#         help='threshold of confidence to add a tag for character category, same as --threshold if omitted.'
+#     )
+#     # wd_args.add_argument(
+#     #     '--wd_maximum_cut_threshold',
+#     #     action = 'store_true',
+#     #     help = 'Enable Maximum Cut Thresholding, will overwrite every threshold value by its calculate value.'
+#     # )
+#     wd_args.add_argument(
+#         '--wd_add_rating_tags_to_first',
+#         action='store_true',
+#         help='Adds rating tags to the first.',
+#     )
+#     wd_args.add_argument(
+#         '--wd_add_rating_tags_to_last',
+#         action='store_true',
+#         help='Adds rating tags to the last.',
+#     )
+#     wd_args.add_argument(
+#         '--wd_character_tags_first',
+#         action='store_true',
+#         help='Always put character tags before the general tags.',
+#     )
+#     wd_args.add_argument(
+#         '--wd_always_first_tags',
+#         type=str,
+#         default=None,
+#         help='comma-separated list of tags to always put at the beginning, e.g. `1girl,solo`'
+#     )
+#     wd_args.add_argument(
+#         '--wd_caption_separator',
+#         type=str,
+#         default=', ',
+#         help='Separator for tags(include space if needed), default is `, `.'
+#     )
+#     wd_args.add_argument(
+#         '--wd_tag_replacement',
+#         type=str,
+#         default=None,
+#         help='tag replacement in the format of `source1,target1;source2,target2; ...`. '
+#              'Escape `,` and `;` with `\\`. e.g. `tag1,tag2;tag3,tag4`',
+#     )
+#     wd_args.add_argument(
+#         '--wd_character_tag_expand',
+#         action='store_true',
+#         help='expand tag tail parenthesis to another tag for character tags. e.g. '
+#              '`character_name_(series)` will be expanded to `character_name, series`.',
+#     )
 
-    llm_args = args.add_argument_group("LLM Caption")
-    llm_args.add_argument(
-        '--llm_choice',
-        type=str,
-        default='llama',
-        choices=['joy', 'llama', 'qwen', 'minicpm', 'florence'],
-        help='select llm models[`joy`, `llama`, `qwen`, `minicpm`, `florence`], default is `llama`.',
-    )
-    llm_args.add_argument(
-        '--llm_config',
-        type=str,
-        help='config json for LLM Caption models, default is `default_llama_3.2V.json`'
-    )
-    llm_args.add_argument(
-        '--llm_model_name',
-        type=str,
-        help='model name for inference, default is `Llama-3.2-11B-Vision-Instruct`'
-    )
-    llm_args.add_argument(
-        '--llm_patch',
-        action='store_true',
-        help='patch llm with lora for uncensored, only support `Llama-3.2-11B-Vision-Instruct` and `Joy-Caption-Pre-Alpha` now'
-    )
-    llm_args.add_argument(
-        '--llm_use_cpu',
-        action='store_true',
-        help='load LLM models use cpu.'
-    )
-    llm_args.add_argument(
-        '--llm_dtype',
-        type=str,
-        choices=["fp16", "bf16", "fp32"],
-        default='fp16',
-        help='choice joy LLM load dtype, default is `fp16`.'
-    )
-    llm_args.add_argument(
-        '--llm_qnt',
-        type=str,
-        choices=["none", "4bit", "8bit"],
-        default='none',
-        help='Enable quantization for LLM ["none","4bit", "8bit"]. default is `none`.'
-    )
-    llm_args.add_argument(
-        '--llm_caption_extension',
-        type=str,
-        default='.llmcaption',
-        help='extension of LLM caption file, default is `.llmcaption`'
-    )
-    llm_args.add_argument(
-        '--llm_read_wd_caption',
-        action='store_true',
-        help='LLM will read wd tags for inference.\nOnly effect when `caption_method` is `llm`'
-    )
-    llm_args.add_argument(
-        '--llm_caption_without_wd',
-        action='store_true',
-        help='LLM will not read WD tags for inference.\nOnly effect when `caption_method` is `wd+llm`.'
-    )
-    llm_args.add_argument(
-        '--llm_system_prompt',
-        type=str,
-        default=DEFAULT_SYSTEM_PROMPT,
-        help='system prompt for llm caption.'
-    )
-    llm_args.add_argument(
-        '--llm_user_prompt',
-        type=str,
-        default=DEFAULT_USER_PROMPT_WITHOUT_WD,
-        help='user prompt for llm caption.'
-    )
-    llm_args.add_argument(
-        '--llm_temperature',
-        type=float,
-        default=0,
-        help='temperature for LLM model, default is `0`，means use llm own default value.'
-    )
-    llm_args.add_argument(
-        '--llm_max_tokens',
-        type=int,
-        default=0,
-        help='max tokens for LLM model output, default is `0`, means use llm own default value.'
-    )
+#     llm_args = args.add_argument_group("LLM Caption")
+#     llm_args.add_argument(
+#         '--llm_choice',
+#         type=str,
+#         default='llama',
+#         choices=['joy', 'llama', 'qwen', 'minicpm', 'florence'],
+#         help='select llm models[`joy`, `llama`, `qwen`, `minicpm`, `florence`], default is `llama`.',
+#     )
+#     llm_args.add_argument(
+#         '--llm_config',
+#         type=str,
+#         help='config json for LLM Caption models, default is `default_llama_3.2V.json`'
+#     )
+#     llm_args.add_argument(
+#         '--llm_model_name',
+#         type=str,
+#         help='model name for inference, default is `Llama-3.2-11B-Vision-Instruct`'
+#     )
+#     llm_args.add_argument(
+#         '--llm_patch',
+#         action='store_true',
+#         help='patch llm with lora for uncensored, only support `Llama-3.2-11B-Vision-Instruct` and `Joy-Caption-Pre-Alpha` now'
+#     )
+#     llm_args.add_argument(
+#         '--llm_use_cpu',
+#         action='store_true',
+#         help='load LLM models use cpu.'
+#     )
+#     llm_args.add_argument(
+#         '--llm_dtype',
+#         type=str,
+#         choices=["fp16", "bf16", "fp32"],
+#         default='fp16',
+#         help='choice joy LLM load dtype, default is `fp16`.'
+#     )
+#     llm_args.add_argument(
+#         '--llm_qnt',
+#         type=str,
+#         choices=["none", "4bit", "8bit"],
+#         default='none',
+#         help='Enable quantization for LLM ["none","4bit", "8bit"]. default is `none`.'
+#     )
+#     llm_args.add_argument(
+#         '--llm_caption_extension',
+#         type=str,
+#         default='.llmcaption',
+#         help='extension of LLM caption file, default is `.llmcaption`'
+#     )
+#     llm_args.add_argument(
+#         '--llm_read_wd_caption',
+#         action='store_true',
+#         help='LLM will read wd tags for inference.\nOnly effect when `caption_method` is `llm`'
+#     )
+#     llm_args.add_argument(
+#         '--llm_caption_without_wd',
+#         action='store_true',
+#         help='LLM will not read WD tags for inference.\nOnly effect when `caption_method` is `wd+llm`.'
+#     )
+#     llm_args.add_argument(
+#         '--llm_system_prompt',
+#         type=str,
+#         default=DEFAULT_SYSTEM_PROMPT,
+#         help='system prompt for llm caption.'
+#     )
+#     llm_args.add_argument(
+#         '--llm_user_prompt',
+#         type=str,
+#         default=DEFAULT_USER_PROMPT_WITHOUT_WD,
+#         help='user prompt for llm caption.'
+#     )
+#     llm_args.add_argument(
+#         '--llm_temperature',
+#         type=float,
+#         default=0,
+#         help='temperature for LLM model, default is `0`，means use llm own default value.'
+#     )
+#     llm_args.add_argument(
+#         '--llm_max_tokens',
+#         type=int,
+#         default=0,
+#         help='max tokens for LLM model output, default is `0`, means use llm own default value.'
+#     )
 
-    # gradio_args = args.add_argument_group("Gradio dummy args, no effects")
-    # gradio_args.add_argument('--theme', type=str, default="default", choices=["default", "ocean", "origin"],
-    #                          help="set themes")
-    # gradio_args.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
-    # gradio_args.add_argument('--listen', action='store_true', help="allow remote connections")
-    # gradio_args.add_argument('--share', action='store_true', help="allow gradio share")
-    # gradio_args.add_argument('--inbrowser', action='store_true', help="auto open in browser")
-    return args.parse_args()
+#     # gradio_args = args.add_argument_group("Gradio dummy args, no effects")
+#     # gradio_args.add_argument('--theme', type=str, default="default", choices=["default", "ocean", "origin"],
+#     #                          help="set themes")
+#     # gradio_args.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
+#     # gradio_args.add_argument('--listen', action='store_true', help="allow remote connections")
+#     # gradio_args.add_argument('--share', action='store_true', help="allow gradio share")
+#     # gradio_args.add_argument('--inbrowser', action='store_true', help="auto open in browser")
+#     return args.parse_args()
 
 
 # def main():

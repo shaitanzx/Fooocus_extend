@@ -5,6 +5,8 @@ import time
 
 import gradio as gr
 from PIL import Image
+import types
+
 
 from . import caption
 from .utils import inference
@@ -570,7 +572,44 @@ def gui():
             start_time = time.monotonic()
 
             if ARGS is None:
-                ARGS = caption.setup_args()
+                # Создаем простой объект с минимальными настройками по умолчанию для GUI
+                ARGS = types.SimpleNamespace(
+                    models_save_path=caption.DEFAULT_MODELS_SAVE_PATH,
+                    log_level="INFO",
+                    skip_download=SKIP_DOWNLOAD,
+                    save_logs=False,
+                    recursive=False,
+                    run_method="sync",
+                    caption_extension=".txt",
+                    save_caption_together=False,
+                    save_caption_together_seperator="|",
+                    image_size=1024,
+                    skip_exists=False,
+                    not_overwrite=False,
+                    custom_caption_save_path=None,
+                    wd_config=None,
+                    wd_model_name=None,
+                    llm_config=None,
+                    llm_model_name=None,
+                    wd_remove_underscore=False,
+                    wd_threshold=0.35,
+                    wd_general_threshold=None,
+                    wd_character_threshold=None,
+                    wd_add_rating_tags_to_first=False,
+                    wd_add_rating_tags_to_last=False,
+                    wd_character_tags_first=False,
+                    wd_always_first_tags=None,
+                    wd_caption_separator=", ",
+                    wd_tag_replacement=None,
+                    wd_character_tag_expand=False,
+                    llm_caption_extension=".llmcaption",
+                    llm_read_wd_caption=False,
+                    llm_caption_without_wd=False,
+                    llm_system_prompt=caption.DEFAULT_SYSTEM_PROMPT,
+                    llm_user_prompt=caption.DEFAULT_USER_PROMPT_WITHOUT_WD,
+                    llm_temperature=0.0,
+                    llm_max_tokens=0
+                )
 
             args = ARGS
             args.model_site = model_site_value
