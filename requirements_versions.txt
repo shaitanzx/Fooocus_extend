@@ -56,4 +56,4 @@ fairscale==0.4.13
 bitsandbytes==0.45.5
 
 
-flash-attn
+flash-attn==2.6.3
