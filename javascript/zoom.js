@@ -50,7 +50,7 @@ onUiLoaded(async() => {
 
     let isMoving = false;
     let activeElement;
-    let isErasing = false; // === НОВОЕ: состояние ластика ===
+    let isErasing = false; // Состояние ластика
 
     const elemData = {};
 
@@ -72,55 +72,108 @@ onUiLoaded(async() => {
 
         let fullScreenMode = false;
 
-        // === НОВОЕ: Создание кнопки ластика ===
+        // === НОВОЕ: Создание кнопки ластика в стиле Gradio ===
         function createEraserButton() {
-            const eraserBtn = document.createElement('button');
-            eraserBtn.innerHTML = '🧹';
-            eraserBtn.className = 'eraser-toggle-btn';
-            eraserBtn.title = 'Toggle Eraser (Click to erase)';
-            eraserBtn.style.cssText = `
-                position: absolute;
-                top: 10px;
-                right: 50px;
-                z-index: 1000;
-                width: 40px;
-                height: 40px;
-                background: #ffffff;
-                border: 2px solid #cccccc;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            `;
-            
-            eraserBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                isErasing = !isErasing;
+            const checkAndAddEraser = () => {
+                // Ищем контейнер с контролами (обычно это div с классом controls или tool-buttons)
+                const controlsContainer = targetElement.querySelector('.controls, .tool-buttons, [class*="controls"]');
                 
-                if (isErasing) {
-                    eraserBtn.style.background = '#ff4444';
-                    eraserBtn.style.borderColor = '#ff0000';
-                    targetElement.style.cursor = 'cell';
-                    console.log('[Eraser] ЛАСТИК ВКЛЮЧЕН');
-                } else {
-                    eraserBtn.style.background = '#ffffff';
-                    eraserBtn.style.borderColor = '#cccccc';
-                    targetElement.style.cursor = 'crosshair';
-                    console.log('[Eraser] КИСТЬ ВКЛЮЧЕНА');
+                if (!controlsContainer) {
+                    // Если не нашли, пробуем найти по другим признакам
+                    const buttons = targetElement.querySelectorAll('button');
+                    if (buttons.length > 0) {
+                        // Берем родителя первой кнопки как контейнер
+                        const parentContainer = buttons[0].parentElement;
+                        addEraserToContainer(parentContainer);
+                    }
+                    return;
+                }
+                
+                addEraserToContainer(controlsContainer);
+            };
+            
+            function addEraserToContainer(container) {
+                // Проверяем, не добавили ли уже
+                if (container.querySelector('.eraser-tool-btn')) return;
+                
+                // Создаем кнопку в стиле Gradio
+                const eraserBtn = document.createElement('button');
+                eraserBtn.className = 'eraser-tool-btn';
+                eraserBtn.title = 'Eraser';
+                eraserBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2L22 11L20 20Z"/>
+                        <path d="M17 17L7 7"/>
+                    </svg>
+                `;
+                
+                // Стили в стиле Gradio
+                eraserBtn.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 32px;
+                    height: 32px;
+                    padding: 4px;
+                    background: transparent;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    color: #6b7280;
+                    transition: all 0.2s;
+                `;
+                
+                // Hover эффект как у остальных кнопок Gradio
+                eraserBtn.addEventListener('mouseenter', () => {
+                    if (!isErasing) {
+                        eraserBtn.style.color = '#1f2937';
+                        eraserBtn.style.background = '#f3f4f6';
+                    }
+                });
+                
+                eraserBtn.addEventListener('mouseleave', () => {
+                    if (!isErasing) {
+                        eraserBtn.style.color = '#6b7280';
+                        eraserBtn.style.background = 'transparent';
+                    }
+                });
+                
+                // Клик по кнопке
+                eraserBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    isErasing = !isErasing;
+                    
+                    if (isErasing) {
+                        eraserBtn.style.color = '#ffffff';
+                        eraserBtn.style.background = '#3b82f6'; // Синий как активная кнопка в Gradio
+                        targetElement.style.cursor = 'cell';
+                        console.log('[Eraser] ЛАСТИК ВКЛЮЧЕН');
+                    } else {
+                        eraserBtn.style.color = '#6b7280';
+                        eraserBtn.style.background = 'transparent';
+                        targetElement.style.cursor = 'crosshair';
+                        console.log('[Eraser] КИСТЬ ВКЛЮЧЕНА');
+                    }
+                });
+                
+                container.appendChild(eraserBtn);
+                console.log('[Eraser] Кнопка ластика добавлена в панель инструментов');
+            }
+            
+            // Пробуем добавить сразу
+            checkAndAddEraser();
+            
+            // Если не получилось, следим за изменениями DOM
+            const observer = new MutationObserver((mutations) => {
+                for (let mutation of mutations) {
+                    if (mutation.addedNodes.length > 0) {
+                        checkAndAddEraser();
+                    }
                 }
             });
             
-            // Убедимся, что у targetElement есть position: relative
-            if (window.getComputedStyle(targetElement).position === 'static') {
-                targetElement.style.position = 'relative';
-            }
-            
-            targetElement.appendChild(eraserBtn);
-            console.log('[Eraser] Кнопка ластика создана');
+            observer.observe(targetElement, { childList: true, subtree: true });
         }
 
         // Создаем кнопку ластика
