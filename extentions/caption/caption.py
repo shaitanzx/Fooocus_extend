@@ -763,17 +763,17 @@ def setup_args() -> argparse.Namespace:
     return args.parse_args()
 
 
-def main():
-    print_title()
-    get_args = setup_args()
-    my_caption = Caption()
-    my_caption.check_path(get_args)
-    my_caption.set_logger(get_args)
-    my_caption.download_models(get_args)
-    my_caption.load_models(get_args)
-    my_caption.run_inference(get_args)
-    my_caption.unload_models()
+# def main():
+#     print_title()
+#     get_args = setup_args()
+#     my_caption = Caption()
+#     my_caption.check_path(get_args)
+#     my_caption.set_logger(get_args)
+#     my_caption.download_models(get_args)
+#     my_caption.load_models(get_args)
+#     my_caption.run_inference(get_args)
+#     my_caption.unload_models()
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

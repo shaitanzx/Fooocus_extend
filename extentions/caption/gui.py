@@ -57,10 +57,10 @@ def gui():
     #     theme = gr.themes.Base()
 
     # with (gr.Blocks(title="WD LLM Caption(By DukeG)", theme=theme) as demo):
-    with gr.Row(equal_height=True):
-        with gr.Column(scale=6):
-            gr.Markdown("## Caption images with WD and LLM models (By DukeG)")
-        close_gradio_server_button = gr.Button(value="Close Gradio Server", variant="primary")
+    # with gr.Row(equal_height=True):
+    #     with gr.Column(scale=6):
+    #         gr.Markdown("## Caption images with WD and LLM models (By DukeG)")
+    #     close_gradio_server_button = gr.Button(value="Close Gradio Server", variant="primary")
 
     with gr.Row():
         with gr.Column():
@@ -861,10 +861,10 @@ def gui():
                                         inputs=batch_inference_input_args,
                                         outputs=batch_process_submit_button)
 
-    def close_gradio_server():
-        demo.close()
+    # def close_gradio_server():
+    #     demo.close()
 
-    close_gradio_server_button.click(fn=close_gradio_server)
+    # close_gradio_server_button.click(fn=close_gradio_server)
 
 #     demo.launch(
 #         server_name="0.0.0.0" if get_gui_args.listen else None,
