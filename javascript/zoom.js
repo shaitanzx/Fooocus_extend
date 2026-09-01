@@ -89,14 +89,26 @@ onUiLoaded(async() => {
                 // Проверяем, не добавили ли уже
                 if (buttonsContainer.querySelector('.eraser-tool-btn')) return;
                 
-                // Создаем разделитель для нового ряда (перенос строки)
-                const rowBreaker = document.createElement('div');
-                rowBreaker.style.cssText = `
+                // Создаем ДВА разделителя для переноса на третий ряд
+                // Первый перенос - после первого ряда (Undo, Clear, Close)
+                const rowBreaker1 = document.createElement('div');
+                rowBreaker1.style.cssText = `
                     width: 100%;
                     height: 0;
                     flex-basis: 100%;
+                    order: 998;
                 `;
-                buttonsContainer.appendChild(rowBreaker);
+                buttonsContainer.appendChild(rowBreaker1);
+                
+                // Второй перенос - после второго ряда (Use brush)
+                const rowBreaker2 = document.createElement('div');
+                rowBreaker2.style.cssText = `
+                    width: 100%;
+                    height: 0;
+                    flex-basis: 100%;
+                    order: 999;
+                `;
+                buttonsContainer.appendChild(rowBreaker2);
                 
                 // Создаем кнопку в стиле существующих кнопок
                 const eraserBtn = document.createElement('button');
@@ -125,6 +137,7 @@ onUiLoaded(async() => {
                     color: ${firstBtnStyle.color || '#ffffff'};
                     transition: all 0.2s;
                     margin: ${firstBtnStyle.margin || '4px'};
+                    order: 1000;
                 `;
                 
                 // Hover эффект
