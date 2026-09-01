@@ -46,6 +46,8 @@ def javascript_html():
     head += f'<script type="text/javascript" src="{fabric_js_path}"></script>\n'
     poses_js_path = webpath('extentions/op_edit/javascript/main.js')
     head += f'<script type="text/javascript" src="{poses_js_path}"></script>\n'
+    erase_viewer_js_path = webpath('javascript/erase.js')
+    head += f'<script type="text/javascript" src="{erase_js_path}"></script>\n'
 
     if args_manager.args.theme:
         head += f'<script type="text/javascript">set_theme(\"{args_manager.args.theme}\");</script>\n'
