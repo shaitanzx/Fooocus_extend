@@ -22,7 +22,7 @@ onUiLoaded(async() => {
 
     // Create hotkey configuration with the provided options
     function createHotkeyConfig(defaultHotkeysConfig) {
-        const result = {}; // Resulting hotkey configuration
+        const result = {};
         for (const key in defaultHotkeysConfig) {
             result[key] = defaultHotkeysConfig[key];
         }
@@ -50,6 +50,7 @@ onUiLoaded(async() => {
 
     let isMoving = false;
     let activeElement;
+    let isErasing = false; // === НОВОЕ: состояние ластика ===
 
     const elemData = {};
 
@@ -70,6 +71,60 @@ onUiLoaded(async() => {
         };
 
         let fullScreenMode = false;
+
+        // === НОВОЕ: Создание кнопки ластика ===
+        function createEraserButton() {
+            const eraserBtn = document.createElement('button');
+            eraserBtn.innerHTML = '🧹';
+            eraserBtn.className = 'eraser-toggle-btn';
+            eraserBtn.title = 'Toggle Eraser (Click to erase)';
+            eraserBtn.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 50px;
+                z-index: 1000;
+                width: 40px;
+                height: 40px;
+                background: #ffffff;
+                border: 2px solid #cccccc;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            
+            eraserBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                isErasing = !isErasing;
+                
+                if (isErasing) {
+                    eraserBtn.style.background = '#ff4444';
+                    eraserBtn.style.borderColor = '#ff0000';
+                    targetElement.style.cursor = 'cell';
+                    console.log('[Eraser] ЛАСТИК ВКЛЮЧЕН');
+                } else {
+                    eraserBtn.style.background = '#ffffff';
+                    eraserBtn.style.borderColor = '#cccccc';
+                    targetElement.style.cursor = 'crosshair';
+                    console.log('[Eraser] КИСТЬ ВКЛЮЧЕНА');
+                }
+            });
+            
+            // Убедимся, что у targetElement есть position: relative
+            if (window.getComputedStyle(targetElement).position === 'static') {
+                targetElement.style.position = 'relative';
+            }
+            
+            targetElement.appendChild(eraserBtn);
+            console.log('[Eraser] Кнопка ластика создана');
+        }
+
+        // Создаем кнопку ластика
+        createEraserButton();
 
         // Create tooltip
         function createTooltip() {
@@ -259,6 +314,11 @@ onUiLoaded(async() => {
 
         // Change the zoom level based on user interaction
         function changeZoomLevel(operation, e) {
+            // === ИЗМЕНЕНО: Не зумим, если активен ластик ===
+            if (isErasing) {
+                return;
+            }
+            
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
 
@@ -527,11 +587,141 @@ onUiLoaded(async() => {
             }
         }
 
+        // === НОВОЕ: Функции для рисования ластиком ===
+        let eraserLastX = 0;
+        let eraserLastY = 0;
+        let isEraserDrawing = false;
+        
+        function getEraserCoordinates(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+        
+        function startErasing(e) {
+            if (!isErasing) return;
+            
+            console.log('[Eraser] Начало стирания');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            isEraserDrawing = true;
+            
+            // Находим canvas
+            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
+            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
+            
+            if (!maskCanvas || !drawingCanvas) {
+                console.warn('[Eraser] Canvas не найдены');
+                return;
+            }
+            
+            const maskCtx = maskCanvas.getContext('2d');
+            const drawingCtx = drawingCanvas.getContext('2d');
+            
+            const pos = getEraserCoordinates(e, drawingCanvas);
+            eraserLastX = pos.x;
+            eraserLastY = pos.y;
+            
+            // Стираем на mask canvas
+            maskCtx.save();
+            maskCtx.globalCompositeOperation = 'destination-out';
+            maskCtx.beginPath();
+            maskCtx.arc(eraserLastX, eraserLastY, 20, 0, Math.PI * 2);
+            maskCtx.fill();
+            maskCtx.restore();
+            
+            // Стираем на drawing canvas
+            drawingCtx.save();
+            drawingCtx.globalCompositeOperation = 'destination-out';
+            drawingCtx.beginPath();
+            drawingCtx.arc(eraserLastX, eraserLastY, 20, 0, Math.PI * 2);
+            drawingCtx.fill();
+            drawingCtx.restore();
+        }
+        
+        function continueErasing(e) {
+            if (!isErasing || !isEraserDrawing) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
+            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
+            
+            if (!maskCanvas || !drawingCanvas) return;
+            
+            const maskCtx = maskCanvas.getContext('2d');
+            const drawingCtx = drawingCanvas.getContext('2d');
+            
+            const pos = getEraserCoordinates(e, drawingCanvas);
+            
+            maskCtx.save();
+            maskCtx.globalCompositeOperation = 'destination-out';
+            maskCtx.beginPath();
+            maskCtx.moveTo(eraserLastX, eraserLastY);
+            maskCtx.lineTo(pos.x, pos.y);
+            maskCtx.lineWidth = 40;
+            maskCtx.lineCap = 'round';
+            maskCtx.lineJoin = 'round';
+            maskCtx.stroke();
+            maskCtx.restore();
+            
+            drawingCtx.save();
+            drawingCtx.globalCompositeOperation = 'destination-out';
+            drawingCtx.beginPath();
+            drawingCtx.moveTo(eraserLastX, eraserLastY);
+            drawingCtx.lineTo(pos.x, pos.y);
+            drawingCtx.lineWidth = 40;
+            drawingCtx.lineCap = 'round';
+            drawingCtx.lineJoin = 'round';
+            drawingCtx.stroke();
+            drawingCtx.restore();
+            
+            eraserLastX = pos.x;
+            eraserLastY = pos.y;
+        }
+        
+        function stopErasing(e) {
+            if (!isEraserDrawing) return;
+            
+            console.log('[Eraser] Конец стирания');
+            isEraserDrawing = false;
+            
+            // Триггерим обновление Gradio
+            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
+            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
+            
+            if (drawingCanvas) {
+                drawingCanvas.dispatchEvent(new Event('input', { bubbles: true }));
+                drawingCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (maskCanvas) {
+                maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
+                maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+        
+        // Добавляем обработчики для ластика
+        targetElement.addEventListener('pointerdown', startErasing, true);
+        targetElement.addEventListener('pointermove', continueErasing, true);
+        targetElement.addEventListener('pointerup', stopErasing, true);
+        targetElement.addEventListener('pointerleave', stopErasing, true);
+
         // Add mouse event handlers
         targetElement.addEventListener("mousemove", handleMouseMove);
         targetElement.addEventListener("mouseleave", handleMouseLeave);
 
         targetElement.addEventListener("wheel", e => {
+            // === ИЗМЕНЕНО: Если активен ластик - не зумим ===
+            if (isErasing) {
+                return;
+            }
+            
             // change zoom level
             const operation = e.deltaY > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
