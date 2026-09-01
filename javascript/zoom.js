@@ -72,15 +72,15 @@ onUiLoaded(async() => {
 
         let fullScreenMode = false;
 
-        // === НОВОЕ: Создание кнопки ластика в третьем ряду ===
+        // === НОВОЕ: Создание кнопки ластика в третьем ряду справа ===
         function createEraserButton() {
             const checkAndAddEraser = () => {
-                // Ищем существующие кнопки (Undo, Clear, Close, Brush size)
+                // Ищем существующие кнопки
                 const existingButtons = targetElement.querySelectorAll('button[aria-label], button[class*="svelte"]');
                 
                 if (existingButtons.length === 0) return;
                 
-                // Находим контейнер с кнопками (родитель первых кнопок)
+                // Находим контейнер с кнопками
                 const firstButton = existingButtons[0];
                 const buttonsContainer = firstButton.parentElement;
                 
@@ -89,26 +89,19 @@ onUiLoaded(async() => {
                 // Проверяем, не добавили ли уже
                 if (buttonsContainer.querySelector('.eraser-tool-btn')) return;
                 
-                // Создаем ДВА разделителя для переноса на третий ряд
-                // Первый перенос - после первого ряда (Undo, Clear, Close)
-                const rowBreaker1 = document.createElement('div');
-                rowBreaker1.style.cssText = `
-                    width: 100%;
-                    height: 0;
-                    flex-basis: 100%;
-                    order: 998;
-                `;
-                buttonsContainer.appendChild(rowBreaker1);
+                // Устанавливаем flex-wrap для контейнера, чтобы кнопки переносились
+                buttonsContainer.style.flexWrap = 'wrap';
+                buttonsContainer.style.alignContent = 'flex-start';
                 
-                // Второй перенос - после второго ряда (Use brush)
-                const rowBreaker2 = document.createElement('div');
-                rowBreaker2.style.cssText = `
+                // Создаем разделитель для переноса на третий ряд
+                const rowBreaker = document.createElement('div');
+                rowBreaker.style.cssText = `
                     width: 100%;
                     height: 0;
                     flex-basis: 100%;
                     order: 999;
                 `;
-                buttonsContainer.appendChild(rowBreaker2);
+                buttonsContainer.appendChild(rowBreaker);
                 
                 // Создаем кнопку в стиле существующих кнопок
                 const eraserBtn = document.createElement('button');
@@ -121,7 +114,7 @@ onUiLoaded(async() => {
                     </svg>
                 `;
                 
-                // Стили копируем с существующих кнопок (темный фон, скругленные углы)
+                // Стили копируем с существующих кнопок
                 const firstBtnStyle = window.getComputedStyle(firstButton);
                 eraserBtn.style.cssText = `
                     display: flex;
@@ -138,6 +131,7 @@ onUiLoaded(async() => {
                     transition: all 0.2s;
                     margin: ${firstBtnStyle.margin || '4px'};
                     order: 1000;
+                    margin-left: auto;
                 `;
                 
                 // Hover эффект
@@ -160,7 +154,7 @@ onUiLoaded(async() => {
                     isErasing = !isErasing;
                     
                     if (isErasing) {
-                        eraserBtn.style.background = '#3b82f6'; // Синий как активная кнопка
+                        eraserBtn.style.background = '#3b82f6';
                         targetElement.style.cursor = 'cell';
                         console.log('[Eraser] ЛАСТИК ВКЛЮЧЕН');
                     } else {
@@ -171,7 +165,7 @@ onUiLoaded(async() => {
                 });
                 
                 buttonsContainer.appendChild(eraserBtn);
-                console.log('[Eraser] Кнопка ластика добавлена в третий ряд');
+                console.log('[Eraser] Кнопка ластика добавлена в третий ряд справа');
             };
             
             // Пробуем добавить сразу
@@ -199,16 +193,13 @@ onUiLoaded(async() => {
             const tooltip = document.createElement("div");
             tooltip.className = "canvas-tooltip";
 
-            // Creating an item of information
             const info = document.createElement("i");
             info.className = "canvas-tooltip-info";
             info.textContent = "";
 
-            // Create a container for the contents of the tooltip
             const tooltipContent = document.createElement("div");
             tooltipContent.className = "canvas-tooltip-content";
 
-            // Define an array with hotkey information and their actions
             const hotkeysInfo = [
                 {
                     configKey: "canvas_hotkey_zoom",
@@ -229,7 +220,6 @@ onUiLoaded(async() => {
                 {configKey: "canvas_hotkey_move", action: "Move canvas"}
             ];
 
-            // Create hotkeys array based on the config values
             const hotkeys = hotkeysInfo.map((info) => {
                 const configValue = hotkeysConfig[info.configKey];
         
@@ -258,16 +248,13 @@ onUiLoaded(async() => {
         
               tooltip.append(info, tooltipContent);
 
-              // Add a hint element to the target element
               toolTipElemnt.appendChild(tooltip);
         }
 
-        //Show tool tip if setting enable
         if (hotkeysConfig.canvas_show_tooltip) {
             createTooltip();
         }
 
-        // Reset the zoom level and pan position of the target element to their initial values
         function resetZoom() {
             elemData[elemId] = {
                 zoomLevel: 1,
@@ -276,9 +263,7 @@ onUiLoaded(async() => {
             };
 
             targetElement.style.overflow = "hidden";
-
             targetElement.isZoomed = false;
-
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
 
             const canvas = gradioApp().querySelector(
@@ -303,13 +288,11 @@ onUiLoaded(async() => {
                     fitToElement();
                     return;
                 }
-
             }
 
             targetElement.style.width = "";
         }
 
-        // Toggle the zIndex of the target element between two values, allowing it to overlap or be overlapped by other elements
         function toggleOverlap(forced = "") {
             const zIndex1 = "0";
             const zIndex2 = "998";
@@ -324,7 +307,6 @@ onUiLoaded(async() => {
             }
         }
 
-        // Adjust the brush size based on the deltaY value from a mouse wheel event
         function adjustBrushSize(
             elemId,
             deltaY,
@@ -354,13 +336,13 @@ onUiLoaded(async() => {
             }
         }
 
-        // Reset zoom when uploading a new image
         const fileInput = gradioApp().querySelector(
             `${elemId} input[type="file"][accept="image/*"].svelte-116rqfv`
         );
-        fileInput.addEventListener("click", resetZoom);
+        if (fileInput) {
+            fileInput.addEventListener("click", resetZoom);
+        }
 
-        // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
         function updateZoom(newZoomLevel, mouseX, mouseY) {
             newZoomLevel = Math.max(0.1, Math.min(newZoomLevel, 15));
 
@@ -378,9 +360,7 @@ onUiLoaded(async() => {
             return newZoomLevel;
         }
 
-        // Change the zoom level based on user interaction
         function changeZoomLevel(operation, e) {
-            // === ИЗМЕНЕНО: Не зумим, если активен ластик ===
             if (isErasing) {
                 return;
             }
@@ -412,39 +392,26 @@ onUiLoaded(async() => {
             }
         }
 
-        /**
-         * This function fits the target element to the screen by calculating
-         * the required scale and offsets. It also updates the global variables
-         * zoomLevel, panX, and panY to reflect the new state.
-         */
-
         function fitToElement() {
-            //Reset Zoom
             targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
-            let parentElement;
+            let parentElement = targetElement.closest('[id^="component-"]');
 
-            parentElement = targetElement.closest('[id^="component-"]');
-
-            // Get element and screen dimensions
             const elementWidth = targetElement.offsetWidth;
             const elementHeight = targetElement.offsetHeight;
 
             const screenWidth = parentElement.clientWidth - 24;
             const screenHeight = parentElement.clientHeight;
 
-            // Calculate scale and offsets
             const scaleX = screenWidth / elementWidth;
             const scaleY = screenHeight / elementHeight;
             const scale = Math.min(scaleX, scaleY);
 
-            const offsetX =0;
-            const offsetY =0;
+            const offsetX = 0;
+            const offsetY = 0;
 
-            // Apply scale and offsets to the element
             targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 
-            // Update global variables
             elemData[elemId].zoomLevel = scale;
             elemData[elemId].panX = offsetX;
             elemData[elemId].panY = offsetY;
@@ -453,7 +420,6 @@ onUiLoaded(async() => {
             toggleOverlap("off");
         }
 
-        // Undo last action
         function undoLastAction(e) {
             let isCtrlPressed = isModifierKey(e, hotkeysConfig.canvas_zoom_undo_extra_key)
             const isAuxButton = e.button >= 3;
@@ -464,7 +430,6 @@ onUiLoaded(async() => {
               if (!isModifierKey(e, hotkeysConfig.canvas_zoom_undo_extra_key)) return;
             }
 
-            // Move undoBtn query outside the if statement to avoid unnecessary queries
             const undoBtn = document.querySelector(`${activeElement} button[aria-label="Undo"]`);
         
             if ((isCtrlPressed) && undoBtn ) {
@@ -473,13 +438,6 @@ onUiLoaded(async() => {
             }
         }
 
-        /**
-         * This function fits the target element to the screen by calculating
-         * the required scale and offsets. It also updates the global variables
-         * zoomLevel, panX, and panY to reflect the new state.
-         */
-
-        // Fullscreen mode
         function fitToScreen() {
             const canvas = gradioApp().querySelector(
                 `${elemId} canvas[key="interface"]`
@@ -496,37 +454,29 @@ onUiLoaded(async() => {
                 return;
             }
 
-            //Reset Zoom
             targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
-            // Get scrollbar width to right-align the image
-            const scrollbarWidth =
-                window.innerWidth - document.documentElement.clientWidth;
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 
-            // Get element and screen dimensions
             const elementWidth = targetElement.offsetWidth;
             const elementHeight = targetElement.offsetHeight;
             const screenWidth = window.innerWidth - scrollbarWidth;
             const screenHeight = window.innerHeight;
 
-            // Get element's coordinates relative to the page
             const elementRect = targetElement.getBoundingClientRect();
             const elementY = elementRect.y;
             const elementX = elementRect.x;
 
-            // Calculate scale and offsets
             const scaleX = screenWidth / elementWidth;
             const scaleY = screenHeight / elementHeight;
             const scale = Math.min(scaleX, scaleY);
 
-            // Get the current transformOrigin
             const computedStyle = window.getComputedStyle(targetElement);
             const transformOrigin = computedStyle.transformOrigin;
             const [originX, originY] = transformOrigin.split(" ");
             const originXValue = parseFloat(originX);
             const originYValue = parseFloat(originY);
 
-            // Calculate offsets with respect to the transformOrigin
             const offsetX =
                 (screenWidth - elementWidth * scale) / 2 -
                 elementX -
@@ -536,10 +486,8 @@ onUiLoaded(async() => {
                 elementY -
                 originYValue * (1 - scale);
 
-            // Apply scale and offsets to the element
             targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 
-            // Update global variables
             elemData[elemId].zoomLevel = scale;
             elemData[elemId].panX = offsetX;
             elemData[elemId].panY = offsetY;
@@ -548,14 +496,11 @@ onUiLoaded(async() => {
             toggleOverlap("on");
         }
 
-        // Handle keydown events
         function handleKeyDown(event) {
-            // Disable key locks to make pasting from the buffer work correctly
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") {
                 return;
             }
 
-            // before activating shortcut, ensure user is not actively typing in an input field
             if (!hotkeysConfig.canvas_blur_prompt) {
                 if (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT') {
                     return;
@@ -583,15 +528,10 @@ onUiLoaded(async() => {
             }
         }
 
-        // Get Mouse position
         function getMousePosition(e) {
             mouseX = e.offsetX;
             mouseY = e.offsetY;
         }
-
-        // Simulation of the function to put a long image into the screen.
-        // We detect if an image has a scroll bar or not, make a fullscreen to reveal the image, then reduce it to fit into the element.
-        // We hide the image and show it to the user when it is ready.
 
         targetElement.isExpanded = false;
         function autoExpand() {
@@ -612,11 +552,8 @@ onUiLoaded(async() => {
         targetElement.addEventListener("mousemove", getMousePosition);
         targetElement.addEventListener("auxclick", undoLastAction);
 
-        //observers
-        // Creating an observer with a callback function to handle DOM changes
         const observer = new MutationObserver((mutationsList, observer) => {
             for (let mutation of mutationsList) {
-              // If the style attribute of the canvas has changed, by observation it happens only when the picture changes
               if (mutation.type === 'attributes' && mutation.attributeName === 'style' &&
                 mutation.target.tagName.toLowerCase() === 'canvas') {
                 targetElement.isExpanded = false;
@@ -625,21 +562,17 @@ onUiLoaded(async() => {
             }
           });
       
-          // Apply auto expand if enabled
           if (hotkeysConfig.canvas_auto_expand) {
             targetElement.addEventListener("mousemove", autoExpand);
-            // Set up an observer to track attribute changes
             observer.observe(targetElement, { attributes: true, childList: true, subtree: true });
           }
 
-        // Handle events only inside the targetElement
         let isKeyDownHandlerAttached = false;
 
         function handleMouseMove() {
             if (!isKeyDownHandlerAttached) {
                 document.addEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = true;
-
                 activeElement = elemId;
             }
         }
@@ -648,12 +581,11 @@ onUiLoaded(async() => {
             if (isKeyDownHandlerAttached) {
                 document.removeEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = false;
-
                 activeElement = null;
             }
         }
 
-        // === НОВОЕ: Функции для рисования ластиком ===
+        // === Функции для рисования ластиком ===
         let eraserLastX = 0;
         let eraserLastY = 0;
         let isEraserDrawing = false;
@@ -677,7 +609,6 @@ onUiLoaded(async() => {
             
             isEraserDrawing = true;
             
-            // Находим canvas
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
             
@@ -693,7 +624,6 @@ onUiLoaded(async() => {
             eraserLastX = pos.x;
             eraserLastY = pos.y;
             
-            // Стираем на mask canvas
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
@@ -701,7 +631,6 @@ onUiLoaded(async() => {
             maskCtx.fill();
             maskCtx.restore();
             
-            // Стираем на drawing canvas
             drawingCtx.save();
             drawingCtx.globalCompositeOperation = 'destination-out';
             drawingCtx.beginPath();
@@ -758,7 +687,6 @@ onUiLoaded(async() => {
             console.log('[Eraser] Конец стирания');
             isEraserDrawing = false;
             
-            // Триггерим обновление Gradio
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
             
@@ -772,50 +700,38 @@ onUiLoaded(async() => {
             }
         }
         
-        // Добавляем обработчики для ластика
         targetElement.addEventListener('pointerdown', startErasing, true);
         targetElement.addEventListener('pointermove', continueErasing, true);
         targetElement.addEventListener('pointerup', stopErasing, true);
         targetElement.addEventListener('pointerleave', stopErasing, true);
 
-        // Add mouse event handlers
         targetElement.addEventListener("mousemove", handleMouseMove);
         targetElement.addEventListener("mouseleave", handleMouseLeave);
 
         targetElement.addEventListener("wheel", e => {
-            // === ИЗМЕНЕНО: Если активен ластик - не зумим ===
             if (isErasing) {
                 return;
             }
             
-            // change zoom level
             const operation = e.deltaY > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
 
-            // Handle brush size adjustment with ctrl key pressed
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_adjust)) {
                 e.preventDefault();
-
-                // Increase or decrease brush size based on scroll direction
                 adjustBrushSize(elemId, e.deltaY);
             }
         });
 
-        // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {
-
-            // Disable key locks to make pasting from the buffer work correctly
             if ((e.ctrlKey && e.code === 'KeyV') || (e.ctrlKey && e.code === 'KeyC') || e.code === "F5") {
                 return;
             }
 
-            // before activating shortcut, ensure user is not actively typing in an input field
             if (!hotkeysConfig.canvas_blur_prompt) {
                 if (e.target.nodeName === 'TEXTAREA' || e.target.nodeName === 'INPUT') {
                     return;
                 }
             }
-
 
             if (e.code === hotkeysConfig.canvas_hotkey_move) {
                 if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
@@ -835,7 +751,6 @@ onUiLoaded(async() => {
         document.addEventListener("keydown", handleMoveKeyDown);
         document.addEventListener("keyup", handleMoveKeyUp);
 
-        // Detect zoom level and update the pan speed.
         function updatePanPosition(movementX, movementY) {
             let panSpeed = 2;
 
@@ -846,7 +761,6 @@ onUiLoaded(async() => {
             elemData[elemId].panX += movementX * panSpeed;
             elemData[elemId].panY += movementY * panSpeed;
 
-            // Delayed redraw of an element
             requestAnimationFrame(() => {
                 targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
                 toggleOverlap("on");
@@ -863,12 +777,10 @@ onUiLoaded(async() => {
             }
         }
 
-        // Prevents sticking to the mouse
         window.onblur = function() {
             isMoving = false;
         };
 
-        // Checks for extension
         function checkForOutBox() {
             const parentElement = targetElement.closest('[id^="component-"]');
             if (parentElement.offsetWidth < targetElement.offsetWidth && !targetElement.isExpanded) {
@@ -889,7 +801,6 @@ onUiLoaded(async() => {
 
         window.addEventListener('resize', (e) => {
             resetZoom();
-
             targetElement.isExpanded = false;
             targetElement.isZoomed = false;
         });
