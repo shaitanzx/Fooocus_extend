@@ -1,0 +1,66 @@
+{
+  "MiniCPM-V-2_6": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "openbmb/MiniCPM-V-2_6",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_minicpm.py": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/configuration_minicpm.py",
+          "image_processing_minicpmv.py": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/image_processing_minicpmv.py",
+          "modeling_minicpmv.py": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/modeling_minicpmv.py",
+          "modeling_navit_siglip.py": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/modeling_navit_siglip.py",
+          "processing_minicpmv.py": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/processing_minicpmv.py",
+          "resampler.py": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/resampler.py",
+          "tokenization_minicpmv_fast.py": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/tokenization_minicpmv_fast.py",
+          "merges.txt": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/merges.txt",
+          "added_tokens.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/added_tokens.json",
+          "config.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/generation_config.json",
+          "preprocessor_config.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/tokenizer_config.json",
+          "special_tokens_map.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/special_tokens_map.json",
+          "vocab.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/vocab.json",
+          "model.safetensors.index.json": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/model.safetensors.index.json",
+          "model-00001-of-00004.safetensors": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/model-00001-of-00004.safetensors",
+          "model-00002-of-00004.safetensors": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/model-00002-of-00004.safetensors",
+          "model-00003-of-00004.safetensors": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/model-00003-of-00004.safetensors",
+          "model-00004-of-00004.safetensors": "https://huggingface.co/openbmb/MiniCPM-V-2_6/resolve/main/model-00004-of-00004.safetensors"
+        }
+      }
+    },
+    "modelscope": {
+      "llm": {
+        "repo_id": "OpenBMB/MiniCPM-V-2_6",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_minicpm.py": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/configuration_minicpm.py",
+          "image_processing_minicpmv.py": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/image_processing_minicpmv.py",
+          "modeling_minicpmv.py": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/modeling_minicpmv.py",
+          "modeling_navit_siglip.py": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/modeling_navit_siglip.py",
+          "processing_minicpmv.py": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/processing_minicpmv.py",
+          "resampler.py": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/resampler.py",
+          "tokenization_minicpmv_fast.py": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/tokenization_minicpmv_fast.py",
+          "merges.txt": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/merges.txt",
+          "added_tokens.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/added_tokens.json",
+          "config.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/config.json",
+          "generation_config.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/generation_config.json",
+          "preprocessor_config.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/preprocessor_config.json",
+          "tokenizer.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/tokenizer.json",
+          "tokenizer_config.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/tokenizer_config.json",
+          "special_tokens_map.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/special_tokens_map.json",
+          "vocab.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/vocab.json",
+          "model.safetensors.index.json": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/model.safetensors.index.json",
+          "model-00001-of-00004.safetensors": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/model-00001-of-00004.safetensors",
+          "model-00002-of-00004.safetensors": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/model-00002-of-00004.safetensors",
+          "model-00003-of-00004.safetensors": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/model-00003-of-00004.safetensors",
+          "model-00004-of-00004.safetensors": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6/resolve/master/model-00004-of-00004.safetensors"
+        }
+      }
+    }
+  }
+}

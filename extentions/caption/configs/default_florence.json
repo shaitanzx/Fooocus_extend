@@ -1,0 +1,166 @@
+{
+  "Florence-2-large": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "microsoft/Florence-2-large",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/configuration_florence2.py",
+          "modeling_florence2.py": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/modeling_florence2.py",
+          "processing_florence2.py": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/processing_florence2.py",
+          "config.json": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/generation_config.json",
+          "preprocessor_config.json": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/tokenizer_config.json",
+          "vocab.json": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/vocab.json",
+          "pytorch_model.bin": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin"
+        }
+      }
+    },
+    "modelscope": {
+      "llm": {
+        "repo_id": "AI-ModelScope/Florence-2-large",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/configuration_florence2.py",
+          "modeling_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/modeling_florence2.py",
+          "processing_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/processing_florence2.py",
+          "config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/config.json",
+          "generation_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/generation_config.json",
+          "preprocessor_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/preprocessor_config.json",
+          "tokenizer.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/tokenizer.json",
+          "tokenizer_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/tokenizer_config.json",
+          "vocab.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/vocab.json",
+          "pytorch_model.bin": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large/resolve/master/pytorch_model.bin"
+        }
+      }
+    }
+  },
+  "Florence-2-base": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "microsoft/Florence-2-base",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/configuration_florence2.py",
+          "modeling_florence2.py": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/modeling_florence2.py",
+          "processing_florence2.py": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/processing_florence2.py",
+          "config.json": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/config.json",
+          "preprocessor_config.json": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/tokenizer_config.json",
+          "vocab.json": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/vocab.json",
+          "pytorch_model.bin": "https://huggingface.co/microsoft/Florence-2-base/resolve/main/pytorch_model.bin"
+        }
+      }
+    },
+    "modelscope": {
+      "llm": {
+        "repo_id": "AI-ModelScope/Florence-2-base",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/configuration_florence2.py",
+          "modeling_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/modeling_florence2.py",
+          "processing_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/processing_florence2.py",
+          "config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/config.json",
+          "preprocessor_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/preprocessor_config.json",
+          "tokenizer.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/tokenizer.json",
+          "tokenizer_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/tokenizer_config.json",
+          "vocab.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/vocab.json",
+          "pytorch_model.bin": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base/resolve/master/pytorch_model.bin"
+        }
+      }
+    }
+  },
+  "Florence-2-large-ft": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "microsoft/Florence-2-large-ft",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/configuration_florence2.py",
+          "modeling_florence2.py": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/modeling_florence2.py",
+          "processing_florence2.py": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/processing_florence2.py",
+          "config.json": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/generation_config.json",
+          "preprocessor_config.json": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/tokenizer_config.json",
+          "vocab.json": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/vocab.json",
+          "pytorch_model.bin": "https://huggingface.co/microsoft/Florence-2-large-ft/resolve/main/pytorch_model.bin"
+        }
+      }
+    },
+    "modelscope": {
+      "llm": {
+        "repo_id": "AI-ModelScope/Florence-2-large-ft",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/configuration_florence2.py",
+          "modeling_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/modeling_florence2.py",
+          "processing_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/processing_florence2.py",
+          "config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/config.json",
+          "generation_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/generation_config.json",
+          "preprocessor_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/preprocessor_config.json",
+          "tokenizer.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/tokenizer.json",
+          "tokenizer_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/tokenizer_config.json",
+          "vocab.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/vocab.json",
+          "pytorch_model.bin": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-large-ft/resolve/master/pytorch_model.bin"
+        }
+      }
+    }
+  },
+  "Florence-2-base-ft": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "microsoft/Florence-2-base-ft",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/configuration_florence2.py",
+          "modeling_florence2.py": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/modeling_florence2.py",
+          "processing_florence2.py": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/processing_florence2.py",
+          "config.json": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/config.json",
+          "preprocessor_config.json": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/tokenizer_config.json",
+          "vocab.json": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/vocab.json",
+          "pytorch_model.bin": "https://huggingface.co/microsoft/Florence-2-base-ft/resolve/main/pytorch_model.bin"
+        }
+      }
+    },
+    "modelscope": {
+      "llm": {
+        "repo_id": "AI-ModelScope/Florence-2-base-ft",
+        "revision": "master",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "configuration_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/configuration_florence2.py",
+          "modeling_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/modeling_florence2.py",
+          "processing_florence2.py": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/processing_florence2.py",
+          "config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/config.json",
+          "preprocessor_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/preprocessor_config.json",
+          "tokenizer.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/tokenizer.json",
+          "tokenizer_config.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/tokenizer_config.json",
+          "vocab.json": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/vocab.json",
+          "pytorch_model.bin": "https://www.modelscope.cn/models/AI-ModelScope/Florence-2-base-ft/resolve/master/pytorch_model.bin"
+        }
+      }
+    }
+  }
+}
