@@ -1,151 +1,98 @@
-console.log("🔧 [Eraser Script] Загрузка...");
+console.log("🔧 [Eraser Script v2] Загрузка...");
 
-function initEraser() {
-    // Ищем все canvas на странице
-    const canvases = document.querySelectorAll('canvas');
-    console.log(`[Eraser] Найдено canvas элементов: ${canvases.length}`);
-
-    canvases.forEach(canvas => {
-        const parent = canvas.parentElement;
-        if (!parent || parent.classList.contains('eraser-attached')) return;
-
-        // Проверяем, похож ли этот canvas на Gradio Sketch (ищем ключи или соседние элементы)
-        const isSketch = canvas.getAttribute('key') === 'interface' || 
-                         canvas.getAttribute('key') === 'mask' ||
-                         parent.querySelector('canvas[key="mask"]') ||
-                         parent.querySelector('canvas[key="interface"]');
-
-        if (!isSketch) return;
-
-        console.log("✅ [Eraser] Целевой sketch canvas найден:", canvas);
-        parent.classList.add('eraser-attached');
-
-        // 1. Создаем кнопку ластика (яркую, чтобы ее точно было видно)
-        const btn = document.createElement('button');
-        btn.innerHTML = '🧹 ЛАСТИК';
-        btn.className = 'eraser-toggle-btn';
-        btn.style.cssText = `
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 99999;
-            padding: 8px 16px;
-            background: #ffffff;
-            color: #000000;
-            border: 2px solid #ff4444;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: sans-serif;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        `;
-        
-        // Убедимся, что у родителя есть position: relative для корректного позиционирования кнопки
-        const computedStyle = window.getComputedStyle(parent);
-        if (computedStyle.position === 'static') {
-            parent.style.position = 'relative';
+function findCanvasDeep(root = document) {
+    const canvases = [];
+    
+    // 1. Ищем в обычном DOM
+    root.querySelectorAll('canvas').forEach(c => canvases.push(c));
+    
+    // 2. Ищем в Shadow DOM (рекурсивно)
+    root.querySelectorAll('*').forEach(el => {
+        if (el.shadowRoot) {
+            canvases.push(...findCanvasDeep(el.shadowRoot));
         }
-        parent.appendChild(btn);
-
-        let isErasing = false;
-        let isDrawing = false;
-        let lastX = 0, lastY = 0;
-
-        // Находим именно mask canvas для рисования прозрачности
-        const maskCanvas = parent.querySelector('canvas[key="mask"]') || canvas;
-        const ctx = maskCanvas.getContext('2d', { willReadFrequently: true });
-
-        // 2. Логика кнопки
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            isErasing = !isErasing;
-            
-            if (isErasing) {
-                btn.style.background = '#ff4444';
-                btn.style.color = '#ffffff';
-                canvas.style.cursor = 'cell'; // Курсор-прицел для ластика
-                console.log("[Eraser] Режим СТИРАНИЯ включен");
-            } else {
-                btn.style.background = '#ffffff';
-                btn.style.color = '#000000';
-                canvas.style.cursor = 'crosshair';
-                console.log("[Eraser] Режим КИСТИ включен");
-            }
-        });
-
-        // 3. Расчет координат с учетом возможного Zoom/Pan (из твоего первого скрипта!)
-        function getCoordinates(e) {
-            const rect = maskCanvas.getBoundingClientRect();
-            // Отношение реального разрешения canvas к его отображаемому CSS-размеру
-            const scaleX = maskCanvas.width / rect.width;
-            const scaleY = maskCanvas.height / rect.height;
-            return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
-        }
-
-        // 4. Перехват событий в фазе CAPTURE (true), чтобы сработать раньше Gradio
-        canvas.addEventListener('pointerdown', (e) => {
-            if (!isErasing) return;
-            console.log("[Eraser] pointerdown сработал");
-            e.preventDefault();
-            e.stopPropagation(); // Блокируем рисование черной кистью от Gradio
-            
-            isDrawing = true;
-            const pos = getCoordinates(e);
-            lastX = pos.x;
-            lastY = pos.y;
-
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.arc(lastX, lastY, 20, 0, Math.PI * 2); // Радиус 20 по умолчанию
-            ctx.fill();
-        }, true);
-
-        canvas.addEventListener('pointermove', (e) => {
-            if (!isErasing || !isDrawing) return;
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const pos = getCoordinates(e);
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.lineWidth = 40; // Диаметр = радиус * 2
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.stroke();
-            
-            lastX = pos.x;
-            lastY = pos.y;
-        }, true);
-
-        const stopErasing = (e) => {
-            if (!isDrawing) return;
-            console.log("[Eraser] pointerup, применяем изменения");
-            isDrawing = false;
-            ctx.globalCompositeOperation = 'source-over'; // Сброс режима
-            
-            // Принудительно сообщаем Gradio об изменении
-            canvas.dispatchEvent(new Event('input', { bubbles: true }));
-            canvas.dispatchEvent(new Event('change', { bubbles: true }));
-            
-            // Специфичный триггер для кастомных компонентов Gradio
-            const customEvent = new CustomEvent('gradio:change', { bubbles: true, detail: { value: null } });
-            parent.dispatchEvent(customEvent);
-        };
-
-        canvas.addEventListener('pointerup', stopErasing, true);
-        canvas.addEventListener('pointerleave', stopErasing, true);
     });
+    
+    return canvases;
 }
 
-// Запускаем сразу и следим за изменениями DOM (на случай динамической загрузки)
-initEraser();
+function analyzeComponent() {
+    console.log("\n=== 🔍 ДИАГНОСТИКА КОМПОНЕНТА ===");
+    
+    // Ищем все возможные контейнеры
+    const possibleContainers = [
+        ...document.querySelectorAll('.gradio-image'),
+        ...document.querySelectorAll('[class*="sketch"]'),
+        ...document.querySelectorAll('[class*="canvas"]'),
+        ...document.querySelectorAll('[class*="image"]')
+    ];
+    
+    console.log(`Найдено возможных контейнеров: ${possibleContainers.length}`);
+    
+    possibleContainers.forEach((container, idx) => {
+        console.log(`\n--- Контейнер #${idx} ---`);
+        console.log('Классы:', container.className);
+        console.log('ID:', container.id);
+        console.log('Тег:', container.tagName);
+        
+        // Проверяем Shadow DOM
+        if (container.shadowRoot) {
+            console.log('✅ Есть Shadow DOM!');
+            const shadowCanvases = findCanvasDeep(container.shadowRoot);
+            console.log(`Canvas в Shadow DOM: ${shadowCanvases.length}`);
+            shadowCanvases.forEach((c, i) => {
+                console.log(`  Canvas #${i}:`, c);
+                console.log(`    Размер: ${c.width}x${c.height}`);
+                console.log(`    Атрибуты:`, Array.from(c.attributes).map(a => `${a.name}="${a.value}"`).join(', '));
+            });
+        }
+        
+        // Ищем canvas в обычном DOM
+        const normalCanvases = container.querySelectorAll('canvas');
+        console.log(`Canvas в обычном DOM: ${normalCanvases.length}`);
+        normalCanvases.forEach((c, i) => {
+            console.log(`  Canvas #${i}:`, c);
+            console.log(`    Размер: ${c.width}x${c.height}`);
+            console.log(`    Атрибуты:`, Array.from(c.attributes).map(a => `${a.name}="${a.value}"`).join(', '));
+        });
+        
+        // Проверяем другие элементы рисования
+        const svgs = container.querySelectorAll('svg');
+        const imgs = container.querySelectorAll('img');
+        const divsWithBg = container.querySelectorAll('div[style*="background"]');
+        
+        console.log(`SVG элементов: ${svgs.length}`);
+        console.log(`IMG элементов: ${imgs.length}`);
+        console.log(`DIV с background: ${divsWithBg.length}`);
+        
+        // Выводим структуру (первые 3 уровня)
+        console.log('Структура (первые 3 уровня):');
+        function printTree(el, depth = 0) {
+            if (depth > 3) return;
+            const indent = '  '.repeat(depth);
+            const attrs = Array.from(el.attributes).map(a => `${a.name}="${a.value}"`).join(' ');
+            console.log(`${indent}<${el.tagName.toLowerCase()} ${attrs}>`);
+            Array.from(el.children).forEach(child => printTree(child, depth + 1));
+        }
+        printTree(container);
+    });
+    
+    console.log("\n=== КОНЕЦ ДИАГНОСТИКИ ===\n");
+}
+
+// Запускаем диагностику сразу и через промежутки времени
+analyzeComponent();
+setTimeout(analyzeComponent, 1000);
+setTimeout(analyzeComponent, 3000);
+
+// Наблюдаем за изменениями DOM
 const observer = new MutationObserver(() => {
-    setTimeout(initEraser, 500); // Небольшая задержка, чтобы DOM успел отрисоваться
+    console.log("[Observer] DOM изменился, запускаем диагностику...");
+    analyzeComponent();
 });
-observer.observe(document.body, { childList: true, subtree: true });
+
+observer.observe(document.body, { 
+    childList: true, 
+    subtree: true,
+    attributes: true
+});
