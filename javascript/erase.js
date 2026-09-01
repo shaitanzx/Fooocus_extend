@@ -1,133 +1,151 @@
-onUiLoaded(function() {
-    const ERASER_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.83L12 20.5c-.79.79-2.05.79-2.83 0l-4.95-4.94c-.78-.79-.78-2.05 0-2.83L13.41 3.56c.79-.78 2.05-.78 2.83 0zM4.22 18.79l1.42 1.42L4.22 21.63 2.81 20.22l1.41-1.43z"/></svg>`;
+console.log("🔧 [Eraser Script] Загрузка...");
 
-    function injectEraserIntoSketch(container) {
-        // Avoid double injection
-        if (container.querySelector('.custom-eraser-btn')) return;
+function initEraser() {
+    // Ищем все canvas на странице
+    const canvases = document.querySelectorAll('canvas');
+    console.log(`[Eraser] Найдено canvas элементов: ${canvases.length}`);
 
-        const interfaceCanvas = container.querySelector("canvas[key='interface']");
-        const maskCanvas = container.querySelector("canvas[key='mask']");
-        if (!interfaceCanvas || !maskCanvas) return;
+    canvases.forEach(canvas => {
+        const parent = canvas.parentElement;
+        if (!parent || parent.classList.contains('eraser-attached')) return;
 
-        // 1. Find or create toolbar area
-        let toolbar = container.querySelector('.controls, .tool-buttons');
-        if (!toolbar) {
-            // Create a floating toolbar if not found
-            toolbar = document.createElement('div');
-            toolbar.className = 'custom-eraser-toolbar';
-            toolbar.style.cssText = 'position: absolute; top: 10px; right: 10px; z-index: 10; display: flex; gap: 5px;';
-            container.style.position = 'relative';
-            container.appendChild(toolbar);
+        // Проверяем, похож ли этот canvas на Gradio Sketch (ищем ключи или соседние элементы)
+        const isSketch = canvas.getAttribute('key') === 'interface' || 
+                         canvas.getAttribute('key') === 'mask' ||
+                         parent.querySelector('canvas[key="mask"]') ||
+                         parent.querySelector('canvas[key="interface"]');
+
+        if (!isSketch) return;
+
+        console.log("✅ [Eraser] Целевой sketch canvas найден:", canvas);
+        parent.classList.add('eraser-attached');
+
+        // 1. Создаем кнопку ластика (яркую, чтобы ее точно было видно)
+        const btn = document.createElement('button');
+        btn.innerHTML = '🧹 ЛАСТИК';
+        btn.className = 'eraser-toggle-btn';
+        btn.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 99999;
+            padding: 8px 16px;
+            background: #ffffff;
+            color: #000000;
+            border: 2px solid #ff4444;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: sans-serif;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        `;
+        
+        // Убедимся, что у родителя есть position: relative для корректного позиционирования кнопки
+        const computedStyle = window.getComputedStyle(parent);
+        if (computedStyle.position === 'static') {
+            parent.style.position = 'relative';
         }
-
-        // 2. Create Eraser Button
-        const eraserBtn = document.createElement('button');
-        eraserBtn.className = 'custom-eraser-btn';
-        eraserBtn.innerHTML = ERASER_ICON;
-        eraserBtn.title = 'Toggle Eraser';
-        eraserBtn.style.cssText = 'background: var(--button-secondary-background-fill); border: 1px solid var(--border-color-primary); border-radius: 4px; padding: 4px; cursor: pointer; display: flex; align-items: center;';
-        toolbar.prepend(eraserBtn);
+        parent.appendChild(btn);
 
         let isErasing = false;
         let isDrawing = false;
         let lastX = 0, lastY = 0;
 
-        eraserBtn.addEventListener('click', (e) => {
+        // Находим именно mask canvas для рисования прозрачности
+        const maskCanvas = parent.querySelector('canvas[key="mask"]') || canvas;
+        const ctx = maskCanvas.getContext('2d', { willReadFrequently: true });
+
+        // 2. Логика кнопки
+        btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             isErasing = !isErasing;
-            eraserBtn.style.background = isErasing ? 'var(--button-primary-background-fill)' : 'var(--button-secondary-background-fill)';
-            interfaceCanvas.style.cursor = isErasing ? 'cell' : 'crosshair';
             
-            // Optional: Disable Gradio's default drawing when eraser is active
             if (isErasing) {
-                interfaceCanvas.style.pointerEvents = 'none';
-                // Re-enable for our custom handlers
-                interfaceCanvas.style.pointerEvents = 'auto';
+                btn.style.background = '#ff4444';
+                btn.style.color = '#ffffff';
+                canvas.style.cursor = 'cell'; // Курсор-прицел для ластика
+                console.log("[Eraser] Режим СТИРАНИЯ включен");
+            } else {
+                btn.style.background = '#ffffff';
+                btn.style.color = '#000000';
+                canvas.style.cursor = 'crosshair';
+                console.log("[Eraser] Режим КИСТИ включен");
             }
         });
 
-        // 3. Intercept Pointer Events for Erasing
-        function getPos(e) {
-            const rect = interfaceCanvas.getBoundingClientRect();
+        // 3. Расчет координат с учетом возможного Zoom/Pan (из твоего первого скрипта!)
+        function getCoordinates(e) {
+            const rect = maskCanvas.getBoundingClientRect();
+            // Отношение реального разрешения canvas к его отображаемому CSS-размеру
+            const scaleX = maskCanvas.width / rect.width;
+            const scaleY = maskCanvas.height / rect.height;
             return {
-                x: (e.clientX - rect.left) * (interfaceCanvas.width / rect.width),
-                y: (e.clientY - rect.top) * (interfaceCanvas.height / rect.height)
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
             };
         }
 
-        interfaceCanvas.addEventListener('pointerdown', (e) => {
+        // 4. Перехват событий в фазе CAPTURE (true), чтобы сработать раньше Gradio
+        canvas.addEventListener('pointerdown', (e) => {
             if (!isErasing) return;
-            
+            console.log("[Eraser] pointerdown сработал");
             e.preventDefault();
-            e.stopPropagation();
-            isDrawing = true;
+            e.stopPropagation(); // Блокируем рисование черной кистью от Gradio
             
-            const pos = getPos(e);
+            isDrawing = true;
+            const pos = getCoordinates(e);
             lastX = pos.x;
             lastY = pos.y;
-            
-            const ctx = maskCanvas.getContext('2d');
+
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath();
-            ctx.arc(lastX, lastY, getBrushRadius(), 0, Math.PI * 2);
+            ctx.arc(lastX, lastY, 20, 0, Math.PI * 2); // Радиус 20 по умолчанию
             ctx.fill();
         }, true);
 
-        interfaceCanvas.addEventListener('pointermove', (e) => {
+        canvas.addEventListener('pointermove', (e) => {
             if (!isErasing || !isDrawing) return;
-            
             e.preventDefault();
             e.stopPropagation();
             
-            const pos = getPos(e);
-            const ctx = maskCanvas.getContext('2d');
+            const pos = getCoordinates(e);
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(pos.x, pos.y);
-            ctx.lineWidth = getBrushRadius() * 2;
+            ctx.lineWidth = 40; // Диаметр = радиус * 2
             ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.stroke();
             
             lastX = pos.x;
             lastY = pos.y;
         }, true);
 
-        const stopDrawing = (e) => {
+        const stopErasing = (e) => {
             if (!isDrawing) return;
+            console.log("[Eraser] pointerup, применяем изменения");
             isDrawing = false;
-            // Trigger Gradio update so Python receives the new mask
-            interfaceCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+            ctx.globalCompositeOperation = 'source-over'; // Сброс режима
+            
+            // Принудительно сообщаем Gradio об изменении
+            canvas.dispatchEvent(new Event('input', { bubbles: true }));
+            canvas.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Специфичный триггер для кастомных компонентов Gradio
+            const customEvent = new CustomEvent('gradio:change', { bubbles: true, detail: { value: null } });
+            parent.dispatchEvent(customEvent);
         };
 
-        interfaceCanvas.addEventListener('pointerup', stopDrawing, true);
-        interfaceCanvas.addEventListener('pointerleave', stopDrawing, true);
-    }
-
-    function getBrushRadius() {
-        // Try to find the brush radius slider in the component
-        const slider = gradioApp().querySelector("input[aria-label='Brush radius']");
-        return slider ? parseFloat(slider.value) : 20;
-    }
-
-    // Observe DOM to apply to dynamically created sketch components
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach(m => {
-            m.addedNodes.forEach(node => {
-                if (node.nodeType === 1) {
-                    if (node.classList && node.classList.contains('gradio-image')) {
-                        injectEraserIntoSketch(node);
-                    } else {
-                        const sketches = node.querySelectorAll ? node.querySelectorAll('.gradio-image') : [];
-                        sketches.forEach(injectEraserIntoSketch);
-                    }
-                }
-            });
-        });
+        canvas.addEventListener('pointerup', stopErasing, true);
+        canvas.addEventListener('pointerleave', stopErasing, true);
     });
+}
 
-    observer.observe(gradioApp(), { childList: true, subtree: true });
-
-    // Initial check
-    gradioApp().querySelectorAll('.gradio-image').forEach(injectEraserIntoSketch);
+// Запускаем сразу и следим за изменениями DOM (на случай динамической загрузки)
+initEraser();
+const observer = new MutationObserver(() => {
+    setTimeout(initEraser, 500); // Небольшая задержка, чтобы DOM успел отрисоваться
 });
+observer.observe(document.body, { childList: true, subtree: true });
