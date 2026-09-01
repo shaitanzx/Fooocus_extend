@@ -572,29 +572,42 @@ def gui():
             start_time = time.monotonic()
 
             if ARGS is None:
-                # Создаем простой объект с минимальными настройками по умолчанию для GUI
+                # Создаем полный объект со ВСЕМИ настройками по умолчанию, чтобы избежать AttributeError
                 ARGS = types.SimpleNamespace(
-                    models_save_path=caption.DEFAULT_MODELS_SAVE_PATH,
-                    log_level="INFO",
-                    skip_download=SKIP_DOWNLOAD,
-                    save_logs=False,
+                    # Base
+                    data_path=None,
                     recursive=False,
+                    # Logs
+                    log_level="INFO",
+                    save_logs=False,
+                    # Download (важно для download.py)
+                    model_site="huggingface",
+                    models_save_path=caption.DEFAULT_MODELS_SAVE_PATH,
+                    use_sdk_cache=False,
+                    download_method="SDK",
+                    force_download=False,
+                    skip_download=True,
+                    # Caption
+                    caption_method="wd+llm",
                     run_method="sync",
                     caption_extension=".txt",
-                    save_caption_together=False,
+                    save_caption_together=True,
                     save_caption_together_seperator="|",
                     image_size=1024,
                     skip_exists=False,
                     not_overwrite=False,
                     custom_caption_save_path=None,
+                    # WD Caption
                     wd_config=None,
                     wd_model_name=None,
-                    llm_config=None,
-                    llm_model_name=None,
-                    wd_remove_underscore=False,
+                    wd_force_use_cpu=False,
+                    wd_caption_extension=".wdcaption",
+                    wd_remove_underscore=True,
+                    wd_undesired_tags="",
+                    wd_tags_frequency=False,
                     wd_threshold=0.35,
-                    wd_general_threshold=None,
-                    wd_character_threshold=None,
+                    wd_general_threshold=0.35,
+                    wd_character_threshold=0.85,
                     wd_add_rating_tags_to_first=False,
                     wd_add_rating_tags_to_last=False,
                     wd_character_tags_first=False,
@@ -602,6 +615,14 @@ def gui():
                     wd_caption_separator=", ",
                     wd_tag_replacement=None,
                     wd_character_tag_expand=False,
+                    # LLM Caption
+                    llm_choice="llama",
+                    llm_config=None,
+                    llm_model_name=None,
+                    llm_patch=False,
+                    llm_use_cpu=False,
+                    llm_dtype="fp16",
+                    llm_qnt="none",
                     llm_caption_extension=".llmcaption",
                     llm_read_wd_caption=False,
                     llm_caption_without_wd=False,
