@@ -70,14 +70,16 @@ onUiLoaded(async() => {
         let eraserLastY = 0;
         let isAltHandlerAttached = false;
         let lastMousePosition = { x: 0, y: 0 };
+        let brushCursorCanvas = null;
+        let brushCursorCanvasOriginalDisplay = '';
 
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
             if (input) {
                 const radius = parseFloat(input.value) || 20;
-                return radius * 2;
+                return radius;
             }
-            return 40;
+            return 20;
         }
 
         function createEraserCursor() {
@@ -101,6 +103,30 @@ onUiLoaded(async() => {
             document.body.appendChild(eraserCursor);
         }
 
+        function findBrushCursorCanvas() {
+            if (!brushCursorCanvas) {
+                brushCursorCanvas = targetElement.querySelector('canvas[key="interface"]');
+                if (brushCursorCanvas) {
+                    brushCursorCanvasOriginalDisplay = brushCursorCanvas.style.display;
+                }
+            }
+        }
+
+        function hideBrushCursor() {
+            findBrushCursorCanvas();
+            if (brushCursorCanvas) {
+                brushCursorCanvas.style.display = 'none';
+            }
+            targetElement.style.cursor = 'none';
+        }
+
+        function showBrushCursor() {
+            if (brushCursorCanvas) {
+                brushCursorCanvas.style.display = brushCursorCanvasOriginalDisplay;
+            }
+            targetElement.style.cursor = '';
+        }
+
         function showEraserCursor(x, y) {
             if (!eraserCursor) createEraserCursor();
             
@@ -111,16 +137,14 @@ onUiLoaded(async() => {
             eraserCursor.style.top = y + 'px';
             eraserCursor.style.display = 'block';
             
-            // Скрываем только системный курсор мыши, не трогая DOM Gradio
-            targetElement.style.cursor = 'none';
+            hideBrushCursor();
         }
 
         function hideEraserCursor() {
             if (eraserCursor) {
                 eraserCursor.style.display = 'none';
             }
-            // Возвращаем системный курсор, Gradio сам отрисует свой курсор кисти
-            targetElement.style.cursor = '';
+            showBrushCursor();
         }
 
         function updateEraserCursor(x, y) {
@@ -136,12 +160,10 @@ onUiLoaded(async() => {
             }
         }
 
-        // Отслеживание позиции мыши глобально
         document.addEventListener('mousemove', (e) => {
             lastMousePosition = { x: e.clientX, y: e.clientY };
         });
 
-        // Глобальные обработчики для Alt
         if (!isAltHandlerAttached) {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Alt' && activeElement === elemId && !isAltPressed) {
@@ -442,7 +464,6 @@ onUiLoaded(async() => {
             }
         }
 
-        // === ЛОГИКА ЛАСТИКА (Alt + Click) ===
         function getEraserCoordinates(e, canvas) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -473,19 +494,19 @@ onUiLoaded(async() => {
             const pos = getEraserCoordinates(e, drawingCanvas);
             eraserLastX = pos.x;
             eraserLastY = pos.y;
-            const brushSize = getCurrentBrushSize();
+            const brushRadius = getCurrentBrushSize();
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
-            maskCtx.arc(eraserLastX, eraserLastY, brushSize / 2, 0, Math.PI * 2);
+            maskCtx.arc(eraserLastX, eraserLastY, brushRadius, 0, Math.PI * 2);
             maskCtx.fill();
             maskCtx.restore();
             
             drawingCtx.save();
             drawingCtx.globalCompositeOperation = 'destination-out';
             drawingCtx.beginPath();
-            drawingCtx.arc(eraserLastX, eraserLastY, brushSize / 2, 0, Math.PI * 2);
+            drawingCtx.arc(eraserLastX, eraserLastY, brushRadius, 0, Math.PI * 2);
             drawingCtx.fill();
             drawingCtx.restore();
         }
@@ -512,14 +533,14 @@ onUiLoaded(async() => {
             const drawingCtx = drawingCanvas.getContext('2d');
             
             const pos = getEraserCoordinates(e, drawingCanvas);
-            const brushSize = getCurrentBrushSize();
+            const brushRadius = getCurrentBrushSize();
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
             maskCtx.moveTo(eraserLastX, eraserLastY);
             maskCtx.lineTo(pos.x, pos.y);
-            maskCtx.lineWidth = brushSize;
+            maskCtx.lineWidth = brushRadius * 2;
             maskCtx.lineCap = 'round';
             maskCtx.lineJoin = 'round';
             maskCtx.stroke();
@@ -530,7 +551,7 @@ onUiLoaded(async() => {
             drawingCtx.beginPath();
             drawingCtx.moveTo(eraserLastX, eraserLastY);
             drawingCtx.lineTo(pos.x, pos.y);
-            drawingCtx.lineWidth = brushSize;
+            drawingCtx.lineWidth = brushRadius * 2;
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
             drawingCtx.stroke();
