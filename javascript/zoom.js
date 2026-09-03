@@ -71,15 +71,15 @@ onUiLoaded(async() => {
         let isAltHandlerAttached = false;
         let lastMousePosition = { x: 0, y: 0 };
         let brushCursorCanvas = null;
-        let brushCursorCanvasOriginalDisplay = '';
+        let brushCursorCanvasOriginalVisibility = '';
 
-        function getCurrentBrushSize() {
+        function getCurrentBrushDiameter() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
             if (input) {
                 const radius = parseFloat(input.value) || 20;
-                return radius;
+                return radius * 2;
             }
-            return 20;
+            return 40;
         }
 
         function createEraserCursor() {
@@ -107,7 +107,7 @@ onUiLoaded(async() => {
             if (!brushCursorCanvas) {
                 brushCursorCanvas = targetElement.querySelector('canvas[key="interface"]');
                 if (brushCursorCanvas) {
-                    brushCursorCanvasOriginalDisplay = brushCursorCanvas.style.display;
+                    brushCursorCanvasOriginalVisibility = brushCursorCanvas.style.visibility;
                 }
             }
         }
@@ -115,7 +115,6 @@ onUiLoaded(async() => {
         function hideBrushCursor() {
             findBrushCursorCanvas();
             if (brushCursorCanvas) {
-                // Используем visibility вместо display, чтобы не ломать layout
                 brushCursorCanvas.style.visibility = 'hidden';
             }
             targetElement.style.cursor = 'none';
@@ -123,10 +122,8 @@ onUiLoaded(async() => {
 
         function showBrushCursor() {
             if (brushCursorCanvas) {
-                // Восстанавливаем видимость
                 brushCursorCanvas.style.visibility = 'visible';
                 
-                // Принудительно триггерим событие mousemove, чтобы Svelte перерисовал курсор
                 const mouseMoveEvent = new MouseEvent('mousemove', {
                     bubbles: true,
                     cancelable: true,
@@ -141,9 +138,9 @@ onUiLoaded(async() => {
         function showEraserCursor(x, y) {
             if (!eraserCursor) createEraserCursor();
             
-            const size = getCurrentBrushSize();
-            eraserCursor.style.width = size + 'px';
-            eraserCursor.style.height = size + 'px';
+            const diameter = getCurrentBrushDiameter();
+            eraserCursor.style.width = diameter + 'px';
+            eraserCursor.style.height = diameter + 'px';
             eraserCursor.style.left = x + 'px';
             eraserCursor.style.top = y + 'px';
             eraserCursor.style.display = 'block';
@@ -163,10 +160,10 @@ onUiLoaded(async() => {
                 eraserCursor.style.left = x + 'px';
                 eraserCursor.style.top = y + 'px';
                 
-                const newSize = getCurrentBrushSize();
-                if (parseFloat(eraserCursor.style.width) !== newSize) {
-                    eraserCursor.style.width = newSize + 'px';
-                    eraserCursor.style.height = newSize + 'px';
+                const newDiameter = getCurrentBrushDiameter();
+                if (parseFloat(eraserCursor.style.width) !== newDiameter) {
+                    eraserCursor.style.width = newDiameter + 'px';
+                    eraserCursor.style.height = newDiameter + 'px';
                 }
             }
         }
@@ -505,7 +502,8 @@ onUiLoaded(async() => {
             const pos = getEraserCoordinates(e, drawingCanvas);
             eraserLastX = pos.x;
             eraserLastY = pos.y;
-            const brushRadius = getCurrentBrushSize();
+            const brushDiameter = getCurrentBrushDiameter();
+            const brushRadius = brushDiameter / 2;
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
@@ -544,14 +542,14 @@ onUiLoaded(async() => {
             const drawingCtx = drawingCanvas.getContext('2d');
             
             const pos = getEraserCoordinates(e, drawingCanvas);
-            const brushRadius = getCurrentBrushSize();
+            const brushDiameter = getCurrentBrushDiameter();
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
             maskCtx.moveTo(eraserLastX, eraserLastY);
             maskCtx.lineTo(pos.x, pos.y);
-            maskCtx.lineWidth = brushRadius * 2;
+            maskCtx.lineWidth = brushDiameter;
             maskCtx.lineCap = 'round';
             maskCtx.lineJoin = 'round';
             maskCtx.stroke();
@@ -562,7 +560,7 @@ onUiLoaded(async() => {
             drawingCtx.beginPath();
             drawingCtx.moveTo(eraserLastX, eraserLastY);
             drawingCtx.lineTo(pos.x, pos.y);
-            drawingCtx.lineWidth = brushRadius * 2;
+            drawingCtx.lineWidth = brushDiameter;
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
             drawingCtx.stroke();
@@ -603,6 +601,10 @@ onUiLoaded(async() => {
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_adjust)) {
                 e.preventDefault();
                 adjustBrushSize(elemId, e.deltaY);
+                
+                if (isAltPressed || isEraserDrawing) {
+                    updateEraserCursor(lastMousePosition.x, lastMousePosition.y);
+                }
             }
         });
 
