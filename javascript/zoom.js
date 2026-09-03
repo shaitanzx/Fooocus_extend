@@ -69,7 +69,7 @@ onUiLoaded(async() => {
         let eraserLastX = 0;
         let eraserLastY = 0;
         let isAltHandlerAttached = false;
-        let lastMousePosition = { x: 0, y: 0 }; // Последняя позиция мыши
+        let lastMousePosition = { x: 0, y: 0 };
 
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
@@ -133,7 +133,7 @@ onUiLoaded(async() => {
             }
         }
 
-        // === НОВОЕ: Отслеживание позиции мыши глобально ===
+        // Отслеживание позиции мыши глобально
         document.addEventListener('mousemove', (e) => {
             lastMousePosition = { x: e.clientX, y: e.clientY };
         });
@@ -143,7 +143,6 @@ onUiLoaded(async() => {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Alt' && activeElement === elemId && !isAltPressed) {
                     isAltPressed = true;
-                    // Показываем курсор в последней известной позиции мыши
                     showEraserCursor(lastMousePosition.x, lastMousePosition.y);
                     e.preventDefault();
                 }
@@ -158,7 +157,7 @@ onUiLoaded(async() => {
             });
 
             document.addEventListener('mousemove', (e) => {
-                if (isAltPressed) {
+                if (isAltPressed || isEraserDrawing) {
                     updateEraserCursor(e.clientX, e.clientY);
                 }
             });
@@ -458,6 +457,9 @@ onUiLoaded(async() => {
             e.stopPropagation();
             isEraserDrawing = true;
             
+            // Явно показываем курсор в текущей позиции
+            showEraserCursor(e.clientX, e.clientY);
+            
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
             
@@ -487,6 +489,11 @@ onUiLoaded(async() => {
         }
 
         function continueErasing(e) {
+            // Явно обновляем курсор даже во время рисования
+            if (isAltPressed || isEraserDrawing) {
+                updateEraserCursor(e.clientX, e.clientY);
+            }
+            
             if (!isEraserDrawing || !e.altKey) {
                 if (isEraserDrawing) stopErasing(e);
                 return;
