@@ -69,12 +69,13 @@ onUiLoaded(async() => {
         let eraserLastX = 0;
         let eraserLastY = 0;
         let isAltHandlerAttached = false;
+        let lastMousePosition = { x: 0, y: 0 }; // Последняя позиция мыши
 
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
             if (input) {
                 const radius = parseFloat(input.value) || 20;
-                return radius * 2; // Возвращаем диаметр
+                return radius * 2;
             }
             return 40;
         }
@@ -84,7 +85,6 @@ onUiLoaded(async() => {
             
             eraserCursor = document.createElement('div');
             eraserCursor.className = 'eraser-cursor';
-            // mix-blend-mode: difference делает курсор видимым на любом фоне (инвертирует цвета под ним)
             eraserCursor.style.cssText = `
                 position: fixed;
                 pointer-events: none;
@@ -125,7 +125,6 @@ onUiLoaded(async() => {
                 eraserCursor.style.left = x + 'px';
                 eraserCursor.style.top = y + 'px';
                 
-                // Динамическое обновление размера, если пользователь крутит колесико с Ctrl
                 const newSize = getCurrentBrushSize();
                 if (parseFloat(eraserCursor.style.width) !== newSize) {
                     eraserCursor.style.width = newSize + 'px';
@@ -134,13 +133,19 @@ onUiLoaded(async() => {
             }
         }
 
-        // Глобальные обработчики для Alt (чтобы курсор появлялся сразу при нажатии)
+        // === НОВОЕ: Отслеживание позиции мыши глобально ===
+        document.addEventListener('mousemove', (e) => {
+            lastMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        // Глобальные обработчики для Alt
         if (!isAltHandlerAttached) {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Alt' && activeElement === elemId && !isAltPressed) {
                     isAltPressed = true;
-                    showEraserCursor(e.clientX, e.clientY);
-                    e.preventDefault(); // Предотвращаем фокус на меню браузера
+                    // Показываем курсор в последней известной позиции мыши
+                    showEraserCursor(lastMousePosition.x, lastMousePosition.y);
+                    e.preventDefault();
                 }
             });
 
@@ -268,7 +273,6 @@ onUiLoaded(async() => {
         }
 
         function changeZoomLevel(operation, e) {
-            // Зум работает только на Shift, Alt не блокируем
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
                 let zoomPosX, zoomPosY;
