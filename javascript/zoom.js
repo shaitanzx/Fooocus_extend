@@ -551,7 +551,7 @@ onUiLoaded(async() => {
             drawingCtx.beginPath();
             drawingCtx.moveTo(eraserLastX, eraserLastY);
             drawingCtx.lineTo(pos.x, pos.y);
-            drawingCtx.lineWidth = brushRadius;
+            drawingCtx.lineWidth = brushRadius * 2;
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
             drawingCtx.stroke();
