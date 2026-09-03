@@ -1,12 +1,10 @@
 onUiLoaded(async() => {
     // Helper functions
 
-    // Detect whether the element has a horizontal scroll bar
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
 
-    // Function for defining the "Ctrl", "Shift" and "Alt" keys
     function isModifierKey(event, key) {
         switch (key) {
         case "Ctrl":
@@ -20,7 +18,6 @@ onUiLoaded(async() => {
         }
     }
 
-    // Create hotkey configuration with the provided options
     function createHotkeyConfig(defaultHotkeysConfig) {
         const result = {};
         for (const key in defaultHotkeysConfig) {
@@ -29,7 +26,6 @@ onUiLoaded(async() => {
         return result;
     }
 
-    // Default config
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
         canvas_hotkey_adjust: "Ctrl",
@@ -43,14 +39,10 @@ onUiLoaded(async() => {
         canvas_blur_prompt: true,
     };
 
-    // Loading the configuration from opts
-    const hotkeysConfig = createHotkeyConfig(
-        defaultHotkeysConfig
-    );
+    const hotkeysConfig = createHotkeyConfig(defaultHotkeysConfig);
 
     let isMoving = false;
     let activeElement;
-    let isCtrlPressed = false; // Состояние клавиши Ctrl
 
     const elemData = {};
 
@@ -72,10 +64,72 @@ onUiLoaded(async() => {
 
         let fullScreenMode = false;
 
-        // Create tooltip
+        // === НОВОЕ: Кастомный курсор для ластика ===
+        let eraserCursor = null;
+        let eraserCursorSize = 40; // Диаметр по умолчанию
+        
+        function createEraserCursor() {
+            if (eraserCursor) return;
+            
+            eraserCursor = document.createElement('div');
+            eraserCursor.className = 'eraser-cursor';
+            eraserCursor.style.cssText = `
+                position: fixed;
+                pointer-events: none;
+                border: 2px solid rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
+                background: rgba(255, 0, 0, 0.1);
+                transform: translate(-50%, -50%);
+                z-index: 99999;
+                display: none;
+                box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+            `;
+            document.body.appendChild(eraserCursor);
+        }
+        
+        function showEraserCursor(x, y, size) {
+            if (!eraserCursor) createEraserCursor();
+            
+            eraserCursorSize = size;
+            eraserCursor.style.width = size + 'px';
+            eraserCursor.style.height = size + 'px';
+            eraserCursor.style.left = x + 'px';
+            eraserCursor.style.top = y + 'px';
+            eraserCursor.style.display = 'block';
+            
+            // Скрываем стандартный курсор
+            targetElement.style.cursor = 'none';
+        }
+        
+        function hideEraserCursor() {
+            if (eraserCursor) {
+                eraserCursor.style.display = 'none';
+            }
+            // Возвращаем стандартный курсор
+            targetElement.style.cursor = 'crosshair';
+        }
+        
+        function updateEraserCursor(x, y) {
+            if (eraserCursor && eraserCursor.style.display !== 'none') {
+                eraserCursor.style.left = x + 'px';
+                eraserCursor.style.top = y + 'px';
+            }
+        }
+        
+        // Получаем текущий размер кисти
+        function getCurrentBrushSize() {
+            const input = gradioApp().querySelector(
+                `${elemId} input[aria-label='Brush radius']`
+            );
+            if (input) {
+                const radius = parseFloat(input.value) || 20;
+                return radius * 2; // Диаметр = радиус * 2
+            }
+            return 40; // По умолчанию
+        }
+
         function createTooltip() {
-            const toolTipElemnt =
-                targetElement.querySelector(".image-container");
+            const toolTipElemnt = targetElement.querySelector(".image-container");
             const tooltip = document.createElement("div");
             tooltip.className = "canvas-tooltip";
 
@@ -104,7 +158,7 @@ onUiLoaded(async() => {
                     action: "Fullscreen mode"
                 },
                 {configKey: "canvas_hotkey_move", action: "Move canvas"},
-                {action: "Eraser (hold Ctrl + click)", key: "Ctrl + Click"}
+                {action: "Eraser (hold Shift + click)", key: "Shift + Click"}
             ];
 
             const hotkeys = hotkeysInfo.map((info) => {
@@ -126,12 +180,11 @@ onUiLoaded(async() => {
                 };
               });
         
-              hotkeys
-                .forEach(hotkey => {
+              hotkeys.forEach(hotkey => {
                   const p = document.createElement("p");
                   p.innerHTML = `<b>${hotkey.key}</b> - ${hotkey.action}`;
                   tooltipContent.appendChild(p);
-                });
+              });
         
               tooltip.append(info, tooltipContent);
               toolTipElemnt.appendChild(tooltip);
@@ -193,12 +246,7 @@ onUiLoaded(async() => {
             }
         }
 
-        function adjustBrushSize(
-            elemId,
-            deltaY,
-            withoutValue = false,
-            percentage = 5
-        ) {
+        function adjustBrushSize(elemId, deltaY, withoutValue = false, percentage = 5) {
             const input =
                 gradioApp().querySelector(
                     `${elemId} input[aria-label='Brush radius']`
@@ -210,12 +258,9 @@ onUiLoaded(async() => {
             if (input) {
                 input.click();
                 if (!withoutValue) {
-                    const maxValue =
-                        parseFloat(input.getAttribute("max")) || 100;
+                    const maxValue = parseFloat(input.getAttribute("max")) || 100;
                     const changeAmount = maxValue * (percentage / 100);
-                    const newValue =
-                        parseFloat(input.value) +
-                        (deltaY > 0 ? -changeAmount : changeAmount);
+                    const newValue = parseFloat(input.value) + (deltaY > 0 ? -changeAmount : changeAmount);
                     input.value = Math.min(Math.max(newValue, 0), maxValue);
                     input.dispatchEvent(new Event("change"));
                 }
@@ -232,10 +277,8 @@ onUiLoaded(async() => {
         function updateZoom(newZoomLevel, mouseX, mouseY) {
             newZoomLevel = Math.max(0.1, Math.min(newZoomLevel, 15));
 
-            elemData[elemId].panX +=
-                mouseX - (mouseX * newZoomLevel) / elemData[elemId].zoomLevel;
-            elemData[elemId].panY +=
-                mouseY - (mouseY * newZoomLevel) / elemData[elemId].zoomLevel;
+            elemData[elemId].panX += mouseX - (mouseX * newZoomLevel) / elemData[elemId].zoomLevel;
+            elemData[elemId].panY += mouseY - (mouseY * newZoomLevel) / elemData[elemId].zoomLevel;
 
             targetElement.style.transformOrigin = "0 0";
             targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${newZoomLevel})`;
@@ -264,8 +307,7 @@ onUiLoaded(async() => {
 
                 fullScreenMode = false;
                 elemData[elemId].zoomLevel = updateZoom(
-                    elemData[elemId].zoomLevel +
-                    (operation === "+" ? delta : -delta),
+                    elemData[elemId].zoomLevel + (operation === "+" ? delta : -delta),
                     zoomPosX - targetElement.getBoundingClientRect().left,
                     zoomPosY - targetElement.getBoundingClientRect().top
                 );
@@ -321,9 +363,7 @@ onUiLoaded(async() => {
         }
 
         function fitToScreen() {
-            const canvas = gradioApp().querySelector(
-                `${elemId} canvas[key="interface"]`
-            );
+            const canvas = gradioApp().querySelector(`${elemId} canvas[key="interface"]`);
 
             if (!canvas) return;
 
@@ -359,14 +399,8 @@ onUiLoaded(async() => {
             const originXValue = parseFloat(originX);
             const originYValue = parseFloat(originY);
 
-            const offsetX =
-                (screenWidth - elementWidth * scale) / 2 -
-                elementX -
-                originXValue * (1 - scale);
-            const offsetY =
-                (screenHeight - elementHeight * scale) / 2 -
-                elementY -
-                originYValue * (1 - scale);
+            const offsetX = (screenWidth - elementWidth * scale) / 2 - elementX - originXValue * (1 - scale);
+            const offsetY = (screenHeight - elementHeight * scale) / 2 - elementY - originYValue * (1 - scale);
 
             targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 
@@ -402,10 +436,7 @@ onUiLoaded(async() => {
                 action(event);
             }
 
-            if (
-                isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) ||
-                isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)
-            ) {
+            if (isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) || isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)) {
                 event.preventDefault();
             }
         }
@@ -436,8 +467,7 @@ onUiLoaded(async() => {
 
         const observer = new MutationObserver((mutationsList, observer) => {
             for (let mutation of mutationsList) {
-              if (mutation.type === 'attributes' && mutation.attributeName === 'style' &&
-                mutation.target.tagName.toLowerCase() === 'canvas') {
+              if (mutation.type === 'attributes' && mutation.attributeName === 'style' && mutation.target.tagName.toLowerCase() === 'canvas') {
                 targetElement.isExpanded = false;
                 setTimeout(resetZoom, 10);
               }
@@ -467,7 +497,7 @@ onUiLoaded(async() => {
             }
         }
 
-        // === НОВОЕ: Функции для рисования ластиком (Ctrl + Click) ===
+        // === ИЗМЕНЕНО: Ластик теперь на Shift + Click ===
         let eraserLastX = 0;
         let eraserLastY = 0;
         let isEraserDrawing = false;
@@ -483,8 +513,8 @@ onUiLoaded(async() => {
         }
         
         function startErasing(e) {
-            // Проверяем, что нажат Ctrl и левая кнопка мыши
-            if (!e.ctrlKey || e.button !== 0) return;
+            // Проверяем, что нажат Shift и левая кнопка мыши
+            if (!e.shiftKey || e.button !== 0) return;
             
             e.preventDefault();
             e.stopPropagation();
@@ -506,26 +536,40 @@ onUiLoaded(async() => {
             eraserLastX = pos.x;
             eraserLastY = pos.y;
             
-            // Меняем курсор на ластик
-            targetElement.style.cursor = 'cell';
+            // Показываем кастомный курсор
+            const brushSize = getCurrentBrushSize();
+            showEraserCursor(e.clientX, e.clientY, brushSize);
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
-            maskCtx.arc(eraserLastX, eraserLastY, 20, 0, Math.PI * 2);
+            maskCtx.arc(eraserLastX, eraserLastY, brushSize / 2, 0, Math.PI * 2);
             maskCtx.fill();
             maskCtx.restore();
             
             drawingCtx.save();
             drawingCtx.globalCompositeOperation = 'destination-out';
             drawingCtx.beginPath();
-            drawingCtx.arc(eraserLastX, eraserLastY, 20, 0, Math.PI * 2);
+            drawingCtx.arc(eraserLastX, eraserLastY, brushSize / 2, 0, Math.PI * 2);
             drawingCtx.fill();
             drawingCtx.restore();
         }
         
         function continueErasing(e) {
-            if (!isEraserDrawing || !e.ctrlKey) {
+            // Обновляем позицию курсора если он видим
+            if (eraserCursor && eraserCursor.style.display !== 'none') {
+                updateEraserCursor(e.clientX, e.clientY);
+                
+                // Обновляем размер если изменился
+                const newBrushSize = getCurrentBrushSize();
+                if (newBrushSize !== eraserCursorSize) {
+                    eraserCursor.style.width = newBrushSize + 'px';
+                    eraserCursor.style.height = newBrushSize + 'px';
+                    eraserCursorSize = newBrushSize;
+                }
+            }
+            
+            if (!isEraserDrawing || !e.shiftKey) {
                 if (isEraserDrawing) {
                     stopErasing(e);
                 }
@@ -544,13 +588,14 @@ onUiLoaded(async() => {
             const drawingCtx = drawingCanvas.getContext('2d');
             
             const pos = getEraserCoordinates(e, drawingCanvas);
+            const brushSize = getCurrentBrushSize();
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
             maskCtx.moveTo(eraserLastX, eraserLastY);
             maskCtx.lineTo(pos.x, pos.y);
-            maskCtx.lineWidth = 40;
+            maskCtx.lineWidth = brushSize;
             maskCtx.lineCap = 'round';
             maskCtx.lineJoin = 'round';
             maskCtx.stroke();
@@ -561,7 +606,7 @@ onUiLoaded(async() => {
             drawingCtx.beginPath();
             drawingCtx.moveTo(eraserLastX, eraserLastY);
             drawingCtx.lineTo(pos.x, pos.y);
-            drawingCtx.lineWidth = 40;
+            drawingCtx.lineWidth = brushSize;
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
             drawingCtx.stroke();
@@ -576,8 +621,8 @@ onUiLoaded(async() => {
             
             isEraserDrawing = false;
             
-            // Возвращаем курсор
-            targetElement.style.cursor = 'crosshair';
+            // Скрываем кастомный курсор
+            hideEraserCursor();
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
