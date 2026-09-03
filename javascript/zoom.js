@@ -1,6 +1,4 @@
 onUiLoaded(async() => {
-    // Helper functions
-
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
@@ -66,7 +64,42 @@ onUiLoaded(async() => {
 
         // === НОВОЕ: Кастомный курсор для ластика ===
         let eraserCursor = null;
-        let eraserCursorSize = 40; // Диаметр по умолчанию
+        let eraserCursorSize = 40;
+        let eraserCursorColor = '#ffffff';
+        let isShiftPressed = false;
+        
+        // Получаем текущий размер кисти
+        function getCurrentBrushSize() {
+            const input = gradioApp().querySelector(
+                `${elemId} input[aria-label='Brush radius']`
+            );
+            if (input) {
+                const radius = parseFloat(input.value) || 20;
+                return radius * 2;
+            }
+            return 40;
+        }
+        
+        // Получаем цвет кисти
+        function getBrushColor() {
+            // Пробуем найти input типа color
+            const colorInput = targetElement.querySelector('input[type="color"]');
+            if (colorInput && colorInput.value) {
+                return colorInput.value;
+            }
+            
+            // Пробуем найти кнопку с цветом кисти
+            const colorBtn = targetElement.querySelector('[class*="color"]');
+            if (colorBtn) {
+                const style = window.getComputedStyle(colorBtn);
+                if (style.backgroundColor && style.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                    return style.backgroundColor;
+                }
+            }
+            
+            // По умолчанию белый
+            return '#ffffff';
+        }
         
         function createEraserCursor() {
             if (eraserCursor) return;
@@ -76,9 +109,9 @@ onUiLoaded(async() => {
             eraserCursor.style.cssText = `
                 position: fixed;
                 pointer-events: none;
-                border: 2px solid rgba(255, 255, 255, 0.8);
+                border: 2px solid ${eraserCursorColor};
                 border-radius: 50%;
-                background: rgba(255, 0, 0, 0.1);
+                background: rgba(255, 255, 255, 0.05);
                 transform: translate(-50%, -50%);
                 z-index: 99999;
                 display: none;
@@ -87,17 +120,18 @@ onUiLoaded(async() => {
             document.body.appendChild(eraserCursor);
         }
         
-        function showEraserCursor(x, y, size) {
+        function showEraserCursor(x, y, size, color) {
             if (!eraserCursor) createEraserCursor();
             
             eraserCursorSize = size;
+            eraserCursorColor = color;
             eraserCursor.style.width = size + 'px';
             eraserCursor.style.height = size + 'px';
             eraserCursor.style.left = x + 'px';
             eraserCursor.style.top = y + 'px';
+            eraserCursor.style.borderColor = color;
             eraserCursor.style.display = 'block';
             
-            // Скрываем стандартный курсор
             targetElement.style.cursor = 'none';
         }
         
@@ -105,7 +139,6 @@ onUiLoaded(async() => {
             if (eraserCursor) {
                 eraserCursor.style.display = 'none';
             }
-            // Возвращаем стандартный курсор
             targetElement.style.cursor = 'crosshair';
         }
         
@@ -113,20 +146,52 @@ onUiLoaded(async() => {
             if (eraserCursor && eraserCursor.style.display !== 'none') {
                 eraserCursor.style.left = x + 'px';
                 eraserCursor.style.top = y + 'px';
+                
+                // Обновляем размер если изменился
+                const newBrushSize = getCurrentBrushSize();
+                if (newBrushSize !== eraserCursorSize) {
+                    eraserCursor.style.width = newBrushSize + 'px';
+                    eraserCursor.style.height = newBrushSize + 'px';
+                    eraserCursorSize = newBrushSize;
+                }
+                
+                // Обновляем цвет если изменился
+                const newBrushColor = getBrushColor();
+                if (newBrushColor !== eraserCursorColor) {
+                    eraserCursor.style.borderColor = newBrushColor;
+                    eraserCursorColor = newBrushColor;
+                }
             }
         }
         
-        // Получаем текущий размер кисти
-        function getCurrentBrushSize() {
-            const input = gradioApp().querySelector(
-                `${elemId} input[aria-label='Brush radius']`
-            );
-            if (input) {
-                const radius = parseFloat(input.value) || 20;
-                return radius * 2; // Диаметр = радиус * 2
+        // === НОВОЕ: Обработчики клавиши Shift ===
+        const shiftKeyDownHandler = (e) => {
+            if (e.key === 'Shift' && !isShiftPressed && activeElement === elemId) {
+                isShiftPressed = true;
+                
+                const brushSize = getCurrentBrushSize();
+                const brushColor = getBrushColor();
+                
+                showEraserCursor(e.clientX, e.clientY, brushSize, brushColor);
             }
-            return 40; // По умолчанию
-        }
+        };
+        
+        const shiftKeyUpHandler = (e) => {
+            if (e.key === 'Shift') {
+                isShiftPressed = false;
+                hideEraserCursor();
+            }
+        };
+        
+        const mouseMoveHandler = (e) => {
+            if (isShiftPressed && activeElement === elemId) {
+                updateEraserCursor(e.clientX, e.clientY);
+            }
+        };
+        
+        document.addEventListener('keydown', shiftKeyDownHandler);
+        document.addEventListener('keyup', shiftKeyUpHandler);
+        document.addEventListener('mousemove', mouseMoveHandler);
 
         function createTooltip() {
             const toolTipElemnt = targetElement.querySelector(".image-container");
@@ -158,7 +223,7 @@ onUiLoaded(async() => {
                     action: "Fullscreen mode"
                 },
                 {configKey: "canvas_hotkey_move", action: "Move canvas"},
-                {action: "Eraser (hold Shift + click)", key: "Shift + Click"}
+                {action: "Eraser (hold Shift)", key: "Shift"}
             ];
 
             const hotkeys = hotkeysInfo.map((info) => {
@@ -290,6 +355,11 @@ onUiLoaded(async() => {
         }
 
         function changeZoomLevel(operation, e) {
+            // Не зумим если зажат Shift (режим ластика)
+            if (isShiftPressed) {
+                return;
+            }
+            
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
 
@@ -497,7 +567,7 @@ onUiLoaded(async() => {
             }
         }
 
-        // === ИЗМЕНЕНО: Ластик теперь на Shift + Click ===
+        // === ИЗМЕНЕНО: Ластик на Shift + Click ===
         let eraserLastX = 0;
         let eraserLastY = 0;
         let isEraserDrawing = false;
@@ -536,9 +606,7 @@ onUiLoaded(async() => {
             eraserLastX = pos.x;
             eraserLastY = pos.y;
             
-            // Показываем кастомный курсор
             const brushSize = getCurrentBrushSize();
-            showEraserCursor(e.clientX, e.clientY, brushSize);
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
@@ -556,19 +624,6 @@ onUiLoaded(async() => {
         }
         
         function continueErasing(e) {
-            // Обновляем позицию курсора если он видим
-            if (eraserCursor && eraserCursor.style.display !== 'none') {
-                updateEraserCursor(e.clientX, e.clientY);
-                
-                // Обновляем размер если изменился
-                const newBrushSize = getCurrentBrushSize();
-                if (newBrushSize !== eraserCursorSize) {
-                    eraserCursor.style.width = newBrushSize + 'px';
-                    eraserCursor.style.height = newBrushSize + 'px';
-                    eraserCursorSize = newBrushSize;
-                }
-            }
-            
             if (!isEraserDrawing || !e.shiftKey) {
                 if (isEraserDrawing) {
                     stopErasing(e);
@@ -621,9 +676,6 @@ onUiLoaded(async() => {
             
             isEraserDrawing = false;
             
-            // Скрываем кастомный курсор
-            hideEraserCursor();
-            
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
             
@@ -637,7 +689,6 @@ onUiLoaded(async() => {
             }
         }
         
-        // Обработчики для ластика
         targetElement.addEventListener('pointerdown', startErasing, true);
         targetElement.addEventListener('pointermove', continueErasing, true);
         targetElement.addEventListener('pointerup', stopErasing, true);
@@ -713,6 +764,8 @@ onUiLoaded(async() => {
 
         window.onblur = function() {
             isMoving = false;
+            isShiftPressed = false;
+            hideEraserCursor();
             if (isEraserDrawing) {
                 stopErasing(new Event('pointerup'));
             }
