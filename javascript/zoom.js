@@ -47,14 +47,14 @@ onUiLoaded(async() => {
         elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
         let fullScreenMode = false;
 
-        // === ЛОГИКА КУРСОРА ЛАСТИКА (как в FWDF-189) ===
+        // === ЛОГИКА КУРСОРА ЛАСТИКА (1:1 как в рабочем FWDF-189) ===
         let isAltPressed = false;
         let isEraserDrawing = false;
         let eraserLastX = 0;
         let eraserLastY = 0;
+        let lastEraserCursor = null;
         let isAltHandlerAttached = false;
         let lastMousePosition = { x: 0, y: 0 };
-        let lastEraserCursor = null; // {x, y, radius}
 
         function getEraserRadius() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
@@ -65,19 +65,25 @@ onUiLoaded(async() => {
             return 20;
         }
 
-        // Рисует курсор прямо на canvas, как в оригинальном коде
-        function drawEraserCursor(canvas, point, radius, previous) {
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            // Очищаем область предыдущего курсора, чтобы не было "шлейфа"
+        // Преобразование экранных координат в координаты canvas (учитывает zoom/pan)
+        function canvasPointForEraser(canvas, event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (event.clientX - rect.left) * (canvas.width / rect.width),
+                y: (event.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        // Рисует курсор прямо на canvas, как в оригинальном рабочем коде
+        function drawEraserCursor(interfaceCanvas, point, radius, previous) {
+            if (!interfaceCanvas) return;
+            const ctx = interfaceCanvas.getContext('2d');
             if (previous) {
-                const pad = previous.radius + 2; // +2 для запаса под lineWidth
+                const pad = previous.radius + 2;
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
-            
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; // Белый контур для лучшей видимости
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
@@ -85,32 +91,21 @@ onUiLoaded(async() => {
             ctx.restore();
         }
 
-        function clearEraserCursor(canvas, previous) {
-            if (!canvas || !previous) return;
-            const ctx = canvas.getContext('2d');
+        function clearEraserCursor(interfaceCanvas, previous) {
+            if (!interfaceCanvas || !previous) return;
+            const ctx = interfaceCanvas.getContext('2d');
             const pad = previous.radius + 2;
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
         function updateEraserCursorVisuals(e) {
-            // Используем interface canvas для отрисовки курсора поверх всего
-            const canvas = targetElement.querySelector('canvas[key="interface"]') || 
-                           targetElement.querySelector('canvas[key="drawing"]');
-            if (!canvas) return;
-
-            // Преобразуем экранные координаты в координаты canvas (учитывает zoom/pan)
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            
-            const point = {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
+            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+            if (!interfaceCanvas) return;
             
             const radius = getEraserRadius();
+            const point = canvasPointForEraser(interfaceCanvas, e);
             
-            drawEraserCursor(canvas, point, radius, lastEraserCursor);
+            drawEraserCursor(interfaceCanvas, point, radius, lastEraserCursor);
             lastEraserCursor = { x: point.x, y: point.y, radius: radius };
         }
 
@@ -119,7 +114,7 @@ onUiLoaded(async() => {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Alt' && activeElement === elemId && !isAltPressed) {
                     isAltPressed = true;
-                    targetElement.style.cursor = 'none'; // Скрываем системный курсор
+                    targetElement.style.cursor = 'none';
                     updateEraserCursorVisuals({ clientX: lastMousePosition.x, clientY: lastMousePosition.y });
                     e.preventDefault();
                 }
@@ -128,10 +123,10 @@ onUiLoaded(async() => {
             document.addEventListener('keyup', (e) => {
                 if (e.key === 'Alt') {
                     isAltPressed = false;
-                    const canvas = targetElement.querySelector('canvas[key="interface"]') || targetElement.querySelector('canvas[key="drawing"]');
-                    clearEraserCursor(canvas, lastEraserCursor);
+                    const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                    clearEraserCursor(interfaceCanvas, lastEraserCursor);
                     lastEraserCursor = null;
-                    targetElement.style.cursor = ''; // Возвращаем системный курсор
+                    targetElement.style.cursor = '';
                     if (isEraserDrawing) stopErasing(e);
                 }
             });
@@ -367,16 +362,6 @@ onUiLoaded(async() => {
         }
 
         // === ЛОГИКА СТИРАНИЯ (Alt + Click) ===
-        function getEraserCoordinates(e, canvas) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
-        }
-
         function startErasing(e) {
             if (!e.altKey || e.button !== 0) return;
             e.preventDefault();
@@ -389,7 +374,7 @@ onUiLoaded(async() => {
             
             const maskCtx = maskCanvas.getContext('2d');
             const drawingCtx = drawingCanvas.getContext('2d');
-            const pos = getEraserCoordinates(e, drawingCanvas);
+            const pos = canvasPointForEraser(drawingCanvas, e);
             
             eraserLastX = pos.x;
             eraserLastY = pos.y;
@@ -427,7 +412,7 @@ onUiLoaded(async() => {
             
             const maskCtx = maskCanvas.getContext('2d');
             const drawingCtx = drawingCanvas.getContext('2d');
-            const pos = getEraserCoordinates(e, drawingCanvas);
+            const pos = canvasPointForEraser(drawingCanvas, e);
             const radius = getEraserRadius();
             
             maskCtx.save();
@@ -537,8 +522,8 @@ onUiLoaded(async() => {
         window.onblur = function() {
             isMoving = false;
             isAltPressed = false;
-            const canvas = targetElement.querySelector('canvas[key="interface"]') || targetElement.querySelector('canvas[key="drawing"]');
-            clearEraserCursor(canvas, lastEraserCursor);
+            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+            clearEraserCursor(interfaceCanvas, lastEraserCursor);
             lastEraserCursor = null;
             targetElement.style.cursor = '';
             if (isEraserDrawing) stopErasing(new Event('pointerup'));
