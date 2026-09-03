@@ -70,7 +70,6 @@ onUiLoaded(async() => {
         let eraserLastY = 0;
         let isAltHandlerAttached = false;
         let lastMousePosition = { x: 0, y: 0 };
-        let brushCursorElements = []; // Сохраняем элементы курсора кисти
 
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
@@ -86,8 +85,6 @@ onUiLoaded(async() => {
             
             eraserCursor = document.createElement('div');
             eraserCursor.className = 'eraser-cursor';
-            // box-sizing: border-box включает border в размер
-            // inset box-shadow не добавляет размер снаружи
             eraserCursor.style.cssText = `
                 position: fixed;
                 pointer-events: none;
@@ -104,58 +101,26 @@ onUiLoaded(async() => {
             document.body.appendChild(eraserCursor);
         }
 
-        function hideBrushCursor() {
-            // Скрываем стандартный курсор
-            targetElement.style.cursor = 'none';
-            
-            // Находим и скрываем элементы курсора кисти Gradio
-            brushCursorElements = [];
-            const possibleCursors = targetElement.querySelectorAll('canvas[key="interface"], [class*="cursor"], [class*="brush"]');
-            possibleCursors.forEach(el => {
-                if (el !== eraserCursor && el.tagName !== 'CANVAS' || (el.tagName === 'CANVAS' && el.getAttribute('key') === 'interface')) {
-                    brushCursorElements.push({
-                        element: el,
-                        originalVisibility: el.style.visibility,
-                        originalOpacity: el.style.opacity
-                    });
-                    el.style.visibility = 'hidden';
-                }
-            });
-        }
-
-        function showBrushCursor() {
-            // Возвращаем стандартный курсор
-            targetElement.style.cursor = '';
-            
-            // Восстанавливаем элементы курсора кисти
-            brushCursorElements.forEach(item => {
-                item.element.style.visibility = item.originalVisibility;
-                item.element.style.opacity = item.originalOpacity;
-            });
-            brushCursorElements = [];
-        }
-
         function showEraserCursor(x, y) {
             if (!eraserCursor) createEraserCursor();
             
             const size = getCurrentBrushSize();
-            // С box-sizing: border-box размер включает border
             eraserCursor.style.width = size + 'px';
             eraserCursor.style.height = size + 'px';
             eraserCursor.style.left = x + 'px';
             eraserCursor.style.top = y + 'px';
             eraserCursor.style.display = 'block';
             
-            // Скрываем курсор кисти
-            hideBrushCursor();
+            // Скрываем только системный курсор мыши, не трогая DOM Gradio
+            targetElement.style.cursor = 'none';
         }
 
         function hideEraserCursor() {
             if (eraserCursor) {
                 eraserCursor.style.display = 'none';
             }
-            // Возвращаем курсор кисти
-            showBrushCursor();
+            // Возвращаем системный курсор, Gradio сам отрисует свой курсор кисти
+            targetElement.style.cursor = '';
         }
 
         function updateEraserCursor(x, y) {
