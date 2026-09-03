@@ -115,14 +115,25 @@ onUiLoaded(async() => {
         function hideBrushCursor() {
             findBrushCursorCanvas();
             if (brushCursorCanvas) {
-                brushCursorCanvas.style.display = 'none';
+                // Используем visibility вместо display, чтобы не ломать layout
+                brushCursorCanvas.style.visibility = 'hidden';
             }
             targetElement.style.cursor = 'none';
         }
 
         function showBrushCursor() {
             if (brushCursorCanvas) {
-                brushCursorCanvas.style.display = brushCursorCanvasOriginalDisplay;
+                // Восстанавливаем видимость
+                brushCursorCanvas.style.visibility = 'visible';
+                
+                // Принудительно триггерим событие mousemove, чтобы Svelte перерисовал курсор
+                const mouseMoveEvent = new MouseEvent('mousemove', {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: lastMousePosition.x,
+                    clientY: lastMousePosition.y
+                });
+                brushCursorCanvas.dispatchEvent(mouseMoveEvent);
             }
             targetElement.style.cursor = '';
         }
@@ -540,7 +551,7 @@ onUiLoaded(async() => {
             maskCtx.beginPath();
             maskCtx.moveTo(eraserLastX, eraserLastY);
             maskCtx.lineTo(pos.x, pos.y);
-            maskCtx.lineWidth = brushRadius;
+            maskCtx.lineWidth = brushRadius * 2;
             maskCtx.lineCap = 'round';
             maskCtx.lineJoin = 'round';
             maskCtx.stroke();
