@@ -63,7 +63,8 @@ onUiLoaded(async() => {
         let fullScreenMode = false;
 
         // === ВИЗУАЛИЗАЦИЯ КУРСОРА ЛАСТИКА ===
-        let eraserCursor = null;
+        let eraserCursorCanvas = null;
+        let eraserCursorCtx = null;
         let isAltPressed = false;
         let isEraserDrawing = false;
         let eraserLastX = 0;
@@ -73,7 +74,6 @@ onUiLoaded(async() => {
         let brushCursorCanvas = null;
         let brushCursorCanvasOriginalVisibility = '';
 
-        // Получаем значение из слайдера (это диаметр/визуальный размер кисти)
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
             if (input) {
@@ -82,23 +82,51 @@ onUiLoaded(async() => {
             return 20;
         }
 
-        function createEraserCursor() {
-            if (eraserCursor) return;
+        function createEraserCursorCanvas() {
+            if (eraserCursorCanvas) return;
             
-            eraserCursor = document.createElement('div');
-            eraserCursor.className = 'eraser-cursor';
-            eraserCursor.style.cssText = `
+            eraserCursorCanvas = document.createElement('canvas');
+            eraserCursorCanvas.className = 'eraser-cursor-canvas';
+            eraserCursorCanvas.style.cssText = `
                 position: fixed;
                 pointer-events: none;
-                border-radius: 50%;
-                background: rgba(0, 0, 0, 0.2);
-                transform: translate(-50%, -50%);
                 z-index: 999999;
                 display: none;
-                box-shadow: 0 0 0 2px #ffffff;
-                mix-blend-mode: difference;
             `;
-            document.body.appendChild(eraserCursor);
+            document.body.appendChild(eraserCursorCanvas);
+            eraserCursorCtx = eraserCursorCanvas.getContext('2d');
+        }
+
+        function drawEraserCursor(x, y) {
+            if (!eraserCursorCanvas) createEraserCursorCanvas();
+            
+            const size = getCurrentBrushSize();
+            const padding = 4; // Отступ для обводки
+            const canvasSize = size + padding * 2;
+            
+            eraserCursorCanvas.width = canvasSize;
+            eraserCursorCanvas.height = canvasSize;
+            eraserCursorCanvas.style.width = canvasSize + 'px';
+            eraserCursorCanvas.style.height = canvasSize + 'px';
+            eraserCursorCanvas.style.left = (x - canvasSize / 2) + 'px';
+            eraserCursorCanvas.style.top = (y - canvasSize / 2) + 'px';
+            eraserCursorCanvas.style.display = 'block';
+            
+            // Очищаем canvas
+            eraserCursorCtx.clearRect(0, 0, canvasSize, canvasSize);
+            
+            // Рисуем круг как в Gradio (обводка)
+            const centerX = canvasSize / 2;
+            const centerY = canvasSize / 2;
+            const radius = size / 2;
+            
+            eraserCursorCtx.strokeStyle = '#ffffff';
+            eraserCursorCtx.lineWidth = 2;
+            eraserCursorCtx.beginPath();
+            eraserCursorCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            eraserCursorCtx.stroke();
+            
+            hideBrushCursor();
         }
 
         function findBrushCursorCanvas() {
@@ -134,35 +162,19 @@ onUiLoaded(async() => {
         }
 
         function showEraserCursor(x, y) {
-            if (!eraserCursor) createEraserCursor();
-            
-            const size = getCurrentBrushSize();
-            eraserCursor.style.width = size + 'px';
-            eraserCursor.style.height = size + 'px';
-            eraserCursor.style.left = x + 'px';
-            eraserCursor.style.top = y + 'px';
-            eraserCursor.style.display = 'block';
-            
-            hideBrushCursor();
+            drawEraserCursor(x, y);
         }
 
         function hideEraserCursor() {
-            if (eraserCursor) {
-                eraserCursor.style.display = 'none';
+            if (eraserCursorCanvas) {
+                eraserCursorCanvas.style.display = 'none';
             }
             showBrushCursor();
         }
 
         function updateEraserCursor(x, y) {
-            if (eraserCursor && eraserCursor.style.display !== 'none') {
-                eraserCursor.style.left = x + 'px';
-                eraserCursor.style.top = y + 'px';
-                
-                const newSize = getCurrentBrushSize();
-                if (parseFloat(eraserCursor.style.width) !== newSize) {
-                    eraserCursor.style.width = newSize + 'px';
-                    eraserCursor.style.height = newSize + 'px';
-                }
+            if (eraserCursorCanvas && eraserCursorCanvas.style.display !== 'none') {
+                drawEraserCursor(x, y);
             }
         }
 
