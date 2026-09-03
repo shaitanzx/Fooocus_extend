@@ -52,6 +52,7 @@ onUiLoaded(async() => {
         let isDrawingEraser = false;
         let lastEraserX = 0;
         let lastEraserY = 0;
+        let lastCursorPos = null;
 
         function getBrushRadius(root) {
             const input = root.querySelector("input[aria-label='Brush radius']");
@@ -92,6 +93,34 @@ onUiLoaded(async() => {
             ctx.restore();
         }
 
+        // === НОВОЕ: Отрисовка курсора ластика ===
+        function drawEraserCursor(canvas, point, radius, previous) {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Очищаем предыдущий курсор
+            if (previous) {
+                const pad = previous.radius + 2;
+                ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
+            }
+            
+            // Рисуем новый курсор
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function clearEraserCursor(canvas, previous) {
+            if (!canvas || !previous) return;
+            const ctx = canvas.getContext('2d');
+            const pad = previous.radius + 2;
+            ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
+        }
+
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
             
@@ -113,19 +142,27 @@ onUiLoaded(async() => {
         }
 
         function handleEraserMove(e) {
-            if (isEraserMode && e.target.tagName === 'CANVAS') {
+            if (!isEraserMode) return;
+            
+            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
+            if (!drawingCanvas) return;
+
+            if (e.target.tagName === 'CANVAS') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
             }
-            
-            if (!isEraserMode || !isDrawingEraser) return;
-
-            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
-            if (!maskCanvas || !drawingCanvas) return;
 
             const pos = getCanvasPoint(drawingCanvas, e);
             const radius = getBrushRadius(targetElement);
+
+            // Рисуем курсор ластика
+            drawEraserCursor(drawingCanvas, pos, radius, lastCursorPos);
+            lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
+
+            if (!isDrawingEraser) return;
+
+            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
+            if (!maskCanvas) return;
 
             eraseLine(maskCanvas, lastEraserX, lastEraserY, pos.x, pos.y, radius);
             eraseLine(drawingCanvas, lastEraserX, lastEraserY, pos.x, pos.y, radius);
@@ -314,6 +351,13 @@ onUiLoaded(async() => {
                 isEraserMode = !isEraserMode;
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
+                
+                // Очищаем курсор при выключении режима
+                if (!isEraserMode) {
+                    const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
+                    clearEraserCursor(drawingCanvas, lastCursorPos);
+                    lastCursorPos = null;
+                }
                 return;
             }
 
@@ -378,6 +422,10 @@ onUiLoaded(async() => {
                 isKeyDownHandlerAttached = false;
                 activeElement = null;
             }
+            // Очищаем курсор при уходе мыши
+            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
+            clearEraserCursor(drawingCanvas, lastCursorPos);
+            lastCursorPos = null;
         }
 
         targetElement.addEventListener('pointerdown', handleEraserDown, true);
@@ -439,6 +487,9 @@ onUiLoaded(async() => {
         window.onblur = function() {
             isMoving = false;
             isDrawingEraser = false;
+            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
+            clearEraserCursor(drawingCanvas, lastCursorPos);
+            lastCursorPos = null;
         };
 
         function checkForOutBox() {
