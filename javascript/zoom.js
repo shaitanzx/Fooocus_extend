@@ -53,29 +53,22 @@ onUiLoaded(async() => {
         let lastEraserX = 0;
         let lastEraserY = 0;
 
-        // === ЛОГИРОВАНИЕ: Получение радиуса кисти ===
         function getBrushRadius(root) {
             const input = root.querySelector("input[aria-label='Brush radius']");
             const value = input ? parseFloat(input.value) : NaN;
             const diameter = Number.isFinite(value) && value > 0 ? value : 20;
-            const radius = diameter / 2;
-            
-            console.log(`[Eraser Debug] getBrushRadius: input.value=${value}, diameter=${diameter}, radius=${radius}`);
-            return radius;
+            return diameter / 2;
         }
 
         function getCanvasPoint(canvas, event) {
             const rect = canvas.getBoundingClientRect();
-            const point = {
+            return {
                 x: (event.clientX - rect.left) * (canvas.width / rect.width),
                 y: (event.clientY - rect.top) * (canvas.height / rect.height)
             };
-            console.log(`[Eraser Debug] getCanvasPoint: canvas.width=${canvas.width}, canvas.height=${canvas.height}, rect.width=${rect.width}, rect.height=${rect.height}, point=(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`);
-            return point;
         }
 
         function eraseAt(canvas, x, y, radius) {
-            console.log(`[Eraser Debug] eraseAt: canvas=${canvas.key}, x=${x.toFixed(1)}, y=${y.toFixed(1)}, radius=${radius}`);
             const ctx = canvas.getContext('2d');
             ctx.save();
             ctx.globalCompositeOperation = 'destination-out';
@@ -86,7 +79,6 @@ onUiLoaded(async() => {
         }
 
         function eraseLine(canvas, x1, y1, x2, y2, radius) {
-            console.log(`[Eraser Debug] eraseLine: canvas=${canvas.key}, from=(${x1.toFixed(1)},${y1.toFixed(1)}) to=(${x2.toFixed(1)},${y2.toFixed(1)}), radius=${radius}, lineWidth=${radius * 2}`);
             const ctx = canvas.getContext('2d');
             ctx.save();
             ctx.globalCompositeOperation = 'destination-out';
@@ -103,17 +95,12 @@ onUiLoaded(async() => {
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
             
-            console.log(`\n[Eraser Debug] === POINTERDOWN ===`);
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
-            
-            if (!maskCanvas || !drawingCanvas) {
-                console.log(`[Eraser Debug] Canvas not found! mask=${!!maskCanvas}, drawing=${!!drawingCanvas}`);
-                return;
-            }
+            if (!maskCanvas || !drawingCanvas) return;
 
             e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
             isDrawingEraser = true;
 
             const pos = getCanvasPoint(drawingCanvas, e);
@@ -121,18 +108,17 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
             const radius = getBrushRadius(targetElement);
 
-            console.log(`[Eraser Debug] Starting erase at (${lastEraserX.toFixed(1)}, ${lastEraserY.toFixed(1)}) with radius ${radius}`);
-            
             eraseAt(maskCanvas, lastEraserX, lastEraserY, radius);
             eraseAt(drawingCanvas, lastEraserX, lastEraserY, radius);
         }
 
         function handleEraserMove(e) {
-            if (!isEraserMode || !isDrawingEraser) return;
+            if (isEraserMode && e.target.tagName === 'CANVAS') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
             
-            console.log(`\n[Eraser Debug] === POINTERMOVE ===`);
-            e.preventDefault();
-            e.stopPropagation();
+            if (!isEraserMode || !isDrawingEraser) return;
 
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
@@ -141,8 +127,6 @@ onUiLoaded(async() => {
             const pos = getCanvasPoint(drawingCanvas, e);
             const radius = getBrushRadius(targetElement);
 
-            console.log(`[Eraser Debug] Erasing line from (${lastEraserX.toFixed(1)},${lastEraserY.toFixed(1)}) to (${pos.x.toFixed(1)},${pos.y.toFixed(1)}) with radius ${radius}`);
-            
             eraseLine(maskCanvas, lastEraserX, lastEraserY, pos.x, pos.y, radius);
             eraseLine(drawingCanvas, lastEraserX, lastEraserY, pos.x, pos.y, radius);
 
@@ -152,7 +136,6 @@ onUiLoaded(async() => {
 
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
-            console.log(`\n[Eraser Debug] === POINTERUP ===`);
             isDrawingEraser = false;
             
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
@@ -230,13 +213,10 @@ onUiLoaded(async() => {
             else if (forced === "on") targetElement.style.zIndex = zIndex2;
         }
 
-        // === ЛОГИРОВАНИЕ: Изменение размера кисти ===
         function adjustBrushSize(elemId, deltaY, withoutValue = false, percentage = 5) {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`) ||
                           gradioApp().querySelector(`${elemId} button[aria-label="Use brush"]`);
-
             if (input) {
-                const oldValue = parseFloat(input.value);
                 input.click();
                 if (!withoutValue) {
                     const maxValue = parseFloat(input.getAttribute("max")) || 100;
@@ -244,8 +224,6 @@ onUiLoaded(async() => {
                     const newValue = parseFloat(input.value) + (deltaY > 0 ? -changeAmount : changeAmount);
                     input.value = Math.min(Math.max(newValue, 0), maxValue);
                     input.dispatchEvent(new Event("change"));
-                    
-                    console.log(`[Eraser Debug] Brush size changed: ${oldValue} -> ${input.value} (deltaY=${deltaY})`);
                 }
             }
         }
@@ -336,7 +314,6 @@ onUiLoaded(async() => {
                 isEraserMode = !isEraserMode;
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
-                console.log(`[Eraser Debug] Eraser mode: ${isEraserMode ? "ON" : "OFF"}`);
                 return;
             }
 
