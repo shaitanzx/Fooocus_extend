@@ -50,7 +50,7 @@ onUiLoaded(async() => {
 
     let isMoving = false;
     let activeElement;
-    let isErasing = false; // Состояние ластика
+    let isCtrlPressed = false; // Состояние клавиши Ctrl
 
     const elemData = {};
 
@@ -71,120 +71,6 @@ onUiLoaded(async() => {
         };
 
         let fullScreenMode = false;
-
-        // === НОВОЕ: Создание кнопки ластика в третьем ряду справа ===
-        function createEraserButton() {
-            const checkAndAddEraser = () => {
-                // Ищем существующие кнопки
-                const existingButtons = targetElement.querySelectorAll('button[aria-label], button[class*="svelte"]');
-                
-                if (existingButtons.length === 0) return;
-                
-                // Находим контейнер с кнопками
-                const firstButton = existingButtons[0];
-                const buttonsContainer = firstButton.parentElement;
-                
-                if (!buttonsContainer) return;
-                
-                // Проверяем, не добавили ли уже
-                if (buttonsContainer.querySelector('.eraser-tool-btn')) return;
-                
-                // Устанавливаем flex-wrap для контейнера, чтобы кнопки переносились
-                buttonsContainer.style.flexWrap = 'wrap';
-                buttonsContainer.style.alignContent = 'flex-start';
-                
-                // Создаем разделитель для переноса на третий ряд
-                const rowBreaker = document.createElement('div');
-                rowBreaker.style.cssText = `
-                    width: 100%;
-                    height: 0;
-                    flex-basis: 100%;
-                    order: 999;
-                `;
-                buttonsContainer.appendChild(rowBreaker);
-                
-                // Создаем кнопку в стиле существующих кнопок
-                const eraserBtn = document.createElement('button');
-                eraserBtn.className = 'eraser-tool-btn';
-                eraserBtn.title = 'Eraser';
-                eraserBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2L22 11L20 20Z"/>
-                        <path d="M17 17L7 7"/>
-                    </svg>
-                `;
-                
-                // Стили копируем с существующих кнопок
-                const firstBtnStyle = window.getComputedStyle(firstButton);
-                eraserBtn.style.cssText = `
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: ${firstBtnStyle.width || '40px'};
-                    height: ${firstBtnStyle.height || '40px'};
-                    padding: ${firstBtnStyle.padding || '8px'};
-                    background: ${firstBtnStyle.backgroundColor || '#1f2937'};
-                    border: ${firstBtnStyle.border || 'none'};
-                    border-radius: ${firstBtnStyle.borderRadius || '8px'};
-                    cursor: pointer;
-                    color: ${firstBtnStyle.color || '#ffffff'};
-                    transition: all 0.2s;
-                    margin: ${firstBtnStyle.margin || '4px'};
-                    order: 1000;
-                    margin-left: auto;
-                `;
-                
-                // Hover эффект
-                eraserBtn.addEventListener('mouseenter', () => {
-                    if (!isErasing) {
-                        eraserBtn.style.background = '#374151';
-                    }
-                });
-                
-                eraserBtn.addEventListener('mouseleave', () => {
-                    if (!isErasing) {
-                        eraserBtn.style.background = firstBtnStyle.backgroundColor || '#1f2937';
-                    }
-                });
-                
-                // Клик по кнопке
-                eraserBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    isErasing = !isErasing;
-                    
-                    if (isErasing) {
-                        eraserBtn.style.background = '#3b82f6';
-                        targetElement.style.cursor = 'cell';
-                        console.log('[Eraser] ЛАСТИК ВКЛЮЧЕН');
-                    } else {
-                        eraserBtn.style.background = firstBtnStyle.backgroundColor || '#1f2937';
-                        targetElement.style.cursor = 'crosshair';
-                        console.log('[Eraser] КИСТЬ ВКЛЮЧЕНА');
-                    }
-                });
-                
-                buttonsContainer.appendChild(eraserBtn);
-                console.log('[Eraser] Кнопка ластика добавлена в третий ряд справа');
-            };
-            
-            // Пробуем добавить сразу
-            checkAndAddEraser();
-            
-            // Если не получилось, следим за изменениями DOM
-            const observer = new MutationObserver((mutations) => {
-                for (let mutation of mutations) {
-                    if (mutation.addedNodes.length > 0) {
-                        checkAndAddEraser();
-                    }
-                }
-            });
-            
-            observer.observe(targetElement, { childList: true, subtree: true });
-        }
-
-        // Создаем кнопку ластика
-        createEraserButton();
 
         // Create tooltip
         function createTooltip() {
@@ -217,13 +103,14 @@ onUiLoaded(async() => {
                     configKey: "canvas_hotkey_fullscreen",
                     action: "Fullscreen mode"
                 },
-                {configKey: "canvas_hotkey_move", action: "Move canvas"}
+                {configKey: "canvas_hotkey_move", action: "Move canvas"},
+                {action: "Eraser (hold Ctrl + click)", key: "Ctrl + Click"}
             ];
 
             const hotkeys = hotkeysInfo.map((info) => {
                 const configValue = hotkeysConfig[info.configKey];
         
-                let key = configValue.slice(-1);
+                let key = info.key || configValue.slice(-1);
         
                 if (info.keySuffix) {
                   key = `${configValue}${info.keySuffix}`;
@@ -247,7 +134,6 @@ onUiLoaded(async() => {
                 });
         
               tooltip.append(info, tooltipContent);
-
               toolTipElemnt.appendChild(tooltip);
         }
 
@@ -361,10 +247,6 @@ onUiLoaded(async() => {
         }
 
         function changeZoomLevel(operation, e) {
-            if (isErasing) {
-                return;
-            }
-            
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_zoom)) {
                 e.preventDefault();
 
@@ -585,7 +467,7 @@ onUiLoaded(async() => {
             }
         }
 
-        // === Функции для рисования ластиком ===
+        // === НОВОЕ: Функции для рисования ластиком (Ctrl + Click) ===
         let eraserLastX = 0;
         let eraserLastY = 0;
         let isEraserDrawing = false;
@@ -601,9 +483,9 @@ onUiLoaded(async() => {
         }
         
         function startErasing(e) {
-            if (!isErasing) return;
+            // Проверяем, что нажат Ctrl и левая кнопка мыши
+            if (!e.ctrlKey || e.button !== 0) return;
             
-            console.log('[Eraser] Начало стирания');
             e.preventDefault();
             e.stopPropagation();
             
@@ -624,6 +506,9 @@ onUiLoaded(async() => {
             eraserLastX = pos.x;
             eraserLastY = pos.y;
             
+            // Меняем курсор на ластик
+            targetElement.style.cursor = 'cell';
+            
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
@@ -640,7 +525,12 @@ onUiLoaded(async() => {
         }
         
         function continueErasing(e) {
-            if (!isErasing || !isEraserDrawing) return;
+            if (!isEraserDrawing || !e.ctrlKey) {
+                if (isEraserDrawing) {
+                    stopErasing(e);
+                }
+                return;
+            }
             
             e.preventDefault();
             e.stopPropagation();
@@ -684,8 +574,10 @@ onUiLoaded(async() => {
         function stopErasing(e) {
             if (!isEraserDrawing) return;
             
-            console.log('[Eraser] Конец стирания');
             isEraserDrawing = false;
+            
+            // Возвращаем курсор
+            targetElement.style.cursor = 'crosshair';
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]');
@@ -700,6 +592,7 @@ onUiLoaded(async() => {
             }
         }
         
+        // Обработчики для ластика
         targetElement.addEventListener('pointerdown', startErasing, true);
         targetElement.addEventListener('pointermove', continueErasing, true);
         targetElement.addEventListener('pointerup', stopErasing, true);
@@ -709,10 +602,6 @@ onUiLoaded(async() => {
         targetElement.addEventListener("mouseleave", handleMouseLeave);
 
         targetElement.addEventListener("wheel", e => {
-            if (isErasing) {
-                return;
-            }
-            
             const operation = e.deltaY > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
 
@@ -779,6 +668,9 @@ onUiLoaded(async() => {
 
         window.onblur = function() {
             isMoving = false;
+            if (isEraserDrawing) {
+                stopErasing(new Event('pointerup'));
+            }
         };
 
         function checkForOutBox() {
