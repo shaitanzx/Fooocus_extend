@@ -73,11 +73,11 @@ onUiLoaded(async() => {
         let brushCursorCanvas = null;
         let brushCursorCanvasOriginalVisibility = '';
 
+        // Получаем сырое значение из слайдера (это диаметр/визуальный размер кисти)
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
             if (input) {
-                const radius = parseFloat(input.value) || 20;
-                return radius;
+                return parseFloat(input.value) || 20;
             }
             return 20;
         }
@@ -503,7 +503,9 @@ onUiLoaded(async() => {
             const pos = getEraserCoordinates(e, drawingCanvas);
             eraserLastX = pos.x;
             eraserLastY = pos.y;
-            const brushRadius = getCurrentBrushSize();
+            
+            const brushSize = getCurrentBrushSize(); // Это диаметр
+            const brushRadius = brushSize / 2;       // Делим на 2 для радиуса дуги
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
@@ -542,14 +544,14 @@ onUiLoaded(async() => {
             const drawingCtx = drawingCanvas.getContext('2d');
             
             const pos = getEraserCoordinates(e, drawingCanvas);
-            const brushRadius = getCurrentBrushSize();
+            const brushSize = getCurrentBrushSize(); // Используем напрямую как диаметр (lineWidth)
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
             maskCtx.moveTo(eraserLastX, eraserLastY);
             maskCtx.lineTo(pos.x, pos.y);
-            maskCtx.lineWidth = brushRadius * 2;
+            maskCtx.lineWidth = brushSize;
             maskCtx.lineCap = 'round';
             maskCtx.lineJoin = 'round';
             maskCtx.stroke();
@@ -560,7 +562,7 @@ onUiLoaded(async() => {
             drawingCtx.beginPath();
             drawingCtx.moveTo(eraserLastX, eraserLastY);
             drawingCtx.lineTo(pos.x, pos.y);
-            drawingCtx.lineWidth = brushRadius * 2;
+            drawingCtx.lineWidth = brushSize;
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
             drawingCtx.stroke();
