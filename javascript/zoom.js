@@ -93,7 +93,7 @@ onUiLoaded(async() => {
             ctx.restore();
         }
 
-        // === НОВОЕ: Отрисовка курсора ластика ===
+        // === Отрисовка курсора ластика (как в режиме кисти) ===
         function drawEraserCursor(canvas, point, radius, previous) {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
@@ -104,12 +104,14 @@ onUiLoaded(async() => {
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
             
-            // Рисуем новый курсор
+            // Рисуем курсор как в режиме кисти (белая обводка + полупрозрачное заполнение)
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+            ctx.fill();
             ctx.stroke();
             ctx.restore();
         }
