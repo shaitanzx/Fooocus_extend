@@ -73,7 +73,7 @@ onUiLoaded(async() => {
         let brushCursorCanvas = null;
         let brushCursorCanvasOriginalVisibility = '';
 
-        // Получаем сырое значение из слайдера (это диаметр/визуальный размер кисти)
+        // Получаем значение из слайдера (это диаметр/визуальный размер кисти)
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
             if (input) {
@@ -90,15 +90,13 @@ onUiLoaded(async() => {
             eraserCursor.style.cssText = `
                 position: fixed;
                 pointer-events: none;
-                border: 2px solid #ffffff;
                 border-radius: 50%;
                 background: rgba(0, 0, 0, 0.2);
                 transform: translate(-50%, -50%);
                 z-index: 999999;
                 display: none;
-                box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5);
+                box-shadow: 0 0 0 2px #ffffff;
                 mix-blend-mode: difference;
-                box-sizing: border-box;
             `;
             document.body.appendChild(eraserCursor);
         }
@@ -504,8 +502,8 @@ onUiLoaded(async() => {
             eraserLastX = pos.x;
             eraserLastY = pos.y;
             
-            const brushSize = getCurrentBrushSize(); // Это диаметр
-            const brushRadius = brushSize / 2;       // Делим на 2 для радиуса дуги
+            const brushSize = getCurrentBrushSize();
+            const brushRadius = brushSize / 2;
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
@@ -544,7 +542,7 @@ onUiLoaded(async() => {
             const drawingCtx = drawingCanvas.getContext('2d');
             
             const pos = getEraserCoordinates(e, drawingCanvas);
-            const brushSize = getCurrentBrushSize(); // Используем напрямую как диаметр (lineWidth)
+            const brushSize = getCurrentBrushSize();
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
