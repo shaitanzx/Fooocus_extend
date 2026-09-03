@@ -70,6 +70,7 @@ onUiLoaded(async() => {
         let eraserLastY = 0;
         let isAltHandlerAttached = false;
         let lastMousePosition = { x: 0, y: 0 };
+        let brushCursorElements = []; // Сохраняем элементы курсора кисти
 
         function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
@@ -85,6 +86,8 @@ onUiLoaded(async() => {
             
             eraserCursor = document.createElement('div');
             eraserCursor.className = 'eraser-cursor';
+            // box-sizing: border-box включает border в размер
+            // inset box-shadow не добавляет размер снаружи
             eraserCursor.style.cssText = `
                 position: fixed;
                 pointer-events: none;
@@ -94,30 +97,65 @@ onUiLoaded(async() => {
                 transform: translate(-50%, -50%);
                 z-index: 999999;
                 display: none;
-                box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+                box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5);
                 mix-blend-mode: difference;
+                box-sizing: border-box;
             `;
             document.body.appendChild(eraserCursor);
+        }
+
+        function hideBrushCursor() {
+            // Скрываем стандартный курсор
+            targetElement.style.cursor = 'none';
+            
+            // Находим и скрываем элементы курсора кисти Gradio
+            brushCursorElements = [];
+            const possibleCursors = targetElement.querySelectorAll('canvas[key="interface"], [class*="cursor"], [class*="brush"]');
+            possibleCursors.forEach(el => {
+                if (el !== eraserCursor && el.tagName !== 'CANVAS' || (el.tagName === 'CANVAS' && el.getAttribute('key') === 'interface')) {
+                    brushCursorElements.push({
+                        element: el,
+                        originalVisibility: el.style.visibility,
+                        originalOpacity: el.style.opacity
+                    });
+                    el.style.visibility = 'hidden';
+                }
+            });
+        }
+
+        function showBrushCursor() {
+            // Возвращаем стандартный курсор
+            targetElement.style.cursor = '';
+            
+            // Восстанавливаем элементы курсора кисти
+            brushCursorElements.forEach(item => {
+                item.element.style.visibility = item.originalVisibility;
+                item.element.style.opacity = item.originalOpacity;
+            });
+            brushCursorElements = [];
         }
 
         function showEraserCursor(x, y) {
             if (!eraserCursor) createEraserCursor();
             
             const size = getCurrentBrushSize();
+            // С box-sizing: border-box размер включает border
             eraserCursor.style.width = size + 'px';
             eraserCursor.style.height = size + 'px';
             eraserCursor.style.left = x + 'px';
             eraserCursor.style.top = y + 'px';
             eraserCursor.style.display = 'block';
             
-            targetElement.style.cursor = 'none';
+            // Скрываем курсор кисти
+            hideBrushCursor();
         }
 
         function hideEraserCursor() {
             if (eraserCursor) {
                 eraserCursor.style.display = 'none';
             }
-            targetElement.style.cursor = '';
+            // Возвращаем курсор кисти
+            showBrushCursor();
         }
 
         function updateEraserCursor(x, y) {
@@ -457,7 +495,6 @@ onUiLoaded(async() => {
             e.stopPropagation();
             isEraserDrawing = true;
             
-            // Явно показываем курсор в текущей позиции
             showEraserCursor(e.clientX, e.clientY);
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
@@ -489,7 +526,6 @@ onUiLoaded(async() => {
         }
 
         function continueErasing(e) {
-            // Явно обновляем курсор даже во время рисования
             if (isAltPressed || isEraserDrawing) {
                 updateEraserCursor(e.clientX, e.clientY);
             }
