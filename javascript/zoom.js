@@ -73,13 +73,13 @@ onUiLoaded(async() => {
         let brushCursorCanvas = null;
         let brushCursorCanvasOriginalVisibility = '';
 
-        function getCurrentBrushDiameter() {
+        function getCurrentBrushSize() {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`);
             if (input) {
                 const radius = parseFloat(input.value) || 20;
-                return radius * 2;
+                return radius;
             }
-            return 40;
+            return 20;
         }
 
         function createEraserCursor() {
@@ -138,9 +138,9 @@ onUiLoaded(async() => {
         function showEraserCursor(x, y) {
             if (!eraserCursor) createEraserCursor();
             
-            const diameter = getCurrentBrushDiameter();
-            eraserCursor.style.width = diameter + 'px';
-            eraserCursor.style.height = diameter + 'px';
+            const size = getCurrentBrushSize();
+            eraserCursor.style.width = size + 'px';
+            eraserCursor.style.height = size + 'px';
             eraserCursor.style.left = x + 'px';
             eraserCursor.style.top = y + 'px';
             eraserCursor.style.display = 'block';
@@ -160,10 +160,10 @@ onUiLoaded(async() => {
                 eraserCursor.style.left = x + 'px';
                 eraserCursor.style.top = y + 'px';
                 
-                const newDiameter = getCurrentBrushDiameter();
-                if (parseFloat(eraserCursor.style.width) !== newDiameter) {
-                    eraserCursor.style.width = newDiameter + 'px';
-                    eraserCursor.style.height = newDiameter + 'px';
+                const newSize = getCurrentBrushSize();
+                if (parseFloat(eraserCursor.style.width) !== newSize) {
+                    eraserCursor.style.width = newSize + 'px';
+                    eraserCursor.style.height = newSize + 'px';
                 }
             }
         }
@@ -472,6 +472,7 @@ onUiLoaded(async() => {
             }
         }
 
+        // === ЛОГИКА ЛАСТИКА (Alt + Click) ===
         function getEraserCoordinates(e, canvas) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -502,8 +503,7 @@ onUiLoaded(async() => {
             const pos = getEraserCoordinates(e, drawingCanvas);
             eraserLastX = pos.x;
             eraserLastY = pos.y;
-            const brushDiameter = getCurrentBrushDiameter();
-            const brushRadius = brushDiameter / 2;
+            const brushRadius = getCurrentBrushSize();
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
@@ -542,14 +542,14 @@ onUiLoaded(async() => {
             const drawingCtx = drawingCanvas.getContext('2d');
             
             const pos = getEraserCoordinates(e, drawingCanvas);
-            const brushDiameter = getCurrentBrushDiameter();
+            const brushRadius = getCurrentBrushSize();
             
             maskCtx.save();
             maskCtx.globalCompositeOperation = 'destination-out';
             maskCtx.beginPath();
             maskCtx.moveTo(eraserLastX, eraserLastY);
             maskCtx.lineTo(pos.x, pos.y);
-            maskCtx.lineWidth = brushDiameter;
+            maskCtx.lineWidth = brushRadius * 2;
             maskCtx.lineCap = 'round';
             maskCtx.lineJoin = 'round';
             maskCtx.stroke();
@@ -560,7 +560,7 @@ onUiLoaded(async() => {
             drawingCtx.beginPath();
             drawingCtx.moveTo(eraserLastX, eraserLastY);
             drawingCtx.lineTo(pos.x, pos.y);
-            drawingCtx.lineWidth = brushDiameter;
+            drawingCtx.lineWidth = brushRadius * 2;
             drawingCtx.lineCap = 'round';
             drawingCtx.lineJoin = 'round';
             drawingCtx.stroke();
