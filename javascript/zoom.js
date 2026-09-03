@@ -56,7 +56,8 @@ onUiLoaded(async() => {
         function getBrushRadius(root) {
             const input = root.querySelector("input[aria-label='Brush radius']");
             const value = input ? parseFloat(input.value) : NaN;
-            return Number.isFinite(value) && value > 0 ? value : 20;
+            const diameter = Number.isFinite(value) && value > 0 ? value : 20;
+            return diameter / 2;
         }
 
         function getCanvasPoint(canvas, event) {
@@ -305,32 +306,14 @@ onUiLoaded(async() => {
         }
 
         function handleKeyDown(event) {
-            console.log('[Eraser Debug] handleKeyDown called');
-            console.log('[Eraser Debug] event.code:', event.code);
-            console.log('[Eraser Debug] hotkeysConfig.canvas_hotkey_eraser:', hotkeysConfig.canvas_hotkey_eraser);
-            console.log('[Eraser Debug] activeElement:', activeElement);
-            console.log('[Eraser Debug] elemId:', elemId);
-            console.log('[Eraser Debug] event.target.nodeName:', event.target.nodeName);
-            console.log('[Eraser Debug] canvas_blur_prompt:', hotkeysConfig.canvas_blur_prompt);
-            
-            if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") {
-                console.log('[Eraser Debug] Early return: clipboard/F5');
-                return;
-            }
-            if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) {
-                console.log('[Eraser Debug] Early return: typing in input');
-                return;
-            }
+            if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
+            if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
 
-            console.log('[Eraser Debug] Checking eraser key match:', event.code === hotkeysConfig.canvas_hotkey_eraser, '&&', activeElement === elemId);
-            
             if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
-                console.log('[Eraser Debug] Eraser toggle triggered! Current mode:', isEraserMode);
                 event.preventDefault();
                 isEraserMode = !isEraserMode;
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
-                console.log('[Eraser Debug] New mode:', isEraserMode);
                 return;
             }
 
@@ -383,21 +366,17 @@ onUiLoaded(async() => {
 
         let isKeyDownHandlerAttached = false;
         function handleMouseMove() {
-            console.log('[Eraser Debug] handleMouseMove called, attaching keydown listener');
             if (!isKeyDownHandlerAttached) {
                 document.addEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = true;
                 activeElement = elemId;
-                console.log('[Eraser Debug] Keydown listener attached, activeElement set to:', elemId);
             }
         }
         function handleMouseLeave() {
-            console.log('[Eraser Debug] handleMouseLeave called, removing keydown listener');
             if (isKeyDownHandlerAttached) {
                 document.removeEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = false;
                 activeElement = null;
-                console.log('[Eraser Debug] Keydown listener removed, activeElement set to null');
             }
         }
 
