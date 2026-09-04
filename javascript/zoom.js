@@ -77,6 +77,7 @@ onUiLoaded(async() => {
         let lastCursorPos = null;
         let currentMouseX = 0;
         let currentMouseY = 0;
+        let cursorDrawTimeout = null; // Для предотвращения множественных вызовов
 
         function getBrushRadius(root) {
             const input = root.querySelector("input[aria-label='Brush radius']");
@@ -93,32 +94,83 @@ onUiLoaded(async() => {
             };
         }
 
+        // === НОВАЯ ФУНКЦИЯ ДЛЯ ПРИНУДИТЕЛЬНОГО ОБНОВЛЕНИЯ КУРСОРА ===
+        function updateEraserCursor() {
+            if (!isEraserMode) {
+                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                clearEraserCursor(interfaceCanvas, lastCursorPos);
+                lastCursorPos = null;
+                return;
+            }
+
+            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+            if (!interfaceCanvas) return;
+
+            const rect = interfaceCanvas.getBoundingClientRect();
+            
+            // Используем сохраненную позицию мыши или центр
+            let point = {
+                x: (currentMouseX - rect.left) * (interfaceCanvas.width / rect.width),
+                y: (currentMouseY - rect.top) * (interfaceCanvas.height / rect.height)
+            };
+            
+            const radius = getBrushRadius(targetElement);
+            
+            // Если мышь вне canvas - рисуем в центре
+            if (point.x < 0 || point.y < 0 || point.x > interfaceCanvas.width || point.y > interfaceCanvas.height) {
+                point.x = interfaceCanvas.width / 2;
+                point.y = interfaceCanvas.height / 2;
+            }
+            
+            // Очищаем старый курсор
+            clearEraserCursor(interfaceCanvas, lastCursorPos);
+            
+            // Рисуем новый
+            drawEraserCursor(interfaceCanvas, point, radius, null);
+            lastCursorPos = { x: point.x, y: point.y, radius: radius };
+        }
+
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
+            
+            // Очищаем предыдущую область
             if (previous) {
-                const pad = previous.radius + 2;
+                const pad = previous.radius + 4;
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
+            
+            // Рисуем курсор
             ctx.save();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+            
+            // Добавляем перекрестие в центре для лучшей видимости
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(point.x - 8, point.y);
+            ctx.lineTo(point.x + 8, point.y);
+            ctx.moveTo(point.x, point.y - 8);
+            ctx.lineTo(point.x, point.y + 8);
+            ctx.stroke();
+            
             ctx.restore();
         }
 
         function clearEraserCursor(interfaceCanvas, previous) {
             if (!interfaceCanvas || !previous) return;
             const ctx = interfaceCanvas.getContext('2d');
-            const pad = previous.radius + 2;
+            const pad = previous.radius + 6;
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-        // === ОБРАБОТЧИКИ ЛАСТИКА С ЛОГИРОВАНИЕМ ===
+        // === ОБРАБОТЧИКИ ЛАСТИКА ===
         function handleEraserDown(e) {
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
@@ -129,7 +181,6 @@ onUiLoaded(async() => {
             const diameter = radius * 2;
             const mode = isEraserMode ? "ЛАСТИК (ERASER)" : "КИСТЬ (BRUSH)";
 
-            // === ГЛАВНОЕ ЛОГИРОВАНИЕ ПРИ КЛИКЕ ===
             console.log("=== 🖱️ MOUSE CLICK DETECTED ===");
             console.log("🎯 Current Mode:", mode);
             console.log("🎚️ Slider Input Value:", inputValue);
@@ -149,7 +200,6 @@ onUiLoaded(async() => {
             lastEraserX = pos.x;
             lastEraserY = pos.y;
 
-            // Стираем точку на маске
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -158,7 +208,6 @@ onUiLoaded(async() => {
             ctxMask.fill();
             ctxMask.restore();
 
-            // Стираем точку на интерфейсном холсте
             const ctxDraw = interfaceCanvas.getContext('2d');
             ctxDraw.save();
             ctxDraw.globalCompositeOperation = 'destination-out';
@@ -169,16 +218,18 @@ onUiLoaded(async() => {
         }
 
         function handleEraserMove(e) {
+            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+            if (!interfaceCanvas) return;
+
+            // Обновляем позицию мыши
+            currentMouseX = e.clientX;
+            currentMouseY = e.clientY;
+
             if (!isEraserMode) {
-                // Если ластик выключен, но курсор еще виден - убираем его
-                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
                 clearEraserCursor(interfaceCanvas, lastCursorPos);
                 lastCursorPos = null;
                 return;
             }
-            
-            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-            if (!interfaceCanvas) return;
 
             if (e.target.tagName === 'CANVAS') {
                 e.preventDefault();
@@ -195,7 +246,6 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
-            // Стираем линию на маске
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -208,7 +258,6 @@ onUiLoaded(async() => {
             ctxMask.stroke();
             ctxMask.restore();
 
-            // Стираем линию на интерфейсном холсте
             const ctxDraw = interfaceCanvas.getContext('2d');
             ctxDraw.save();
             ctxDraw.globalCompositeOperation = 'destination-out';
@@ -430,33 +479,11 @@ onUiLoaded(async() => {
                 targetElement.style.outlineOffset = "-3px";
                 console.log("[DEBUG] Eraser mode toggled to:", isEraserMode);
                 
-                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                // 🔥 ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ КУРСОР
+                setTimeout(() => {
+                    updateEraserCursor();
+                }, 10);
                 
-                if (isEraserMode) {
-                    // 🔥 СРАЗУ ПОКАЗЫВАЕМ КУРСОР ЛАСТИКА
-                    if (interfaceCanvas) {
-                        const rect = interfaceCanvas.getBoundingClientRect();
-                        const point = {
-                            x: (currentMouseX - rect.left) * (interfaceCanvas.width / rect.width),
-                            y: (currentMouseY - rect.top) * (interfaceCanvas.height / rect.height)
-                        };
-                        
-                        const radius = getBrushRadius(targetElement);
-                        
-                        // Если мышь вне canvas - рисуем в центре
-                        if (point.x < 0 || point.y < 0 || point.x > interfaceCanvas.width || point.y > interfaceCanvas.height) {
-                            point.x = interfaceCanvas.width / 2;
-                            point.y = interfaceCanvas.height / 2;
-                        }
-                        
-                        drawEraserCursor(interfaceCanvas, point, radius, lastCursorPos);
-                        lastCursorPos = { x: point.x, y: point.y, radius: radius };
-                    }
-                } else {
-                    // Убираем курсор ластика
-                    clearEraserCursor(interfaceCanvas, lastCursorPos);
-                    lastCursorPos = null;
-                }
                 return;
             }
 
@@ -483,6 +510,11 @@ onUiLoaded(async() => {
             mouseY = e.offsetY;
             currentMouseX = e.clientX;
             currentMouseY = e.clientY;
+            
+            // Обновляем курсор при движении мыши, если ластик включен
+            if (isEraserMode) {
+                updateEraserCursor();
+            }
         }
 
         targetElement.isExpanded = false;
@@ -525,6 +557,13 @@ onUiLoaded(async() => {
                 document.addEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = true;
                 activeElement = elemId;
+                
+                // Если ластик уже был включен при входе на холст - показываем курсор
+                if (isEraserMode) {
+                    setTimeout(() => {
+                        updateEraserCursor();
+                    }, 50);
+                }
             }
         }
 
