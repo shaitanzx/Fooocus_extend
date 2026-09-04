@@ -61,6 +61,7 @@ onUiLoaded(async() => {
         
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
+        const MASK_OPACITY = 0.7; // Прозрачность маски как в оригинальном Gradio
 
         document.addEventListener('mousemove', (e) => {
             lastMousePos = { x: e.clientX, y: e.clientY };
@@ -192,6 +193,7 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
+            // Стираем на маске (реальные данные)
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -204,6 +206,7 @@ onUiLoaded(async() => {
             ctxMask.stroke();
             ctxMask.restore();
 
+            // Стираем на drawing canvas
             const ctxDraw = drawingCanvas.getContext('2d');
             ctxDraw.save();
             ctxDraw.globalCompositeOperation = 'destination-out';
@@ -214,6 +217,13 @@ onUiLoaded(async() => {
             ctxDraw.lineCap = 'round';
             ctxDraw.lineJoin = 'round';
             ctxDraw.stroke();
+            ctxDraw.restore();
+
+            // Перерисовываем маску с правильной визуальной прозрачностью
+            ctxDraw.save();
+            ctxDraw.globalAlpha = MASK_OPACITY;
+            ctxDraw.globalCompositeOperation = 'source-over';
+            ctxDraw.drawImage(maskCanvas, 0, 0);
             ctxDraw.restore();
 
             lastEraserX = pos.x;
@@ -249,7 +259,6 @@ onUiLoaded(async() => {
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             });
             
-            // КРИТИЧЕСКИ ВАЖНО: Принудительно обновляем состояние sketch-компонента
             if (maskCanvas) {
                 maskCanvas.toBlob((blob) => {
                     if (blob) {
