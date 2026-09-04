@@ -1,17 +1,26 @@
 onUiLoaded(async() => {
+    // Helper functions
+
+    // Detect whether the element has a horizontal scroll bar
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
 
+    // Function for defining the "Ctrl", "Shift" and "Alt" keys
     function isModifierKey(event, key) {
         switch (key) {
-        case "Ctrl": return event.ctrlKey;
-        case "Shift": return event.shiftKey;
-        case "Alt": return event.altKey;
-        default: return false;
+        case "Ctrl":
+            return event.ctrlKey;
+        case "Shift":
+            return event.shiftKey;
+        case "Alt":
+            return event.altKey;
+        default:
+            return false;
         }
     }
 
+    // Create hotkey configuration with the provided options
     function createHotkeyConfig(defaultHotkeysConfig) {
         const result = {};
         for (const key in defaultHotkeysConfig) {
@@ -20,6 +29,7 @@ onUiLoaded(async() => {
         return result;
     }
 
+    // Default config
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
         canvas_hotkey_adjust: "Ctrl",
@@ -28,12 +38,13 @@ onUiLoaded(async() => {
         canvas_hotkey_reset: "KeyR",
         canvas_hotkey_fullscreen: "KeyS",
         canvas_hotkey_move: "KeyF",
-        canvas_hotkey_eraser: "KeyE",
+        canvas_hotkey_eraser: "KeyE", // Добавлено для ластика
         canvas_show_tooltip: true,
         canvas_auto_expand: true,
         canvas_blur_prompt: true,
     };
 
+    // Loading the configuration from opts
     const hotkeysConfig = createHotkeyConfig(defaultHotkeysConfig);
 
     let isMoving = false;
@@ -42,29 +53,38 @@ onUiLoaded(async() => {
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
-        if (!targetElement) return;
+
+        if (!targetElement) {
+            console.log("Element not found");
+            return;
+        }
 
         targetElement.style.transformOrigin = "0 0";
-        elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
+
+        elemData[elemId] = {
+            zoom: 1,
+            panX: 0,
+            panY: 0
+        };
+
         let fullScreenMode = false;
 
+        // === ПЕРЕМЕННЫЕ ДЛЯ ЛАСТИКА ===
         let isEraserMode = false;
         let isDrawingEraser = false;
         let lastEraserX = 0;
         let lastEraserY = 0;
         let lastCursorPos = null;
-        let cachedRadius = 20;
+        
+        // Переменные для отслеживания позиции мыши в реальном времени
+        let lastMouseScreenPos = { x: 0, y: 0 };
+        let lastMouseCanvasPos = null;
 
-        function getBrushRadius() {
-            const input = targetElement.querySelector("input[aria-label='Brush radius']");
-            if (input && input.value) {
-                const val = parseFloat(input.value);
-                if (Number.isFinite(val) && val > 0) {
-                    cachedRadius = val;
-                    return val;
-                }
-            }
-            return cachedRadius;
+        function getBrushRadius(root) {
+            const input = root.querySelector("input[aria-label='Brush radius']");
+            const value = input ? parseFloat(input.value) : NaN;
+            const radius = Number.isFinite(value) && value > 0 ? value : 20;
+            return radius;
         }
 
         function getCanvasPoint(canvas, event) {
@@ -75,7 +95,6 @@ onUiLoaded(async() => {
             };
         }
 
-        // Рисуем курсор ластика на interface canvas
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
@@ -94,7 +113,6 @@ onUiLoaded(async() => {
             ctx.restore();
         }
 
-        // Очищаем курсор ластика
         function clearEraserCursor(interfaceCanvas, previous) {
             if (!interfaceCanvas || !previous) return;
             const ctx = interfaceCanvas.getContext('2d');
@@ -102,40 +120,21 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-        // Принудительно заставляем Gradio перерисовать курсор кисти
-        function triggerBrushCursorRedraw() {
+        // === ОТслеживание мыши для мгновенного переключения курсора ===
+        targetElement.addEventListener('mousemove', (e) => {
+            lastMouseScreenPos = { x: e.clientX, y: e.clientY };
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-            if (!interfaceCanvas) return;
-            
-            // Создаем событие mousemove с последними координатами мыши
-            const mouseEvent = new MouseEvent('mousemove', {
-                bubbles: true,
-                cancelable: true,
-                clientX: lastMouseX || 0,
-                clientY: lastMouseY || 0,
-                view: window
-            });
-            
-            // Отправляем событие на canvas, чтобы Gradio перерисовал курсор кисти
-            interfaceCanvas.dispatchEvent(mouseEvent);
-        }
-
-        // Отслеживаем позицию мыши глобально
-        let lastMouseX = 0;
-        let lastMouseY = 0;
-        document.addEventListener('mousemove', (e) => {
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
+            if (interfaceCanvas) {
+                lastMouseCanvasPos = getCanvasPoint(interfaceCanvas, e);
+            }
         });
 
-        function handlePointerDown(e) {
-            if (e.button !== 0) return;
-
-            const radius = getBrushRadius();
+        // === ОБРАБОТЧИКИ ЛАСТИКА ===
+        function handleEraserDown(e) {
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-
-            if (!isEraserMode) return;
+            
+            if (!isEraserMode || e.button !== 0) return;
             if (!maskCanvas || !interfaceCanvas) return;
 
             e.preventDefault();
@@ -145,7 +144,9 @@ onUiLoaded(async() => {
             const pos = getCanvasPoint(interfaceCanvas, e);
             lastEraserX = pos.x;
             lastEraserY = pos.y;
+            const radius = getBrushRadius(targetElement);
 
+            // Стираем точку на маске
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -154,6 +155,7 @@ onUiLoaded(async() => {
             ctxMask.fill();
             ctxMask.restore();
 
+            // Стираем точку на интерфейсном холсте
             const ctxDraw = interfaceCanvas.getContext('2d');
             ctxDraw.save();
             ctxDraw.globalCompositeOperation = 'destination-out';
@@ -174,7 +176,7 @@ onUiLoaded(async() => {
             }
 
             const pos = getCanvasPoint(interfaceCanvas, e);
-            const radius = getBrushRadius();
+            const radius = getBrushRadius(targetElement);
 
             drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
             lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
@@ -183,6 +185,7 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
+            // Стираем линию на маске
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -195,6 +198,7 @@ onUiLoaded(async() => {
             ctxMask.stroke();
             ctxMask.restore();
 
+            // Стираем линию на интерфейсном холсте
             const ctxDraw = interfaceCanvas.getContext('2d');
             ctxDraw.save();
             ctxDraw.globalCompositeOperation = 'destination-out';
@@ -228,15 +232,18 @@ onUiLoaded(async() => {
             }
         }
 
+        // Create tooltip
         function createTooltip() {
             const toolTipElemnt = targetElement.querySelector(".image-container");
             if (!toolTipElemnt) return;
             
             const tooltip = document.createElement("div");
             tooltip.className = "canvas-tooltip";
+
             const info = document.createElement("i");
             info.className = "canvas-tooltip-info";
             info.textContent = "";
+
             const tooltipContent = document.createElement("div");
             tooltipContent.className = "canvas-tooltip-content";
 
@@ -268,17 +275,31 @@ onUiLoaded(async() => {
             toolTipElemnt.appendChild(tooltip);
         }
 
-        if (hotkeysConfig.canvas_show_tooltip) createTooltip();
+        if (hotkeysConfig.canvas_show_tooltip) {
+            createTooltip();
+        }
 
+        // Reset the zoom level and pan position
         function resetZoom() {
             elemData[elemId] = { zoomLevel: 1, panX: 0, panY: 0 };
             targetElement.style.overflow = "hidden";
             targetElement.isZoomed = false;
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
+
+            const canvas = gradioApp().querySelector(`${elemId} canvas[key="interface"]`);
             toggleOverlap("off");
             fullScreenMode = false;
+
             const closeBtn = targetElement.querySelector("button[aria-label='Remove Image']");
             if (closeBtn) closeBtn.addEventListener("click", resetZoom);
+
+            if (canvas) {
+                const parentElement = targetElement.closest('[id^="component-"]');
+                if (canvas && parseFloat(canvas.style.width) > parentElement.offsetWidth && parseFloat(targetElement.style.width) > parentElement.offsetWidth) {
+                    fitToElement();
+                    return;
+                }
+            }
             targetElement.style.width = "";
         }
 
@@ -293,6 +314,7 @@ onUiLoaded(async() => {
         function adjustBrushSize(elemId, deltaY, withoutValue = false, percentage = 5) {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`) ||
                           gradioApp().querySelector(`${elemId} button[aria-label="Use brush"]`);
+
             if (input) {
                 input.click();
                 if (!withoutValue) {
@@ -301,11 +323,6 @@ onUiLoaded(async() => {
                     const newValue = parseFloat(input.value) + (deltaY > 0 ? -changeAmount : changeAmount);
                     input.value = Math.min(Math.max(newValue, 0), maxValue);
                     input.dispatchEvent(new Event("change"));
-                    
-                    const newRadius = parseFloat(input.value);
-                    if (Number.isFinite(newRadius) && newRadius > 0) {
-                        cachedRadius = newRadius;
-                    }
                 }
             }
         }
@@ -317,6 +334,7 @@ onUiLoaded(async() => {
             newZoomLevel = Math.max(0.1, Math.min(newZoomLevel, 15));
             elemData[elemId].panX += mouseX - (mouseX * newZoomLevel) / elemData[elemId].zoomLevel;
             elemData[elemId].panY += mouseY - (mouseY * newZoomLevel) / elemData[elemId].zoomLevel;
+
             targetElement.style.transformOrigin = "0 0";
             targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${newZoomLevel})`;
             targetElement.style.overflow = "visible";
@@ -330,6 +348,7 @@ onUiLoaded(async() => {
                 let delta = 0.2;
                 if (elemData[elemId].zoomLevel > 7) delta = 0.9;
                 else if (elemData[elemId].zoomLevel > 2) delta = 0.6;
+
                 fullScreenMode = false;
                 elemData[elemId].zoomLevel = updateZoom(
                     elemData[elemId].zoomLevel + (operation === "+" ? delta : -delta),
@@ -354,8 +373,10 @@ onUiLoaded(async() => {
 
         function undoLastAction(e) {
             let isCtrlPressed = isModifierKey(e, hotkeysConfig.canvas_zoom_undo_extra_key);
-            if (e.button >= 3) isCtrlPressed = true;
+            const isAuxButton = e.button >= 3;
+            if (isAuxButton) isCtrlPressed = true;
             else if (!isModifierKey(e, hotkeysConfig.canvas_zoom_undo_extra_key)) return;
+            
             const undoBtn = document.querySelector(`${activeElement} button[aria-label="Undo"]`);
             if (isCtrlPressed && undoBtn) {
                 e.preventDefault();
@@ -387,36 +408,51 @@ onUiLoaded(async() => {
             toggleOverlap("on");
         }
 
+        // === ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ===
         function handleKeyDown(event) {
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
             if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
 
+            // Переключение режима ластика
             if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
                 event.preventDefault();
                 isEraserMode = !isEraserMode;
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
                 
+                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+
                 if (isEraserMode) {
-                    // ВХОД В РЕЖИМ ЛАСТИКА
-                    // Очищаем любой предыдущий курсор ластика
-                    const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-                    clearEraserCursor(interfaceCanvas, lastCursorPos);
-                    lastCursorPos = null;
-                    // Скрываем системный курсор, чтобы наш кастомный был виден
+                    // 1. Скрываем системный курсор кисти
                     targetElement.style.cursor = 'none';
+                    if (interfaceCanvas) interfaceCanvas.style.cursor = 'none';
+
+                    // 2. Рисуем курсор ластика в текущей позиции мыши
+                    if (lastMouseCanvasPos) {
+                        const radius = getBrushRadius(targetElement);
+                        drawEraserCursor(interfaceCanvas, lastMouseCanvasPos, radius, null);
+                        lastCursorPos = { x: lastMouseCanvasPos.x, y: lastMouseCanvasPos.y, radius: radius };
+                    }
                 } else {
-                    // ВЫХОД ИЗ РЕЖИМА ЛАСТИКА (возврат в режим кисти)
-                    // Очищаем курсор ластика
-                    const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                    // 1. Возвращаем системный курсор
+                    targetElement.style.cursor = '';
+                    if (interfaceCanvas) interfaceCanvas.style.cursor = '';
+
+                    // 2. Стираем курсор ластика с холста
                     clearEraserCursor(interfaceCanvas, lastCursorPos);
                     lastCursorPos = null;
-                    
-                    // Возвращаем системный курсор
-                    targetElement.style.cursor = '';
-                    
-                    // Принудительно заставляем Gradio перерисовать курсор кисти
-                    triggerBrushCursorRedraw();
+
+                    // 3. Заставляем Gradio перерисовать свой родной курсор кисти
+                    if (interfaceCanvas && lastMouseScreenPos.x !== 0) {
+                        const fakeMouseMove = new MouseEvent('mousemove', {
+                            bubbles: true,
+                            cancelable: true,
+                            clientX: lastMouseScreenPos.x,
+                            clientY: lastMouseScreenPos.y,
+                            view: window
+                        });
+                        interfaceCanvas.dispatchEvent(fakeMouseMove);
+                    }
                 }
                 return;
             }
@@ -427,11 +463,13 @@ onUiLoaded(async() => {
                 [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen,
                 [hotkeysConfig.canvas_zoom_hotkey_undo]: undoLastAction,
             };
+
             const action = hotkeyActions[event.code];
             if (action) {
                 event.preventDefault();
                 action(event);
             }
+
             if (isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) || isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)) {
                 event.preventDefault();
             }
@@ -445,21 +483,23 @@ onUiLoaded(async() => {
         targetElement.isExpanded = false;
         function autoExpand() {
             const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
-            if (canvas && hasHorizontalScrollbar(targetElement) && !targetElement.isExpanded) {
-                targetElement.style.visibility = "hidden";
-                setTimeout(() => {
-                    fitToScreen();
-                    resetZoom();
-                    targetElement.style.visibility = "visible";
-                    targetElement.isExpanded = true;
-                }, 10);
+            if (canvas) {
+                if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
+                    targetElement.style.visibility = "hidden";
+                    setTimeout(() => {
+                        fitToScreen();
+                        resetZoom();
+                        targetElement.style.visibility = "visible";
+                        targetElement.isExpanded = true;
+                    }, 10);
+                }
             }
         }
 
         targetElement.addEventListener("mousemove", getMousePosition);
         targetElement.addEventListener("auxclick", undoLastAction);
 
-        const observer = new MutationObserver((mutationsList) => {
+        const observer = new MutationObserver((mutationsList, observer) => {
             for (let mutation of mutationsList) {
               if (mutation.type === 'attributes' && mutation.attributeName === 'style' && mutation.target.tagName.toLowerCase() === 'canvas') {
                 targetElement.isExpanded = false;
@@ -474,6 +514,7 @@ onUiLoaded(async() => {
         }
 
         let isKeyDownHandlerAttached = false;
+
         function handleMouseMove() {
             if (!isKeyDownHandlerAttached) {
                 document.addEventListener("keydown", handleKeyDown);
@@ -481,21 +522,21 @@ onUiLoaded(async() => {
                 activeElement = elemId;
             }
         }
+
         function handleMouseLeave() {
             if (isKeyDownHandlerAttached) {
                 document.removeEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = false;
                 activeElement = null;
             }
-            // При уходе мыши очищаем курсор ластика
-            if (isEraserMode) {
-                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-                clearEraserCursor(interfaceCanvas, lastCursorPos);
-                lastCursorPos = null;
-            }
+            // Очищаем курсор при уходе мыши
+            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+            clearEraserCursor(interfaceCanvas, lastCursorPos);
+            lastCursorPos = null;
         }
 
-        targetElement.addEventListener('pointerdown', handlePointerDown, true);
+        // Подключаем перехватчики событий мыши для ластика
+        targetElement.addEventListener('pointerdown', handleEraserDown, true);
         targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
 
@@ -505,6 +546,7 @@ onUiLoaded(async() => {
         targetElement.addEventListener("wheel", e => {
             const operation = e.deltaY > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
+
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_adjust)) {
                 e.preventDefault();
                 adjustBrushSize(elemId, e.deltaY);
@@ -535,6 +577,7 @@ onUiLoaded(async() => {
             if (elemData[elemId].zoomLevel > 8) panSpeed = 3.5;
             elemData[elemId].panX += movementX * panSpeed;
             elemData[elemId].panY += movementY * panSpeed;
+
             requestAnimationFrame(() => {
                 targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
                 toggleOverlap("on");
@@ -554,11 +597,9 @@ onUiLoaded(async() => {
         window.onblur = function() {
             isMoving = false;
             isDrawingEraser = false;
-            if (isEraserMode) {
-                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-                clearEraserCursor(interfaceCanvas, lastCursorPos);
-                lastCursorPos = null;
-            }
+            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+            clearEraserCursor(interfaceCanvas, lastCursorPos);
+            lastCursorPos = null;
         };
 
         function checkForOutBox() {
