@@ -42,7 +42,12 @@ onUiLoaded(async() => {
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
-        if (!targetElement) return;
+        if (!targetElement) {
+            console.log(`[Eraser] Element not found: ${elemId}`);
+            return;
+        }
+
+        console.log(`[Eraser] Initialized for element: ${elemId}`);
 
         targetElement.style.transformOrigin = "0 0";
         elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
@@ -53,12 +58,27 @@ onUiLoaded(async() => {
         let lastEraserX = 0;
         let lastEraserY = 0;
         let lastCursorPos = null;
+        
+        // Кэш для размера кисти и позиция мыши
+        let cachedRadius = 20;
+        let lastMousePos = { x: 0, y: 0 };
+
+        // Глобальное отслеживание позиции мыши для мгновенного переключения
+        document.addEventListener('mousemove', (e) => {
+            lastMousePos = { x: e.clientX, y: e.clientY };
+        });
 
         function getBrushRadius(root) {
             const input = root.querySelector("input[aria-label='Brush radius']");
-            const value = input ? parseFloat(input.value) : NaN;
-            const diameter = Number.isFinite(value) && value > 0 ? value : 20;
-            return diameter / 2;
+            if (input && input.value) {
+                const val = parseFloat(input.value);
+                if (Number.isFinite(val) && val > 0) {
+                    cachedRadius = val; // Обновляем кэш, если значение валидное
+                    return val;
+                }
+            }
+            // Если слайдер скрыт или значение невалидное, используем кэш
+            return cachedRadius;
         }
 
         function getCanvasPoint(canvas, event) {
@@ -69,42 +89,15 @@ onUiLoaded(async() => {
             };
         }
 
-        function eraseAt(canvas, x, y, radius) {
-            const ctx = canvas.getContext('2d');
-            ctx.save();
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-        }
-
-        function eraseLine(canvas, x1, y1, x2, y2, radius) {
-            const ctx = canvas.getContext('2d');
-            ctx.save();
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineWidth = radius * 2;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        // === Отрисовка курсора ластика на interface canvas (как курсор кисти) ===
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
             
-            // Очищаем предыдущий курсор
             if (previous) {
                 const pad = previous.radius + 2;
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
             
-            // Рисуем курсор как в Gradio (полупрозрачный круг с обводкой)
             ctx.save();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
@@ -139,8 +132,23 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
             const radius = getBrushRadius(targetElement);
 
-            eraseAt(maskCanvas, lastEraserX, lastEraserY, radius);
-            eraseAt(drawingCanvas, lastEraserX, lastEraserY, radius);
+            console.log(`[Eraser] Started drawing at X=${pos.x.toFixed(1)}, Y=${pos.y.toFixed(1)}, Radius=${radius}`);
+
+            const ctxMask = maskCanvas.getContext('2d');
+            ctxMask.save();
+            ctxMask.globalCompositeOperation = 'destination-out';
+            ctxMask.beginPath();
+            ctxMask.arc(lastEraserX, lastEraserY, radius, 0, Math.PI * 2);
+            ctxMask.fill();
+            ctxMask.restore();
+
+            const ctxDraw = drawingCanvas.getContext('2d');
+            ctxDraw.save();
+            ctxDraw.globalCompositeOperation = 'destination-out';
+            ctxDraw.beginPath();
+            ctxDraw.arc(lastEraserX, lastEraserY, radius, 0, Math.PI * 2);
+            ctxDraw.fill();
+            ctxDraw.restore();
         }
 
         function handleEraserMove(e) {
@@ -158,7 +166,7 @@ onUiLoaded(async() => {
             const pos = getCanvasPoint(drawingCanvas, e);
             const radius = getBrushRadius(targetElement);
 
-            // Рисуем курсор на interface canvas (как курсор кисти)
+            // Рисуем курсор на interface canvas
             drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
             lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
 
@@ -167,8 +175,29 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
-            eraseLine(maskCanvas, lastEraserX, lastEraserY, pos.x, pos.y, radius);
-            eraseLine(drawingCanvas, lastEraserX, lastEraserY, pos.x, pos.y, radius);
+            const ctxMask = maskCanvas.getContext('2d');
+            ctxMask.save();
+            ctxMask.globalCompositeOperation = 'destination-out';
+            ctxMask.beginPath();
+            ctxMask.moveTo(lastEraserX, lastEraserY);
+            ctxMask.lineTo(pos.x, pos.y);
+            ctxMask.lineWidth = radius * 2;
+            ctxMask.lineCap = 'round';
+            ctxMask.lineJoin = 'round';
+            ctxMask.stroke();
+            ctxMask.restore();
+
+            const ctxDraw = drawingCanvas.getContext('2d');
+            ctxDraw.save();
+            ctxDraw.globalCompositeOperation = 'destination-out';
+            ctxDraw.beginPath();
+            ctxDraw.moveTo(lastEraserX, lastEraserY);
+            ctxDraw.lineTo(pos.x, pos.y);
+            ctxDraw.lineWidth = radius * 2;
+            ctxDraw.lineCap = 'round';
+            ctxDraw.lineJoin = 'round';
+            ctxDraw.stroke();
+            ctxDraw.restore();
 
             lastEraserX = pos.x;
             lastEraserY = pos.y;
@@ -177,6 +206,7 @@ onUiLoaded(async() => {
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
+            console.log("[Eraser] Stopped drawing.");
             
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
@@ -264,6 +294,10 @@ onUiLoaded(async() => {
                     const newValue = parseFloat(input.value) + (deltaY > 0 ? -changeAmount : changeAmount);
                     input.value = Math.min(Math.max(newValue, 0), maxValue);
                     input.dispatchEvent(new Event("change"));
+                    
+                    // Обновляем кэш при изменении размера через колесико или кнопку
+                    cachedRadius = parseFloat(input.value);
+                    console.log(`[Eraser] Brush size adjusted. New cached radius: ${cachedRadius}`);
                 }
             }
         }
@@ -345,6 +379,7 @@ onUiLoaded(async() => {
             toggleOverlap("on");
         }
 
+        // === ГЛАВНАЯ ЛОГИКА ПЕРЕКЛЮЧЕНИЯ С ЛОГИРОВАНИЕМ ===
         function handleKeyDown(event) {
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
             if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
@@ -352,14 +387,57 @@ onUiLoaded(async() => {
             if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
                 event.preventDefault();
                 isEraserMode = !isEraserMode;
+                console.log(`[Eraser] >>> Key 'E' pressed. Toggled isEraserMode to: ${isEraserMode}`);
+                
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
                 
-                // Очищаем курсор при выключении режима
-                if (!isEraserMode) {
-                    const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                if (!interfaceCanvas) {
+                    console.warn("[Eraser] interfaceCanvas not found!");
+                    return;
+                }
+
+                if (isEraserMode) {
+                    // ВКЛЮЧЕНИЕ ЛАСТИКА
+                    console.log(`[Eraser] Entering Eraser Mode. Last mouse screen pos: X=${lastMousePos.x}, Y=${lastMousePos.y}`);
+                    
+                    // Скрываем системный курсор
+                    targetElement.style.cursor = 'none';
+                    
+                    // Вычисляем координаты на canvas
+                    const rect = interfaceCanvas.getBoundingClientRect();
+                    const canvasPoint = {
+                        x: (lastMousePos.x - rect.left) * (interfaceCanvas.width / rect.width),
+                        y: (lastMousePos.y - rect.top) * (interfaceCanvas.height / rect.height)
+                    };
+                    
+                    // Получаем радиус (использует кэш, если слайдер скрыт)
+                    const radius = getBrushRadius(targetElement);
+                    console.log(`[Eraser] Drawing eraser cursor at canvas X=${canvasPoint.x.toFixed(1)}, Y=${canvasPoint.y.toFixed(1)} with cached radius=${radius}`);
+                    
+                    drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
+                    lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
+                } else {
+                    // ВЫКЛЮЧЕНИЕ ЛАСТИКА
+                    console.log("[Eraser] Exiting Eraser Mode. Clearing custom eraser cursor.");
+                    
                     clearEraserCursor(interfaceCanvas, lastCursorPos);
                     lastCursorPos = null;
+                    
+                    // Возвращаем системный курсор
+                    targetElement.style.cursor = '';
+                    
+                    // Заставляем Gradio перерисовать свой курсор кисти
+                    console.log("[Eraser] Dispatching synthetic mousemove to trigger Gradio's native brush cursor redraw.");
+                    const fakeEvent = new MouseEvent('mousemove', {
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: lastMousePos.x,
+                        clientY: lastMousePos.y,
+                        view: window
+                    });
+                    interfaceCanvas.dispatchEvent(fakeEvent);
                 }
                 return;
             }
@@ -380,6 +458,11 @@ onUiLoaded(async() => {
             }
         }
 
+        function getMousePosition(e) {
+            mouseX = e.offsetX;
+            mouseY = e.offsetY;
+        }
+
         targetElement.isExpanded = false;
         function autoExpand() {
             const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
@@ -394,7 +477,7 @@ onUiLoaded(async() => {
             }
         }
 
-        targetElement.addEventListener("mousemove", (e) => { mouseX = e.offsetX; mouseY = e.offsetY; });
+        targetElement.addEventListener("mousemove", getMousePosition);
         targetElement.addEventListener("auxclick", undoLastAction);
 
         const observer = new MutationObserver((mutationsList) => {
@@ -417,6 +500,7 @@ onUiLoaded(async() => {
                 document.addEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = true;
                 activeElement = elemId;
+                console.log(`[Eraser] Keydown listener attached for: ${elemId}`);
             }
         }
         function handleMouseLeave() {
@@ -425,10 +509,12 @@ onUiLoaded(async() => {
                 isKeyDownHandlerAttached = false;
                 activeElement = null;
             }
-            // Очищаем курсор при уходе мыши
-            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-            clearEraserCursor(interfaceCanvas, lastCursorPos);
-            lastCursorPos = null;
+            if (isEraserMode) {
+                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                clearEraserCursor(interfaceCanvas, lastCursorPos);
+                lastCursorPos = null;
+                console.log("[Eraser] Mouse left element, cleared eraser cursor.");
+            }
         }
 
         targetElement.addEventListener('pointerdown', handleEraserDown, true);
@@ -490,9 +576,12 @@ onUiLoaded(async() => {
         window.onblur = function() {
             isMoving = false;
             isDrawingEraser = false;
-            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-            clearEraserCursor(interfaceCanvas, lastCursorPos);
-            lastCursorPos = null;
+            if (isEraserMode) {
+                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                clearEraserCursor(interfaceCanvas, lastCursorPos);
+                lastCursorPos = null;
+                console.log("[Eraser] Window lost focus, cleared eraser cursor.");
+            }
         };
 
         function checkForOutBox() {
@@ -520,6 +609,7 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
+    console.log("[Eraser] Starting applyZoomAndPan for all canvases...");
     applyZoomAndPan("#inpaint_canvas");
     applyZoomAndPan("#inpaint_mask_canvas");
     applyZoomAndPan("#cleaner_canvas");
