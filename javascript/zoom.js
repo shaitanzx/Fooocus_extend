@@ -59,7 +59,6 @@ onUiLoaded(async() => {
         let lastEraserY = 0;
         let lastCursorPos = null;
         
-        // Кэш хранит ДИАМЕТР кисти (как в слайдере)
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
 
@@ -67,22 +66,17 @@ onUiLoaded(async() => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
 
-        // Функция получения РАДИУСА кисти (диаметр / 2)
         function getBrushRadius() {
             const radius = cachedDiameter / 2;
-            console.log(`[Eraser] getBrushRadius: cachedDiameter=${cachedDiameter}, returning radius=${radius}`);
             return radius;
         }
 
-        // Функция обновления кэша диаметра из слайдера
         function updateCachedDiameter() {
             const input = targetElement.querySelector("input[aria-label='Brush radius']");
             if (input && input.value) {
                 const val = parseFloat(input.value);
                 if (Number.isFinite(val) && val > 0) {
-                    const oldDiameter = cachedDiameter;
                     cachedDiameter = val;
-                    console.log(`[Eraser] Diameter cache updated: ${oldDiameter} -> ${cachedDiameter} (radius: ${oldDiameter/2} -> ${cachedDiameter/2})`);
                     return true;
                 }
             }
@@ -96,33 +90,17 @@ onUiLoaded(async() => {
             brushInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
                 if (Number.isFinite(val) && val > 0) {
-                    const oldDiameter = cachedDiameter;
                     cachedDiameter = val;
-                    console.log(`[Eraser] Slider input event: diameter ${oldDiameter} -> ${cachedDiameter}`);
                 }
             });
             
             brushInput.addEventListener('change', (e) => {
                 const val = parseFloat(e.target.value);
                 if (Number.isFinite(val) && val > 0) {
-                    const oldDiameter = cachedDiameter;
                     cachedDiameter = val;
-                    console.log(`[Eraser] Slider change event: diameter ${oldDiameter} -> ${cachedDiameter}`);
                 }
             });
         }
-
-
-        // ==========================================================
-        // === ЛОГИКА ЦВЕТА КУРСОРА (чтение актуального значения) ===
-        // ==========================================================
-        
-        // Перед каждой прорисовкой читаем актуальный цвет из палитры Gradio
-        function getCurrentBrushColor() {
-            const colorInput = targetElement.querySelector('input[type="color"]');
-            return (colorInput && colorInput.value) ? colorInput.value : '#ffffff';
-        }
-
 
         function getCanvasPoint(canvas, event) {
             const rect = canvas.getBoundingClientRect();
@@ -141,10 +119,6 @@ onUiLoaded(async() => {
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
             
-            // Читаем актуальный цвет кисти прямо сейчас
-            const baseColor = getCurrentBrushColor();
-
-
             ctx.save();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
@@ -178,8 +152,6 @@ onUiLoaded(async() => {
             lastEraserX = pos.x;
             lastEraserY = pos.y;
             const radius = getBrushRadius();
-
-            console.log(`[Eraser] Started drawing at X=${pos.x.toFixed(1)}, Y=${pos.y.toFixed(1)}, radius=${radius} (diameter=${radius*2})`);
 
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
@@ -249,22 +221,38 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
+        // === ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
-            console.log("[Eraser] Stopped drawing.");
+            console.log("[Eraser] Stopped drawing. Syncing canvas state with Gradio...");
             
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             
-            if (drawingCanvas) {
-                drawingCanvas.dispatchEvent(new Event('input', { bubbles: true }));
-                drawingCanvas.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            if (maskCanvas) {
-                maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
-                maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
-            }
+            // Функция для надежного оповещения Gradio об изменении холста
+            const notifyGradio = (canvas) => {
+                if (!canvas) return;
+                
+                // 1. Имитируем окончание штриха (pointerup). 
+                // Это ОСНОВНОЙ триггер, который Gradio Sketch использует для сериализации 
+                // данных canvas и обновления внутреннего значения компонента.
+                canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true }));
+                
+                // 2. Стандартные события изменения данных
+                canvas.dispatchEvent(new Event('input', { bubbles: true }));
+                canvas.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+
+            notifyGradio(drawingCanvas);
+            notifyGradio(maskCanvas);
+            
+            // Дополнительно отправляем события на сам контейнер targetElement, 
+            // так как некоторые версии Gradio/Fooocus слушают изменения именно на нем.
+            targetElement.dispatchEvent(new Event('input', { bubbles: true }));
+            targetElement.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            console.log("[Eraser] Gradio sync complete. The erased mask will now be correctly passed to the backend.");
         }
 
         function createTooltip() {
@@ -343,9 +331,7 @@ onUiLoaded(async() => {
                     
                     const newDiameter = parseFloat(input.value);
                     if (Number.isFinite(newDiameter) && newDiameter > 0) {
-                        const oldDiameter = cachedDiameter;
                         cachedDiameter = newDiameter;
-                        console.log(`[Eraser] Brush size adjusted via wheel: diameter ${oldDiameter} -> ${cachedDiameter}`);
                     }
                 }
             }
@@ -435,21 +421,14 @@ onUiLoaded(async() => {
             if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
                 event.preventDefault();
                 isEraserMode = !isEraserMode;
-                console.log(`[Eraser] >>> Key 'E' pressed. Toggled isEraserMode to: ${isEraserMode}`);
                 
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
                 
                 const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-                if (!interfaceCanvas) {
-                    console.warn("[Eraser] interfaceCanvas not found!");
-                    return;
-                }
+                if (!interfaceCanvas) return;
 
                 if (isEraserMode) {
-                    console.log(`[Eraser] Entering Eraser Mode. Last mouse screen pos: X=${lastMousePos.x}, Y=${lastMousePos.y}`);
-                    console.log(`[Eraser] Using CACHED diameter for eraser: ${cachedDiameter} (radius: ${cachedDiameter/2})`);
-                    
                     targetElement.style.cursor = 'none';
                     
                     const rect = interfaceCanvas.getBoundingClientRect();
@@ -459,19 +438,13 @@ onUiLoaded(async() => {
                     };
                     
                     const radius = getBrushRadius();
-                    console.log(`[Eraser] Drawing eraser cursor at canvas X=${canvasPoint.x.toFixed(1)}, Y=${canvasPoint.y.toFixed(1)} with radius=${radius}`);
-                    
                     drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
                     lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
                 } else {
-                    console.log("[Eraser] Exiting Eraser Mode. Clearing custom eraser cursor.");
-                    
                     clearEraserCursor(interfaceCanvas, lastCursorPos);
                     lastCursorPos = null;
-                    
                     targetElement.style.cursor = '';
                     
-                    console.log("[Eraser] Dispatching synthetic mousemove to trigger Gradio's native brush cursor redraw.");
                     const fakeEvent = new MouseEvent('mousemove', {
                         bubbles: true,
                         cancelable: true,
@@ -542,7 +515,6 @@ onUiLoaded(async() => {
                 document.addEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = true;
                 activeElement = elemId;
-                console.log(`[Eraser] Keydown listener attached for: ${elemId}`);
             }
         }
         function handleMouseLeave() {
@@ -555,7 +527,6 @@ onUiLoaded(async() => {
                 const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
                 clearEraserCursor(interfaceCanvas, lastCursorPos);
                 lastCursorPos = null;
-                console.log("[Eraser] Mouse left element, cleared eraser cursor.");
             }
         }
 
@@ -622,7 +593,6 @@ onUiLoaded(async() => {
                 const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
                 clearEraserCursor(interfaceCanvas, lastCursorPos);
                 lastCursorPos = null;
-                console.log("[Eraser] Window lost focus, cleared eraser cursor.");
             }
         };
 
