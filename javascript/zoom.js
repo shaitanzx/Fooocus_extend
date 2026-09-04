@@ -59,8 +59,8 @@ onUiLoaded(async() => {
         let lastEraserY = 0;
         let lastCursorPos = null;
         
-        // Кэш для размера кисти и позиция мыши
-        let cachedRadius = 20;
+        // Кэш для РАЗМЕРА КИСТИ (диаметр) и позиция мыши
+        let cachedBrushDiameter = 20;
         let lastMousePos = { x: 0, y: 0 };
 
         // Глобальное отслеживание позиции мыши для мгновенного переключения
@@ -68,17 +68,23 @@ onUiLoaded(async() => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
 
-        function getBrushRadius(root) {
+        // Получаем диаметр кисти из слайдера (значение слайдера = диаметр)
+        function getBrushDiameter(root) {
             const input = root.querySelector("input[aria-label='Brush radius']");
             if (input && input.value) {
                 const val = parseFloat(input.value);
                 if (Number.isFinite(val) && val > 0) {
-                    cachedRadius = val; // Обновляем кэш, если значение валидное
+                    cachedBrushDiameter = val; // Кэшируем диаметр
                     return val;
                 }
             }
             // Если слайдер скрыт или значение невалидное, используем кэш
-            return cachedRadius;
+            return cachedBrushDiameter;
+        }
+
+        // Получаем радиус (половина диаметра)
+        function getBrushRadius(root) {
+            return getBrushDiameter(root) / 2;
         }
 
         function getCanvasPoint(canvas, event) {
@@ -130,9 +136,9 @@ onUiLoaded(async() => {
             const pos = getCanvasPoint(drawingCanvas, e);
             lastEraserX = pos.x;
             lastEraserY = pos.y;
-            const radius = getBrushRadius(targetElement);
+            const radius = getBrushRadius(targetElement); // Получаем радиус (диаметр / 2)
 
-            console.log(`[Eraser] Started drawing at X=${pos.x.toFixed(1)}, Y=${pos.y.toFixed(1)}, Radius=${radius}`);
+            console.log(`[Eraser] Started drawing at X=${pos.x.toFixed(1)}, Y=${pos.y.toFixed(1)}, Radius=${radius}, Diameter=${radius * 2}`);
 
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
@@ -164,7 +170,7 @@ onUiLoaded(async() => {
             }
 
             const pos = getCanvasPoint(drawingCanvas, e);
-            const radius = getBrushRadius(targetElement);
+            const radius = getBrushRadius(targetElement); // Получаем радиус
 
             // Рисуем курсор на interface canvas
             drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
@@ -181,7 +187,7 @@ onUiLoaded(async() => {
             ctxMask.beginPath();
             ctxMask.moveTo(lastEraserX, lastEraserY);
             ctxMask.lineTo(pos.x, pos.y);
-            ctxMask.lineWidth = radius * 2;
+            ctxMask.lineWidth = radius * 2; // lineWidth = диаметр
             ctxMask.lineCap = 'round';
             ctxMask.lineJoin = 'round';
             ctxMask.stroke();
@@ -193,7 +199,7 @@ onUiLoaded(async() => {
             ctxDraw.beginPath();
             ctxDraw.moveTo(lastEraserX, lastEraserY);
             ctxDraw.lineTo(pos.x, pos.y);
-            ctxDraw.lineWidth = radius * 2;
+            ctxDraw.lineWidth = radius * 2; // lineWidth = диаметр
             ctxDraw.lineCap = 'round';
             ctxDraw.lineJoin = 'round';
             ctxDraw.stroke();
@@ -295,9 +301,9 @@ onUiLoaded(async() => {
                     input.value = Math.min(Math.max(newValue, 0), maxValue);
                     input.dispatchEvent(new Event("change"));
                     
-                    // Обновляем кэш при изменении размера через колесико или кнопку
-                    cachedRadius = parseFloat(input.value);
-                    console.log(`[Eraser] Brush size adjusted. New cached radius: ${cachedRadius}`);
+                    // Обновляем кэш диаметра при изменении размера через колесико
+                    cachedBrushDiameter = parseFloat(input.value);
+                    console.log(`[Eraser] Brush size adjusted. New cached diameter: ${cachedBrushDiameter}, radius: ${cachedBrushDiameter / 2}`);
                 }
             }
         }
@@ -379,7 +385,6 @@ onUiLoaded(async() => {
             toggleOverlap("on");
         }
 
-        // === ГЛАВНАЯ ЛОГИКА ПЕРЕКЛЮЧЕНИЯ С ЛОГИРОВАНИЕМ ===
         function handleKeyDown(event) {
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
             if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
@@ -412,9 +417,9 @@ onUiLoaded(async() => {
                         y: (lastMousePos.y - rect.top) * (interfaceCanvas.height / rect.height)
                     };
                     
-                    // Получаем радиус (использует кэш, если слайдер скрыт)
+                    // Получаем радиус (диаметр / 2)
                     const radius = getBrushRadius(targetElement);
-                    console.log(`[Eraser] Drawing eraser cursor at canvas X=${canvasPoint.x.toFixed(1)}, Y=${canvasPoint.y.toFixed(1)} with cached radius=${radius}`);
+                    console.log(`[Eraser] Drawing eraser cursor at canvas X=${canvasPoint.x.toFixed(1)}, Y=${canvasPoint.y.toFixed(1)} with radius=${radius} (diameter=${radius * 2})`);
                     
                     drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
                     lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
