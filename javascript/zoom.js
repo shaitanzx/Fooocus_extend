@@ -60,7 +60,7 @@ onUiLoaded(async() => {
         let lastCursorPos = null;
         
         // Кэш хранит ДИАМЕТР кисти (как в слайдере)
-        let cachedDiameter = 20;
+        let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
 
         document.addEventListener('mousemove', (e) => {
