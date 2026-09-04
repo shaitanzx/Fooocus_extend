@@ -132,10 +132,6 @@ onUiLoaded(async() => {
             };
         }
 
-<<<<<<< HEAD
-=======
-        // При каждом вызове читаем свежий цвет и используем его
->>>>>>> 7ea680a64b893bc732a08eab9d0e5bd1add0f0e7
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
@@ -150,27 +146,12 @@ onUiLoaded(async() => {
 
 
             ctx.save();
-<<<<<<< HEAD
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.lineWidth = 1;
-=======
-
-            // Внутренняя часть — полупрозрачная (30%)
-            ctx.globalAlpha = 0.3;
-            ctx.fillStyle = baseColor;
->>>>>>> 7ea680a64b893bc732a08eab9d0e5bd1add0f0e7
             ctx.beginPath();
             ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
             ctx.fill();
-<<<<<<< HEAD
-=======
-
-            // Обводка — сплошная (100%)
-            ctx.globalAlpha = 1.0;
-            ctx.strokeStyle = baseColor;
-            ctx.lineWidth = 2;
->>>>>>> 7ea680a64b893bc732a08eab9d0e5bd1add0f0e7
             ctx.stroke();
             ctx.restore();
         }
@@ -182,11 +163,6 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-<<<<<<< HEAD
-=======
-        // Слушатель удален — цвет читается при каждой прорисовке курсора
-
->>>>>>> 7ea680a64b893bc732a08eab9d0e5bd1add0f0e7
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
             
