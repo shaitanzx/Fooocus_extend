@@ -495,6 +495,20 @@ with shared.gradio_root:
                         with gr.Row():
                             with gr.Column():
                                 inpaint_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
+                                
+                                # === НОВОЕ: Кнопка и компонент предпросмотра маски ===
+                                update_mask_btn = gr.Button("🔄 Обновить предпросмотр маски", elem_id='update_mask_preview_btn', visible=True, size='sm')
+                                mask_preview_output = gr.Image(
+                                    label='Mask Preview (White = Protected, Black = Inpaint Area)', 
+                                    type='numpy', 
+                                    height=500, 
+                                    show_label=True, 
+                                    elem_id='mask_preview_output',
+                                    interactive=False
+                                )
+                                # ================================================                              
+                                
+                                
                                 inpaint_advanced_masking_checkbox = gr.Checkbox(label='Enable Advanced Masking Features', value=modules.config.default_inpaint_advanced_masking_checkbox)
                                 inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.config.default_inpaint_method, label='Method')
                                 inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
@@ -506,6 +520,48 @@ with shared.gradio_root:
                                 gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Documentation</a>')
                                 example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
 
+
+                                # === НОВАЯ ФУНКЦИЯ: Извлечение маски из словаря sketch-компонента ===
+                                def update_mask_preview(image_data):
+                                    """
+                                    Извлекает маску из словаря, который возвращает gr.Image с tool='sketch'.
+                                    """
+                                    if image_data is None:
+                                        return None
+                                    
+                                    # При tool='sketch' и source='upload' Gradio передает словарь с ключами 'image' и 'mask'
+                                    if isinstance(image_data, dict) and 'mask' in image_data:
+                                        mask = image_data['mask']
+                                        
+                                        if isinstance(mask, np.ndarray):
+                                            # Если маска имеет 4 канала (RGBA), используем альфа-канал как основу
+                                            if mask.shape[2] == 4:
+                                                alpha = mask[:, :, 3]
+                                                return np.stack([alpha, alpha, alpha], axis=2).astype(np.uint8)
+                                            # Если маска имеет 3 канала (RGB), конвертируем в оттенки серого для четкости
+                                            elif mask.shape[2] == 3:
+                                                gray = np.mean(mask, axis=2)
+                                                return np.stack([gray, gray, gray], axis=2).astype(np.uint8)
+                                        
+                                        return mask
+                                    
+                                    # Fallback: если по какой-то причине пришел просто numpy array (например, маска еще не рисовалась)
+                                    elif isinstance(image_data, np.ndarray):
+                                        if image_data.ndim == 3 and image_data.shape[2] == 4:
+                                            alpha_channel = image_data[:, :, 3]
+                                            return np.stack([alpha_channel, alpha_channel, alpha_channel], axis=2).astype(np.uint8)
+                                    
+                                    return None
+                                # ================================================
+                                # === ПРИВЯЗКА КНОПКИ ОБНОВЛЕНИЯ МАСКИ ===
+                                update_mask_btn.click(
+                                    fn=update_mask_preview,
+                                    inputs=[inpaint_input_image],
+                                    outputs=[mask_preview_output],
+                                    queue=False,
+                                    show_progress=False
+                                )
+                                # ================================================
                             with gr.Column(visible=modules.config.default_inpaint_advanced_masking_checkbox) as inpaint_mask_generation_col:
                                 inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", mask_opacity=1, elem_id='inpaint_mask_canvas')
                                 invert_mask_checkbox = gr.Checkbox(label='Invert Mask When Generating', value=modules.config.default_invert_mask_checkbox)
