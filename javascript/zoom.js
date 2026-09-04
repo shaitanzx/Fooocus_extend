@@ -1,7 +1,4 @@
-console.log("🔥 СКРИПТ ЗАГРУЗИЛСЯ! 🔥");
 onUiLoaded(async() => {
-    console.log("🚀 [DEBUG 1] Скрипт начал выполняться!");
-
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
@@ -45,13 +42,7 @@ onUiLoaded(async() => {
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
-        
-        if (!targetElement) {
-            console.warn("⚠️ [DEBUG 2] Элемент НЕ НАЙДЕН:", elemId);
-            return;
-        }
-        
-        console.log("✅ [DEBUG 2] Элемент найден:", elemId, "Размер:", targetElement.offsetWidth, "x", targetElement.offsetHeight);
+        if (!targetElement) return;
 
         targetElement.style.transformOrigin = "0 0";
         elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
@@ -62,12 +53,18 @@ onUiLoaded(async() => {
         let lastEraserX = 0;
         let lastEraserY = 0;
         let lastCursorPos = null;
+        let currentRadius = 20; // Кэшированный радиус
 
-        function getBrushRadius(root) {
-            const input = root.querySelector("input[aria-label='Brush radius']");
-            const value = input ? parseFloat(input.value) : NaN;
-            const radius = Number.isFinite(value) && value > 0 ? value : 20;
-            return radius;
+        // Функция для надежного получения актуального радиуса
+        function updateBrushRadius() {
+            const input = targetElement.querySelector("input[aria-label='Brush radius']");
+            if (input) {
+                const val = parseFloat(input.value);
+                if (Number.isFinite(val) && val > 0) {
+                    currentRadius = val;
+                }
+            }
+            return currentRadius;
         }
 
         function getCanvasPoint(canvas, event) {
@@ -103,39 +100,16 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-        // === ГЛАВНЫЙ ОБРАБОТЧИК КЛИКА С МАКСИМАЛЬНЫМ ЛОГИРОВАНИЕМ ===
         function handlePointerDown(e) {
-            console.log("🖱️ [DEBUG 3] handlePointerDown СРАБОТАЛ! Кнопка:", e.button, "на элементе:", elemId);
-            
-            if (e.button !== 0) return; // Только левая кнопка мыши
+            if (e.button !== 0) return;
 
+            // Принудительно обновляем радиус перед действием
+            const radius = updateBrushRadius();
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-            const input = targetElement.querySelector("input[aria-label='Brush radius']");
-            
-            const inputValue = input ? input.value : 'N/A';
-            const radius = getBrushRadius(targetElement);
-            const diameter = radius * 2;
-            const mode = isEraserMode ? "ЛАСТИК (ERASER)" : "КИСТЬ (BRUSH)";
 
-            console.log("=== 📊 ДАННЫЕ КЛИКА ===");
-            console.log("🎯 Режим:", mode);
-            console.log("🎚️ Значение слайдера (input.value):", inputValue);
-            console.log("⭕ Размер курсора (Radius):", radius);
-            console.log("🔵 Реальный размер области (Diameter):", diameter);
-            console.log("🖼️ Размеры canvas:", interfaceCanvas ? `width=${interfaceCanvas.width}, height=${interfaceCanvas.height}` : "Не найден");
-            console.log("========================");
-
-            if (!isEraserMode) {
-                console.log("➡️ [DEBUG] Режим кисти. Пропускаем событие в Gradio.");
-                return; 
-            }
-
-            console.log("🧹 [DEBUG] Режим ластика. Блокируем Gradio и стираем.");
-            if (!maskCanvas || !interfaceCanvas) {
-                console.error("❌ [DEBUG] Canvas не найдены для стирания!");
-                return;
-            }
+            if (!isEraserMode) return;
+            if (!maskCanvas || !interfaceCanvas) return;
 
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -173,7 +147,7 @@ onUiLoaded(async() => {
             }
 
             const pos = getCanvasPoint(interfaceCanvas, e);
-            const radius = getBrushRadius(targetElement);
+            const radius = updateBrushRadius(); // Всегда свежий радиус
 
             drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
             lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
@@ -390,7 +364,6 @@ onUiLoaded(async() => {
                 isEraserMode = !isEraserMode;
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
-                console.log("⌨️ [DEBUG] Режим ластика переключен на:", isEraserMode);
                 
                 if (!isEraserMode) {
                     const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
@@ -471,10 +444,7 @@ onUiLoaded(async() => {
             lastCursorPos = null;
         }
 
-        // ПРИКРЕПЛЕНИЕ СОБЫТИЙ
         targetElement.addEventListener('pointerdown', handlePointerDown, true);
-        console.log("🔗 [DEBUG 4] Слушатель 'pointerdown' успешно прикреплен к", elemId);
-        
         targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
 
@@ -563,14 +533,8 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
-    console.log("🔄 [DEBUG 5] Запуск applyZoomAndPan для всех холстов...");
     applyZoomAndPan("#inpaint_canvas");
     applyZoomAndPan("#inpaint_mask_canvas");
     applyZoomAndPan("#cleaner_canvas");
     applyZoomAndPan("#cleaner_video_canvas");
-    
-    // ГЛОБАЛЬНЫЙ ТЕСТ: если ничего выше не сработало, это покажет, видит ли браузер клики вообще
-    window.addEventListener('mousedown', (e) => {
-        console.log("🌍 [DEBUG GLOBAL] Обнаружен mousedown где-то на странице. Координаты:", e.clientX, e.clientY);
-    }, true);
 });
