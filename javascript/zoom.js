@@ -1,26 +1,20 @@
+console.log("🔥 СКРИПТ ЗАГРУЗИЛСЯ! 🔥");
 onUiLoaded(async() => {
-    // Helper functions
+    console.log("🚀 [DEBUG 1] Скрипт начал выполняться!");
 
-    // Detect whether the element has a horizontal scroll bar
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
 
-    // Function for defining the "Ctrl", "Shift" and "Alt" keys
     function isModifierKey(event, key) {
         switch (key) {
-        case "Ctrl":
-            return event.ctrlKey;
-        case "Shift":
-            return event.shiftKey;
-        case "Alt":
-            return event.altKey;
-        default:
-            return false;
+        case "Ctrl": return event.ctrlKey;
+        case "Shift": return event.shiftKey;
+        case "Alt": return event.altKey;
+        default: return false;
         }
     }
 
-    // Create hotkey configuration with the provided options
     function createHotkeyConfig(defaultHotkeysConfig) {
         const result = {};
         for (const key in defaultHotkeysConfig) {
@@ -29,7 +23,6 @@ onUiLoaded(async() => {
         return result;
     }
 
-    // Default config
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
         canvas_hotkey_adjust: "Ctrl",
@@ -38,13 +31,12 @@ onUiLoaded(async() => {
         canvas_hotkey_reset: "KeyR",
         canvas_hotkey_fullscreen: "KeyS",
         canvas_hotkey_move: "KeyF",
-        canvas_hotkey_eraser: "KeyE", // Добавлено для ластика
+        canvas_hotkey_eraser: "KeyE",
         canvas_show_tooltip: true,
         canvas_auto_expand: true,
         canvas_blur_prompt: true,
     };
 
-    // Loading the configuration from opts
     const hotkeysConfig = createHotkeyConfig(defaultHotkeysConfig);
 
     let isMoving = false;
@@ -53,23 +45,18 @@ onUiLoaded(async() => {
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
-
+        
         if (!targetElement) {
-            console.log("Element not found");
+            console.warn("⚠️ [DEBUG 2] Элемент НЕ НАЙДЕН:", elemId);
             return;
         }
+        
+        console.log("✅ [DEBUG 2] Элемент найден:", elemId, "Размер:", targetElement.offsetWidth, "x", targetElement.offsetHeight);
 
         targetElement.style.transformOrigin = "0 0";
-
-        elemData[elemId] = {
-            zoom: 1,
-            panX: 0,
-            panY: 0
-        };
-
+        elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
         let fullScreenMode = false;
 
-        // === ПЕРЕМЕННЫЕ ДЛЯ ЛАСТИКА ===
         let isEraserMode = false;
         let isDrawingEraser = false;
         let lastEraserX = 0;
@@ -79,7 +66,7 @@ onUiLoaded(async() => {
         function getBrushRadius(root) {
             const input = root.querySelector("input[aria-label='Brush radius']");
             const value = input ? parseFloat(input.value) : NaN;
-            const radius = Number.isFinite(value) && value > 0 ? value : 100;
+            const radius = Number.isFinite(value) && value > 0 ? value : 20;
             return radius;
         }
 
@@ -116,8 +103,12 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-        // === ОБРАБОТЧИКИ ЛАСТИКА С ЛОГИРОВАНИЕМ ===
-        function handleEraserDown(e) {
+        // === ГЛАВНЫЙ ОБРАБОТЧИК КЛИКА С МАКСИМАЛЬНЫМ ЛОГИРОВАНИЕМ ===
+        function handlePointerDown(e) {
+            console.log("🖱️ [DEBUG 3] handlePointerDown СРАБОТАЛ! Кнопка:", e.button, "на элементе:", elemId);
+            
+            if (e.button !== 0) return; // Только левая кнопка мыши
+
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const input = targetElement.querySelector("input[aria-label='Brush radius']");
@@ -127,17 +118,24 @@ onUiLoaded(async() => {
             const diameter = radius * 2;
             const mode = isEraserMode ? "ЛАСТИК (ERASER)" : "КИСТЬ (BRUSH)";
 
-            // === ГЛАВНОЕ ЛОГИРОВАНИЕ ПРИ КЛИКЕ ===
-            console.log("=== 🖱️ MOUSE CLICK DETECTED ===");
-            console.log("🎯 Current Mode:", mode);
-            console.log("🎚️ Slider Input Value:", inputValue);
-            console.log("⭕ Cursor Size (Radius):", radius);
-            console.log("🔵 Drawing/Erasing Area Size (Diameter):", diameter);
-            console.log("🖼️ Canvas Dimensions:", interfaceCanvas ? `width=${interfaceCanvas.width}, height=${interfaceCanvas.height}` : "Not found");
-            console.log("===============================");
+            console.log("=== 📊 ДАННЫЕ КЛИКА ===");
+            console.log("🎯 Режим:", mode);
+            console.log("🎚️ Значение слайдера (input.value):", inputValue);
+            console.log("⭕ Размер курсора (Radius):", radius);
+            console.log("🔵 Реальный размер области (Diameter):", diameter);
+            console.log("🖼️ Размеры canvas:", interfaceCanvas ? `width=${interfaceCanvas.width}, height=${interfaceCanvas.height}` : "Не найден");
+            console.log("========================");
 
-            if (!isEraserMode || e.button !== 0) return;
-            if (!maskCanvas || !interfaceCanvas) return;
+            if (!isEraserMode) {
+                console.log("➡️ [DEBUG] Режим кисти. Пропускаем событие в Gradio.");
+                return; 
+            }
+
+            console.log("🧹 [DEBUG] Режим ластика. Блокируем Gradio и стираем.");
+            if (!maskCanvas || !interfaceCanvas) {
+                console.error("❌ [DEBUG] Canvas не найдены для стирания!");
+                return;
+            }
 
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -147,7 +145,6 @@ onUiLoaded(async() => {
             lastEraserX = pos.x;
             lastEraserY = pos.y;
 
-            // Стираем точку на маске
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -156,7 +153,6 @@ onUiLoaded(async() => {
             ctxMask.fill();
             ctxMask.restore();
 
-            // Стираем точку на интерфейсном холсте
             const ctxDraw = interfaceCanvas.getContext('2d');
             ctxDraw.save();
             ctxDraw.globalCompositeOperation = 'destination-out';
@@ -186,7 +182,6 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
-            // Стираем линию на маске
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -199,7 +194,6 @@ onUiLoaded(async() => {
             ctxMask.stroke();
             ctxMask.restore();
 
-            // Стираем линию на интерфейсном холсте
             const ctxDraw = interfaceCanvas.getContext('2d');
             ctxDraw.save();
             ctxDraw.globalCompositeOperation = 'destination-out';
@@ -233,18 +227,15 @@ onUiLoaded(async() => {
             }
         }
 
-        // Create tooltip
         function createTooltip() {
             const toolTipElemnt = targetElement.querySelector(".image-container");
             if (!toolTipElemnt) return;
             
             const tooltip = document.createElement("div");
             tooltip.className = "canvas-tooltip";
-
             const info = document.createElement("i");
             info.className = "canvas-tooltip-info";
             info.textContent = "";
-
             const tooltipContent = document.createElement("div");
             tooltipContent.className = "canvas-tooltip-content";
 
@@ -276,31 +267,17 @@ onUiLoaded(async() => {
             toolTipElemnt.appendChild(tooltip);
         }
 
-        if (hotkeysConfig.canvas_show_tooltip) {
-            createTooltip();
-        }
+        if (hotkeysConfig.canvas_show_tooltip) createTooltip();
 
-        // Reset the zoom level and pan position
         function resetZoom() {
             elemData[elemId] = { zoomLevel: 1, panX: 0, panY: 0 };
             targetElement.style.overflow = "hidden";
             targetElement.isZoomed = false;
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
-
-            const canvas = gradioApp().querySelector(`${elemId} canvas[key="interface"]`);
             toggleOverlap("off");
             fullScreenMode = false;
-
             const closeBtn = targetElement.querySelector("button[aria-label='Remove Image']");
             if (closeBtn) closeBtn.addEventListener("click", resetZoom);
-
-            if (canvas) {
-                const parentElement = targetElement.closest('[id^="component-"]');
-                if (canvas && parseFloat(canvas.style.width) > parentElement.offsetWidth && parseFloat(targetElement.style.width) > parentElement.offsetWidth) {
-                    fitToElement();
-                    return;
-                }
-            }
             targetElement.style.width = "";
         }
 
@@ -315,7 +292,6 @@ onUiLoaded(async() => {
         function adjustBrushSize(elemId, deltaY, withoutValue = false, percentage = 5) {
             const input = gradioApp().querySelector(`${elemId} input[aria-label='Brush radius']`) ||
                           gradioApp().querySelector(`${elemId} button[aria-label="Use brush"]`);
-
             if (input) {
                 input.click();
                 if (!withoutValue) {
@@ -335,7 +311,6 @@ onUiLoaded(async() => {
             newZoomLevel = Math.max(0.1, Math.min(newZoomLevel, 15));
             elemData[elemId].panX += mouseX - (mouseX * newZoomLevel) / elemData[elemId].zoomLevel;
             elemData[elemId].panY += mouseY - (mouseY * newZoomLevel) / elemData[elemId].zoomLevel;
-
             targetElement.style.transformOrigin = "0 0";
             targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${newZoomLevel})`;
             targetElement.style.overflow = "visible";
@@ -349,7 +324,6 @@ onUiLoaded(async() => {
                 let delta = 0.2;
                 if (elemData[elemId].zoomLevel > 7) delta = 0.9;
                 else if (elemData[elemId].zoomLevel > 2) delta = 0.6;
-
                 fullScreenMode = false;
                 elemData[elemId].zoomLevel = updateZoom(
                     elemData[elemId].zoomLevel + (operation === "+" ? delta : -delta),
@@ -374,10 +348,8 @@ onUiLoaded(async() => {
 
         function undoLastAction(e) {
             let isCtrlPressed = isModifierKey(e, hotkeysConfig.canvas_zoom_undo_extra_key);
-            const isAuxButton = e.button >= 3;
-            if (isAuxButton) isCtrlPressed = true;
+            if (e.button >= 3) isCtrlPressed = true;
             else if (!isModifierKey(e, hotkeysConfig.canvas_zoom_undo_extra_key)) return;
-            
             const undoBtn = document.querySelector(`${activeElement} button[aria-label="Undo"]`);
             if (isCtrlPressed && undoBtn) {
                 e.preventDefault();
@@ -413,13 +385,12 @@ onUiLoaded(async() => {
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
             if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
 
-            // Переключение режима ластика
             if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
                 event.preventDefault();
                 isEraserMode = !isEraserMode;
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
-                console.log("[DEBUG] Eraser mode toggled to:", isEraserMode);
+                console.log("⌨️ [DEBUG] Режим ластика переключен на:", isEraserMode);
                 
                 if (!isEraserMode) {
                     const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
@@ -435,13 +406,11 @@ onUiLoaded(async() => {
                 [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen,
                 [hotkeysConfig.canvas_zoom_hotkey_undo]: undoLastAction,
             };
-
             const action = hotkeyActions[event.code];
             if (action) {
                 event.preventDefault();
                 action(event);
             }
-
             if (isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) || isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)) {
                 event.preventDefault();
             }
@@ -455,23 +424,21 @@ onUiLoaded(async() => {
         targetElement.isExpanded = false;
         function autoExpand() {
             const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
-            if (canvas) {
-                if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
-                    targetElement.style.visibility = "hidden";
-                    setTimeout(() => {
-                        fitToScreen();
-                        resetZoom();
-                        targetElement.style.visibility = "visible";
-                        targetElement.isExpanded = true;
-                    }, 10);
-                }
+            if (canvas && hasHorizontalScrollbar(targetElement) && !targetElement.isExpanded) {
+                targetElement.style.visibility = "hidden";
+                setTimeout(() => {
+                    fitToScreen();
+                    resetZoom();
+                    targetElement.style.visibility = "visible";
+                    targetElement.isExpanded = true;
+                }, 10);
             }
         }
 
         targetElement.addEventListener("mousemove", getMousePosition);
         targetElement.addEventListener("auxclick", undoLastAction);
 
-        const observer = new MutationObserver((mutationsList, observer) => {
+        const observer = new MutationObserver((mutationsList) => {
             for (let mutation of mutationsList) {
               if (mutation.type === 'attributes' && mutation.attributeName === 'style' && mutation.target.tagName.toLowerCase() === 'canvas') {
                 targetElement.isExpanded = false;
@@ -486,7 +453,6 @@ onUiLoaded(async() => {
         }
 
         let isKeyDownHandlerAttached = false;
-
         function handleMouseMove() {
             if (!isKeyDownHandlerAttached) {
                 document.addEventListener("keydown", handleKeyDown);
@@ -494,21 +460,21 @@ onUiLoaded(async() => {
                 activeElement = elemId;
             }
         }
-
         function handleMouseLeave() {
             if (isKeyDownHandlerAttached) {
                 document.removeEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = false;
                 activeElement = null;
             }
-            // Очищаем курсор при уходе мыши
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             clearEraserCursor(interfaceCanvas, lastCursorPos);
             lastCursorPos = null;
         }
 
-        // Подключаем перехватчики событий мыши для ластика
-        targetElement.addEventListener('pointerdown', handleEraserDown, true);
+        // ПРИКРЕПЛЕНИЕ СОБЫТИЙ
+        targetElement.addEventListener('pointerdown', handlePointerDown, true);
+        console.log("🔗 [DEBUG 4] Слушатель 'pointerdown' успешно прикреплен к", elemId);
+        
         targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
 
@@ -518,7 +484,6 @@ onUiLoaded(async() => {
         targetElement.addEventListener("wheel", e => {
             const operation = e.deltaY > 0 ? "-" : "+";
             changeZoomLevel(operation, e);
-
             if (isModifierKey(e, hotkeysConfig.canvas_hotkey_adjust)) {
                 e.preventDefault();
                 adjustBrushSize(elemId, e.deltaY);
@@ -549,7 +514,6 @@ onUiLoaded(async() => {
             if (elemData[elemId].zoomLevel > 8) panSpeed = 3.5;
             elemData[elemId].panX += movementX * panSpeed;
             elemData[elemId].panY += movementY * panSpeed;
-
             requestAnimationFrame(() => {
                 targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
                 toggleOverlap("on");
@@ -599,8 +563,14 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
+    console.log("🔄 [DEBUG 5] Запуск applyZoomAndPan для всех холстов...");
     applyZoomAndPan("#inpaint_canvas");
     applyZoomAndPan("#inpaint_mask_canvas");
     applyZoomAndPan("#cleaner_canvas");
     applyZoomAndPan("#cleaner_video_canvas");
+    
+    // ГЛОБАЛЬНЫЙ ТЕСТ: если ничего выше не сработало, это покажет, видит ли браузер клики вообще
+    window.addEventListener('mousedown', (e) => {
+        console.log("🌍 [DEBUG GLOBAL] Обнаружен mousedown где-то на странице. Координаты:", e.clientX, e.clientY);
+    }, true);
 });
