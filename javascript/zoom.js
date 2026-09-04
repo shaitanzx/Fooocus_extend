@@ -103,13 +103,12 @@ onUiLoaded(async() => {
         }
 
         // ==========================================================
-        // === УПРОЩЕННАЯ ЛОГИКА ЦВЕТА КУРСОРА ===
+        // === ЛОГИКА ЦВЕТА КУРСОРА (чтение актуального значения) ===
         // ==========================================================
         
-        // 1. Просто получаем текущий цвет кисти из палитры Gradio
+        // Перед каждой прорисовкой читаем актуальный цвет из палитры Gradio
         function getCurrentBrushColor() {
             const colorInput = targetElement.querySelector('input[type="color"]');
-            // Если палитра есть и в ней выбран цвет, берем его. Иначе белый по умолчанию.
             return (colorInput && colorInput.value) ? colorInput.value : '#ffffff';
         }
 
@@ -121,7 +120,7 @@ onUiLoaded(async() => {
             };
         }
 
-        // 2. Рисуем курсор с использованием globalAlpha вместо hexToRgba
+        // При каждом вызове читаем свежий цвет и используем его
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
@@ -131,21 +130,21 @@ onUiLoaded(async() => {
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
             
-            // Получаем чистый HEX-цвет (например, "#00ff00")
+            // Читаем актуальный цвет кисти прямо сейчас
             const baseColor = getCurrentBrushColor();
 
             ctx.save();
 
-            // --- ШАГ 1: Рисуем внутреннюю часть (полупрозрачную) ---
-            ctx.globalAlpha = 0.3;       // Устанавливаем прозрачность 30%
-            ctx.fillStyle = baseColor;   // Canvas сам отлично понимает HEX-цвет!
+            // Внутренняя часть — полупрозрачная (30%)
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = baseColor;
             ctx.beginPath();
             ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // --- ШАГ 2: Рисуем обводку (сплошную, 100% яркости) ---
-            ctx.globalAlpha = 1.0;       // Возвращаем полную непрозрачность
-            ctx.strokeStyle = baseColor; // Тот же самый цвет
+            // Обводка — сплошная (100%)
+            ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = baseColor;
             ctx.lineWidth = 2;
             ctx.stroke();
 
@@ -159,17 +158,7 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-        // 3. Слушатель изменения цвета — перерисовывает курсор, если он активен
-        const colorPickerInput = targetElement.querySelector('input[type="color"]');
-        if (colorPickerInput) {
-            colorPickerInput.addEventListener('input', () => {
-                if (isEraserMode && lastCursorPos) {
-                    const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-                    clearEraserCursor(interfaceCanvas, lastCursorPos);
-                    drawEraserCursor(interfaceCanvas, lastCursorPos, lastCursorPos.radius, null);
-                }
-            });
-        }
+        // Слушатель удален — цвет читается при каждой прорисовке курсора
 
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
