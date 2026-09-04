@@ -558,8 +558,7 @@ with shared.gradio_root:
                                     fn=update_mask_preview,
                                     inputs=[inpaint_input_image],
                                     outputs=[mask_preview_output],
-                                    queue=False,
-                                    show_progress=False
+                                    queue=False
                                 )
                                 # ================================================
                             with gr.Column(visible=modules.config.default_inpaint_advanced_masking_checkbox) as inpaint_mask_generation_col:

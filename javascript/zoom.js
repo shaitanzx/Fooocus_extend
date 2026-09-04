@@ -59,21 +59,17 @@ onUiLoaded(async() => {
         let lastEraserY = 0;
         let lastCursorPos = null;
         
-        // Кэш хранит ДИАМЕТР кисти (как в слайдере)
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
 
-        // Глобальное отслеживание позиции мыши для мгновенного переключения курсора
         document.addEventListener('mousemove', (e) => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
 
-        // Функция получения РАДИУСА кисти (диаметр / 2)
         function getBrushRadius() {
             return cachedDiameter / 2;
         }
 
-        // Функция обновления кэша диаметра из слайдера
         function updateCachedDiameter() {
             const input = targetElement.querySelector("input[aria-label='Brush radius']");
             if (input && input.value) {
@@ -113,7 +109,6 @@ onUiLoaded(async() => {
             };
         }
 
-        // Отрисовка курсора ластика (полупрозрачный белый круг с обводкой)
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
@@ -149,7 +144,7 @@ onUiLoaded(async() => {
             if (!maskCanvas || !drawingCanvas) return;
 
             e.preventDefault();
-            e.stopImmediatePropagation(); // Блокируем родное рисование Gradio
+            e.stopImmediatePropagation();
             isDrawingEraser = true;
 
             const pos = getCanvasPoint(drawingCanvas, e);
@@ -225,7 +220,6 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === КРИТИЧЕСКИ ВАЖНО: Синхронизация с Gradio после стирания ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
@@ -235,8 +229,6 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             
-            // 1. Симулируем pointerup с координатами, чтобы Gradio распознал окончание штриха
-            // и перечитал данные с canvas, а не использовал кэш.
             const canvasesToNotify = [interfaceCanvas, drawingCanvas].filter(Boolean);
             canvasesToNotify.forEach(canvas => {
                 const rect = canvas.getBoundingClientRect();
@@ -251,12 +243,29 @@ onUiLoaded(async() => {
                 canvas.dispatchEvent(pointerUpEvent);
             });
 
-            // 2. Отправляем input и change на все возможные элементы, которые слушает Gradio
             const elementsToNotify = [targetElement, drawingCanvas, maskCanvas, interfaceCanvas].filter(Boolean);
             elementsToNotify.forEach(el => {
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             });
+            
+            // КРИТИЧЕСКИ ВАЖНО: Принудительно обновляем состояние sketch-компонента
+            if (maskCanvas) {
+                maskCanvas.toBlob((blob) => {
+                    if (blob) {
+                        const file = new File([blob], "mask.png", { type: "image/png" });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        
+                        const hiddenInput = targetElement.querySelector('input[type="file"]');
+                        if (hiddenInput) {
+                            hiddenInput.files = dataTransfer.files;
+                            hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            console.log("[Eraser] Mask canvas synced to hidden input.");
+                        }
+                    }
+                }, 'image/png');
+            }
             
             console.log("[Eraser] Gradio sync events dispatched successfully.");
         }
@@ -420,7 +429,6 @@ onUiLoaded(async() => {
             toggleOverlap("on");
         }
 
-        // === ОБРАБОТКА КЛАВИШИ 'E' И ПЕРЕКЛЮЧЕНИЕ КУРСОРОВ ===
         function handleKeyDown(event) {
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
             if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
@@ -436,7 +444,6 @@ onUiLoaded(async() => {
                 if (!interfaceCanvas) return;
 
                 if (isEraserMode) {
-                    // ВКЛЮЧЕНИЕ ЛАСТИКА
                     targetElement.style.cursor = 'none';
                     
                     const rect = interfaceCanvas.getBoundingClientRect();
@@ -449,12 +456,10 @@ onUiLoaded(async() => {
                     drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
                     lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
                 } else {
-                    // ВЫКЛЮЧЕНИЕ ЛАСТИКА
                     clearEraserCursor(interfaceCanvas, lastCursorPos);
                     lastCursorPos = null;
                     targetElement.style.cursor = '';
                     
-                    // Заставляем Gradio перерисовать свой родной курсор кисти
                     const fakeEvent = new MouseEvent('mousemove', {
                         bubbles: true,
                         cancelable: true,
@@ -540,7 +545,6 @@ onUiLoaded(async() => {
             }
         }
 
-        // Подключаем перехватчики событий мыши для ластика (useCapture = true)
         targetElement.addEventListener('pointerdown', handleEraserDown, true);
         targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
