@@ -642,6 +642,7 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
+    
     console.log("[Eraser] Starting applyZoomAndPan for all canvases...");
     applyZoomAndPan("#inpaint_canvas");
     applyZoomAndPan("#inpaint_mask_canvas");
