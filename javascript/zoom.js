@@ -21,19 +21,6 @@ onUiLoaded(async() => {
         return result;
     }
 
-    // Конвертация data URL в File объект
-    function dataURLtoFile(dataURL, filename) {
-        const arr = dataURL.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new File([u8arr], filename, { type: mime });
-    }
-
     // === КОНФИГУРАЦИЯ ГОРЯЧИХ КЛАВИШ ===
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
@@ -221,7 +208,7 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === КЛЮЧЕВАЯ ФУНКЦИЯ: Синхронизация маски с Gradio ===
+        // === КЛЮЧЕВАЯ ФУНКЦИЯ: Синхронизация маски с Gradio БЕЗ порчи image ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
@@ -235,7 +222,7 @@ onUiLoaded(async() => {
                 return;
             }
 
-            // 1. Симулируем pointerup на maskCanvas (Gradio слушает именно его)
+            // 1. Симулируем pointerup на maskCanvas (Gradio Sketch слушает именно его)
             const rect = maskCanvas.getBoundingClientRect();
             maskCanvas.dispatchEvent(new PointerEvent('pointerup', {
                 bubbles: true,
@@ -247,47 +234,13 @@ onUiLoaded(async() => {
             }));
             console.log("[Eraser] pointerup dispatched on maskCanvas");
 
-            // 2. Отправляем input и change на maskCanvas
+            // 2. Отправляем input и change ТОЛЬКО на maskCanvas
+            // Мы НЕ трогаем input[type="file"] вручную, чтобы не сломать словарь {image, mask}
             maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
             maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+            console.log("[Eraser] input/change events dispatched on maskCanvas only");
 
-            // 3. Конвертируем оба canvas в data URL (синхронно)
-            const maskDataURL = maskCanvas.toDataURL('image/png');
-            console.log("[Eraser] Mask canvas converted to data URL");
-            
-            const interfaceDataURL = interfaceCanvas ? interfaceCanvas.toDataURL('image/png') : null;
-            if (interfaceDataURL) {
-                console.log("[Eraser] Interface canvas converted to data URL");
-            }
-
-            // 4. Находим ВСЕ input[type="file"] в компоненте
-            const fileInputs = targetElement.querySelectorAll('input[type="file"]');
-            console.log(`[Eraser] Found ${fileInputs.length} file inputs`);
-
-            // 5. Обновляем каждый input с правильными данными
-            // Обычно первый input - для image, второй - для mask
-            fileInputs.forEach((input, index) => {
-                const dataTransfer = new DataTransfer();
-                
-                if (index === 0 && interfaceDataURL) {
-                    // Первый input - для изображения
-                    const file = dataURLtoFile(interfaceDataURL, "image.png");
-                    dataTransfer.items.add(file);
-                    console.log(`[Eraser] Updating file input #${index} with image data`);
-                } else if (index === 1) {
-                    // Второй input - для маски
-                    const file = dataURLtoFile(maskDataURL, "mask.png");
-                    dataTransfer.items.add(file);
-                    console.log(`[Eraser] Updating file input #${index} with mask data`);
-                }
-                
-                if (dataTransfer.items.length > 0) {
-                    input.files = dataTransfer.files;
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-
-            console.log("[Eraser] Mask sync complete");
+            console.log("[Eraser] Sync complete - Gradio will update mask key only");
         }
 
         // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
