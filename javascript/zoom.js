@@ -208,15 +208,15 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === КЛЮЧЕВАЯ ФУНКЦИЯ: Синхронизация через нативный механизм Gradio ===
+        // === КЛЮЧЕВАЯ ФУНКЦИЯ: Правильная синхронизация с Gradio ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
-            console.log("[Eraser] Stopped erasing. Syncing with Gradio...");
+            console.log("[Eraser] Stopped erasing. Triggering Gradio sync...");
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-            // Gradio слушает события именно на drawing/interface canvas, а не на mask
+            // Gradio слушает события рисования именно на этом холсте
             const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || interfaceCanvas;
             
             if (!maskCanvas || !drawingCanvas) {
@@ -227,22 +227,30 @@ onUiLoaded(async() => {
             // 1. Имитируем pointerup на ОСНОВНОМ холсте (drawing/interface).
             // Когда Gradio ловит это событие, он АВТОМАТИЧЕСКИ считывает данные 
             // и с drawingCanvas (который у нас чистый и содержит оригинал), 
-            // и с maskCanvas (который мы модифицировали).
+            // и с maskCanvas (который мы модифицировали ластиком).
             const rect = drawingCanvas.getBoundingClientRect();
-            drawingCanvas.dispatchEvent(new PointerEvent('pointerup', {
+            const pointerUpEvent = new PointerEvent('pointerup', {
                 bubbles: true,
                 cancelable: true,
-                clientX: rect.left + rect.width / 2,
-                clientY: rect.top + rect.height / 2,
+                clientX: rect.left + 10, // Координаты внутри холста
+                clientY: rect.top + 10,
                 pointerId: 1,
-                button: 0
-            }));
+                button: 0,
+                isPrimary: true
+            });
+            
+            drawingCanvas.dispatchEvent(pointerUpEvent);
             console.log("[Eraser] pointerup dispatched on drawing/interface canvas");
 
             // 2. Отправляем input и change на основной холст, чтобы Svelte-компонент Gradio обновил состояние
             drawingCanvas.dispatchEvent(new Event('input', { bubbles: true }));
             drawingCanvas.dispatchEvent(new Event('change', { bubbles: true }));
-            console.log("[Eraser] input/change events dispatched. Gradio will now read pristine image + updated mask.");
+            
+            // 3. На всякий случай дублируем на maskCanvas
+            maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
+            maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            console.log("[Eraser] Sync events dispatched. Gradio will now read pristine image + updated mask.");
         }
 
         // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
