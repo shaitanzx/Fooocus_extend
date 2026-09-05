@@ -185,7 +185,7 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
             const radius = getBrushRadius();
 
-            // Стираем ТОЛЬКО на mask canvas — это влияет на ключ 'mask' в словаре
+            // Стираем ТОЛЬКО на mask canvas — это влияет только на ключ 'mask' в словаре
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -210,7 +210,7 @@ onUiLoaded(async() => {
             const pos = getCanvasPoint(maskCanvas, e);
             const radius = getBrushRadius();
 
-            // Рисуем курсор ластика на interface canvas (только визуал)
+            // Рисуем курсор ластика на interface canvas (только визуал, не влияет на данные)
             if (interfaceCanvas) {
                 drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
                 lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
@@ -218,7 +218,7 @@ onUiLoaded(async() => {
 
             if (!isDrawingEraser) return;
 
-            // Стираем ТОЛЬКО на mask canvas — это влияет на ключ 'mask' в словаре
+            // Стираем ТОЛЬКО на mask canvas — это влияет только на ключ 'mask' в словаре
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
