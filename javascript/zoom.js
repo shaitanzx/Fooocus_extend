@@ -78,6 +78,9 @@ onUiLoaded(async() => {
         // Кэш хранит ДИАМЕТР кисти (как в слайдере)
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
+        
+        // === НОВОЕ: Хранилище для оригинального, чистого изображения ===
+        let pristineImageData = null;
 
         // Глобальное отслеживание мыши для переключения курсора
         document.addEventListener('mousemove', (e) => {
@@ -152,6 +155,26 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
+        // === НОВОЕ: Функция сохранения чистого состояния изображения ===
+        function savePristineImage() {
+            const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+            if (interfaceCanvas) {
+                pristineImageData = interfaceCanvas.toDataURL('image/png');
+                console.log("[Eraser] Pristine (original) image data saved successfully.");
+            }
+        }
+
+        // Сохраняем чистое изображение при инициализации (с небольшой задержкой, чтобы Gradio успел отрисовать картинку)
+        setTimeout(savePristineImage, 500);
+
+        // Также обновляем сохраненное изображение, если пользователь загрузил новую картинку
+        const mainFileInput = targetElement.querySelector('input[type="file"]');
+        if (mainFileInput) {
+            mainFileInput.addEventListener('change', () => {
+                setTimeout(savePristineImage, 500);
+            });
+        }
+
         // === ОБРАБОТЧИКИ ЛАСТИКА ===
         
         // ВАЖНО: Стираем ТОЛЬКО на maskCanvas, чтобы не портить исходное изображение
@@ -221,73 +244,68 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === КЛЮЧЕВАЯ ФУНКЦИЯ: Синхронизация маски с Gradio ===
+        // === КЛЮЧЕВАЯ ФУНКЦИЯ: Синхронизация с использованием сохраненного оригинала ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
-            console.log("[Eraser] Stopped erasing. Syncing mask with Gradio...");
+            console.log("[Eraser] Stopped erasing. Syncing mask with Gradio using pristine image...");
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             
-            if (!maskCanvas) {
-                console.warn("[Eraser] maskCanvas not found!");
+            if (!maskCanvas || !interfaceCanvas) {
+                console.warn("[Eraser] Required canvases not found!");
                 return;
             }
 
-            // 1. Симулируем pointerup на maskCanvas (Gradio слушает именно его)
-            const rect = maskCanvas.getBoundingClientRect();
-            maskCanvas.dispatchEvent(new PointerEvent('pointerup', {
+            // 1. Симулируем pointerup на interfaceCanvas (чтобы Gradio "проснулся")
+            const rect = interfaceCanvas.getBoundingClientRect();
+            interfaceCanvas.dispatchEvent(new PointerEvent('pointerup', {
                 bubbles: true,
                 cancelable: true,
-                clientX: rect.left + rect.width / 2,
-                clientY: rect.top + rect.height / 2,
+                composed: true,
+                clientX: rect.left + 10,
+                clientY: rect.top + 10,
                 pointerId: 1,
-                button: 0
+                button: 0,
+                isPrimary: true
             }));
-            console.log("[Eraser] pointerup dispatched on maskCanvas");
 
-            // 2. Отправляем input и change на maskCanvas
-            maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
-            maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+            // 2. Отправляем input и change на interfaceCanvas
+            interfaceCanvas.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+            interfaceCanvas.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
 
-            // 3. Конвертируем оба canvas в data URL (синхронно)
-            const maskDataURL = maskCanvas.toDataURL('image/png');
-            console.log("[Eraser] Mask canvas converted to data URL");
-            
-            const interfaceDataURL = interfaceCanvas ? interfaceCanvas.toDataURL('image/png') : null;
-            if (interfaceDataURL) {
-                console.log("[Eraser] Interface canvas converted to data URL");
-            }
+            // 3. Берем СОХРАНЕННОЕ чистое изображение (или текущее, если сохраненное по какой-то причине null)
+            const imageDataToUse = pristineImageData || interfaceCanvas.toDataURL('image/png');
+            const maskDataToUse = maskCanvas.toDataURL('image/png');
 
             // 4. Находим ВСЕ input[type="file"] в компоненте
             const fileInputs = targetElement.querySelectorAll('input[type="file"]');
-            console.log(`[Eraser] Found ${fileInputs.length} file inputs`);
+            console.log(`[Eraser] Found ${fileInputs.length} file inputs. Injecting separated data...`);
 
-            // 5. Обновляем каждый input с правильными данными
-            // Обычно первый input - для image, второй - для mask
+            // 5. Обновляем каждый input с ПРАВИЛЬНЫМИ, разделенными данными
             fileInputs.forEach((input, index) => {
                 const dataTransfer = new DataTransfer();
                 
-                if (index === 0 && interfaceDataURL) {
-                    // Первый input - для изображения
-                    const file = dataURLtoFile(interfaceDataURL, "image.png");
+                if (index === 0) {
+                    // Первый input - всегда оригинальное, чистое изображение
+                    const file = dataURLtoFile(imageDataToUse, "image.png");
                     dataTransfer.items.add(file);
-                    console.log(`[Eraser] Updating file input #${index} with image data`);
+                    console.log(`[Eraser] Input #${index} updated with PRISTINE (original) image data.`);
                 } else if (index === 1) {
-                    // Второй input - для маски
-                    const file = dataURLtoFile(maskDataURL, "mask.png");
+                    // Второй input - наша измененная маска с дырками от ластика
+                    const file = dataURLtoFile(maskDataToUse, "mask.png");
                     dataTransfer.items.add(file);
-                    console.log(`[Eraser] Updating file input #${index} with mask data`);
+                    console.log(`[Eraser] Input #${index} updated with MODIFIED mask data.`);
                 }
                 
                 if (dataTransfer.items.length > 0) {
                     input.files = dataTransfer.files;
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
                 }
             });
 
-            console.log("[Eraser] Mask sync complete");
+            console.log("[Eraser] Mask sync complete. Original image is 100% protected.");
         }
 
         // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
@@ -303,7 +321,6 @@ onUiLoaded(async() => {
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
                 
-                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
                 if (!interfaceCanvas) return;
 
                 if (isEraserMode) {
