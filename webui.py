@@ -506,6 +506,14 @@ with shared.gradio_root:
                                     elem_id='mask_preview_output',
                                     interactive=False
                                 )
+                                image_preview_output = gr.Image(
+                                    label='Mask Preview (White = Protected, Black = Inpaint Area)', 
+                                    type='numpy', 
+                                    height=500, 
+                                    show_label=True, 
+                                    elem_id='mask_preview_output',
+                                    interactive=False
+                                )
                                 # ================================================                              
                                 
                                 
@@ -528,7 +536,7 @@ with shared.gradio_root:
                                     """
                                     if image_data is None:
                                         return None
-                                    
+                                    image = image_data['image']
                                     # При tool='sketch' и source='upload' Gradio передает словарь с ключами 'image' и 'mask'
                                     if isinstance(image_data, dict) and 'mask' in image_data:
                                         mask = image_data['mask']
@@ -537,27 +545,27 @@ with shared.gradio_root:
                                             # Если маска имеет 4 канала (RGBA), используем альфа-канал как основу
                                             if mask.shape[2] == 4:
                                                 alpha = mask[:, :, 3]
-                                                return np.stack([alpha, alpha, alpha], axis=2).astype(np.uint8)
+                                                return image, np.stack([alpha, alpha, alpha], axis=2).astype(np.uint8)
                                             # Если маска имеет 3 канала (RGB), конвертируем в оттенки серого для четкости
                                             elif mask.shape[2] == 3:
                                                 gray = np.mean(mask, axis=2)
-                                                return np.stack([gray, gray, gray], axis=2).astype(np.uint8)
+                                                return image, np.stack([gray, gray, gray], axis=2).astype(np.uint8)
                                         
-                                        return mask
+                                        return image, mask
                                     
                                     # Fallback: если по какой-то причине пришел просто numpy array (например, маска еще не рисовалась)
                                     elif isinstance(image_data, np.ndarray):
                                         if image_data.ndim == 3 and image_data.shape[2] == 4:
                                             alpha_channel = image_data[:, :, 3]
-                                            return np.stack([alpha_channel, alpha_channel, alpha_channel], axis=2).astype(np.uint8)
+                                            return image, np.stack([alpha_channel, alpha_channel, alpha_channel], axis=2).astype(np.uint8)
                                     
-                                    return None
+                                    return image, None
                                 # ================================================
                                 # === ПРИВЯЗКА КНОПКИ ОБНОВЛЕНИЯ МАСКИ ===
                                 update_mask_btn.click(
                                     fn=update_mask_preview,
                                     inputs=[inpaint_input_image],
-                                    outputs=[mask_preview_output],
+                                    outputs=[image_preview_output,mask_preview_output],
                                     queue=False
                                 )
                                 # ================================================
