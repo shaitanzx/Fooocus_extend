@@ -1,5 +1,5 @@
-onUiLoaded(async() => {
 
+onUiLoaded(() => {
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
         canvas_hotkey_adjust: "Ctrl",
