@@ -1,5 +1,4 @@
 onUiLoaded(async() => {
-    // Вспомогательные функции
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
@@ -21,7 +20,6 @@ onUiLoaded(async() => {
         return result;
     }
 
-    // Конфигурация горячих клавиш
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
         canvas_hotkey_adjust: "Ctrl",
@@ -42,19 +40,6 @@ onUiLoaded(async() => {
     let activeElement;
     const elemData = {};
 
-    // === ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: конвертация data URL в File ===
-    function dataURLtoFile(dataURL, filename) {
-        const arr = dataURL.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new File([u8arr], filename, { type: mime });
-    }
-
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
         if (!targetElement) {
@@ -68,29 +53,23 @@ onUiLoaded(async() => {
         elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
         let fullScreenMode = false;
 
-        // === ПЕРЕМЕННЫЕ ЛАСТИКА ===
         let isEraserMode = false;
         let isDrawingEraser = false;
         let lastEraserX = 0;
         let lastEraserY = 0;
         let lastCursorPos = null;
         
-        // Кэш хранит ДИАМЕТР кисти (как в слайдере)
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
 
-        // Глобальное отслеживание мыши для переключения курсора
         document.addEventListener('mousemove', (e) => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
 
-        // Функция получения РАДИУСА кисти (диаметр / 2)
         function getBrushRadius() {
-            const radius = cachedDiameter / 2;
-            return radius;
+            return cachedDiameter / 2;
         }
 
-        // Функция обновления кэша диаметра из слайдера
         function updateCachedDiameter() {
             const input = targetElement.querySelector("input[aria-label='Brush radius']");
             if (input && input.value) {
@@ -109,16 +88,11 @@ onUiLoaded(async() => {
         if (brushInput) {
             brushInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
-                if (Number.isFinite(val) && val > 0) {
-                    cachedDiameter = val;
-                }
+                if (Number.isFinite(val) && val > 0) cachedDiameter = val;
             });
-            
             brushInput.addEventListener('change', (e) => {
                 const val = parseFloat(e.target.value);
-                if (Number.isFinite(val) && val > 0) {
-                    cachedDiameter = val;
-                }
+                if (Number.isFinite(val) && val > 0) cachedDiameter = val;
             });
         }
 
@@ -130,7 +104,6 @@ onUiLoaded(async() => {
             };
         }
 
-        // Отрисовка визуального курсора ластика на interface canvas
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
@@ -158,9 +131,7 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-        // === ОБРАБОТЧИКИ ЛАСТИКА ===
-        
-        // ВАЖНО: Стираем ТОЛЬКО на maskCanvas, чтобы не портить исходное изображение
+        // === ВАЖНО: Стираем ТОЛЬКО на maskCanvas, не трогая interfaceCanvas ===
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
             
@@ -176,7 +147,7 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
             const radius = getBrushRadius();
 
-            console.log(`[Eraser] Started drawing at X=${pos.x.toFixed(1)}, Y=${pos.y.toFixed(1)}, radius=${radius}`);
+            console.log(`[Eraser] Started erasing at X=${pos.x.toFixed(1)}, Y=${pos.y.toFixed(1)}, radius=${radius}`);
 
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
@@ -202,7 +173,7 @@ onUiLoaded(async() => {
             const pos = getCanvasPoint(maskCanvas, e);
             const radius = getBrushRadius();
 
-            // Рисуем визуальный курсор на interface canvas (не влияет на данные)
+            // Рисуем визуальный курсор на interface canvas (только визуал, не влияет на данные)
             if (interfaceCanvas) {
                 drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
                 lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
@@ -227,11 +198,11 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === КРИТИЧЕСКИ ВАЖНО: Синхронизация с Gradio после стирания ===
+        // === КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Синхронизация только через maskCanvas ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
-            console.log("[Eraser] Stopped drawing. Starting sync...");
+            console.log("[Eraser] Stopped erasing. Syncing with Gradio...");
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
@@ -241,7 +212,7 @@ onUiLoaded(async() => {
                 return;
             }
 
-            // 1. Симулируем pointerup на maskCanvas (именно там Gradio слушает окончание штриха)
+            // 1. Симулируем pointerup на maskCanvas (Gradio слушает именно его)
             const rect = maskCanvas.getBoundingClientRect();
             maskCanvas.dispatchEvent(new PointerEvent('pointerup', {
                 bubbles: true,
@@ -253,32 +224,15 @@ onUiLoaded(async() => {
             }));
             console.log("[Eraser] pointerup dispatched on maskCanvas");
 
-            // 2. Отправляем input и change на maskCanvas
+            // 2. Отправляем input и change ТОЛЬКО на maskCanvas
+            // НЕ трогаем interfaceCanvas и input[type="file"] - это ломает словарь image
             maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
             maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+            console.log("[Eraser] input/change events dispatched on maskCanvas only");
 
-            // 3. Конвертируем mask canvas в data URL (синхронно)
-            const maskDataURL = maskCanvas.toDataURL('image/png');
-            console.log("[Eraser] Mask canvas converted to data URL");
-
-            // 4. Находим ВСЕ input[type="file"] в компоненте
-            const fileInputs = targetElement.querySelectorAll('input[type="file"]');
-            console.log(`[Eraser] Found ${fileInputs.length} file inputs`);
-
-            // 5. Обновляем каждый input с маской
-            fileInputs.forEach((input, index) => {
-                const file = dataURLtoFile(maskDataURL, "mask.png");
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                input.files = dataTransfer.files;
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-                console.log(`[Eraser] Updated file input #${index}`);
-            });
-
-            console.log("[Eraser] Sync complete");
+            console.log("[Eraser] Sync complete - Gradio will update mask key only");
         }
 
-        // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
         function handleKeyDown(event) {
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
             if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
@@ -295,7 +249,6 @@ onUiLoaded(async() => {
                 if (!interfaceCanvas) return;
 
                 if (isEraserMode) {
-                    // ВКЛЮЧЕНИЕ ЛАСТИКА
                     targetElement.style.cursor = 'none';
                     interfaceCanvas.style.cursor = 'none';
                     
@@ -309,13 +262,11 @@ onUiLoaded(async() => {
                     drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
                     lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
                 } else {
-                    // ВЫКЛЮЧЕНИЕ ЛАСТИКА (возврат к кисти)
                     clearEraserCursor(interfaceCanvas, lastCursorPos);
                     lastCursorPos = null;
                     targetElement.style.cursor = '';
                     interfaceCanvas.style.cursor = '';
                     
-                    // Заставляем Gradio перерисовать свой родной курсор кисти
                     const fakeEvent = new MouseEvent('mousemove', {
                         bubbles: true,
                         cancelable: true,
@@ -344,7 +295,6 @@ onUiLoaded(async() => {
             }
         }
 
-        // === СТАНДАРТНЫЕ ФУНКЦИИ ZOOM/PAN ===
         function createTooltip() {
             const toolTipElemnt = targetElement.querySelector(".image-container");
             if (!toolTipElemnt) return;
@@ -561,7 +511,6 @@ onUiLoaded(async() => {
             }
         }
 
-        // Привязка событий
         targetElement.addEventListener('pointerdown', handleEraserDown, true);
         targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
