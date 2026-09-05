@@ -1,4 +1,5 @@
 onUiLoaded(async() => {
+    // Вспомогательные функции
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
@@ -20,6 +21,7 @@ onUiLoaded(async() => {
         return result;
     }
 
+    // Конфигурация горячих клавиш
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
         canvas_hotkey_adjust: "Ctrl",
@@ -42,27 +44,24 @@ onUiLoaded(async() => {
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
-        if (!targetElement) {
-            console.log(`[Eraser] Element not found: ${elemId}`);
-            return;
-        }
-
-        console.log(`[Eraser] Initialized for element: ${elemId}`);
+        if (!targetElement) return;
 
         targetElement.style.transformOrigin = "0 0";
         elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
         let fullScreenMode = false;
 
+        // === ПЕРЕМЕННЫЕ ЛАСТИКА ===
         let isEraserMode = false;
         let isDrawingEraser = false;
         let lastEraserX = 0;
         let lastEraserY = 0;
         let lastCursorPos = null;
         
+        // Кэш диаметра кисти
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
-        const MASK_OPACITY = 0.7; // Прозрачность маски как в оригинальном Gradio
 
+        // Глобальное отслеживание мыши для переключения курсора
         document.addEventListener('mousemove', (e) => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
@@ -89,16 +88,11 @@ onUiLoaded(async() => {
         if (brushInput) {
             brushInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
-                if (Number.isFinite(val) && val > 0) {
-                    cachedDiameter = val;
-                }
+                if (Number.isFinite(val) && val > 0) cachedDiameter = val;
             });
-            
             brushInput.addEventListener('change', (e) => {
                 const val = parseFloat(e.target.value);
-                if (Number.isFinite(val) && val > 0) {
-                    cachedDiameter = val;
-                }
+                if (Number.isFinite(val) && val > 0) cachedDiameter = val;
             });
         }
 
@@ -110,15 +104,14 @@ onUiLoaded(async() => {
             };
         }
 
+        // Отрисовка визуального курсора ластика на interface canvas
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
-            
             if (previous) {
                 const pad = previous.radius + 2;
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
-            
             ctx.save();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
@@ -137,42 +130,12 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
+        // === ОБРАБОТЧИКИ ЛАСТИКА ===
+        
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
             
-            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
-            if (!maskCanvas || !drawingCanvas) return;
-
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            isDrawingEraser = true;
-
-            const pos = getCanvasPoint(drawingCanvas, e);
-            lastEraserX = pos.x;
-            lastEraserY = pos.y;
-            const radius = getBrushRadius();
-
-            const ctxMask = maskCanvas.getContext('2d');
-            ctxMask.save();
-            ctxMask.globalCompositeOperation = 'destination-out';
-            ctxMask.beginPath();
-            ctxMask.arc(lastEraserX, lastEraserY, radius, 0, Math.PI * 2);
-            ctxMask.fill();
-            ctxMask.restore();
-
-            const ctxDraw = drawingCanvas.getContext('2d');
-            ctxDraw.save();
-            ctxDraw.globalCompositeOperation = 'destination-out';
-            ctxDraw.beginPath();
-            ctxDraw.arc(lastEraserX, lastEraserY, radius, 0, Math.PI * 2);
-            ctxDraw.fill();
-            ctxDraw.restore();
-        }
-
-        function handleEraserDown(e) {
-            if (!isEraserMode || e.button !== 0) return;
-            
+            // ВАЖНО: Работаем ТОЛЬКО с маской, чтобы не портить исходное изображение
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
@@ -185,7 +148,6 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
             const radius = getBrushRadius();
 
-            // Стираем ТОЛЬКО на mask canvas — это влияет только на ключ 'mask' в словаре
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -210,7 +172,7 @@ onUiLoaded(async() => {
             const pos = getCanvasPoint(maskCanvas, e);
             const radius = getBrushRadius();
 
-            // Рисуем курсор ластика на interface canvas (только визуал, не влияет на данные)
+            // Рисуем визуальный курсор на interface canvas (не влияет на данные)
             if (interfaceCanvas) {
                 drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
                 lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
@@ -218,7 +180,7 @@ onUiLoaded(async() => {
 
             if (!isDrawingEraser) return;
 
-            // Стираем ТОЛЬКО на mask canvas — это влияет только на ключ 'mask' в словаре
+            // Стираем ТОЛЬКО на mask canvas
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -238,32 +200,31 @@ onUiLoaded(async() => {
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
-            console.log("[Eraser] Stopped drawing. Forcing Gradio canvas sync...");
             
-            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || targetElement.querySelector('canvas[key="interface"]');
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             
-            const canvasesToNotify = [interfaceCanvas, drawingCanvas].filter(Boolean);
-            canvasesToNotify.forEach(canvas => {
-                const rect = canvas.getBoundingClientRect();
-                const pointerUpEvent = new PointerEvent('pointerup', {
+            // 1. Симулируем pointerup с координатами, чтобы Gradio "проснулся"
+            if (interfaceCanvas) {
+                const rect = interfaceCanvas.getBoundingClientRect();
+                interfaceCanvas.dispatchEvent(new PointerEvent('pointerup', {
                     bubbles: true,
                     cancelable: true,
                     clientX: rect.left + 10,
                     clientY: rect.top + 10,
                     pointerId: 99,
                     button: 0
-                });
-                canvas.dispatchEvent(pointerUpEvent);
-            });
+                }));
+            }
 
-            const elementsToNotify = [targetElement, drawingCanvas, maskCanvas, interfaceCanvas].filter(Boolean);
-            elementsToNotify.forEach(el => {
+            // 2. Отправляем стандартные события изменения
+            [targetElement, maskCanvas, interfaceCanvas].filter(Boolean).forEach(el => {
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             });
             
+            // 3. КРИТИЧЕСКИ ВАЖНО: Принудительно обновляем скрытый input[type="file"]
+            // Это заставляет Gradio перечитать данные маски и обновить внутреннее состояние словаря
             if (maskCanvas) {
                 maskCanvas.toBlob((blob) => {
                     if (blob) {
@@ -275,15 +236,78 @@ onUiLoaded(async() => {
                         if (hiddenInput) {
                             hiddenInput.files = dataTransfer.files;
                             hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            console.log("[Eraser] Mask canvas synced to hidden input.");
                         }
                     }
                 }, 'image/png');
             }
-            
-            console.log("[Eraser] Gradio sync events dispatched successfully.");
         }
 
+        // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
+        function handleKeyDown(event) {
+            if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
+            if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
+
+            if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
+                event.preventDefault();
+                isEraserMode = !isEraserMode;
+                
+                targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
+                targetElement.style.outlineOffset = "-3px";
+                
+                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
+                if (!interfaceCanvas) return;
+
+                if (isEraserMode) {
+                    // ВКЛЮЧЕНИЕ ЛАСТИКА
+                    targetElement.style.cursor = 'none';
+                    interfaceCanvas.style.cursor = 'none';
+                    
+                    const rect = interfaceCanvas.getBoundingClientRect();
+                    const canvasPoint = {
+                        x: (lastMousePos.x - rect.left) * (interfaceCanvas.width / rect.width),
+                        y: (lastMousePos.y - rect.top) * (interfaceCanvas.height / rect.height)
+                    };
+                    
+                    const radius = getBrushRadius();
+                    drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
+                    lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
+                } else {
+                    // ВЫКЛЮЧЕНИЕ ЛАСТИКА (возврат к кисти)
+                    clearEraserCursor(interfaceCanvas, lastCursorPos);
+                    lastCursorPos = null;
+                    targetElement.style.cursor = '';
+                    interfaceCanvas.style.cursor = '';
+                    
+                    // Заставляем Gradio перерисовать свой родной курсор кисти
+                    const fakeEvent = new MouseEvent('mousemove', {
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: lastMousePos.x,
+                        clientY: lastMousePos.y,
+                        view: window
+                    });
+                    interfaceCanvas.dispatchEvent(fakeEvent);
+                }
+                return;
+            }
+
+            const hotkeyActions = {
+                [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
+                [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
+                [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen,
+                [hotkeysConfig.canvas_zoom_hotkey_undo]: undoLastAction,
+            };
+            const action = hotkeyActions[event.code];
+            if (action) {
+                event.preventDefault();
+                action(event);
+            }
+            if (isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) || isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)) {
+                event.preventDefault();
+            }
+        }
+
+        // === СТАНДАРТНЫЕ ФУНКЦИИ ZOOM/PAN (FWDF-189) ===
         function createTooltip() {
             const toolTipElemnt = targetElement.querySelector(".image-container");
             if (!toolTipElemnt) return;
@@ -443,65 +467,6 @@ onUiLoaded(async() => {
             toggleOverlap("on");
         }
 
-        function handleKeyDown(event) {
-            if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
-            if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
-
-            if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
-                event.preventDefault();
-                isEraserMode = !isEraserMode;
-                
-                targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
-                targetElement.style.outlineOffset = "-3px";
-                
-                const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-                if (!interfaceCanvas) return;
-
-                if (isEraserMode) {
-                    targetElement.style.cursor = 'none';
-                    
-                    const rect = interfaceCanvas.getBoundingClientRect();
-                    const canvasPoint = {
-                        x: (lastMousePos.x - rect.left) * (interfaceCanvas.width / rect.width),
-                        y: (lastMousePos.y - rect.top) * (interfaceCanvas.height / rect.height)
-                    };
-                    
-                    const radius = getBrushRadius();
-                    drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
-                    lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
-                } else {
-                    clearEraserCursor(interfaceCanvas, lastCursorPos);
-                    lastCursorPos = null;
-                    targetElement.style.cursor = '';
-                    
-                    const fakeEvent = new MouseEvent('mousemove', {
-                        bubbles: true,
-                        cancelable: true,
-                        clientX: lastMousePos.x,
-                        clientY: lastMousePos.y,
-                        view: window
-                    });
-                    interfaceCanvas.dispatchEvent(fakeEvent);
-                }
-                return;
-            }
-
-            const hotkeyActions = {
-                [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
-                [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
-                [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen,
-                [hotkeysConfig.canvas_zoom_hotkey_undo]: undoLastAction,
-            };
-            const action = hotkeyActions[event.code];
-            if (action) {
-                event.preventDefault();
-                action(event);
-            }
-            if (isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) || isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)) {
-                event.preventDefault();
-            }
-        }
-
         function getMousePosition(e) {
             mouseX = e.offsetX;
             mouseY = e.offsetY;
@@ -559,6 +524,7 @@ onUiLoaded(async() => {
             }
         }
 
+        // Привязка событий
         targetElement.addEventListener('pointerdown', handleEraserDown, true);
         targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
@@ -650,7 +616,6 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
-    console.log("[Eraser] Starting applyZoomAndPan for all canvases...");
     applyZoomAndPan("#inpaint_canvas");
     applyZoomAndPan("#inpaint_mask_canvas");
     applyZoomAndPan("#cleaner_canvas");
