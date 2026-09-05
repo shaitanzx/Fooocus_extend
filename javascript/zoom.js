@@ -42,9 +42,27 @@ onUiLoaded(async() => {
     let activeElement;
     const elemData = {};
 
+    // === ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: конвертация data URL в File ===
+    function dataURLtoFile(dataURL, filename) {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: mime });
+    }
+
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
-        if (!targetElement) return;
+        if (!targetElement) {
+            console.log(`[Eraser] Element not found: ${elemId}`);
+            return;
+        }
+
+        console.log(`[Eraser] Initialized for element: ${elemId}`);
 
         targetElement.style.transformOrigin = "0 0";
         elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
@@ -57,7 +75,7 @@ onUiLoaded(async() => {
         let lastEraserY = 0;
         let lastCursorPos = null;
         
-        // Кэш диаметра кисти
+        // Кэш хранит ДИАМЕТР кисти (как в слайдере)
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
 
@@ -66,10 +84,13 @@ onUiLoaded(async() => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
 
+        // Функция получения РАДИУСА кисти (диаметр / 2)
         function getBrushRadius() {
-            return cachedDiameter / 2;
+            const radius = cachedDiameter / 2;
+            return radius;
         }
 
+        // Функция обновления кэша диаметра из слайдера
         function updateCachedDiameter() {
             const input = targetElement.querySelector("input[aria-label='Brush radius']");
             if (input && input.value) {
@@ -88,11 +109,16 @@ onUiLoaded(async() => {
         if (brushInput) {
             brushInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
-                if (Number.isFinite(val) && val > 0) cachedDiameter = val;
+                if (Number.isFinite(val) && val > 0) {
+                    cachedDiameter = val;
+                }
             });
+            
             brushInput.addEventListener('change', (e) => {
                 const val = parseFloat(e.target.value);
-                if (Number.isFinite(val) && val > 0) cachedDiameter = val;
+                if (Number.isFinite(val) && val > 0) {
+                    cachedDiameter = val;
+                }
             });
         }
 
@@ -108,10 +134,12 @@ onUiLoaded(async() => {
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
+            
             if (previous) {
                 const pad = previous.radius + 2;
                 ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
             }
+            
             ctx.save();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
@@ -132,10 +160,10 @@ onUiLoaded(async() => {
 
         // === ОБРАБОТЧИКИ ЛАСТИКА ===
         
+        // ВАЖНО: Стираем ТОЛЬКО на maskCanvas, чтобы не портить исходное изображение
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
             
-            // ВАЖНО: Работаем ТОЛЬКО с маской, чтобы не портить исходное изображение
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
@@ -147,6 +175,8 @@ onUiLoaded(async() => {
             lastEraserX = pos.x;
             lastEraserY = pos.y;
             const radius = getBrushRadius();
+
+            console.log(`[Eraser] Started drawing at X=${pos.x.toFixed(1)}, Y=${pos.y.toFixed(1)}, radius=${radius}`);
 
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
@@ -197,49 +227,55 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
+        // === КРИТИЧЕСКИ ВАЖНО: Синхронизация с Gradio после стирания ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
+            console.log("[Eraser] Stopped drawing. Starting sync...");
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             
-            // 1. Симулируем pointerup с координатами, чтобы Gradio "проснулся"
-            if (interfaceCanvas) {
-                const rect = interfaceCanvas.getBoundingClientRect();
-                interfaceCanvas.dispatchEvent(new PointerEvent('pointerup', {
-                    bubbles: true,
-                    cancelable: true,
-                    clientX: rect.left + 10,
-                    clientY: rect.top + 10,
-                    pointerId: 99,
-                    button: 0
-                }));
+            if (!maskCanvas) {
+                console.warn("[Eraser] maskCanvas not found!");
+                return;
             }
 
-            // 2. Отправляем стандартные события изменения
-            [targetElement, maskCanvas, interfaceCanvas].filter(Boolean).forEach(el => {
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
+            // 1. Симулируем pointerup на maskCanvas (именно там Gradio слушает окончание штриха)
+            const rect = maskCanvas.getBoundingClientRect();
+            maskCanvas.dispatchEvent(new PointerEvent('pointerup', {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                pointerId: 1,
+                button: 0
+            }));
+            console.log("[Eraser] pointerup dispatched on maskCanvas");
+
+            // 2. Отправляем input и change на maskCanvas
+            maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
+            maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // 3. Конвертируем mask canvas в data URL (синхронно)
+            const maskDataURL = maskCanvas.toDataURL('image/png');
+            console.log("[Eraser] Mask canvas converted to data URL");
+
+            // 4. Находим ВСЕ input[type="file"] в компоненте
+            const fileInputs = targetElement.querySelectorAll('input[type="file"]');
+            console.log(`[Eraser] Found ${fileInputs.length} file inputs`);
+
+            // 5. Обновляем каждый input с маской
+            fileInputs.forEach((input, index) => {
+                const file = dataURLtoFile(maskDataURL, "mask.png");
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log(`[Eraser] Updated file input #${index}`);
             });
-            
-            // 3. КРИТИЧЕСКИ ВАЖНО: Принудительно обновляем скрытый input[type="file"]
-            // Это заставляет Gradio перечитать данные маски и обновить внутреннее состояние словаря
-            if (maskCanvas) {
-                maskCanvas.toBlob((blob) => {
-                    if (blob) {
-                        const file = new File([blob], "mask.png", { type: "image/png" });
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        
-                        const hiddenInput = targetElement.querySelector('input[type="file"]');
-                        if (hiddenInput) {
-                            hiddenInput.files = dataTransfer.files;
-                            hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
-                    }
-                }, 'image/png');
-            }
+
+            console.log("[Eraser] Sync complete");
         }
 
         // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
@@ -250,6 +286,7 @@ onUiLoaded(async() => {
             if (event.code === hotkeysConfig.canvas_hotkey_eraser && activeElement === elemId) {
                 event.preventDefault();
                 isEraserMode = !isEraserMode;
+                console.log(`[Eraser] >>> Key 'E' pressed. Toggled isEraserMode to: ${isEraserMode}`);
                 
                 targetElement.style.outline = isEraserMode ? "3px solid #ff4444" : "none";
                 targetElement.style.outlineOffset = "-3px";
@@ -307,7 +344,7 @@ onUiLoaded(async() => {
             }
         }
 
-        // === СТАНДАРТНЫЕ ФУНКЦИИ ZOOM/PAN (FWDF-189) ===
+        // === СТАНДАРТНЫЕ ФУНКЦИИ ZOOM/PAN ===
         function createTooltip() {
             const toolTipElemnt = targetElement.querySelector(".image-container");
             if (!toolTipElemnt) return;
@@ -616,6 +653,7 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
+    console.log("[Eraser] Starting applyZoomAndPan for all canvases...");
     applyZoomAndPan("#inpaint_canvas");
     applyZoomAndPan("#inpaint_mask_canvas");
     applyZoomAndPan("#cleaner_canvas");
