@@ -210,7 +210,7 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === ВОССТАНОВЛЕНИЕ ORIGINAL IMAGE И СИНХРОНИЗАЦИЯ MASK ===
+        // === НОВАЯ ФУНКЦИЯ: Восстановление изображения и синхронизация ===
         function restoreAndSync() {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
@@ -220,11 +220,10 @@ onUiLoaded(async() => {
                 return;
             }
 
-            // Сначала сохраняем уже измененную ластиком маску.
-            // Это нужно сделать ДО восстановления interface canvas.
+            // Сначала сохраняем итоговую маску после работы ластика.
             const updatedMaskData = maskCanvas.toDataURL('image/png');
 
-            // Затем восстанавливаем оригинальное изображение на interface canvas.
+            // Затем восстанавливаем оригинальное изображение на interface canvas
             if (pristineImageData) {
                 console.log("[Eraser] Restoring pristine image data to interface canvas...");
                 const img = new Image();
@@ -234,8 +233,7 @@ onUiLoaded(async() => {
                     ctx.drawImage(img, 0, 0);
                     console.log("[Eraser] Pristine image successfully restored.");
                     
-                    // Возвращаем сохраненную маску на mask canvas.
-                    // interface canvas при этом остается оригинальным.
+                    // Возвращаем сохраненную маску после восстановления image.
                     const updatedMask = new Image();
                     updatedMask.onload = () => {
                         const maskContext = maskCanvas.getContext('2d');
@@ -245,8 +243,7 @@ onUiLoaded(async() => {
                         maskContext.drawImage(updatedMask, 0, 0);
                         maskContext.restore();
 
-                        // Только после восстановления обоих canvas просим
-                        // Gradio собрать словарь { image, mask }.
+                        // Теперь Gradio увидит original image и updated mask.
                         triggerGradioSync(maskCanvas, interfaceCanvas);
                     };
                     updatedMask.src = updatedMaskData;
@@ -259,27 +256,39 @@ onUiLoaded(async() => {
         }
 
         function triggerGradioSync(maskCanvas, interfaceCanvas) {
-            // Имитируем pointerup на interface canvas, чтобы Gradio "проснулся"
+            // В Gradio 3.41.2 состояние sketch обновляется не через DOM
+            // change/input, а через mousedown -> mousemove -> mouseup:
+            // mouseup вызывает handle_draw_end(), save_mask_line() и
+            // trigger_on_change().
+            //
+            // События отправляются далеко за пределами canvas. Поэтому
+            // Gradio выполнит штатную фиксацию image/mask, но не нарисует
+            // видимую линию.
             const rect = interfaceCanvas.getBoundingClientRect();
-            interfaceCanvas.dispatchEvent(new PointerEvent('pointerup', {
+            const syncEvent = {
                 bubbles: true,
                 cancelable: true,
-                composed: true,
-                clientX: rect.left + 10,
-                clientY: rect.top + 10,
-                pointerId: 1,
+                clientX: rect.left - 10000,
+                clientY: rect.top - 10000,
                 button: 0,
-                isPrimary: true
-            }));
+                buttons: 0,
+                view: window
+            };
 
-            // Отправляем события изменения на оба холста
-            interfaceCanvas.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-            interfaceCanvas.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-            
-            maskCanvas.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-            maskCanvas.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+            // На время синхронизации отключаем только собственный режим
+            // ластика, чтобы его capture-обработчики не остановили эти
+            // служебные события до того, как их получит Gradio.
+            const previousEraserMode = isEraserMode;
+            isEraserMode = false;
+            try {
+                interfaceCanvas.dispatchEvent(new MouseEvent('mousedown', syncEvent));
+                interfaceCanvas.dispatchEvent(new MouseEvent('mousemove', syncEvent));
+                interfaceCanvas.dispatchEvent(new MouseEvent('mouseup', syncEvent));
+            } finally {
+                isEraserMode = previousEraserMode;
+            }
 
-            console.log("[Eraser] Gradio sync events dispatched successfully.");
+            console.log("[Eraser] Gradio image/mask state synchronized.");
         }
 
         function handleEraserUp(e) {
