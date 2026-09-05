@@ -1,4 +1,5 @@
 onUiLoaded(async() => {
+    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
     function hasHorizontalScrollbar(element) {
         return element.scrollWidth > element.clientWidth;
     }
@@ -20,6 +21,20 @@ onUiLoaded(async() => {
         return result;
     }
 
+    // Конвертация data URL в File объект
+    function dataURLtoFile(dataURL, filename) {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: mime });
+    }
+
+    // === КОНФИГУРАЦИЯ ГОРЯЧИХ КЛАВИШ ===
     const defaultHotkeysConfig = {
         canvas_hotkey_zoom: "Shift",
         canvas_hotkey_adjust: "Ctrl",
@@ -53,23 +68,28 @@ onUiLoaded(async() => {
         elemData[elemId] = { zoom: 1, panX: 0, panY: 0 };
         let fullScreenMode = false;
 
+        // === ПЕРЕМЕННЫЕ ЛАСТИКА ===
         let isEraserMode = false;
         let isDrawingEraser = false;
         let lastEraserX = 0;
         let lastEraserY = 0;
         let lastCursorPos = null;
         
+        // Кэш хранит ДИАМЕТР кисти (как в слайдере)
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
 
+        // Глобальное отслеживание мыши для переключения курсора
         document.addEventListener('mousemove', (e) => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
 
+        // Функция получения РАДИУСА кисти (диаметр / 2)
         function getBrushRadius() {
             return cachedDiameter / 2;
         }
 
+        // Функция обновления кэша диаметра из слайдера
         function updateCachedDiameter() {
             const input = targetElement.querySelector("input[aria-label='Brush radius']");
             if (input && input.value) {
@@ -104,6 +124,7 @@ onUiLoaded(async() => {
             };
         }
 
+        // Отрисовка визуального курсора ластика на interface canvas
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
             if (!interfaceCanvas) return;
             const ctx = interfaceCanvas.getContext('2d');
@@ -131,7 +152,9 @@ onUiLoaded(async() => {
             ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
-        // === ВАЖНО: Стираем ТОЛЬКО на maskCanvas, не трогая interfaceCanvas ===
+        // === ОБРАБОТЧИКИ ЛАСТИКА ===
+        
+        // ВАЖНО: Стираем ТОЛЬКО на maskCanvas, чтобы не портить исходное изображение
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
             
@@ -198,11 +221,11 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Синхронизация только через maskCanvas ===
+        // === КЛЮЧЕВАЯ ФУНКЦИЯ: Синхронизация маски с Gradio ===
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
-            console.log("[Eraser] Stopped erasing. Syncing with Gradio...");
+            console.log("[Eraser] Stopped erasing. Syncing mask with Gradio...");
             
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
@@ -224,15 +247,50 @@ onUiLoaded(async() => {
             }));
             console.log("[Eraser] pointerup dispatched on maskCanvas");
 
-            // 2. Отправляем input и change ТОЛЬКО на maskCanvas
-            // НЕ трогаем interfaceCanvas и input[type="file"] - это ломает словарь image
+            // 2. Отправляем input и change на maskCanvas
             maskCanvas.dispatchEvent(new Event('input', { bubbles: true }));
             maskCanvas.dispatchEvent(new Event('change', { bubbles: true }));
-            console.log("[Eraser] input/change events dispatched on maskCanvas only");
 
-            console.log("[Eraser] Sync complete - Gradio will update mask key only");
+            // 3. Конвертируем оба canvas в data URL (синхронно)
+            const maskDataURL = maskCanvas.toDataURL('image/png');
+            console.log("[Eraser] Mask canvas converted to data URL");
+            
+            const interfaceDataURL = interfaceCanvas ? interfaceCanvas.toDataURL('image/png') : null;
+            if (interfaceDataURL) {
+                console.log("[Eraser] Interface canvas converted to data URL");
+            }
+
+            // 4. Находим ВСЕ input[type="file"] в компоненте
+            const fileInputs = targetElement.querySelectorAll('input[type="file"]');
+            console.log(`[Eraser] Found ${fileInputs.length} file inputs`);
+
+            // 5. Обновляем каждый input с правильными данными
+            // Обычно первый input - для image, второй - для mask
+            fileInputs.forEach((input, index) => {
+                const dataTransfer = new DataTransfer();
+                
+                if (index === 0 && interfaceDataURL) {
+                    // Первый input - для изображения
+                    const file = dataURLtoFile(interfaceDataURL, "image.png");
+                    dataTransfer.items.add(file);
+                    console.log(`[Eraser] Updating file input #${index} with image data`);
+                } else if (index === 1) {
+                    // Второй input - для маски
+                    const file = dataURLtoFile(maskDataURL, "mask.png");
+                    dataTransfer.items.add(file);
+                    console.log(`[Eraser] Updating file input #${index} with mask data`);
+                }
+                
+                if (dataTransfer.items.length > 0) {
+                    input.files = dataTransfer.files;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+
+            console.log("[Eraser] Mask sync complete");
         }
 
+        // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
         function handleKeyDown(event) {
             if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") return;
             if (!hotkeysConfig.canvas_blur_prompt && (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT')) return;
@@ -249,6 +307,7 @@ onUiLoaded(async() => {
                 if (!interfaceCanvas) return;
 
                 if (isEraserMode) {
+                    // ВКЛЮЧЕНИЕ ЛАСТИКА
                     targetElement.style.cursor = 'none';
                     interfaceCanvas.style.cursor = 'none';
                     
@@ -262,11 +321,13 @@ onUiLoaded(async() => {
                     drawEraserCursor(interfaceCanvas, canvasPoint, radius, null);
                     lastCursorPos = { x: canvasPoint.x, y: canvasPoint.y, radius: radius };
                 } else {
+                    // ВЫКЛЮЧЕНИЕ ЛАСТИКА (возврат к кисти)
                     clearEraserCursor(interfaceCanvas, lastCursorPos);
                     lastCursorPos = null;
                     targetElement.style.cursor = '';
                     interfaceCanvas.style.cursor = '';
                     
+                    // Заставляем Gradio перерисовать свой родной курсор кисти
                     const fakeEvent = new MouseEvent('mousemove', {
                         bubbles: true,
                         cancelable: true,
@@ -295,6 +356,7 @@ onUiLoaded(async() => {
             }
         }
 
+        // === СТАНДАРТНЫЕ ФУНКЦИИ ZOOM/PAN ===
         function createTooltip() {
             const toolTipElemnt = targetElement.querySelector(".image-container");
             if (!toolTipElemnt) return;
@@ -511,6 +573,7 @@ onUiLoaded(async() => {
             }
         }
 
+        // Привязка событий
         targetElement.addEventListener('pointerdown', handleEraserDown, true);
         targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
