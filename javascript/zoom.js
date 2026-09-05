@@ -66,6 +66,9 @@ onUiLoaded(async() => {
         let cachedDiameter = 40;
         let lastMousePos = { x: 0, y: 0 };
         
+        // === НОВОЕ: Хранилище для "снимка" оригинального изображения ===
+        let pristineImageData = null;
+
         // Глобальное отслеживание мыши для переключения курсора
         document.addEventListener('mousemove', (e) => {
             lastMousePos = { x: e.clientX, y: e.clientY };
@@ -111,16 +114,32 @@ onUiLoaded(async() => {
             };
         }
 
-        // Курсор нельзя рисовать на interface canvas: это реальное изображение.
-        // Иначе clearRect() при перемещении курсора повреждает image.
+        // Отрисовка визуального курсора ластика на interface canvas
         function drawEraserCursor(interfaceCanvas, point, radius, previous) {
-            // Оставлено для совместимости с остальным оригинальным кодом.
-            // Визуальный курсор должен реализовываться CSS/overlay-слоем,
-            // но не записью в interface canvas.
+            if (!interfaceCanvas) return;
+            const ctx = interfaceCanvas.getContext('2d');
+            
+            if (previous) {
+                const pad = previous.radius + 2;
+                ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
+            }
+            
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
         }
 
         function clearEraserCursor(interfaceCanvas, previous) {
-            // Ничего не очищаем: interface canvas больше не изменяется.
+            if (!interfaceCanvas || !previous) return;
+            const ctx = interfaceCanvas.getContext('2d');
+            const pad = previous.radius + 2;
+            ctx.clearRect(previous.x - pad, previous.y - pad, pad * 2, pad * 2);
         }
 
         // === ОБРАБОТЧИКИ ЛАСТИКА ===
@@ -131,8 +150,8 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
-            // Не блокируем штатный pointerdown Gradio.
-            // Он нужен sketch-компоненту для обновления image/mask.
+            e.preventDefault();
+            e.stopImmediatePropagation();
             isDrawingEraser = true;
 
             const pos = getCanvasPoint(maskCanvas, e);
@@ -157,6 +176,11 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             if (!maskCanvas) return;
+
+            if (e.target.tagName === 'CANVAS') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
 
             const pos = getCanvasPoint(maskCanvas, e);
             const radius = getBrushRadius();
@@ -186,27 +210,56 @@ onUiLoaded(async() => {
             lastEraserY = pos.y;
         }
 
-        // === СИНХРОНИЗАЦИЯ ИЗМЕНЕННОЙ МАСКИ ===
-        function syncMaskToGradio() {
+        // === ВОССТАНОВЛЕНИЕ ORIGINAL IMAGE И СИНХРОНИЗАЦИЯ MASK ===
+        function restoreAndSync() {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             
             if (!maskCanvas || !interfaceCanvas) {
-                console.warn("[Eraser] Canvases not found for mask sync!");
+                console.warn("[Eraser] Required canvases not found for sync!");
                 return;
             }
 
-            // Не восстанавливаем interface canvas через toDataURL().
-            // Это изображение, а менять нужно только mask canvas.
-            // Ждем один кадр, чтобы последнее стирание успело примениться.
-            requestAnimationFrame(() => {
+            // Сначала сохраняем уже измененную ластиком маску.
+            // Это нужно сделать ДО восстановления interface canvas.
+            const updatedMaskData = maskCanvas.toDataURL('image/png');
+
+            // Затем восстанавливаем оригинальное изображение на interface canvas.
+            if (pristineImageData) {
+                console.log("[Eraser] Restoring pristine image data to interface canvas...");
+                const img = new Image();
+                img.onload = () => {
+                    const ctx = interfaceCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, interfaceCanvas.width, interfaceCanvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    console.log("[Eraser] Pristine image successfully restored.");
+                    
+                    // Возвращаем сохраненную маску на mask canvas.
+                    // interface canvas при этом остается оригинальным.
+                    const updatedMask = new Image();
+                    updatedMask.onload = () => {
+                        const maskContext = maskCanvas.getContext('2d');
+                        maskContext.save();
+                        maskContext.globalCompositeOperation = 'source-over';
+                        maskContext.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                        maskContext.drawImage(updatedMask, 0, 0);
+                        maskContext.restore();
+
+                        // Только после восстановления обоих canvas просим
+                        // Gradio собрать словарь { image, mask }.
+                        triggerGradioSync(maskCanvas, interfaceCanvas);
+                    };
+                    updatedMask.src = updatedMaskData;
+                };
+                img.src = pristineImageData;
+            } else {
+                console.warn("[Eraser] No pristine image data found. Syncing anyway.");
                 triggerGradioSync(maskCanvas, interfaceCanvas);
-            });
+            }
         }
 
         function triggerGradioSync(maskCanvas, interfaceCanvas) {
-            // Имитируем pointerup на interface canvas, чтобы Gradio повторно
-            // собрал значение sketch-компонента image/mask.
+            // Имитируем pointerup на interface canvas, чтобы Gradio "проснулся"
             const rect = interfaceCanvas.getBoundingClientRect();
             interfaceCanvas.dispatchEvent(new PointerEvent('pointerup', {
                 bubbles: true,
@@ -219,7 +272,10 @@ onUiLoaded(async() => {
                 isPrimary: true
             }));
 
-            // input/change отправляем только после pointerup.
+            // Отправляем события изменения на оба холста
+            interfaceCanvas.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+            interfaceCanvas.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+            
             maskCanvas.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
             maskCanvas.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
 
@@ -229,9 +285,10 @@ onUiLoaded(async() => {
         function handleEraserUp(e) {
             if (!isDrawingEraser) return;
             isDrawingEraser = false;
-            console.log("[Eraser] Stopped erasing. Synchronizing mask...");
+            console.log("[Eraser] Stopped erasing. Initiating restore and sync sequence...");
             
-            syncMaskToGradio();
+            // Вызываем функцию восстановления и синхронизации
+            restoreAndSync();
         }
 
         // === ЛОГИКА ПЕРЕКЛЮЧЕНИЯ РЕЖИМОВ (КЛАВИША E) ===
@@ -251,8 +308,10 @@ onUiLoaded(async() => {
                 if (!interfaceCanvas) return;
 
                 if (isEraserMode) {
-                    // === ВКЛЮЧЕНИЕ ЛАСТИКА ===
-                    console.log("[Eraser] Entering Eraser Mode.");
+                    // === ВКЛЮЧЕНИЕ ЛАСТИКА: СОХРАНЯЕМ ОРИГИНАЛ ===
+                    console.log("[Eraser] Entering Eraser Mode. Capturing pristine interface image...");
+                    pristineImageData = interfaceCanvas.toDataURL('image/png');
+                    console.log("[Eraser] Pristine image data saved successfully.");
 
                     targetElement.style.cursor = 'none';
                     interfaceCanvas.style.cursor = 'none';
@@ -521,9 +580,8 @@ onUiLoaded(async() => {
         }
 
         // Привязка событий
-        // Без capture-фазы: сначала штатный обработчик Gradio, затем ластик.
-        targetElement.addEventListener('pointerdown', handleEraserDown);
-        targetElement.addEventListener('pointermove', handleEraserMove);
+        targetElement.addEventListener('pointerdown', handleEraserDown, true);
+        targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
 
         targetElement.addEventListener("mousemove", handleMouseMove);
