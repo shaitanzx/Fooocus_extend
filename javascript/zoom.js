@@ -170,30 +170,55 @@ onUiLoaded(async() => {
             ctxDraw.restore();
         }
 
+        function handleEraserDown(e) {
+            if (!isEraserMode || e.button !== 0) return;
+            
+            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
+            if (!maskCanvas) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            isDrawingEraser = true;
+
+            const pos = getCanvasPoint(maskCanvas, e);
+            lastEraserX = pos.x;
+            lastEraserY = pos.y;
+            const radius = getBrushRadius();
+
+            // Стираем ТОЛЬКО на mask canvas — это влияет на ключ 'mask' в словаре
+            const ctxMask = maskCanvas.getContext('2d');
+            ctxMask.save();
+            ctxMask.globalCompositeOperation = 'destination-out';
+            ctxMask.beginPath();
+            ctxMask.arc(lastEraserX, lastEraserY, radius, 0, Math.PI * 2);
+            ctxMask.fill();
+            ctxMask.restore();
+        }
+
         function handleEraserMove(e) {
             if (!isEraserMode) return;
             
+            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
-            const drawingCanvas = targetElement.querySelector('canvas[key="drawing"]') || interfaceCanvas;
-            if (!drawingCanvas) return;
+            if (!maskCanvas) return;
 
             if (e.target.tagName === 'CANVAS') {
                 e.preventDefault();
                 e.stopImmediatePropagation();
             }
 
-            const pos = getCanvasPoint(drawingCanvas, e);
+            const pos = getCanvasPoint(maskCanvas, e);
             const radius = getBrushRadius();
 
-            drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
-            lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
+            // Рисуем курсор ластика на interface canvas (только визуал)
+            if (interfaceCanvas) {
+                drawEraserCursor(interfaceCanvas, pos, radius, lastCursorPos);
+                lastCursorPos = { x: pos.x, y: pos.y, radius: radius };
+            }
 
             if (!isDrawingEraser) return;
 
-            const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
-            if (!maskCanvas) return;
-
-            // Стираем на маске (реальные данные)
+            // Стираем ТОЛЬКО на mask canvas — это влияет на ключ 'mask' в словаре
             const ctxMask = maskCanvas.getContext('2d');
             ctxMask.save();
             ctxMask.globalCompositeOperation = 'destination-out';
@@ -205,26 +230,6 @@ onUiLoaded(async() => {
             ctxMask.lineJoin = 'round';
             ctxMask.stroke();
             ctxMask.restore();
-
-            // Стираем на drawing canvas
-            const ctxDraw = drawingCanvas.getContext('2d');
-            ctxDraw.save();
-            ctxDraw.globalCompositeOperation = 'destination-out';
-            ctxDraw.beginPath();
-            ctxDraw.moveTo(lastEraserX, lastEraserY);
-            ctxDraw.lineTo(pos.x, pos.y);
-            ctxDraw.lineWidth = radius * 2;
-            ctxDraw.lineCap = 'round';
-            ctxDraw.lineJoin = 'round';
-            ctxDraw.stroke();
-            ctxDraw.restore();
-
-            // Перерисовываем маску с правильной визуальной прозрачностью
-            ctxDraw.save();
-            ctxDraw.globalAlpha = MASK_OPACITY;
-            ctxDraw.globalCompositeOperation = 'source-over';
-            ctxDraw.drawImage(maskCanvas, 0, 0);
-            ctxDraw.restore();
 
             lastEraserX = pos.x;
             lastEraserY = pos.y;
