@@ -150,6 +150,8 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
+            e.preventDefault();
+            e.stopImmediatePropagation();
             isDrawingEraser = true;
 
             const pos = getCanvasPoint(maskCanvas, e);
@@ -174,6 +176,11 @@ onUiLoaded(async() => {
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             const interfaceCanvas = targetElement.querySelector('canvas[key="interface"]');
             if (!maskCanvas) return;
+
+            if (e.target.tagName === 'CANVAS') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
 
             const pos = getCanvasPoint(maskCanvas, e);
             const radius = getBrushRadius();
@@ -573,10 +580,8 @@ onUiLoaded(async() => {
         }
 
         // Привязка событий
-        // Сначала штатные обработчики Gradio получают pointer-события и
-        // обновляют внутреннее состояние sketch, затем работает ластик.
-        targetElement.addEventListener('pointerdown', handleEraserDown);
-        targetElement.addEventListener('pointermove', handleEraserMove);
+        targetElement.addEventListener('pointerdown', handleEraserDown, true);
+        targetElement.addEventListener('pointermove', handleEraserMove, true);
         window.addEventListener('pointerup', handleEraserUp, true);
 
         targetElement.addEventListener("mousemove", handleMouseMove);
