@@ -722,14 +722,14 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     # Восстанавливаем оригинальное состояние
     # Переносим патчи обратно на устройство модели, чтобы она работала корректно
-    target_unet.patches = move_tensors_to_device(original_patches, model_device)
+    target_unet.patches = move_tensors_to_device(original_patches, main_device)
     
     # model_options обычно не содержит тяжелых тензоров, но для безопасности применяем ту же логику
-    target_unet.model_options = move_tensors_to_device(original_model_options, model_device)
+    target_unet.model_options = move_tensors_to_device(original_model_options, main_device)
     
     # Явно удаляем локальные ссылки, чтобы сборщик мусора мог освободить RAM
     del original_patches, original_model_options
-    
+
     if p.enable_instant:
         for cond in [positive_cond, negative_cond]:
             for item in cond:
