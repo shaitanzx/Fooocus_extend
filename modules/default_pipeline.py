@@ -750,10 +750,13 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         images[0] = png
 
         images.append(maska)
-
+    print('1111111111111111111111111111111111')
     target_unet.patches = copy.deepcopy(original_patches)
+    print('222222222222222222222222222222222')
     target_unet.model_options = copy.deepcopy(original_model_options)
+    print('3333333333333333333333333333333333')
     del original_patches, original_model_options
+    print('4444444444444444444444444444444444444444')
     if p.enable_instant:
         for cond in [positive_cond, negative_cond]:
             for item in cond:
@@ -764,9 +767,12 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         negative_cond = copy.deepcopy(original_ncond)
         del original_pcond, original_ncond
         del instantid_model, control_net
-
+    print('555555555555555555555555555555555555555555555')
     gc.collect()
+    print('66666666666666666666666666666666666666666666')
     torch.cuda.empty_cache()
+    print('777777777777777777777777777777777777777777')
     torch.cuda.ipc_collect()
+    print('88888888888888888888888888888888888888888888')
 
     return images
