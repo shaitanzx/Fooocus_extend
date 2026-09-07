@@ -146,7 +146,14 @@ onUiLoaded(async() => {
         
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
-            
+
+            // === ИСПРАВЛЕНИЕ: Разрешаем клики по элементам управления UI ===
+            // Если клик был по кнопке, инпуту, слайдеру или их дочерним элементам, 
+            // мы не блокируем событие, чтобы Gradio мог его нормально обработать.
+            if (e.target.closest('button, input, select, label, [role="button"], .gradio-button, .svelte-116rqfv')) {
+                return; 
+            }
+           
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
             if (!maskCanvas) return;
 
