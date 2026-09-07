@@ -510,7 +510,7 @@ with shared.gradio_root:
                                     height, width = image.shape[:2]
                                     return gr.update(minimum=width, value=width), gr.update(minimum=height, value=height)
                                 def outpaint_resolution_selector(value):
-                                    if 'Resolution' in outpaint_selections:
+                                    if 'Resolution' in value:
                                         return gr.update(visible=True,interactive=True),gr.update(visible=True,interactive=True)
                                     return gr.update(visible=False,interactive=True),gr.update(visible=False,interactive=True)
                                 inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth])    
