@@ -502,9 +502,9 @@ with shared.gradio_root:
                                 outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom', 'Resolution'], value=[], label='Outpaint Direction')
                                 with gr.Row():
                                     with gr.Column():
-                                        outpaint_width = gr.Slider(label="outpaint width",minimum=0,maximum=2048,step=8,value=1024,interactive=True,visible=True)
+                                        outpaint_width = gr.Slider(label="outpaint width",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
                                         outpaint_width_min = gr.Textbox(value='')
-                                        outpaint_heighth = gr.Slider(label="outpaint height",minimum=0,maximum=2048,step=8,value=1024,interactive=True,visible=True)
+                                        outpaint_heighth = gr.Slider(label="outpaint height",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
                                         outpaint_heighth_min = gr.Textbox(value='')
                                     with gr.Column():
                                         outpaint_shift_width = gr.Slider(label="outpaint shift width",minimum=0,maximum=0,step=1,value=0,interactive=True,visible=True)

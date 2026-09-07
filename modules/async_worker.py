@@ -947,7 +947,6 @@ def worker():
 
     def apply_outpaint(async_task, inpaint_image, inpaint_mask):
         if len(async_task.outpaint_selections) > 0:
-            print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ',async_task.outpaint_selections)
             H, W, C = inpaint_image.shape
             if 'resolution' in async_task.outpaint_selections:
 
