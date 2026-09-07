@@ -74,8 +74,19 @@ onUiLoaded(async() => {
             lastMousePos = { x: e.clientX, y: e.clientY };
         });
 
-        // Функция получения РАДИУСА кисти (диаметр / 2)
+
+
+        // === ИСПРАВЛЕННАЯ ФУНКЦИЯ: Всегда читает актуальное значение со слайдера ===
         function getBrushRadius() {
+            const input = targetElement.querySelector("input[aria-label='Brush radius']");
+            if (input && input.value) {
+                const val = parseFloat(input.value);
+                if (Number.isFinite(val) && val > 0) {
+                    cachedDiameter = val; // Обновляем кэш на всякий случай
+                    return val / 2;
+                }
+            }
+            // Если слайдер скрыт или значение некорректно, используем кэш
             return cachedDiameter / 2;
         }
 
