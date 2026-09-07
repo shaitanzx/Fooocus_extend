@@ -434,19 +434,19 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     decoded_latent = None
 
     target_unet.model_options['conditioning_modifiers'] = []
-    original_patches = copy.deepcopy(target_unet.patches)
-    original_model_options = copy.deepcopy(target_unet.model_options)
+    # original_patches = copy.deepcopy(target_unet.patches)
+    # original_model_options = copy.deepcopy(target_unet.model_options)
 
 
-    # === ИЗМЕРЕНИЕ ПАМЯТИ ===
-    patches_size = get_structure_memory_size(original_patches)
-    options_size = get_structure_memory_size(original_model_options)
-    total_size = patches_size + options_size
+    # # === ИЗМЕРЕНИЕ ПАМЯТИ ===
+    # patches_size = get_structure_memory_size(original_patches)
+    # options_size = get_structure_memory_size(original_model_options)
+    # total_size = patches_size + options_size
     
-    print(f'[Memory] original_patches: {format_bytes(patches_size)}')
-    print(f'[Memory] original_model_options: {format_bytes(options_size)}')
-    print(f'[Memory] TOTAL backup size: {format_bytes(total_size)}')
-    # ==========================
+    # print(f'[Memory] original_patches: {format_bytes(patches_size)}')
+    # print(f'[Memory] original_model_options: {format_bytes(options_size)}')
+    # print(f'[Memory] TOTAL backup size: {format_bytes(total_size)}')
+    # # ==========================
 
 
 
