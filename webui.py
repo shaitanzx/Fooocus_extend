@@ -321,7 +321,7 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 
     if mode == modules.flags.inpaint_option_detail:
         return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),
+            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False)
             gr.Dataset.update(visible=True, samples=modules.config.example_inpaint_prompts),
             False, 'None', 0.5, 0.0
         ]
@@ -331,13 +331,13 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 
     if mode == modules.flags.inpaint_option_modify:
         return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),
+            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False)
             gr.Dataset.update(visible=False, samples=modules.config.example_inpaint_prompts),
             True, inpaint_engine_version, 1.0, 0.0
         ]
 
     return [
-        gr.update(visible=False, value=''), gr.update(visible=True),
+        gr.update(visible=False, value=''), gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),
         gr.Dataset.update(visible=False, samples=modules.config.example_inpaint_prompts),
         False, inpaint_engine_version, 1.0, 0.618
     ]
@@ -499,11 +499,12 @@ with shared.gradio_root:
                                 inpaint_advanced_masking_checkbox = gr.Checkbox(label='Enable Advanced Masking Features', value=modules.config.default_inpaint_advanced_masking_checkbox)
                                 inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.config.default_inpaint_method, label='Method')
                                 inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
-                                with gr.Column():
-                                    outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom', 'Resolution'], value=[], label='Outpaint Direction')
-                                with gr.Column():
-                                    outpaint_width = gr.Slider(label="outpaint width",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
-                                    outpaint_heighth = gr.Slider(label="outpaint height",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
+                                with gr.Row():
+                                    with gr.Column():
+                                        outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom', 'Resolution'], value=[], label='Outpaint Direction')
+                                    with gr.Column():
+                                        outpaint_width = gr.Slider(label="outpaint width",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
+                                        outpaint_heighth = gr.Slider(label="outpaint height",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
                                 
                                 example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
                                                                      label='Additional Prompt Quick List',
@@ -1875,7 +1876,7 @@ with shared.gradio_root:
         adv_trans.change(show_viewtrans, inputs=adv_trans, outputs=[viewstrans])
 
         inpaint_mode.change(inpaint_mode_change, inputs=[inpaint_mode, inpaint_engine_state], outputs=[
-            inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
+            inpaint_additional_prompt, outpaint_selections,outpaint_width,outpaint_heighth, example_inpaint_prompts,
             inpaint_disable_initial_latent, inpaint_engine,
             inpaint_strength, inpaint_respective_field
         ], show_progress=False, queue=False)
