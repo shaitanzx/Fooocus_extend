@@ -507,14 +507,15 @@ with shared.gradio_root:
                                 outpaint_width = gr.Slider(label="outpaint width",minimum=0,maximum=2048,step=1,value=0,interactive=True,visible=False)
                                 outpaint_heighth = gr.Slider(label="outpaint height",minimum=0,maximum=2048,step=1,value=0,interactive=True,visible=False)
                                 def outpaint_resolution_value(image):
+                                    image = image.get('image')
                                     height, width = image.shape[:2]
                                     return gr.update(minimum=width, value=width), gr.update(minimum=height, value=height)
                                 def outpaint_resolution_selector(value):
                                     if 'Resolution' in value:
                                         return gr.update(visible=True,interactive=True),gr.update(visible=True,interactive=True)
                                     return gr.update(visible=False,interactive=True),gr.update(visible=False,interactive=True)
-                                inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth])    
-                                outpaint_selections.select(fn=outpaint_resolution_selector,inputs=outpaint_selections,outputs=[outpaint_width,outpaint_heighth])
+                                inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth],show_progress=False, queue=False)    
+                                outpaint_selections.select(fn=outpaint_resolution_selector,inputs=outpaint_selections,outputs=[outpaint_width,outpaint_heighth],show_progress=False, queue=False)
                                 gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Documentation</a>')
                                 example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
 
