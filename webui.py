@@ -503,9 +503,9 @@ with shared.gradio_root:
                                 with gr.Row():
                                     with gr.Column():
                                         outpaint_width = gr.Slider(label="outpaint width",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
-                                        outpaint_width_min = gr.Textbox(value='')
+                                        outpaint_width_min = gr.Textbox(value='',visible=False)
                                         outpaint_heighth = gr.Slider(label="outpaint height",minimum=0,maximum=2048,step=2,value=1024,interactive=True,visible=True)
-                                        outpaint_heighth_min = gr.Textbox(value='')
+                                        outpaint_heighth_min = gr.Textbox(value='',visible=False)
                                     with gr.Column():
                                         outpaint_shift_width = gr.Slider(label="outpaint shift width",minimum=0,maximum=0,step=1,value=0,interactive=True,visible=True)
                                         outpaint_shift_heighth = gr.Slider(label="outpaint shift height",minimum=0,maximum=0,step=1,value=0,interactive=True,visible=True)
