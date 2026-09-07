@@ -347,6 +347,45 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
 
+import sys
+
+def get_structure_memory_size(obj, seen=None):
+    """
+    Рекурсивно вычисляет реальный размер памяти, занимаемый структурой 
+    (dict, list, tuple, torch.Tensor и другими объектами).
+    Возвращает размер в байтах.
+    """
+    if seen is None:
+        seen = set()
+    
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0  # Избегаем бесконечного цикла при циклических ссылках
+    seen.add(obj_id)
+    
+    size = sys.getsizeof(obj)  # Базовый размер Python-объекта
+    
+    if isinstance(obj, torch.Tensor):
+        # Реальный размер тензора = размер одного элемента * количество элементов
+        size = obj.element_size() * obj.nelement()
+    elif isinstance(obj, dict):
+        size += sum(get_structure_memory_size(k, seen) + get_structure_memory_size(v, seen) 
+                    for k, v in obj.items())
+    elif isinstance(obj, (list, tuple, set, frozenset)):
+        size += sum(get_structure_memory_size(v, seen) for v in obj)
+    
+    return size
+
+
+def format_bytes(size_bytes):
+    """Форматирует байты в читаемый вид (KB, MB, GB)."""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024.0:
+            return f"{size_bytes:.2f} {unit}"
+        size_bytes /= 1024.0
+    return f"{size_bytes:.2f} TB"
+
+
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
@@ -398,6 +437,16 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     original_patches = copy.deepcopy(target_unet.patches)
     original_model_options = copy.deepcopy(target_unet.model_options)
 
+
+    # === ИЗМЕРЕНИЕ ПАМЯТИ ===
+    patches_size = get_structure_memory_size(original_patches)
+    options_size = get_structure_memory_size(original_model_options)
+    total_size = patches_size + options_size
+    
+    print(f'[Memory] original_patches: {format_bytes(patches_size)}')
+    print(f'[Memory] original_model_options: {format_bytes(options_size)}')
+    print(f'[Memory] TOTAL backup size: {format_bytes(total_size)}')
+    # ==========================
 
 
 
