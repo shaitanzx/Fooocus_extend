@@ -147,9 +147,14 @@ onUiLoaded(async() => {
         function handleEraserDown(e) {
             if (!isEraserMode || e.button !== 0) return;
 
-            // === ИСПРАВЛЕНИЕ: Разрешаем клики по элементам управления UI ===
-            // Если клик был по кнопке, инпуту, слайдеру или их дочерним элементам, 
-            // мы не блокируем событие, чтобы Gradio мог его нормально обработать.
+            // === ИСПРАВЛЕНИЕ: Игнорируем клики ТОЛЬКО по настоящим элементам управления ===
+            const tag = e.target.tagName.toLowerCase();
+            const isUIControl = tag === 'button' || tag === 'input' || tag === 'select' || tag === 'label' || e.target.closest('button, input, select');
+            
+            if (isUIControl) {
+                // Позволяем Gradio обработать клик по кнопке отмены, очистки или слайдеру
+                return; 
+            }
 
            
             const maskCanvas = targetElement.querySelector('canvas[key="mask"]');
