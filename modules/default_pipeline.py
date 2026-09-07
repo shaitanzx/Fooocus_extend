@@ -443,7 +443,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
 
     _lbw_state = {
-        "baseline_patches": copy.deepcopy(target_unet.patches),
         "active_names": set(),
         "logged_steps": set()
     }
@@ -472,7 +471,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             if hasattr(patcher, 'unpatch_model'):
                 patcher.unpatch_model()
 
-            patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
+            patcher.patches = move_tensors_to_device(copy.deepcopy(original_patches), model_device)
 
             for cfg in desired_loras:
                 filename = cfg[0]
