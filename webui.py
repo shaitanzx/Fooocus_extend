@@ -527,7 +527,7 @@ with shared.gradio_root:
                                 #         return gr.update(visible=True,interactive=True),gr.update(visible=True,interactive=True)
                                 #     return gr.update(visible=False,interactive=True),gr.update(visible=False,interactive=True)
                                 outpaint_width.release(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
-                                outpaint_heighth.release(outpaint_shiftingheighth, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
+                                outpaint_heighth.release(outpaint_shifting_width, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
                                 inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth,outpaint_width_min,outpaint_heighth_min],show_progress=False, queue=False)    
                                 # outpaint_selections.select(fn=outpaint_resolution_selector,inputs=outpaint_selections,outputs=[outpaint_width,outpaint_heighth],show_progress=False, queue=False)
                                 gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Documentation</a>')
