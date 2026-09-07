@@ -348,7 +348,6 @@ layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer
 os.makedirs(layer_model_root, exist_ok=True)
 
 def move_tensors_to_device(obj, device):
-    """Рекурсивно перемещает все torch.Tensor в сложной структуре (dict, list, tuple) на указанное устройство."""
     if isinstance(obj, torch.Tensor):
         return obj.to(device)
     elif isinstance(obj, dict):
@@ -358,7 +357,6 @@ def move_tensors_to_device(obj, device):
     elif isinstance(obj, tuple):
         return tuple(move_tensors_to_device(v, device) for v in obj)
     else:
-        # Функции, строки, числа и другие объекты возвращаются без изменений
         return obj
 @torch.no_grad()
 @torch.inference_mode()
@@ -409,15 +407,10 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     target_unet.model_options['conditioning_modifiers'] = []
     
-    # Определяем устройство модели (обычно cuda)
     main_device = next(target_unet.model.parameters()).device
     
-    # Сохраняем оригинальное состояние, но сразу переносим тензоры в RAM (CPU)
     original_patches = move_tensors_to_device(copy.deepcopy(target_unet.patches), 'cpu')
     original_model_options = move_tensors_to_device(copy.deepcopy(target_unet.model_options), 'cpu')
-
-
-
 
     if p.enable_instant:
         instantid_model, control_net = None, None
@@ -719,14 +712,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
         images.append(maska)
 
-    # Восстанавливаем оригинальное состояние
-    # Переносим патчи обратно на устройство модели, чтобы она работала корректно
     target_unet.patches = move_tensors_to_device(original_patches, main_device)
-    
-    # model_options обычно не содержит тяжелых тензоров, но для безопасности применяем ту же логику
     target_unet.model_options = move_tensors_to_device(original_model_options, main_device)
-    
-    # Явно удаляем локальные ссылки, чтобы сборщик мусора мог освободить RAM
     del original_patches, original_model_options
 
     if p.enable_instant:
