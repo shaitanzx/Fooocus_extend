@@ -473,60 +473,60 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
 
 
-    _lbw_state = {
-        "baseline_patches": copy.deepcopy(target_unet.patches),
-        "active_names": set(),
-        "logged_steps": set()
-    }
+    # _lbw_state = {
+    #     "baseline_patches": copy.deepcopy(target_unet.patches),
+    #     "active_names": set(),
+    #     "logged_steps": set()
+    # }
 
-    def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-        tensor_cache = model_options.get("_lbw_tensor_cache", {})
-        step_ranges  = model_options.get("_lbw_step_ranges", {})
-        slot_map     = model_options.get("_lbw_slot_map", {})
+    # def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+    #     tensor_cache = model_options.get("_lbw_tensor_cache", {})
+    #     step_ranges  = model_options.get("_lbw_step_ranges", {})
+    #     slot_map     = model_options.get("_lbw_slot_map", {})
 
-        patcher = model if hasattr(model, 'add_patches') else target_unet
+    #     patcher = model if hasattr(model, 'add_patches') else target_unet
 
-        current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
-        current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
+    #     current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+    #     current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
 
-        desired_names = set()
-        desired_loras = []
-        for cfg in step_ranges.values():
-            start, stop = cfg[5], cfg[6]
-            if current_step >= start and (stop is None or current_step <= stop):
-                desired_names.add(cfg[0])
-                desired_loras.append(cfg)
+    #     desired_names = set()
+    #     desired_loras = []
+    #     for cfg in step_ranges.values():
+    #         start, stop = cfg[5], cfg[6]
+    #         if current_step >= start and (stop is None or current_step <= stop):
+    #             desired_names.add(cfg[0])
+    #             desired_loras.append(cfg)
 
-        if desired_names != _lbw_state["active_names"]:
-            _lbw_state["active_names"] = desired_names
+    #     if desired_names != _lbw_state["active_names"]:
+    #         _lbw_state["active_names"] = desired_names
 
-            if hasattr(patcher, 'unpatch_model'):
-                patcher.unpatch_model()
+    #         if hasattr(patcher, 'unpatch_model'):
+    #             patcher.unpatch_model()
 
-            patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
+    #         patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
 
-            for cfg in desired_loras:
-                filename = cfg[0]
-                te_weight = cfg[1]
-                unet_weight = cfg[2]
-                lbw_preset  = cfg[3]
-                lbwe_preset = cfg[4]
+    #         for cfg in desired_loras:
+    #             filename = cfg[0]
+    #             te_weight = cfg[1]
+    #             unet_weight = cfg[2]
+    #             lbw_preset  = cfg[3]
+    #             lbwe_preset = cfg[4]
 
-                u_patch, c_patch = tensor_cache.get(filename, (None, None))
+    #             u_patch, c_patch = tensor_cache.get(filename, (None, None))
 
-                if u_patch:
-                    apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map, lbwe_preset)
+    #             if u_patch:
+    #                 apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map, lbwe_preset)
 
-                if c_patch:
-                    patcher.add_patches(c_patch, te_weight)
+    #             if c_patch:
+    #                 patcher.add_patches(c_patch, te_weight)
 
-            try:
-                patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
-            except Exception as e:
-                action = f"PATCH_ERR: {str(e)[:30]}"
+    #         try:
+    #             patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
+    #         except Exception as e:
+    #             action = f"PATCH_ERR: {str(e)[:30]}"
 
-        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
-    #target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
+    #     return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    # target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
     if transper != "None":
 
         print(f'[Transparency] {transper}')
@@ -750,13 +750,10 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         images[0] = png
 
         images.append(maska)
-    print('1111111111111111111111111111111111')
-    target_unet.patches = copy.deepcopy(original_patches)
-    print('222222222222222222222222222222222')
-    target_unet.model_options = copy.deepcopy(original_model_options)
-    print('3333333333333333333333333333333333')
-    del original_patches, original_model_options
-    print('4444444444444444444444444444444444444444')
+
+    # target_unet.patches = copy.deepcopy(original_patches)
+    # target_unet.model_options = copy.deepcopy(original_model_options)
+    # del original_patches, original_model_options
     if p.enable_instant:
         for cond in [positive_cond, negative_cond]:
             for item in cond:
@@ -767,12 +764,9 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         negative_cond = copy.deepcopy(original_ncond)
         del original_pcond, original_ncond
         del instantid_model, control_net
-    print('555555555555555555555555555555555555555555555')
-    gc.collect()
-    print('66666666666666666666666666666666666666666666')
-    torch.cuda.empty_cache()
-    print('777777777777777777777777777777777777777777')
-    torch.cuda.ipc_collect()
-    print('88888888888888888888888888888888888888888888')
+
+    # gc.collect()
+    # torch.cuda.empty_cache()
+    # torch.cuda.ipc_collect()
 
     return images
