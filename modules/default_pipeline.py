@@ -526,7 +526,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                 action = f"PATCH_ERR: {str(e)[:30]}"
 
         return model, x, timestep, uncond, cond, cond_scale, model_options, seed
-    target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
+    #target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
     if transper != "None":
 
         print(f'[Transparency] {transper}')
