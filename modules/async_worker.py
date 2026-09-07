@@ -67,6 +67,17 @@ class AsyncTask:
         self.uov_method = args.pop()
         self.uov_input_image = args.pop()
         self.outpaint_selections = args.pop()
+
+        
+        self.outpaint_width = args.pop()
+        self.outpaint_shift_width = args.pop()
+        self.outpaint_heighth = args.pop()
+        self.outpaint_shift_heighth = args.pop()
+
+
+
+
+
         self.inpaint_input_image = args.pop()
         self.inpaint_additional_prompt = args.pop()
         self.inpaint_mask_image_upload = args.pop()

@@ -1916,7 +1916,8 @@ with shared.gradio_root:
         ctrls += [base_model, refiner_model, refiner_switch] + lora_ctrls
         ctrls += [input_image_checkbox, current_tab]
         ctrls += [uov_method, uov_input_image]
-        ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
+        ctrls += [outpaint_selections, outpaint_width, outpaint_shift_width, outpaint_heighth, outpaint_shift_heighth] 
+        ctrls += [inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
         ctrls += [disable_preview, disable_intermediate_results, disable_seed_increment, black_out_nsfw]
         ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, type_cfg, rescale_cfg, adaptive_cfg, clip_skip]
         ctrls += [sampler_name, scheduler_name, vae_name]
