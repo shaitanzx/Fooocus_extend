@@ -321,7 +321,7 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 
     if mode == modules.flags.inpaint_option_detail:
         return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False)
+            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False),
             gr.Dataset.update(visible=True, samples=modules.config.example_inpaint_prompts),
             False, 'None', 0.5, 0.0
         ]
@@ -331,7 +331,7 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 
     if mode == modules.flags.inpaint_option_modify:
         return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False)
+            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False),
             gr.Dataset.update(visible=False, samples=modules.config.example_inpaint_prompts),
             True, inpaint_engine_version, 1.0, 0.0
         ]
