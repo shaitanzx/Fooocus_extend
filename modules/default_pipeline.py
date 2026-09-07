@@ -471,7 +471,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             if hasattr(patcher, 'unpatch_model'):
                 patcher.unpatch_model()
 
-            patcher.patches = move_tensors_to_device(copy.deepcopy(original_patches), model_device)
+            patcher.patches = move_tensors_to_device(copy.deepcopy(original_patches), main_device)
 
             for cfg in desired_loras:
                 filename = cfg[0]
