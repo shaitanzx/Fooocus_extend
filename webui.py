@@ -1885,7 +1885,7 @@ with shared.gradio_root:
         default_inpaint_ctrls = [inpaint_mode, inpaint_disable_initial_latent, inpaint_engine, inpaint_strength, inpaint_respective_field]
         for mode, disable_initial_latent, engine, strength, respective_field in [default_inpaint_ctrls] + enhance_inpaint_update_ctrls:
             shared.gradio_root.load(inpaint_mode_change, inputs=[mode, inpaint_engine_state], outputs=[
-                inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts, disable_initial_latent,
+                inpaint_additional_prompt, outpaint_selections, outpaint_width, outpaint_heighth, example_inpaint_prompts, disable_initial_latent,
                 engine, strength, respective_field
             ], show_progress=False, queue=False)
 
