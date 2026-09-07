@@ -347,45 +347,19 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
 
-import sys
-
-def get_structure_memory_size(obj, seen=None):
-    """
-    Рекурсивно вычисляет реальный размер памяти, занимаемый структурой 
-    (dict, list, tuple, torch.Tensor и другими объектами).
-    Возвращает размер в байтах.
-    """
-    if seen is None:
-        seen = set()
-    
-    obj_id = id(obj)
-    if obj_id in seen:
-        return 0  # Избегаем бесконечного цикла при циклических ссылках
-    seen.add(obj_id)
-    
-    size = sys.getsizeof(obj)  # Базовый размер Python-объекта
-    
+def move_tensors_to_device(obj, device):
+    """Рекурсивно перемещает все torch.Tensor в сложной структуре (dict, list, tuple) на указанное устройство."""
     if isinstance(obj, torch.Tensor):
-        # Реальный размер тензора = размер одного элемента * количество элементов
-        size = obj.element_size() * obj.nelement()
+        return obj.to(device)
     elif isinstance(obj, dict):
-        size += sum(get_structure_memory_size(k, seen) + get_structure_memory_size(v, seen) 
-                    for k, v in obj.items())
-    elif isinstance(obj, (list, tuple, set, frozenset)):
-        size += sum(get_structure_memory_size(v, seen) for v in obj)
-    
-    return size
-
-
-def format_bytes(size_bytes):
-    """Форматирует байты в читаемый вид (KB, MB, GB)."""
-    for unit in ['B', 'KB', 'MB', 'GB']:
-        if size_bytes < 1024.0:
-            return f"{size_bytes:.2f} {unit}"
-        size_bytes /= 1024.0
-    return f"{size_bytes:.2f} TB"
-
-
+        return {k: move_tensors_to_device(v, device) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [move_tensors_to_device(v, device) for v in obj]
+    elif isinstance(obj, tuple):
+        return tuple(move_tensors_to_device(v, device) for v in obj)
+    else:
+        # Функции, строки, числа и другие объекты возвращаются без изменений
+        return obj
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
@@ -434,19 +408,14 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     decoded_latent = None
 
     target_unet.model_options['conditioning_modifiers'] = []
-    # original_patches = copy.deepcopy(target_unet.patches)
-    # original_model_options = copy.deepcopy(target_unet.model_options)
-
-
-    # # === ИЗМЕРЕНИЕ ПАМЯТИ ===
-    # patches_size = get_structure_memory_size(original_patches)
-    # options_size = get_structure_memory_size(original_model_options)
-    # total_size = patches_size + options_size
     
-    # print(f'[Memory] original_patches: {format_bytes(patches_size)}')
-    # print(f'[Memory] original_model_options: {format_bytes(options_size)}')
-    # print(f'[Memory] TOTAL backup size: {format_bytes(total_size)}')
-    # # ==========================
+    # Определяем устройство модели (обычно cuda)
+    main_device = next(target_unet.model.parameters()).device
+    
+    # Сохраняем оригинальное состояние, но сразу переносим тензоры в RAM (CPU)
+    original_patches = move_tensors_to_device(copy.deepcopy(target_unet.patches), 'cpu')
+    original_model_options = move_tensors_to_device(copy.deepcopy(target_unet.model_options), 'cpu')
+
 
 
 
@@ -473,60 +442,60 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
 
 
-    # _lbw_state = {
-    #     "baseline_patches": copy.deepcopy(target_unet.patches),
-    #     "active_names": set(),
-    #     "logged_steps": set()
-    # }
+    _lbw_state = {
+        "baseline_patches": copy.deepcopy(target_unet.patches),
+        "active_names": set(),
+        "logged_steps": set()
+    }
 
-    # def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
-    #     tensor_cache = model_options.get("_lbw_tensor_cache", {})
-    #     step_ranges  = model_options.get("_lbw_step_ranges", {})
-    #     slot_map     = model_options.get("_lbw_slot_map", {})
+    def lbw_conditioning_modifier(model, x, timestep, uncond, cond, cond_scale, model_options, seed):
+        tensor_cache = model_options.get("_lbw_tensor_cache", {})
+        step_ranges  = model_options.get("_lbw_step_ranges", {})
+        slot_map     = model_options.get("_lbw_slot_map", {})
 
-    #     patcher = model if hasattr(model, 'add_patches') else target_unet
+        patcher = model if hasattr(model, 'add_patches') else target_unet
 
-    #     current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
-    #     current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
+        current_sigma = timestep[0].item() if hasattr(timestep, '__getitem__') else timestep.item()
+        current_step = next((i for i, s in enumerate(minmax_sigmas) if s.item() <= current_sigma + 1e-5), 0)
 
-    #     desired_names = set()
-    #     desired_loras = []
-    #     for cfg in step_ranges.values():
-    #         start, stop = cfg[5], cfg[6]
-    #         if current_step >= start and (stop is None or current_step <= stop):
-    #             desired_names.add(cfg[0])
-    #             desired_loras.append(cfg)
+        desired_names = set()
+        desired_loras = []
+        for cfg in step_ranges.values():
+            start, stop = cfg[5], cfg[6]
+            if current_step >= start and (stop is None or current_step <= stop):
+                desired_names.add(cfg[0])
+                desired_loras.append(cfg)
 
-    #     if desired_names != _lbw_state["active_names"]:
-    #         _lbw_state["active_names"] = desired_names
+        if desired_names != _lbw_state["active_names"]:
+            _lbw_state["active_names"] = desired_names
 
-    #         if hasattr(patcher, 'unpatch_model'):
-    #             patcher.unpatch_model()
+            if hasattr(patcher, 'unpatch_model'):
+                patcher.unpatch_model()
 
-    #         patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
+            patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
 
-    #         for cfg in desired_loras:
-    #             filename = cfg[0]
-    #             te_weight = cfg[1]
-    #             unet_weight = cfg[2]
-    #             lbw_preset  = cfg[3]
-    #             lbwe_preset = cfg[4]
+            for cfg in desired_loras:
+                filename = cfg[0]
+                te_weight = cfg[1]
+                unet_weight = cfg[2]
+                lbw_preset  = cfg[3]
+                lbwe_preset = cfg[4]
 
-    #             u_patch, c_patch = tensor_cache.get(filename, (None, None))
+                u_patch, c_patch = tensor_cache.get(filename, (None, None))
 
-    #             if u_patch:
-    #                 apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map, lbwe_preset)
+                if u_patch:
+                    apply_lbw_patches(patcher, u_patch, unet_weight, lbw_preset, slot_map, lbwe_preset)
 
-    #             if c_patch:
-    #                 patcher.add_patches(c_patch, te_weight)
+                if c_patch:
+                    patcher.add_patches(c_patch, te_weight)
 
-    #         try:
-    #             patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
-    #         except Exception as e:
-    #             action = f"PATCH_ERR: {str(e)[:30]}"
+            try:
+                patcher.patch_model(device_to=getattr(patcher, 'current_device', None))
+            except Exception as e:
+                action = f"PATCH_ERR: {str(e)[:30]}"
 
-    #     return model, x, timestep, uncond, cond, cond_scale, model_options, seed
-    # target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
+        return model, x, timestep, uncond, cond, cond_scale, model_options, seed
+    target_unet.add_conditioning_modifier(lbw_conditioning_modifier)
     if transper != "None":
 
         print(f'[Transparency] {transper}')
@@ -751,9 +720,16 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
         images.append(maska)
 
-    # target_unet.patches = copy.deepcopy(original_patches)
-    # target_unet.model_options = copy.deepcopy(original_model_options)
-    # del original_patches, original_model_options
+    # Восстанавливаем оригинальное состояние
+    # Переносим патчи обратно на устройство модели, чтобы она работала корректно
+    target_unet.patches = move_tensors_to_device(original_patches, model_device)
+    
+    # model_options обычно не содержит тяжелых тензоров, но для безопасности применяем ту же логику
+    target_unet.model_options = move_tensors_to_device(original_model_options, model_device)
+    
+    # Явно удаляем локальные ссылки, чтобы сборщик мусора мог освободить RAM
+    del original_patches, original_model_options
+    
     if p.enable_instant:
         for cond in [positive_cond, negative_cond]:
             for item in cond:
@@ -765,8 +741,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         del original_pcond, original_ncond
         del instantid_model, control_net
 
-    # gc.collect()
-    # torch.cuda.empty_cache()
-    # torch.cuda.ipc_collect()
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
 
     return images
