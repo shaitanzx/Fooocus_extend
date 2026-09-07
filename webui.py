@@ -518,7 +518,7 @@ with shared.gradio_root:
                                     image = image.get('image')
                                     height, width = image.shape[:2]
                                     return gr.update(minimum=width, value=width), gr.update(minimum=height, value=height)
-                                def outpaint_shifting_width(resolution,resolution_min)
+                                def outpaint_shifting_width(resolution,resolution_min):
                                     shift_max=resolution-int(resolution_min)
                                     shift_center=int(shift_max/2)
                                     return gr.update(maximum=shift_max,value=shift_center)
