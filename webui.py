@@ -501,23 +501,16 @@ with shared.gradio_root:
                                 inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
                                 outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom', 'Resolution'], value=[], label='Outpaint Direction')
                                 with gr.Row(visible=False) as outpaint_res:
-                                
-                                    with gr.Row():
-                                        # === СТОЛБЕЦ 1: РАЗРЕШЕНИЕ ===
-                                        with gr.Column(scale=1):
-                                            outpaint_width = gr.Slider(label="outpaint width", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
-                                            outpaint_width_min = gr.Textbox(value='', visible=False)
-                                            outpaint_heighth = gr.Slider(label="outpaint height", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
-                                            outpaint_heighth_min = gr.Textbox(value='', visible=False)
-                                        
-                                        # === СТОЛБЕЦ 2: СДВИГ ===
-                                        with gr.Column(scale=1):
-                                            with gr.Row():
-                                                outpaint_shift_width = gr.Slider(label="outpaint shift width", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
-                                                width_center = gr.Button("⊙", interactive=True, scale=1, min_width=40)
-                                            with gr.Row():
-                                                outpaint_shift_heighth = gr.Slider(label="outpaint shift height", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
-                                                height_center = gr.Button("⊙", interactive=True, scale=1, min_width=40)                        
+                                    with gr.Group():
+                                        with gr.Row():
+                                            with gr.Column():
+                                                outpaint_width = gr.Slider(label="outpaint width", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
+                                                outpaint_width_min = gr.Textbox(value='', visible=False)
+                                                outpaint_heighth = gr.Slider(label="outpaint height", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
+                                                outpaint_heighth_min = gr.Textbox(value='', visible=False)
+                                            with gr.Column():
+                                                    outpaint_shift_width = gr.Slider(label="outpaint shift width", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
+                                                    outpaint_shift_heighth = gr.Slider(label="outpaint shift height", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
                                 example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
                                                                      label='Additional Prompt Quick List',
                                                                      components=[inpaint_additional_prompt],
@@ -534,10 +527,7 @@ with shared.gradio_root:
                                     if 'Resolution' in value:
                                         return gr.update(visible=True)
                                     return gr.update(visible=False)
-                                
 
-                                width_center.click(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
-                                height_center.click(outpaint_shifting_width, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
                                 outpaint_width.release(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
                                 outpaint_heighth.release(outpaint_shifting_width, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
                                 inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth,outpaint_width_min,outpaint_heighth_min,outpaint_shift_heighth, outpaint_shift_width],show_progress=True, queue=False)    
