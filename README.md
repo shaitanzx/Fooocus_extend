@@ -51,6 +51,8 @@ Let's look at everything in order.
 24. Add beta57 scheduler
 25. Add DoRA models support
 26. embedding tag constructor
+27. Eraser tool when drawing masks in Inpaint and Clear modes
+28. Resolution mode in Outpaint
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -580,6 +582,24 @@ You can load external upscalers using civatai helper. The upscaler is based on t
 <img width="834" height="204" alt="image" src="https://github.com/user-attachments/assets/08402616-a20c-442d-8224-bfcec9db39ba" />
 
 You can return it to its original location through the Advanced settings - Settings - Show negative prompt textbox in main page
+
+**Eraser tool when drawing masks in Inpaint and Clear modes**
+
+<img width="422" height="298" alt="image" src="https://github.com/user-attachments/assets/685a0978-f53c-4722-970a-7014e1b6b6f7" />
+
+
+You can now erase an incorrectly drawn mask. To switch to Eraser mode, press E while the cursor is over the image; the border around the block will turn red. The color will revert to the standard one after exiting the mode.
+
+**Resolution mode in Outpaint**
+
+<img width="1234" height="390" alt="image" src="https://github.com/user-attachments/assets/e183eee2-e53d-476e-b371-74a5eaf0d286" />
+
+
+In addition to selecting the direction for image expansion, you can now specify a target resolution. To do this, select the "Resolution" option; the corresponding settings will appear when this mode is activated.
+outpaint width/height – target resolution
+outpaint shift width/height – offset of the original image relative to the new resolution (0 = left/top edge)
+
+When an image is loaded, the target resolution defaults to the image's own resolution. If you change the target resolution, the offset values ​​automatically center the original image within the new area. You can subsequently adjust these values ​​as desired.
 
 <table>
   <tr>
