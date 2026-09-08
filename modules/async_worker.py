@@ -955,34 +955,14 @@ def worker():
                 shift_x = async_task.outpaint_shift_width
                 shift_y = async_task.outpaint_shift_heighth
                 
-                # # Если ничего не изменилось — возвращаем оригинал без изменений
-                # if new_W == orig_W and new_H == orig_H and shift_x == 0 and shift_y == 0:
-                #     return inpaint_image, inpaint_mask
-                
-                # === ВЫЧИСЛЕНИЕ ПАДДИНГА ===
-                # shift_x = сколько пикселей добавить СЛЕВА от оригинала
-                # (new_W - orig_W - shift_x) = сколько пикселей добавить СПРАВА
                 pad_left = shift_x
                 pad_right = new_W - W - shift_x
                 pad_top = shift_y
                 pad_bottom = new_H - H - shift_y
                 
-                # === РАСШИРЕНИЕ ИЗОБРАЖЕНИЯ ===
-                # Краевые пиксели (edge mode) создают плавное продолжение картинки
-                inpaint_image = np.pad(
-                    inpaint_image,
-                    [[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]],
-                    mode='edge'
-                )
-                
-                # === РАСШИРЕНИЕ МАСКИ ===
-                # Новые области заполняются белым (255 = область для генерации)
-                inpaint_mask = np.pad(
-                    inpaint_mask,
-                    [[pad_top, pad_bottom], [pad_left, pad_right]],
-                    mode='constant',
-                    constant_values=255
-                ) 
+                inpaint_image = np.pad(inpaint_image,[[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]],mode='edge')
+
+                inpaint_mask = np.pad(inpaint_mask,[[pad_top, pad_bottom], [pad_left, pad_right]],mode='constant',constant_values=255) 
 
             else:                   
                 if 'top' in async_task.outpaint_selections:
