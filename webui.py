@@ -514,10 +514,10 @@ with shared.gradio_root:
                                             with gr.Column(scale=1):
                                                 with gr.Row():
                                                     outpaint_shift_width = gr.Slider(label="outpaint shift width", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
-                                                    width_center = gr.Button("⊙", interactive=True, size="sm", scale=1, min_width=40)
+                                                    width_center = gr.Button("⊙", interactive=True, scale=1, min_width=40)
                                                 with gr.Row():
                                                     outpaint_shift_heighth = gr.Slider(label="outpaint shift height", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
-                                                    height_center = gr.Button("⊙", interactive=True, size="sm", scale=1, min_width=40)                        
+                                                    height_center = gr.Button("⊙", interactive=True, scale=1, min_width=40)                        
                                 example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
                                                                      label='Additional Prompt Quick List',
                                                                      components=[inpaint_additional_prompt],
@@ -536,8 +536,8 @@ with shared.gradio_root:
                                     return gr.update(visible=False)
                                 
 
-                                width_center.click(lambda x: gr.update(value=int(x / 2)),inputs=[outpaint_width],outputs=[outpaint_shift_width],queue=False,show_progress=False)
-                                height_center.click(lambda x: gr.update(value=int(x / 2)),inputs=[outpaint_heighth],outputs=[outpaint_shift_heighth],queue=False,show_progress=False)
+                                width_center.click(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
+                                height_center.click(outpaint_shifting_width, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
                                 outpaint_width.release(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
                                 outpaint_heighth.release(outpaint_shifting_width, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
                                 inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth,outpaint_width_min,outpaint_heighth_min,outpaint_shift_heighth, outpaint_shift_width],show_progress=True, queue=False)    
