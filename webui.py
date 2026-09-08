@@ -510,10 +510,10 @@ with shared.gradio_root:
                                         with gr.Column():
                                             with gr.Row():
                                                 outpaint_shift_width = gr.Slider(label="outpaint shift width",minimum=0,maximum=0,step=1,value=0,interactive=True,visible=True)
-                                                width_center = gr.Button("⊙", scale=1, interactive=True)
+                                                width_center = gr.Button("⊙", interactive=True)
                                             with gr.Row():
                                                 outpaint_shift_heighth = gr.Slider(label="outpaint shift height",minimum=0,maximum=0,step=1,value=0,interactive=True,visible=True)
-                                                height_center = gr.Button("⊙", scale=1, interactive=True)                        
+                                                height_center = gr.Button("⊙", interactive=True)                        
                                 example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
                                                                      label='Additional Prompt Quick List',
                                                                      components=[inpaint_additional_prompt],
