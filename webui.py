@@ -524,7 +524,7 @@ with shared.gradio_root:
                                     return gr.update(maximum=shift_max,value=shift_center)
                                 def outpaint_resolution_selector(value):
                                     print ('aaaaaaaaaaaaaaaaaaaaaaaa',value)
-                                     if 'Resolution' in value:
+                                     if 'resolution' in value:
                                          return gr.update(visible=True)
                                      return gr.update(visible=False)
                                 outpaint_width.release(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
