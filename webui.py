@@ -501,16 +501,15 @@ with shared.gradio_root:
                                 inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
                                 outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom', 'Resolution'], value=[], label='Outpaint Direction')
                                 with gr.Row(visible=False) as outpaint_res:
-                                    with gr.Group():
-                                        with gr.Row():
-                                            with gr.Column():
-                                                outpaint_width = gr.Slider(label="outpaint width", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
-                                                outpaint_width_min = gr.Textbox(value='', visible=False)
-                                                outpaint_heighth = gr.Slider(label="outpaint height", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
-                                                outpaint_heighth_min = gr.Textbox(value='', visible=False)
-                                            with gr.Column():
-                                                    outpaint_shift_width = gr.Slider(label="outpaint shift width", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
-                                                    outpaint_shift_heighth = gr.Slider(label="outpaint shift height", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
+
+                                    with gr.Column():
+                                        outpaint_width = gr.Slider(label="outpaint width", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
+                                        outpaint_width_min = gr.Textbox(value='', visible=False)
+                                        outpaint_heighth = gr.Slider(label="outpaint height", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
+                                        outpaint_heighth_min = gr.Textbox(value='', visible=False)
+                                    with gr.Column():
+                                        outpaint_shift_width = gr.Slider(label="outpaint shift width", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
+                                        outpaint_shift_heighth = gr.Slider(label="outpaint shift height", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
                                 example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
                                                                      label='Additional Prompt Quick List',
                                                                      components=[inpaint_additional_prompt],
