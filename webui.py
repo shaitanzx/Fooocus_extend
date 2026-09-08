@@ -523,6 +523,7 @@ with shared.gradio_root:
                                     shift_center=int(shift_max/2)
                                     return gr.update(maximum=shift_max,value=shift_center)
                                 def outpaint_resolution_selector(value):
+                                    print ('aaaaaaaaaaaaaaaaaaaaaaaa',value)
                                      if 'Resolution' in value:
                                          return gr.update(visible=True)
                                      return gr.update(visible=False)
