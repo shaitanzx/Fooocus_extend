@@ -321,7 +321,7 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 
     if mode == modules.flags.inpaint_option_detail:
         return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),
+            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False),
             gr.Dataset.update(visible=True, samples=modules.config.example_inpaint_prompts),
             False, 'None', 0.5, 0.0
         ]
@@ -331,13 +331,13 @@ def inpaint_mode_change(mode, inpaint_engine_version):
 
     if mode == modules.flags.inpaint_option_modify:
         return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),
+            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False),
             gr.Dataset.update(visible=False, samples=modules.config.example_inpaint_prompts),
             True, inpaint_engine_version, 1.0, 0.0
         ]
 
     return [
-        gr.update(visible=False, value=''), gr.update(visible=True),
+        gr.update(visible=False, value=''), gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),
         gr.Dataset.update(visible=False, samples=modules.config.example_inpaint_prompts),
         False, inpaint_engine_version, 1.0, 0.618
     ]
@@ -494,15 +494,43 @@ with shared.gradio_root:
                     with gr.Tab(label='Inpaint or Outpaint', id='inpaint_tab') as inpaint_tab:
                         with gr.Row():
                             with gr.Column():
-                                inpaint_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", brush_radius=100, elem_id='inpaint_canvas', show_label=False)
+                                inpaint_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
+                                                              
                                 inpaint_advanced_masking_checkbox = gr.Checkbox(label='Enable Advanced Masking Features', value=modules.config.default_inpaint_advanced_masking_checkbox)
                                 inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.config.default_inpaint_method, label='Method')
                                 inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
-                                outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom'], value=[], label='Outpaint Direction')
+                                outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom', 'Resolution'], value=[], label='Outpaint Direction')
+                                with gr.Row(visible=False) as outpaint_res:
+
+                                    with gr.Column():
+                                        outpaint_width = gr.Slider(label="outpaint width", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
+                                        outpaint_width_min = gr.Textbox(value='', visible=False)
+                                        outpaint_heighth = gr.Slider(label="outpaint height", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
+                                        outpaint_heighth_min = gr.Textbox(value='', visible=False)
+                                    with gr.Column():
+                                        outpaint_shift_width = gr.Slider(label="outpaint shift width", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
+                                        outpaint_shift_heighth = gr.Slider(label="outpaint shift height", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
                                 example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
                                                                      label='Additional Prompt Quick List',
                                                                      components=[inpaint_additional_prompt],
                                                                      visible=False)
+                                def outpaint_resolution_value(image):
+                                    image = image.get('image')
+                                    height, width = image.shape[:2]
+                                    return gr.update(minimum=width, value=width), gr.update(minimum=height, value=height),gr.update(value=width), gr.update(value=height),gr.update(maximum=0, value=0),gr.update(maximum=0, value=0)
+                                def outpaint_shifting_width(resolution,resolution_min):
+                                    shift_max=resolution-int(resolution_min)
+                                    shift_center=int(shift_max/2)
+                                    return gr.update(maximum=shift_max,value=shift_center)
+                                def outpaint_resolution_selector(value):
+                                    if 'Resolution' in value:
+                                        return gr.update(visible=True)
+                                    return gr.update(visible=False)
+
+                                outpaint_width.release(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
+                                outpaint_heighth.release(outpaint_shifting_width, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
+                                inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth,outpaint_width_min,outpaint_heighth_min,outpaint_shift_heighth, outpaint_shift_width],show_progress=True, queue=False)    
+                                outpaint_selections.change(fn=outpaint_resolution_selector,inputs=outpaint_selections,outputs=outpaint_res,show_progress=False, queue=False)
                                 gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Documentation</a>')
                                 example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
 
@@ -1859,7 +1887,7 @@ with shared.gradio_root:
         adv_trans.change(show_viewtrans, inputs=adv_trans, outputs=[viewstrans])
 
         inpaint_mode.change(inpaint_mode_change, inputs=[inpaint_mode, inpaint_engine_state], outputs=[
-            inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
+            inpaint_additional_prompt, outpaint_selections,outpaint_width,outpaint_heighth, example_inpaint_prompts,
             inpaint_disable_initial_latent, inpaint_engine,
             inpaint_strength, inpaint_respective_field
         ], show_progress=False, queue=False)
@@ -1868,7 +1896,7 @@ with shared.gradio_root:
         default_inpaint_ctrls = [inpaint_mode, inpaint_disable_initial_latent, inpaint_engine, inpaint_strength, inpaint_respective_field]
         for mode, disable_initial_latent, engine, strength, respective_field in [default_inpaint_ctrls] + enhance_inpaint_update_ctrls:
             shared.gradio_root.load(inpaint_mode_change, inputs=[mode, inpaint_engine_state], outputs=[
-                inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts, disable_initial_latent,
+                inpaint_additional_prompt, outpaint_selections, outpaint_width, outpaint_heighth, example_inpaint_prompts, disable_initial_latent,
                 engine, strength, respective_field
             ], show_progress=False, queue=False)
 
@@ -1889,7 +1917,8 @@ with shared.gradio_root:
         ctrls += [base_model, refiner_model, refiner_switch] + lora_ctrls
         ctrls += [input_image_checkbox, current_tab]
         ctrls += [uov_method, uov_input_image]
-        ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
+        ctrls += [outpaint_selections, outpaint_width, outpaint_shift_width, outpaint_heighth, outpaint_shift_heighth] 
+        ctrls += [inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
         ctrls += [disable_preview, disable_intermediate_results, disable_seed_increment, black_out_nsfw]
         ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, type_cfg, rescale_cfg, adaptive_cfg, clip_skip]
         ctrls += [sampler_name, scheduler_name, vae_name]

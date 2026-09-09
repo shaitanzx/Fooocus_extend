@@ -347,6 +347,17 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
 os.makedirs(layer_model_root, exist_ok=True)
 
+def move_tensors_to_device(obj, device):
+    if isinstance(obj, torch.Tensor):
+        return obj.to(device)
+    elif isinstance(obj, dict):
+        return {k: move_tensors_to_device(v, device) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [move_tensors_to_device(v, device) for v in obj]
+    elif isinstance(obj, tuple):
+        return tuple(move_tensors_to_device(v, device) for v in obj)
+    else:
+        return obj
 @torch.no_grad()
 @torch.inference_mode()
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
@@ -395,11 +406,11 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     decoded_latent = None
 
     target_unet.model_options['conditioning_modifiers'] = []
-    original_patches = copy.deepcopy(target_unet.patches)
-    original_model_options = copy.deepcopy(target_unet.model_options)
-
-
-
+    
+    main_device = next(target_unet.model.parameters()).device
+    
+    original_patches = move_tensors_to_device(copy.deepcopy(target_unet.patches), 'cpu')
+    original_model_options = move_tensors_to_device(copy.deepcopy(target_unet.model_options), 'cpu')
 
     if p.enable_instant:
         instantid_model, control_net = None, None
@@ -425,7 +436,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
 
     _lbw_state = {
-        "baseline_patches": copy.deepcopy(target_unet.patches),
         "active_names": set(),
         "logged_steps": set()
     }
@@ -454,7 +464,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             if hasattr(patcher, 'unpatch_model'):
                 patcher.unpatch_model()
 
-            patcher.patches = copy.deepcopy(_lbw_state["baseline_patches"])
+            patcher.patches = move_tensors_to_device(copy.deepcopy(original_patches), main_device)
 
             for cfg in desired_loras:
                 filename = cfg[0]
@@ -702,9 +712,10 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
         images.append(maska)
 
-    target_unet.patches = copy.deepcopy(original_patches)
-    target_unet.model_options = copy.deepcopy(original_model_options)
+    target_unet.patches = move_tensors_to_device(original_patches, main_device)
+    target_unet.model_options = move_tensors_to_device(original_model_options, main_device)
     del original_patches, original_model_options
+
     if p.enable_instant:
         for cond in [positive_cond, negative_cond]:
             for item in cond:
