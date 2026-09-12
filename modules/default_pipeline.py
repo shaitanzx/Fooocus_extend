@@ -85,7 +85,33 @@ def refresh_base_model(name, vae_name=None):
     if model_base.filename == filename and model_base.vae_filename == vae_filename:
         return
 
+
+    print(
+    "[ZIMAGE-DEBUG] about to load base model",
+    "filename=", filename,
+    "vae_filename=", vae_filename,
+    flush=True,
+    )
+
+
+
     model_base = core.load_model(filename, vae_filename)
+
+
+
+    print(
+    "[ZIMAGE-DEBUG] base model loaded",
+    "model_type=", type(model_base.unet.model).__name__
+    if model_base.unet is not None else None,
+    "clip_type=", type(model_base.clip).__name__
+    if model_base.clip is not None else None,
+    "vae_type=", type(model_base.vae).__name__
+    if model_base.vae is not None else None,
+    flush=True,
+    )
+
+
+
     print(f'Base model loaded: {model_base.filename}')
     print(f'VAE loaded: {model_base.vae_filename}')
     return
@@ -249,6 +275,18 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
                        base_model_additional_loras=None, use_synthetic_refiner=False, vae_name=None):
     global final_unet, final_clip, final_vae, final_refiner_unet, final_refiner_vae, final_expansion
 
+    print(
+    "[ZIMAGE-DEBUG] refresh_everything",
+    "base_model=", base_model_name,
+    "refiner_model=", refiner_model_name,
+    "loras=", loras,
+    flush=True,
+    )
+
+
+
+
+
     final_unet = None
     final_clip = None
     final_vae = None
@@ -363,6 +401,15 @@ def move_tensors_to_device(obj, device):
 def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, height, image_seed, callback, sampler_name, 
         scheduler_name, latent=None, denoise=1.0, tiled=False, cfg_scale=7.0, refiner_swap_method='joint', 
         disable_preview=False,tile_x=False,tile_y=False,transper='None'):
+    print(
+    "process_diffusion",
+    width=width,
+    height=height,
+    steps=steps,
+    sampler=sampler_name,
+    scheduler=scheduler_name,
+    denoise=denoise,
+    )
 
     target_unet, target_vae, target_refiner_unet, target_refiner_vae, target_clip \
         = final_unet, final_vae, final_refiner_unet, final_refiner_vae, final_clip
