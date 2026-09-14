@@ -1,4 +1,4 @@
-"""Local model and runtime management for Fooocus image-to-video (Cross-platform)."""
+"""Local model and runtime management for Fooocus image-to-video (Cross-platform with detailed logging)."""
 
 from __future__ import annotations
 
@@ -8,36 +8,46 @@ import multiprocessing
 import os
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import venv
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
 import modules.config
 
 # ==============================================================================
+# 🔧 ЛОГИРОВАНИЕ
+# ==============================================================================
+def _log(message: str) -> None:
+    """Выводит сообщение с меткой времени и префиксом модуля."""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] [VideoModels] {message}", flush=True)
+
+# ==============================================================================
 # 🔧 КРОССПЛАТФОРМЕННАЯ ИНИЦИАЛИЗАЦИЯ ПУТЕЙ
 # ==============================================================================
-# Находим корневую папку Fooocus (на 1 уровень выше папки modules, где лежит этот файл).
-# Path(__file__).resolve() работает идентично и в Windows (C:\...), и в Colab (/content/...).
+_log("Инициализация модуля video_models...")
+
+# Находим корневую папку Fooocus (на 1 уровень выше папки modules)
 BASE_DIR = Path(__file__).resolve().parents[1]
+_log(f"Определена базовая директория проекта: {BASE_DIR}")
 
-# Принудительно задаем абсолютные пути относительно корня проекта.
-# В Windows: C:\Fooocus\video_runtime
-# В Colab:    /content/Fooocus/video_runtime (или где лежит ваш клон репозитория)
+# Принудительно задаем абсолютные пути
 modules.config.path_video_runtime = str(BASE_DIR / "video_runtime")
+_log(f"Путь к video_runtime установлен в: {modules.config.path_video_runtime}")
 
-# Если путь к моделям еще не задан в config, задаем его стандартно
 if not getattr(modules.config, 'path_video_models', None):
     modules.config.path_video_models = str(BASE_DIR / "models" / "video_models")
+    _log(f"Путь к video_models не был задан, установлен по умолчанию: {modules.config.path_video_models}")
 else:
-    # Если задан, но является относительным, делаем его абсолютным относительно BASE_DIR
     orig_path = Path(modules.config.path_video_models)
     if not orig_path.is_absolute():
         modules.config.path_video_models = str(BASE_DIR / orig_path)
-# ==============================================================================
+    _log(f"Итоговый путь к video_models: {modules.config.path_video_models}")
 
 
 GIB = 1024 ** 3
@@ -68,13 +78,7 @@ VIDEO_MODELS = {
         repo_id="Wan-AI/Wan2.2-TI2V-5B-Diffusers",
         folder_name="wan2.2-ti2v-5b",
         download_bytes=34_000_000_000,
-        required_paths=(
-            MODEL_INDEX,
-            "transformer",
-            "text_encoder",
-            "tokenizer",
-            "vae",
-        ),
+        required_paths=(MODEL_INDEX, "transformer", "text_encoder", "tokenizer", "vae"),
     ),
     "h3": VideoModel(
         key="h3",
@@ -82,49 +86,47 @@ VIDEO_MODELS = {
         repo_id="MiniMaxAI/MiniMax-H3",
         folder_name="minimax-h3-fl2va",
         download_bytes=150_000_000_000,
-        required_paths=(
-            "modular_model_index.json",
-            "transformer",
-            "text_encoder",
-            "tokenizer",
-            "processor",
-            "vae",
-            "audio_vae",
-            "scheduler",
-            "audio_scheduler",
-        ),
-        allow_patterns=(
-            MODEL_INDEX,
-            "modular_model_index.json",
-            "transformer/**",
-            "text_encoder/**",
-            "tokenizer/**",
-            "processor/**",
-            "vae/**",
-            "audio_vae/**",
-            "scheduler/**",
-            "audio_scheduler/**",
-        ),
+        required_paths=("modular_model_index.json", "transformer", "text_encoder", "tokenizer", "processor", "vae", "audio_vae", "scheduler", "audio_scheduler"),
+        allow_patterns=(MODEL_INDEX, "modular_model_index.json", "transformer/**", "text_encoder/**", "tokenizer/**", "processor/**", "vae/**", "audio_vae/**", "scheduler/**", "audio_scheduler/**"),
         experimental=True,
     ),
 }
 
 
 def get_model(model_key: str) -> VideoModel:
+    _log(f"Запрос модели по ключу: '{model_key}'")
     try:
-        return VIDEO_MODELS[model_key]
+        model = VIDEO_MODELS[model_key]
+        _log(f"Модель найдена: {model.label}")
+        return model
     except KeyError as exc:
+        _log(f"ОШИБКА: Неизвестный ключ модели '{model_key}'")
         raise ValueError(f"Unknown video model: {model_key}") from exc
 
 
 def model_components_present(model_key: str) -> bool:
     model = get_model(model_key)
-    return all((model.path / relative_path).exists() for relative_path in model.required_paths)
+    _log(f"Проверка наличия компонентов для {model_key} в папке: {model.path}")
+    missing = [p for p in model.required_paths if not (model.path / p).exists()]
+    if missing:
+        _log(f"Отсутствуют компоненты: {missing}")
+        return False
+    _log("Все требуемые компоненты присутствуют.")
+    return True
 
 
 def model_is_ready(model_key: str) -> bool:
-    model = get_model(model_key)
-    return model_components_present(model_key) and (model.path / ".fooocus-complete").is_file()
+    _log(f"Проверка готовности модели: {model_key}")
+    components_ok = model_components_present(model_key)
+    marker_path = Path(modules.config.path_video_models) / get_model(model_key).folder_name / ".fooocus-complete"
+    marker_ok = marker_path.is_file()
+    
+    if components_ok and marker_ok:
+        _log(f"Модель {model_key} ПОЛНОСТЬЮ ГОТОВА к использованию.")
+        return True
+    else:
+        _log(f"Модель {model_key} НЕ ГОТОВА (компоненты: {components_ok}, маркер: {marker_ok}).")
+        return False
 
 
 def model_status(model_key: str) -> str:
@@ -137,116 +139,172 @@ def model_status(model_key: str) -> str:
 
 def runtime_python() -> Path:
     root = Path(modules.config.path_video_runtime)
-    # Ключевое кроссплатформенное условие:
-    if os.name == "nt":  # Windows
-        return root / "Scripts" / "python.exe"
-    else:                # Linux (Google Colab) / macOS
-        return root / "bin" / "python"
+    if os.name == "nt":
+        python_path = root / "Scripts" / "python.exe"
+        _log(f"Определена ОС Windows. Путь к Python в venv: {python_path}")
+    else:
+        python_path = root / "bin" / "python"
+        _log(f"Определена ОС Linux/macOS (Colab). Путь к Python в venv: {python_path}")
+    return python_path
 
 
 def _video_requirements() -> Path:
-    return Path(__file__).resolve().parents[1] / "requirements_video.txt"
+    req_path = Path(__file__).resolve().parents[1] / "requirements_video.txt"
+    _log(f"Поиск файла требований: {req_path}")
+    return req_path
 
 
 def _requirements_hash() -> str:
     req_file = _video_requirements()
     if not req_file.exists():
+        _log(f"ВНИМАНИЕ: Файл требований {req_file} не найден. Создается заглушка.")
         req_file.parent.mkdir(parents=True, exist_ok=True)
         req_file.write_text("torch\ndiffusers\n")
-    return hashlib.sha256(req_file.read_bytes()).hexdigest()
+    
+    file_hash = hashlib.sha256(req_file.read_bytes()).hexdigest()
+    _log(f"Хеш файла требований: {file_hash[:16]}...")
+    return file_hash
 
 
 def runtime_is_ready() -> bool:
+    _log("Проверка готовности видео-окружения (runtime)...")
     python = runtime_python()
     if not python.is_file():
+        _log(f"-> Не готово: исполняемый файл Python не найден по пути {python}")
         return False
+        
     marker = Path(modules.config.path_video_runtime) / ".fooocus-video-runtime"
     if not marker.is_file():
+        _log(f"-> Не готово: маркер окружения не найден по пути {marker}")
         return False
+        
     try:
         state = json.loads(marker.read_text(encoding="utf-8"))
-        return state.get("requirements_hash") == _requirements_hash()
-    except (OSError, ValueError):
+        current_hash = _requirements_hash()
+        saved_hash = state.get("requirements_hash")
+        
+        if saved_hash == current_hash:
+            _log("-> Готово: хеш требований совпадает, окружение актуально.")
+            return True
+        else:
+            _log(f"-> Не готово: хеш требований изменился (был: {saved_hash[:8]}..., стал: {current_hash[:8]}...). Требуется переустановка.")
+            return False
+    except (OSError, ValueError) as e:
+        _log(f"-> Не готово: ошибка чтения маркера ({e}).")
         return False
 
 
 def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
-    """Create the isolated environment and install pinned video dependencies."""
+    _log("=== НАЧАЛО setup_runtime ===")
     report = progress or (lambda _message: None)
     runtime_dir = Path(modules.config.path_video_runtime)
     requirements = _video_requirements()
     
+    _log(f"Создание директорий (если отсутствуют): {runtime_dir.parent} и {runtime_dir}")
     runtime_dir.parent.mkdir(parents=True, exist_ok=True)
     runtime_dir.mkdir(parents=True, exist_ok=True)
 
     if runtime_is_ready():
-        report("✅ Video environment is already up to date.")
+        msg = "✅ Video environment is already up to date."
+        _log(msg)
+        report(msg)
         return runtime_python()
 
     if not runtime_python().exists():
-        report("🛠️ Creating isolated video environment (this may take a minute)...")
+        msg = "🛠️ Creating isolated video environment (this may take a minute)..."
+        _log(msg)
+        report(msg)
+        _log("Запуск venv.EnvBuilder...")
         venv.EnvBuilder(with_pip=True, clear=False).create(runtime_dir)
+        _log("venv успешно создан.")
 
-    report("📦 Installing video runtime packages …")
+    msg = "📦 Installing video runtime packages …"
+    _log(msg)
+    report(msg)
+    
+    python_exe = str(runtime_python())
+    cmd = [python_exe, "-m", "pip", "install", "--disable-pip-version-check", "-r", str(requirements)]
+    _log(f"Выполнение команды: {' '.join(cmd)}")
+    
     process = subprocess.Popen(
-        [
-            str(runtime_python()),
-            "-m",
-            "pip",
-            "install",
-            "--disable-pip-version-check",
-            "-r",
-            str(requirements),
-        ],
+        cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
     )
+    
     if process.stdout is None:
+        _log("КРИТИЧЕСКАЯ ОШИБКА: Не удалось получить stdout от процесса установки.")
         raise RuntimeError("Could not read output from the video environment installer.")
+        
+    _log("--- Начало вывода pip install ---")
     for line in process.stdout:
         line = line.strip()
         if line:
+            # Дублируем вывод и в лог, и в UI callback
+            _log(f"  [pip] {line}")
             report(line)
+    _log("--- Конец вывода pip install ---")
+    
     return_code = process.wait()
+    _log(f"Процесс pip install завершен с кодом возврата: {return_code}")
+    
     if return_code != 0:
+        _log("КРИТИЧЕСКАЯ ОШИБКА: Установка пакетов завершилась неудачно.")
         raise RuntimeError(f"Video environment setup failed with exit code {return_code}.")
 
+    _log("Запись маркера успешной установки окружения...")
     marker = runtime_dir / ".fooocus-video-runtime"
     marker.write_text(
-        json.dumps(
-            {
-                "requirements": str(requirements),
-                "requirements_hash": _requirements_hash(),
-                "created_at": time.time(),
-            }
-        ),
+        json.dumps({
+            "requirements": str(requirements),
+            "requirements_hash": _requirements_hash(),
+            "created_at": time.time(),
+        }),
         encoding="utf-8",
     )
-    report("✅ Video environment is ready.")
+    
+    msg = "✅ Video environment is ready."
+    _log(msg)
+    report(msg)
+    _log("=== ЗАВЕРШЕНИЕ setup_runtime ===")
     return runtime_python()
 
 
 def _download_model_process(model_key: str, status_file: str) -> None:
+    _log(f"[Дочерний процесс] Начата загрузка модели: {model_key}")
     model = get_model(model_key)
     status_path = Path(status_file)
     try:
         from huggingface_hub import snapshot_download
 
+        _log(f"[Дочерний процесс] Запись статуса: Connecting...")
         status_path.write_text("Connecting to Hugging Face …", encoding="utf-8")
+        
+        _log(f"[Дочерний процесс] Создание директории модели: {model.path}")
         model.path.mkdir(parents=True, exist_ok=True)
+        
+        _log(f"[Дочерний процесс] Вызов snapshot_download для {model.repo_id}...")
         snapshot_download(
             repo_id=model.repo_id,
             local_dir=str(model.path),
             allow_patterns=list(model.allow_patterns) if model.allow_patterns else None,
             resume_download=True,
         )
+        
+        _log(f"[Дочерний процесс] Загрузка завершена. Проверка компонентов...")
         if not model_components_present(model_key):
+            _log("[Дочерний процесс] ОШИБКА: После загрузки отсутствуют требуемые компоненты.")
             raise RuntimeError("Download completed but required model components are missing.")
+            
+        _log(f"[Дочерний процесс] Запись маркера .fooocus-complete...")
         (model.path / ".fooocus-complete").write_text(model.repo_id, encoding="utf-8")
         status_path.write_text("complete", encoding="utf-8")
+        _log(f"[Дочерний процесс] Загрузка модели {model_key} успешно завершена.")
+        
     except Exception as exc:
+        _log(f"[Дочерний процесс] КРИТИЧЕСКАЯ ОШИБКА при загрузке: {exc}")
         status_path.write_text(f"error: {exc}", encoding="utf-8")
         raise
 
@@ -261,24 +319,33 @@ class DownloadManager:
         self._model_key: str | None = None
 
     def start(self, model_key: str) -> None:
+        _log(f"DownloadManager.start() вызван для модели: {model_key}")
         with self._lock:
             if self._process is not None and self._process.is_alive():
+                _log("ОШИБКА: Попытка запустить загрузку, когда другая уже активна.")
                 raise RuntimeError("Another video model download is already running.")
+                
             model = get_model(model_key)
             free_bytes = shutil.disk_usage(model.path.parent).free
-            remaining = max(0, model.download_bytes - directory_size(model.path))
+            current_size = directory_size(model.path)
+            remaining = max(0, model.download_bytes - current_size)
+            
+            _log(f"Проверка диска: Свободно={free_bytes/GIB:.1f} GiB, Уже скачано={current_size/GIB:.1f} GiB, Осталось={remaining/GIB:.1f} GiB")
+            
             if free_bytes < remaining + 2 * GIB:
+                _log("ОШИБКА: Недостаточно свободного места на диске.")
                 raise RuntimeError(
                     f"Not enough free disk space. Need about {remaining / GIB:.1f} GiB "
                     f"plus 2 GiB working space. (Current free: {free_bytes / GIB:.1f} GiB)"
                 )
+                
             status_dir = Path(modules.config.path_video_runtime)
             status_dir.mkdir(parents=True, exist_ok=True)
             self._status_file = status_dir / "download-status.txt"
             self._status_file.write_text(f"Starting {model.label} download …", encoding="utf-8")
             self._model_key = model_key
             
-            # "spawn" обязателен для корректной работы с CUDA и в Windows, и в Linux
+            _log("Запуск дочернего процесса загрузки через multiprocessing (context='spawn')...")
             ctx = multiprocessing.get_context("spawn")
             self._process = ctx.Process(
                 target=_download_model_process,
@@ -286,17 +353,22 @@ class DownloadManager:
                 daemon=True,
             )
             self._process.start()
+            _log(f"Дочерний процесс запущен с PID: {self._process.pid}")
 
     def cancel(self) -> bool:
+        _log("DownloadManager.cancel() вызван.")
         with self._lock:
             if self._process is None or not self._process.is_alive():
+                _log("Отмена не требуется: процесс не запущен или уже завершен.")
                 return False
+                
+            _log(f"Отправка сигнала terminate() процессу с PID {self._process.pid}...")
             self._process.terminate()
             self._process.join(timeout=5)
+            
             if self._status_file:
-                self._status_file.write_text(
-                    "Cancelled. Run Download again to resume.", encoding="utf-8"
-                )
+                self._status_file.write_text("Cancelled. Run Download again to resume.", encoding="utf-8")
+                _log("Статус изменен на 'Cancelled'.")
             return True
 
     def status(self) -> tuple[bool, str]:
@@ -306,6 +378,7 @@ class DownloadManager:
                 message = self._status_file.read_text(encoding="utf-8")
             else:
                 message = "Idle"
+                
             if running and self._model_key:
                 model = get_model(self._model_key)
                 downloaded = directory_size(model.path)
@@ -314,9 +387,12 @@ class DownloadManager:
                     f"{message}\nDownloaded about {downloaded / GIB:.1f} of "
                     f"{model.download_bytes / GIB:.1f} GiB ({percent}%)."
                 )
+                
             if self._process is not None and not running and self._process.exitcode:
                 if not message.startswith("error:") and not message.startswith("Cancelled"):
                     message = f"Download stopped with exit code {self._process.exitcode}."
+                    _log(f"ВНИМАНИЕ: Процесс загрузки завершился с кодом {self._process.exitcode}")
+                    
             return running, message
 
 
@@ -327,6 +403,7 @@ def directory_size(path: Path) -> int:
     if not path.exists():
         return 0
     total = 0
+    # Логируем только для больших директорий или при первом вызове, чтобы не спамить
     for root, _dirs, files in os.walk(path):
         for file_name in files:
             try:
@@ -337,12 +414,14 @@ def directory_size(path: Path) -> int:
 
 
 def hardware_info() -> dict[str, float | str | bool]:
+    _log("Сбор информации о железе (hardware_info)...")
     total_ram = 0
     try:
         import psutil
         total_ram = psutil.virtual_memory().total
-    except Exception:
-        pass
+        _log(f"  System RAM: {total_ram / GIB:.1f} GB")
+    except Exception as e:
+        _log(f"  Не удалось получить RAM (psutil): {e}")
 
     vram = 0
     cuda = False
@@ -350,14 +429,18 @@ def hardware_info() -> dict[str, float | str | bool]:
     try:
         import torch
         cuda = torch.cuda.is_available()
+        _log(f"  CUDA доступен: {cuda}")
         if cuda:
             properties = torch.cuda.get_device_properties(0)
             vram = properties.total_memory
             device_name = properties.name
-    except Exception:
-        pass
+            _log(f"  GPU: {device_name} ({vram / GIB:.1f} GB VRAM)")
+    except Exception as e:
+        _log(f"  Не удалось получить информацию о GPU (torch): {e}")
 
     free_disk = shutil.disk_usage(modules.config.path_video_models).free
+    _log(f"  Свободно на диске (video_models): {free_disk / GIB:.1f} GB")
+    
     return {
         "cuda": cuda,
         "device_name": device_name,
@@ -369,37 +452,56 @@ def hardware_info() -> dict[str, float | str | bool]:
 
 def resolve_hardware_profile(requested: str = "Auto") -> str:
     if requested != "Auto":
+        _log(f"Используется запрошенный профиль железа: {requested}")
         return requested
-    vram = float(hardware_info()["vram_gb"])
+        
+    info = hardware_info()
+    vram = float(info["vram_gb"])
     if vram < 10:
-        return "8 GB"
-    if vram < 14:
-        return "12 GB"
-    return "16 GB+"
+        profile = "8 GB"
+    elif vram < 14:
+        profile = "12 GB"
+    else:
+        profile = "16 GB+"
+        
+    _log(f"Автоопределение профиля железа по VRAM ({vram} GB): выбран профиль '{profile}'")
+    return profile
 
 
 def preflight(model_key: str, profile: str = "Auto") -> tuple[bool, str]:
+    _log(f"=== ЗАПУСК PREFLIGHT для модели: {model_key}, профиль: {profile} ===")
     model = get_model(model_key)
     info = hardware_info()
     selected = resolve_hardware_profile(profile)
+    
     if not info["cuda"]:
+        _log("PREFLIGHT ЗАВЕРШЕН С ОШИБКОЙ: Отсутствует CUDA.")
         return False, "A CUDA-capable NVIDIA GPU is required for local video generation."
 
     if model_key == "h3":
+        _log("Выполнение специфичных проверок для H3...")
         if not h3_authorized():
+            _log("PREFLIGHT ЗАВЕРШЕН С ОШИБКОЙ: H3 не авторизован.")
             return False, "Confirm your MiniMax H3 authorization before downloading or running H3."
+            
         warnings = []
         if float(info["vram_gb"]) < 12:
             warnings.append("H3 is unsupported below 12 GB VRAM")
         if float(info["ram_gb"]) < 75:
             warnings.append("H3 offload normally needs about 75 GB system RAM")
+            
         remaining_gib = max(0, model.download_bytes - directory_size(model.path)) / GIB
         if float(info["free_disk_gb"]) < remaining_gib:
-            warnings.append(f"the official FL2VA files need about {remaining_gib:.0f} GiB more free disk")
+            warnings.append(f"Need about {remaining_gib:.0f} GiB more free disk")
+            
         if warnings:
+            _log(f"PREFLIGHT ЗАВЕРШЕН С ПРЕДУПРЕЖДЕНИЯМИ: {'; '.join(warnings)}")
             return False, "; ".join(warnings) + "."
+            
+        _log("PREFLIGHT ДЛЯ H3 ПРОШЕЛ УСПЕШНО.")
         return True, "H3 experimental preflight passed."
 
+    _log(f"PREFLIGHT ДЛЯ WAN ПРОШЕЛ УСПЕШНО (Профиль: {selected}).")
     if selected == "8 GB":
         return True, "8 GB mode uses reduced frames/resolution and maximum CPU offload; generation is slow."
     return True, f"Wan profile: {selected}."
@@ -410,22 +512,28 @@ def _h3_marker() -> Path:
 
 
 def set_h3_authorized(authorized: bool) -> None:
+    _log(f"Вызов set_h3_authorized({authorized})")
     marker = _h3_marker()
     if authorized:
+        _log("Запись маркера авторизации H3...")
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text(
             json.dumps({"acknowledged": True, "license": H3_LICENSE_URL}),
             encoding="utf-8",
         )
     elif marker.exists():
+        _log("Удаление маркера авторизации H3...")
         marker.unlink()
 
 
 def h3_authorized() -> bool:
-    return _h3_marker().is_file()
+    is_auth = _h3_marker().is_file()
+    _log(f"Проверка авторизации H3: {'ДА' if is_auth else 'НЕТ'}")
+    return is_auth
 
 
 def model_status_summary() -> str:
+    _log("Генерация сводки статуса моделей (model_status_summary)...")
     info = hardware_info()
     lines = [
         f"GPU: {info['device_name']} ({info['vram_gb']} GB VRAM)",
@@ -433,4 +541,6 @@ def model_status_summary() -> str:
         f"Wan: {model_status('wan')}",
         f"MiniMax H3: {model_status('h3')}",
     ]
-    return "\n".join(lines)
+    summary = "\n".join(lines)
+    _log("Сводка статуса:\n" + summary)
+    return summary
