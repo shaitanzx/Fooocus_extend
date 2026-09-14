@@ -204,6 +204,64 @@ def runtime_is_ready() -> bool:
         return False
 
 
+def _install_pip_via_get_pip(python_exe: Path) -> bool:
+    """Устанавливает pip через get-pip.py — работает даже без ensurepip."""
+    import urllib.request
+    import tempfile
+    
+    _log("Скачивание get-pip.py...")
+    get_pip_url = "https://bootstrap.pypa.io/get-pip.py"
+    
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+            urllib.request.urlretrieve(get_pip_url, tmp_path)
+        
+        _log(f"Запуск get-pip.py через {python_exe}...")
+        result = subprocess.run(
+            [str(python_exe), str(tmp_path), "--no-warn-script-location"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        
+        if result.returncode != 0:
+            _log(f"get-pip.py завершился с ошибкой:\nstdout: {result.stdout}\nstderr: {result.stderr}")
+            return False
+        
+        _log("pip успешно установлен через get-pip.py")
+        return True
+    except Exception as e:
+        _log(f"Ошибка при установке pip через get-pip.py: {e}")
+        return False
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
+
+
+def _try_system_python_fallback() -> Path | None:
+    """В Colab: проверяем, есть ли pip в системном Python."""
+    if "google.colab" not in sys.modules and "COLAB_GPU" not in os.environ:
+        return None
+    
+    _log("Colab-режим: проверяем системный Python как fallback...")
+    system_python = Path(sys.executable)
+    
+    # Проверяем, что pip доступен
+    result = subprocess.run(
+        [str(system_python), "-m", "pip", "--version"],
+        capture_output=True,
+        text=True,
+    )
+    
+    if result.returncode == 0:
+        _log(f"Системный pip найден: {result.stdout.strip()}")
+        return system_python
+    
+    _log("Системный pip недоступен.")
+    return None
+
+
 def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     _log("=== НАЧАЛО setup_runtime ===")
     report = progress or (lambda _message: None)
@@ -220,7 +278,7 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
         report(msg)
         return runtime_python()
 
-    # 🔧 ИСПРАВЛЕНИЕ: принудительно удаляем битый venv, если он есть
+    # Удаляем битый venv если есть
     python_exe = runtime_python()
     if python_exe.exists():
         _log(f"⚠️ Обнаружен неполный venv по пути {python_exe.parent}. Удаляем для пересоздания...")
@@ -228,42 +286,153 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
             shutil.rmtree(runtime_dir)
             _log("Старый venv удалён.")
         except Exception as e:
-            _log(f"Не удалось полностью удалить старый venv: {e}. Пробуем продолжить...")
+            _log(f"Не удалось полностью удалить старый venv: {e}.")
         runtime_dir.mkdir(parents=True, exist_ok=True)
 
-    # Создаём venv с clear=True для гарантии чистой установки
-    msg = "🛠️ Creating isolated video environment (this may take a minute)..."
+    # =====================================================================
+    # УРОВЕНЬ 1: Стандартный venv с pip
+    # =====================================================================
+    msg = "️ Creating isolated video environment (this may take a minute)..."
     _log(msg)
     report(msg)
     
-    _log("Запуск venv.EnvBuilder(with_pip=True, clear=True)...")
+    venv_created = False
+    pip_available = False
+    
+    _log("[Уровень 1] Попытка: venv.EnvBuilder(with_pip=True, clear=True)...")
     try:
         venv.EnvBuilder(with_pip=True, clear=True).create(runtime_dir)
+        venv_created = True
+        
+        # Проверяем, появился ли pip
+        pip_exe = python_exe.parent / ("pip.exe" if os.name == "nt" else "pip")
+        if pip_exe.exists():
+            pip_available = True
+            _log("[Уровень 1] УСПЕХ: venv создан с pip.")
+        else:
+            _log("[Уровень 1] venv создан, но pip отсутствует.")
     except Exception as e:
-        _log(f"Ошибка при создании venv: {e}. Пробуем альтернативный метод через ensurepip...")
-        # Запасной вариант для Colab
-        venv.EnvBuilder(with_pip=False, clear=True).create(runtime_dir)
-        _log("Запуск ensurepip для установки pip...")
-        subprocess.run([str(python_exe), "-m", "ensurepip", "--upgrade"], check=True)
-    
-    _log("venv успешно создан.")
-    
-    #  Дополнительная проверка: убеждаемся, что pip теперь есть
-    if os.name == "nt":
-        pip_exe = python_exe.parent / "pip.exe"
-    else:
-        pip_exe = python_exe.parent / "pip"
-    
-    if not pip_exe.exists():
-        _log(f"КРИТИЧЕСКАЯ ОШИБКА: pip не был установлен даже после пересоздания venv. Путь: {pip_exe}")
-        raise RuntimeError(f"Failed to install pip in venv at {runtime_dir}")
-    _log(f"pip найден по пути: {pip_exe}")
+        _log(f"[Уровень 1] ОШИБКА: {e}")
 
+    # =====================================================================
+    # УРОВЕНЬ 2: venv без pip + get-pip.py
+    # =====================================================================
+    if not pip_available:
+        _log("[Уровень 2] Попытка: venv без pip + установка через get-pip.py...")
+        try:
+            # Если venv не создался на уровне 1 — создаём без pip
+            if not venv_created:
+                venv.EnvBuilder(with_pip=False, clear=True).create(runtime_dir)
+                _log("venv создан без pip.")
+            
+            # Проверяем, что python в venv работает
+            test_result = subprocess.run(
+                [str(python_exe), "--version"],
+                capture_output=True,
+                text=True,
+            )
+            if test_result.returncode != 0:
+                _log(f"[Уровень 2] Python в venv не работает: {test_result.stderr}")
+                raise RuntimeError("venv python broken")
+            
+            _log(f"Python в venv: {test_result.stdout.strip()}")
+            
+            if _install_pip_via_get_pip(python_exe):
+                pip_available = True
+                _log("[Уровень 2] УСПЕХ: pip установлен через get-pip.py.")
+            else:
+                _log("[Уровень 2] ОШИБКА: get-pip.py не сработал.")
+        except Exception as e:
+            _log(f"[Уровень 2] ОШИБКА: {e}")
+
+    # =====================================================================
+    # УРОВЕНЬ 3: Colab fallback — используем системный Python
+    # =====================================================================
+    if not pip_available:
+        _log("[Уровень 3] Colab-fallback: пробуем системный Python...")
+        system_python = _try_system_python_fallback()
+        
+        if system_python:
+            _log("[Уровень 3] УСПЕХ: будем использовать системный Python.")
+            # Сохраняем путь для последующего использования
+            # (но НЕ перезаписываем runtime_python(), чтобы не сломать логику)
+            _log("ВНИМАНИЕ: используется системный Python без изоляции venv.")
+            _log("Это нормально для Colab, но может конфликтовать с зависимостями Fooocus.")
+            
+            # Устанавливаем requirements напрямую в системный Python
+            msg = "📦 Installing video runtime packages (system Python)…"
+            _log(msg)
+            report(msg)
+            
+            cmd = [str(system_python), "-m", "pip", "install", 
+                   "--disable-pip-version-check", "-r", str(requirements)]
+            _log(f"Выполнение команды: {' '.join(cmd)}")
+            
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            
+            if process.stdout is None:
+                raise RuntimeError("Could not read output from pip.")
+            
+            _log("--- Начало вывода pip install ---")
+            for line in process.stdout:
+                line = line.strip()
+                if line:
+                    _log(f"  [pip] {line}")
+                    report(line)
+            _log("--- Конец вывода pip install ---")
+            
+            return_code = process.wait()
+            _log(f"Процесс pip install завершен с кодом возврата: {return_code}")
+            
+            if return_code != 0:
+                _log("КРИТИЧЕСКАЯ ОШИБКА: Установка пакетов завершилась неудачно.")
+                raise RuntimeError(f"Video environment setup failed with exit code {return_code}.")
+            
+            # Создаём маркер, чтобы не повторять установку
+            marker = runtime_dir / ".fooocus-video-runtime"
+            marker.write_text(
+                json.dumps({
+                    "requirements": str(requirements),
+                    "requirements_hash": _requirements_hash(),
+                    "created_at": time.time(),
+                    "mode": "system_python_fallback",
+                }),
+                encoding="utf-8",
+            )
+            
+            msg = "✅ Video environment is ready (system Python fallback)."
+            _log(msg)
+            report(msg)
+            _log("=== ЗАВЕРШЕНИЕ setup_runtime ===")
+            return system_python
+        else:
+            _log("[Уровень 3] ОШИБКА: системный pip тоже недоступен.")
+
+    # =====================================================================
+    # ФИНАЛЬНАЯ ПРОВЕРКА
+    # =====================================================================
+    if not pip_available:
+        _log("КРИТИЧЕСКАЯ ОШИБКА: не удалось получить pip ни одним из трёх способов.")
+        raise RuntimeError(
+            f"Failed to set up pip in venv at {runtime_dir}. "
+            "Tried: standard venv, get-pip.py, system Python fallback."
+        )
+
+    # =====================================================================
+    # УСТАНОВКА REQUIREMENTS (для уровней 1 и 2)
+    # =====================================================================
     msg = "📦 Installing video runtime packages …"
     _log(msg)
     report(msg)
     
-    cmd = [str(python_exe), "-m", "pip", "install", "--disable-pip-version-check", "-r", str(requirements)]
+    cmd = [str(python_exe), "-m", "pip", "install", 
+           "--disable-pip-version-check", "-r", str(requirements)]
     _log(f"Выполнение команды: {' '.join(cmd)}")
     
     process = subprocess.Popen(
@@ -300,6 +469,7 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
             "requirements": str(requirements),
             "requirements_hash": _requirements_hash(),
             "created_at": time.time(),
+            "mode": "venv",
         }),
         encoding="utf-8",
     )
