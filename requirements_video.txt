@@ -6,7 +6,7 @@ torchao==0.13.0
 diffusers==0.40.0
 transformers==4.57.6
 accelerate==1.10.1
-huggingface-hub==0.34.4
+huggingface-hub==1.23.0
 safetensors==0.6.2
 sentencepiece==0.2.1
 protobuf==6.32.0
