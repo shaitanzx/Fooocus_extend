@@ -10,8 +10,60 @@ from modules.flags import OutputFormat
 from modules.meta_parser import MetadataParser, get_exif
 from modules.util import generate_temp_filename
 
+import html
+
 log_cache = {}
 
+def log_video(video_path: str, metadata: dict) -> str:
+    """Add a generated MP4 to Fooocus's private log and write JSON metadata."""
+    metadata_path = os.path.splitext(video_path)[0] + ".json"
+    with open(metadata_path, "w", encoding="utf-8") as metadata_file:
+        json.dump(metadata, metadata_file, ensure_ascii=False, indent=2)
+
+    if args_manager.args.disable_image_log:
+        return video_path
+
+    output_dir = os.path.dirname(video_path)
+    html_name = os.path.join(output_dir, "log.html")
+    only_name = os.path.basename(video_path)
+    date_string = os.path.basename(output_dir)
+    css_styles = (
+        "<style>"
+        "body { background-color:#121212; color:#E0E0E0; } "
+        "a { color:#BB86FC; } "
+        ".metadata { border-collapse:collapse; width:100%; } "
+        ".metadata td { border:1px solid #4d4d4d; padding:4px; } "
+        "video { height:auto; max-width:768px; }"
+        "</style>"
+    )
+    split = "<!--fooocus-log-split-->"
+    begin_part = (
+        f"<!DOCTYPE html><html><head><title>Fooocus Log {html.escape(date_string)}</title>"
+        f"{css_styles}</head><body><p>Fooocus Log {html.escape(date_string)} "
+        f"(private)</p>{split}\n"
+    )
+    end_part = f"\n{split}</body></html>"
+    middle_part = log_cache.get(html_name, "")
+    if not middle_part and os.path.exists(html_name):
+        existing = open(html_name, "r", encoding="utf-8").read().split(split)
+        middle_part = existing[1] if len(existing) == 3 else existing[0]
+
+    safe_name = html.escape(only_name, quote=True)
+    rows = "".join(
+        f"<tr><td>{html.escape(str(key))}</td><td>{html.escape(str(value))}</td></tr>"
+        for key, value in metadata.items()
+    )
+    item = (
+        f'<div class="video-container"><hr><a href="{safe_name}" target="_blank">{safe_name}</a>'
+        f'<br><video controls preload="metadata" src="{safe_name}"></video>'
+        f'<table class="metadata">{rows}</table></div>\n'
+    )
+    middle_part = item + middle_part
+    with open(html_name, "w", encoding="utf-8") as output:
+        output.write(begin_part + middle_part + end_part)
+    log_cache[html_name] = middle_part
+    print(f"Video generated with private log at: {html_name}")
+    return video_path
 
 def get_current_html_path(output_format=None):
     output_format = output_format if output_format else modules.config.default_output_format
