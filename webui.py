@@ -73,6 +73,140 @@ import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
 import extentions.omost.main as omost
 from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
+
+import queue
+import threading
+import modules.video_models as video_models
+import modules.video_worker as video_worker
+
+VIDEO_MODEL_LABELS = {
+    'Wan 2.2 TI2V 5B (recommended)': 'wan',
+    'MiniMax H3-Base FL2VA (experimental)': 'h3',
+}
+
+
+def get_video_task(image, video_prompt, model_label, hardware_profile, resolution, duration, seed):
+    model_key = VIDEO_MODEL_LABELS.get(model_label, 'wan')
+    return video_worker.VideoTask(
+        image=image,
+        prompt=video_prompt,
+        model=model_key,
+        hardware_profile=hardware_profile,
+        resolution=resolution,
+        duration=float(duration),
+        seed=int(seed),
+    )
+
+
+def video_generate_clicked(task: video_worker.VideoTask):
+    if task.image is None:
+        yield gr.update(visible=True, value=modules.html.make_progress_html(0, 'Choose an input image.')), \
+            gr.update(), 'Choose an input image before generating.'
+        return
+
+    video_worker.submit(task)
+    yield gr.update(visible=True, value=modules.html.make_progress_html(1, 'Waiting for video worker …')), \
+        gr.update(visible=False), 'Video task queued.'
+
+    finished = False
+    while not finished:
+        time.sleep(0.05)
+        while task.yields:
+            flag, product = task.yields.pop(0)
+            if flag == 'progress':
+                percentage, title = product
+                yield gr.update(visible=True, value=modules.html.make_progress_html(percentage, title)), \
+                    gr.update(), title
+            elif flag == 'finish':
+                yield gr.update(visible=False), gr.update(value=product, visible=True), \
+                    f'Video saved to {product}'
+                finished = True
+            elif flag in ('error', 'cancelled'):
+                yield gr.update(visible=False), gr.update(), str(product)
+                finished = True
+
+
+def stop_video_clicked(task):
+    if task is not None:
+        task.cancel()
+    return task, 'Stopping video generation …'
+
+
+def _setup_runtime_in_thread(messages, outcome):
+    try:
+        video_models.setup_runtime(lambda message: messages.put(message))
+        outcome['ready'] = True
+    except Exception as exc:
+        outcome['error'] = str(exc)
+    finally:
+        messages.put(None)
+
+
+def setup_and_download_video_model(model_label, hardware_profile, h3_authorization):
+    model_key = VIDEO_MODEL_LABELS.get(model_label, 'wan')
+    if model_key == 'h3':
+        video_models.set_h3_authorized(bool(h3_authorization))
+    allowed, message = video_models.preflight(model_key, hardware_profile)
+    if not allowed:
+        yield message
+        return
+
+    messages = queue.Queue()
+    outcome = {}
+    setup_thread = threading.Thread(
+        target=_setup_runtime_in_thread,
+        args=(messages, outcome),
+        daemon=True,
+    )
+    setup_thread.start()
+    while True:
+        update = messages.get()
+        if update is None:
+            break
+        yield update
+    if outcome.get('error'):
+        yield f"Video runtime setup failed: {outcome['error']}"
+        return
+
+    if video_models.model_is_ready(model_key):
+        yield video_models.model_status_summary()
+        return
+
+    try:
+        video_models.DOWNLOAD_MANAGER.start(model_key)
+    except Exception as exc:
+        yield f'Download could not start: {exc}'
+        return
+
+    while True:
+        running, download_message = video_models.DOWNLOAD_MANAGER.status()
+        yield f'{message}\n\n{download_message}'
+        if not running:
+            break
+        time.sleep(0.5)
+    yield video_models.model_status_summary()
+
+
+def cancel_video_download():
+    cancelled = video_models.DOWNLOAD_MANAGER.cancel()
+    return 'Download cancelled; it can be resumed later.' if cancelled else 'No model download is running.'
+
+
+def remember_gallery_selection(gallery_items, evt: gr.SelectData):
+    value = None
+    index = evt.index
+    if isinstance(index, (tuple, list)):
+        index = index[0] if index else None
+    if gallery_items and index is not None and 0 <= int(index) < len(gallery_items):
+        value = gallery_items[int(index)]
+    if value is None:
+        value = evt.value
+    if isinstance(value, dict):
+        return value.get('name') or value.get('path')
+    if isinstance(value, (tuple, list)) and value:
+        return value[0]
+    return value
+
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -377,6 +511,11 @@ with shared.gradio_root:
             gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
                                  elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
                                  elem_id='final_gallery')
+
+            video_output = gr.Video(label='Generated Video', visible=False, autoplay=False)
+            selected_gallery_image = gr.State(None)
+
+
             with gr.Row():
                 with gr.Column(scale=17):
                     with gr.Row():
@@ -490,6 +629,69 @@ with shared.gradio_root:
                         ip_advanced.change(ip_advance_checked, inputs=ip_advanced,
                                            outputs=ip_ad_cols + ip_types + ip_stops + ip_weights,
                                            queue=False, show_progress=False)
+                    with gr.Tab(label='Image to Video', id='i2v_tab') as i2v_tab:
+                        with gr.Row():
+                            with gr.Column():
+                                video_input_image = grh.Image(
+                                    label='Starting image',
+                                    source='upload',
+                                    type='numpy',
+                                    show_label=True,
+                                    height=420,
+                                )
+                                use_gallery_for_video = gr.Button(value='Use selected Fooocus image')
+                                video_prompt = gr.Textbox(
+                                    label='Motion prompt',
+                                    placeholder='Describe movement, camera motion, and sounds.',
+                                    lines=3,
+                                )
+                            with gr.Column():
+                                video_model = gr.Radio(
+                                    label='Local video model',
+                                    choices=list(VIDEO_MODEL_LABELS.keys()),
+                                    value='Wan 2.2 TI2V 5B (recommended)',
+                                )
+                                video_hardware_profile = gr.Radio(
+                                    label='Hardware profile',
+                                    choices=['Auto', '8 GB', '12 GB', '16 GB+'],
+                                    value='Auto',
+                                )
+                                video_resolution = gr.Dropdown(
+                                    label='Aspect-preserving resolution',
+                                    choices=['Auto', 'Low (512px)', 'Medium (480p)', 'High (720p)'],
+                                    value='Auto',
+                                )
+                                video_duration = gr.Slider(
+                                    label='Duration (seconds)',
+                                    minimum=5,
+                                    maximum=15,
+                                    step=1,
+                                    value=5,
+                                )
+                                video_seed = gr.Number(label='Seed', value=0, precision=0)
+                                h3_authorization = gr.Checkbox(
+                                    label='I am authorized to use MiniMax H3 in my territory',
+                                    value=video_models.h3_authorized(),
+                                    visible=False,
+                                )
+                                gr.Markdown(
+                                    'H3 is local H3-Base (768p), not the hosted 2K workflow. '
+                                    'Its community license excludes the EU, UK, US, and South Korea '
+                                    'without separate authorization.'
+                                )
+                                video_model_status = gr.Textbox(
+                                    label='Setup and status',
+                                    value=video_models.model_status_summary(),
+                                    lines=5,
+                                    interactive=False,
+                                )
+                                with gr.Row():
+                                    video_setup_button = gr.Button(value='Download / Set up', variant='secondary')
+                                    video_download_cancel = gr.Button(value='Cancel download')
+                                with gr.Row():
+                                    video_generate_button = gr.Button(value='Generate Video', variant='primary')
+                                    video_stop_button = gr.Button(value='Stop Video')
+                                videoTask = gr.State(None)
 
                     with gr.Tab(label='Inpaint or Outpaint', id='inpaint_tab') as inpaint_tab:
                         with gr.Row():
@@ -830,6 +1032,9 @@ with shared.gradio_root:
             inpaint_tab.select(lambda: 'inpaint', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             adetail_tab.select(lambda: 'adetail', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
+
+            i2v_tab.select(lambda: 'i2v', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
+
             describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
@@ -1220,6 +1425,61 @@ with shared.gradio_root:
             text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
             enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
             metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
+
+            for image_tab in [uov_tab, inpaint_tab, ip_tab, describe_tab, enhance_tab, metadata_tab]:
+                image_tab.select(lambda: gr.update(visible=True), outputs=generate_button,
+                                 queue=False, show_progress=False)
+            i2v_tab.select(lambda: gr.update(visible=False), outputs=generate_button,
+                           queue=False, show_progress=False)
+
+            gallery.select(remember_gallery_selection, inputs=gallery, outputs=selected_gallery_image,
+                           queue=False, show_progress=False)
+            use_gallery_for_video.click(lambda image: image, inputs=selected_gallery_image,
+                                        outputs=video_input_image, queue=False, show_progress=False)
+            video_model.change(
+                lambda selected: gr.update(visible=VIDEO_MODEL_LABELS.get(selected) == 'h3'),
+                inputs=video_model,
+                outputs=h3_authorization,
+                queue=False,
+                show_progress=False,
+            )
+            video_setup_button.click(
+                setup_and_download_video_model,
+                inputs=[video_model, video_hardware_profile, h3_authorization],
+                outputs=video_model_status,
+            )
+            video_download_cancel.click(cancel_video_download, outputs=video_model_status,
+                                        queue=False, show_progress=False)
+            video_generate_button.click(
+                get_video_task,
+                inputs=[
+                    video_input_image,
+                    video_prompt,
+                    video_model,
+                    video_hardware_profile,
+                    video_resolution,
+                    video_duration,
+                    video_seed,
+                ],
+                outputs=videoTask,
+                queue=False,
+                show_progress=False,
+            ).then(
+                video_generate_clicked,
+                inputs=videoTask,
+                outputs=[progress_html, video_output, video_model_status],
+            )
+            video_stop_button.click(
+                stop_video_clicked,
+                inputs=videoTask,
+                outputs=[videoTask, video_model_status],
+                queue=False,
+                show_progress=False,
+            )
+
+
+
+
             enhance_checkbox.change(lambda x: (gr.update(visible=x), gr.update(value=False) if x else gr.update()),
                         inputs=enhance_checkbox,outputs=[enhance_input_panel, adetailer_checkbox],queue=False, show_progress=False)
             adetailer_checkbox.change(lambda x: (gr.update(visible=x), gr.update(value=False) if x else gr.update()),
