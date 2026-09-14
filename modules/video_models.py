@@ -262,6 +262,110 @@ def _try_system_python_fallback() -> Path | None:
     return None
 
 
+def _diagnose_requirements_file(req_path: Path) -> None:
+    """Диагностика проблем с файлом requirements."""
+    _log(f"--- Диагностика файла: {req_path} ---")
+    
+    if not req_path.exists():
+        _log(f"  Файл НЕ СУЩЕСТВУЕТ по пути: {req_path}")
+        # Проверяем родительскую папку
+        _log(f"  Содержимое родительской папки ({req_path.parent}):")
+        try:
+            for item in req_path.parent.iterdir():
+                _log(f"    - {item.name} ({'dir' if item.is_dir() else 'file'})")
+        except Exception as e:
+            _log(f"    Не удалось прочитать папку: {e}")
+        return
+    
+    _log(f"  Файл существует: ДА")
+    _log(f"  Размер: {req_path.stat().st_size} байт")
+    _log(f"  Права доступа: {oct(req_path.stat().st_mode)}")
+    _log(f"  Владелец UID: {req_path.stat().st_uid}")
+    _log(f"  Текущий UID процесса: {os.getuid()}")
+    
+    # Проверяем читаемость
+    readable = os.access(req_path, os.R_OK)
+    _log(f"  Файл доступен для чтения (os.access): {readable}")
+    
+    # Проверяем, не симлинк ли это
+    if req_path.is_symlink():
+        _log(f"  ВНИМАНИЕ: файл является символической ссылкой!")
+        _log(f"  Цель ссылки: {req_path.resolve()}")
+        target_exists = req_path.resolve().exists()
+        _log(f"  Цель ссылки существует: {target_exists}")
+    
+    # Пытаемся прочитать
+    try:
+        content = req_path.read_text(encoding="utf-8")
+        _log(f"  Содержимое файла ({len(content)} символов):")
+        for line in content.splitlines()[:10]:
+            _log(f"    | {line}")
+        if len(content.splitlines()) > 10:
+            _log(f"    ... и ещё {len(content.splitlines()) - 10} строк")
+    except Exception as e:
+        _log(f"  ОШИБКА при чтении файла: {e}")
+    
+    _log("--- Конец диагностики ---")
+
+
+def _prepare_requirements_for_pip(req_path: Path, venv_dir: Path) -> str:
+    """
+    Подготавливает путь к requirements так, чтобы pip гарантированно мог его прочитать.
+    Возвращает путь к файлу, который точно доступен.
+    """
+    _log("Подготовка файла requirements для pip...")
+    
+    # Сначала диагностируем
+    _diagnose_requirements_file(req_path)
+    
+    # Стратегия 1: Если файл читается — используем как есть
+    if req_path.exists() and os.access(req_path, os.R_OK):
+        try:
+            req_path.read_text(encoding="utf-8")  # тестовое чтение
+            _log("Стратегия 1: файл доступен, используем оригинальный путь.")
+            return str(req_path)
+        except Exception as e:
+            _log(f"Стратегия 1 не сработала: {e}")
+    
+    # Стратегия 2: Копируем файл ВНУТРЬ venv (там точно будут правильные права)
+    _log("Стратегия 2: копируем requirements внутрь venv...")
+    try:
+        venv_requirements = venv_dir / "requirements_video_copy.txt"
+        # Читаем содержимое разными способами
+        content = None
+        try:
+            content = req_path.read_text(encoding="utf-8")
+        except Exception:
+            try:
+                content = req_path.read_bytes().decode("utf-8", errors="ignore")
+            except Exception as e2:
+                _log(f"Не удалось прочитать файл даже в бинарном режиме: {e2}")
+        
+        if content:
+            venv_requirements.write_text(content, encoding="utf-8")
+            _log(f"Файл скопирован в: {venv_requirements}")
+            _log(f"Новый размер: {venv_requirements.stat().st_size} байт")
+            return str(venv_requirements)
+    except Exception as e:
+        _log(f"Стратегия 2 не сработала: {e}")
+    
+    # Стратегия 3: Копируем во временную папку /tmp
+    _log("Стратегия 3: копируем в /tmp...")
+    try:
+        import tempfile
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, prefix="fooocus_req_"
+        ) as tmp:
+            tmp.write(req_path.read_text(encoding="utf-8", errors="ignore"))
+            tmp_path = Path(tmp.name)
+        _log(f"Файл скопирован в: {tmp_path}")
+        return str(tmp_path)
+    except Exception as e:
+        _log(f"Стратегия 3 не сработала: {e}")
+    
+    raise RuntimeError(f"Не удалось подготовить файл requirements: {req_path}")
+
+
 def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     _log("=== НАЧАЛО setup_runtime ===")
     report = progress or (lambda _message: None)
@@ -292,7 +396,7 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     # =====================================================================
     # УРОВЕНЬ 1: Стандартный venv с pip
     # =====================================================================
-    msg = "️ Creating isolated video environment (this may take a minute)..."
+    msg = "🛠️ Creating isolated video environment (this may take a minute)..."
     _log(msg)
     report(msg)
     
@@ -304,7 +408,6 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
         venv.EnvBuilder(with_pip=True, clear=True).create(runtime_dir)
         venv_created = True
         
-        # Проверяем, появился ли pip
         pip_exe = python_exe.parent / ("pip.exe" if os.name == "nt" else "pip")
         if pip_exe.exists():
             pip_available = True
@@ -320,12 +423,10 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     if not pip_available:
         _log("[Уровень 2] Попытка: venv без pip + установка через get-pip.py...")
         try:
-            # Если venv не создался на уровне 1 — создаём без pip
             if not venv_created:
                 venv.EnvBuilder(with_pip=False, clear=True).create(runtime_dir)
                 _log("venv создан без pip.")
             
-            # Проверяем, что python в venv работает
             test_result = subprocess.run(
                 [str(python_exe), "--version"],
                 capture_output=True,
@@ -346,7 +447,7 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
             _log(f"[Уровень 2] ОШИБКА: {e}")
 
     # =====================================================================
-    # УРОВЕНЬ 3: Colab fallback — используем системный Python
+    # УРОВЕНЬ 3: Colab fallback — системный Python
     # =====================================================================
     if not pip_available:
         _log("[Уровень 3] Colab-fallback: пробуем системный Python...")
@@ -354,18 +455,17 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
         
         if system_python:
             _log("[Уровень 3] УСПЕХ: будем использовать системный Python.")
-            # Сохраняем путь для последующего использования
-            # (но НЕ перезаписываем runtime_python(), чтобы не сломать логику)
             _log("ВНИМАНИЕ: используется системный Python без изоляции venv.")
-            _log("Это нормально для Colab, но может конфликтовать с зависимостями Fooocus.")
             
-            # Устанавливаем requirements напрямую в системный Python
-            msg = "📦 Installing video runtime packages (system Python)…"
+            msg = " Installing video runtime packages (system Python)…"
             _log(msg)
             report(msg)
             
+            # Подготавливаем requirements
+            req_path_for_pip = _prepare_requirements_for_pip(requirements, runtime_dir)
+            
             cmd = [str(system_python), "-m", "pip", "install", 
-                   "--disable-pip-version-check", "-r", str(requirements)]
+                   "--disable-pip-version-check", "-r", req_path_for_pip]
             _log(f"Выполнение команды: {' '.join(cmd)}")
             
             process = subprocess.Popen(
@@ -394,7 +494,6 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
                 _log("КРИТИЧЕСКАЯ ОШИБКА: Установка пакетов завершилась неудачно.")
                 raise RuntimeError(f"Video environment setup failed with exit code {return_code}.")
             
-            # Создаём маркер, чтобы не повторять установку
             marker = runtime_dir / ".fooocus-video-runtime"
             marker.write_text(
                 json.dumps({
@@ -431,8 +530,11 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     _log(msg)
     report(msg)
     
+    # 🔧 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: подготавливаем путь к requirements
+    req_path_for_pip = _prepare_requirements_for_pip(requirements, runtime_dir)
+    
     cmd = [str(python_exe), "-m", "pip", "install", 
-           "--disable-pip-version-check", "-r", str(requirements)]
+           "--disable-pip-version-check", "-r", req_path_for_pip]
     _log(f"Выполнение команды: {' '.join(cmd)}")
     
     process = subprocess.Popen(
@@ -460,7 +562,41 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     
     if return_code != 0:
         _log("КРИТИЧЕСКАЯ ОШИБКА: Установка пакетов завершилась неудачно.")
-        raise RuntimeError(f"Video environment setup failed with exit code {return_code}.")
+        _log("Попробуйте стратегию с передачей через stdin...")
+        
+        # Последний fallback: передаём содержимое через stdin
+        try:
+            _log("Финальный fallback: передача requirements через stdin...")
+            content = requirements.read_text(encoding="utf-8", errors="ignore")
+            cmd_stdin = [str(python_exe), "-m", "pip", "install", 
+                        "--disable-pip-version-check", "-r", "-"]
+            _log(f"Выполнение команды: {' '.join(cmd_stdin)}")
+            
+            process2 = subprocess.Popen(
+                cmd_stdin,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            
+            _log("--- Начало вывода pip install (stdin) ---")
+            stdout, _ = process2.communicate(input=content, timeout=600)
+            for line in stdout.splitlines():
+                if line.strip():
+                    _log(f"  [pip] {line.strip()}")
+                    report(line.strip())
+            _log("--- Конец вывода pip install (stdin) ---")
+            
+            if process2.returncode != 0:
+                _log("КРИТИЧЕСКАЯ ОШИБКА: даже stdin не помог.")
+                raise RuntimeError(f"Video environment setup failed with exit code {process2.returncode}.")
+            
+            _log("✅ Установка через stdin прошла успешно!")
+        except Exception as e:
+            _log(f"Финальный fallback тоже не сработал: {e}")
+            raise RuntimeError(f"Video environment setup failed with exit code {return_code}.")
 
     _log("Запись маркера успешной установки окружения...")
     marker = runtime_dir / ".fooocus-video-runtime"
