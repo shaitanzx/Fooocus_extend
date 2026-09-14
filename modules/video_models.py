@@ -1,4 +1,4 @@
-"""Local model and runtime management for Fooocus image-to-video."""
+"""Local model and runtime management for Fooocus image-to-video (Cross-platform)."""
 
 from __future__ import annotations
 
@@ -16,6 +16,28 @@ from pathlib import Path
 from typing import Callable
 
 import modules.config
+
+# ==============================================================================
+# 🔧 КРОССПЛАТФОРМЕННАЯ ИНИЦИАЛИЗАЦИЯ ПУТЕЙ
+# ==============================================================================
+# Находим корневую папку Fooocus (на 1 уровень выше папки modules, где лежит этот файл).
+# Path(__file__).resolve() работает идентично и в Windows (C:\...), и в Colab (/content/...).
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+# Принудительно задаем абсолютные пути относительно корня проекта.
+# В Windows: C:\Fooocus\video_runtime
+# В Colab:    /content/Fooocus/video_runtime (или где лежит ваш клон репозитория)
+modules.config.path_video_runtime = str(BASE_DIR / "video_runtime")
+
+# Если путь к моделям еще не задан в config, задаем его стандартно
+if not getattr(modules.config, 'path_video_models', None):
+    modules.config.path_video_models = str(BASE_DIR / "models" / "video_models")
+else:
+    # Если задан, но является относительным, делаем его абсолютным относительно BASE_DIR
+    orig_path = Path(modules.config.path_video_models)
+    if not orig_path.is_absolute():
+        modules.config.path_video_models = str(BASE_DIR / orig_path)
+# ==============================================================================
 
 
 GIB = 1024 ** 3
@@ -115,9 +137,11 @@ def model_status(model_key: str) -> str:
 
 def runtime_python() -> Path:
     root = Path(modules.config.path_video_runtime)
-    if os.name == "nt":
+    # Ключевое кроссплатформенное условие:
+    if os.name == "nt":  # Windows
         return root / "Scripts" / "python.exe"
-    return root / "bin" / "python"
+    else:                # Linux (Google Colab) / macOS
+        return root / "bin" / "python"
 
 
 def _video_requirements() -> Path:
@@ -125,7 +149,11 @@ def _video_requirements() -> Path:
 
 
 def _requirements_hash() -> str:
-    return hashlib.sha256(_video_requirements().read_bytes()).hexdigest()
+    req_file = _video_requirements()
+    if not req_file.exists():
+        req_file.parent.mkdir(parents=True, exist_ok=True)
+        req_file.write_text("torch\ndiffusers\n")
+    return hashlib.sha256(req_file.read_bytes()).hexdigest()
 
 
 def runtime_is_ready() -> bool:
@@ -147,17 +175,19 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     report = progress or (lambda _message: None)
     runtime_dir = Path(modules.config.path_video_runtime)
     requirements = _video_requirements()
+    
     runtime_dir.parent.mkdir(parents=True, exist_ok=True)
+    runtime_dir.mkdir(parents=True, exist_ok=True)
 
     if runtime_is_ready():
-        report("Video environment is already up to date.")
+        report("✅ Video environment is already up to date.")
         return runtime_python()
 
     if not runtime_python().exists():
-        report("Creating isolated video environment …")
+        report("🛠️ Creating isolated video environment (this may take a minute)...")
         venv.EnvBuilder(with_pip=True, clear=False).create(runtime_dir)
 
-    report("Installing video runtime packages …")
+    report("📦 Installing video runtime packages …")
     process = subprocess.Popen(
         [
             str(runtime_python()),
@@ -194,7 +224,7 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
         ),
         encoding="utf-8",
     )
-    report("Video environment is ready.")
+    report("✅ Video environment is ready.")
     return runtime_python()
 
 
@@ -240,14 +270,17 @@ class DownloadManager:
             if free_bytes < remaining + 2 * GIB:
                 raise RuntimeError(
                     f"Not enough free disk space. Need about {remaining / GIB:.1f} GiB "
-                    f"plus 2 GiB working space."
+                    f"plus 2 GiB working space. (Current free: {free_bytes / GIB:.1f} GiB)"
                 )
             status_dir = Path(modules.config.path_video_runtime)
             status_dir.mkdir(parents=True, exist_ok=True)
             self._status_file = status_dir / "download-status.txt"
             self._status_file.write_text(f"Starting {model.label} download …", encoding="utf-8")
             self._model_key = model_key
-            self._process = multiprocessing.get_context("spawn").Process(
+            
+            # "spawn" обязателен для корректной работы с CUDA и в Windows, и в Linux
+            ctx = multiprocessing.get_context("spawn")
+            self._process = ctx.Process(
                 target=_download_model_process,
                 args=(model_key, str(self._status_file)),
                 daemon=True,
@@ -307,7 +340,6 @@ def hardware_info() -> dict[str, float | str | bool]:
     total_ram = 0
     try:
         import psutil
-
         total_ram = psutil.virtual_memory().total
     except Exception:
         pass
@@ -317,7 +349,6 @@ def hardware_info() -> dict[str, float | str | bool]:
     device_name = "CPU"
     try:
         import torch
-
         cuda = torch.cuda.is_available()
         if cuda:
             properties = torch.cuda.get_device_properties(0)
