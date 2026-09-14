@@ -172,6 +172,16 @@ def runtime_is_ready() -> bool:
     if not python.is_file():
         _log(f"-> Не готово: исполняемый файл Python не найден по пути {python}")
         return False
+    
+    # 🔧 НОВАЯ ПРОВЕРКА: убеждаемся, что pip тоже существует
+    if os.name == "nt":
+        pip_path = python.parent / "pip.exe"
+    else:
+        pip_path = python.parent / "pip"
+    
+    if not pip_path.is_file():
+        _log(f"-> Не готово: pip не найден по пути {pip_path}. venv повреждён, требуется пересоздание.")
+        return False
         
     marker = Path(modules.config.path_video_runtime) / ".fooocus-video-runtime"
     if not marker.is_file():
@@ -210,20 +220,50 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
         report(msg)
         return runtime_python()
 
-    if not runtime_python().exists():
-        msg = "🛠️ Creating isolated video environment (this may take a minute)..."
-        _log(msg)
-        report(msg)
-        _log("Запуск venv.EnvBuilder...")
-        venv.EnvBuilder(with_pip=True, clear=False).create(runtime_dir)
-        _log("venv успешно создан.")
+    # 🔧 ИСПРАВЛЕНИЕ: принудительно удаляем битый venv, если он есть
+    python_exe = runtime_python()
+    if python_exe.exists():
+        _log(f"⚠️ Обнаружен неполный venv по пути {python_exe.parent}. Удаляем для пересоздания...")
+        try:
+            shutil.rmtree(runtime_dir)
+            _log("Старый venv удалён.")
+        except Exception as e:
+            _log(f"Не удалось полностью удалить старый venv: {e}. Пробуем продолжить...")
+        runtime_dir.mkdir(parents=True, exist_ok=True)
+
+    # Создаём venv с clear=True для гарантии чистой установки
+    msg = "🛠️ Creating isolated video environment (this may take a minute)..."
+    _log(msg)
+    report(msg)
+    
+    _log("Запуск venv.EnvBuilder(with_pip=True, clear=True)...")
+    try:
+        venv.EnvBuilder(with_pip=True, clear=True).create(runtime_dir)
+    except Exception as e:
+        _log(f"Ошибка при создании venv: {e}. Пробуем альтернативный метод через ensurepip...")
+        # Запасной вариант для Colab
+        venv.EnvBuilder(with_pip=False, clear=True).create(runtime_dir)
+        _log("Запуск ensurepip для установки pip...")
+        subprocess.run([str(python_exe), "-m", "ensurepip", "--upgrade"], check=True)
+    
+    _log("venv успешно создан.")
+    
+    #  Дополнительная проверка: убеждаемся, что pip теперь есть
+    if os.name == "nt":
+        pip_exe = python_exe.parent / "pip.exe"
+    else:
+        pip_exe = python_exe.parent / "pip"
+    
+    if not pip_exe.exists():
+        _log(f"КРИТИЧЕСКАЯ ОШИБКА: pip не был установлен даже после пересоздания venv. Путь: {pip_exe}")
+        raise RuntimeError(f"Failed to install pip in venv at {runtime_dir}")
+    _log(f"pip найден по пути: {pip_exe}")
 
     msg = "📦 Installing video runtime packages …"
     _log(msg)
     report(msg)
     
-    python_exe = str(runtime_python())
-    cmd = [python_exe, "-m", "pip", "install", "--disable-pip-version-check", "-r", str(requirements)]
+    cmd = [str(python_exe), "-m", "pip", "install", "--disable-pip-version-check", "-r", str(requirements)]
     _log(f"Выполнение команды: {' '.join(cmd)}")
     
     process = subprocess.Popen(
@@ -242,7 +282,6 @@ def setup_runtime(progress: Callable[[str], None] | None = None) -> Path:
     for line in process.stdout:
         line = line.strip()
         if line:
-            # Дублируем вывод и в лог, и в UI callback
             _log(f"  [pip] {line}")
             report(line)
     _log("--- Конец вывода pip install ---")
