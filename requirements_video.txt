@@ -3,11 +3,12 @@ torch==2.8.0
 torchvision==0.23.0
 torchaudio==2.8.0
 torchao==0.13.0
+numpy==1.26.4
 diffusers==0.40.0
 transformers==4.57.6
 accelerate==1.10.1
 huggingface-hub==1.23.0
-safetensors==0.6.2
+safetensors==0.8.0
 sentencepiece==0.2.1
 protobuf==6.32.0
 imageio==2.37.0
