@@ -16,6 +16,11 @@ import gradio as gr
 import numpy as np
 import torch
 from PIL import Image, ImageDraw
+import sys
+from unittest.mock import MagicMock
+
+# 1. Обманываем transformers, создавая фиктивный модуль flash_attn
+sys.modules['flash_attn'] = MagicMock()
 from transformers import AutoModelForCausalLM, AutoProcessor
 
 
