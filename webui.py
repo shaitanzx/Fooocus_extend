@@ -835,7 +835,7 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='Florance2')
+                        with gr.TabItem(label='Florance2'):
                             florance2.ui()
                             
 
