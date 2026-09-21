@@ -215,6 +215,7 @@ def _load_model(model_id: str) -> Tuple[torch.nn.Module, Any, torch.device]:
                 model_id,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
+                attn_implementation="sdpa",
             ).eval()
             _loaded_model = model
             _loaded_model_id = model_id
