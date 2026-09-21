@@ -19,8 +19,18 @@ from PIL import Image, ImageDraw
 import sys
 from unittest.mock import MagicMock
 
-# 1. Обманываем transformers, создавая фиктивный модуль flash_attn
-sys.modules['flash_attn'] = MagicMock()
+# Создаем полноценный mock-модуль с необходимыми атрибутами
+flash_attn_mock = types.ModuleType('flash_attn')
+flash_attn_mock.__spec__ = None
+flash_attn_mock.__version__ = "2.5.0"  # Фиктивная версия
+flash_attn_mock.flash_attn_func = MagicMock()
+flash_attn_mock.flash_attn_varlen_func = MagicMock()
+
+# Добавляем вложенные модули, которые могут проверяться
+flash_attn_mock.bert_padding = MagicMock()
+flash_attn_mock.bert_padding.unpad_input = MagicMock()
+flash_attn_mock.bert_padding.pad_input = MagicMock()
+
 from transformers import AutoModelForCausalLM, AutoProcessor
 
 
