@@ -289,7 +289,7 @@ def _generate(
     model_id: str,
     max_new_tokens: int = 256,
     num_beams: int = 1,
-) -> Dict[str,, Any]:
+) -> Dict[str, Any]:
     """Run one Florence task and always offload the model afterwards."""
     if image is None:
         raise ValueError("Input image is empty")
