@@ -60,6 +60,8 @@ from transformers import AutoModelForCausalLM, AutoProcessor
 MODEL_IDS = (
     "microsoft/Florence-2-base",
     "microsoft/Florence-2-large",
+    'microsoft/Florence-2-base-ft',
+    'microsoft/Florence-2-large-ft'
 )
 DEFAULT_MODEL_ID = "microsoft/Florence-2-base"
 
@@ -237,6 +239,8 @@ def _load_model(model_id: str) -> Tuple[torch.nn.Module, Any, torch.device]:
             _processor_cache[model_id] = AutoProcessor.from_pretrained(
                 model_id,
                 trust_remote_code=True,
+                attn_implementation="sdpa",
+                cache_dir=os.path.join("models","caption")
             )
 
         if _loaded_model is None:
@@ -247,6 +251,7 @@ def _load_model(model_id: str) -> Tuple[torch.nn.Module, Any, torch.device]:
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 attn_implementation="sdpa",
+                cache_dir=os.path.join("models","caption")
             ).eval()
             _loaded_model = model
             _loaded_model_id = model_id
