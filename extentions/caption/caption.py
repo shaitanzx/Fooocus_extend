@@ -154,63 +154,63 @@ class Caption:
         if self.use_wd:
             wd_config_file = Path(config.wd_config) if config.wd_config else os.path.join(Path(__file__).parent, 'configs', 'default_wd.json')
             self.wd_model_path, self.wd_tags_csv_path = download_models(
-                logger=self.my_logger, models_type="wd", config=config,
+                logger=self.my_logger, models_type="wd", args=config,
                 config_file=wd_config_file, models_save_path=models_save_path,
             )
 
         if self.use_joy:
             llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_joy.json')
             self.llm_models_paths = download_models(
-                logger=self.my_logger, models_type="joy", config=config,
+                logger=self.my_logger, models_type="joy", args=config,
                 config_file=llm_config_file, models_save_path=models_save_path,
             )
         elif self.use_llama:
             llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_llama_3.2V.json')
             self.llm_models_paths = download_models(
-                logger=self.my_logger, models_type="llama", config=config,
+                logger=self.my_logger, models_type="llama", args=config,
                 config_file=llm_config_file, models_save_path=models_save_path,
             )
         elif self.use_qwen:
             llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_qwen2_vl.json')
             self.llm_models_paths = download_models(
-                logger=self.my_logger, models_type="qwen", config=config,
+                logger=self.my_logger, models_type="qwen", args=config,
                 config_file=llm_config_file, models_save_path=models_save_path,
             )
         elif self.use_minicpm:
             llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_minicpm.json')
             self.llm_models_paths = download_models(
-                logger=self.my_logger, models_type="minicpm", config=config,
+                logger=self.my_logger, models_type="minicpm", args=config,
                 config_file=llm_config_file, models_save_path=models_save_path,
             )
         elif self.use_florence:
             llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_florence.json')
             self.llm_models_paths = download_models(
-                logger=self.my_logger, models_type="florence", config=config,
+                logger=self.my_logger, models_type="florence", args=config,
                 config_file=llm_config_file, models_save_path=models_save_path,
             )
 
     def load_models(self, config: CaptionConfig):
         if self.use_wd:
             self.my_tagger = Tagger(
-                logger=self.my_logger, config=config,
+                logger=self.my_logger, args=config,
                 model_path=self.wd_model_path, tags_csv_path=self.wd_tags_csv_path
             )
             self.my_tagger.load_model()
 
         if self.use_joy:
-            self.my_llm = LLM(logger=self.my_logger, models_type="joy", models_paths=self.llm_models_paths, config=config)
+            self.my_llm = LLM(logger=self.my_logger, models_type="joy", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
         elif self.use_llama:
-            self.my_llm = LLM(logger=self.my_logger, models_type="llama", models_paths=self.llm_models_paths, config=config)
+            self.my_llm = LLM(logger=self.my_logger, models_type="llama", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
         elif self.use_qwen:
-            self.my_llm = LLM(logger=self.my_logger, models_type="qwen", models_paths=self.llm_models_paths, config=config)
+            self.my_llm = LLM(logger=self.my_logger, models_type="qwen", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
         elif self.use_minicpm:
-            self.my_llm = LLM(logger=self.my_logger, models_type="minicpm", models_paths=self.llm_models_paths, config=config)
+            self.my_llm = LLM(logger=self.my_logger, models_type="minicpm", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
         elif self.use_florence:
-            self.my_llm = LLM(logger=self.my_logger, models_type="florence", models_paths=self.llm_models_paths, config=config)
+            self.my_llm = LLM(logger=self.my_logger, models_type="florence", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
 
     def run_inference(self, config: CaptionConfig):
