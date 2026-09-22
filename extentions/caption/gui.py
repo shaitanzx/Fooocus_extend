@@ -217,8 +217,7 @@ def gui():
         with gr.Column():
             with gr.Tab("Single mode"):
                 with gr.Column():
-                    input_image = gr.Image(elem_id="input_image", type='filepath', label="Upload Image",
-                                            source=["upload", "clipboard"])
+                    input_image = gr.Image(elem_id="input_image", type='filepath', label="Upload Image")
                     single_image_submit_button = gr.Button(elem_id="single_image_submit_button",
                                                             value="Inference", variant='primary')
 
