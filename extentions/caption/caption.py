@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
@@ -12,13 +13,47 @@ from .utils.download import download_models
 from .utils.image import get_image_paths
 from .utils.inference import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT_WITHOUT_WD, DEFAULT_USER_PROMPT_WITH_WD
 from .utils.inference import get_caption_file_path, LLM, Tagger
-from .utils.logger import Logger, print_title
 
 DEFAULT_MODELS_SAVE_PATH = str(os.path.join(os.getcwd(), "models"))
 
 
 # ==========================================================
-# НОВЫЙ СПОСОБ ПЕРЕДАЧИ НАСТРОЕК: Dataclass вместо argparse
+# ИЗОЛИРОВАННАЯ СИСТЕМА ЛОГИРОВАНИЯ ТОЛЬКО ДЛЯ ЭТОГО МОДУЛЯ
+# ==========================================================
+class IsolatedLogger:
+    """Логгер, который работает только в этом модуле и не влияет на другие"""
+    
+    def __init__(self, name: str = "caption_module", level: str = "INFO", log_file: str = None):
+        # Создаем именованный логгер (не корневой!)
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(getattr(logging, level.upper(), logging.INFO))
+        
+        # Очищаем старые handlers, если они есть
+        self.logger.handlers.clear()
+        
+        # Формат сообщений
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        
+        # Console handler (вывод в консоль)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
+        
+        # File handler (если указан файл)
+        if log_file:
+            file_handler = logging.FileHandler(log_file, encoding='utf-8')
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
+        
+        # ВАЖНО: Не передавать логи родительским логгерам
+        self.logger.propagate = False
+
+
+# ==========================================================
+# ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ
 # ==========================================================
 @dataclass
 class CaptionConfig:
@@ -76,7 +111,6 @@ class CaptionConfig:
     llm_user_prompt: str = DEFAULT_USER_PROMPT_WITHOUT_WD
     llm_temperature: float = 0.0
     llm_max_tokens: int = 0
-# ==========================================================
 
 
 class Caption:
@@ -104,6 +138,7 @@ class Caption:
             raise FileNotFoundError
 
     def set_logger(self, config: CaptionConfig):
+        # ИСПОЛЬЗУЕМ ИЗОЛИРОВАННЫЙ ЛОГГЕР
         if config.save_logs:
             workspace_path = os.getcwd()
             data_dir_path = Path(config.data_path)
@@ -126,13 +161,15 @@ class Caption:
         else:
             log_file = None
 
-        if str(config.log_level).lower() in 'debug, info, warning, error, critical':
-            self.my_logger = Logger(config.log_level, log_file).logger
-            self.my_logger.info(f'Set log level to "{config.log_level}"')
-        else:
-            self.my_logger = Logger('INFO', log_file).logger
-            self.my_logger.warning('Invalid log level, set log level to "INFO"!')
-
+        # Создаем изолированный логгер
+        self.my_logger = IsolatedLogger(
+            name="caption_module",
+            level=config.log_level,
+            log_file=log_file
+        ).logger
+        
+        self.my_logger.info(f'Log level set to "{config.log_level}"')
+        
         if config.save_logs:
             self.my_logger.info(f'Log file will be saved as "{log_file}".')
 
@@ -358,21 +395,17 @@ class Caption:
             self.my_llm.unload_model()
 
 
-# # Для запуска из командной строки (опционально, не используется GUI)
-# def main():
-#     print_title()
-#     config = CaptionConfig()
-#     # Если нужно запустить из CLI, можно задать путь вручную:
-#     # config.data_path = "path/to/your/images"
-#     # config.caption_method = "wd+llm"
+def main():
+    print_title()
+    config = CaptionConfig()
     
-#     my_caption = Caption()
-#     my_caption.check_path(config)
-#     my_caption.set_logger(config)
-#     my_caption.download_models(config)
-#     my_caption.load_models(config)
-#     my_caption.run_inference(config)
-#     my_caption.unload_models()
+    my_caption = Caption()
+    my_caption.check_path(config)
+    my_caption.set_logger(config)
+    my_caption.download_models(config)
+    my_caption.load_models(config)
+    my_caption.run_inference(config)
+    my_caption.unload_models()
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
