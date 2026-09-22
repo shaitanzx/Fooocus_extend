@@ -237,6 +237,7 @@ def _load_model(model_id: str) -> Tuple[torch.nn.Module, Any, torch.device]:
             _processor_cache[model_id] = AutoProcessor.from_pretrained(
                 model_id,
                 trust_remote_code=True,
+                attn_implementation="sdpa",
             )
 
         if _loaded_model is None:
