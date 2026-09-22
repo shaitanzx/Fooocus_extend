@@ -6,6 +6,38 @@ models when imported and does not launch its own Gradio application.
 
 from __future__ import annotations
 
+import sys
+import importlib.util
+from unittest.mock import MagicMock
+
+# Create a fake spec object
+class FakeFlashAttnSpec:
+    name = 'flash_attn'
+    loader = None
+    origin = None
+    submodule_search_locations = []
+    
+fake_spec = FakeFlashAttnSpec()
+
+# Create mock modules with proper __spec__ attributes
+flash_attn_mock = MagicMock()
+flash_attn_mock.__spec__ = fake_spec
+flash_attn_mock.__version__ = "0.0.0"  # Force version check to fail
+
+sys.modules['flash_attn'] = flash_attn_mock
+sys.modules['flash_attn.flash_attn_interface'] = MagicMock()
+sys.modules['flash_attn.bert_padding'] = MagicMock()
+
+# Patch find_spec to return our fake spec
+_original_find_spec = importlib.util.find_spec
+
+def _patched_find_spec(name, package=None):
+    if name == 'flash_attn' or name.startswith('flash_attn.'):
+        return fake_spec
+    return _original_find_spec(name, package)
+
+importlib.util.find_spec = _patched_find_spec
+
 import gc
 import os
 import threading
@@ -16,20 +48,9 @@ import gradio as gr
 import numpy as np
 import torch
 from PIL import Image, ImageDraw
-import sys
-from unittest.mock import MagicMock
 
-# Создаем полноценный mock-модуль с необходимыми атрибутами
-flash_attn_mock = types.ModuleType('flash_attn')
-flash_attn_mock.__spec__ = None
-flash_attn_mock.__version__ = "2.5.0"  # Фиктивная версия
-flash_attn_mock.flash_attn_func = MagicMock()
-flash_attn_mock.flash_attn_varlen_func = MagicMock()
 
-# Добавляем вложенные модули, которые могут проверяться
-flash_attn_mock.bert_padding = MagicMock()
-flash_attn_mock.bert_padding.unpad_input = MagicMock()
-flash_attn_mock.bert_padding.pad_input = MagicMock()
+
 
 from transformers import AutoModelForCausalLM, AutoProcessor
 
