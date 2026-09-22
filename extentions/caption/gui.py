@@ -569,7 +569,7 @@ def gui():
             start_time = time.monotonic()
 
             if ARGS is None:
-                ARGS = []
+                ARGS = caption.setup_args()
 
             args = ARGS
             args.model_site = model_site_value
@@ -577,7 +577,7 @@ def gui():
                 os.environ["HF_TOKEN"] = str(huggingface_token_value)
 
             #get_gradio_args = gui_setup_args()
-            args.models_save_path = os.path.join("models","caption")
+            args.models_save_path = str(os.path.join("models","caption"))
             args.log_level = "INFO"
             args.caption_method = str(caption_method_value).lower()
             args.llm_choice = str(llm_choice_value).lower()

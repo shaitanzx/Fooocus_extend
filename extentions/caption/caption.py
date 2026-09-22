@@ -753,13 +753,13 @@ def setup_args() -> argparse.Namespace:
         help='max tokens for LLM model output, default is `0`, means use llm own default value.'
     )
 
-    gradio_args = args.add_argument_group("Gradio dummy args, no effects")
-    gradio_args.add_argument('--theme', type=str, default="default", choices=["default", "ocean", "origin"],
-                             help="set themes")
-    gradio_args.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
-    gradio_args.add_argument('--listen', action='store_true', help="allow remote connections")
-    gradio_args.add_argument('--share', action='store_true', help="allow gradio share")
-    gradio_args.add_argument('--inbrowser', action='store_true', help="auto open in browser")
+    # gradio_args = args.add_argument_group("Gradio dummy args, no effects")
+    # gradio_args.add_argument('--theme', type=str, default="default", choices=["default", "ocean", "origin"],
+    #                          help="set themes")
+    # gradio_args.add_argument('--port', type=int, default="8282", help="port, default is `8282`")
+    # gradio_args.add_argument('--listen', action='store_true', help="allow remote connections")
+    # gradio_args.add_argument('--share', action='store_true', help="allow gradio share")
+    # gradio_args.add_argument('--inbrowser', action='store_true', help="auto open in browser")
     return args.parse_args()
 
 
