@@ -237,12 +237,11 @@ def _load_model(model_id: str) -> Tuple[torch.nn.Module, Any, torch.device]:
             _processor_cache[model_id] = AutoProcessor.from_pretrained(
                 model_id,
                 trust_remote_code=True,
-                attn_implementation="sdpa",
             )
 
         if _loaded_model is None:
-            # low_cpu_mem_usage reduces the temporary RAM peak during loading.
-            # It is available because Fooocus already depends on accelerate.
+            # Загружаем модель БЕЗ принудительного dtype
+            # Florence-2 сама выберет оптимальные типы для своих слоев
             model = AutoModelForCausalLM.from_pretrained(
                 model_id,
                 trust_remote_code=True,
@@ -252,11 +251,11 @@ def _load_model(model_id: str) -> Tuple[torch.nn.Module, Any, torch.device]:
             _loaded_model = model
             _loaded_model_id = model_id
 
-        # Ensure old Fooocus allocations are released before the large move.
         _prepare_gpu_memory(device)
-        dtype = _model_dtype(device)
+        
+        # Перемещаем модель на устройство БЕЗ изменения dtype
         try:
-            _loaded_model.to(device=device, dtype=dtype)
+            _loaded_model.to(device=device)
         except RuntimeError as exc:
             _release_loaded_model()
             if "out of memory" in str(exc).lower():
@@ -280,6 +279,9 @@ def _move_batch_to_device(batch: Any, device: torch.device) -> Any:
     return batch
 
 
+
+
+
 def _generate(
     image: Image.Image,
     task_token: str,
@@ -287,7 +289,7 @@ def _generate(
     model_id: str,
     max_new_tokens: int = 256,
     num_beams: int = 1,
-) -> Dict[str, Any]:
+) -> Dict[str,, Any]:
     """Run one Florence task and always offload the model afterwards."""
     if image is None:
         raise ValueError("Input image is empty")
@@ -299,15 +301,21 @@ def _generate(
     try:
         inputs = processor(text=prompt, images=image, return_tensors="pt")
         inputs = _move_batch_to_device(inputs, device)
+        
+        # Используем autocast для автоматического смешивания типов
+        # Это позволяет модели работать в float16 там, где это безопасно,
+        # но сохраняет float32 для критичных слоев (LayerNorm)
         with torch.inference_mode():
-            generated_ids = model.generate(
-                input_ids=inputs["input_ids"],
-                pixel_values=inputs["pixel_values"],
-                max_new_tokens=max_new_tokens,
-                early_stopping=False,
-                do_sample=False,
-                num_beams=num_beams,
-            )
+            with torch.autocast(device_type=device.type, dtype=torch.float16):
+                generated_ids = model.generate(
+                    input_ids=inputs["input_ids"],
+                    pixel_values=inputs["pixel_values"],
+                    max_new_tokens=max_new_tokens,
+                    early_stopping=False,
+                    do_sample=False,
+                    num_beams=num_beams,
+                )
+        
         generated_text = processor.batch_decode(
             generated_ids,
             skip_special_tokens=False,
@@ -318,7 +326,6 @@ def _generate(
             image_size=image.size,
         )
     finally:
-        # Delete activations before moving the weights back to CPU.
         for name in ("inputs", "generated_ids"):
             if name in locals():
                 del locals()[name]
