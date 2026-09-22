@@ -774,6 +774,3 @@ def main():
     my_caption.run_inference(get_args)
     my_caption.unload_models()
 
-
-if __name__ == "__main__":
-    main()
