@@ -52,8 +52,8 @@ def gui():
                 with gr.Column(min_width=240):
                     with gr.Column(min_width=240):
                         caption_method = gr.Radio(label="Caption method", choices=["WD+LLM", "WD", "LLM"], value="WD+LLM")
-                        #llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "MiniCPM", "Florence"], value="Llama")
-                        llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "Florence"], value="Llama")
+                        llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "MiniCPM", "Florence"], value="Llama")
+                        #llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "Florence"], value="Llama")
 
                         def llm_choice_visibility(caption_method_radio):
                             return gr.update(visible=True if "LLM" in caption_method_radio else False)
