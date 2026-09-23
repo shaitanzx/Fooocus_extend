@@ -4,6 +4,10 @@ import time
 
 import gradio as gr
 from PIL import Image
+import ldm_patched.modules.model_management as mm
+import modules.default_pipeline as pipeline
+import modules.core as core
+import gc
 
 from . import caption
 from .utils import inference
@@ -316,11 +320,77 @@ def gui():
         skip_exists, not_overwrite, caption_extension, save_caption_together, save_caption_together_seperator
     ]
 
+
+    def defragment_vram():
+        if not torch.cuda.is_available():
+            return    
+        try:
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+            torch.cuda.reset_peak_memory_stats()
+            torch.cuda.synchronize()
+        except Exception as e:
+            print(f"[Omost] Warning during VRAM defragmentation: {e}")
+
+    def unload_fooocus_completely():
+        print(f"\n[Caption] === Unloading ALL Fooocus models ===")
+
+        try:
+            mm.unload_all_models()
+            print(f"[Caption] ✓ Models properly unloaded from GPU")
+        except Exception as e:
+            print(f"[Caption] Warning during unload_all_models: {e}")
+
+        if len(mm.current_loaded_models) > 0:
+            for i in range(len(mm.current_loaded_models) - 1, -1, -1):
+                try:
+                    m = mm.current_loaded_models.pop(i)
+                    m.model_unload()
+                    del m
+                except Exception as e:
+                    print(f"[Caption] Warning: {e}")
+        try:
+            pipeline.final_unet = None
+            pipeline.final_clip = None
+            pipeline.final_vae = None
+            pipeline.final_refiner_unet = None
+            pipeline.final_refiner_vae = None
+            pipeline.final_expansion = None
+            pipeline.loaded_ControlNets = {}
+        except Exception as e:
+            print(f"[Caption] Warning: {e}")
+
+        try:
+            pipeline.model_base = core.StableDiffusionModel()
+            pipeline.model_refiner = core.StableDiffusionModel()
+        except Exception as e:
+            print(f"[Omost] Warning: {e}")
+
+        gc.collect()
+        
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+            torch.cuda.reset_peak_memory_stats()
+            gc.collect()
+            torch.cuda.synchronize()
+
+        defragment_vram()
+
+
+
+
     def caption_models_load(
             model_site_value, huggingface_token_value, caption_method_value, llm_choice_value,
             wd_model_value, joy_model_value, llama_model_value, qwen_model_value, minicpm_model_value, florence_model_value,
             wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
     ):
+
+        unload_fooocus_completely()
+
+
         global IS_MODEL_LOAD, ARGS, CAPTION_FN
 
         if not IS_MODEL_LOAD:
