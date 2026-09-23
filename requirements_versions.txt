@@ -19,7 +19,8 @@ onnx==1.18.0
 onnxruntime==1.18.1
 timm==1.0.7
 numpy==1.26.4
-tokenizers==0.19.1
+#tokenizers==0.19.1
+tokenizers==0.20.3
 packaging==24.1
 rembg==2.0.57
 groundingdino-py==0.4.0
@@ -40,7 +41,8 @@ potracer==0.0.4
 deep-translator==1.11.4
 ultralytics==8.3.227
 mediapipe==0.10.13
-transformers==4.42.4
+#transformers==4.42.4
+transformers==4.45.2
 litelama==0.1.7
 ftfy==6.3.1
 
