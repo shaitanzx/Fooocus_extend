@@ -8,6 +8,7 @@ import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
 import modules.core as core
 import gc
+import torch
 
 from . import caption
 from .utils import inference
