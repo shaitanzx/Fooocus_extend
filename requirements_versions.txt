@@ -32,7 +32,8 @@ chardet==5.2.0
 insightface==0.7.3
 pydantic==2.11.5
 lpips==0.1.4
-peft==0.6.0
+#peft==0.6.0
+peft==0.13.2
 diffusers==0.29.0
 ##huggingface-hub==0.23.2
 ##huggingface-hub==0.30.0
