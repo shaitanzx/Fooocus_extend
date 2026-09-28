@@ -1,5 +1,29 @@
 {
-  "Qwen2-VL-7B-Instruct": {
+    "Qwen2-VL-2B-Instruct": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "Qwen/Qwen2-VL-2B-Instruct",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "chat_template.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/chat_template.json",
+          "config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/generation_config.json",
+          "merges.txt": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/merges.txt",
+          "model-00001-of-00002.safetensors": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/model-00001-of-00002.safetensors",
+          "model-00002-of-00002.safetensors": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/model-00002-of-00002.safetensors",
+          "model.safetensors.index.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/model.safetensors.index.json",
+          "preprocessor_config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/preprocessor_config.json",
+          "tokenizer.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/tokenizer_config.json",
+          "vocab.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/vocab.json"
+
+        }
+      }
+    }
+  },
+    "Qwen2-VL-7B-Instruct": {
     "huggingface": {
       "llm": {
         "repo_id": "Qwen/Qwen2-VL-7B-Instruct",
@@ -21,29 +45,6 @@
           "model-00003-of-00005.safetensors": "https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct/resolve/main/model-00003-of-00005.safetensors",
           "model-00004-of-00005.safetensors": "https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct/resolve/main/model-00004-of-00005.safetensors",
           "model-00005-of-00005.safetensors": "https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct/resolve/main/model-00005-of-00005.safetensors"
-        }
-      }
-    }
-  },
-  "Qwen2-VL-2B-Instruct": {
-    "huggingface": {
-      "llm": {
-        "repo_id": "Qwen/Qwen2-VL-2B-Instruct",
-        "revision": "main",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "chat_template.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/chat_template.json",
-          "config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/config.json",
-          "generation_config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/generation_config.json",
-          "merges.txt": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/merges.txt",
-          "model-00001-of-00002.safetensors": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/model-00001-of-00002.safetensors",
-          "model-00002-of-00002.safetensors": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/model-00003-of-00002.safetensors",
-          "model.safetensors.index.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/model.safetensors.index.json",
-          "preprocessor_config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/preprocessor_config.json",
-          "tokenizer.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/tokenizer.json",
-          "tokenizer_config.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/tokenizer_config.json",
-          "vocab.json": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct/resolve/main/vocab.json"
         }
       }
     }
