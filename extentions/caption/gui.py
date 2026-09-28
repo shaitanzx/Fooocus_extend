@@ -18,7 +18,7 @@ WD_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_wd.json"
 JOY_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_joy.json")
 LLAMA_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_llama_3.2V.json")
 QWEN_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_qwen2_vl.json")
-MINICPM_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_minicpm.json")
+#MINICPM_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_minicpm.json")
 FLORENCE_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_florence.json")
 
 SKIP_DOWNLOAD = True
@@ -52,8 +52,8 @@ def gui():
                 with gr.Column(min_width=240):
                     with gr.Column(min_width=240):
                         caption_method = gr.Radio(label="Caption method", choices=["WD+LLM", "WD", "LLM"], value="WD+LLM")
-                        llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "MiniCPM", "Florence"], value="Llama")
-                        #llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "Florence"], value="Llama")
+                        #llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "MiniCPM", "Florence"], value="Llama")
+                        llm_choice = gr.Radio(label="Choice LLM", choices=["Llama", "Joy", "Qwen", "Florence"], value="Llama")
 
                         def llm_choice_visibility(caption_method_radio):
                             return gr.update(visible=True if "LLM" in caption_method_radio else False)
@@ -65,7 +65,7 @@ def gui():
                         joy_models = gr.Dropdown(label="Joy models", choices=read_json(JOY_CONFIG), value=read_json(JOY_CONFIG)[0], visible=False)
                         llama_models = gr.Dropdown(label="Llama models", choices=read_json(LLAMA_CONFIG), value=read_json(LLAMA_CONFIG)[0])
                         qwen_models = gr.Dropdown(label="Qwen models", choices=read_json(QWEN_CONFIG), value=read_json(QWEN_CONFIG)[0], visible=False)
-                        minicpm_models = gr.Dropdown(label="MiniCPM models", choices=read_json(MINICPM_CONFIG), value=read_json(MINICPM_CONFIG)[0], visible=False)
+                        #minicpm_models = gr.Dropdown(label="MiniCPM models", choices=read_json(MINICPM_CONFIG), value=read_json(MINICPM_CONFIG)[0], visible=False)
                         florence_models = gr.Dropdown(label="Florence models", choices=read_json(FLORENCE_CONFIG), value=read_json(FLORENCE_CONFIG)[0], visible=False)
 
                 with gr.Column(min_width=240):
@@ -199,14 +199,22 @@ def gui():
         llm_settings_visible = gr.update(visible=True if "LLM" in caption_method_radio else False)
         return run_method_visible, wd_model_visible, wd_force_use_cpu_visible, llm_use_cpu_visible, wd_settings_visible, llm_load_settings_visible, llm_settings_visible
 
+    # def llm_choice_update_visibility(caption_method_radio, llm_choice_radio, joy_models_dropdown):
+    #     joy_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Joy" else False)
+    #     llama_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Llama" else False)
+    #     llama_use_patch_visible = gr.update(visible=True if "LLM" in caption_method_radio and (llm_choice_radio == "Llama" or (llm_choice_radio == "Joy" and joy_models_dropdown == "Joy-Caption-Pre-Alpha")) else False)
+    #     qwen_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Qwen" else False)
+    #     minicpm_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "MiniCPM" else False)
+    #     florence_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else False)
+    #     return joy_model_visible, llama_model_visible, llama_use_patch_visible, qwen_model_visible, minicpm_model_visible, florence_model_visible
+# ЗАМЕНИТЬ НА:
     def llm_choice_update_visibility(caption_method_radio, llm_choice_radio, joy_models_dropdown):
         joy_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Joy" else False)
         llama_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Llama" else False)
         llama_use_patch_visible = gr.update(visible=True if "LLM" in caption_method_radio and (llm_choice_radio == "Llama" or (llm_choice_radio == "Joy" and joy_models_dropdown == "Joy-Caption-Pre-Alpha")) else False)
         qwen_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Qwen" else False)
-        minicpm_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "MiniCPM" else False)
         florence_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else False)
-        return joy_model_visible, llama_model_visible, llama_use_patch_visible, qwen_model_visible, minicpm_model_visible, florence_model_visible
+        return joy_model_visible, llama_model_visible, llama_use_patch_visible, qwen_model_visible, florence_model_visible
 
     def joy_formated_prompts_visibility(llm_choice_radio, joy_models_dropdown):
         joy_formated_prompts_visible = gr.update(visible=True if llm_choice_radio == "Joy" and joy_models_dropdown != "Joy-Caption-Pre-Alpha" else False)
@@ -214,10 +222,16 @@ def gui():
         return joy_formated_prompts_visible, extra_options_visible
 
     caption_method.change(fn=caption_method_update_visibility, inputs=caption_method, outputs=[run_method, wd_models, wd_force_use_cpu, llm_use_cpu, wd_settings, llm_load_settings, llm_settings])
-    caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
-    llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
+    #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
+    caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
+    
+    #llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
+    llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
+    
     llm_choice.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
-    joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
+    #joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
+    joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
+    
     joy_models.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
 
     def llm_use_patch_visibility(llama_model_dropdown):
@@ -292,8 +306,8 @@ def gui():
     def use_qwen(check_caption_method, check_llm_choice):
         return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "qwen" else False
 
-    def use_minicpm(check_caption_method, check_llm_choice):
-        return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "minicpm" else False
+    # def use_minicpm(check_caption_method, check_llm_choice):
+    #     return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "minicpm" else False
 
     def use_florence(check_caption_method, check_llm_choice):
         return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "florence" else False
@@ -304,10 +318,10 @@ def gui():
     # def unloads_models_interactive_group():
     #     return [gr.update(interactive=True)] * 15 + [gr.update(variant='primary'), gr.update(variant='secondary')]
     def load_models_interactive_group():
-        return [gr.update(interactive=False)] * 13 + [gr.update(variant='secondary'), gr.update(variant='primary')]
+        return [gr.update(interactive=False)] * 12 + [gr.update(variant='secondary'), gr.update(variant='primary')]
 
     def unloads_models_interactive_group():
-        return [gr.update(interactive=True)] * 13 + [gr.update(variant='primary'), gr.update(variant='secondary')]
+        return [gr.update(interactive=True)] * 12 + [gr.update(variant='primary'), gr.update(variant='secondary')]
         
     single_inference_input_args = [
         wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
@@ -450,9 +464,9 @@ def gui():
             elif use_qwen(config.caption_method, config.llm_choice):
                 config.llm_config = QWEN_CONFIG
                 config.llm_model_name = str(qwen_model_value)
-            elif use_minicpm(config.caption_method, config.llm_choice):
-                config.llm_config = MINICPM_CONFIG
-                config.llm_model_name = str(minicpm_model_value)
+            # elif use_minicpm(config.caption_method, config.llm_choice):
+            #     config.llm_config = MINICPM_CONFIG
+            #     config.llm_model_name = str(minicpm_model_value)
             elif use_florence(config.caption_method, config.llm_choice):
                 config.llm_config = FLORENCE_CONFIG
                 config.llm_model_name = str(florence_model_value)
@@ -535,9 +549,12 @@ def gui():
             CAPTION_FN.my_logger.debug(f"WD General tags: {general_tag_text}")
             CAPTION_FN.my_logger.info(f"WD tags content: {tag_text}")
 
+        # if use_joy(config.caption_method, config.llm_choice) or use_llama(config.caption_method, config.llm_choice) or \
+        #    use_qwen(config.caption_method, config.llm_choice) or use_minicpm(config.caption_method, config.llm_choice) or \
+        #    use_florence(config.caption_method, config.llm_choice):
+        # ЗАМЕНИТЬ НА:
         if use_joy(config.caption_method, config.llm_choice) or use_llama(config.caption_method, config.llm_choice) or \
-           use_qwen(config.caption_method, config.llm_choice) or use_minicpm(config.caption_method, config.llm_choice) or \
-           use_florence(config.caption_method, config.llm_choice):
+            use_qwen(config.caption_method, config.llm_choice) or use_florence(config.caption_method, config.llm_choice):        
             CAPTION_FN.my_logger.debug(f"Caption with LLM: {config.llm_model_name}.")
             caption_text = CAPTION_FN.my_llm.get_caption(
                 image=image, system_prompt=str(config.llm_system_prompt),
