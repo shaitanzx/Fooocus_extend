@@ -58,7 +58,7 @@ def gui():
                         def llm_choice_visibility(caption_method_radio):
                             return gr.update(visible=True if "LLM" in caption_method_radio else False)
 
-                        caption_method.select(fn=llm_choice_visibility, inputs=caption_method, outputs=llm_choice)
+                        caption_method.change(fn=llm_choice_visibility, inputs=caption_method, outputs=llm_choice)
 
                     with gr.Column(min_width=240):
                         wd_models = gr.Dropdown(label="WD models", choices=read_json(WD_CONFIG), value=read_json(WD_CONFIG)[0])
