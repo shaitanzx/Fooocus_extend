@@ -655,8 +655,8 @@ def gui():
 
     load_model_button.click(
         fn=caption_models_load,
-        inputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
-        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
+        inputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
+        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
     )
 
     # unload_model_button.click(
@@ -666,7 +666,7 @@ def gui():
 
     unload_model_button.click(
         fn=caption_unload_models,
-        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
+        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
     )
 
     single_image_submit_button.click(
