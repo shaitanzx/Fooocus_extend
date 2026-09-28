@@ -429,7 +429,7 @@ def gui():
     #         config.models_save_path = str(os.path.join("models", "caption"))
     def caption_models_load(
             caption_method_value, llm_choice_value,
-            wd_model_value, joy_model_value, llama_model_value, qwen_model_value, minicpm_model_value, florence_model_value,
+            wd_model_value, joy_model_value, llama_model_value, qwen_model_value, florence_model_value,
             wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
     ):
 
