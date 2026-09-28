@@ -44,9 +44,9 @@ def gui():
 
     with gr.Row():
         with gr.Column():
-            with gr.Column(min_width=240):
-                model_site = gr.Radio(label="Model Site", choices=["huggingface", "modelscope"], value="huggingface")
-                huggingface_token = gr.Textbox(label="Hugging Face TOKEN", type="password", placeholder="Enter your Hugging Face TOKEN(READ-PERMISSION)")
+            # with gr.Column(min_width=240):
+            #     model_site = gr.Radio(label="Model Site", choices=["huggingface", "modelscope"], value="huggingface")
+            #     huggingface_token = gr.Textbox(label="Hugging Face TOKEN", type="password", placeholder="Enter your Hugging Face TOKEN(READ-PERMISSION)")
 
             with gr.Row(equal_height=True) as models_settings:
                 with gr.Column(min_width=240):
@@ -186,10 +186,10 @@ def gui():
 
                     batch_process_submit_button = gr.Button(elem_id="batch_process_submit_button", value="Batch Process", variant='primary')
 
-    def huggingface_token_update_visibility(model_site_radio):
-        return gr.Textbox(visible=True if model_site_radio == "huggingface" else False)
+    # def huggingface_token_update_visibility(model_site_radio):
+    #     return gr.Textbox(visible=True if model_site_radio == "huggingface" else False)
 
-    model_site.change(fn=huggingface_token_update_visibility, inputs=model_site, outputs=huggingface_token)
+    # model_site.change(fn=huggingface_token_update_visibility, inputs=model_site, outputs=huggingface_token)
 
     def caption_method_update_visibility(caption_method_radio):
         run_method_visible = gr.update(visible=True if caption_method_radio == "WD+LLM" else False)
@@ -298,12 +298,17 @@ def gui():
     def use_florence(check_caption_method, check_llm_choice):
         return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "florence" else False
 
+    # def load_models_interactive_group():
+    #     return [gr.update(interactive=False)] * 15 + [gr.update(variant='secondary'), gr.update(variant='primary')]
+
+    # def unloads_models_interactive_group():
+    #     return [gr.update(interactive=True)] * 15 + [gr.update(variant='primary'), gr.update(variant='secondary')]
     def load_models_interactive_group():
-        return [gr.update(interactive=False)] * 15 + [gr.update(variant='secondary'), gr.update(variant='primary')]
+        return [gr.update(interactive=False)] * 13 + [gr.update(variant='secondary'), gr.update(variant='primary')]
 
     def unloads_models_interactive_group():
-        return [gr.update(interactive=True)] * 15 + [gr.update(variant='primary'), gr.update(variant='secondary')]
-
+        return [gr.update(interactive=True)] * 13 + [gr.update(variant='primary'), gr.update(variant='secondary')]
+        
     single_inference_input_args = [
         wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
         wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
@@ -383,29 +388,50 @@ def gui():
 
 
 
+    # def caption_models_load(
+    #         model_site_value, huggingface_token_value, caption_method_value, llm_choice_value,
+    #         wd_model_value, joy_model_value, llama_model_value, qwen_model_value, minicpm_model_value, florence_model_value,
+    #         wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
+    # ):
+
+    #     unload_fooocus_completely()
+
+
+    #     global IS_MODEL_LOAD, ARGS, CAPTION_FN
+
+    #     if not IS_MODEL_LOAD:
+    #         start_time = time.monotonic()
+
+    #         # === ИСПОЛЬЗУЕМ DATACLASS ВМЕСТО ARGPARSE ===
+    #         if ARGS is None:
+    #             ARGS = caption.CaptionConfig()
+            
+    #         config = ARGS
+    #         config.model_site = model_site_value
+            
+    #         if huggingface_token_value != "" and str(huggingface_token_value).startswith("hf"):
+    #             os.environ["HF_TOKEN"] = str(huggingface_token_value)
+
+    #         config.models_save_path = str(os.path.join("models", "caption"))
     def caption_models_load(
-            model_site_value, huggingface_token_value, caption_method_value, llm_choice_value,
+            caption_method_value, llm_choice_value,
             wd_model_value, joy_model_value, llama_model_value, qwen_model_value, minicpm_model_value, florence_model_value,
             wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
     ):
 
         unload_fooocus_completely()
 
-
         global IS_MODEL_LOAD, ARGS, CAPTION_FN
 
         if not IS_MODEL_LOAD:
             start_time = time.monotonic()
 
-            # === ИСПОЛЬЗУЕМ DATACLASS ВМЕСТО ARGPARSE ===
             if ARGS is None:
                 ARGS = caption.CaptionConfig()
             
             config = ARGS
-            config.model_site = model_site_value
-            
-            if huggingface_token_value != "" and str(huggingface_token_value).startswith("hf"):
-                os.environ["HF_TOKEN"] = str(huggingface_token_value)
+            # УДАЛЕНО: config.model_site = model_site_value
+            # УДАЛЕНО: блок с huggingface_token_value и HF_TOKEN
 
             config.models_save_path = str(os.path.join("models", "caption"))
             config.log_level = "INFO"
@@ -604,15 +630,26 @@ def gui():
             gr.Warning("Models not loaded!")
         return unloads_models_interactive_group()
 
+    # load_model_button.click(
+    #     fn=caption_models_load,
+    #     inputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
+    #     outputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
+    # )
+
     load_model_button.click(
         fn=caption_models_load,
-        inputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
-        outputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
+        inputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
+        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
     )
+
+    # unload_model_button.click(
+    #     fn=caption_unload_models,
+    #     outputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
+    # )
 
     unload_model_button.click(
         fn=caption_unload_models,
-        outputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
+        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
     )
 
     single_image_submit_button.click(
