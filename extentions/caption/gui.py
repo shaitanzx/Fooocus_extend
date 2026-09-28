@@ -70,7 +70,7 @@ def gui():
 
                 with gr.Column(min_width=240):
                     with gr.Column(min_width=240):
-                        wd_force_use_cpu = gr.Checkbox(label="Force use CPU for WD inference")
+                        wd_force_use_cpu = gr.Checkbox(label="Force use CPU for WD inference", value=True)
                         llm_use_cpu = gr.Checkbox(label="Use cpu for LLM inference")
 
                     llm_use_patch = gr.Checkbox(label="Use LLM LoRA to avoid censored")
