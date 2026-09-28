@@ -11,18 +11,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3/resolve/main/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-eva02-large-tagger-v3",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-eva02-large-tagger-v3/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-eva02-large-tagger-v3/resolve/master/selected_tags.csv"
-        }
-      }
     }
   },
   "wd-vit-large-tagger-v3": {
@@ -35,18 +23,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/SmilingWolf/wd-vit-large-tagger-v3/resolve/main/model.onnx",
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-vit-large-tagger-v3/resolve/main/selected_tags.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-vit-large-tagger-v3",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-vit-large-tagger-v3/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-vit-large-tagger-v3/resolve/master/selected_tags.csv"
         }
       }
     }
@@ -63,18 +39,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-swinv2-tagger-v3",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-swinv2-tagger-v3/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-swinv2-tagger-v3/resolve/master/selected_tags.csv"
-        }
-      }
     }
   },
   "wd-vit-v3": {
@@ -87,18 +51,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/main/model.onnx",
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/main/selected_tags.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-vit-tagger-v3",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-vit-tagger-v3/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-vit-tagger-v3/resolve/master/selected_tags.csv"
         }
       }
     }
@@ -115,18 +67,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-convnext-tagger-v3/resolve/main/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-convnext-tagger-v3",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-convnext-tagger-v3/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-convnext-tagger-v3/resolve/master/selected_tags.csv"
-        }
-      }
     }
   },
   "wd14-moat-v2": {
@@ -139,17 +79,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-moat-tagger-v2/resolve/v2.0/model.onnx",
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-moat-tagger-v2/resolve/v2.0/selected_tags.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-moat-tagger-v2",
-        "revision": "v2.0",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-moat-tagger-v2/resolve/v2.0/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-moat-tagger-v2/resolve/v2.0/selected_tags.csv"
         }
       }
     }
@@ -166,17 +95,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-swinv2-tagger-v2/resolve/v2.0/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-swinv2-tagger-v2",
-        "revision": "v2.0",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-swinv2-tagger-v2/resolve/v2.0/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-swinv2-tagger-v2/resolve/v2.0/selected_tags.csv"
-        }
-      }
     }
   },
   "wd14-convnextv2-v2": {
@@ -189,17 +107,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/v2.0/model.onnx",
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/v2.0/selected_tags.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-convnextv2-tagger-v2",
-        "revision": "v2.0",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnextv2-tagger-v2/resolve/v2.0/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnextv2-tagger-v2/resolve/v2.0/selected_tags.csv"
         }
       }
     }
@@ -216,17 +123,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger-v2/resolve/v2.0/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-vit-tagger-v2",
-        "revision": "v2.0",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-vit-tagger-v2/resolve/v2.0/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-vit-tagger-v2/resolve/v2.0/selected_tags.csv"
-        }
-      }
     }
   },
   "wd14-convnext-v2": {
@@ -239,17 +135,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/v2.0/model.onnx",
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/v2.0/selected_tags.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-convnext-tagger-v2",
-        "revision": "v2.0",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnext-tagger-v2/resolve/v2.0/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnext-tagger-v2/resolve/v2.0/selected_tags.csv"
         }
       }
     }
@@ -266,18 +151,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-swinv2-tagger-v2/resolve/main/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-swinv2-tagger-v2",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-swinv2-tagger-v2/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-swinv2-tagger-v2/resolve/master/selected_tags.csv"
-        }
-      }
     }
   },
   "wd14-convnextv2-v2-git": {
@@ -290,18 +163,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/main/model.onnx",
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/main/selected_tags.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-convnextv2-tagger-v2",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnextv2-tagger-v2/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnextv2-tagger-v2/resolve/master/selected_tags.csv"
         }
       }
     }
@@ -318,18 +179,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger-v2/resolve/main/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-vit-tagger-v2",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-vit-tagger-v2/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-vit-tagger-v2/resolve/master/selected_tags.csv"
-        }
-      }
     }
   },
   "wd14-convnext-v2-git": {
@@ -342,18 +191,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/main/model.onnx",
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/main/selected_tags.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-convnext-tagger-v2",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnext-tagger-v2/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnext-tagger-v2/resolve/master/selected_tags.csv"
         }
       }
     }
@@ -370,18 +207,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger/resolve/main/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-vit-tagger",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-vit-tagger/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-vit-tagger/resolve/master/selected_tags.csv"
-        }
-      }
     }
   },
   "wd14-convnext": {
@@ -396,18 +221,6 @@
           "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger/resolve/main/selected_tags.csv"
         }
       }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/wd-v1-4-vit-tagger",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnext-tagger/resolve/master/model.onnx",
-          "selected_tags.csv": "https://www.modelscope.cn/models/fireicewolf/wd-v1-4-convnext-tagger/resolve/master/selected_tags.csv"
-        }
-      }
     }
   },
   "Z3D-E621-Convnext": {
@@ -420,18 +233,6 @@
         "file_list": {
           "model.onnx": "https://huggingface.co/toynya/Z3D-E621-Convnext/resolve/main/model.onnx",
           "tags-selected.csv": "https://huggingface.co/toynya/Z3D-E621-Convnext/main/tags-selected.csv"
-        }
-      }
-    },
-    "modelscope": {
-      "models": {
-        "repo_id": "fireicewolf/Z3D-E621-Convnext",
-        "revision": "master",
-        "repo_type": "model",
-        "subfolder": "",
-        "file_list": {
-          "model.onnx": "https://www.modelscope.cn/models/fireicewolf/Z3D-E621-Convnext/resolve/master/model.onnx",
-          "tags-selected.csv": "https://www.modelscope.cn/models/fireicewolf/Z3D-E621-Convnext/resolve/master/tags-selected.csv"
         }
       }
     }
