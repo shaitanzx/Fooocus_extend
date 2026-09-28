@@ -28,7 +28,7 @@
   "Qwen2-VL-2B-Instruct": {
     "huggingface": {
       "llm": {
-        "repo_id": "Qwen/Qwen2-VL-72B-Instruct",
+        "repo_id": "Qwen/Qwen2-VL-2B-Instruct",
         "revision": "main",
         "repo_type": "model",
         "subfolder": "",
