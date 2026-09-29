@@ -37,10 +37,10 @@ def read_json(config_file):
 def gui():
     print_title()
 
-    with gr.Row(equal_height=True):
-        with gr.Column(scale=6):
-            gr.Markdown("## Caption images with WD and LLM models (By DukeG)")
-        close_gradio_server_button = gr.Button(value="Close Gradio Server", variant="primary")
+    # with gr.Row(equal_height=True):
+    #     with gr.Column(scale=6):
+    #         gr.Markdown("## Caption images with WD and LLM models (By DukeG)")
+    #     close_gradio_server_button = gr.Button(value="Close Gradio Server", variant="primary")
 
     with gr.Row():
         with gr.Column():
@@ -81,7 +81,7 @@ def gui():
 
             with gr.Row():
                 load_model_button = gr.Button(value="Load Models", variant='primary')
-                unload_model_button = gr.Button(value="Unload Models")
+                unload_model_button = gr.Button(value="Unload Models",interactive=False)
 
             with gr.Row():
                 with gr.Column(min_width=240) as wd_settings:
@@ -161,7 +161,7 @@ def gui():
             with gr.Tab("Single mode"):
                 with gr.Column():
                     input_image = gr.Image(elem_id="input_image", type='filepath', label="Upload Image")
-                    single_image_submit_button = gr.Button(elem_id="single_image_submit_button", value="Inference", variant='primary')
+                    single_image_submit_button = gr.Button(elem_id="single_image_submit_button", value="Inference", variant='primary',interactive=False)
 
                 with gr.Column():
                     wd_tags_output = gr.Text(label='WD Tags Output', lines=10, interactive=False, show_label=True)
@@ -656,8 +656,9 @@ def gui():
     load_model_button.click(
         fn=caption_models_load,
         inputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
-        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
-    )
+        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]) \
+        .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=False)),
+                  outputs=[unload_model_button,single_image_submit_button,load_model_button])
 
     # unload_model_button.click(
     #     fn=caption_unload_models,
@@ -666,8 +667,9 @@ def gui():
 
     unload_model_button.click(
         fn=caption_unload_models,
-        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
-    )
+        outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]) \
+        .then(lambda: (gr.update(interactive=True),gr.update(interactive=False),gr.update(interactive=False),),
+                  outputs=[load_model_button,single_image_submit_button,unload_model_button])
 
     single_image_submit_button.click(
         fn=caption_single_inference,
