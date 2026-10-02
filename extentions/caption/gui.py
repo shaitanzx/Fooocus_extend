@@ -218,7 +218,7 @@ def gui():
                         enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
                         input_dir = gr.Textbox(label="Batch Directory", value=f"{temp_dir}batch_temp", scale=4)
                         is_recursive = gr.Checkbox(label="recursive subfolder", scale=1, visible=False)
-                    custom_caption_save_path = gr.Textbox(label="Custom caption save directory", value=f"{temp_dir}{ext_dir}")
+                    custom_caption_save_path = gr.Textbox(label="Custom caption save directory", value=f"{temp_dir}batch_caption")
                     with gr.Row(equal_height=True):
                         run_method = gr.Radio(label="Run method", choices=['sync', 'queue'], value="sync", interactive=True)
 
