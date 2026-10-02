@@ -507,6 +507,7 @@ class LLM:
                         image_features = vision_outputs.hidden_states[-2]
                         embedded_images = self.image_adapter(image_features)
                         embedded_images = embedded_images.to(device)
+                    del vision_outputs, image_features
                     # Embed prompt
                     prompt_embeds = self.llm.model.embed_tokens(prompt.to(device))
                     assert prompt_embeds.shape == (1, prompt.shape[1],
@@ -648,10 +649,16 @@ class LLM:
 
                         # Embed image
                         # This results in Batch x Image Tokens x Features
+                        # with torch.amp.autocast_mode.autocast(device, enabled=True):
+                        #     vision_outputs = self.clip_model(pixel_values=pixel_values, output_hidden_states=True)
+                        #     embedded_images = self.image_adapter(vision_outputs.hidden_states)
+                        #     embedded_images = embedded_images.to(device)
                         with torch.amp.autocast_mode.autocast(device, enabled=True):
                             vision_outputs = self.clip_model(pixel_values=pixel_values, output_hidden_states=True)
                             embedded_images = self.image_adapter(vision_outputs.hidden_states)
                             embedded_images = embedded_images.to(device)
+
+                        del vision_outputs
 
                         # Construct the input
                         input_embeds = torch.cat([
@@ -934,7 +941,7 @@ class LLM:
             self.logger.info(f'Unloading LLM...')
             start = time.monotonic()
             del self.llm
-            if hasattr(self, "llm_processer"):
+            if hasattr(self, "llm_processor"):
                 del self.llm_processor
             if hasattr(self, "llm_tokenizer"):
                 del self.llm_tokenizer

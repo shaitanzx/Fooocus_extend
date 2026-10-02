@@ -388,11 +388,34 @@ class Caption:
         seconds = f"{seconds:.2f} Sec(s)"
         self.my_logger.info(f"All work done with in {days}{hours}{minutes}{seconds}.")
 
+    # def unload_models(self):
+    #     if self.use_wd:
+    #         self.my_tagger.unload_model()
+    #     if self.use_joy or self.use_llama or self.use_qwen or self.use_minicpm or self.use_florence:
+    #         self.my_llm.unload_model()
     def unload_models(self):
-        if self.use_wd:
-            self.my_tagger.unload_model()
-        if self.use_joy or self.use_llama or self.use_qwen or self.use_minicpm or self.use_florence:
-            self.my_llm.unload_model()
+        tagger = self.my_tagger
+        llm = self.my_llm
+
+        # Сразу отсоединяем объекты от Caption.
+        self.my_tagger = None
+        self.my_llm = None
+
+        try:
+            if tagger is not None:
+                tagger.unload_model()
+        finally:
+            if llm is not None:
+                llm.unload_model()
+
+        self.wd_model_path = None
+        self.wd_tags_csv_path = None
+        self.llm_models_paths = None
+
+        del tagger, llm
+
+        import gc
+        gc.collect()
 
 
 # def main():
