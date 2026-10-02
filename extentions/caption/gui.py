@@ -216,6 +216,7 @@ def gui():
                         file_zip=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260,interactive=True)
                         files_single = gr.Files(label="Drag (Select) 1 or more reference images",file_count="multiple",
                                             file_types=["image"],visible=True,interactive=True,height=260)
+                        preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
                         enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
                         input_dir = gr.Textbox(label="Batch Directory", value=f"{temp_dir}batch_temp", scale=4)
                         is_recursive = gr.Checkbox(label="recursive subfolder", scale=1, visible=False)
