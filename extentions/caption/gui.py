@@ -715,11 +715,9 @@ def gui():
         outputs=[load_model_button, single_image_submit_button, unload_model_button]
     )
 
-    single_image_submit_button.click(
-        fn=caption_single_inference,
-        inputs=single_inference_input_args,
-        outputs=[wd_tags_output, llm_caption_output]
-    )
+    single_image_submit_button.click(lambda: (gr.update(interactive=False)),outputs=[single_image_submit_button]) \
+        .then(fn=caption_single_inference,inputs=single_inference_input_args,outputs=[wd_tags_output, llm_caption_output]) \
+        .then(lambda: (gr.update(interactive=True)),outputs=[single_image_submit_button])
 
     batch_process_submit_button.click(
         fn=caption_batch_inference,
