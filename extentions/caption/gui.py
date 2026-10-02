@@ -208,7 +208,7 @@ def gui():
                     llm_caption_output = gr.Text(label='LLM Caption Output', lines=10, interactive=False, show_label=True)
 
             with gr.Tab("Batch mode") as bs_mode:
-                    ext_dir=gr.Textbox(value='batch_caption',visible=False)
+                ext_dir=gr.Textbox(value='batch_caption',visible=False)
                 with gr.Column(min_width=240):
                     with gr.Row():
                         file_zip=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260,interactive=True)
