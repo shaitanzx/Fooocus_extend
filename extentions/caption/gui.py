@@ -7,6 +7,7 @@ from PIL import Image
 import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
 import modules.core as core
+from modules.launch_util import delete_folder_content
 import gc
 import torch
 
@@ -26,6 +27,42 @@ SKIP_DOWNLOAD = True
 IS_MODEL_LOAD = False
 ARGS = None
 CAPTION_FN = None
+
+
+temp_dir=modules.config.temp_path+os.path.sep
+def clear_dirs(ext_dir):
+    result=delete_folder_content(f"{temp_dir}{ext_dir}", '')
+    result=delete_folder_content(f"{temp_dir}batch_temp", '')
+    return
+def zip_enable(enable):
+    if enable:
+        return gr.update(visible=True),gr.update(visible=False)
+    else:
+        return gr.update(visible=False),gr.update(visible=True)
+
+def unzip_file(zip_file_obj,files_single,enable_zip):
+    extract_folder = f"{temp_dir}batch_temp"
+    if not os.path.exists(extract_folder):
+        os.makedirs(extract_folder)
+    if enable_zip:
+        zip_ref=zipfile.ZipFile(zip_file_obj.name, 'r')
+        zip_ref.extractall(extract_folder)
+        zip_ref.close()
+    else:
+        for file in files_single:
+            original_name = os.path.basename(getattr(file, 'orig_name', file.name))
+            save_path = os.path.join(extract_folder, original_name)
+            try:
+                with open(file.name, 'rb') as src:
+                    with open(save_path, 'wb') as dst:
+                        while True:
+                            chunk = src.read(8192)  # Читаем по 8KB за раз
+                            if not chunk:
+                                break
+                            dst.write(chunk)
+            except Exception as e:
+                print(f"copy error {original_name}: {str(e)}")
+    return
 
 
 
@@ -171,11 +208,16 @@ def gui():
                     llm_caption_output = gr.Text(label='LLM Caption Output', lines=10, interactive=False, show_label=True)
 
             with gr.Tab("Batch mode") as bs_mode:
+                    ext_dir=gr.Textbox(value='batch_caption',visible=False)
                 with gr.Column(min_width=240):
                     with gr.Row():
-                        input_dir = gr.Textbox(label="Batch Directory", placeholder="Enter the directory path for batch processing", scale=4)
-                        is_recursive = gr.Checkbox(label="recursive subfolder", scale=1)
-                    custom_caption_save_path = gr.Textbox(label="Custom caption save directory", placeholder="Enter custom caption save directory path for batch processing")
+                        file_zip=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260,interactive=True)
+                        files_single = gr.Files(label="Drag (Select) 1 or more reference images",file_count="multiple",
+                                            file_types=["image"],visible=True,interactive=True,height=260)
+                    
+                        input_dir = gr.Textbox(label="Batch Directory", value=f"{temp_dir}batch_temp", scale=4)
+                        is_recursive = gr.Checkbox(label="recursive subfolder", scale=1, visible=False)
+                    custom_caption_save_path = gr.Textbox(label="Custom caption save directory", value=f"{temp_dir}batch_temp")
                     with gr.Row(equal_height=True):
                         run_method = gr.Radio(label="Run method", choices=['sync', 'queue'], value="sync", interactive=True)
 
@@ -187,6 +229,7 @@ def gui():
                         save_caption_together = gr.Checkbox(label="Save WD and LLM captions in one file", value=True)
                         save_caption_together_seperator = gr.Textbox(label="Seperator between WD tags and LLM captions", value="|")
 
+                    enable_zip.change(fn=zip_enable,inputs=[enable_zip],outputs=[file_zip,files_single],show_progress=False)
                     batch_process_submit_button = gr.Button(elem_id="batch_process_submit_button", value="Batch Process", variant='primary')
 
     # def huggingface_token_update_visibility(model_site_radio):
@@ -719,8 +762,8 @@ def gui():
         .then(fn=caption_single_inference,inputs=single_inference_input_args,outputs=[wd_tags_output, llm_caption_output]) \
         .then(lambda: (gr.update(interactive=True)),outputs=[single_image_submit_button])
 
-    batch_process_submit_button.click(
-        fn=caption_batch_inference,
-        inputs=batch_inference_input_args,
-        outputs=batch_process_submit_button
-    )
+    batch_process_submit_button.click(lambda: (gr.update(interactive=False)),outputs=[batch_process_submit_button]) \
+        .then(fn=clear_dirs,inputs=ext_dir) \
+        .then(fn=unzip_file,inputs=[file_zip,files_single,enable_zip]) \
+        .then(fn=caption_batch_inference,inputs=batch_inference_input_args,outputs=batch_process_submit_button) \
+        .then(lambda: (gr.update(interactive=True)),outputs=[batch_process_submit_button])

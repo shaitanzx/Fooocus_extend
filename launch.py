@@ -189,4 +189,5 @@ os.makedirs(f"{config.temp_path}{os.path.sep}batch_logo", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_old_photo", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_cleaner", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_cleaner_video", exist_ok=True)
+os.makedirs(f"{config.temp_path}{os.path.sep}batch_caption", exist_ok=True)
 from webui import *
