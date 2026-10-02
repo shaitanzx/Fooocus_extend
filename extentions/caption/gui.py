@@ -63,7 +63,7 @@ def gui():
 
                     with gr.Column(min_width=240):
                         wd_models = gr.Dropdown(label="WD models", choices=read_json(WD_CONFIG), value=read_json(WD_CONFIG)[0])
-                        joy_models = gr.Dropdown(label="Joy models", choices=read_json(JOY_CONFIG), value=read_json(JOY_CONFIG)[0], visible=False)
+                        joy_models = gr.Dropdown(label="Joy models", choices=read_json(JOY_CONFIG), value=read_json(JOY_CONFIG)[0], visible=True)
                         #llama_models = gr.Dropdown(label="Llama models", choices=read_json(LLAMA_CONFIG), value=read_json(LLAMA_CONFIG)[0])
                         qwen_models = gr.Dropdown(label="Qwen models", choices=read_json(QWEN_CONFIG), value=read_json(QWEN_CONFIG)[0], visible=False)
                         #minicpm_models = gr.Dropdown(label="MiniCPM models", choices=read_json(MINICPM_CONFIG), value=read_json(MINICPM_CONFIG)[0], visible=False)
