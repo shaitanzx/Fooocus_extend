@@ -703,7 +703,7 @@ def gui():
 
         start_time = time.monotonic()
 
-        for image_path, stage in CAPTION_FN.iter_inference(config):
+        for image_path in CAPTION_FN.iter_inference(config):
             yield gr.update(value=image_path, visible=True)
         
         if auto_unload_value:
