@@ -11,6 +11,7 @@ import modules.config
 from modules.launch_util import delete_folder_content
 import gc
 import torch
+import zipfile
 
 from . import caption
 from .utils import inference
