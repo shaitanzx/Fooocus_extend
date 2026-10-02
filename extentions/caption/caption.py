@@ -395,17 +395,17 @@ class Caption:
             self.my_llm.unload_model()
 
 
-def main():
-    print_title()
-    config = CaptionConfig()
+# def main():
+#     print_title()
+#     config = CaptionConfig()
     
-    my_caption = Caption()
-    my_caption.check_path(config)
-    my_caption.set_logger(config)
-    my_caption.download_models(config)
-    my_caption.load_models(config)
-    my_caption.run_inference(config)
-    my_caption.unload_models()
+#     my_caption = Caption()
+#     my_caption.check_path(config)
+#     my_caption.set_logger(config)
+#     my_caption.download_models(config)
+#     my_caption.load_models(config)
+#     my_caption.run_inference(config)
+#     my_caption.unload_models()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
