@@ -12,7 +12,7 @@ import torch
 
 from . import caption
 from .utils import inference
-from .utils.logger import print_title
+#from .utils.logger import print_title
 
 WD_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_wd.json")
 JOY_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_joy.json")
