@@ -766,8 +766,7 @@ def gui():
         .then(lambda: (gr.update(interactive=True)),outputs=[single_image_submit_button])
 
     batch_process_submit_button.click(lambda: (gr.update(interactive=False)),outputs=[batch_process_submit_button]) \
-        .then(lambda: (gr.update(value=None)),outputs=[preview],
-)
+        .then(lambda: (gr.update(value=None)),outputs=[preview]) \
         .then(fn=clear_dirs,inputs=ext_dir) \
         .then(fn=unzip_file,inputs=[file_zip,files_single,enable_zip]) \
         .then(fn=caption_batch_inference,inputs=batch_inference_input_args,outputs=preview) \
