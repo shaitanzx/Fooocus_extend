@@ -252,143 +252,330 @@ class Caption:
 
     def iter_inference(self, config: CaptionConfig):
         start_inference_time = time.monotonic()
-        
+
+        # Один список используется и для общего количества, и для нумерации.
+        image_paths = get_image_paths(
+            logger=self.my_logger,
+            path=Path(config.data_path),
+            recursive=config.recursive,
+        )
+        total_images = len(image_paths)
+
+        # Сопоставляем путь с номером. Tagger.iter_inference() и
+        # LLM.iter_inference() в текущем commit выдают строку пути.
+        image_number_by_path = {
+            str(image_path): index
+            for index, image_path in enumerate(image_paths, start=1)
+        }
+
+        def add_progress_info(path_iterator):
+            """Дополняет пути номером изображения и общим количеством."""
+            for image_path in path_iterator:
+                image_path = str(image_path)
+                yield (
+                    image_number_by_path[image_path],
+                    total_images,
+                    image_path,
+                )
+
         if self.use_wd and config.caption_method == "wd+llm":
             if config.llm_user_prompt == DEFAULT_USER_PROMPT_WITHOUT_WD:
                 if not config.llm_caption_without_wd:
-                    self.my_logger.warning(f"LLM user prompt not defined, using default version with wd tags...")
+                    self.my_logger.warning(
+                        "LLM user prompt not defined, using default version with wd tags..."
+                    )
                     config.llm_user_prompt = DEFAULT_USER_PROMPT_WITH_WD
-            
+
             if config.run_method == "sync":
-                self.my_logger.info(f"Running in sync mode...")
-                image_paths = get_image_paths(logger=self.my_logger, path=Path(config.data_path), recursive=config.recursive)
-                pbar = tqdm(total=len(image_paths), smoothing=0.0)
-                
-                for image_path in image_paths:
+                self.my_logger.info("Running in sync mode...")
+                pbar = tqdm(total=total_images, smoothing=0.0)
+
+                for image_number, image_path in enumerate(image_paths, start=1):
                     try:
-                        pbar.set_description('Processing: {}'.format(image_path if len(image_path) <= 40 else image_path[:15]) + ' ... ' + image_path[-20:])
-                        
+                        pbar.set_description(
+                            "Processing: {}".format(
+                                image_path
+                                if len(image_path) <= 40
+                                else image_path[:15]
+                            )
+                            + " ... "
+                            + image_path[-20:]
+                        )
+
                         wd_caption_file = get_caption_file_path(
-                            self.my_logger, data_path=config.data_path, image_path=Path(image_path),
-                            custom_caption_save_path=config.custom_caption_save_path, caption_extension=config.wd_caption_extension
-                        )
-                        llm_caption_file = get_caption_file_path(
-                            self.my_logger, data_path=config.data_path, image_path=Path(image_path),
+                            self.my_logger,
+                            data_path=config.data_path,
+                            image_path=Path(image_path),
                             custom_caption_save_path=config.custom_caption_save_path,
-                            caption_extension=config.llm_caption_extension if config.save_caption_together else config.caption_extension
+                            caption_extension=config.wd_caption_extension,
                         )
-                        
+
+                        llm_caption_file = get_caption_file_path(
+                            self.my_logger,
+                            data_path=config.data_path,
+                            image_path=Path(image_path),
+                            custom_caption_save_path=config.custom_caption_save_path,
+                            caption_extension=(
+                                config.llm_caption_extension
+                                if config.save_caption_together
+                                else config.caption_extension
+                            ),
+                        )
+
+                        # Определяем, будет ли запускаться хотя бы один этап.
+                        # Если оба соответствующих файла уже есть и включён
+                        # skip_exists, картинку не показываем как обрабатываемую.
+                        wd_will_run = not (
+                            config.skip_exists
+                            and os.path.isfile(wd_caption_file)
+                        )
+                        llm_will_run = not (
+                            config.skip_exists
+                            and os.path.isfile(llm_caption_file)
+                        )
+
+                        if wd_will_run or llm_will_run:
+                            yield image_number, total_images, str(image_path)
+
                         image = Image.open(image_path)
                         tag_text = ""
                         caption = ""
 
-                        if not (config.skip_exists and os.path.isfile(wd_caption_file)):
-                            yield str(image_path)
-                            tag_text, rating_tag_text, character_tag_text, general_tag_text = self.my_tagger.get_tags(image=image)
+                        if wd_will_run:
+                            tag_text, rating_tag_text, character_tag_text, general_tag_text = (
+                                self.my_tagger.get_tags(image=image)
+                            )
 
-                            if not (config.not_overwrite and os.path.isfile(wd_caption_file)):
-                                with open(wd_caption_file, "wt", encoding="utf-8") as f:
+                            if not (
+                                config.not_overwrite
+                                and os.path.isfile(wd_caption_file)
+                            ):
+                                with open(
+                                    wd_caption_file,
+                                    "wt",
+                                    encoding="utf-8",
+                                ) as f:
                                     f.write(tag_text + "\n")
                             else:
-                                self.my_logger.warning(f'`not_overwrite` ENABLED!!! WD Caption file {wd_caption_file} already exist, Skip save caption.')
+                                self.my_logger.warning(
+                                    f"`not_overwrite` ENABLED!!! "
+                                    f"WD Caption file {wd_caption_file} "
+                                    f"already exist, Skip save caption."
+                                )
 
                             self.my_logger.debug(f"Image path: {image_path}")
-                            self.my_logger.debug(f"WD Caption path: {wd_caption_file}")
-                            if config.wd_model_name and config.wd_model_name.lower().startswith("wd"):
-                                self.my_logger.debug(f"WD Rating tags: {rating_tag_text}")
-                                self.my_logger.debug(f"WD Character tags: {character_tag_text}")
-                            self.my_logger.debug(f"WD General tags: {general_tag_text}")
-                        else:
-                            self.my_logger.warning(f'`skip_exists` ENABLED!!! WD Caption file {wd_caption_file} already exists, Skip save it!')
-
-                        if not (config.skip_exists and os.path.isfile(llm_caption_file)):
-                            yield str(image_path)
-                            caption = self.my_llm.get_caption(
-                                image=image, system_prompt=str(config.llm_system_prompt),
-                                user_prompt=str(config.llm_user_prompt).format(wd_tags=tag_text),
-                                temperature=config.llm_temperature, max_new_tokens=config.llm_max_tokens
+                            self.my_logger.debug(
+                                f"WD Caption path: {wd_caption_file}"
                             )
-                            if not (config.not_overwrite and os.path.isfile(llm_caption_file)):
-                                with open(llm_caption_file, "wt", encoding="utf-8") as f:
-                                    f.write(caption + "\n")
-                                self.my_logger.debug(f"Image path: {image_path}")
-                                self.my_logger.debug(f"LLM Caption path: {llm_caption_file}")
-                                self.my_logger.debug(f"LLM Caption content: {caption}")
-                            else:
-                                self.my_logger.warning(f'`not_overwrite` ENABLED!!! LLM Caption file {llm_caption_file} already exist, skip save it!')
+
+                            if (
+                                config.wd_model_name
+                                and config.wd_model_name.lower().startswith("wd")
+                            ):
+                                self.my_logger.debug(
+                                    f"WD Rating tags: {rating_tag_text}"
+                                )
+                                self.my_logger.debug(
+                                    f"WD Character tags: {character_tag_text}"
+                                )
+
+                            self.my_logger.debug(
+                                f"WD General tags: {general_tag_text}"
+                            )
                         else:
-                            self.my_logger.warning(f'`skip_exists` ENABLED!!! LLM Caption file {llm_caption_file} already exists, skip save it!')
+                            self.my_logger.warning(
+                                f"`skip_exists` ENABLED!!! "
+                                f"WD Caption file {wd_caption_file} already exists, "
+                                f"Skip save it!"
+                            )
+
+                        if llm_will_run:
+                            caption = self.my_llm.get_caption(
+                                image=image,
+                                system_prompt=str(config.llm_system_prompt),
+                                user_prompt=str(
+                                    config.llm_user_prompt
+                                ).format(wd_tags=tag_text),
+                                temperature=config.llm_temperature,
+                                max_new_tokens=config.llm_max_tokens,
+                            )
+
+                            if not (
+                                config.not_overwrite
+                                and os.path.isfile(llm_caption_file)
+                            ):
+                                with open(
+                                    llm_caption_file,
+                                    "wt",
+                                    encoding="utf-8",
+                                ) as f:
+                                    f.write(caption + "\n")
+
+                                self.my_logger.debug(f"Image path: {image_path}")
+                                self.my_logger.debug(
+                                    f"LLM Caption path: {llm_caption_file}"
+                                )
+                                self.my_logger.debug(
+                                    f"LLM Caption content: {caption}"
+                                )
+                            else:
+                                self.my_logger.warning(
+                                    f"`not_overwrite` ENABLED!!! "
+                                    f"LLM Caption file {llm_caption_file} "
+                                    f"already exist, skip save it!"
+                                )
+                        else:
+                            self.my_logger.warning(
+                                f"`skip_exists` ENABLED!!! "
+                                f"LLM Caption file {llm_caption_file} "
+                                f"already exists, Skip save it!"
+                            )
 
                         if config.save_caption_together:
                             together_caption_file = get_caption_file_path(
-                                self.my_logger, data_path=config.data_path, image_path=Path(image_path),
-                                custom_caption_save_path=config.custom_caption_save_path, caption_extension=config.caption_extension
+                                self.my_logger,
+                                data_path=config.data_path,
+                                image_path=Path(image_path),
+                                custom_caption_save_path=config.custom_caption_save_path,
+                                caption_extension=config.caption_extension,
                             )
-                            self.my_logger.debug(f"`save_caption_together` Enabled, will save WD tags and LLM captions in a new file `{together_caption_file}`")
-                            if not (config.skip_exists and os.path.isfile(together_caption_file)):
+
+                            self.my_logger.debug(
+                                "`save_caption_together` Enabled, "
+                                "will save WD tags and LLM captions in a new file "
+                                f"`{together_caption_file}`"
+                            )
+
+                            if not (
+                                config.skip_exists
+                                and os.path.isfile(together_caption_file)
+                            ):
                                 if not tag_text or not caption:
-                                    self.my_logger.warning("WD tags or LLM Caption is null, skip save them together in one file!")
+                                    self.my_logger.warning(
+                                        "WD tags or LLM Caption is null, "
+                                        "skip save them together in one file!"
+                                    )
                                     pbar.update(1)
                                     continue
 
-                                if not (config.not_overwrite and os.path.isfile(together_caption_file)):
-                                    with open(together_caption_file, "wt", encoding="utf-8") as f:
-                                        together_caption = f"{tag_text} {config.save_caption_together_seperator} {caption}"
+                                if not (
+                                    config.not_overwrite
+                                    and os.path.isfile(together_caption_file)
+                                ):
+                                    with open(
+                                        together_caption_file,
+                                        "wt",
+                                        encoding="utf-8",
+                                    ) as f:
+                                        together_caption = (
+                                            f"{tag_text} "
+                                            f"{config.save_caption_together_seperator} "
+                                            f"{caption}"
+                                        )
                                         f.write(together_caption + "\n")
-                                    self.my_logger.debug(f"Together Caption save path: {together_caption_file}")
-                                    self.my_logger.debug(f"Together Caption content: {together_caption}")
+
+                                    self.my_logger.debug(
+                                        "Together Caption save path: "
+                                        f"{together_caption_file}"
+                                    )
+                                    self.my_logger.debug(
+                                        f"Together Caption content: {together_caption}"
+                                    )
                                 else:
-                                    self.my_logger.warning(f'`not_overwrite` ENABLED!!! Together Caption file {together_caption_file} already exist, skip save it!')
+                                    self.my_logger.warning(
+                                        "`not_overwrite` ENABLED!!! "
+                                        f"Together Caption file {together_caption_file} "
+                                        "already exist, skip save it!"
+                                    )
                             else:
-                                self.my_logger.warning(f'`skip_exists` ENABLED!!! LLM Caption file {llm_caption_file} already exists, skip save it!')
+                                self.my_logger.warning(
+                                    "`skip_exists` ENABLED!!! "
+                                    f"Together Caption file {together_caption_file} "
+                                    "already exists, skip save it!"
+                                )
 
                     except Exception as e:
-                        self.my_logger.error(f"Failed to caption image: {image_path}, skip it.\nerror info: {e}")
+                        self.my_logger.error(
+                            f"Failed to caption image: {image_path}, "
+                            f"skip it.\nerror info: {e}"
+                        )
                         pbar.update(1)
                         continue
 
                     pbar.update(1)
+
                 pbar.close()
 
                 if config.wd_tags_frequency:
-                    sorted_tags = sorted(self.my_tagger.tag_freq.items(), key=lambda x: x[1], reverse=True)
-                    self.my_logger.info('WD Tag frequencies:')
+                    sorted_tags = sorted(
+                        self.my_tagger.tag_freq.items(),
+                        key=lambda x: x[1],
+                        reverse=True,
+                    )
+                    self.my_logger.info("WD Tag frequencies:")
                     for tag, freq in sorted_tags:
-                        self.my_logger.info(f'{tag}: {freq}')
+                        self.my_logger.info(f"{tag}: {freq}")
+
             else:
-                self.my_logger.info(f"Running in queue mode...")
+                self.my_logger.info("Running in queue mode...")
                 pbar = tqdm(total=2, smoothing=0.0)
-                pbar.set_description('Processing with WD model...')
-                yield from self.my_tagger.iter_inference()
+
+                pbar.set_description("Processing with WD model...")
+                yield from add_progress_info(self.my_tagger.iter_inference())
                 pbar.update(1)
-                
-                if self.use_joy: pbar.set_description('Processing with Joy model...')
-                elif self.use_llama: pbar.set_description('Processing with Llama model...')
-                elif self.use_qwen: pbar.set_description('Processing with Qwen model...')
-                elif self.use_minicpm: pbar.set_description('Processing with Mini-CPM model...')
-                elif self.use_florence: pbar.set_description('Processing with Florence model...')
-                
-                yield from self.my_llm.iter_inference()
+
+                if self.use_joy:
+                    pbar.set_description("Processing with Joy model...")
+                elif self.use_llama:
+                    pbar.set_description("Processing with Llama model...")
+                elif self.use_qwen:
+                    pbar.set_description("Processing with Qwen model...")
+                elif self.use_minicpm:
+                    pbar.set_description("Processing with Mini-CPM model...")
+                elif self.use_florence:
+                    pbar.set_description("Processing with Florence model...")
+
+                yield from add_progress_info(self.my_llm.iter_inference())
                 pbar.update(1)
                 pbar.close()
+
         else:
             if self.use_wd:
-                yield from self.my_tagger.iter_inference()
-            elif self.use_joy or self.use_llama or self.use_qwen or self.use_minicpm or self.use_florence:
-                yield from self.my_llm.iter_inference()
+                yield from add_progress_info(self.my_tagger.iter_inference())
+            elif (
+                self.use_joy
+                or self.use_llama
+                or self.use_qwen
+                or self.use_minicpm
+                or self.use_florence
+            ):
+                yield from add_progress_info(self.my_llm.iter_inference())
 
         total_inference_time = time.monotonic() - start_inference_time
         days = total_inference_time // (24 * 3600)
-        total_inference_time %= (24 * 3600)
+        total_inference_time %= 24 * 3600
         hours = total_inference_time // 3600
         total_inference_time %= 3600
         minutes = total_inference_time // 60
         seconds = total_inference_time % 60
+
         days = f"{days:.0f} Day(s) " if days > 0 else ""
-        hours = f"{hours:.0f} Hour(s) " if hours > 0 or (days and hours == 0) else ""
-        minutes = f"{minutes:.0f} Min(s) " if minutes > 0 or (hours and minutes == 0) else ""
+        hours = (
+            f"{hours:.0f} Hour(s) "
+            if hours > 0 or (days and hours == 0)
+            else ""
+        )
+        minutes = (
+            f"{minutes:.0f} Min(s) "
+            if minutes > 0 or (hours and minutes == 0)
+            else ""
+        )
         seconds = f"{seconds:.2f} Sec(s)"
-        self.my_logger.info(f"All work done with in {days}{hours}{minutes}{seconds}.")
+
+        self.my_logger.info(
+            f"All work done with in {days}{hours}{minutes}{seconds}."
+        )
+
 
     # def unload_models(self):
     #     if self.use_wd:
@@ -419,7 +606,7 @@ class Caption:
         import gc
         gc.collect()
 
-        
+
     def run_inference(self, config: CaptionConfig):
         for _event in self.iter_inference(config):
             pass

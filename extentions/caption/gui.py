@@ -703,12 +703,24 @@ def gui():
 
         start_time = time.monotonic()
 
-        for image_path in CAPTION_FN.iter_inference(config):
-            gr.Info(f"Inference end in {time.monotonic() - start_time:.1f}s.")
+        for image_number, total_images, image_path in CAPTION_FN.iter_inference(config):
+            filename = os.path.basename(os.fspath(image_path))
+
+            gr.Info(
+                f"Caption Batch: start element generation "
+                f"{image_number}/{total_images}. "
+                f"Filename: {filename}"
+            )
+
             yield gr.update(value=image_path, visible=True)
-        
+
         if auto_unload_value:
             caption_unload_models()
+
+        gr.Info(
+            f"Caption Batch: completed in "
+            f"{time.monotonic() - start_time:.1f}s."
+        )
 
         yield gr.update()
 

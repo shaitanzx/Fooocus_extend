@@ -822,8 +822,9 @@ class LLM:
 
     def iter_inference(self):
         image_paths = get_image_paths(logger=self.logger, path=Path(self.args.data_path), recursive=self.args.recursive)
+        total_images = len(image_paths)
         pbar = tqdm(total=len(image_paths), smoothing=0.0)
-        for image_path in image_paths:
+        for image_number, image_path in enumerate(image_paths, start=1):
             try:
                 pbar.set_description('Processing: {}'.format(image_path if len(image_path) <= 40 else
                                                              image_path[:15]) + ' ... ' + image_path[-20:])
@@ -842,7 +843,7 @@ class LLM:
                                         f'LLM Caption file {llm_caption_file} already exists, Skip this caption.')
                     pbar.update(1)
                     continue
-                yield str(image_path)
+                yield image_number, total_images, str(image_path)
                 # Image process
                 image = Image.open(image_path)
                 # Change user prompt
@@ -1268,8 +1269,9 @@ class Tagger:
 
     def iter_inference(self):
         image_paths = get_image_paths(logger=self.logger, path=Path(self.args.data_path), recursive=self.args.recursive)
+        total_images = len(image_paths)
         pbar = tqdm(total=len(image_paths), smoothing=0.0)
-        for image_path in image_paths:
+        for image_number, image_path in enumerate(image_paths, start=1):
             try:
                 pbar.set_description('Processing: {}'.format(image_path if len(image_path) <= 40 else
                                                              image_path[:15]) + ' ... ' + image_path[-20:])
@@ -1288,7 +1290,7 @@ class Tagger:
                                         f'WD Caption file {wd_caption_file} already exists, Skip this caption.')
                     pbar.update(1)
                     continue
-                yield str(image_path)
+                yield image_number, total_images, str(image_path)
                 # Image process
                 image = Image.open(image_path)
                 # Get tags
