@@ -820,7 +820,7 @@ class LLM:
             unique_content = '.'.join(unique_content)
             return unique_content
 
-    def inference(self):
+    def iter_inference(self):
         image_paths = get_image_paths(logger=self.logger, path=Path(self.args.data_path), recursive=self.args.recursive)
         pbar = tqdm(total=len(image_paths), smoothing=0.0)
         for image_path in image_paths:
@@ -842,6 +842,7 @@ class LLM:
                                         f'LLM Caption file {llm_caption_file} already exists, Skip this caption.')
                     pbar.update(1)
                     continue
+                yield str(image_path)
                 # Image process
                 image = Image.open(image_path)
                 # Change user prompt
@@ -925,7 +926,9 @@ class LLM:
             pbar.update(1)
 
         pbar.close()
-
+    def inference(self):
+        for _event in self.iter_inference():
+            pass
     def unload_model(self) -> bool:
         image_adapter_unloaded = llm_unloaded = clip_model_unloaded = False
         # Unload Image Adapter
@@ -1263,7 +1266,7 @@ class Tagger:
 
         return tag_text, rating_tag_text, character_tag_text, general_tag_text
 
-    def inference(self):
+    def iter_inference(self):
         image_paths = get_image_paths(logger=self.logger, path=Path(self.args.data_path), recursive=self.args.recursive)
         pbar = tqdm(total=len(image_paths), smoothing=0.0)
         for image_path in image_paths:
@@ -1285,6 +1288,7 @@ class Tagger:
                                         f'WD Caption file {wd_caption_file} already exists, Skip this caption.')
                     pbar.update(1)
                     continue
+                yield str(image_path)
                 # Image process
                 image = Image.open(image_path)
                 # Get tags
@@ -1319,7 +1323,9 @@ class Tagger:
             self.logger.info('Tag frequencies:')
             for tag, freq in sorted_tags:
                 self.logger.info(f'{tag}: {freq}')
-
+    def inference(self):
+        for _event in self.iter_inference():
+            pass
     def unload_model(self) -> bool:
         unloaded = False
         if self.ort_infer_sess:

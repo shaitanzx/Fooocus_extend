@@ -250,7 +250,7 @@ class Caption:
             self.my_llm = LLM(logger=self.my_logger, models_type="florence", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
 
-    def run_inference(self, config: CaptionConfig):
+    def iter_inference(self, config: CaptionConfig):
         start_inference_time = time.monotonic()
         
         if self.use_wd and config.caption_method == "wd+llm":
@@ -283,6 +283,7 @@ class Caption:
                         caption = ""
 
                         if not (config.skip_exists and os.path.isfile(wd_caption_file)):
+                            yield str(image_path)
                             tag_text, rating_tag_text, character_tag_text, general_tag_text = self.my_tagger.get_tags(image=image)
 
                             if not (config.not_overwrite and os.path.isfile(wd_caption_file)):
@@ -301,6 +302,7 @@ class Caption:
                             self.my_logger.warning(f'`skip_exists` ENABLED!!! WD Caption file {wd_caption_file} already exists, Skip save it!')
 
                         if not (config.skip_exists and os.path.isfile(llm_caption_file)):
+                            yield str(image_path)
                             caption = self.my_llm.get_caption(
                                 image=image, system_prompt=str(config.llm_system_prompt),
                                 user_prompt=str(config.llm_user_prompt).format(wd_tags=tag_text),
@@ -357,7 +359,7 @@ class Caption:
                 self.my_logger.info(f"Running in queue mode...")
                 pbar = tqdm(total=2, smoothing=0.0)
                 pbar.set_description('Processing with WD model...')
-                self.my_tagger.inference()
+                yield from self.my_tagger.iter_inference()
                 pbar.update(1)
                 
                 if self.use_joy: pbar.set_description('Processing with Joy model...')
@@ -366,14 +368,14 @@ class Caption:
                 elif self.use_minicpm: pbar.set_description('Processing with Mini-CPM model...')
                 elif self.use_florence: pbar.set_description('Processing with Florence model...')
                 
-                self.my_llm.inference()
+                yield from self.my_llm.iter_inference()
                 pbar.update(1)
                 pbar.close()
         else:
             if self.use_wd:
-                self.my_tagger.inference()
+                yield from self.my_tagger.iter_inference()
             elif self.use_joy or self.use_llama or self.use_qwen or self.use_minicpm or self.use_florence:
-                self.my_llm.inference()
+                yield from self.my_llm.iter_inference()
 
         total_inference_time = time.monotonic() - start_inference_time
         days = total_inference_time // (24 * 3600)
@@ -416,6 +418,11 @@ class Caption:
 
         import gc
         gc.collect()
+
+        
+    def run_inference(self, config: CaptionConfig):
+        for _event in self.iter_inference(config):
+            pass
 
 
 # def main():
