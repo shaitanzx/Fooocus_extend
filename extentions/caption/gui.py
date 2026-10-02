@@ -444,8 +444,9 @@ def gui():
             wd_model_value, joy_model_value, qwen_model_value, florence_model_value,
             wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
     ):
-
-        unload_fooocus_completely()
+        if (("LLM" in caption_method_value and not llm_use_cpu_value) or 
+            ("WD" in caption_method_value and not wd_force_use_cpu_value)):
+            unload_fooocus_completely()
 
         global IS_MODEL_LOAD, ARGS, CAPTION_FN
 
