@@ -7,6 +7,7 @@ from PIL import Image
 import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
 import modules.core as core
+import modules.config
 from modules.launch_util import delete_folder_content
 import gc
 import torch
