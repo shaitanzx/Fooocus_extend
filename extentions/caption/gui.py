@@ -231,7 +231,7 @@ def gui():
                         save_caption_together_seperator = gr.Textbox(label="Seperator between WD tags and LLM captions", value="|")
 
                     enable_zip.change(fn=zip_enable,inputs=[enable_zip],outputs=[file_zip,files_single],show_progress=False)
-                    batch_process_submit_button = gr.Button(elem_id="batch_process_submit_button", value="Batch Process", variant='primary')
+                    batch_process_submit_button = gr.Button(elem_id="batch_process_submit_button", value="Batch Process", variant='primary',interactive=False)
 
     # def huggingface_token_update_visibility(model_site_radio):
     #     return gr.Textbox(visible=True if model_site_radio == "huggingface" else False)
@@ -653,62 +653,61 @@ def gui():
             recursive_value, custom_caption_save_path_value, skip_exists_value, not_overwrite_value, caption_extension_value,
             save_caption_together_value, save_caption_together_seperator_value
     ):
-        if batch_process_submit_button_value == "Batch Process":
-            if not IS_MODEL_LOAD:
-                raise gr.Error("Models not loaded!")
-                
-            config = ARGS
-            if not input_dir_value:
-                raise gr.Error("None input image/dir!")
-
-            config.wd_remove_underscore = bool(wd_remove_underscore_value)
-            config.wd_threshold = float(wd_threshold_value)
-            config.wd_general_threshold = float(wd_general_threshold_value)
-            config.wd_character_threshold = float(wd_character_threshold_value)
-            config.wd_add_rating_tags_to_first = bool(wd_add_rating_tags_to_first_value)
-            config.wd_add_rating_tags_to_last = bool(wd_add_rating_tags_to_last_value)
-            config.wd_character_tags_first = bool(wd_character_tags_first_value)
-            config.wd_character_tag_expand = bool(wd_character_tag_expand_value)
-            config.wd_undesired_tags = str(wd_undesired_tags_value)
-            config.wd_always_first_tags = str(wd_always_first_tags_value)
-            config.wd_caption_extension = str(wd_caption_extension_value)
-            config.wd_caption_separator = str(wd_caption_separator_value)
-            config.wd_tag_replacement = str(wd_tag_replacement_value)
-
-            config.llm_caption_extension = str(llm_caption_extension_value)
-            config.llm_read_wd_caption = bool(llm_read_wd_caption_value)
-            config.llm_caption_without_wd = bool(llm_caption_without_wd_value)
-            config.llm_system_prompt = str(llm_system_prompt_value)
-            config.llm_user_prompt = str(llm_user_prompt_value)
-            config.llm_temperature = float(llm_temperature_value)
-            config.llm_max_tokens = int(llm_max_tokens_value)
-            config.image_size = int(image_size_value)
-
-            config.data_path = str(input_dir_value)
-            config.run_method = str(run_method_value)
-            config.recursive = bool(recursive_value)
-            config.custom_caption_save_path = str(custom_caption_save_path_value)
-            config.skip_exists = bool(skip_exists_value)
-            config.not_overwrite = bool(not_overwrite_value)
-            config.caption_extension = str(caption_extension_value)
-            config.save_caption_together = bool(save_caption_together_value)
-            config.save_caption_together_seperator = str(save_caption_together_seperator_value)
-
-            if config.data_path and not os.path.exists(config.data_path):
-                raise gr.Error(f"{config.data_path} NOT FOUND!!!")
-            if config.custom_caption_save_path and not os.path.exists(config.custom_caption_save_path):
-                raise gr.Error(f"{config.custom_caption_save_path} NOT FOUND!!!")
-
-            start_time = time.monotonic()
-            CAPTION_FN.run_inference(config)
-            gr.Info(f"Inference end in {time.monotonic() - start_time:.1f}s.")
+        
+        if not IS_MODEL_LOAD:
+            raise gr.Error("Models not loaded!")
             
-            if auto_unload_value:
-                caption_unload_models()
+        config = ARGS
+        if not input_dir_value:
+            raise gr.Error("None input image/dir!")
 
-            return gr.update(value="Done!", variant='stop')
-        else:
-            return gr.update(value="Batch Process", variant='primary')
+        config.wd_remove_underscore = bool(wd_remove_underscore_value)
+        config.wd_threshold = float(wd_threshold_value)
+        config.wd_general_threshold = float(wd_general_threshold_value)
+        config.wd_character_threshold = float(wd_character_threshold_value)
+        config.wd_add_rating_tags_to_first = bool(wd_add_rating_tags_to_first_value)
+        config.wd_add_rating_tags_to_last = bool(wd_add_rating_tags_to_last_value)
+        config.wd_character_tags_first = bool(wd_character_tags_first_value)
+        config.wd_character_tag_expand = bool(wd_character_tag_expand_value)
+        config.wd_undesired_tags = str(wd_undesired_tags_value)
+        config.wd_always_first_tags = str(wd_always_first_tags_value)
+        config.wd_caption_extension = str(wd_caption_extension_value)
+        config.wd_caption_separator = str(wd_caption_separator_value)
+        config.wd_tag_replacement = str(wd_tag_replacement_value)
+
+        config.llm_caption_extension = str(llm_caption_extension_value)
+        config.llm_read_wd_caption = bool(llm_read_wd_caption_value)
+        config.llm_caption_without_wd = bool(llm_caption_without_wd_value)
+        config.llm_system_prompt = str(llm_system_prompt_value)
+        config.llm_user_prompt = str(llm_user_prompt_value)
+        config.llm_temperature = float(llm_temperature_value)
+        config.llm_max_tokens = int(llm_max_tokens_value)
+        config.image_size = int(image_size_value)
+
+        config.data_path = str(input_dir_value)
+        config.run_method = str(run_method_value)
+        config.recursive = bool(recursive_value)
+        config.custom_caption_save_path = str(custom_caption_save_path_value)
+        config.skip_exists = bool(skip_exists_value)
+        config.not_overwrite = bool(not_overwrite_value)
+        config.caption_extension = str(caption_extension_value)
+        config.save_caption_together = bool(save_caption_together_value)
+        config.save_caption_together_seperator = str(save_caption_together_seperator_value)
+
+        if config.data_path and not os.path.exists(config.data_path):
+            raise gr.Error(f"{config.data_path} NOT FOUND!!!")
+        if config.custom_caption_save_path and not os.path.exists(config.custom_caption_save_path):
+            raise gr.Error(f"{config.custom_caption_save_path} NOT FOUND!!!")
+
+        start_time = time.monotonic()
+        CAPTION_FN.run_inference(config)
+        gr.Info(f"Inference end in {time.monotonic() - start_time:.1f}s.")
+        
+        if auto_unload_value:
+            caption_unload_models()
+
+        
+
 
     def caption_unload_models():
         global IS_MODEL_LOAD
@@ -739,8 +738,8 @@ def gui():
         fn=caption_models_load,
         inputs=[caption_method, llm_choice, wd_models, joy_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
         outputs=[caption_method, llm_choice, wd_models, joy_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]) \
-        .then(lambda: (gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=False)),
-        outputs=[unload_model_button, single_image_submit_button, load_model_button])
+        .then(lambda: (gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),gr.update(interactive=False)),
+        outputs=[unload_model_button, single_image_submit_button, batch_process_submit_button, load_model_button])
 
     # unload_model_button.click(
     #     fn=caption_unload_models,
@@ -755,8 +754,8 @@ def gui():
     unload_model_button.click(
         fn=caption_unload_models,
         outputs=[caption_method, llm_choice, wd_models, joy_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]) \
-        .then(lambda: (gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=False)),
-        outputs=[load_model_button, single_image_submit_button, unload_model_button]
+        .then(lambda: (gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=False),gr.update(interactive=False)),
+        outputs=[load_model_button, single_image_submit_button, batch_process_submit_button, unload_model_button]
     )
 
     single_image_submit_button.click(lambda: (gr.update(interactive=False)),outputs=[single_image_submit_button]) \
@@ -766,5 +765,5 @@ def gui():
     batch_process_submit_button.click(lambda: (gr.update(interactive=False)),outputs=[batch_process_submit_button]) \
         .then(fn=clear_dirs,inputs=ext_dir) \
         .then(fn=unzip_file,inputs=[file_zip,files_single,enable_zip]) \
-        .then(fn=caption_batch_inference,inputs=batch_inference_input_args,outputs=batch_process_submit_button) \
+        .then(fn=caption_batch_inference,inputs=batch_inference_input_args) \
         .then(lambda: (gr.update(interactive=True)),outputs=[batch_process_submit_button])
