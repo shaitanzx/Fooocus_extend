@@ -35,7 +35,7 @@ def read_json(config_file):
 
 
 def gui():
-    print_title()
+    #print_title()
 
     # with gr.Row(equal_height=True):
     #     with gr.Column(scale=6):
