@@ -704,6 +704,7 @@ def gui():
         start_time = time.monotonic()
 
         for image_path in CAPTION_FN.iter_inference(config):
+            gr.Info(f"Inference end in {time.monotonic() - start_time:.1f}s.")
             yield gr.update(value=image_path, visible=True)
         
         if auto_unload_value:
