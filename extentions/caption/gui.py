@@ -28,6 +28,34 @@ ARGS = None
 CAPTION_FN = None
 
 
+def log_memory(stage: str):
+    import psutil
+    import gc
+    import torch
+    
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    
+    mem = psutil.virtual_memory()
+    ram_used_gb = mem.used / 1e9
+    ram_avail_gb = mem.available / 1e9
+    
+    vram_used_gb = 0
+    vram_reserved_gb = 0
+    if torch.cuda.is_available():
+        vram_used_gb = torch.cuda.memory_allocated() / 1e9
+        vram_reserved_gb = torch.cuda.memory_reserved() / 1e9
+    
+    print(f"\n{'='*60}")
+    print(f"MEMORY LOG [{stage}]")
+    print(f"  RAM: {ram_used_gb:.2f} GB used / {ram_avail_gb:.2f} GB free")
+    print(f"  VRAM allocated: {vram_used_gb:.2f} GB")
+    print(f"  VRAM reserved: {vram_reserved_gb:.2f} GB")
+    print(f"{'='*60}\n")
+
+
+
 def read_json(config_file):
     with open(config_file, 'r', encoding='utf-8') as config_json:
         datas = json.load(config_json)
@@ -444,10 +472,13 @@ def gui():
             wd_model_value, joy_model_value, qwen_model_value, florence_model_value,
             wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
     ):
+
+        log_memory("BEFORE unload_fooocus")
+
         if (("LLM" in caption_method_value and not llm_use_cpu_value) or 
             ("WD" in caption_method_value and not wd_force_use_cpu_value)):
             unload_fooocus_completely()
-
+        log_memory("AFTER unload_fooocus")
         global IS_MODEL_LOAD, ARGS, CAPTION_FN
 
         if not IS_MODEL_LOAD:
@@ -497,8 +528,10 @@ def gui():
             config.skip_download = SKIP_DOWNLOAD
 
             caption_init.download_models(config)
-            caption_init.load_models(config)
+            log_memory("AFTER download_models")
 
+            caption_init.load_models(config)
+            log_memory("AFTER load_models")  # ПОСЛЕ загрузки в GPU
             IS_MODEL_LOAD = True
             gr.Info(f"Models loaded in {time.monotonic() - start_time:.1f}s.")
             return load_models_interactive_group()
@@ -520,6 +553,9 @@ def gui():
             llm_caption_extension_value, llm_read_wd_caption_value, llm_caption_without_wd_value, llm_system_prompt_value, llm_user_prompt_value,
             llm_temperature_value, llm_max_tokens_value, image_size_value, auto_unload_value, input_image_value
     ):
+
+        log_memory("BEFORE inference")
+
         if not IS_MODEL_LOAD:
             raise gr.Error("Models not loaded!")
             
@@ -561,6 +597,8 @@ def gui():
             if character_tag_text: CAPTION_FN.my_logger.debug(f"WD Character tags: {character_tag_text}")
             CAPTION_FN.my_logger.debug(f"WD General tags: {general_tag_text}")
             CAPTION_FN.my_logger.info(f"WD tags content: {tag_text}")
+            log_memory("AFTER WD tagging")
+
 
         # if use_joy(config.caption_method, config.llm_choice) or use_llama(config.caption_method, config.llm_choice) or \
         #    use_qwen(config.caption_method, config.llm_choice) or use_minicpm(config.caption_method, config.llm_choice) or \
@@ -578,13 +616,14 @@ def gui():
                 temperature=config.llm_temperature, max_new_tokens=config.llm_max_tokens
             )
             CAPTION_FN.my_logger.info(f"LLM Caption content: {caption_text}")
-            
+            log_memory("AFTER LLM caption")
+
         gr.Info(f"Inference end in {time.monotonic() - start_time:.1f}s.")
         CAPTION_FN.my_logger.info(f"Inference end in {time.monotonic() - start_time:.1f}s.")
         
         if auto_unload_value:
             caption_unload_models()
-            
+        log_memory("END inference")    
         return tag_text, caption_text
 
     def caption_batch_inference(
@@ -655,12 +694,15 @@ def gui():
 
     def caption_unload_models():
         global IS_MODEL_LOAD
+        log_memory("BEFORE unload caption models")
         if IS_MODEL_LOAD:
             CAPTION_FN.unload_models()
             IS_MODEL_LOAD = False
             gr.Info("Models unloaded successfully.")
         else:
             gr.Warning("Models not loaded!")
+        log_memory("AFTER unload caption models") 
+        
         return unloads_models_interactive_group()
 
     # load_model_button.click(
