@@ -276,7 +276,7 @@ class Caption:
                 yield (
                     image_number,
                     total_images,
-                    image_path,
+                    str(image_path),
                 )
 
         if self.use_wd and config.caption_method == "wd+llm":

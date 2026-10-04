@@ -216,7 +216,8 @@ def gui():
                         file_zip=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260,interactive=True)
                         files_single = gr.Files(label="Drag (Select) 1 or more reference images",file_count="multiple",
                                             file_types=["image"],visible=True,interactive=True,height=260)
-                        preview=gr.Image(label="Process preview",visible=True,height=260,interactive=False)
+                        preview=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
+                        file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                         enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
                         input_dir = gr.Textbox(value=f"{temp_dir}batch_temp", visible=False)
                         is_recursive = gr.Checkbox(visible=False)
@@ -712,7 +713,7 @@ def gui():
                 f"Filename: {filename}"
             )
 
-            yield gr.update(value=image_path, visible=True)
+            yield gr.update(value=image_path)
 
         if auto_unload_value:
             caption_unload_models()
@@ -722,7 +723,7 @@ def gui():
             f"{time.monotonic() - start_time:.1f}s."
         )
 
-        yield gr.update()
+        yield gr.update(value=None)
 
 
     def caption_unload_models():
@@ -778,9 +779,8 @@ def gui():
         .then(fn=caption_single_inference,inputs=single_inference_input_args,outputs=[wd_tags_output, llm_caption_output]) \
         .then(lambda: (gr.update(interactive=True)),outputs=[single_image_submit_button])
 
-    batch_process_submit_button.click(lambda: (gr.update(interactive=False)),outputs=[batch_process_submit_button]) \
-        .then(lambda: (gr.update(value=None)),outputs=[preview]) \
+    batch_process_submit_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False), gr.update(visible=True)),outputs=[batch_process_submit_button,file_out,preview]) \
         .then(fn=clear_dirs,inputs=ext_dir) \
         .then(fn=unzip_file,inputs=[file_zip,files_single,enable_zip]) \
-        .then(fn=caption_batch_inference,inputs=batch_inference_input_args,outputs=preview) \
-        .then(lambda: (gr.update(interactive=True)),outputs=[batch_process_submit_button])
+        .then(fn=caption_batch_inference,inputs=batch_inference_input_args,outputs=preview,show_progress=False) \
+        .then(lambda: (gr.update(interactive=True),gr.update(visible=True), gr.update(visible=False)),outputs=[batch_process_submit_button,file_out,preview])
