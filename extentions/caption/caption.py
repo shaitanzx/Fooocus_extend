@@ -270,12 +270,11 @@ class Caption:
 
         def add_progress_info(path_iterator):
             """Дополняет пути номером изображения и общим количеством."""
-            for image_path in path_iterator:
-                image_path = str(image_path)
-                print ('aaaaaaaaaaaaaaaaaa', image_path)
-                print ('aaaaaaaaaaaaaaaaaa', path_iterator)
+            for event in path_iterator:
+                
+                image_number, event_total, image_path = event
                 yield (
-                    image_number_by_path[image_path],
+                    image_number,
                     total_images,
                     image_path,
                 )
