@@ -218,15 +218,15 @@ def gui():
                                             file_types=["image"],visible=True,interactive=True,height=260)
                         preview=gr.Image(label="Process preview",visible=True,height=260,interactive=False)
                         enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
-                        input_dir = gr.Textbox(label="Batch Directory", value=f"{temp_dir}batch_temp", scale=4, visible=False)
-                        is_recursive = gr.Checkbox(label="recursive subfolder", scale=1, visible=False)
-                    custom_caption_save_path = gr.Textbox(label="Custom caption save directory", value=f"{temp_dir}batch_caption",vision=False)
+                        input_dir = gr.Textbox(value=f"{temp_dir}batch_temp", visible=False)
+                        is_recursive = gr.Checkbox(visible=False)
+                    custom_caption_save_path = gr.Textbox(value=f"{temp_dir}batch_caption",visible=False)
                     with gr.Row(equal_height=True):
                         run_method = gr.Radio(label="Run method", choices=['sync', 'queue'], value="sync", interactive=True)
 
                         with gr.Column(min_width=240, visible=False):
-                            skip_exists = gr.Checkbox(label="Will not caption if caption file exists")
-                            not_overwrite = gr.Checkbox(label="Will not overwrite caption file if exists")
+                            skip_exists = gr.Checkbox()
+                            not_overwrite = gr.Checkbox()
                     with gr.Column(min_width=240):
                         caption_extension = gr.Textbox(label="Caption file extension", value=".txt")
                         save_caption_together = gr.Checkbox(label="Save WD and LLM captions in one file", value=True)
