@@ -272,6 +272,8 @@ class Caption:
             """Дополняет пути номером изображения и общим количеством."""
             for image_path in path_iterator:
                 image_path = str(image_path)
+                print ('aaaaaaaaaaaaaaaaaa', image_path)
+                print ('aaaaaaaaaaaaaaaaaa', path_iterator)
                 yield (
                     image_number_by_path[image_path],
                     total_images,
