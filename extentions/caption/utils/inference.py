@@ -4,7 +4,7 @@ import os
 import time
 from argparse import Namespace
 from pathlib import Path
-
+import random
 import numpy
 from PIL import Image, ImageDraw
 from tqdm import tqdm
@@ -66,7 +66,8 @@ DEFAULT_USER_PROMPT_WITH_WD = """Refer to the following words:
 Please describe this image."""
 
 DEFAULT_USER_PROMPT_WITHOUT_WD = """Please describe this image."""
-
+colormap = ['blue','orange','green','purple','brown','pink','gray','olive','cyan','red',
+            'lime','indigo','violet','aqua','magenta','coral','gold','tan','skyblue']
 def _draw_florence_result(
     image: Image.Image,
     task_name: str,
@@ -90,48 +91,33 @@ def _draw_florence_result(
         return canvas
 
     if task_name in {"Referring Expression Segmentation", "Region to Segmentation"}:
-        canvas = image.convert("RGB").copy()
-        draw = ImageDraw.Draw(canvas, "RGBA")
-        colors = [(255, 80, 80, 100), (80, 160, 255, 100), (80, 220, 120, 100)]
-        width, height = image.size
-
-        for index, (polygons, label) in enumerate(
-            zip(result.get("polygons", []), result.get("labels", []))
-        ):
-            color = colors[index % len(colors)]
-
-            for polygon in polygons:
-                try:
-                    coords = numpy.asarray(
-                        polygon, dtype=numpy.float64
-                    ).reshape(-1, 2)
-                except (TypeError, ValueError, OverflowError):
-                    continue
-
-                # Отбрасываем NaN и Inf.
-                coords = coords[numpy.isfinite(coords).all(axis=1)]
-                if len(coords) < 3:
-                    continue
-
-                # Florence возвращает координаты в пикселях исходного изображения.
-                coords[:, 0] = numpy.clip(coords[:, 0], 0, width - 1)
-                coords[:, 1] = numpy.clip(coords[:, 1], 0, height - 1)
-
-                # Передаём Pillow обычные Python int в виде пар (x, y).
-                points = [
-                    (int(round(float(x))), int(round(float(y))))
-                    for x, y in coords
-                ]
-
-                if len(set(points)) < 3:
-                    continue
-
-                draw.polygon(
-                    points,
-                    fill=color,
-                    outline=color[:3] + (255,),
-                )
-                draw.text(points[0], str(label), fill="white")
+    draw = ImageDraw.Draw(image)  
+      
+   
+    # Set up scale factor if needed (use 1 if not scaling)  
+    scale = 1  
+      
+    # Iterate over polygons and labels  
+    for polygons, label in zip(prediction['polygons'], prediction['labels']):  
+        color = random.choice(colormap)  
+        fill_color = random.choice(colormap) if fill_mask else None  
+          
+        for _polygon in polygons:  
+            _polygon = numpy.array(_polygon).reshape(-1, 2)  
+            if len(_polygon) < 3:  
+                print('Invalid polygon:', _polygon)  
+                continue  
+              
+            _polygon = (_polygon * scale).reshape(-1).tolist()  
+              
+            # Draw the polygon  
+            if fill_mask:  
+                draw.polygon(_polygon, outline=color, fill=fill_color)  
+            else:  
+                draw.polygon(_polygon, outline=color)  
+              
+            # Draw the label text  
+            draw.text((_polygon[0] + 8, _polygon[1] + 2), label, fill=color) 
 
         return canvas
 
