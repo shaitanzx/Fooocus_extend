@@ -221,11 +221,13 @@ def gui():
                     florence_system_prompt = gr.Dropdown(
                         choices=list(SINGLE_TASKS),
                         value="More Detailed Caption",
-                        label="Task",
+                        label="Florence2 system prompt",
+                        visible=False,
                     )
                     florence_user_prompt = gr.Textbox(
-                        label="Text input",
+                        label="Florence user prompt",
                         placeholder="Required for grounding/region tasks",
+                        visible=False,
                     )
                     llm_system_prompt = gr.Textbox(label="system prompt for llm caption", lines=7, max_lines=7, value=caption.DEFAULT_SYSTEM_PROMPT)
                     llm_user_prompt = gr.Textbox(label="user prompt for llm caption", lines=7, max_lines=7, value=caption.DEFAULT_USER_PROMPT_WITH_WD)
@@ -308,9 +310,8 @@ def gui():
         llama_use_patch_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Joy" and joy_models_dropdown == "Joy-Caption-Alpha-Two" or joy_models_dropdown == "Joy-Caption-Pre-Alpha" else False)
         qwen_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Qwen" else False)
         florence_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else False)
-        florence_system_prompt = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else False)
-        florence_user_prompt = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else False)
-        return joy_model_visible, llama_use_patch_visible, qwen_model_visible, florence_model_visible, florence_system_promp, florence_user_prompt
+
+        return joy_model_visible, llama_use_patch_visible, qwen_model_visible, florence_model_visible, florence_model_visible, florence_model_visible, not florence_model_visible, not florence_model_visible
         
     def joy_formated_prompts_visibility(llm_choice_radio, joy_models_dropdown):
         joy_formated_prompts_visible = gr.update(visible=True if llm_choice_radio == "Joy" and joy_models_dropdown != "Joy-Caption-Pre-Alpha" else False)
@@ -320,17 +321,17 @@ def gui():
     caption_method.change(fn=caption_method_update_visibility, inputs=caption_method, outputs=[run_method, wd_models, wd_force_use_cpu, llm_use_cpu, wd_settings, llm_load_settings, llm_settings])
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
-    caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_promp, florence_user_prompt])
+    caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_promp, florence_user_prompt, llm_system_prompt, llm_user_prompt])
 
 
     #llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
     #llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
-    llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_promp, florence_user_prompt])
+    llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_promp, florence_user_prompt, llm_system_prompt, llm_user_prompt])
     
     llm_choice.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
     #joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
     #joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
-    joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_promp, florence_user_prompt])
+    joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_promp, florence_user_prompt, llm_system_prompt, llm_user_prompt])
     
     joy_models.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
 
