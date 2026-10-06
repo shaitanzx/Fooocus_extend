@@ -688,6 +688,7 @@ def gui():
                 image=image,
                 task_name=config.florence_task,
                 text_input=config.florence_text_input,
+                max_token=config.llm_max_tokens
             )
         elif use_joy(config.caption_method, config.llm_choice) or use_qwen(
             config.caption_method, config.llm_choice
