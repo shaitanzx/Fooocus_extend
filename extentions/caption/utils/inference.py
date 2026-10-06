@@ -133,12 +133,15 @@ def _draw_florence_result(
 
     if task_name == "OCR with Region":
         canvas = image.convert("RGB").copy()
-        draw = ImageDraw.Draw(canvas)
-        for box, label in zip(result.get("quad_boxes", []), result.get("labels", [])):
-            points = numpy.asarray(box).reshape(-1, 2).astype(int).tolist()
-            if len(points) >= 4:
-                draw.line(points + [points[0]], fill="red", width=3)
-                draw.text(tuple(points[0]), str(label), fill="red")
+        draw = ImageDraw.Draw(image)
+        bboxes, labels = result.get['quad_boxes'], result.get['labels']
+        for box, label in zip(bboxes, labels):
+            color = random.choice(colormap)
+            new_box = (numpy.array(box) * scale).tolist()
+            draw.polygon(new_box, width=3, outline=color)
+            draw.text((new_box[0]+8, new_box[1]+2),
+                        "{}".format(label),
+                        align="right",fill=color)
         return canvas
     return None
 
