@@ -288,7 +288,7 @@ def gui():
         llm_load_settings_visible = llm_use_cpu_visible = gr.update(visible=True if "LLM" in caption_method_radio else False)
         wd_settings_visible = gr.update(visible=True if "WD" in caption_method_radio else False)
         llm_settings_visible = gr.update(visible=True if "LLM" in caption_method_radio else False)
-        return run_method_visible, wd_model_visible, wd_force_use_cpu_visible, llm_use_cpu_visible, wd_settings_visible, llm_load_settings_visible, llm_settings_visible,wd_settings_visible,llm_settings_visible
+        return run_method_visible, wd_model_visible, wd_force_use_cpu_visible, llm_use_cpu_visible, wd_settings_visible, llm_load_settings_visible, llm_settings_visible,wd_settings_visible,llm_settings_visible,llm_settings_visible
 
     # def llm_choice_update_visibility(caption_method_radio, llm_choice_radio, joy_models_dropdown):
     #     joy_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Joy" else False)
@@ -320,7 +320,7 @@ def gui():
         extra_options_visible = gr.update(visible=True if llm_choice_radio == "Joy" and joy_models_dropdown in ["Joy-Caption-Alpha-Two-Llava", "Joy-Caption-Alpha-Two"] else False)
         return joy_formated_prompts_visible, extra_options_visible
 
-    caption_method.change(fn=caption_method_update_visibility, inputs=caption_method, outputs=[run_method, wd_models, wd_force_use_cpu, llm_use_cpu, wd_settings, llm_load_settings, llm_settings,wd_tags_output, llm_caption_output])
+    caption_method.change(fn=caption_method_update_visibility, inputs=caption_method, outputs=[run_method, wd_models, wd_force_use_cpu, llm_use_cpu, wd_settings, llm_load_settings, llm_settings,wd_tags_output, llm_caption_output,florence_image])
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
     caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt])
