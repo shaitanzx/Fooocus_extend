@@ -91,7 +91,8 @@ def _draw_florence_result(
         return canvas
 
     if task_name in {"Referring Expression Segmentation", "Region to Segmentation"}:
-        draw = ImageDraw.Draw(image)  
+        canvas = image.convert("RGB").copy()
+        draw = ImageDraw.Draw(canvas)
         
     
         # Set up scale factor if needed (use 1 if not scaling)  
