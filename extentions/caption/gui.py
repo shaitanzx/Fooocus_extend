@@ -288,7 +288,7 @@ def gui():
         llm_load_settings_visible = llm_use_cpu_visible = gr.update(visible=True if "LLM" in caption_method_radio else False)
         wd_settings_visible = gr.update(visible=True if "WD" in caption_method_radio else False)
         llm_settings_visible = gr.update(visible=True if "LLM" in caption_method_radio else False)
-        florence_image = gr.update(visible=llm_settings_visible and llm_choice == "Florence" else False)
+        florence_image = gr.update(visible=True if llm_settings_visible and llm_choice == "Florence" else False)
         return run_method_visible, wd_model_visible, wd_force_use_cpu_visible, llm_use_cpu_visible, wd_settings_visible, llm_load_settings_visible, llm_settings_visible,wd_settings_visible,llm_settings_visible,florence_image
 
     # def llm_choice_update_visibility(caption_method_radio, llm_choice_radio, joy_models_dropdown):
