@@ -324,7 +324,7 @@ def gui():
     caption_method.change(fn=caption_method_update_visibility, inputs=[caption_method,llm_choice], outputs=[run_method, wd_models, wd_force_use_cpu, llm_use_cpu, wd_settings, llm_load_settings, llm_settings,wd_tags_output, llm_caption_output,florence_image])
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
-    caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt])
+    caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt, florence_image])
 
 
     #llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
@@ -334,7 +334,7 @@ def gui():
     llm_choice.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
     #joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
     #joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
-    joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt])
+    joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt, florence_image])
     
     joy_models.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
 
@@ -657,6 +657,9 @@ def gui():
         config.llm_max_tokens = int(llm_max_tokens_value)
         config.image_size = int(image_size_value)
         config.data_path = str(input_image_value)
+
+        config.florence_task = str(florence_task_value)
+        config.florence_text_input = str(florence_text_input_value)
 
         start_time = time.monotonic()
         image = Image.open(input_image_value)
