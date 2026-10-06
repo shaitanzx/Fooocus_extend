@@ -111,10 +111,8 @@ def _draw_florence_result(
                 _polygon = (_polygon * scale).reshape(-1).tolist()  
                 
                 # Draw the polygon  
-                if fill_mask:  
-                    draw.polygon(_polygon, outline=color, fill=fill_color)  
-                else:  
-                    draw.polygon(_polygon, outline=color)  
+                draw.polygon(_polygon, outline=color, fill=fill_color)  
+ 
                 
                 # Draw the label text  
                 draw.text((_polygon[0] + 8, _polygon[1] + 2), label, fill=color) 
