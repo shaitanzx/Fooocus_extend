@@ -91,33 +91,33 @@ def _draw_florence_result(
         return canvas
 
     if task_name in {"Referring Expression Segmentation", "Region to Segmentation"}:
-    draw = ImageDraw.Draw(image)  
-      
-   
-    # Set up scale factor if needed (use 1 if not scaling)  
-    scale = 1  
-      
-    # Iterate over polygons and labels  
-    for polygons, label in zip(prediction['polygons'], prediction['labels']):  
-        color = random.choice(colormap)  
-        fill_color = random.choice(colormap) if fill_mask else None  
-          
-        for _polygon in polygons:  
-            _polygon = numpy.array(_polygon).reshape(-1, 2)  
-            if len(_polygon) < 3:  
-                print('Invalid polygon:', _polygon)  
-                continue  
-              
-            _polygon = (_polygon * scale).reshape(-1).tolist()  
-              
-            # Draw the polygon  
-            if fill_mask:  
-                draw.polygon(_polygon, outline=color, fill=fill_color)  
-            else:  
-                draw.polygon(_polygon, outline=color)  
-              
-            # Draw the label text  
-            draw.text((_polygon[0] + 8, _polygon[1] + 2), label, fill=color) 
+        draw = ImageDraw.Draw(image)  
+        
+    
+        # Set up scale factor if needed (use 1 if not scaling)  
+        scale = 1  
+        
+        # Iterate over polygons and labels  
+        for polygons, label in zip(prediction['polygons'], prediction['labels']):  
+            color = random.choice(colormap)  
+            fill_color = random.choice(colormap) if fill_mask else None  
+            
+            for _polygon in polygons:  
+                _polygon = numpy.array(_polygon).reshape(-1, 2)  
+                if len(_polygon) < 3:  
+                    print('Invalid polygon:', _polygon)  
+                    continue  
+                
+                _polygon = (_polygon * scale).reshape(-1).tolist()  
+                
+                # Draw the polygon  
+                if fill_mask:  
+                    draw.polygon(_polygon, outline=color, fill=fill_color)  
+                else:  
+                    draw.polygon(_polygon, outline=color)  
+                
+                # Draw the label text  
+                draw.text((_polygon[0] + 8, _polygon[1] + 2), label, fill=color) 
 
         return canvas
 
