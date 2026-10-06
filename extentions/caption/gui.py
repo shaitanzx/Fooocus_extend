@@ -8,6 +8,7 @@ import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
 import modules.core as core
 import modules.config
+import modules.util 
 from modules.launch_util import delete_folder_content
 import gc
 import torch
@@ -36,6 +37,19 @@ def clear_dirs(ext_dir):
     result=delete_folder_content(f"{temp_dir}{ext_dir}", '')
     result=delete_folder_content(f"{temp_dir}batch_temp", '')
     return
+
+ def output_zip():
+    directory=f"{temp_dir}batch_caption"
+    _, _, filename = modules.util.generate_temp_filename(folder=temp_dir)
+    name, ext = os.path.splitext(filename)
+    zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
+    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
+    zipf.close()
+    return zip_file   
 def zip_enable(enable):
     if enable:
         return gr.update(visible=True),gr.update(visible=False)
@@ -783,4 +797,5 @@ def gui():
         .then(fn=clear_dirs,inputs=ext_dir) \
         .then(fn=unzip_file,inputs=[file_zip,files_single,enable_zip]) \
         .then(fn=caption_batch_inference,inputs=batch_inference_input_args,outputs=preview,show_progress=False) \
+        .then(fn=output_zip,outputs=file_out) \
         .then(lambda: (gr.update(interactive=True),gr.update(visible=True), gr.update(visible=False)),outputs=[batch_process_submit_button,file_out,preview])
