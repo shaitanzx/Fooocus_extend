@@ -6,12 +6,30 @@ from argparse import Namespace
 from pathlib import Path
 
 import numpy
-from PIL import Image
+from PIL import Image, ImageDraw
 from tqdm import tqdm
 
 from .image import image_process, image_process_gbr, image_process_image, get_image_paths
 from .logger import Logger
 
+from typing import Optional
+
+FLORENCE_TASK_TOKENS = {
+    "Caption": "<CAPTION>",
+    "Detailed Caption": "<DETAILED_CAPTION>",
+    "More Detailed Caption": "<MORE_DETAILED_CAPTION>",
+    "Object Detection": "<OD>",
+    "Dense Region Caption": "<DENSE_REGION_CAPTION>",
+    "Region Proposal": "<REGION_PROPOSAL>",
+    "Caption to Phrase Grounding": "<CAPTION_TO_PHRASE_GROUNDING>",
+    "Referring Expression Segmentation": "<REFERRING_EXPRESSION_SEGMENTATION>",
+    "Region to Segmentation": "<REGION_TO_SEGMENTATION>",
+    "Open Vocabulary Detection": "<OPEN_VOCABULARY_DETECTION>",
+    "Region to Category": "<REGION_TO_CATEGORY>",
+    "Region to Description": "<REGION_TO_DESCRIPTION>",
+    "OCR": "<OCR>",
+    "OCR with Region": "<OCR_WITH_REGION>",
+}
 kaomojis = [
     "0_0",
     "(o)_(o)",
@@ -49,6 +67,64 @@ Please describe this image."""
 
 DEFAULT_USER_PROMPT_WITHOUT_WD = """Please describe this image."""
 
+def _draw_florence_result(
+    image: Image.Image,
+    task_name: str,
+    result: dict,
+) -> Optional[Image.Image]:
+    if task_name in {
+        "Object Detection",
+        "Dense Region Caption",
+        "Region Proposal",
+        "Caption to Phrase Grounding",
+    }:
+        canvas = image.convert("RGB").copy()
+        draw = ImageDraw.Draw(canvas)
+        for bbox, label in zip(result.get("bboxes", []), result.get("labels", [])):
+            x1, y1, x2, y2 = [int(value) for value in bbox]
+            draw.rectangle((x1, y1, x2, y2), outline="red", width=3)
+            draw.text(
+                (x1 + 4, y1 + 4), str(label), fill="white",
+                stroke_width=2, stroke_fill="red",
+            )
+        return canvas
+
+    if task_name in {"Referring Expression Segmentation", "Region to Segmentation"}:
+        canvas = image.convert("RGB").copy()
+        draw = ImageDraw.Draw(canvas, "RGBA")
+        colors = [(255, 80, 80, 100), (80, 160, 255, 100), (80, 220, 120, 100)]
+        for index, (polygons, label) in enumerate(
+            zip(result.get("polygons", []), result.get("labels", []))
+        ):
+            color = colors[index % len(colors)]
+            for polygon in polygons:
+                points = numpy.asarray(polygon).reshape(-1, 2).astype(int).tolist()
+                if len(points) >= 3:
+                    draw.polygon(points, fill=color, outline=color[:3] + (255,))
+                    draw.text(tuple(points[0]), str(label), fill="white")
+        return canvas
+
+    if task_name == "Open Vocabulary Detection":
+        return _draw_florence_result(
+            image,
+            "Object Detection",
+            {
+                "bboxes": result.get("bboxes", []),
+                "labels": result.get("bboxes_labels", []),
+            },
+        )
+
+    if task_name == "OCR with Region":
+        canvas = image.convert("RGB").copy()
+        draw = ImageDraw.Draw(canvas)
+        for box, label in zip(result.get("quad_boxes", []), result.get("labels", [])):
+            points = numpy.asarray(box).reshape(-1, 2).astype(int).tolist()
+            if len(points) >= 4:
+                draw.line(points + [points[0]], fill="red", width=3)
+                draw.text(tuple(points[0]), str(label), fill="red")
+        return canvas
+
+    return None
 
 def get_caption_file_path(
         logger: Logger,
@@ -445,6 +521,81 @@ class LLM:
             self.image_adapter.to(device)
             self.logger.info(f'Image Adapter Loaded in {time.monotonic() - start_time:.1f}s.')
 
+    def get_florence_result(
+        self,
+        image: Image.Image,
+        task_name: Optional[str] = None,
+        text_input: Optional[str] = None,
+    ) -> tuple[str, Optional[Image.Image]]:
+        import torch
+
+        if self.models_type != "florence":
+            raise ValueError("get_florence_result() requires a Florence model")
+        if self.llm is None or self.llm_processor is None:
+            raise RuntimeError("Florence model and processor must be loaded first")
+        if image is None:
+            raise ValueError("Input image is empty")
+
+        task_name = task_name or getattr(
+            self.args, "florence_task", "More Detailed Caption"
+        )
+        if task_name not in FLORENCE_TASK_TOKENS:
+            raise ValueError(f"Unsupported Florence task: {task_name}")
+
+        task_token = FLORENCE_TASK_TOKENS[task_name]
+        prompt = task_token + (str(text_input) if text_input else "")
+        image = image.convert("RGB")
+        inputs = None
+        generated_ids = None
+
+        try:
+            inputs = self.llm_processor(
+                text=prompt, images=image, return_tensors="pt"
+            )
+            model_parameter = next(self.llm.parameters())
+            model_device = model_parameter.device
+            model_dtype = model_parameter.dtype
+
+            # Переносим input_ids как целочисленный tensor, а pixel_values
+            # приводим к dtype загруженной модели.
+            for key, value in list(inputs.items()):
+                if torch.is_tensor(value):
+                    if value.is_floating_point():
+                        inputs[key] = value.to(device=model_device, dtype=model_dtype)
+                    else:
+                        inputs[key] = value.to(device=model_device)
+
+            with torch.inference_mode():
+                generated_ids = self.llm.generate(
+                    input_ids=inputs["input_ids"],
+                    pixel_values=inputs["pixel_values"],
+                    max_new_tokens=256,
+                    early_stopping=False,
+                    do_sample=False,
+                    num_beams=1,
+                )
+
+            generated_text = self.llm_processor.batch_decode(
+                generated_ids, skip_special_tokens=False
+            )[0]
+            parsed = self.llm_processor.post_process_generation(
+                generated_text, task=task_token, image_size=image.size
+            )
+            task_result = parsed.get(task_token, parsed)
+            visualization = _draw_florence_result(
+                image=image,
+                task_name=task_name,
+                result=task_result if isinstance(task_result, dict) else {},
+            )
+            return str(task_result), visualization
+        finally:
+            del inputs
+            del generated_ids
+
+
+
+
+
     def get_caption(
             self,
             image: Image.Image,
@@ -468,7 +619,13 @@ class LLM:
             if not self.args.llm_use_cpu:
                 self.logger.debug(f'Will empty cuda device cache...')
                 torch.cuda.empty_cache()
-
+            if self.models_type == "florence":
+                result_text, _ = self.get_florence_result(
+                    image=image,
+                    task_name=getattr(self.args, "florence_task", "More Detailed Caption"),
+                    text_input=getattr(self.args, "florence_text_input", ""),
+                )
+                return result_text
             if self.models_type == "joy":
                 # Preprocess image
                 self.logger.warning(f"`{self.args.llm_model_name}` force resize input image to 384 pixels!")
@@ -736,30 +893,30 @@ class LLM:
                     content = self.llm.chat(image=image, msgs=messages, tokenizer=self.llm_tokenizer,
                                             system_prompt=system_prompt if system_prompt else None,
                                             sampling=False, stream=False, **params)
-                elif self.models_type == "florence":
-                    self.logger.warning(f"Florence models don't support system prompt or user prompt!")
-                    self.logger.warning(f"Florence models don't support temperature or max tokens!")
+                # elif self.models_type == "florence":
+                #     self.logger.warning(f"Florence models don't support system prompt or user prompt!")
+                #     self.logger.warning(f"Florence models don't support temperature or max tokens!")
 
-                    def run_inference(task_prompt, text_input=None):
-                        if text_input is None:
-                            input_prompt = task_prompt
-                        else:
-                            input_prompt = task_prompt + text_input
-                        get_inputs = (self.llm_processor(text=input_prompt, images=image, return_tensors="pt").
-                                      to(device=self.llm.device, dtype=self.llm.dtype))
-                        generated_ids = self.llm.generate(
-                            input_ids=get_inputs["input_ids"],
-                            pixel_values=get_inputs["pixel_values"],
-                            max_new_tokens=1024,
-                            num_beams=3
-                        )
-                        generated_text = self.llm_processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
-                        parsed_answer = self.llm_processor.post_process_generation(generated_text, task=task_prompt,
-                                                                                   image_size=(
-                                                                                       image.width, image.height))
-                        return parsed_answer[task_prompt]
+                #     def run_inference(task_prompt, text_input=None):
+                #         if text_input is None:
+                #             input_prompt = task_prompt
+                #         else:
+                #             input_prompt = task_prompt + text_input
+                #         get_inputs = (self.llm_processor(text=input_prompt, images=image, return_tensors="pt").
+                #                       to(device=self.llm.device, dtype=self.llm.dtype))
+                #         generated_ids = self.llm.generate(
+                #             input_ids=get_inputs["input_ids"],
+                #             pixel_values=get_inputs["pixel_values"],
+                #             max_new_tokens=1024,
+                #             num_beams=3
+                #         )
+                #         generated_text = self.llm_processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+                #         parsed_answer = self.llm_processor.post_process_generation(generated_text, task=task_prompt,
+                #                                                                    image_size=(
+                #                                                                        image.width, image.height))
+                #         return parsed_answer[task_prompt]
 
-                    content = run_inference("<MORE_DETAILED_CAPTION>")
+                #     content = run_inference("<MORE_DETAILED_CAPTION>")
 
                 else:
                     if system_prompt:

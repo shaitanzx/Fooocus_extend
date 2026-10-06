@@ -112,6 +112,8 @@ class CaptionConfig:
     llm_temperature: float = 0.0
     llm_max_tokens: int = 0
 
+    florence_task: str = "More Detailed Caption"
+    florence_text_input: str = ""
 
 class Caption:
     def __init__(self):

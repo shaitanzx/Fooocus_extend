@@ -426,24 +426,23 @@ def gui():
 
     def unloads_models_interactive_group():
         return [gr.update(interactive=True)] * 11 + [gr.update(variant='primary'), gr.update(variant='secondary')]
-    if llm_choice="Florance":
-
-        single_inference_input_args = [
-            wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
-            wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
-            wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
-            llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, florence_prompt, florence_user_prompt,
-            llm_temperature, llm_max_tokens, image_size, auto_unload, input_image
-        ]
-    else:
-        single_inference_input_args = [
-            wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
-            wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
-            wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
-            llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, llm_system_prompt, llm_user_prompt,
-            llm_temperature, llm_max_tokens, image_size, auto_unload, input_image
-        ]
-
+        
+    # single_inference_input_args = [
+    #     wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
+    #     wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
+    #     wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
+    #     llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, llm_system_prompt, llm_user_prompt,
+    #     llm_temperature, llm_max_tokens, image_size, auto_unload, input_image
+    # ]
+    single_inference_input_args = [
+        wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
+        wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
+        wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
+        llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd,
+        florence_system_prompt, florence_user_prompt,
+        llm_system_prompt, llm_user_prompt,
+        llm_temperature, llm_max_tokens, image_size, auto_unload, input_image,
+    ]
     batch_inference_input_args = [
         batch_process_submit_button, run_method, wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
         wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
@@ -623,11 +622,13 @@ def gui():
             wd_remove_underscore_value, wd_threshold_value, wd_general_threshold_value, wd_character_threshold_value,
             wd_add_rating_tags_to_first_value, wd_character_tags_first_value, wd_add_rating_tags_to_last_value, wd_character_tag_expand_value,
             wd_undesired_tags_value, wd_always_first_tags_value, wd_caption_extension_value, wd_caption_separator_value, wd_tag_replacement_value,
-            llm_caption_extension_value, llm_read_wd_caption_value, llm_caption_without_wd_value, llm_system_prompt_value, llm_user_prompt_value,
+            llm_caption_extension_value, llm_read_wd_caption_value, llm_caption_without_wd_value, 
+            florence_system_prompt, florence_user_prompt,llm_system_prompt_value, llm_user_prompt_value,
             llm_temperature_value, llm_max_tokens_value, image_size_value, auto_unload_value, input_image_value
     ):
 
 
+        florence_visualization = None
 
         if not IS_MODEL_LOAD:
             raise gr.Error("Models not loaded!")
@@ -679,9 +680,17 @@ def gui():
         # ЗАМЕНИТЬ НА:
         # if use_joy(config.caption_method, config.llm_choice) or use_llama(config.caption_method, config.llm_choice) or \
         #     use_qwen(config.caption_method, config.llm_choice) or use_florence(config.caption_method, config.llm_choice):        
-
-        if use_joy(config.caption_method, config.llm_choice) or use_qwen(config.caption_method, config.llm_choice) or \
-            use_florence(config.caption_method, config.llm_choice):
+        if use_florence(config.caption_method, config.llm_choice):
+            caption_text, florence_visualization = CAPTION_FN.my_llm.get_florence_result(
+                image=image,
+                task_name=config.florence_task,
+                text_input=config.florence_text_input,
+            )
+        elif use_joy(config.caption_method, config.llm_choice) or use_qwen(
+            config.caption_method, config.llm_choice
+        ):
+        # if use_joy(config.caption_method, config.llm_choice) or use_qwen(config.caption_method, config.llm_choice) or \
+        #     use_florence(config.caption_method, config.llm_choice):
             CAPTION_FN.my_logger.debug(f"Caption with LLM: {config.llm_model_name}.")
             caption_text = CAPTION_FN.my_llm.get_caption(
                 image=image, system_prompt=str(config.llm_system_prompt),
@@ -697,7 +706,7 @@ def gui():
         if auto_unload_value:
             caption_unload_models()
   
-        return tag_text, caption_text
+        return tag_text, caption_text, florence_visualization
 
     def caption_batch_inference(
             batch_process_submit_button_value, run_method_value, wd_remove_underscore_value, wd_threshold_value, wd_general_threshold_value,
@@ -828,7 +837,7 @@ def gui():
     )
 
     single_image_submit_button.click(lambda: (gr.update(interactive=False)),outputs=[single_image_submit_button]) \
-        .then(fn=caption_single_inference,inputs=single_inference_input_args,outputs=[wd_tags_output, llm_caption_output]) \
+        .then(fn=caption_single_inference,inputs=single_inference_input_args,outputs=[wd_tags_output, llm_caption_output, florence_image]) \
         .then(lambda: (gr.update(interactive=True)),outputs=[single_image_submit_button])
 
     batch_process_submit_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False), gr.update(visible=True)),outputs=[batch_process_submit_button,file_out,preview]) \
