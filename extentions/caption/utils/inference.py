@@ -73,6 +73,8 @@ def _draw_florence_result(
     task_name: str,
     result: dict,
 ) -> Optional[Image.Image]:
+    # Set up scale factor if needed (use 1 if not scaling)  
+    scale = 1  
     if task_name in {
         "Object Detection",
         "Dense Region Caption",
@@ -95,8 +97,7 @@ def _draw_florence_result(
         draw = ImageDraw.Draw(canvas)
         
     
-        # Set up scale factor if needed (use 1 if not scaling)  
-        scale = 1  
+
         
         # Iterate over polygons and labels  
         
