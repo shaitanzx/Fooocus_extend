@@ -102,7 +102,7 @@ def _draw_florence_result(
         
         for index, (polygons, label) in enumerate(zip(result.get("polygons", []), result.get("labels", []))): 
             color = random.choice(colormap)  
-            fill_color = random.choice(colormap) if fill_mask else None  
+            fill_color = random.choice(colormap)
             
             for _polygon in polygons:  
                 _polygon = numpy.array(_polygon).reshape(-1, 2)  
