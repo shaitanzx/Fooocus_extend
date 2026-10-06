@@ -121,7 +121,25 @@ def _draw_florence_result(
                 draw.text((_polygon[0] + 8, _polygon[1] + 2), label, fill=color) 
 
         return canvas
+    if task_name == "Open Vocabulary Detection":
+        return _draw_florence_result(
+            image,
+            "Object Detection",
+            {
+                "bboxes": result.get("bboxes", []),
+                "labels": result.get("bboxes_labels", []),
+            },
+        )
 
+    if task_name == "OCR with Region":
+        canvas = image.convert("RGB").copy()
+        draw = ImageDraw.Draw(canvas)
+        for box, label in zip(result.get("quad_boxes", []), result.get("labels", [])):
+            points = numpy.asarray(box).reshape(-1, 2).astype(int).tolist()
+            if len(points) >= 4:
+                draw.line(points + [points[0]], fill="red", width=3)
+                draw.text(tuple(points[0]), str(label), fill="red")
+        return canvas
     return None
 
 def get_caption_file_path(
