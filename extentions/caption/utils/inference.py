@@ -98,7 +98,7 @@ def _draw_florence_result(
         scale = 1  
         
         # Iterate over polygons and labels  
-        for polygons, label in zip(prediction['polygons'], prediction['labels']):  
+        for polygons, label in zip(result.get['polygons'], result.get['labels']):  
             color = random.choice(colormap)  
             fill_color = random.choice(colormap) if fill_mask else None  
             
