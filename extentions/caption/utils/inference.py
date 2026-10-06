@@ -99,7 +99,7 @@ def _draw_florence_result(
         scale = 1  
         
         # Iterate over polygons and labels  
-        print("_________",result)
+        
         
         for index, (polygons, label) in enumerate(zip(result.get("polygons", []), result.get("labels", []))): 
             color = random.choice(colormap)  
@@ -134,8 +134,10 @@ def _draw_florence_result(
     if task_name == "OCR with Region":
         canvas = image.convert("RGB").copy()
         draw = ImageDraw.Draw(image)
-        bboxes, labels = result.get['quad_boxes'], result.get['labels']
-        for box, label in zip(bboxes, labels):
+        print("_________",result)
+        #bboxes, labels = result.get['quad_boxes'], result.get['labels']
+        #for index, (polygons, label) in enumerate(zip(result.get("polygons", []), result.get("labels", []))):
+        for index, (box, label) in enumerate(zip(result.get['quad_boxes', []], result.get['labels', []])):
             color = random.choice(colormap)
             new_box = (numpy.array(box) * scale).tolist()
             draw.polygon(new_box, width=3, outline=color)
