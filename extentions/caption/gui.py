@@ -238,7 +238,7 @@ def gui():
                         llm_temperature = gr.Slider(label="temperature for LLM model", minimum=0, maximum=1.0, value=0, step=0.1)
                         llm_max_tokens = gr.Slider(label="max token for LLM model", minimum=0, maximum=2048, value=0, step=1)
                         image_size = gr.Slider(label="Resize image for inference", minimum=256, maximum=2048, value=1024, step=1)
-                        auto_unload = gr.Checkbox(label="Auto Unload Models after inference.")
+                        auto_unload = gr.Checkbox(label="Auto Unload Models after inference.",visible=False)
 
         with gr.Column():
             with gr.Tab("Single mode"):
