@@ -137,7 +137,7 @@ def _draw_florence_result(
         print("_________",result)
         #bboxes, labels = result.get['quad_boxes'], result.get['labels']
         #for index, (polygons, label) in enumerate(zip(result.get("polygons", []), result.get("labels", []))):
-        for index, (box, label) in enumerate(zip(result.get['quad_boxes', []], result.get['labels', []])):
+        for index, (box, label) in enumerate(zip(result.get('quad_boxes', []), result.get('labels', []))):
             color = random.choice(colormap)
             new_box = (numpy.array(box) * scale).tolist()
             draw.polygon(new_box, width=3, outline=color)
