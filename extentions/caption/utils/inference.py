@@ -548,7 +548,7 @@ class LLM:
         image: Image.Image,
         task_name: Optional[str] = None,
         text_input: Optional[str] = None,
-        max_tokens: int = 0,
+        max_token: int = 0,
     ) -> tuple[str, Optional[Image.Image]]:
         import torch
 
@@ -588,14 +588,14 @@ class LLM:
                     else:
                         inputs[key] = value.to(device=model_device)
             print ('--------------', max_tokens)
-            if max_tokens==0:
-                max_tokens=1024
+            if max_token==0:
+                max_token=1024
             print(f'Florence2 max_new_tokens is {max_tokens}')
             with torch.inference_mode():
                 generated_ids = self.llm.generate(
                     input_ids=inputs["input_ids"],
                     pixel_values=inputs["pixel_values"],
-                    max_new_tokens=max_tokens,
+                    max_new_tokens=max_token,
                     early_stopping=False,
                     do_sample=False,
                     num_beams=1,
