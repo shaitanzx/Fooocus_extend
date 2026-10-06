@@ -313,7 +313,7 @@ def gui():
         qwen_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Qwen" else False)
         florence_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else False)
         prompt_visible = gr.update(visible=False if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else True)
-        return joy_model_visible, llama_use_patch_visible, qwen_model_visible, florence_model_visible, florence_model_visible, florence_model_visible, prompt_visible, prompt_visible,florence_image
+        return joy_model_visible, llama_use_patch_visible, qwen_model_visible, florence_model_visible, florence_model_visible, florence_model_visible, prompt_visible, prompt_visible,florence_model_visible
         
     def joy_formated_prompts_visibility(llm_choice_radio, joy_models_dropdown):
         joy_formated_prompts_visible = gr.update(visible=True if llm_choice_radio == "Joy" and joy_models_dropdown != "Joy-Caption-Pre-Alpha" else False)
