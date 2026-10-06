@@ -658,8 +658,8 @@ def gui():
         config.image_size = int(image_size_value)
         config.data_path = str(input_image_value)
 
-        config.florence_task = str(florence_task_value)
-        config.florence_text_input = str(florence_text_input_value)
+        config.florence_task = str(florence_system_prompt)
+        config.florence_text_input = str(florence_user_prompt)
 
         start_time = time.monotonic()
         image = Image.open(input_image_value)
