@@ -223,11 +223,13 @@ def gui():
                         value="More Detailed Caption",
                         label="Florence2 system prompt",
                         visible=False,
+                        interactive=True
                     )
                     florence_user_prompt = gr.Textbox(
                         label="Florence user prompt",
                         placeholder="Required for grounding/region tasks",
                         visible=False,
+                        interactive=True
                     )
                     llm_system_prompt = gr.Textbox(label="system prompt for llm caption", lines=7, max_lines=7, value=caption.DEFAULT_SYSTEM_PROMPT)
                     llm_user_prompt = gr.Textbox(label="user prompt for llm caption", lines=7, max_lines=7, value=caption.DEFAULT_USER_PROMPT_WITH_WD)
@@ -310,8 +312,8 @@ def gui():
         llama_use_patch_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Joy" and joy_models_dropdown == "Joy-Caption-Alpha-Two" or joy_models_dropdown == "Joy-Caption-Pre-Alpha" else False)
         qwen_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Qwen" else False)
         florence_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else False)
-
-        return joy_model_visible, llama_use_patch_visible, qwen_model_visible, florence_model_visible, florence_model_visible, florence_model_visible, not florence_model_visible, not florence_model_visible
+        prompt_visible = gr.update(visible=False if "LLM" in caption_method_radio and llm_choice_radio == "Florence" else True)
+        return joy_model_visible, llama_use_patch_visible, qwen_model_visible, florence_model_visible, florence_model_visible, florence_model_visible, prompt_visible, prompt_visible
         
     def joy_formated_prompts_visibility(llm_choice_radio, joy_models_dropdown):
         joy_formated_prompts_visible = gr.update(visible=True if llm_choice_radio == "Joy" and joy_models_dropdown != "Joy-Caption-Pre-Alpha" else False)
