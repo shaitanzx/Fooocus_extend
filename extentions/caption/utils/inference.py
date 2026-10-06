@@ -93,35 +93,46 @@ def _draw_florence_result(
         canvas = image.convert("RGB").copy()
         draw = ImageDraw.Draw(canvas, "RGBA")
         colors = [(255, 80, 80, 100), (80, 160, 255, 100), (80, 220, 120, 100)]
+        width, height = image.size
+
         for index, (polygons, label) in enumerate(
             zip(result.get("polygons", []), result.get("labels", []))
         ):
             color = colors[index % len(colors)]
+
             for polygon in polygons:
-                points = numpy.asarray(polygon).reshape(-1, 2).astype(int).tolist()
-                if len(points) >= 3:
-                    draw.polygon(points, fill=color, outline=color[:3] + (255,))
-                    draw.text(tuple(points[0]), str(label), fill="white")
-        return canvas
+                try:
+                    coords = numpy.asarray(
+                        polygon, dtype=numpy.float64
+                    ).reshape(-1, 2)
+                except (TypeError, ValueError, OverflowError):
+                    continue
 
-    if task_name == "Open Vocabulary Detection":
-        return _draw_florence_result(
-            image,
-            "Object Detection",
-            {
-                "bboxes": result.get("bboxes", []),
-                "labels": result.get("bboxes_labels", []),
-            },
-        )
+                # Отбрасываем NaN и Inf.
+                coords = coords[numpy.isfinite(coords).all(axis=1)]
+                if len(coords) < 3:
+                    continue
 
-    if task_name == "OCR with Region":
-        canvas = image.convert("RGB").copy()
-        draw = ImageDraw.Draw(canvas)
-        for box, label in zip(result.get("quad_boxes", []), result.get("labels", [])):
-            points = numpy.asarray(box).reshape(-1, 2).astype(int).tolist()
-            if len(points) >= 4:
-                draw.line(points + [points[0]], fill="red", width=3)
-                draw.text(tuple(points[0]), str(label), fill="red")
+                # Florence возвращает координаты в пикселях исходного изображения.
+                coords[:, 0] = numpy.clip(coords[:, 0], 0, width - 1)
+                coords[:, 1] = numpy.clip(coords[:, 1], 0, height - 1)
+
+                # Передаём Pillow обычные Python int в виде пар (x, y).
+                points = [
+                    (int(round(float(x))), int(round(float(y))))
+                    for x, y in coords
+                ]
+
+                if len(set(points)) < 3:
+                    continue
+
+                draw.polygon(
+                    points,
+                    fill=color,
+                    outline=color[:3] + (255,),
+                )
+                draw.text(points[0], str(label), fill="white")
+
         return canvas
 
     return None
