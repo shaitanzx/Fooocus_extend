@@ -426,14 +426,23 @@ def gui():
 
     def unloads_models_interactive_group():
         return [gr.update(interactive=True)] * 11 + [gr.update(variant='primary'), gr.update(variant='secondary')]
-        
-    single_inference_input_args = [
-        wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
-        wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
-        wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
-        llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, llm_system_prompt, llm_user_prompt,
-        llm_temperature, llm_max_tokens, image_size, auto_unload, input_image
-    ]
+    if llm_choice="Florance":
+
+        single_inference_input_args = [
+            wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
+            wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
+            wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
+            llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, florence_prompt, florence_user_prompt,
+            llm_temperature, llm_max_tokens, image_size, auto_unload, input_image
+        ]
+    else:
+        single_inference_input_args = [
+            wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
+            wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
+            wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
+            llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, llm_system_prompt, llm_user_prompt,
+            llm_temperature, llm_max_tokens, image_size, auto_unload, input_image
+        ]
 
     batch_inference_input_args = [
         batch_process_submit_button, run_method, wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
