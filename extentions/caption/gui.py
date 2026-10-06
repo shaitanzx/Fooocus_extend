@@ -38,7 +38,7 @@ def clear_dirs(ext_dir):
     result=delete_folder_content(f"{temp_dir}batch_temp", '')
     return
 
- def output_zip():
+def output_zip():
     directory=f"{temp_dir}batch_caption"
     _, _, filename = modules.util.generate_temp_filename(folder=temp_dir)
     name, ext = os.path.splitext(filename)
