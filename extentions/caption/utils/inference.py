@@ -134,7 +134,7 @@ def _draw_florence_result(
 
     if task_name == "OCR with Region":
         canvas = image.convert("RGB").copy()
-        draw = ImageDraw.Draw(image)
+        draw = ImageDraw.Draw(canvas)
         print("_________",result)
         #bboxes, labels = result.get['quad_boxes'], result.get['labels']
         #for index, (polygons, label) in enumerate(zip(result.get("polygons", []), result.get("labels", []))):
