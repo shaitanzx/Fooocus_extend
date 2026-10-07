@@ -147,6 +147,25 @@ def _draw_florence_result(
                         align="right",fill=color)
         return canvas
     return None
+def save_florence_visualization(
+    visualization,
+    caption_file: Path,
+    not_overwrite: bool = False,
+):
+    if visualization is None:
+        return None
+
+    caption_file = Path(caption_file)
+    mask_file = caption_file.with_name(
+        f"{caption_file.stem}_visualization.png"
+    )
+
+    if not_overwrite and mask_file.exists():
+        return mask_file
+
+    mask_file.parent.mkdir(parents=True, exist_ok=True)
+    visualization.convert("RGB").save(mask_file, format="PNG")
+    return mask_file
 
 def get_caption_file_path(
         logger: Logger,
@@ -1054,13 +1073,28 @@ class LLM:
                 # LLM caption
                 system_prompt = str(
                     self.args.llm_system_prompt) if self.args.llm_model_name != "Joy-Caption-Pre-Alpha" else ""
-                caption = self.get_caption(
-                    image=image,
-                    system_prompt=system_prompt,
-                    user_prompt=user_prompt,
-                    temperature=self.args.llm_temperature,
-                    max_new_tokens=self.args.llm_max_tokens
-                )
+                visualization = None
+
+                if self.models_type == "florence":
+                    caption, visualization = self.get_florence_result(
+                        image=image,
+                        task_name=getattr(
+                            self.args, "florence_task", "More Detailed Caption"
+                        ),
+                        text_input=getattr(
+                            self.args, "florence_text_input", ""
+                        ),
+                        max_token=self.args.llm_max_tokens,
+                    )
+                else:
+                    caption = self.get_caption(
+                        image=image,
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        temperature=self.args.llm_temperature,
+                        max_new_tokens=self.args.llm_max_tokens,
+                    )
+
                 if not (self.args.not_overwrite and os.path.isfile(llm_caption_file)):
                     with open(llm_caption_file, "wt", encoding="utf-8") as f:
                         f.write(caption + "\n")

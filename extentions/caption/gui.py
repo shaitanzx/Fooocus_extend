@@ -447,7 +447,9 @@ def gui():
         batch_process_submit_button, run_method, wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
         wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
         wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
-        llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, llm_system_prompt, llm_user_prompt,
+        llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, 
+        florence_system_prompt, florence_user_prompt,
+        llm_system_prompt, llm_user_prompt,
         llm_temperature, llm_max_tokens, image_size, auto_unload, input_dir, is_recursive, custom_caption_save_path,
         skip_exists, not_overwrite, caption_extension, save_caption_together, save_caption_together_seperator
     ]
@@ -716,7 +718,9 @@ def gui():
             batch_process_submit_button_value, run_method_value, wd_remove_underscore_value, wd_threshold_value, wd_general_threshold_value,
             wd_character_threshold_value, wd_add_rating_tags_to_first_value, wd_character_tags_first_value, wd_add_rating_tags_to_last_value,
             wd_character_tag_expand_value, wd_undesired_tags_value, wd_always_first_tags_value, wd_caption_extension_value, wd_caption_separator_value,
-            wd_tag_replacement_value, llm_caption_extension_value, llm_read_wd_caption_value, llm_caption_without_wd_value, llm_system_prompt_value,
+            wd_tag_replacement_value, llm_caption_extension_value, llm_read_wd_caption_value, llm_caption_without_wd_value, 
+            florence_system_prompt_value,florence_user_prompt_value,
+            llm_system_prompt_value,
             llm_user_prompt_value, llm_temperature_value, llm_max_tokens_value, image_size_value, auto_unload_value, input_dir_value,
             recursive_value, custom_caption_save_path_value, skip_exists_value, not_overwrite_value, caption_extension_value,
             save_caption_together_value, save_caption_together_seperator_value
@@ -751,6 +755,9 @@ def gui():
         config.llm_temperature = float(llm_temperature_value)
         config.llm_max_tokens = int(llm_max_tokens_value)
         config.image_size = int(image_size_value)
+
+        config.florence_task = str(florence_system_prompt_value)
+        config.florence_text_input = str(florence_user_prompt_value)
 
         config.data_path = str(input_dir_value)
         config.run_method = str(run_method_value)

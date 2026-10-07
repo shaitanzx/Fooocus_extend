@@ -12,7 +12,7 @@ from tqdm import tqdm
 from .utils.download import download_models
 from .utils.image import get_image_paths
 from .utils.inference import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT_WITHOUT_WD, DEFAULT_USER_PROMPT_WITH_WD
-from .utils.inference import get_caption_file_path, LLM, Tagger
+from .utils.inference import get_caption_file_path, LLM, Tagger, save_florence_visualization,
 
 DEFAULT_MODELS_SAVE_PATH = str(os.path.join(os.getcwd(), "models"))
 
@@ -393,15 +393,25 @@ class Caption:
                             )
 
                         if llm_will_run:
-                            caption = self.my_llm.get_caption(
-                                image=image,
-                                system_prompt=str(config.llm_system_prompt),
-                                user_prompt=str(
-                                    config.llm_user_prompt
-                                ).format(wd_tags=tag_text),
-                                temperature=config.llm_temperature,
-                                max_new_tokens=config.llm_max_tokens,
-                            )
+                            visualization = None
+
+                            if self.use_florence:
+                                caption, visualization = self.my_llm.get_florence_result(
+                                    image=image,
+                                    task_name=config.florence_task,
+                                    text_input=config.florence_text_input,
+                                    max_token=config.llm_max_tokens,
+                                )
+                            else:
+                                caption = self.my_llm.get_caption(
+                                    image=image,
+                                    system_prompt=str(config.llm_system_prompt),
+                                    user_prompt=str(
+                                        config.llm_user_prompt
+                                    ).format(wd_tags=tag_text),
+                                    temperature=config.llm_temperature,
+                                    max_new_tokens=config.llm_max_tokens,
+                                )
 
                             if not (
                                 config.not_overwrite
@@ -413,7 +423,11 @@ class Caption:
                                     encoding="utf-8",
                                 ) as f:
                                     f.write(caption + "\n")
-
+                                save_florence_visualization(
+                                    visualization=visualization,
+                                    caption_file=llm_caption_file,
+                                    not_overwrite=config.not_overwrite,
+                                )
                                 self.my_logger.debug(f"Image path: {image_path}")
                                 self.my_logger.debug(
                                     f"LLM Caption path: {llm_caption_file}"
