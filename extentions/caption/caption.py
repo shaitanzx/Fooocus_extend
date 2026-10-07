@@ -403,6 +403,11 @@ class Caption:
                                     text_input=config.florence_text_input,
                                     max_token=config.llm_max_tokens,
                                 )
+                                save_florence_visualization(
+                                    visualization=visualization,
+                                    caption_file=llm_caption_file,
+                                    not_overwrite=config.not_overwrite,
+                                )  
                             else:
                                 caption = self.my_llm.get_caption(
                                     image=image,
@@ -444,11 +449,7 @@ class Caption:
                                 f"LLM Caption file {llm_caption_file} "
                                 f"already exists, Skip save it!"
                             )
-                        save_florence_visualization(
-                            visualization=visualization,
-                            caption_file=llm_caption_file,
-                            not_overwrite=config.not_overwrite,
-                        )                        
+                      
                         if config.save_caption_together:
                             together_caption_file = get_caption_file_path(
                                 self.my_logger,
