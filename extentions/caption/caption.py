@@ -269,7 +269,7 @@ class Caption:
             str(image_path): index
             for index, image_path in enumerate(image_paths, start=1)
         }
-        visualization = None
+
         def add_progress_info(path_iterator):
             """Дополняет пути номером изображения и общим количеством."""
             for event in path_iterator:
@@ -343,7 +343,7 @@ class Caption:
                         image = Image.open(image_path)
                         tag_text = ""
                         caption = ""
-                        
+                        visualization = None
 
                         if wd_will_run:
                             tag_text, rating_tag_text, character_tag_text, general_tag_text = (
@@ -403,7 +403,6 @@ class Caption:
                                     text_input=config.florence_text_input,
                                     max_token=config.llm_max_tokens,
                                 )
-
                             else:
                                 caption = self.my_llm.get_caption(
                                     image=image,
@@ -439,13 +438,20 @@ class Caption:
                                     f"LLM Caption file {llm_caption_file} "
                                     f"already exist, skip save it!"
                                 )
+
+                            save_florence_visualization(
+                                visualization=visualization,
+                                caption_file=llm_caption_file,
+                                not_overwrite=config.not_overwrite,
+                            )
+
                         else:
                             self.my_logger.warning(
                                 f"`skip_exists` ENABLED!!! "
                                 f"LLM Caption file {llm_caption_file} "
                                 f"already exists, Skip save it!"
                             )
-                      
+
                         if config.save_caption_together:
                             together_caption_file = get_caption_file_path(
                                 self.my_logger,
@@ -565,11 +571,7 @@ class Caption:
                 or self.use_florence
             ):
                 yield from add_progress_info(self.my_llm.iter_inference())
-        save_florence_visualization(
-            visualization=visualization,
-            caption_file=llm_caption_file,
-            not_overwrite=config.not_overwrite,
-        )          
+
         total_inference_time = time.monotonic() - start_inference_time
         days = total_inference_time // (24 * 3600)
         total_inference_time %= 24 * 3600
