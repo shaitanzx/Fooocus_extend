@@ -1104,7 +1104,12 @@ class LLM:
                 else:
                     self.logger.warning(f'`not_overwrite` ENABLED!!! '
                                         f'LLM Caption file {llm_caption_file} already exist, skip save it!')
-
+                save_florence_visualization(
+                    visualization=visualization,
+                    caption_file=llm_caption_file,
+                    not_overwrite=self.args.not_overwrite,
+                )
+                
                 if not tag_text:
                     self.logger.warning(
                         "WD tags or LLM Caption is null, skip save them together in one file!")
