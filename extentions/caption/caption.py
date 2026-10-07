@@ -12,7 +12,7 @@ from tqdm import tqdm
 from .utils.download import download_models
 from .utils.image import get_image_paths
 from .utils.inference import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT_WITHOUT_WD, DEFAULT_USER_PROMPT_WITH_WD
-from .utils.inference import get_caption_file_path, LLM, Tagger, save_florence_visualization,
+from .utils.inference import get_caption_file_path, LLM, Tagger, save_florence_visualization
 
 DEFAULT_MODELS_SAVE_PATH = str(os.path.join(os.getcwd(), "models"))
 
