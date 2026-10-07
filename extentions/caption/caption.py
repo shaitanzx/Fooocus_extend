@@ -343,6 +343,7 @@ class Caption:
                         image = Image.open(image_path)
                         tag_text = ""
                         caption = ""
+                        visualization = None
 
                         if wd_will_run:
                             tag_text, rating_tag_text, character_tag_text, general_tag_text = (
@@ -393,7 +394,7 @@ class Caption:
                             )
 
                         if llm_will_run:
-                            visualization = None
+                            
 
                             if self.use_florence:
                                 caption, visualization = self.my_llm.get_florence_result(
@@ -423,11 +424,7 @@ class Caption:
                                     encoding="utf-8",
                                 ) as f:
                                     f.write(caption + "\n")
-                                save_florence_visualization(
-                                    visualization=visualization,
-                                    caption_file=llm_caption_file,
-                                    not_overwrite=config.not_overwrite,
-                                )
+
                                 self.my_logger.debug(f"Image path: {image_path}")
                                 self.my_logger.debug(
                                     f"LLM Caption path: {llm_caption_file}"
@@ -447,7 +444,11 @@ class Caption:
                                 f"LLM Caption file {llm_caption_file} "
                                 f"already exists, Skip save it!"
                             )
-
+                        save_florence_visualization(
+                            visualization=visualization,
+                            caption_file=llm_caption_file,
+                            not_overwrite=config.not_overwrite,
+                        )                        
                         if config.save_caption_together:
                             together_caption_file = get_caption_file_path(
                                 self.my_logger,
