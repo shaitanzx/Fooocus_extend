@@ -587,7 +587,6 @@ class LLM:
                         inputs[key] = value.to(device=model_device, dtype=model_dtype)
                     else:
                         inputs[key] = value.to(device=model_device)
-            print ('--------------', max_token)
             if max_token==0:
                 max_token=1024
             print(f'Florence2 max_new_tokens is {max_token}')
