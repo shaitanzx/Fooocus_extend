@@ -223,6 +223,7 @@ def gui():
                     pixai_exclude_tags = gr.Textbox(
                         label="Tags to exclude",
                         placeholder="comma-separated list of tags",
+                        value=""
                     )
 
                 with gr.Column(min_width=240, visible=True) as tagger_common_settings:
@@ -386,16 +387,16 @@ def gui():
             gr.update(visible=tagger_enabled and is_pixai and mode == "simple"),
             gr.update(visible=tagger_enabled and is_pixai and mode == "advanced"),
             gr.update(visible=tagger_enabled),
-            gr.update(value=defaults.get("pixai_threshold", 0.17)),
-            gr.update(value=defaults.get("pixai_character_threshold", 0.27)),
-            gr.update(value=defaults.get("pixai_general_threshold", 0.17)),
-            gr.update(value=defaults.get("pixai_style_threshold", 0.17)),
-            gr.update(value=defaults.get("pixai_copyright_threshold", 0.24)),
-            gr.update(value=defaults.get("pixai_meta_threshold", 0.17)),
-            gr.update(value=defaults.get("pixai_rating_threshold", 0.41)),
-            gr.update(value=defaults.get("pixai_replace_underscore", False)),
-            gr.update(value=defaults.get("pixai_trailing_comma", False)),
-            gr.update(value=defaults.get("pixai_exclude_tags", "")),
+            #gr.update(value=defaults.get("pixai_threshold", 0.17)),
+            #gr.update(value=defaults.get("pixai_character_threshold", 0.27)),
+            #gr.update(value=defaults.get("pixai_general_threshold", 0.17)),
+            #gr.update(value=defaults.get("pixai_style_threshold", 0.17)),
+            #gr.update(value=defaults.get("pixai_copyright_threshold", 0.24)),
+            #gr.update(value=defaults.get("pixai_meta_threshold", 0.17)),
+            #gr.update(value=defaults.get("pixai_rating_threshold", 0.41)),
+            #gr.update(value=defaults.get("pixai_replace_underscore", False)),
+            #gr.update(value=defaults.get("pixai_trailing_comma", False)),
+            #gr.update(value=defaults.get("pixai_exclude_tags", "")),
         )
 
     tagger_profile_outputs = [
@@ -404,16 +405,16 @@ def gui():
         pixai_simple_settings,
         pixai_advanced_settings,
         tagger_common_settings,
-        pixai_threshold,
-        pixai_character_threshold,
-        pixai_general_threshold,
-        pixai_style_threshold,
-        pixai_copyright_threshold,
-        pixai_meta_threshold,
-        pixai_rating_threshold,
-        pixai_replace_underscore,
-        pixai_trailing_comma,
-        pixai_exclude_tags,
+        # pixai_threshold,
+        # pixai_character_threshold,
+        # pixai_general_threshold,
+        # pixai_style_threshold,
+        # pixai_copyright_threshold,
+        # pixai_meta_threshold,
+        # pixai_rating_threshold,
+        # pixai_replace_underscore,
+        # pixai_trailing_comma,
+        # pixai_exclude_tags,
     ]
 
     # def llm_choice_update_visibility(caption_method_radio, llm_choice_radio, joy_models_dropdown):
