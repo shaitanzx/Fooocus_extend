@@ -185,45 +185,45 @@ def gui():
                     with gr.Column(visible=False) as pixai_simple_settings:
                         pixai_threshold = gr.Slider(
                             label="General / Style threshold",
-                            minimum=0.0, maximum=1.0, value=0.17, step=0.01,
+                            minimum=0.0, maximum=1.0, value=0.17, step=0.01, interactive=True
                         )
                         pixai_trailing_comma = gr.Checkbox(
-                            label="Add trailing comma", value=False,
+                            label="Add trailing comma", value=False, interactive=True
                         )
 
                     with gr.Column(visible=False) as pixai_advanced_settings:
                         pixai_general_threshold = gr.Slider(
                             label="General threshold", minimum=0.0, maximum=1.0,
-                            value=0.17, step=0.01,
+                            value=0.17, step=0.01, interactive=True
                         )
                         pixai_style_threshold = gr.Slider(
                             label="Style threshold", minimum=0.0, maximum=1.0,
-                            value=0.15, step=0.01,
+                            value=0.15, step=0.01, interactive=True
                         )
                         pixai_copyright_threshold = gr.Slider(
                             label="Copyright threshold", minimum=0.0, maximum=1.0,
-                            value=0.24, step=0.01,
+                            value=0.24, step=0.01, interactive=True
                         )
                         pixai_meta_threshold = gr.Slider(
                             label="Meta threshold", minimum=0.0, maximum=1.0,
-                            value=0.17, step=0.01,
+                            value=0.17, step=0.01, interactive=True
                         )
                         pixai_rating_threshold = gr.Slider(
                             label="Rating threshold", minimum=0.0, maximum=1.0,
-                            value=0.41, step=0.01,
+                            value=0.41, step=0.01, interactive=True
                         )
 
                     pixai_character_threshold = gr.Slider(
                         label="Character threshold", minimum=0.0, maximum=1.0,
-                        value=0.27, step=0.01,
+                        value=0.27, step=0.01, interactive=True
                     )
                     pixai_replace_underscore = gr.Checkbox(
-                        label="Replace underscores with spaces", value=False,
+                        label="Replace underscores with spaces", value=False, interactive=True
                     )
                     pixai_exclude_tags = gr.Textbox(
                         label="Tags to exclude",
                         placeholder="comma-separated list of tags",
-                        value=""
+                        value="" interactive=True
                     )
 
                 with gr.Column(min_width=240, visible=True) as tagger_common_settings:
@@ -396,8 +396,11 @@ def gui():
             #gr.update(value=defaults.get("pixai_rating_threshold", 0.41)),
             #gr.update(value=defaults.get("pixai_replace_underscore", False)),
             #gr.update(value=defaults.get("pixai_trailing_comma", False)),
-            #gr.update(value=defaults.get("pixai_exclude_tags", "")),
+            gr.update(value=defaults.get("pixai_exclude_tags", "")),
         )
+
+
+
 
     tagger_profile_outputs = [
         wd_settings,
