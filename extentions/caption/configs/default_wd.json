@@ -236,5 +236,79 @@
         }
       }
     }
+  },
+  
+  "PixAI-Tagger-v1.0-Simple": {
+    "tagger_type": "pixai",
+    "pixai_mode": "simple",
+    "model_storage_name": "PixAI-Tagger-v1.0",
+    "pixai_defaults": {
+      "pixai_threshold": 0.17,
+      "pixai_character_threshold": 0.27,
+      "pixai_general_threshold": 0.17,
+      "pixai_style_threshold": 0.17,
+      "pixai_copyright_threshold": 0.24,
+      "pixai_meta_threshold": 0.17,
+      "pixai_rating_threshold": 0.41,
+      "pixai_replace_underscore": false,
+      "pixai_trailing_comma": false,
+      "pixai_exclude_tags": ""
+    },
+    "huggingface": {
+      "models": {
+        "repo_id": "pixai-labs/pixai-tagger-v1.0",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/config.json",
+          "model.safetensors": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/model.safetensors",
+          "preprocessor_config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/preprocessor_config.json",
+          "tagger_pipeline.py": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/tagger_pipeline.py"
+        }
+      }
+    }
+  },
+  "PixAI-Tagger-v1.0-Advanced": {
+    "tagger_type": "pixai",
+    "pixai_mode": "advanced",
+    "model_storage_name": "PixAI-Tagger-v1.0",
+    "pixai_defaults": {
+      "pixai_threshold": 0.17,
+      "pixai_character_threshold": 0.27,
+      "pixai_general_threshold": 0.17,
+      "pixai_style_threshold": 0.15,
+      "pixai_copyright_threshold": 0.24,
+      "pixai_meta_threshold": 0.17,
+      "pixai_rating_threshold": 0.41,
+      "pixai_replace_underscore": false,
+      "pixai_trailing_comma": false,
+      "pixai_exclude_tags": ""
+    },
+    "huggingface": {
+      "models": {
+        "repo_id": "pixai-labs/pixai-tagger-v1.0",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/config.json",
+          "model.safetensors": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/model.safetensors",
+          "preprocessor_config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/preprocessor_config.json",
+          "tagger_pipeline.py": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/tagger_pipeline.py"
+        }
+      }
+    }
   }
+
+
+
+
+
+
+
+
+
+
+
 }
