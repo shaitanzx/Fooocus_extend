@@ -222,18 +222,7 @@ def gui():
                         with gr.Group():
                             gr.Markdown("<center>PixAI Tagger Settings</center>")
 
-                        with gr.Column(visible=False) as pixai_simple_settings:
-                            pixai_threshold = gr.Slider(
-                                label="General / Style threshold",
-                                minimum=0.0,
-                                maximum=1.0,
-                                value=0.17,
-                                step=0.01, interactive=True
-                            )
-                            pixai_trailing_comma = gr.Checkbox(
-                                label="Add trailing comma",
-                                value=False,interactive=True
-                            )
+
 
                         with gr.Column(visible=False) as pixai_advanced_settings:
                             pixai_general_threshold = gr.Slider(
@@ -271,7 +260,18 @@ def gui():
                                 value=0.41,
                                 step=0.01,interactive=True
                             )
-
+                        with gr.Column(visible=False) as pixai_simple_settings:
+                            pixai_threshold = gr.Slider(
+                                label="General / Style threshold",
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.17,
+                                step=0.01, interactive=True
+                            )
+                            pixai_trailing_comma = gr.Checkbox(
+                                label="Add trailing comma",
+                                value=False,interactive=True
+                            )
                         # Эти параметры используются в обоих PixAI-профилях.
                         pixai_character_threshold = gr.Slider(
                             label="Character threshold",
