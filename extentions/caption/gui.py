@@ -117,9 +117,6 @@ def gui():
 
     with gr.Row():
         with gr.Column():
-            # with gr.Column(min_width=240):
-            #     model_site = gr.Radio(label="Model Site", choices=["huggingface", "modelscope"], value="huggingface")
-            #     huggingface_token = gr.Textbox(label="Hugging Face TOKEN", type="password", placeholder="Enter your Hugging Face TOKEN(READ-PERMISSION)")
 
             with gr.Row(equal_height=True) as models_settings:
                 with gr.Column(min_width=240):
@@ -396,7 +393,7 @@ def gui():
             #gr.update(value=defaults.get("pixai_rating_threshold", 0.41)),
             #gr.update(value=defaults.get("pixai_replace_underscore", False)),
             #gr.update(value=defaults.get("pixai_trailing_comma", False)),
-            gr.update(value=defaults.get("pixai_exclude_tags", "")),
+            #gr.update(value=defaults.get("pixai_exclude_tags", "")),
         )
 
 
