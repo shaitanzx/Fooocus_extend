@@ -159,22 +159,64 @@ def gui():
                 load_model_button = gr.Button(value="Load Models", variant='primary')
                 unload_model_button = gr.Button(value="Unload Models",interactive=False)
 
+            # Панель настроек: tagger слева, LLM справа.
             with gr.Row():
+                # Общий родитель для WD Settings, PixAI Settings и Common Tagger Settings.
                 with gr.Column(min_width=240) as tagger_settings:
                     with gr.Column(min_width=240) as wd_settings:
                         with gr.Group():
                             gr.Markdown("<center>WD Settings</center>")
-                        wd_remove_underscore = gr.Checkbox(label="Replace underscores with spaces", value=True)
-                        wd_threshold = gr.Slider(label="Threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
-                        wd_general_threshold = gr.Slider(label="General threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
-                        wd_character_threshold = gr.Slider(label="Character threshold", minimum=0.01, maximum=1.00, value=0.85, step=0.01)
-                        wd_add_rating_tags_to_first = gr.Checkbox(label="Adds rating tags to the first")
-                        wd_add_rating_tags_to_last = gr.Checkbox(label="Adds rating tags to the last")
-                        wd_character_tags_first = gr.Checkbox(label="Always put character tags before the general tags")
-                        wd_character_tag_expand = gr.Checkbox(label="Expand tag tail parenthesis to another tag for character tags")
-                        wd_undesired_tags = gr.Textbox(label="undesired tags to remove", placeholder="comma-separated list of tags")
-                        wd_always_first_tags = gr.Textbox(label="Tags always put at the beginning", placeholder="comma-separated list of tags")
-                        wd_tag_replacement = gr.Textbox(label="Tag replacement", placeholder="in the format of `source1,target1;source2,target2;...`")
+
+                        wd_remove_underscore = gr.Checkbox(
+                            label="Replace underscores with spaces",
+                            value=True,
+                        )
+                        wd_threshold = gr.Slider(
+                            label="Threshold",
+                            minimum=0.01,
+                            maximum=1.00,
+                            value=0.35,
+                            step=0.01,
+                        )
+                        wd_general_threshold = gr.Slider(
+                            label="General threshold",
+                            minimum=0.01,
+                            maximum=1.00,
+                            value=0.35,
+                            step=0.01,
+                        )
+                        wd_character_threshold = gr.Slider(
+                            label="Character threshold",
+                            minimum=0.01,
+                            maximum=1.00,
+                            value=0.85,
+                            step=0.01,
+                        )
+
+                        wd_add_rating_tags_to_first = gr.Checkbox(
+                            label="Adds rating tags to the first",
+                        )
+                        wd_add_rating_tags_to_last = gr.Checkbox(
+                            label="Adds rating tags to the last",
+                        )
+                        wd_character_tags_first = gr.Checkbox(
+                            label="Always put character tags before the general tags",
+                        )
+                        wd_character_tag_expand = gr.Checkbox(
+                            label="Expand tag tail parenthesis to another tag for character tags",
+                        )
+                        wd_undesired_tags = gr.Textbox(
+                            label="undesired tags to remove",
+                            placeholder="comma-separated list of tags",
+                        )
+                        wd_always_first_tags = gr.Textbox(
+                            label="Tags always put at the beginning",
+                            placeholder="comma-separated list of tags",
+                        )
+                        wd_tag_replacement = gr.Textbox(
+                            label="Tag replacement",
+                            placeholder="in the format of `source1,target1;source2,target2;...`",
+                        )
 
                     with gr.Column(min_width=240, visible=False) as pixai_settings:
                         with gr.Group():
@@ -183,75 +225,135 @@ def gui():
                         with gr.Column(visible=False) as pixai_simple_settings:
                             pixai_threshold = gr.Slider(
                                 label="General / Style threshold",
-                                minimum=0.0, maximum=1.0, value=0.17, step=0.01, interactive=True
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.17,
+                                step=0.01,
                             )
                             pixai_trailing_comma = gr.Checkbox(
-                                label="Add trailing comma", value=False, interactive=True
+                                label="Add trailing comma",
+                                value=False,
                             )
 
                         with gr.Column(visible=False) as pixai_advanced_settings:
                             pixai_general_threshold = gr.Slider(
-                                label="General threshold", minimum=0.0, maximum=1.0,
-                                value=0.17, step=0.01, interactive=True
+                                label="General threshold",
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.17,
+                                step=0.01,
                             )
                             pixai_style_threshold = gr.Slider(
-                                label="Style threshold", minimum=0.0, maximum=1.0,
-                                value=0.15, step=0.01, interactive=True
+                                label="Style threshold",
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.15,
+                                step=0.01,
                             )
                             pixai_copyright_threshold = gr.Slider(
-                                label="Copyright threshold", minimum=0.0, maximum=1.0,
-                                value=0.24, step=0.01, interactive=True
+                                label="Copyright threshold",
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.24,
+                                step=0.01,
                             )
                             pixai_meta_threshold = gr.Slider(
-                                label="Meta threshold", minimum=0.0, maximum=1.0,
-                                value=0.17, step=0.01, interactive=True
+                                label="Meta threshold",
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.17,
+                                step=0.01,
                             )
                             pixai_rating_threshold = gr.Slider(
-                                label="Rating threshold", minimum=0.0, maximum=1.0,
-                                value=0.41, step=0.01, interactive=True
+                                label="Rating threshold",
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.41,
+                                step=0.01,
                             )
 
+                        # Эти параметры используются в обоих PixAI-профилях.
                         pixai_character_threshold = gr.Slider(
-                            label="Character threshold", minimum=0.0, maximum=1.0,
-                            value=0.27, step=0.01, interactive=True
+                            label="Character threshold",
+                            minimum=0.0,
+                            maximum=1.0,
+                            value=0.27,
+                            step=0.01,
                         )
                         pixai_replace_underscore = gr.Checkbox(
-                            label="Replace underscores with spaces", value=False, interactive=True
+                            label="Replace underscores with spaces",
+                            value=False,
                         )
                         pixai_exclude_tags = gr.Textbox(
                             label="Tags to exclude",
                             placeholder="comma-separated list of tags",
-                            value="", interactive=True
                         )
 
-                    with gr.Column(min_width=240, visible=True) as tagger_common_settings:
+                    with gr.Column(
+                        min_width=240,
+                        visible=True,
+                    ) as tagger_common_settings:
                         with gr.Group():
                             gr.Markdown("<center>Common Tagger Settings</center>")
+
                         wd_caption_extension = gr.Textbox(
-                            label="Extension for tag captions files", value=".wdcaption",
+                            label="Extension for tag captions files",
+                            value=".wdcaption",
                         )
                         wd_caption_separator = gr.Textbox(
-                            label="Separator for tags", value=", ",
+                            label="Separator for tags",
+                            value=", ",
                         )
 
+                # LLM — соседняя колонка tagger_settings в том же Row.
                 with gr.Column(min_width=240) as llm_settings:
                     with gr.Group():
                         gr.Markdown("<center>LLM Settings</center>")
-                    llm_caption_extension = gr.Textbox(label="extension of LLM caption file", value=".llmcaption")
-                    llm_read_wd_caption = gr.Checkbox(label="llm will read wd caption for inference")
-                    llm_caption_without_wd = gr.Checkbox(label="llm will not read wd caption for inference")
 
-                    with gr.Accordion(label="Joy Formated Prompts", open=False) as joy_formated_prompts:
+                    llm_caption_extension = gr.Textbox(
+                        label="extension of LLM caption file",
+                        value=".llmcaption",
+                    )
+                    llm_read_wd_caption = gr.Checkbox(
+                        label="llm will read wd caption for inference",
+                    )
+                    llm_caption_without_wd = gr.Checkbox(
+                        label="llm will not read wd caption for inference",
+                    )
+
+                    with gr.Accordion(
+                        label="Joy Formated Prompts",
+                        open=False,
+                    ) as joy_formated_prompts:
                         caption_type = gr.Dropdown(
                             label="Caption Type",
-                            choices=["Descriptive", "Descriptive (Informal)", "Training Prompt", "MidJourney", "Booru tag list", "Booru-like tag list", "Art Critic", "Product Listing", "Social Media Post"],
-                            value="Descriptive")
+                            choices=[
+                                "Descriptive",
+                                "Descriptive (Informal)",
+                                "Training Prompt",
+                                "MidJourney",
+                                "Booru tag list",
+                                "Booru-like tag list",
+                                "Art Critic",
+                                "Product Listing",
+                                "Social Media Post",
+                            ],
+                            value="Descriptive",
+                        )
 
                         caption_length = gr.Dropdown(
                             label="Caption Length",
-                            choices=["any", "very short", "short", "medium-length", "long", "very long"] + [str(i) for i in range(20, 261, 10)],
+                            choices=[
+                                "any",
+                                "very short",
+                                "short",
+                                "medium-length",
+                                "long",
+                                "very long",
+                            ] + [str(i) for i in range(20, 261, 10)],
                             value="long",
                         )
+
                         with gr.Column(min_width=240) as extra_options_column:
                             extra_options = gr.CheckboxGroup(
                                 label="Extra Options",
@@ -272,32 +374,71 @@ def gui():
                                     "Do NOT use any ambiguous language.",
                                     "Include whether the image is sfw, suggestive, or nsfw.",
                                     "ONLY describe the most important elements of the image.",
-                                    "If there is a person/character in the image you must refer to them as {name}."
-                                ])
-                            name_input = gr.Textbox(label="Person/Character Name (if applicable)")
+                                    "If there is a person/character in the image you must refer to them as {name}.",
+                                ],
+                            )
+                            name_input = gr.Textbox(
+                                label="Person/Character Name (if applicable)",
+                            )
 
-                        generate_prompt_button = gr.Button(value="Generate prompts", variant="primary")
+                        generate_prompt_button = gr.Button(
+                            value="Generate prompts",
+                            variant="primary",
+                        )
+
                     florence_system_prompt = gr.Dropdown(
                         choices=list(SINGLE_TASKS),
                         value="More Detailed Caption",
                         label="Florence2 system prompt",
                         visible=False,
-                        interactive=True
+                        interactive=True,
                     )
                     florence_user_prompt = gr.Textbox(
                         label="Florence user prompt",
                         placeholder="Required for grounding/region tasks",
                         visible=False,
-                        interactive=True
+                        interactive=True,
                     )
-                    llm_system_prompt = gr.Textbox(label="system prompt for llm caption", lines=7, max_lines=7, value=caption.DEFAULT_SYSTEM_PROMPT)
-                    llm_user_prompt = gr.Textbox(label="user prompt for llm caption", lines=7, max_lines=7, value=caption.DEFAULT_USER_PROMPT_WITH_WD)
+                    llm_system_prompt = gr.Textbox(
+                        label="system prompt for llm caption",
+                        lines=7,
+                        max_lines=7,
+                        value=caption.DEFAULT_SYSTEM_PROMPT,
+                    )
+                    llm_user_prompt = gr.Textbox(
+                        label="user prompt for llm caption",
+                        lines=7,
+                        max_lines=7,
+                        value=caption.DEFAULT_USER_PROMPT_WITH_WD,
+                    )
 
                     with gr.Accordion(label="Advanced Options", open=False):
-                        llm_temperature = gr.Slider(label="temperature for LLM model", minimum=0, maximum=1.0, value=0, step=0.1)
-                        llm_max_tokens = gr.Slider(label="max token for LLM model", minimum=0, maximum=2048, value=0, step=1)
-                        image_size = gr.Slider(label="Resize image for inference", minimum=256, maximum=2048, value=1024, step=1)
-                        auto_unload = gr.Checkbox(label="Auto Unload Models after inference.",visible=False)
+                        llm_temperature = gr.Slider(
+                            label="temperature for LLM model",
+                            minimum=0,
+                            maximum=1.0,
+                            value=0,
+                            step=0.1,
+                        )
+                        llm_max_tokens = gr.Slider(
+                            label="max token for LLM model",
+                            minimum=0,
+                            maximum=2048,
+                            value=0,
+                            step=1,
+                        )
+                        image_size = gr.Slider(
+                            label="Resize image for inference",
+                            minimum=256,
+                            maximum=2048,
+                            value=1024,
+                            step=1,
+                        )
+                        auto_unload = gr.Checkbox(
+                            label="Auto Unload Models after inference.",
+                            visible=False,
+                        )
+
 
         with gr.Column():
             with gr.Tab("Single mode"):
