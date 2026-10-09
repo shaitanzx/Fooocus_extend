@@ -222,16 +222,16 @@ def gui():
                         placeholder="comma-separated list of tags",
                         value="", interactive=True
                     )
-
-                with gr.Column(min_width=240, visible=True) as tagger_common_settings:
-                    with gr.Group():
-                        gr.Markdown("<center>Common Tagger Settings</center>")
-                    wd_caption_extension = gr.Textbox(
-                        label="Extension for tag captions files", value=".wdcaption",
-                    )
-                    wd_caption_separator = gr.Textbox(
-                        label="Separator for tags", value=", ",
-                    )
+                with gr.Row():
+                    with gr.Column(min_width=240, visible=True) as tagger_common_settings:
+                        with gr.Group():
+                            gr.Markdown("<center>Common Tagger Settings</center>")
+                        wd_caption_extension = gr.Textbox(
+                            label="Extension for tag captions files", value=".wdcaption",
+                        )
+                        wd_caption_separator = gr.Textbox(
+                            label="Separator for tags", value=", ",
+                        )
 
                 with gr.Column(min_width=240) as llm_settings:
                     with gr.Group():
