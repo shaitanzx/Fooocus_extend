@@ -12,7 +12,7 @@ from tqdm import tqdm
 from .utils.download import download_models
 from .utils.image import get_image_paths
 from .utils.inference import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT_WITHOUT_WD, DEFAULT_USER_PROMPT_WITH_WD
-from .utils.inference import get_caption_file_path, LLM, Tagger, save_florence_visualization
+from .utils.inference import get_caption_file_path, LLM, Tagger, save_florence_visualization,PixAITagger
 
 DEFAULT_MODELS_SAVE_PATH = str(os.path.join(os.getcwd(), "models"))
 
@@ -78,6 +78,7 @@ class CaptionConfig:
     custom_caption_save_path: Optional[str] = None
     
     # WD Args
+    tagger_type: str = "wd"
     wd_config: Optional[str] = None
     wd_model_name: Optional[str] = None
     wd_force_use_cpu: bool = False
@@ -95,6 +96,18 @@ class CaptionConfig:
     wd_caption_separator: str = ", "
     wd_tag_replacement: Optional[str] = None
     wd_character_tag_expand: bool = False
+
+    pixai_mode: str = "simple"
+    pixai_threshold: float = 0.17
+    pixai_character_threshold: float = 0.27
+    pixai_general_threshold: float = 0.17
+    pixai_style_threshold: float = 0.17
+    pixai_copyright_threshold: float = 0.24
+    pixai_meta_threshold: float = 0.17
+    pixai_rating_threshold: float = 0.41
+    pixai_replace_underscore: bool = False
+    pixai_trailing_comma: bool = False
+    pixai_exclude_tags: str = ""
     
     # LLM Args
     llm_choice: str = "llama"
@@ -118,6 +131,10 @@ class CaptionConfig:
 class Caption:
     def __init__(self):
         self.use_wd = False
+
+        self.use_pixai = False
+        self.pixai_model_path = None
+
         self.use_joy = False
         self.use_llama = False
         self.use_qwen = False
@@ -191,11 +208,27 @@ class Caption:
             models_save_path = Path(DEFAULT_MODELS_SAVE_PATH)
 
         if self.use_wd:
-            wd_config_file = Path(config.wd_config) if config.wd_config else os.path.join(Path(__file__).parent, 'configs', 'default_wd.json')
-            self.wd_model_path, self.wd_tags_csv_path = download_models(
-                logger=self.my_logger, models_type="wd", args=config,
-                config_file=wd_config_file, models_save_path=models_save_path,
+            wd_config_file = (
+                Path(config.wd_config)
+                if config.wd_config
+                else Path(__file__).parent / "configs" / "default_wd.json"
             )
+            wd_download_result = download_models(
+                logger=self.my_logger,
+                models_type="wd",
+                args=config,
+                config_file=wd_config_file,
+                models_save_path=models_save_path,
+            )
+
+            if config.tagger_type == "pixai":
+                self.use_pixai = True
+                self.pixai_model_path = wd_download_result[0]
+                self.wd_model_path = None
+                self.wd_tags_csv_path = None
+            else:
+                self.use_pixai = False
+                self.wd_model_path, self.wd_tags_csv_path = wd_download_result
 
         if self.use_joy:
             llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_joy.json')

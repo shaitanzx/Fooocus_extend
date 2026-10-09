@@ -88,7 +88,7 @@ def download_models(
             if models_type == "wd":
                 model_name = list(datas.keys())[0] if not args.wd_model_name else args.wd_model_name
                 args.wd_model_name = model_name
-            elif models_type in ["joy", "llama", "qwen", "minicpm", "florence"]:
+            elif models_type in ["joy", "qwen", "florence"]:
                 model_name = list(datas.keys())[0] if not args.llm_model_name else args.llm_model_name
                 args.llm_model_name = model_name
             else:
@@ -98,10 +98,21 @@ def download_models(
             if model_name not in datas.keys():
                 logger.error(f'"{str(model_name)}" NOT FOUND IN CONFIG!')
                 raise FileNotFoundError
-            return model_name, datas[model_name]
+
+            model_info = datas[model_name]
+            if models_type == "wd":
+                args.tagger_type = model_info.get("tagger_type", "wd")
+                args.pixai_mode = model_info.get("pixai_mode", "simple")
+
+                for name, value in model_info.get("pixai_defaults", {}).items():
+                    if name.startswith("pixai_"):
+                        setattr(args, name, value)
+
+            return model_name, model_info
 
     model_name, model_info = read_json(config_file)
-    models_save_path = Path(os.path.join(models_save_path, model_name))
+    storage_name = model_info.get("model_storage_name", model_name)
+    models_save_path = Path(os.path.join(models_save_path, storage_name))
 
     if args.use_sdk_cache:
         logger.warning('use_sdk_cache ENABLED! download_method force to use "SDK" and models_save_path will be ignored')
@@ -153,6 +164,10 @@ def download_models(
                 skip_local_file_exist=skip_local_file_exist,
                 force_download=force_download
             )
+
+            if models_type == "wd" and model_info.get("tagger_type") == "pixai":
+                return Path(os.path.dirname(models_path[0])), None
+
             return models_path
 
         models_path = []
@@ -227,6 +242,8 @@ def download_models(
     )
 
     if models_type == "wd":
+        if models_type == "wd" and model_info.get("tagger_type") == "pixai":
+            return Path(os.path.dirname(models_path[0])), None        
         models_path = os.path.dirname(models_path[0])
         wd_model_path = Path(os.path.join(models_path, "model.onnx"))
         if os.path.isfile(os.path.join(models_path, "selected_tags.csv")):
