@@ -160,7 +160,7 @@ def gui():
                 unload_model_button = gr.Button(value="Unload Models",interactive=False)
 
             with gr.Row():
-                with gr.Column():
+                with gr.Column(min_width=240) as tagger_settings:
                     with gr.Column(min_width=240) as wd_settings:
                         with gr.Group():
                             gr.Markdown("<center>WD Settings</center>")
@@ -380,11 +380,12 @@ def gui():
         defaults = profile.get("pixai_defaults", {})
 
         return (
-            gr.update(visible=tagger_enabled and not is_pixai),
-            gr.update(visible=tagger_enabled and is_pixai),
+            gr.update(visible=tagger_enabled),  # tagger_settings — вся левая колонка
+            gr.update(visible=tagger_enabled and not is_pixai),  # wd_settings
+            gr.update(visible=tagger_enabled and is_pixai),  # pixai_settings
             gr.update(visible=tagger_enabled and is_pixai and mode == "simple"),
             gr.update(visible=tagger_enabled and is_pixai and mode == "advanced"),
-            gr.update(visible=tagger_enabled),
+            gr.update(visible=tagger_enabled),  # tagger_common_settings
             #gr.update(value=defaults.get("pixai_threshold", 0.17)),
             #gr.update(value=defaults.get("pixai_character_threshold", 0.27)),
             #gr.update(value=defaults.get("pixai_general_threshold", 0.17)),
@@ -401,6 +402,7 @@ def gui():
 
 
     tagger_profile_outputs = [
+        tagger_settings,
         wd_settings,
         pixai_settings,
         pixai_simple_settings,
