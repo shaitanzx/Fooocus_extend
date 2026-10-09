@@ -1105,7 +1105,7 @@ def gui():
 
             gr.Info(
                 f"Caption Batch: start element generation "
-                f"{image_number+1}/{total_images}. "
+                f"{image_number}/{total_images}. "
                 f"Filename: {filename}"
             )
 
