@@ -228,11 +228,11 @@ def gui():
                                 minimum=0.0,
                                 maximum=1.0,
                                 value=0.17,
-                                step=0.01, intractive=True
+                                step=0.01, interactive=True
                             )
                             pixai_trailing_comma = gr.Checkbox(
                                 label="Add trailing comma",
-                                value=False,intractive=True
+                                value=False,interactive=True
                             )
 
                         with gr.Column(visible=False) as pixai_advanced_settings:
@@ -241,35 +241,35 @@ def gui():
                                 minimum=0.0,
                                 maximum=1.0,
                                 value=0.17,
-                                step=0.01,intractive=True
+                                step=0.01,interactive=True
                             )
                             pixai_style_threshold = gr.Slider(
                                 label="Style threshold",
                                 minimum=0.0,
                                 maximum=1.0,
                                 value=0.15,
-                                step=0.01,intractive=True
+                                step=0.01,interactive=True
                             )
                             pixai_copyright_threshold = gr.Slider(
                                 label="Copyright threshold",
                                 minimum=0.0,
                                 maximum=1.0,
                                 value=0.24,
-                                step=0.01,intractive=True
+                                step=0.01,interactive=True
                             )
                             pixai_meta_threshold = gr.Slider(
                                 label="Meta threshold",
                                 minimum=0.0,
                                 maximum=1.0,
                                 value=0.17,
-                                step=0.01,intractive=True
+                                step=0.01,interactive=True
                             )
                             pixai_rating_threshold = gr.Slider(
                                 label="Rating threshold",
                                 minimum=0.0,
                                 maximum=1.0,
                                 value=0.41,
-                                step=0.01,intractive=True
+                                step=0.01,interactive=True
                             )
 
                         # Эти параметры используются в обоих PixAI-профилях.
@@ -278,15 +278,15 @@ def gui():
                             minimum=0.0,
                             maximum=1.0,
                             value=0.27,
-                            step=0.01,intractive=True
+                            step=0.01,interactive=True
                         )
                         pixai_replace_underscore = gr.Checkbox(
                             label="Replace underscores with spaces",
-                            value=False,intractive=True
+                            value=False,interactive=True
                         )
                         pixai_exclude_tags = gr.Textbox(
                             label="Tags to exclude",
-                            placeholder="comma-separated list of tags",intractive=True
+                            placeholder="comma-separated list of tags",interactive=True
                         )
 
                     with gr.Column(
