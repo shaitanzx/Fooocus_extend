@@ -1569,3 +1569,197 @@ class Tagger:
             unloaded = True
 
         return unloaded
+class PixAITagger(Tagger):
+    ADVANCED_ORDER = (
+        "character",
+        "general",
+        "style",
+        "copyright",
+        "meta",
+        "rating",
+    )
+
+    def __init__(self, logger, args, model_path):
+        super().__init__(
+            logger=logger,
+            args=args,
+            model_path=model_path,
+            tags_csv_path=None,
+        )
+        self.tagger = None
+        self.last_category_tags = {}
+
+    def load_model(self):
+        required_files = (
+            "config.json",
+            "model.safetensors",
+            "preprocessor_config.json",
+            "tagger_pipeline.py",
+        )
+        missing = [
+            name for name in required_files
+            if not (self.model_path / name).is_file()
+        ]
+        if missing:
+            raise FileNotFoundError(
+                f"Missing PixAI model files in {self.model_path}: {', '.join(missing)}"
+            )
+
+        try:
+            import torch
+            from transformers import pipeline
+        except ImportError as exc:
+            self.logger.error(f"PixAI dependency import failed: {exc}")
+            raise
+
+        device = -1
+        if not self.args.wd_force_use_cpu:
+            try:
+                if torch.cuda.is_available():
+                    device = 0
+                else:
+                    self.logger.warning("CUDA is unavailable; PixAI will use CPU.")
+            except Exception as exc:
+                self.logger.warning(f"Could not initialize CUDA; PixAI will use CPU: {exc}")
+
+        model_name = self.args.wd_model_name or "PixAI Tagger"
+        self.logger.info(
+            f"Loading {model_name} with {'CPU' if device == -1 else 'CUDA'}..."
+        )
+        start_time = time.monotonic()
+        self.tagger = pipeline(
+            model=str(self.model_path),
+            image_processor=str(self.model_path),
+            trust_remote_code=True,
+            device=device,
+        )
+        self.logger.info(
+            f"{model_name} loaded in {time.monotonic() - start_time:.1f}s."
+        )
+
+    @staticmethod
+    def _filter_category(tag_scores, threshold, replace_underscore, excluded_tags):
+        tags = []
+        ordered_scores = sorted(
+            tag_scores.items(),
+            key=lambda item: float(item[1]),
+            reverse=True,
+        )
+
+        for raw_tag, score in ordered_scores:
+            if float(score) <= threshold:
+                continue
+
+            tag = str(raw_tag)
+            if replace_underscore:
+                tag = tag.replace("_", " ")
+
+            if tag.lower() in excluded_tags:
+                continue
+
+            tag = tag.replace("(", r"\(").replace(")", r"\)")
+            tags.append(tag)
+
+        return tags
+
+    def get_tags(self, image: Image.Image) -> tuple[str, str, str, str]:
+        if self.tagger is None:
+            raise RuntimeError("PixAI Tagger is not loaded.")
+
+        output = self.tagger(image.convert("RGB"))
+        if not isinstance(output, dict) or not isinstance(output.get("results"), dict):
+            raise ValueError(
+                "Unexpected PixAI output; expected a dict containing 'results'."
+            )
+
+        raw_categories = output["results"]
+        replace_underscore = bool(self.args.pixai_replace_underscore)
+        excluded_tags = {
+            item.strip().lower().replace("_", " ") if replace_underscore
+            else item.strip().lower()
+            for item in str(self.args.pixai_exclude_tags).split(",")
+            if item.strip()
+        }
+
+        mode = str(self.args.pixai_mode).lower()
+        if mode == "simple":
+            thresholds = {
+                "general": float(self.args.pixai_threshold),
+                "character": float(self.args.pixai_character_threshold),
+                "style": float(self.args.pixai_threshold),
+            }
+            order = ("general", "character", "style")
+        elif mode == "advanced":
+            thresholds = {
+                "character": float(self.args.pixai_character_threshold),
+                "general": float(self.args.pixai_general_threshold),
+                "style": float(self.args.pixai_style_threshold),
+                "copyright": float(self.args.pixai_copyright_threshold),
+                "meta": float(self.args.pixai_meta_threshold),
+                "rating": float(self.args.pixai_rating_threshold),
+            }
+            order = self.ADVANCED_ORDER
+        else:
+            raise ValueError(f"Unknown PixAI mode: {self.args.pixai_mode}")
+
+        self.last_category_tags = {}
+        for category, threshold in thresholds.items():
+            self.last_category_tags[category] = self._filter_category(
+                raw_categories.get(category, {}),
+                threshold,
+                replace_underscore,
+                excluded_tags,
+            )
+
+        for category, tags in self.last_category_tags.items():
+            self.logger.debug(f"PixAI {category} tags: {', '.join(tags)}")
+            if self.args.wd_tags_frequency:
+                for tag in tags:
+                    self.tag_freq[tag] = self.tag_freq.get(tag, 0) + 1
+
+        combined_tags = [
+            tag
+            for category in order
+            for tag in self.last_category_tags.get(category, [])
+        ]
+        tag_text = self.args.wd_caption_separator.join(combined_tags)
+
+        if mode == "simple" and self.args.pixai_trailing_comma:
+            tag_text += ","
+
+        rating_tag_text = self.args.wd_caption_separator.join(
+            self.last_category_tags.get("rating", [])
+        )
+        character_tag_text = self.args.wd_caption_separator.join(
+            self.last_category_tags.get("character", [])
+        )
+        general_tag_text = self.args.wd_caption_separator.join(
+            self.last_category_tags.get("general", [])
+        )
+
+        return tag_text, rating_tag_text, character_tag_text, general_tag_text
+
+    def unload_model(self) -> bool:
+        if self.tagger is None:
+            return False
+
+        model_name = self.args.wd_model_name or "PixAI Tagger"
+        self.logger.info(f"Unloading {model_name}...")
+        start_time = time.monotonic()
+
+        self.tagger = None
+        self.last_category_tags.clear()
+
+        import gc
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
+
+        self.logger.info(
+            f"{model_name} unloaded in {time.monotonic() - start_time:.1f}s."
+        )
+        return True
