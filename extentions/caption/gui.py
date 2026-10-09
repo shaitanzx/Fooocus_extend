@@ -40,6 +40,9 @@ QWEN_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_qwen2_
 #MINICPM_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_minicpm.json")
 FLORENCE_CONFIG = os.path.join(os.path.dirname(__file__), "configs", "default_florence.json")
 
+with open(WD_CONFIG, "r", encoding="utf-8") as f:
+    TAGGER_MODEL_CONFIG = json.load(f)
+
 SKIP_DOWNLOAD = True
 
 IS_MODEL_LOAD = False
@@ -132,7 +135,12 @@ def gui():
                         caption_method.change(fn=llm_choice_visibility, inputs=caption_method, outputs=llm_choice)
 
                     with gr.Column(min_width=240):
-                        wd_models = gr.Dropdown(label="WD models", choices=read_json(WD_CONFIG), value=read_json(WD_CONFIG)[0])
+                        wd_model_names = list(TAGGER_MODEL_CONFIG.keys())
+                        wd_models = gr.Dropdown(
+                            label="Tagger models",
+                            choices=wd_model_names,
+                            value=wd_model_names[0],
+                        )
                         joy_models = gr.Dropdown(label="Joy models", choices=read_json(JOY_CONFIG), value=read_json(JOY_CONFIG)[0], visible=True)
                         #llama_models = gr.Dropdown(label="Llama models", choices=read_json(LLAMA_CONFIG), value=read_json(LLAMA_CONFIG)[0])
                         qwen_models = gr.Dropdown(label="Qwen models", choices=read_json(QWEN_CONFIG), value=read_json(QWEN_CONFIG)[0], visible=False)
@@ -141,7 +149,7 @@ def gui():
 
                 with gr.Column(min_width=240):
                     with gr.Column(min_width=240):
-                        wd_force_use_cpu = gr.Checkbox(label="Force use CPU for WD inference", value=True)
+                        wd_force_use_cpu = gr.Checkbox(label="Force use CPU for tagger inference", value=True)
                         llm_use_cpu = gr.Checkbox(label="Use cpu for LLM inference")
 
                     llm_use_patch = gr.Checkbox(label="Use LLM LoRA to avoid censored")
@@ -162,18 +170,70 @@ def gui():
                     wd_threshold = gr.Slider(label="Threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
                     wd_general_threshold = gr.Slider(label="General threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
                     wd_character_threshold = gr.Slider(label="Character threshold", minimum=0.01, maximum=1.00, value=0.85, step=0.01)
-
                     wd_add_rating_tags_to_first = gr.Checkbox(label="Adds rating tags to the first")
                     wd_add_rating_tags_to_last = gr.Checkbox(label="Adds rating tags to the last")
                     wd_character_tags_first = gr.Checkbox(label="Always put character tags before the general tags")
                     wd_character_tag_expand = gr.Checkbox(label="Expand tag tail parenthesis to another tag for character tags")
-
                     wd_undesired_tags = gr.Textbox(label="undesired tags to remove", placeholder="comma-separated list of tags")
                     wd_always_first_tags = gr.Textbox(label="Tags always put at the beginning", placeholder="comma-separated list of tags")
-
-                    wd_caption_extension = gr.Textbox(label="extension for wd captions files", value=".wdcaption")
-                    wd_caption_separator = gr.Textbox(label="Separator for tags", value=", ")
                     wd_tag_replacement = gr.Textbox(label="Tag replacement", placeholder="in the format of `source1,target1;source2,target2;...`")
+
+                with gr.Column(min_width=240, visible=False) as pixai_settings:
+                    with gr.Group():
+                        gr.Markdown("<center>PixAI Tagger Settings</center>")
+
+                    with gr.Column(visible=False) as pixai_simple_settings:
+                        pixai_threshold = gr.Slider(
+                            label="General / Style threshold",
+                            minimum=0.0, maximum=1.0, value=0.17, step=0.01,
+                        )
+                        pixai_trailing_comma = gr.Checkbox(
+                            label="Add trailing comma", value=False,
+                        )
+
+                    with gr.Column(visible=False) as pixai_advanced_settings:
+                        pixai_general_threshold = gr.Slider(
+                            label="General threshold", minimum=0.0, maximum=1.0,
+                            value=0.17, step=0.01,
+                        )
+                        pixai_style_threshold = gr.Slider(
+                            label="Style threshold", minimum=0.0, maximum=1.0,
+                            value=0.15, step=0.01,
+                        )
+                        pixai_copyright_threshold = gr.Slider(
+                            label="Copyright threshold", minimum=0.0, maximum=1.0,
+                            value=0.24, step=0.01,
+                        )
+                        pixai_meta_threshold = gr.Slider(
+                            label="Meta threshold", minimum=0.0, maximum=1.0,
+                            value=0.17, step=0.01,
+                        )
+                        pixai_rating_threshold = gr.Slider(
+                            label="Rating threshold", minimum=0.0, maximum=1.0,
+                            value=0.41, step=0.01,
+                        )
+
+                    pixai_character_threshold = gr.Slider(
+                        label="Character threshold", minimum=0.0, maximum=1.0,
+                        value=0.27, step=0.01,
+                    )
+                    pixai_replace_underscore = gr.Checkbox(
+                        label="Replace underscores with spaces", value=False,
+                    )
+                    pixai_exclude_tags = gr.Textbox(
+                        label="Tags to exclude",
+                        placeholder="comma-separated list of tags",
+                    )
+
+                with gr.Column(min_width=240, visible=True) as tagger_common_settings:
+                    with gr.Group():
+                        gr.Markdown("<center>Common Tagger Settings</center>")
+                    wd_caption_extension = gr.Textbox(
+                        label="Extension for tag captions files", value=".wdcaption",
+                    )
+                    wd_caption_separator = gr.Textbox(
+                        label="Separator for tags", value=", ",
+                    )
 
                 with gr.Column(min_width=240) as llm_settings:
                     with gr.Group():
@@ -282,14 +342,79 @@ def gui():
 
     # model_site.change(fn=huggingface_token_update_visibility, inputs=model_site, outputs=huggingface_token)
 
-    def caption_method_update_visibility(caption_method_radio,llm_choice):
-        run_method_visible = gr.update(visible=True if caption_method_radio == "WD+LLM" else False)
-        wd_force_use_cpu_visible = wd_model_visible = gr.update(visible=True if "WD" in caption_method_radio else False)
-        llm_load_settings_visible = llm_use_cpu_visible = gr.update(visible=True if "LLM" in caption_method_radio else False)
-        wd_settings_visible = gr.update(visible=True if "WD" in caption_method_radio else False)
-        llm_settings_visible = gr.update(visible=True if "LLM" in caption_method_radio else False)
-        florence_image = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice == "Florence" else False)
-        return run_method_visible, wd_model_visible, wd_force_use_cpu_visible, llm_use_cpu_visible, wd_settings_visible, llm_load_settings_visible, llm_settings_visible,wd_settings_visible,llm_settings_visible,florence_image
+    def caption_method_update_visibility(caption_method_radio, llm_choice):
+        caption_method_radio = caption_method_radio or ""
+        tagger_enabled = "WD" in caption_method_radio
+        llm_enabled = "LLM" in caption_method_radio
+
+        run_method_visible = gr.update(visible=caption_method_radio == "WD+LLM")
+        wd_model_visible = gr.update(visible=tagger_enabled)
+        wd_force_use_cpu_visible = gr.update(visible=tagger_enabled)
+        llm_use_cpu_visible = gr.update(visible=llm_enabled)
+        llm_load_settings_visible = gr.update(visible=llm_enabled)
+        llm_settings_visible = gr.update(visible=llm_enabled)
+        wd_tags_output_visible = gr.update(visible=tagger_enabled)
+        llm_caption_output_visible = gr.update(visible=llm_enabled)
+        florence_image_visible = gr.update(
+            visible=llm_enabled and llm_choice == "Florence"
+        )
+
+        return (
+            run_method_visible,
+            wd_model_visible,
+            wd_force_use_cpu_visible,
+            llm_use_cpu_visible,
+            llm_load_settings_visible,
+            llm_settings_visible,
+            wd_tags_output_visible,
+            llm_caption_output_visible,
+            florence_image_visible,
+        )
+
+    def selected_tagger_visibility(caption_method_value, model_name):
+        caption_method_value = caption_method_value or ""
+        tagger_enabled = "WD" in caption_method_value
+
+        profile = TAGGER_MODEL_CONFIG.get(str(model_name), {})
+        is_pixai = profile.get("tagger_type") == "pixai"
+        mode = str(profile.get("pixai_mode", "simple")).lower()
+        defaults = profile.get("pixai_defaults", {})
+
+        return (
+            gr.update(visible=tagger_enabled and not is_pixai),
+            gr.update(visible=tagger_enabled and is_pixai),
+            gr.update(visible=tagger_enabled and is_pixai and mode == "simple"),
+            gr.update(visible=tagger_enabled and is_pixai and mode == "advanced"),
+            gr.update(visible=tagger_enabled),
+            gr.update(value=defaults.get("pixai_threshold", 0.17)),
+            gr.update(value=defaults.get("pixai_character_threshold", 0.27)),
+            gr.update(value=defaults.get("pixai_general_threshold", 0.17)),
+            gr.update(value=defaults.get("pixai_style_threshold", 0.17)),
+            gr.update(value=defaults.get("pixai_copyright_threshold", 0.24)),
+            gr.update(value=defaults.get("pixai_meta_threshold", 0.17)),
+            gr.update(value=defaults.get("pixai_rating_threshold", 0.41)),
+            gr.update(value=defaults.get("pixai_replace_underscore", False)),
+            gr.update(value=defaults.get("pixai_trailing_comma", False)),
+            gr.update(value=defaults.get("pixai_exclude_tags", "")),
+        )
+
+    tagger_profile_outputs = [
+        wd_settings,
+        pixai_settings,
+        pixai_simple_settings,
+        pixai_advanced_settings,
+        tagger_common_settings,
+        pixai_threshold,
+        pixai_character_threshold,
+        pixai_general_threshold,
+        pixai_style_threshold,
+        pixai_copyright_threshold,
+        pixai_meta_threshold,
+        pixai_rating_threshold,
+        pixai_replace_underscore,
+        pixai_trailing_comma,
+        pixai_exclude_tags,
+    ]
 
     # def llm_choice_update_visibility(caption_method_radio, llm_choice_radio, joy_models_dropdown):
     #     joy_model_visible = gr.update(visible=True if "LLM" in caption_method_radio and llm_choice_radio == "Joy" else False)
@@ -321,7 +446,31 @@ def gui():
         extra_options_visible = gr.update(visible=True if llm_choice_radio == "Joy" and joy_models_dropdown in ["Joy-Caption-Alpha-Two-Llava", "Joy-Caption-Alpha-Two"] else False)
         return joy_formated_prompts_visible, extra_options_visible
 
-    caption_method.change(fn=caption_method_update_visibility, inputs=[caption_method,llm_choice], outputs=[run_method, wd_models, wd_force_use_cpu, llm_use_cpu, wd_settings, llm_load_settings, llm_settings,wd_tags_output, llm_caption_output,florence_image])
+    caption_method.change(
+        fn=caption_method_update_visibility,
+        inputs=[caption_method, llm_choice],
+        outputs=[
+            run_method,
+            wd_models,
+            wd_force_use_cpu,
+            llm_use_cpu,
+            llm_load_settings,
+            llm_settings,
+            wd_tags_output,
+            llm_caption_output,
+            florence_image,
+        ],
+    )
+    caption_method.change(
+        fn=selected_tagger_visibility,
+        inputs=[caption_method, wd_models],
+        outputs=tagger_profile_outputs,
+    )
+    wd_models.change(
+        fn=selected_tagger_visibility,
+        inputs=[caption_method, wd_models],
+        outputs=tagger_profile_outputs,
+    )
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
     #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
     caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt, florence_image])
