@@ -160,69 +160,70 @@ def gui():
                 unload_model_button = gr.Button(value="Unload Models",interactive=False)
 
             with gr.Row():
-                with gr.Column(min_width=240) as wd_settings:
-                    with gr.Group():
-                        gr.Markdown("<center>WD Settings</center>")
-                    wd_remove_underscore = gr.Checkbox(label="Replace underscores with spaces", value=True)
-                    wd_threshold = gr.Slider(label="Threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
-                    wd_general_threshold = gr.Slider(label="General threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
-                    wd_character_threshold = gr.Slider(label="Character threshold", minimum=0.01, maximum=1.00, value=0.85, step=0.01)
-                    wd_add_rating_tags_to_first = gr.Checkbox(label="Adds rating tags to the first")
-                    wd_add_rating_tags_to_last = gr.Checkbox(label="Adds rating tags to the last")
-                    wd_character_tags_first = gr.Checkbox(label="Always put character tags before the general tags")
-                    wd_character_tag_expand = gr.Checkbox(label="Expand tag tail parenthesis to another tag for character tags")
-                    wd_undesired_tags = gr.Textbox(label="undesired tags to remove", placeholder="comma-separated list of tags")
-                    wd_always_first_tags = gr.Textbox(label="Tags always put at the beginning", placeholder="comma-separated list of tags")
-                    wd_tag_replacement = gr.Textbox(label="Tag replacement", placeholder="in the format of `source1,target1;source2,target2;...`")
+                with gr.Column(min_width=240):
+                    with gr.Column(min_width=240) as wd_settings:
+                        with gr.Group():
+                            gr.Markdown("<center>WD Settings</center>")
+                        wd_remove_underscore = gr.Checkbox(label="Replace underscores with spaces", value=True)
+                        wd_threshold = gr.Slider(label="Threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
+                        wd_general_threshold = gr.Slider(label="General threshold", minimum=0.01, maximum=1.00, value=0.35, step=0.01)
+                        wd_character_threshold = gr.Slider(label="Character threshold", minimum=0.01, maximum=1.00, value=0.85, step=0.01)
+                        wd_add_rating_tags_to_first = gr.Checkbox(label="Adds rating tags to the first")
+                        wd_add_rating_tags_to_last = gr.Checkbox(label="Adds rating tags to the last")
+                        wd_character_tags_first = gr.Checkbox(label="Always put character tags before the general tags")
+                        wd_character_tag_expand = gr.Checkbox(label="Expand tag tail parenthesis to another tag for character tags")
+                        wd_undesired_tags = gr.Textbox(label="undesired tags to remove", placeholder="comma-separated list of tags")
+                        wd_always_first_tags = gr.Textbox(label="Tags always put at the beginning", placeholder="comma-separated list of tags")
+                        wd_tag_replacement = gr.Textbox(label="Tag replacement", placeholder="in the format of `source1,target1;source2,target2;...`")
 
-                with gr.Column(min_width=240, visible=False) as pixai_settings:
-                    with gr.Group():
-                        gr.Markdown("<center>PixAI Tagger Settings</center>")
+                    with gr.Column(min_width=240, visible=False) as pixai_settings:
+                        with gr.Group():
+                            gr.Markdown("<center>PixAI Tagger Settings</center>")
 
-                    with gr.Column(visible=False) as pixai_simple_settings:
-                        pixai_threshold = gr.Slider(
-                            label="General / Style threshold",
-                            minimum=0.0, maximum=1.0, value=0.17, step=0.01, interactive=True
+                        with gr.Column(visible=False) as pixai_simple_settings:
+                            pixai_threshold = gr.Slider(
+                                label="General / Style threshold",
+                                minimum=0.0, maximum=1.0, value=0.17, step=0.01, interactive=True
+                            )
+                            pixai_trailing_comma = gr.Checkbox(
+                                label="Add trailing comma", value=False, interactive=True
+                            )
+
+                        with gr.Column(visible=False) as pixai_advanced_settings:
+                            pixai_general_threshold = gr.Slider(
+                                label="General threshold", minimum=0.0, maximum=1.0,
+                                value=0.17, step=0.01, interactive=True
+                            )
+                            pixai_style_threshold = gr.Slider(
+                                label="Style threshold", minimum=0.0, maximum=1.0,
+                                value=0.15, step=0.01, interactive=True
+                            )
+                            pixai_copyright_threshold = gr.Slider(
+                                label="Copyright threshold", minimum=0.0, maximum=1.0,
+                                value=0.24, step=0.01, interactive=True
+                            )
+                            pixai_meta_threshold = gr.Slider(
+                                label="Meta threshold", minimum=0.0, maximum=1.0,
+                                value=0.17, step=0.01, interactive=True
+                            )
+                            pixai_rating_threshold = gr.Slider(
+                                label="Rating threshold", minimum=0.0, maximum=1.0,
+                                value=0.41, step=0.01, interactive=True
+                            )
+
+                        pixai_character_threshold = gr.Slider(
+                            label="Character threshold", minimum=0.0, maximum=1.0,
+                            value=0.27, step=0.01, interactive=True
                         )
-                        pixai_trailing_comma = gr.Checkbox(
-                            label="Add trailing comma", value=False, interactive=True
+                        pixai_replace_underscore = gr.Checkbox(
+                            label="Replace underscores with spaces", value=False, interactive=True
+                        )
+                        pixai_exclude_tags = gr.Textbox(
+                            label="Tags to exclude",
+                            placeholder="comma-separated list of tags",
+                            value="", interactive=True
                         )
 
-                    with gr.Column(visible=False) as pixai_advanced_settings:
-                        pixai_general_threshold = gr.Slider(
-                            label="General threshold", minimum=0.0, maximum=1.0,
-                            value=0.17, step=0.01, interactive=True
-                        )
-                        pixai_style_threshold = gr.Slider(
-                            label="Style threshold", minimum=0.0, maximum=1.0,
-                            value=0.15, step=0.01, interactive=True
-                        )
-                        pixai_copyright_threshold = gr.Slider(
-                            label="Copyright threshold", minimum=0.0, maximum=1.0,
-                            value=0.24, step=0.01, interactive=True
-                        )
-                        pixai_meta_threshold = gr.Slider(
-                            label="Meta threshold", minimum=0.0, maximum=1.0,
-                            value=0.17, step=0.01, interactive=True
-                        )
-                        pixai_rating_threshold = gr.Slider(
-                            label="Rating threshold", minimum=0.0, maximum=1.0,
-                            value=0.41, step=0.01, interactive=True
-                        )
-
-                    pixai_character_threshold = gr.Slider(
-                        label="Character threshold", minimum=0.0, maximum=1.0,
-                        value=0.27, step=0.01, interactive=True
-                    )
-                    pixai_replace_underscore = gr.Checkbox(
-                        label="Replace underscores with spaces", value=False, interactive=True
-                    )
-                    pixai_exclude_tags = gr.Textbox(
-                        label="Tags to exclude",
-                        placeholder="comma-separated list of tags",
-                        value="", interactive=True
-                    )
-                with gr.Row():
                     with gr.Column(min_width=240, visible=True) as tagger_common_settings:
                         with gr.Group():
                             gr.Markdown("<center>Common Tagger Settings</center>")
