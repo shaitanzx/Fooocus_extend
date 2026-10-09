@@ -733,6 +733,8 @@ def gui():
         wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
         wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
         llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd,
+        pixai_threshold,pixai_character_threshold,pixai_general_threshold,pixai_style_threshold,pixai_copyright_threshold,
+        pixai_meta_threshold,pixai_rating_threshold,pixai_replace_underscore,pixai_trailing_comma,pixai_exclude_tags,
         florence_system_prompt, florence_user_prompt,
         llm_system_prompt, llm_user_prompt,
         llm_temperature, llm_max_tokens, image_size, auto_unload, input_image,
@@ -742,6 +744,8 @@ def gui():
         wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
         wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
         llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, 
+        pixai_threshold,pixai_character_threshold,pixai_general_threshold,pixai_style_threshold,pixai_copyright_threshold,
+        pixai_meta_threshold,pixai_rating_threshold,pixai_replace_underscore,pixai_trailing_comma,pixai_exclude_tags,
         florence_system_prompt, florence_user_prompt,
         llm_system_prompt, llm_user_prompt,
         llm_temperature, llm_max_tokens, image_size, auto_unload, input_dir, is_recursive, custom_caption_save_path,
@@ -919,6 +923,8 @@ def gui():
             wd_add_rating_tags_to_first_value, wd_character_tags_first_value, wd_add_rating_tags_to_last_value, wd_character_tag_expand_value,
             wd_undesired_tags_value, wd_always_first_tags_value, wd_caption_extension_value, wd_caption_separator_value, wd_tag_replacement_value,
             llm_caption_extension_value, llm_read_wd_caption_value, llm_caption_without_wd_value, 
+            pixai_threshold_value,pixai_character_threshold_value,pixai_general_threshold_value,pixai_style_threshold_value,pixai_copyright_threshold_value,
+            pixai_meta_threshold_value,pixai_rating_threshold_value,pixai_replace_underscore_value,pixai_trailing_comma_value,pixai_exclude_tags_value,            
             florence_system_prompt, florence_user_prompt,llm_system_prompt_value, llm_user_prompt_value,
             llm_temperature_value, llm_max_tokens_value, image_size_value, auto_unload_value, input_image_value
     ):
@@ -943,6 +949,17 @@ def gui():
         config.wd_caption_extension = str(wd_caption_extension_value)
         config.wd_caption_separator = str(wd_caption_separator_value)
         config.wd_tag_replacement = str(wd_tag_replacement_value)
+
+        config.pixai_threshold = float(pixai_threshold_value)
+        config.pixai_character_threshold = float(pixai_character_threshold_value)
+        config.pixai_general_threshold = float(pixai_general_threshold_value)
+        config.pixai_style_threshold = float(pixai_style_threshold_value)
+        config.pixai_copyright_threshold = float(pixai_copyright_threshold_value)
+        config.pixai_meta_threshold = float(pixai_meta_threshold_value)
+        config.pixai_rating_threshold = float(pixai_rating_threshold_value)
+        config.pixai_replace_underscore = bool(pixai_replace_underscore_value)
+        config.pixai_trailing_comma = bool(pixai_trailing_comma_value)
+        config.pixai_exclude_tags = str(pixai_exclude_tags_value)
 
         config.llm_caption_extension = str(llm_caption_extension_value)
         config.llm_read_wd_caption = bool(llm_read_wd_caption_value)
@@ -1013,6 +1030,8 @@ def gui():
             wd_character_threshold_value, wd_add_rating_tags_to_first_value, wd_character_tags_first_value, wd_add_rating_tags_to_last_value,
             wd_character_tag_expand_value, wd_undesired_tags_value, wd_always_first_tags_value, wd_caption_extension_value, wd_caption_separator_value,
             wd_tag_replacement_value, llm_caption_extension_value, llm_read_wd_caption_value, llm_caption_without_wd_value, 
+            pixai_threshold_value,pixai_character_threshold_value,pixai_general_threshold_value,pixai_style_threshold_value,pixai_copyright_threshold_value,
+            pixai_meta_threshold_value,pixai_rating_threshold_value,pixai_replace_underscore_value,pixai_trailing_comma_value,pixai_exclude_tags_value,
             florence_system_prompt_value,florence_user_prompt_value,
             llm_system_prompt_value,
             llm_user_prompt_value, llm_temperature_value, llm_max_tokens_value, image_size_value, auto_unload_value, input_dir_value,
@@ -1040,6 +1059,17 @@ def gui():
         config.wd_caption_extension = str(wd_caption_extension_value)
         config.wd_caption_separator = str(wd_caption_separator_value)
         config.wd_tag_replacement = str(wd_tag_replacement_value)
+
+        config.pixai_threshold = float(pixai_threshold_value)
+        config.pixai_character_threshold = float(pixai_character_threshold_value)
+        config.pixai_general_threshold = float(pixai_general_threshold_value)
+        config.pixai_style_threshold = float(pixai_style_threshold_value)
+        config.pixai_copyright_threshold = float(pixai_copyright_threshold_value)
+        config.pixai_meta_threshold = float(pixai_meta_threshold_value)
+        config.pixai_rating_threshold = float(pixai_rating_threshold_value)
+        config.pixai_replace_underscore = bool(pixai_replace_underscore_value)
+        config.pixai_trailing_comma = bool(pixai_trailing_comma_value)
+        config.pixai_exclude_tags = str(pixai_exclude_tags_value)
 
         config.llm_caption_extension = str(llm_caption_extension_value)
         config.llm_read_wd_caption = bool(llm_read_wd_caption_value)
@@ -1105,18 +1135,6 @@ def gui():
 
         return unloads_models_interactive_group()
 
-    # load_model_button.click(
-    #     fn=caption_models_load,
-    #     inputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
-    #     outputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
-    # )
-
-    # load_model_button.click(
-    #     fn=caption_models_load,
-    #     inputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
-    #     outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]) \
-    #     .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=False)),
-    #               outputs=[unload_model_button,single_image_submit_button,load_model_button])
     load_model_button.click(
         fn=caption_models_load,
         inputs=[caption_method, llm_choice, wd_models, joy_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt],
@@ -1124,16 +1142,6 @@ def gui():
         .then(lambda: (gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),gr.update(interactive=False)),
         outputs=[unload_model_button, single_image_submit_button, batch_process_submit_button, load_model_button])
 
-    # unload_model_button.click(
-    #     fn=caption_unload_models,
-    #     outputs=[model_site, huggingface_token, caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, minicpm_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]
-    # )
-
-    # unload_model_button.click(
-    #     fn=caption_unload_models,
-    #     outputs=[caption_method, llm_choice, wd_models, joy_models, llama_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]) \
-    #     .then(lambda: (gr.update(interactive=True),gr.update(interactive=False),gr.update(interactive=False),),
-    #               outputs=[load_model_button,single_image_submit_button,unload_model_button])
     unload_model_button.click(
         fn=caption_unload_models,
         outputs=[caption_method, llm_choice, wd_models, joy_models, qwen_models, florence_models, wd_force_use_cpu, llm_use_cpu, llm_use_patch, llm_dtype, llm_qnt, load_model_button, unload_model_button]) \
