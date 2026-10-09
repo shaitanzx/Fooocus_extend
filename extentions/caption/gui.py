@@ -220,7 +220,7 @@ def gui():
                     pixai_exclude_tags = gr.Textbox(
                         label="Tags to exclude",
                         placeholder="comma-separated list of tags",
-                        value="" interactive=True
+                        value="", interactive=True
                     )
 
                 with gr.Column(min_width=240, visible=True) as tagger_common_settings:
