@@ -160,7 +160,7 @@ def gui():
                 unload_model_button = gr.Button(value="Unload Models",interactive=False)
 
             with gr.Row():
-                with gr.Column(min_width=240):
+                with gr.Column():
                     with gr.Column(min_width=240) as wd_settings:
                         with gr.Group():
                             gr.Markdown("<center>WD Settings</center>")
