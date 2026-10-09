@@ -263,10 +263,20 @@ class Caption:
 
     def load_models(self, config: CaptionConfig):
         if self.use_wd:
-            self.my_tagger = Tagger(
-                logger=self.my_logger, args=config,
-                model_path=self.wd_model_path, tags_csv_path=self.wd_tags_csv_path
-            )
+            if self.use_pixai:
+                self.my_tagger = PixAITagger(
+                    logger=self.my_logger,
+                    args=config,
+                    model_path=self.pixai_model_path,
+                )
+            else:
+                self.my_tagger = Tagger(
+                    logger=self.my_logger,
+                    args=config,
+                    model_path=self.wd_model_path,
+                    tags_csv_path=self.wd_tags_csv_path,
+                )
+
             self.my_tagger.load_model()
 
         if self.use_joy:
@@ -653,6 +663,8 @@ class Caption:
 
         self.wd_model_path = None
         self.wd_tags_csv_path = None
+        self.pixai_model_path = None
+        self.use_pixai = False
         self.llm_models_paths = None
 
         del tagger, llm
