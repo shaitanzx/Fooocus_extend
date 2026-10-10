@@ -73,7 +73,7 @@ import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
 import extentions.omost.main as omost
 from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
-import extentions.florance2 as florance2
+
 import extentions.caption.gui as caption
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
@@ -836,11 +836,6 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                        with gr.TabItem(label='caption'):
-                            caption.gui()
-                        with gr.TabItem(label='Florance2'):
-                            florance2.ui()
-                            
 
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
@@ -1185,7 +1180,8 @@ with shared.gradio_root:
                 with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
-
+                  with gr.TabItem(label='caption'):
+                        caption.gui()
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML() 
 
