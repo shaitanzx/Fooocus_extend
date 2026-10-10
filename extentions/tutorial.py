@@ -1,4 +1,4 @@
-"""Reusable Gradio card linking to a visual guide."""
+"""Reusable compact Gradio link to a visual guide."""
 
 from html import escape
 from urllib.parse import urlparse
@@ -7,17 +7,17 @@ import gradio as gr
 
 
 def tutorial(guide_url: str) -> gr.HTML:
-    """Create a full-width clickable card that opens a guide in a new tab.
+    """Create a compact, full-width visual-guide link styled as a button.
 
-    Call this function while building a Gradio Blocks interface, for example::
+    Call this function while building a Gradio Blocks interface::
 
-        tutorial("https://github.com/owner/repo/blob/dev/guide.md")
+        create_visual_guide_card("https://github.com/owner/repo/blob/dev/guide.md")
 
     Args:
         guide_url: Absolute HTTP(S) URL of the visual guide.
 
     Returns:
-        A Gradio HTML component containing the guide link card.
+        A Gradio HTML component containing the clickable guide bar.
 
     Raises:
         TypeError: If ``guide_url`` is not a string.
@@ -34,24 +34,25 @@ def tutorial(guide_url: str) -> gr.HTML:
     # Escape the URL before inserting it into an HTML attribute.
     safe_url = escape(guide_url, quote=True)
 
-    card_html = f"""
+    button_html = f"""
     <a
         href="{safe_url}"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Open the visual guide on GitHub"
+        aria-label="Open the guide on GitHub"
         style="
             display: flex;
             align-items: center;
             gap: 18px;
             width: 100%;
+            min-height: 70px;
             box-sizing: border-box;
             margin: 14px 0 18px;
-            padding: 20px 22px;
-            border: 1px solid rgba(126, 110, 255, 0.48);
+            padding: 15px 22px;
+            border: 1px solid rgba(126, 145, 255, 0.82);
             border-radius: 14px;
-            background: linear-gradient(110deg, #1c2941 0%, #222746 100%);
-            color: #eef1fa;
+            background: linear-gradient(100deg, #1b2943 0%, #202b49 100%);
+            color: #dfe7fb;
             text-decoration: none;
             cursor: pointer;
         "
@@ -62,73 +63,64 @@ def tutorial(guide_url: str) -> gr.HTML:
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                flex: 0 0 60px;
-                width: 60px;
-                height: 60px;
-                border-radius: 12px;
-                background: rgba(125, 107, 255, 0.12);
+                flex: 0 0 42px;
+                width: 42px;
+                height: 42px;
             "
         >
             <svg
-                width="34"
-                height="34"
-                viewBox="0 0 24 24"
+                width="38"
+                height="38"
+                viewBox="0 0 40 40"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
                 <path
-                    d="M12 6.5C9.5 4.8 6.2 4.5 3 5.5V19
-                       C6.2 18 9.5 18.3 12 20
-                       M12 6.5C14.5 4.8 17.8 4.5 21 5.5V19
-                       C17.8 18 14.5 18.3 12 20
-                       M12 6.5V20"
-                    stroke="#9b8cff"
-                    stroke-width="1.7"
+                    d="M20 11.5C15.5 8.5 9.5 8.3 4 10.5V31
+                       C9.5 28.8 15.5 29 20 32
+                       M20 11.5C24.5 8.5 30.5 8.3 36 10.5V31
+                       C30.5 28.8 24.5 29 20 32
+                       M20 11.5V32"
+                    stroke="#89A0FF"
+                    stroke-width="2.2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
+                />
+                <path
+                    d="M31 3.5V10.5M27.5 7H34.5"
+                    stroke="#A795FF"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
                 />
             </svg>
         </span>
 
-        <span style="flex: 1; min-width: 0;">
-            <span
-                style="
-                    display: block;
-                    margin-bottom: 5px;
-                    font-size: 20px;
-                    font-weight: 650;
-                    line-height: 1.25;
-                "
-            >
-                Visual guide
-            </span>
-            <span
-                style="
-                    display: block;
-                    color: #aeb9d2;
-                    font-size: 14px;
-                    line-height: 1.45;
-                "
-            >
-                Screenshots, prompts, and step-by-step examples
-            </span>
+        <span
+            style="
+                flex: 1 1 auto;
+                min-width: 0;
+                color: #e1e8f8;
+                font-size: 16px;
+                font-weight: 550;
+                line-height: 1.4;
+            "
+        >
+            Need help? Open the guide
         </span>
 
         <span
             style="
                 flex: 0 0 auto;
-                padding: 12px 18px;
-                border-radius: 10px;
-                background: #5749df;
-                color: #ffffff;
-                font-size: 14px;
-                font-weight: 600;
+                margin-left: auto;
+                color: #91a6ff;
+                font-size: 15px;
+                font-weight: 550;
                 white-space: nowrap;
             "
         >
-            Open guide &#8599;
+            View on GitHub &#8599;
         </span>
     </a>
     """
 
-    return gr.HTML(value=card_html)
+    return gr.HTML(value=button_html)
