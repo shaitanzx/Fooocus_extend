@@ -626,6 +626,9 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 ***Change log***
 
+v9.3.6
+ 1. Add Caption tool
+
 v9.3.5
  1. Eraser tool when drawing masks in Inpaint and Clear modes
  2. Resolution mode in Outpaint
