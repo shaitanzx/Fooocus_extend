@@ -73,7 +73,6 @@ def _draw_florence_result(
     task_name: str,
     result: dict,
 ) -> Optional[Image.Image]:
-    # Set up scale factor if needed (use 1 if not scaling)  
     scale = 1  
     if task_name in {
         "Object Detection",
@@ -95,13 +94,7 @@ def _draw_florence_result(
     if task_name in {"Referring Expression Segmentation", "Region to Segmentation"}:
         canvas = image.convert("RGB").copy()
         draw = ImageDraw.Draw(canvas)
-        
-    
-
-        
-        # Iterate over polygons and labels  
-        
-        
+      
         for index, (polygons, label) in enumerate(zip(result.get("polygons", []), result.get("labels", []))): 
             color = random.choice(colormap)  
             fill_color = random.choice(colormap)
@@ -113,15 +106,10 @@ def _draw_florence_result(
                     continue  
                 
                 _polygon = (_polygon * scale).reshape(-1).tolist()  
-                
-                # Draw the polygon  
-                draw.polygon(_polygon, outline=color, fill=fill_color)  
- 
-                
-                # Draw the label text  
+                draw.polygon(_polygon, outline=color, fill=fill_color)   
                 draw.text((_polygon[0] + 8, _polygon[1] + 2), label, fill=color) 
-
         return canvas
+
     if task_name == "Open Vocabulary Detection":
         return _draw_florence_result(
             image,
@@ -135,9 +123,6 @@ def _draw_florence_result(
     if task_name == "OCR with Region":
         canvas = image.convert("RGB").copy()
         draw = ImageDraw.Draw(canvas)
-        print("_________",result)
-        #bboxes, labels = result.get['quad_boxes'], result.get['labels']
-        #for index, (polygons, label) in enumerate(zip(result.get("polygons", []), result.get("labels", []))):
         for index, (box, label) in enumerate(zip(result.get('quad_boxes', []), result.get('labels', []))):
             color = random.choice(colormap)
             new_box = (numpy.array(box) * scale).tolist()
@@ -147,6 +132,7 @@ def _draw_florence_result(
                         align="right",fill=color)
         return canvas
     return None
+
 def save_florence_visualization(
     visualization,
     caption_file: Path,
@@ -154,11 +140,8 @@ def save_florence_visualization(
 ):
     if visualization is None:
         return None
-
     caption_file = Path(caption_file)
-    mask_file = caption_file.with_name(
-        f"{caption_file.stem}_visualization.png"
-    )
+    mask_file = caption_file.with_name(f"{caption_file.stem}_visualization.png")
 
     if not_overwrite and mask_file.exists():
         return mask_file
@@ -598,8 +581,6 @@ class LLM:
             model_device = model_parameter.device
             model_dtype = model_parameter.dtype
 
-            # Переносим input_ids как целочисленный tensor, а pixel_values
-            # приводим к dtype загруженной модели.
             for key, value in list(inputs.items()):
                 if torch.is_tensor(value):
                     if value.is_floating_point():
@@ -636,10 +617,6 @@ class LLM:
             del inputs
             del generated_ids
 
-
-
-
-
     def get_caption(
             self,
             image: Image.Image,
@@ -648,7 +625,6 @@ class LLM:
             temperature: float = 0,
             max_new_tokens: int = 0,
     ) -> str:
-        # Import torch
         try:
             import torch
             if self.models_type == "joy":
@@ -671,13 +647,9 @@ class LLM:
                 )
                 return result_text
             if self.models_type == "joy":
-                # Preprocess image
                 self.logger.warning(f"`{self.args.llm_model_name}` force resize input image to 384 pixels!")
                 image = image_process(image, target_size=384)
                 image = image_process_image(image)
-                # image = self.clip_processor(images=image, return_tensors='pt').pixel_values
-                # image = image.to(device)
-                # image = image.resize((384, 384), Image.Resampling.LANCZOS)
                 pixel_values = TVF.pil_to_tensor(image)
 
                 llm_dtype = torch.float32 if self.args.llm_use_cpu or self.args.llm_dtype == "fp32" else \
@@ -937,30 +909,6 @@ class LLM:
                     content = self.llm.chat(image=image, msgs=messages, tokenizer=self.llm_tokenizer,
                                             system_prompt=system_prompt if system_prompt else None,
                                             sampling=False, stream=False, **params)
-                # elif self.models_type == "florence":
-                #     self.logger.warning(f"Florence models don't support system prompt or user prompt!")
-                #     self.logger.warning(f"Florence models don't support temperature or max tokens!")
-
-                #     def run_inference(task_prompt, text_input=None):
-                #         if text_input is None:
-                #             input_prompt = task_prompt
-                #         else:
-                #             input_prompt = task_prompt + text_input
-                #         get_inputs = (self.llm_processor(text=input_prompt, images=image, return_tensors="pt").
-                #                       to(device=self.llm.device, dtype=self.llm.dtype))
-                #         generated_ids = self.llm.generate(
-                #             input_ids=get_inputs["input_ids"],
-                #             pixel_values=get_inputs["pixel_values"],
-                #             max_new_tokens=1024,
-                #             num_beams=3
-                #         )
-                #         generated_text = self.llm_processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
-                #         parsed_answer = self.llm_processor.post_process_generation(generated_text, task=task_prompt,
-                #                                                                    image_size=(
-                #                                                                        image.width, image.height))
-                #         return parsed_answer[task_prompt]
-
-                #     content = run_inference("<MORE_DETAILED_CAPTION>")
 
                 else:
                     if system_prompt:
@@ -1148,9 +1096,11 @@ class LLM:
             pbar.update(1)
 
         pbar.close()
+
     def inference(self):
         for _event in self.iter_inference():
             pass
+            
     def unload_model(self) -> bool:
         image_adapter_unloaded = llm_unloaded = clip_model_unloaded = False
         # Unload Image Adapter
