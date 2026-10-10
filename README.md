@@ -345,6 +345,8 @@ This extension allows you to download models for generation from the civitai web
 
 <img width="1187" height="1574" alt="image" src="https://github.com/user-attachments/assets/b0535932-b770-4bde-95ed-b62abec92e28" />
 
+This extension allows you to analyze images and generate tags or captions using WD and PixAI taggers, as well as Joy, Qwen, and Florence-2 models. It supports single-image and batch processing. Florence-2 can also detect objects, recognize text, segment regions, and save visualizations.
+
 
 **TextMask**
 
