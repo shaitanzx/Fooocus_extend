@@ -22,6 +22,7 @@ Let's look at everything in order.
    - Vector - allows you to convert a raster image into a vector
 3. Tools
    - Civitai Helper - A module for working with models and downloading them from Civitai
+   - Caption - Image analysis, tag list generation, and text description creation.
    - TextMask - A module for overlaying text on images and generating a mask for it for subsequent generation with text
    - SVGcode - allows you to convert a raster image into a vector
    - Roller - module for rolling images
@@ -338,6 +339,12 @@ The full analog of this module in the “in generation” panel, unlike which yo
 
 
 This extension allows you to download models for generation from the civitai website.  To download a model you first need to specify your Civitai_API_key. In the Download Model section in the Civitai URL field you need to specify a link to the required model from the browser address bar and click Get Model Info by Civitai URL. After analysing the link you will be given information about the model. You will also be able to select the version of the model before downloading. This extension also allows you to find duplicates of downloaded models and check for updates. In addition, there is a group download option.
+
+
+**Caption**
+
+<img width="1187" height="1574" alt="image" src="https://github.com/user-attachments/assets/b0535932-b770-4bde-95ed-b62abec92e28" />
+
 
 **TextMask**
 
