@@ -17,44 +17,29 @@ from .utils.inference import get_caption_file_path, LLM, Tagger, save_florence_v
 DEFAULT_MODELS_SAVE_PATH = str(os.path.join(os.getcwd(), "models"))
 
 
-# ==========================================================
-# ИЗОЛИРОВАННАЯ СИСТЕМА ЛОГИРОВАНИЯ ТОЛЬКО ДЛЯ ЭТОГО МОДУЛЯ
-# ==========================================================
 class IsolatedLogger:
-    """Логгер, который работает только в этом модуле и не влияет на другие"""
     
     def __init__(self, name: str = "caption_module", level: str = "INFO", log_file: str = None):
-        # Создаем именованный логгер (не корневой!)
         self.logger = logging.getLogger(name)
         self.logger.setLevel(getattr(logging, level.upper(), logging.INFO))
         
-        # Очищаем старые handlers, если они есть
         self.logger.handlers.clear()
         
-        # Формат сообщений
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         
-        # Console handler (вывод в консоль)
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
-        
-        # File handler (если указан файл)
         if log_file:
             file_handler = logging.FileHandler(log_file, encoding='utf-8')
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
         
-        # ВАЖНО: Не передавать логи родительским логгерам
         self.logger.propagate = False
 
-
-# ==========================================================
-# ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ
-# ==========================================================
 @dataclass
 class CaptionConfig:
     data_path: str = ""
@@ -157,7 +142,7 @@ class Caption:
             raise FileNotFoundError
 
     def set_logger(self, config: CaptionConfig):
-        # ИСПОЛЬЗУЕМ ИЗОЛИРОВАННЫЙ ЛОГГЕР
+
         if config.save_logs:
             workspace_path = os.getcwd()
             data_dir_path = Path(config.data_path)
@@ -180,7 +165,6 @@ class Caption:
         else:
             log_file = None
 
-        # Создаем изолированный логгер
         self.my_logger = IsolatedLogger(
             name="caption_module",
             level=config.log_level,
@@ -282,15 +266,11 @@ class Caption:
         if self.use_joy:
             self.my_llm = LLM(logger=self.my_logger, models_type="joy", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
-        elif self.use_llama:
-            self.my_llm = LLM(logger=self.my_logger, models_type="llama", models_paths=self.llm_models_paths, args=config)
-            self.my_llm.load_model()
+
         elif self.use_qwen:
             self.my_llm = LLM(logger=self.my_logger, models_type="qwen", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
-        elif self.use_minicpm:
-            self.my_llm = LLM(logger=self.my_logger, models_type="minicpm", models_paths=self.llm_models_paths, args=config)
-            self.my_llm.load_model()
+
         elif self.use_florence:
             self.my_llm = LLM(logger=self.my_logger, models_type="florence", models_paths=self.llm_models_paths, args=config)
             self.my_llm.load_model()
@@ -298,7 +278,6 @@ class Caption:
     def iter_inference(self, config: CaptionConfig):
         start_inference_time = time.monotonic()
 
-        # Один список используется и для общего количества, и для нумерации.
         image_paths = get_image_paths(
             logger=self.my_logger,
             path=Path(config.data_path),
@@ -306,17 +285,13 @@ class Caption:
         )
         total_images = len(image_paths)
 
-        # Сопоставляем путь с номером. Tagger.iter_inference() и
-        # LLM.iter_inference() в текущем commit выдают строку пути.
         image_number_by_path = {
             str(image_path): index
             for index, image_path in enumerate(image_paths, start=1)
         }
 
         def add_progress_info(path_iterator):
-            """Дополняет пути номером изображения и общим количеством."""
-            for event in path_iterator:
-                
+            for event in path_iterator:               
                 image_number, event_total, image_path = event
                 yield (
                     image_number,
@@ -368,9 +343,6 @@ class Caption:
                             ),
                         )
 
-                        # Определяем, будет ли запускаться хотя бы один этап.
-                        # Если оба соответствующих файла уже есть и включён
-                        # skip_exists, картинку не показываем как обрабатываемую.
                         wd_will_run = not (
                             config.skip_exists
                             and os.path.isfile(wd_caption_file)
@@ -393,15 +365,8 @@ class Caption:
                                 self.my_tagger.get_tags(image=image)
                             )
 
-                            if not (
-                                config.not_overwrite
-                                and os.path.isfile(wd_caption_file)
-                            ):
-                                with open(
-                                    wd_caption_file,
-                                    "wt",
-                                    encoding="utf-8",
-                                ) as f:
+                            if not (config.not_overwrite and os.path.isfile(wd_caption_file)):
+                                with open(wd_caption_file,"wt",encoding="utf-8") as f:
                                     f.write(tag_text + "\n")
                             else:
                                 self.my_logger.warning(
@@ -411,24 +376,13 @@ class Caption:
                                 )
 
                             self.my_logger.debug(f"Image path: {image_path}")
-                            self.my_logger.debug(
-                                f"WD Caption path: {wd_caption_file}"
-                            )
+                            self.my_logger.debug(f"WD Caption path: {wd_caption_file}")
 
-                            if (
-                                config.wd_model_name
-                                and config.wd_model_name.lower().startswith("wd")
-                            ):
-                                self.my_logger.debug(
-                                    f"WD Rating tags: {rating_tag_text}"
-                                )
-                                self.my_logger.debug(
-                                    f"WD Character tags: {character_tag_text}"
-                                )
+                            if (config.wd_model_name and config.wd_model_name.lower().startswith("wd")):
+                                self.my_logger.debug(f"WD Rating tags: {rating_tag_text}")
+                                self.my_logger.debug(f"WD Character tags: {character_tag_text}")
 
-                            self.my_logger.debug(
-                                f"WD General tags: {general_tag_text}"
-                            )
+                            self.my_logger.debug(f"WD General tags: {general_tag_text}")
                         else:
                             self.my_logger.warning(
                                 f"`skip_exists` ENABLED!!! "
@@ -437,8 +391,6 @@ class Caption:
                             )
 
                         if llm_will_run:
-                            
-
                             if self.use_florence:
                                 caption, visualization = self.my_llm.get_florence_result(
                                     image=image,
@@ -461,20 +413,12 @@ class Caption:
                                 config.not_overwrite
                                 and os.path.isfile(llm_caption_file)
                             ):
-                                with open(
-                                    llm_caption_file,
-                                    "wt",
-                                    encoding="utf-8",
-                                ) as f:
+                                with open(llm_caption_file,"wt",encoding="utf-8") as f:
                                     f.write(caption + "\n")
 
                                 self.my_logger.debug(f"Image path: {image_path}")
-                                self.my_logger.debug(
-                                    f"LLM Caption path: {llm_caption_file}"
-                                )
-                                self.my_logger.debug(
-                                    f"LLM Caption content: {caption}"
-                                )
+                                self.my_logger.debug(f"LLM Caption path: {llm_caption_file}")
+                                self.my_logger.debug(f"LLM Caption content: {caption}")
                             else:
                                 self.my_logger.warning(
                                     f"`not_overwrite` ENABLED!!! "
@@ -510,10 +454,7 @@ class Caption:
                                 f"`{together_caption_file}`"
                             )
 
-                            if not (
-                                config.skip_exists
-                                and os.path.isfile(together_caption_file)
-                            ):
+                            if not (config.skip_exists and os.path.isfile(together_caption_file)):
                                 if not tag_text or not caption:
                                     self.my_logger.warning(
                                         "WD tags or LLM Caption is null, "
@@ -522,15 +463,8 @@ class Caption:
                                     pbar.update(1)
                                     continue
 
-                                if not (
-                                    config.not_overwrite
-                                    and os.path.isfile(together_caption_file)
-                                ):
-                                    with open(
-                                        together_caption_file,
-                                        "wt",
-                                        encoding="utf-8",
-                                    ) as f:
+                                if not (config.not_overwrite and os.path.isfile(together_caption_file)):
+                                    with open(together_caption_file,"wt",encoding="utf-8") as f:
                                         together_caption = (
                                             f"{tag_text} "
                                             f"{config.save_caption_together_seperator} "
@@ -542,9 +476,7 @@ class Caption:
                                         "Together Caption save path: "
                                         f"{together_caption_file}"
                                     )
-                                    self.my_logger.debug(
-                                        f"Together Caption content: {together_caption}"
-                                    )
+                                    self.my_logger.debug(f"Together Caption content: {together_caption}")
                                 else:
                                     self.my_logger.warning(
                                         "`not_overwrite` ENABLED!!! "
@@ -590,12 +522,8 @@ class Caption:
 
                 if self.use_joy:
                     pbar.set_description("Processing with Joy model...")
-                elif self.use_llama:
-                    pbar.set_description("Processing with Llama model...")
                 elif self.use_qwen:
                     pbar.set_description("Processing with Qwen model...")
-                elif self.use_minicpm:
-                    pbar.set_description("Processing with Mini-CPM model...")
                 elif self.use_florence:
                     pbar.set_description("Processing with Florence model...")
 
@@ -640,17 +568,10 @@ class Caption:
             f"All work done with in {days}{hours}{minutes}{seconds}."
         )
 
-
-    # def unload_models(self):
-    #     if self.use_wd:
-    #         self.my_tagger.unload_model()
-    #     if self.use_joy or self.use_llama or self.use_qwen or self.use_minicpm or self.use_florence:
-    #         self.my_llm.unload_model()
     def unload_models(self):
         tagger = self.my_tagger
         llm = self.my_llm
 
-        # Сразу отсоединяем объекты от Caption.
         self.my_tagger = None
         self.my_llm = None
 
@@ -676,19 +597,3 @@ class Caption:
     def run_inference(self, config: CaptionConfig):
         for _event in self.iter_inference(config):
             pass
-
-
-# def main():
-#     print_title()
-#     config = CaptionConfig()
-    
-#     my_caption = Caption()
-#     my_caption.check_path(config)
-#     my_caption.set_logger(config)
-#     my_caption.download_models(config)
-#     my_caption.load_models(config)
-#     my_caption.run_inference(config)
-#     my_caption.unload_models()
-
-# if __name__ == "__main__":
-#     main()
