@@ -11,7 +11,7 @@ def tutorial(guide_url: str) -> gr.HTML:
 
     Call this function while building a Gradio Blocks interface::
 
-        create_visual_guide_card("https://github.com/owner/repo/blob/dev/guide.md")
+        tutorial("https://github.com/owner/repo/blob/dev/guide.md")
 
     Args:
         guide_url: Absolute HTTP(S) URL of the visual guide.
@@ -43,12 +43,12 @@ def tutorial(guide_url: str) -> gr.HTML:
         style="
             display: flex;
             align-items: center;
-            gap: 18px;
+            gap: 12px;
             width: 100%;
-            min-height: 70px;
+            min-height: 36px;
             box-sizing: border-box;
-            margin: 14px 0 18px;
-            padding: 15px 22px;
+            margin: 8px 0 10px;
+            padding: 4px 16px;
             border: 1px solid rgba(126, 145, 255, 0.82);
             border-radius: 14px;
             background: linear-gradient(100deg, #1b2943 0%, #202b49 100%);
@@ -63,14 +63,14 @@ def tutorial(guide_url: str) -> gr.HTML:
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                flex: 0 0 42px;
-                width: 42px;
-                height: 42px;
+                flex: 0 0 26px;
+                width: 26px;
+                height: 26px;
             "
         >
             <svg
-                width="38"
-                height="38"
+                width="26"
+                height="26"
                 viewBox="0 0 40 40"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -100,9 +100,9 @@ def tutorial(guide_url: str) -> gr.HTML:
                 flex: 1 1 auto;
                 min-width: 0;
                 color: #e1e8f8;
-                font-size: 16px;
+                font-size: 14px;
                 font-weight: 550;
-                line-height: 1.4;
+                line-height: 1.25;
             "
         >
             Need help? Open the guide
@@ -113,7 +113,7 @@ def tutorial(guide_url: str) -> gr.HTML:
                 flex: 0 0 auto;
                 margin-left: auto;
                 color: #91a6ff;
-                font-size: 15px;
+                font-size: 13px;
                 font-weight: 550;
                 white-space: nowrap;
             "
