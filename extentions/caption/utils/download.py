@@ -143,15 +143,11 @@ def download_models(
             if download_method == "sdk":
                 if model_site == "huggingface":
                     from huggingface_hub import hf_hub_download
-                elif model_site == "modelscope":
-                    from modelscope.hub.file_download import model_file_download
+
 
         except ModuleNotFoundError:
             if model_site == "huggingface":
                 logger.warning('huggingface_hub not installed or download via it failed, '
-                               'retrying with URL method to download...')
-            elif model_site == "modelscope":
-                logger.warning('modelscope not installed or download via it failed, '
                                'retrying with URL method to download...')
 
             models_path = download_choice(
@@ -184,37 +180,18 @@ def download_models(
 
             for filename in sub_model_info["file_list"]:
                 if download_method.lower() == 'sdk':
-                    if model_site == "huggingface":
-                        logger.info(f'Will download "{filename}" from huggingface repo: "{sub_model_info["repo_id"]}".')
-                        sub_model_path = hf_hub_download(
-                            repo_id=sub_model_info["repo_id"],
-                            filename=filename,
-                            subfolder=sub_model_info["subfolder"] if sub_model_info["subfolder"] != "" else None,
-                            repo_type=sub_model_info["repo_type"],
-                            revision=sub_model_info["revision"],
-                            local_dir=os.path.join(models_save_path, sub_model_name) if not use_sdk_cache else None,
-                            local_files_only=skip_local_file_exist \
-                                if os.path.exists(os.path.join(models_save_path, sub_model_name, filename)) else False,
-                            # local_dir_use_symlinks=False if not use_sdk_cache else "auto",
-                            # resume_download=True,
-                            force_download=force_download
-                        )
-                    elif model_site == "modelscope":
-                        local_file = os.path.join(models_save_path, sub_model_name, filename)
-                        if skip_local_file_exist and os.path.exists(local_file):
-                            logger.info(f"`skip_local_file_exist` is Enable, Skipping download {filename}...")
-                            sub_model_path = local_file
-                        else:
-                            logger.info(
-                                f'Will download "{filename}" from modelscope repo: "{sub_model_info["repo_id"]}".')
-                            sub_model_path = model_file_download(
-                                model_id=sub_model_info["repo_id"],
-                                file_path=filename if sub_model_info["subfolder"] == ""
-                                else os.path.join(sub_model_info["subfolder"], filename),
-                                revision=sub_model_info["revision"],
-                                local_files_only=False,
-                                local_dir=os.path.join(models_save_path, sub_model_name) if not use_sdk_cache else None,
-                            )
+                    logger.info(f'Will download "{filename}" from huggingface repo: "{sub_model_info["repo_id"]}".')
+                    sub_model_path = hf_hub_download(
+                        repo_id=sub_model_info["repo_id"],
+                        filename=filename,
+                        subfolder=sub_model_info["subfolder"] if sub_model_info["subfolder"] != "" else None,
+                        repo_type=sub_model_info["repo_type"],
+                        revision=sub_model_info["revision"],
+                        local_dir=os.path.join(models_save_path, sub_model_name) if not use_sdk_cache else None,
+                        local_files_only=skip_local_file_exist \
+                            if os.path.exists(os.path.join(models_save_path, sub_model_name, filename)) else False,
+                        force_download=force_download
+                    )
                 else:
                     model_url = sub_model_info["file_list"][filename]
                     logger.info(f'Will download model from url: {model_url}')
