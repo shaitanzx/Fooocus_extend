@@ -290,7 +290,7 @@ def gui():
 
                     enable_zip.change(fn=zip_enable,inputs=[enable_zip],outputs=[file_zip,files_single],show_progress=False)
                     batch_process_submit_button = gr.Button(elem_id="batch_process_submit_button", value="Batch Process", variant='primary',interactive=False)
-    gr.Row():
+    with gr.Row():
         gr.HTML('* Based by fireicewolf <a href="https://github.com/fireicewolf/wd-llm-caption-cli" target="_blank">\U0001F4D4 Document</a> and gokaygokay. <a href="https://huggingface.co/spaces/gokaygokay/Florence-2" target="_blank">\U0001F4D4 Document</a>')
     def caption_method_update_visibility(caption_method_radio, llm_choice):
         caption_method_radio = caption_method_radio or ""
