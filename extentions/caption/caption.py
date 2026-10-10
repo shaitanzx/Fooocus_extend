@@ -313,15 +313,7 @@ class Caption:
 
                 for image_number, image_path in enumerate(image_paths, start=1):
                     try:
-                        pbar.set_description(
-                            "Processing: {}".format(
-                                image_path
-                                if len(image_path) <= 40
-                                else image_path[:15]
-                            )
-                            + " ... "
-                            + image_path[-20:]
-                        )
+                        pbar.set_description(f'Processing: {os.path.basename(image_path)}')
 
                         wd_caption_file = get_caption_file_path(
                             self.my_logger,
