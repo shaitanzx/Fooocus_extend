@@ -3,23 +3,6 @@ from logging import handlers
 from typing import Optional
 
 
-# def print_title():
-#     def title_format(content="", symbol="-", length=0):
-#         if len(content) >= length:
-#             return content
-#         else:
-#             return (symbol * ((length - len(content)) // 2)) + content + \
-#                 (symbol * ((length - len(content)) // 2 + (length - len(content)) % 2))
-
-#     print("")
-#     print(title_format(content="*", symbol="*", length=70))
-#     print(title_format(content=" WD LLM CAPTION ", symbol="*", length=70))
-#     print(title_format(content=" Author: DukeG ", symbol="*", length=70))
-#     print(title_format(content=" GitHub: https://github.com/fireicewolf/wd-llm-caption-cli ", symbol="*", length=70))
-#     print(title_format(content="*", symbol="*", length=70))
-#     print("")
-
-
 class Logger:
 
     def __init__(self, level="INFO", log_file: Optional[str] = None):
