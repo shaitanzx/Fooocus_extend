@@ -1180,7 +1180,7 @@ with shared.gradio_root:
                 with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
-                  with gr.TabItem(label='caption'):
+                  with gr.TabItem(label='Caption'):
                         caption.gui()
                   with gr.TabItem(label='TextMask') as text_mask:
                     mask=gr.HTML() 
