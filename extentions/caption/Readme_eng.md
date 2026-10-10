@@ -1,4 +1,5 @@
 ## What Caption Does
+([Читать на русском языке](Readme_rus.md))
 
 `Caption` analyzes images and can create a tag list, write a text description, or do both. The interface offers three **Caption method** options:
 
