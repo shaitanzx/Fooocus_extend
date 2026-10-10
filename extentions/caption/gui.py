@@ -360,51 +360,16 @@ def gui():
         extra_options_visible = gr.update(visible=True if llm_choice_radio == "Joy" and joy_models_dropdown in ["Joy-Caption-Alpha-Two-Llava", "Joy-Caption-Alpha-Two"] else False)
         return joy_formated_prompts_visible, extra_options_visible
 
-    caption_method.change(
-        fn=caption_method_update_visibility,
-        inputs=[caption_method, llm_choice],
-        outputs=[
-            run_method,
-            wd_models,
-            wd_force_use_cpu,
-            llm_use_cpu,
-            llm_load_settings,
-            llm_settings,
-            wd_tags_output,
-            llm_caption_output,
-            florence_image,
-        ],
-    )
-    caption_method.change(
-        fn=selected_tagger_visibility,
-        inputs=[caption_method, wd_models],
-        outputs=tagger_profile_outputs,
-    )
-    wd_models.change(
-        fn=selected_tagger_visibility,
-        inputs=[caption_method, wd_models],
-        outputs=tagger_profile_outputs,
-    )
-    #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
-    #caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
+    caption_method.change(fn=caption_method_update_visibility,inputs=[caption_method, llm_choice],
+        outputs=[run_method,wd_models,wd_force_use_cpu,llm_use_cpu,llm_load_settings,llm_settings,wd_tags_output,llm_caption_output,florence_image,])
+    caption_method.change(fn=selected_tagger_visibility,inputs=[caption_method, wd_models],outputs=tagger_profile_outputs)
+    wd_models.change(fn=selected_tagger_visibility,inputs=[caption_method, wd_models],outputs=tagger_profile_outputs)
     caption_method.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt, florence_image])
 
-
-    #llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
-    #llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
-    llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt, florence_image])
-    
+    llm_choice.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt, florence_image])    
     llm_choice.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
-    #joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, minicpm_models, florence_models])
-    #joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llama_models, llm_use_patch, qwen_models, florence_models])
     joy_models.change(fn=llm_choice_update_visibility, inputs=[caption_method, llm_choice, joy_models], outputs=[joy_models, llm_use_patch, qwen_models, florence_models, florence_system_prompt, florence_user_prompt, llm_system_prompt, llm_user_prompt, florence_image])
-    
     joy_models.change(fn=joy_formated_prompts_visibility, inputs=[llm_choice, joy_models], outputs=[joy_formated_prompts, extra_options_column])
-
-    # def llm_use_patch_visibility(llama_model_dropdown):
-    #     return gr.update(visible=True if llama_model_dropdown == "Llama-3.2-11B-Vision-Instruct" else False)
-
-    #llama_models.select(fn=llm_use_patch_visibility, inputs=llama_models, outputs=llm_use_patch)
 
     def llm_user_prompt_default(caption_method_radio, llm_read_wd_caption_select, llm_user_prompt_textbox):
         if caption_method_radio != "WD+LLM" and llm_user_prompt_textbox == inference.DEFAULT_USER_PROMPT_WITH_WD:
@@ -467,36 +432,18 @@ def gui():
     def use_joy(check_caption_method, check_llm_choice):
         return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "joy" else False
 
-    # def use_llama(check_caption_method, check_llm_choice):
-    #     return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "llama" else False
-
     def use_qwen(check_caption_method, check_llm_choice):
         return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "qwen" else False
-
-    # def use_minicpm(check_caption_method, check_llm_choice):
-    #     return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "minicpm" else False
 
     def use_florence(check_caption_method, check_llm_choice):
         return True if check_caption_method in ["llm", "wd+llm"] and check_llm_choice == "florence" else False
 
-    # def load_models_interactive_group():
-    #     return [gr.update(interactive=False)] * 15 + [gr.update(variant='secondary'), gr.update(variant='primary')]
-
-    # def unloads_models_interactive_group():
-    #     return [gr.update(interactive=True)] * 15 + [gr.update(variant='primary'), gr.update(variant='secondary')]
     def load_models_interactive_group():
         return [gr.update(interactive=False)] * 11 + [gr.update(variant='secondary'), gr.update(variant='primary')]
 
     def unloads_models_interactive_group():
         return [gr.update(interactive=True)] * 11 + [gr.update(variant='primary'), gr.update(variant='secondary')]
         
-    # single_inference_input_args = [
-    #     wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
-    #     wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
-    #     wd_undesired_tags, wd_always_first_tags, wd_caption_extension, wd_caption_separator, wd_tag_replacement,
-    #     llm_caption_extension, llm_read_wd_caption, llm_caption_without_wd, llm_system_prompt, llm_user_prompt,
-    #     llm_temperature, llm_max_tokens, image_size, auto_unload, input_image
-    # ]
     single_inference_input_args = [
         wd_remove_underscore, wd_threshold, wd_general_threshold, wd_character_threshold,
         wd_add_rating_tags_to_first, wd_character_tags_first, wd_add_rating_tags_to_last, wd_character_tag_expand,
@@ -532,11 +479,10 @@ def gui():
             torch.cuda.reset_peak_memory_stats()
             torch.cuda.synchronize()
         except Exception as e:
-            print(f"[Omost] Warning during VRAM defragmentation: {e}")
+            print(f"\n[Caption] Warning during VRAM defragmentation: {e}")
 
     def unload_fooocus_completely():
         print(f"\n[Caption] === Unloading ALL Fooocus models ===")
-
         try:
             mm.unload_all_models()
             print(f"[Caption] ✓ Models properly unloaded from GPU")
@@ -580,41 +526,11 @@ def gui():
 
         defragment_vram()
 
-
-
-
-    # def caption_models_load(
-    #         model_site_value, huggingface_token_value, caption_method_value, llm_choice_value,
-    #         wd_model_value, joy_model_value, llama_model_value, qwen_model_value, minicpm_model_value, florence_model_value,
-    #         wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
-    # ):
-
-    #     unload_fooocus_completely()
-
-
-    #     global IS_MODEL_LOAD, ARGS, CAPTION_FN
-
-    #     if not IS_MODEL_LOAD:
-    #         start_time = time.monotonic()
-
-    #         # === ИСПОЛЬЗУЕМ DATACLASS ВМЕСТО ARGPARSE ===
-    #         if ARGS is None:
-    #             ARGS = caption.CaptionConfig()
-            
-    #         config = ARGS
-    #         config.model_site = model_site_value
-            
-    #         if huggingface_token_value != "" and str(huggingface_token_value).startswith("hf"):
-    #             os.environ["HF_TOKEN"] = str(huggingface_token_value)
-
-    #         config.models_save_path = str(os.path.join("models", "caption"))
     def caption_models_load(
             caption_method_value, llm_choice_value,
             wd_model_value, joy_model_value, qwen_model_value, florence_model_value,
             wd_force_use_cpu_value, llm_use_cpu_value, llm_use_patch_value, llm_dtype_value, llm_qnt_value
     ):
-
-
 
         if (("LLM" in caption_method_value and not llm_use_cpu_value) or 
             ("WD" in caption_method_value and not wd_force_use_cpu_value)):
@@ -629,9 +545,6 @@ def gui():
                 ARGS = caption.CaptionConfig()
             
             config = ARGS
-            # УДАЛЕНО: config.model_site = model_site_value
-            # УДАЛЕНО: блок с huggingface_token_value и HF_TOKEN
-
             config.models_save_path = str(os.path.join("models", "caption"))
             config.log_level = "INFO"
             config.caption_method = str(caption_method_value).lower()
@@ -643,15 +556,9 @@ def gui():
             if use_joy(config.caption_method, config.llm_choice):
                 config.llm_config = JOY_CONFIG
                 config.llm_model_name = str(joy_model_value)
-            # elif use_llama(config.caption_method, config.llm_choice):
-            #     config.llm_config = LLAMA_CONFIG
-            #     config.llm_model_name = str(llama_model_value)
             elif use_qwen(config.caption_method, config.llm_choice):
                 config.llm_config = QWEN_CONFIG
                 config.llm_model_name = str(qwen_model_value)
-            # elif use_minicpm(config.caption_method, config.llm_choice):
-            #     config.llm_config = MINICPM_CONFIG
-            #     config.llm_model_name = str(minicpm_model_value)
             elif use_florence(config.caption_method, config.llm_choice):
                 config.llm_config = FLORENCE_CONFIG
                 config.llm_model_name = str(florence_model_value)
@@ -667,10 +574,7 @@ def gui():
             config.llm_dtype = str(llm_dtype_value)
             config.llm_qnt = str(llm_qnt_value)
             config.skip_download = SKIP_DOWNLOAD
-
             caption_init.download_models(config)
-
-
             caption_init.load_models(config)
 
             IS_MODEL_LOAD = True
@@ -697,7 +601,6 @@ def gui():
             florence_system_prompt, florence_user_prompt,llm_system_prompt_value, llm_user_prompt_value,
             llm_temperature_value, llm_max_tokens_value, image_size_value, auto_unload_value, input_image_value
     ):
-
 
         florence_visualization = None
 
@@ -757,14 +660,6 @@ def gui():
             CAPTION_FN.my_logger.debug(f"WD General tags: {general_tag_text}")
             CAPTION_FN.my_logger.info(f"WD tags content: {tag_text}")
 
-
-
-        # if use_joy(config.caption_method, config.llm_choice) or use_llama(config.caption_method, config.llm_choice) or \
-        #    use_qwen(config.caption_method, config.llm_choice) or use_minicpm(config.caption_method, config.llm_choice) or \
-        #    use_florence(config.caption_method, config.llm_choice):
-        # ЗАМЕНИТЬ НА:
-        # if use_joy(config.caption_method, config.llm_choice) or use_llama(config.caption_method, config.llm_choice) or \
-        #     use_qwen(config.caption_method, config.llm_choice) or use_florence(config.caption_method, config.llm_choice):        
         if use_florence(config.caption_method, config.llm_choice):
             caption_text, florence_visualization = CAPTION_FN.my_llm.get_florence_result(
                 image=image,
@@ -775,8 +670,6 @@ def gui():
         elif use_joy(config.caption_method, config.llm_choice) or use_qwen(
             config.caption_method, config.llm_choice
         ):
-        # if use_joy(config.caption_method, config.llm_choice) or use_qwen(config.caption_method, config.llm_choice) or \
-        #     use_florence(config.caption_method, config.llm_choice):
             CAPTION_FN.my_logger.debug(f"Caption with LLM: {config.llm_model_name}.")
             caption_text = CAPTION_FN.my_llm.get_caption(
                 image=image, system_prompt=str(config.llm_system_prompt),
