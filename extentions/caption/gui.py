@@ -13,6 +13,7 @@ from modules.launch_util import delete_folder_content
 import gc
 import torch
 import zipfile
+from extentions.tutorial import tutorial
 
 from . import caption
 from .utils import inference
@@ -103,6 +104,7 @@ def read_json(config_file):
 
 def gui():
     with gr.Row():
+        tutorial("https://github.com/shaitanzx/Fooocus_extend/blob/dev/extentions/caption/Readme_eng.md")
         with gr.Column():
 
             with gr.Row(equal_height=True) as models_settings:
