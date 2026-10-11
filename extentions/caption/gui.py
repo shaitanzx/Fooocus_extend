@@ -104,7 +104,7 @@ def read_json(config_file):
 
 def gui():
     with gr.Row():
-        tutorial("https://github.com/shaitanzx/Fooocus_extend/blob/dev/extentions/caption/Readme_eng.md")
+        tutorial("caption/Readme_eng.md")
     with gr.Row():
         with gr.Column():
 

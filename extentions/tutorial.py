@@ -7,6 +7,8 @@ import gradio as gr
 
 
 def tutorial(guide_url: str) -> gr.HTML:
+    main="https://github.com/shaitanzx/Fooocus_extend/blob/dev/extentions/"
+    guide_url = main + guide_url
     """Create a compact, full-width visual-guide link styled as a button.
 
     Call this function while building a Gradio Blocks interface::
