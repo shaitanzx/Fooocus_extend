@@ -291,7 +291,7 @@ def watermark():
         else:
             return gr.update (visible=False),gr.update(visible=True)
     #with gr.Row():
-    with gr.Column():
+    with gr.Row():
         logo_mode=gr.Radio(
             choices=["Logo", "Watermark"],
             value="Logo",
