@@ -290,14 +290,14 @@ def watermark():
             return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
         else:
             return gr.update (visible=False),gr.update(visible=True)
-    with gr.Row():
-        with gr.Column():
-            logo_mode=gr.Radio(
-                choices=["Logo", "Watermark"],
-                value="Logo",
-                label="Select Paste Mode"
-                )
-            tutorial("watermark_eng.md")
+    #with gr.Row():
+    with gr.Column():
+        logo_mode=gr.Radio(
+            choices=["Logo", "Watermark"],
+            value="Logo",
+            label="Select Paste Mode"
+            )
+        tutorial("watermark_eng.md")
     with gr.Row():
         with gr.Column():
             with gr.Row():
