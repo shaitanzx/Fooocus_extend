@@ -1,4 +1,4 @@
-## What Caption Does
+## What Logo Does
 ([Читать на русском языке](watermark_rus.md))
 
 `Logo` overlays either a single logo in a corner or a repeating watermark pattern onto images.
