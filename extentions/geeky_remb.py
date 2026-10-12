@@ -5,10 +5,7 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageColor
 import cv2
 from tqdm import tqdm
 import gradio as gr
-##from modules import script_callbacks, shared, scripts
-##from modules.paths_internal import models_path
-##from modules.processing import StableDiffusionProcessing
-##from modules.images import save_image
+
 import torch
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
