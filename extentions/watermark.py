@@ -297,7 +297,7 @@ def watermark():
             value="Logo",
             label="Select Paste Mode"
             )
-        tutorial("watermark_eng.md")
+        tutorial("watermark.md")
     with gr.Row():
         with gr.Column():
             with gr.Row():

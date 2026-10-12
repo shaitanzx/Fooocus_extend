@@ -104,7 +104,7 @@ def read_json(config_file):
 
 def gui():
     with gr.Row():
-        tutorial("caption/Readme_eng.md")
+        tutorial("caption/readme.md")
     with gr.Row():
         with gr.Column():
 
