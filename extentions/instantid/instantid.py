@@ -25,7 +25,7 @@ import torch.nn.functional as F
 def gui():
     with gr.Row():
         enable_instant = gr.Checkbox(label="Enabled", value=False)
-        tutorial("cleaner/clean_up_tab.md")      
+        tutorial("instantid/readme.md")      
     with gr.Row():
         with gr.Column():
             # upload face image
