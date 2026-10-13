@@ -5,7 +5,7 @@ from functools import partial
 from itertools import chain
 from types import SimpleNamespace
 from typing import Any
-
+from extentions.tutorial import tutorial
 import gradio as gr
 import modules
 
