@@ -96,12 +96,14 @@ def adui(
         ad_ckpt_dropdown =[]
 
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
-        with gr.Row():
-            tutorial("adetailer/readme.md")
-            only_detect = gr.Checkbox(
-                label=f"Only detect",
-                value=False,
-                visible=True),
+        with gr.Group():
+            with gr.Row():
+                tutorial("adetailer/readme.md")
+            with gr.Row():
+                only_detect = gr.Checkbox(
+                    label=f"Only detect",
+                    value=False,
+                    visible=True),
 
         with gr.Group():
             with gr.Tabs():
