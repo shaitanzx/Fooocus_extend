@@ -576,7 +576,6 @@ def on_ui_tabs():
     geekyremb_max_video_length=3600
     geekyremb_max_image_size=8196
     with gr.Blocks(analytics_enabled=False) as geeky_remb_tab:
-        gr.Markdown("# GeekyRemB: Background Removal and Image/Video Manipulation")
         with gr.Row():
             tutorial("geeky_remb.md")       
         with gr.Row():
