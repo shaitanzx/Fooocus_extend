@@ -578,7 +578,7 @@ def on_ui_tabs():
     with gr.Blocks(analytics_enabled=False) as geeky_remb_tab:
         gr.Markdown("# GeekyRemB: Background Removal and Image/Video Manipulation")
         with gr.Row():
-            tutorial("vector/vector.md")       
+            tutorial("geeky_remb.md")       
         with gr.Row():
             with gr.Column(scale=1):
                 input_type = gr.Radio(["Image", "Video"], label="Input Type", value="Image")
@@ -966,5 +966,3 @@ def run_geeky_remb(input_type, foreground_input, foreground_video, result_type, 
                 return temp_file.name, None
         return None, None
 
-#script_callbacks.on_ui_tabs(on_ui_tabs)
-#script_callbacks.on_ui_settings(on_ui_settings)
