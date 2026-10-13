@@ -12,7 +12,7 @@ import modules.default_pipeline as pipeline
 import modules.core as core
 import gc
 import torch
-
+from extentions.tutorial import tutorial
 # Phi3 Hijack
 from transformers.models.phi3.modeling_phi3 import Phi3PreTrainedModel
 
@@ -246,6 +246,8 @@ def model_loading(llm_name):
 
 def gui():
     models_name = ["omost-llama-3-8b-4bits","omost-dolphin-2.9-llama3-8b-4bits","omost-phi-3-mini-128k-8bits","omost-llama-3-8b","omost-dolphin-2.9-llama3-8b","omost-phi-3-mini-128k"] 
+    with gr.Row():
+        tutorial("omost/readme.md")
     with gr.Row(elem_classes='outer_parent'):
         with gr.Column(scale=25):
             with gr.Row():
