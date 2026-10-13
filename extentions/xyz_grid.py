@@ -10,19 +10,10 @@ from PIL import Image
 import numpy as np
 import cv2
 
-###import modules.scripts as scripts
-import gradio as gr
-###from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_schedulers, errors
-###from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
-###from modules.shared import opts, state
-###from modules.sd_models import model_data, select_checkpoint
-###import modules.shared as shared
-###import modules.sd_samplers
-###import modules.sd_models
-###import modules.sd_vae
-import re
 
-##from modules.ui_components import ToolButton
+import gradio as gr
+import re
+from extentions.tutorial import tutorial
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -168,17 +159,6 @@ def confirm_range(min_val, max_val, axis_label):
 
     return confirm_range_fun
 
-
-#def apply_size(p, x: str, xs) -> None:
-#    try:
-#        width, _, height = x.partition('x')
-#        width = int(width.strip())
-#        height = int(height.strip())
-#        p.aspect_ratios_selection=f"{width} {height}"
-#        #p.width = width
-#        #p.height = height
-#    except ValueError:
-#        print(f"Invalid size in XYZ plot: {x}")
 def apply_size(p, x: str, _):
     width, height = x.replace('×', ' ').split(' ')[:2]
     width = int(width.strip())
@@ -461,7 +441,8 @@ def title():
 
 def ui():
     current_axis_options = [x for x in axis_options if type(x) == AxisOption]
-
+    with gr.Row():
+        tutorial("xyz_grid.md")
     with gr.Row():
         with gr.Column(scale=19):
             with gr.Row():
