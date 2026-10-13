@@ -1,37 +1,80 @@
-"""Reusable compact Gradio link to a visual guide."""
+"""Reusable compact Gradio link to a visual guide on GitHub."""
 
 from html import escape
-from urllib.parse import urlparse
-
+import os
+from pathlib import Path, PurePosixPath
+from urllib.parse import quote
+import warnings
+import pygit2
 import gradio as gr
 
+REPOSITORY_URL = "https://github.com/shaitanzx/Fooocus_extend"
+EXTENSIONS_DIRECTORY = "extentions"  # This spelling matches the repository path.
+DEFAULT_REF = "main"
 
-def tutorial(guide_url: str) -> gr.HTML:
-    main="https://github.com/shaitanzx/Fooocus_extend/blob/dev/extentions/"
-    guide_url = main + guide_url
+
+def _detect_source_ref() -> str:
+    """Detect the copied checkout's branch once when this module is imported."""
+    configured_ref = os.getenv("FOOOCUS_EXTEND_REF", "").strip()
+    if configured_ref:
+        return configured_ref
+
+    
+    try:
+        start_path = str(Path(__file__).resolve().parent)
+        git_dir = pygit2.discover_repository(start_path)
+        if git_dir:
+            repository = pygit2.Repository(git_dir)
+            if repository.head_is_detached:
+                target = repository.head.target
+                if target is not None:
+                    return target.hex[:12]
+            else:
+                branch = repository.head.shorthand
+                if branch:
+                    return branch
+    except (pygit2.GitError, OSError, AttributeError):
+        pass
+
+    return DEFAULT_REF
+
+
+# Compute this once at import time. The Caption call becomes a simple path append.
+SOURCE_REF = _detect_source_ref()
+EXTENSIONS_BASE_URL = (
+    f"{REPOSITORY_URL}/blob/{quote(SOURCE_REF, safe='/')}/{EXTENSIONS_DIRECTORY}/"
+)
+
+
+def tutorial(guide_path: str) -> gr.HTML:
     """Create a compact, full-width visual-guide link styled as a button.
 
-    Call this function while building a Gradio Blocks interface::
+    Pass a path relative to the repository's ``extentions/`` folder, as Caption does::
 
-        tutorial("https://github.com/owner/repo/blob/dev/guide.md")
+        tutorial("caption/readme.md")
 
     Args:
-        guide_url: Absolute HTTP(S) URL of the visual guide.
+        guide_path: Relative POSIX path inside ``extentions/``.
 
     Returns:
         A Gradio HTML component containing the clickable guide bar.
 
     Raises:
-        TypeError: If ``guide_url`` is not a string.
-        ValueError: If ``guide_url`` is empty or is not an absolute HTTP(S) URL.
+        TypeError: If ``guide_path`` is not a string.
+        ValueError: If it is empty, absolute, or attempts to leave ``extentions/``.
     """
-    if not isinstance(guide_url, str):
-        raise TypeError("guide_url must be a string")
+    if not isinstance(guide_path, str):
+        raise TypeError("guide_path must be a string")
 
-    guide_url = guide_url.strip()
-    parsed_url = urlparse(guide_url)
-    if parsed_url.scheme not in ("http", "https") or not parsed_url.netloc:
-        raise ValueError("guide_url must be an absolute http:// or https:// URL")
+    guide_path = guide_path.strip()
+    if not guide_path or "\\" in guide_path:
+        raise ValueError("guide_path must be a non-empty relative POSIX path")
+
+    relative_path = PurePosixPath(guide_path)
+    if relative_path.is_absolute() or any(part in ("", ".", "..") for part in relative_path.parts):
+        raise ValueError("guide_path must stay inside the extentions/ directory")
+
+    guide_url = EXTENSIONS_BASE_URL + quote(relative_path.as_posix(), safe="/")
 
     # Escape the URL before inserting it into an HTML attribute.
     safe_url = escape(guide_url, quote=True)
