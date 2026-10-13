@@ -5,9 +5,11 @@ import numpy as np
 import modules.util
 import modules.config
 from PIL import Image
-
+from extentions.tutorial import tutorial
 
 def start():
+    with gr.Row():
+        tutorial("tile_roll.md")
     with gr.Column():
         with gr.Row():
             tile_load = gr.Image(label="Upload file of tile", type="numpy")
