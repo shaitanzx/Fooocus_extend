@@ -6,11 +6,13 @@ import os
 import modules.config
 import extentions.batch as batch
 from potrace import Bitmap, POTRACE_TURNPOLICY_MINORITY
+from extentions.tutorial import tutorial
 temp_dir=modules.config.temp_path+os.path.sep
 
 def ui():
     with gr.Row():
         poDoVector = gr.Checkbox(label="Enabled", value=False)
+        tutorial("vector/vector.md")
     with gr.Row():
             with gr.Column():
                 with gr.Box():
