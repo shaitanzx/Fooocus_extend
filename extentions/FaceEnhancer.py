@@ -1328,8 +1328,8 @@ def gui(generator):
     upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
     with gr.Row(visible=not generator):
         file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
-    with gr.Row(visible=generator):
-        face_en_enabled = gr.Checkbox(label="Enabled", value=False)
+    with gr.Row():
+        face_en_enabled = gr.Checkbox(label="Enabled", value=False,visible=generator)
         tutorial("FaceEnhancer.md")
     with gr.Row():
         with gr.Column():
