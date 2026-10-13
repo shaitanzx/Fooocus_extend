@@ -5,7 +5,7 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageColor
 import cv2
 from tqdm import tqdm
 import gradio as gr
-
+from extentions.tutorial import tutorial
 import torch
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -577,7 +577,8 @@ def on_ui_tabs():
     geekyremb_max_image_size=8196
     with gr.Blocks(analytics_enabled=False) as geeky_remb_tab:
         gr.Markdown("# GeekyRemB: Background Removal and Image/Video Manipulation")
-        
+        with gr.Row():
+            tutorial("vector/vector.md")       
         with gr.Row():
             with gr.Column(scale=1):
                 input_type = gr.Radio(["Image", "Video"], label="Input Type", value="Image")
