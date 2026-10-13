@@ -1,14 +1,8 @@
-#import modules.scripts as scripts
+from extentions.tutorial import tutorial
 import gradio as gr
 import os
 import platform
 import subprocess as sp
-
-#from modules import images
-#from modules.processing import process_images, Processed
-#from modules.processing import Processed
-#from modules.shared import opts, cmd_opts, state
-
 
 from ..build_dynamic_prompt import *
 from ..main import *
@@ -19,7 +13,6 @@ from ..one_button_presets import OneButtonPresets
 OBPresets = OneButtonPresets()
 
 basemodelslist = ["SD1.5", "SDXL", "Stable Cascade", "Anime Model"]
-#subjects = ["all","object","animal","humanoid", "landscape", "concept"]
 subjects =["------ all"]
 subjectsubtypesobject = ["all"]
 subjectsubtypeshumanoid = ["all"]
@@ -387,6 +380,7 @@ def ui():
             
         with gr.Row():
           enable_obp = gr.Checkbox(label="Enabled", value=False)
+          tutorial("obp/readme.md") 
         with gr.Tab("Main"):
             with gr.Row(variant="compact"):
                 md_basic = gr.Markdown("""
