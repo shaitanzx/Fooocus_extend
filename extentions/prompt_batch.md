@@ -1,4 +1,124 @@
+## What Prompt Batch Does
+([Читать на русском языке](#что-делает-prompt-batch))
+
+Prompt Batch runs multiple generations sequentially. Each row of the table contains a positive prompt and a negative prompt. If you upload a text file, the extension converts its lines into such a table. All rows use the common generation settings from the standard Fooocus interface: the selected model, styles, quality, size, number of images per prompt, and other parameters.
+
+## Tab Settings and Elements
+
+### `prompt` / `negative prompt` Table
+
+The table has two columns:
+
+- `prompt` — the positive description of the desired image;
+- `negative prompt` — what you want to avoid.
+
+Initially, one empty row is displayed. The table is edited directly in the interface: enter prompts into the cells to create a queue. 
+**Start batch** goes through the rows from top to bottom. An empty positive prompt is skipped, and generation is not launched for it.
+**Delete last row** removes the last row of the table if there is more than one row. 
+**Clear Batch** clears the table and returns a single empty row.
+
+### `Base positive prompt:`
+
+Determines how the positive prompt from the main Fooocus form combines with the `prompt` from the table row. **None** is selected by default. This field only affects the positive part of the prompt.
+
+- **None** — the table row replaces the main positive prompt. If the row cell is empty, this queue element is not generated.
+- **Prefix** — the main positive prompt is added before the row text. Example: base `portrait, soft light`, row `a woman in a garden` → `portrait, soft light a woman in a garden`.
+- **Suffix** — the main positive prompt is added after the row. Example: same base and row → `a woman in a garden portrait, soft light`.
+
+### `Base negative prompt:`
+
+Works the same way, but for the negative part. **None** is selected by default.
+
+- **None** — the row's negative prompt completely replaces the main Fooocus negative prompt.
+- **Prefix** — the main Fooocus negative prompt is placed before the row's negative text.
+- **Suffix** — the row's negative text is placed first, and the main negative prompt comes after it.
+
+If you leave the `negative prompt` cell empty and select **None**, the main negative prompt from the main interface is not preserved. Choose **Prefix** or **Suffix** if you want to add a common negative list to all rows.
+
+### `only positive prompts`
+
+This checkbox is only needed when loading a file, not during normal manual table filling. Enabled by default.
+
+- **Enabled:** every non-empty line of the file becomes a separate positive `prompt`, and the negative column remains empty. Empty lines are ignored. Choose this mode if the file is just a list of options.
+- **Disabled:** lines are read in pairs: the first non-empty line of the pair is the positive prompt, the next non-empty line is the negative one. The next pair starts after these two lines. Empty lines are skipped. If the line after a positive prompt is empty, the positive prompt is still added with an empty negative one; an empty line does not reserve a separate spot for negative text.
+
+Example for the disabled checkbox:
+```
+portrait of a traveler
+blurry, low quality
+
+red bicycle in the rain
+
+```
+
+
+The first entry will get `portrait of a traveler` and `blurry, low quality`. The second will get `red bicycle in the rain` and an empty negative prompt. If you don't need a negative prompt for a pair, leave an empty line after the positive prompt, and start the next prompt with the next non-empty line. With the checkbox disabled, empty lines are skipped — they are not considered independent negative lines.
+
+### `Load prompts from file`
+
+The button loads a **single** text file into the table. The file extension can be anything: the text structure is what matters. When reading, the application determines the encoding by the first 1000 bytes, and then loads the lines. For simplicity, use a standard `.txt` in UTF-8 encoding. If characters are displayed incorrectly or the upload fails, resave the file in UTF-8.
+
+Before loading, select the desired **only positive prompts** value. After reading the file, the table is replaced with the obtained lines.
+
+### `Start batch`
+
+Launches the processing of filled rows one by one. Before generation starts, queue editing is locked so that the content does not change during processing. Notifications show the number of the current element. After completion, the link to the generation history is updated.
+
+The **Stop** button terminates the queue after the current interruptible generation step. Results that have already been created remain saved; subsequent rows are not launched.
+
+## How to Use
+
+### Fill the Queue Manually
+
+1. In the main Fooocus interface, select the model and configure the generation parameters.
+2. If necessary, set a common positive prompt and negative prompt in the main form.
+3. Open **Prompt Batch** and enter one pair of prompts per generation into the table.
+4. For independent full prompts, leave **Base positive prompt = None** and **Base negative prompt = None**.
+5. If you need a common positive prefix or suffix, select **Prefix** or **Suffix** respectively. Configure the Base negative prompt similarly.
+6. Click **Start batch**. Monitor the notifications and results in the gallery.
+
+### Load a List of Options from a Text File
+
+1. Prepare a text file. With **only positive prompts** enabled, write each positive prompt on a new line.
+2. Leave **only positive prompts** enabled, then click **Load prompts from file** and select the file.
+3. Review the resulting table and correct the lines if necessary.
+4. For a list of positive/negative pairs, uncheck the box. Place each positive prompt and the following negative one on separate lines; leave an empty line for empty negative text.
+5. Check the base Prefix/Suffix and launch **Start batch**.
+
+### Example: One Common Style for Different Scenes
+
+In the main Fooocus form, set the base positive text to `editorial photography, warm natural light`. Enter separate plots into the table, for example `a ceramic vase on a wooden table` and `a small bookstore on a rainy street`. Set **Base positive prompt = Prefix** and **Base negative prompt = Prefix** if a common list of things to avoid is set in the main form. Then the common instructions will be added to each plot.
+
+If you want to use the table row as the main plot and put the common quality tag at the end, switch **Base positive prompt** to **Suffix**.
+
+### Get Multiple Images per Row
+
+The **Image Number** parameter is taken from the main Fooocus form. If you select 3, each non-empty row triggers the generation of three images. This will increase the total number of outputs roughly proportionally to the number of non-empty rows. Choose a small set for testing before running a long list.
+
+## Which Fooocus Settings Apply to Each Row
+
+Prompt Batch does not create separate model settings for each row. Each entry uses the parameters collected for normal generation: **base/refiner model**, **Styles**, **Performance**, **Steps**, **Aspect Ratio**, **Image Number**, **Output Format**, **Filename Prefix**, **Negative Prompt**, seed, LoRA, and other available generation settings. They are set in the standard UI elements and passed to the handler before the queue is launched.
+
+**Seed / Random.** With **Random** enabled, each subsequent prompt gets a new random seed. With Random disabled, the fixed seed you specified in the main form is used. This is convenient if you need to compare the effect of texts with the same seed, although different prompts may still yield different results.
+
+Common settings can be changed before the queue is launched. Prompt Batch uses the text of the positive and negative prompts from the main form according to the **Base positive prompt** and **Base negative prompt** rules. The standard setting of other parameters remains common for the entire queue.
+
+## Where Results Appear
+
+Images appear in the standard Fooocus gallery and are saved in the main **Outputs path** directory (if the application is run with default logging settings).
+
+The format is selected by the common **Output Format** parameter; by default, it is set by the installation configuration. The name includes an optional **Filename Prefix**, date, time, and a random suffix, and files are placed in a folder with the current date. Therefore, the results of different prompts do not overwrite each other with the same name.
+
+## Troubleshooting
+
+- **The file opened with unreadable characters or the upload ended with an error.** Try resaving it as `.txt` in UTF-8. The encoding is recognized by a small sample — the first 1000 bytes.
+- **After loading a pair, the negative text ended up in the positive column.** Check **only positive prompts**. For pairs, uncheck the box and place positive and negative sequentially, without inserting an empty line between them.
+- **The main negative text disappeared.** In **Base negative prompt = None** mode, it is replaced by the value from the row. Choose Prefix or Suffix if you need to add common text.
+- **Some rows are not launched.** An empty `prompt` is skipped. Check that there is text in the positive column.
+- **The queue stopped before the end.** Check if you pressed **Stop**: when stopped, the results of already completed elements remain, and subsequent entries are not launched.
+
 ## Что делает Prompt Batch
+([Read in English](#what-prompt-batch-does))
 
 Prompt Batch запускает несколько генераций последовательно. Каждая строка таблицы содержит положительный промпт и негативный промпт. Если вы загрузили текстовый файл, расширение преобразует его строки в такую таблицу. Для всех строк используются общие настройки генерации из обычного интерфейса Fooocus: выбранная модель, стили, качество, размер, число изображений на один промпт и другие параметры.
 
