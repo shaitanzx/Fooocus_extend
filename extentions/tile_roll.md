@@ -1,4 +1,93 @@
+## What Roller Does
+([Читать на русском языке](#что-делает-roller))
+
+`Roller` is a tool for **cyclically shifting a single tile image** after generation in seamless texture mode. It does not generate new pixels, does not redraw edges, and does not change the image size. Instead, pixels that "move off" one edge appear on the opposite side. Therefore, in an already seamless tile only the arrangement of details changes, while seamlessness is preserved. The goal of the module is to rearrange the tile for a more aesthetic look without losing seamlessness.
+
+This is useful when the seam of a repeating texture is too noticeable at the edges. Shifting by half the width and/or height moves the original edges to the center of the image: that makes it easier to inspect the seams or place them in a less noticeable part of the tile.
+
+`Roller` **does not make a regular image seamless**. If the edges of the source image did not match, after the shift the mismatch will simply move to another place.
+
+Roller has no model loading and no separate button to start processing. The shift is performed when, after moving the slider, the user releases it.
+
+## Interface and All Settings
+
+Before an image is loaded, only the **`Upload file of tile`** area is visible. After loading, two sliders and a save button appear.
+
+**`Upload file of tile`** - uploading an image.
+**`Y Shift`** - cyclically shifts the image vertically.
+**`X Shift`** - cyclically shifts the image horizontally.
+**`Save to OUTPUT FOLDER`** - writes the currently displayed version of the image with the `roll` prefix to the OUTPUT folder.
+
+### How `X Shift` and `Y Shift` Work
+
+Both sliders are applied **simultaneously**, not sequentially to an already shifted preview. Therefore you can first adjust `X Shift`, then change `Y Shift`: the horizontal shift will not accumulate or "break", and the result will always be calculated as a combination of the current X and Y values applied to the original.
+
+This gives two simple ways to restore the original appearance:
+
+- set `X Shift = 0` and `Y Shift = 0`;
+- or upload the original file again.
+
+The sliders have no separate "Apply" button. While the slider is being dragged, the result may not update; release the mouse or finger and wait for the image to change.
+
+### The Range Depends on the Image Size
+
+For a **1024 × 1024 px** tile, both ranges are available from `−512` to `+512`. For a **2048 × 1024 px** file, `X Shift` will range from `−1024` to `+1024`, and `Y Shift` — from `−512` to `+512`. Roller takes the width and height from the loaded image.
+
+## Step by Step: Processing a Single Image
+
+1. Open **`Extention` → `tools` → `Roller`**.
+2. In **`Upload file of tile`**, drag and drop or select a single texture file. After successful loading, `Y Shift`, `X Shift`, and `Save to OUTPUT FOLDER` will appear.
+3. First assess which seam needs to be moved. If a vertical boundary on the left/right is noticeable, start with `X Shift`. If a horizontal boundary on the top/bottom is noticeable, start with `Y Shift`.
+4. Move the slider and **release it**. The left upload area will show the new result. You can change both sliders in any order.
+5. Check that you see exactly the result you need. If necessary, reset one of the parameters to zero or adjust the second one.
+6. Press **`Save to OUTPUT FOLDER`** to save the result.
+7. Open the results folder described below and take the generated PNG.
+
+## Practical Scenarios
+
+### Move All Original Seams to the Center of the Tile
+
+For a 1024 × 1024 px image:
+
+1. Load the file.
+2. Set `X Shift = 512` and release the slider.
+3. Set `Y Shift = 512` and release the slider.
+4. The original left/right and top/bottom boundaries will end up roughly in the center of the new image.
+5. Save the PNG if this arrangement of details looks better.
+
+The sign does not matter when shifting by exactly half, but it is important for arbitrary values.
+
+### Check the Vertical Seam
+
+If you only need to inspect the transition between the left and right boundaries:
+
+1. Leave `Y Shift = 0`.
+2. Set `X Shift` close to half the width, for example `512` for a tile 1024 px wide.
+3. Look at the vertical line in the center. The seam of the original left and right edges will be there.
+4. If sharp transitions of color, shape, or lighting are noticeable, the source texture needs to be fixed: Roller only relocates this seam.
+
+### Move a Detail to the Right and Up
+
+To move an element approximately 160 px to the right and 80 px up, set `X Shift = 160`, `Y Shift = 80`. Remember: a positive `X` is to the right, a positive `Y` is up. Pixels that leave the boundary will appear on the opposite side.
+
+### Restore the Original Appearance Without Re-uploading
+
+Set both values to `0` and release any slider. Roller always takes the hidden original copy and applies the current pair of values, so a zero pair restores the original pixel arrangement.
+
+## Troubleshooting
+
+- **The slider moves, but the image does not change.** Roller updates the result after the slider is released, not while it is being dragged. Release it and wait for the update to finish.
+
+- **`X Shift`, `Y Shift`, or the save button are not visible.** They are deliberately hidden until an image appears. Load a single file into `Upload file of tile`; if the image was cleared, upload it again.
+
+- **After adjusting X, the Y effect disappeared, or vice versa.** Check the current values of both sliders. Roller does not accumulate shifts one after another, but recalculates the image from the original copy using the current X/Y pair. This is expected behavior.
+
+- **The saved file did not appear in the browser.** This is normal: Roller writes the PNG to `outputs/<date>/` rather than providing a download link.
+
+- **The image still does not look seamless after the shift.** Roller does not blend or retouch edges. The shift helps you see where the seam falls in the center, but the seam itself must be fixed in the source texture or in another editor.
+
 ## Что делает Roller
+([Read in English](#what-roller-does))
 
 `Roller` — это инструмент для **циклического сдвига одного изображения-тайла** после генерации в режиме бесшовных текстур. Он не генерирует новые пиксели, не дорисовывает края и не меняет размер изображения. Вместо этого пиксели, которые «уезжают» за один край, появляются с противоположной стороны. Поэтому у уже бесшовного тайла меняется только расположение деталей, а бесшовность сохраняется. Цель модуля -  перестановка тайла для более эстетичного вида без потери бесшовности.
 
@@ -71,7 +160,7 @@
 
 ### Вернуть оригинальный вид без повторной загрузки
 
-Установите оба значения в `0` и отпустите любой ползунок. Roller каждый раз берёт скрытую исходную копию и применяет текущую пару значений, поэтому нулевая пара возвращает исходное расположение пикселей. [4]
+Установите оба значения в `0` и отпустите любой ползунок. Roller каждый раз берёт скрытую исходную копию и применяет текущую пару значений, поэтому нулевая пара возвращает исходное расположение пикселей.
 
 ## Устранение неполадок
 
