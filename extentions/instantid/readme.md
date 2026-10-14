@@ -1,4 +1,139 @@
+## What InstantID is For
+([Читать на русском языке](#для-чего-нужен-instantid))
+
+`InstantID` helps create new images while preserving a person's recognizability from a single face photo. You describe the desired scene with text, upload a photo of the person, and Fooocus uses their facial features. Optionally, you can upload a separate photo with the desired pose: in this case, the identity is taken from the first image, while the facial and compositional guide comes from the second.
+
+This is not a tool for direct insertion or pixel-perfect copying of the original face. It generates a new image, so the resemblance depends on the original photo, the model, the text description, and the control strength. InstantID selects the **largest detected face** in the photo. Working with multiple faces simultaneously is not supported.
+
+## Where to Find It and What Files Are Needed
+
+Open the **`Extensions` → `in generation` → `InstantID`** panel. InstantID is located in the group of additional settings applied during generation.
+
+For the first test, you need the standard base model selected in Fooocus, a text prompt, and one face photo. The **`Upload a photo of your face`** field is mandatory when the `Enabled` checkbox is checked. Use a photo where the face is large enough, sharp, and not obscured by foreign objects. If the detector does not find a face, generation fails with the message `Reference Image: No face detected.`
+
+The **`Upload a reference pose image (Optional)`** field accepts an additional single image. If you upload a shot, it must also have a detectable face: from it, the module extracts facial keypoints to set a guide. If a pose shot is not uploaded, the code uses the face photo for these keypoints as well.
+
+On first use, the extension may download the necessary model and face detector files. If this is happening for the first time, let the download complete; in case of an error, check your internet connection and the Fooocus console messages.
+
+## Quick First Launch
+
+1. Open **`Extensions` → `in generation` → `InstantID`**.
+2. Upload a face to **`Upload a photo of your face`**. For a start, it is better to choose a single shot with a clearly visible face.
+3. Do not upload a pose reference yet. Without it, the module will use the face both as the basis for identity and as the guide for keypoints.
+4. Enable **`Enabled`**.
+5. Leave the other settings at their default values and set a prompt, for example: `portrait photo of a person standing in a garden, soft daylight, natural expression`.
+6. Click the standard **Generate** button.
+7. Evaluate not only the facial resemblance, but also the pose, saturation, and correspondence to the text. Change one setting at a time per run to see the effect.
+
+The `Enabled` checkbox is initially turned off. If it is off, the presence of an uploaded photo and slider values will not trigger InstantID: generation will proceed normally.
+
+## All Settings and Their Effects
+
+### `Enabled`
+
+**Default:** disabled. This setting enables InstantID at the generation stage. Without it, all other InstantID fields are ignored for the current task.
+
+Enable it after uploading the facial reference. If you forget to check the box, Fooocus will still create an image, but it will not be controlled by this reference.
+
+### `Upload a photo of your face`
+
+Accepts **one** image file. This is the source of identity: the program runs face recognition and obtains a feature vector from the largest detected face, which it then passes to the adapter.
+
+If there are multiple people in the shot, the code selects the face with the largest bounding box area, rather than asking the user to choose a person. Crop the photo in advance so that the desired face is the largest.
+
+### `Upload a reference pose image (Optional)`
+
+Accepts **one optional image** that sets the pose/head position guide. The program extracts facial keypoints from it. The identity is still taken from `Upload a photo of your face`, not from the pose photo.
+
+Choose an image where the face is visible and large enough.
+
+Despite the name "pose image", the implementation builds a control map from **facial keypoints**, not the entire body skeleton. Do not expect it to accurately set the position of hands and legs.
+
+### `IdentityNet strength (for fidelity)`
+
+**Range:** `0`–`1.5`. **Step:** `0.001`. **Default:** `0.80`.
+
+Enhances the controlling influence of IdentityNet — the part of InstantID that helps maintain resemblance through the face and keypoints. If the result is not similar enough, increase the value in small steps. Too much influence can make the result less natural or restrict compositional freedom; adjust it together with Image adapter strength. To increase resemblance, gradually strengthen both parameters, and if the saturation is excessive, first reduce the Image adapter strength.
+
+The parameter only acts when `Enabled` is on. In calculations, it is passed as the InstantID ControlNet strength.
+
+### `Image adapter strength (for detail)`
+
+**Range:** `0`–`1.5`. **Step:** `0.001`. **Default:** `0.80`.
+
+Sets the weight of the image adapter, which passes the features of the reference face to the model. Increasing it can help with resemblance and details, but at too high a value, it may increase saturation or interfere with the accurate execution of the text description. In such cases, first reduce this parameter, and if the saturation remains excessive, also reduce the IdentityNet strength.
+
+### `Start at` and `End at`
+
+**Range of each:** `0`–`1`. **Step:** `0.001`. **Default:** `Start at = 0`, `End at = 1`.
+
+These sliders set the time segment of the generation process during which InstantID control is active. By default, it acts from beginning to end. The code passes them as the start and end of the ControlNet control schedule; the same boundaries are used in the adapter settings.
+
+For the first launch, leave the full range `0–1`. These fields do not set a resemblance percentage and do not change the original photo. The interface does not check if `Start at` is less than `End at`, so for a predictable result, keep the start lower than the end.
+
+### `PyraCanny`
+
+**Default:** enabled. This is a separate additional structural hint based on contours, built from the pose reference. If a pose reference is not uploaded, the face photo is substituted into the task state, so PyraCanny may use it. It does not replace the main InstantID face control.
+
+Disable `PyraCanny` if you want to keep only the main identity/keypoints control and weaken the additional following of image contours. In normal generation mode, this checkbox determines whether the corresponding control is added to the reference image.
+
+### `PyraCanny` → `Stop At`
+
+**Range:** `0`–`1`. **Step:** `0.001`. **Default:** `0.5`.
+
+Determines up to what part of the generation process the PyraCanny hint acts. The lower the value, the earlier it stops influencing. This parameter does not control the main IdentityNet — `End at` is for that. If the `PyraCanny` checkbox is disabled, `Stop At` is not used.
+
+### `PyraCanny` → `Weight`
+
+**Range:** `0`–`2`. **Step:** `0.001`. **Default:** `1`.
+
+The strength of the contour hint. Increase it if you need to rely more heavily on the shape/contours of the reference image; decrease it if the composition is being copied too much or is interfering with the prompt. When `PyraCanny` is disabled, the slider is not applied.
+
+### `CPDS`
+
+**Default:** disabled. This is an alternative additional processing of the reference image via CPDS — a way to obtain a depth map. It can be enabled separately or together with PyraCanny if additional structural constraints are needed.
+
+As with PyraCanny, the source will be the pose reference if uploaded, or the face photo if there is no separate pose reference. If `CPDS` is disabled, its two sliders are ignored.
+
+### `CPDS` → `Stop At`
+
+**Range:** `0`–`1`. **Step:** `0.001`. **Default:** `0.5`.
+
+Sets the moment when CPDS influence stops during generation. It is independent of `CPDS` → `Weight` and the main `End at`. Not used when the `CPDS` checkbox is disabled.
+
+### `CPDS` → `Weight`
+
+**Range:** `0`–`2`. **Step:** `0.001`. **Default:** `1`.
+
+Sets the strength of the additional CPDS control. Start with the default value. If the additional depth structure restricts the result too much, reduce the weight or disable `CPDS`.
+
+## Result and Saving
+
+InstantID does not create a separate face file, mask, JSON settings, or archive. It changes the control conditions of the standard Fooocus generation; the result is saved as a normally generated image in the standard output folder. If you need to repeat the same result, save the image and separately record the settings and prompt: do not rely on the temporary upload in the field as a reference archive.
+
+## Practical Settings
+
+### First, achieve resemblance
+Leave `Start at = 0`, `End at = 1`, `IdentityNet strength = 0.80`, and `Image adapter strength = 0.80`. If the face is not recognizable enough, first increase one of the two weights in small steps. Choose a photo with a clear face, crop out extra people, and make one control run after each change.
+
+### Reduce saturation or regain control over the prompt
+First, reduce `Image adapter strength`. If the saturation is still too high, slightly reduce `IdentityNet strength`. If the text correspondence is weak, try reducing the adapter weight as well.
+
+### Maintain a pose or contour guide
+Upload a separate pose image with a visible face. Leave IdentityNet and the adapter at values that give the desired resemblance, then enable or disable `PyraCanny` and `CPDS` one by one. For the first test, leave the weights at `1` and `Stop At = 0.5`; then adjust only the type of structural hint that is actually needed.
+
+## Troubleshooting
+
+**The image generated, but it doesn't look like the uploaded face.** Ensure that `Enabled` is checked and the correct person's face is uploaded. If there are multiple people in the photo, the code automatically selected the largest face. Crop the shot so that the desired face is the largest. Then try gradually increasing the IdentityNet or adapter strength.
+
+**The message `Reference Image: No face detected.` appears.** The detector did not find a face in the main photo. Take a clearer, more frontal shot where the face occupies a larger portion of the frame. This is an error specific to the facial reference.
+
+**An error appears after uploading a separate pose.** Facial keypoints are also searched for in the pose picture. Check that the face is visible there. If you are unsure, remove the pose file and repeat the generation: the main photo will be used instead.
+
+**The generation heavily copies the contours or composition of the reference.** Reduce `PyraCanny` → `Weight` or disable `PyraCanny`. If necessary, disable `CPDS` or reduce its weight. These parameters affect additional structural hints, not the direct recognition of identity.
+
 ## Для чего нужен InstantID
+([Read in English](#what-instantid-is-for))
 
 `InstantID` помогает создавать новые изображения с сохранением узнаваемости человека по одной фотографии лица. Вы описываете желаемый кадр текстом, загружаете фотографию человека, а Fooocus использует её признаки лица. При желании можно отдельно загрузить фотографию с нужной позой: тогда идентичность берётся из первого снимка, а ориентир лица и композиции — из второго.
 
