@@ -5,7 +5,7 @@
 
 ## Where to Open It and What is Needed
 
-1. In Fooocus Extend, expand **`Extension` → `tools` → `Civitai_helper`**. [4]
+1. In Fooocus Extend, expand **`Extention` → `tools` → `Civitai_helper`**. [4]
 2. For regular public Civitai pages, you can start with the model URL. Some files require authorization to download. For such cases, there is a **`Civitai API key`** field and an **`Apply setting`** button at the top of the tab.
 3. If downloading requires a key, create one in your Civitai account and paste it into this field.
 4. Click **`Apply setting`** after pasting. The program will save the key in `civitai_api_key.txt` in the Fooocus Extend working folder and also use it in download requests.

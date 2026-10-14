@@ -13,7 +13,7 @@ On the first activation, you may need to wait for the models to load.
 
 ## First Launch
 
-1. Open **`Extensions` → `in generation` → `Photomaker`**.
+1. Open **`Extentions` → `in generation` → `Photomaker`**.
 2. Drag and drop one or more photos into **`Drag (Select) 1 or more photos of your face`**. After uploading, the files will appear in the `Your images` area.
 3. Enable **`Enabled`**.
 4. In the positive prompt, add `img` exactly once after the description of the person. For example: `portrait photo of a man img, wearing a dark blue jacket, soft window light`.
@@ -107,7 +107,7 @@ Keep `img` right after defining the person, for example: `portrait of an Asian w
 
 ## Первый запуск
 
-1. Откройте **`Extensions` → `in generation` → `Photomaker`**.
+1. Откройте **`Extentions` → `in generation` → `Photomaker`**.
 2. Перетащите одну или несколько фотографий в **`Drag (Select) 1 or more photos of your face`**. После загрузки файлы появятся в области `Your images`.
 3. Включите **`Enabled`**.
 4. В положительном prompt добавьте `img` ровно один раз после описания человека. Например: `portrait photo of a man img, wearing a dark blue jacket, soft window light`.

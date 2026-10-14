@@ -7,7 +7,7 @@ The extension does not create an image from a text description. It works either 
 
 ## Where to Find FaceEnhancer
 
-Open the **Extensions** panel. It contains two separate tabs named **FaceEnhancer**.
+Open the **Extentions** panel. It contains two separate tabs named **FaceEnhancer**.
 
 - In the **in generation** group, FaceEnhancer processes the result immediately after generation. A toggle switch **Enabled** appears here. While it is turned off, the FaceEnhancer settings do not participate in the generation.
 - In the **modules** group, FaceEnhancer works as a standalone processor for uploaded images. There is no **Enabled** toggle here: instead, there are upload fields and a **Start FaceEnhancer** button.
@@ -16,7 +16,7 @@ Open the **Extensions** panel. It contains two separate tabs named **FaceEnhance
 
 For the first test, use a single regular portrait photograph. This helps you see the effect without wasting time on a large batch.
 
-1. Open **Extensions → modules → FaceEnhancer**.
+1. Open **Extentions → modules → FaceEnhancer**.
 2. Drag and drop a single file into the **Drag (Select) 1 or more reference images** area.
 3. Leave the standard values: **GFPGANv1.4.pth**, **SRVGG, realesr-general-x4v3.pth**, **retinaface_resnet50**, scale factor **4**.
 4. Do not enable **Enable Face Swap**.
@@ -148,7 +148,7 @@ Enter only `-1` or non-negative numbers. Other negative numbers are not processe
 
 This mode is needed when you want FaceEnhancer to automatically process the image immediately after Fooocus generation.
 
-1. Open **Extensions → in generation → FaceEnhancer**.
+1. Open **Extentions → in generation → FaceEnhancer**.
 2. Enable **Enabled**.
 3. Select the face model, upscale model, detector, and scale factor.
 4. For normal enhancement, leave **Enable Face Swap** disabled.
@@ -159,7 +159,7 @@ FaceEnhancer receives the last result from the current generation list and retur
 
 ## Standalone Processing of a Single Image
 
-1. Open **Extensions → modules → FaceEnhancer**.
+1. Open **Extentions → modules → FaceEnhancer**.
 2. Leave **Upload ZIP-file** disabled.
 3. Drag and drop a single file into **Drag (Select) 1 or more reference images**.
 4. After uploading, the interface hides the list and shows the **Reference image** field. This is normal behavior for a single file.
@@ -265,7 +265,7 @@ First, decrease the **Rescaling factor**, select a single input file, and try a 
 
 ## Где находится FaceEnhancer
 
-Откройте панель **Extensions**. В ней есть две отдельные вкладки с названием **FaceEnhancer**.
+Откройте панель **Extentions**. В ней есть две отдельные вкладки с названием **FaceEnhancer**.
 
 - В группе **in generation** FaceEnhancer обрабатывает результат сразу после генерации. Здесь появляется переключатель **Enabled**. Пока он выключен, настройки FaceEnhancer не участвуют в генерации.
 - В группе **modules** FaceEnhancer работает как самостоятельный обработчик загруженных изображений. Здесь нет переключателя **Enabled**: вместо него есть поля загрузки и кнопка **Start FaceEnhancer**.
@@ -274,7 +274,7 @@ First, decrease the **Rescaling factor**, select a single input file, and try a 
 
 Для первой проверки используйте одну обычную портретную фотографию. Это помогает увидеть эффект и не тратить время на большой пакет.
 
-1. Откройте **Extensions → modules → FaceEnhancer**.
+1. Откройте **Extentions → modules → FaceEnhancer**.
 2. Перетащите один файл в область **Drag (Select) 1 or more reference images**.
 3. Оставьте стандартные значения: **GFPGANv1.4.pth**, **SRVGG, realesr-general-x4v3.pth**, **retinaface_resnet50**, коэффициент **4**.
 4. Не включайте **Enable Face Swap**.
@@ -406,7 +406,7 @@ Face Swap заменяет лицо в целевой картинке лицо�
 
 Этот режим нужен, когда вы хотите, чтобы FaceEnhancer автоматически обработал изображение сразу после генерации Fooocus.
 
-1. Откройте **Extensions → in generation → FaceEnhancer**.
+1. Откройте **Extentions → in generation → FaceEnhancer**.
 2. Включите **Enabled**.
 3. Выберите модель лица, модель апскейла, детектор и коэффициент масштаба.
 4. Для обычного улучшения оставьте **Enable Face Swap** выключенным.
@@ -417,7 +417,7 @@ FaceEnhancer получает последний результат из тек�
 
 ## Самостоятельная обработка одного изображения
 
-1. Откройте **Extensions → modules → FaceEnhancer**.
+1. Откройте **Extentions → modules → FaceEnhancer**.
 2. Оставьте **Upload ZIP-file** выключенным.
 3. Перетащите один файл в **Drag (Select) 1 or more reference images**.
 4. После загрузки интерфейс скрывает список и показывает поле **Reference image**. Это нормальное поведение для одного файла.

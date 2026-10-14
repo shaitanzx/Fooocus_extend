@@ -12,7 +12,7 @@ OMOST accepts **text messages** here. If you need a composition based on a textu
 
 ## Where to Open It and What to Prepare
 
-1. In the Fooocus Extend interface, expand **`Extension` → `in generation` → `modules`** and select the **`omost`** tab.
+1. In the Fooocus Extend interface, expand **`Extention` → `in generation` → `modules`** and select the **`omost`** tab.
 2. In the main interface, check the standard Fooocus settings you usually use in advance: generation model, image resolution, negative prompt, and other parameters. The `Render the Image!` button creates a standard Fooocus task with the current settings.
 3. On the first request, the selected OMOST language model is loaded. Before loading, the OMOST code unloads Fooocus models from GPU memory; after the response, the OMOST language model is also unloaded. Therefore, the first message and subsequent rendering may take extra time while the necessary models are loaded back.
 4. Write the scene text in the chat field and click **`Submit`**. OMOST models and their training examples are designed to generate structured Canvas descriptions; if the response does not create the desired regions, try rephrasing the request more clearly.

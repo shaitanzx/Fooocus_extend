@@ -7,7 +7,7 @@ This is not a tool for direct insertion or pixel-perfect copying of the original
 
 ## Where to Find It and What Files Are Needed
 
-Open the **`Extensions` → `in generation` → `InstantID`** panel. InstantID is located in the group of additional settings applied during generation.
+Open the **`Extentions` → `in generation` → `InstantID`** panel. InstantID is located in the group of additional settings applied during generation.
 
 For the first test, you need the standard base model selected in Fooocus, a text prompt, and one face photo. The **`Upload a photo of your face`** field is mandatory when the `Enabled` checkbox is checked. Use a photo where the face is large enough, sharp, and not obscured by foreign objects. If the detector does not find a face, generation fails with the message `Reference Image: No face detected.`
 
@@ -17,7 +17,7 @@ On first use, the extension may download the necessary model and face detector f
 
 ## Quick First Launch
 
-1. Open **`Extensions` → `in generation` → `InstantID`**.
+1. Open **`Extentions` → `in generation` → `InstantID`**.
 2. Upload a face to **`Upload a photo of your face`**. For a start, it is better to choose a single shot with a clearly visible face.
 3. Do not upload a pose reference yet. Without it, the module will use the face both as the basis for identity and as the guide for keypoints.
 4. Enable **`Enabled`**.
@@ -141,7 +141,7 @@ Upload a separate pose image with a visible face. Leave IdentityNet and the adap
 
 ## Где найти и какие файлы нужны
 
-Откройте панель **`Extensions` → `in generation` → `InstantID`**. InstantID находится в группе дополнительных настроек, применяемых во время генерации.
+Откройте панель **`Extentions` → `in generation` → `InstantID`**. InstantID находится в группе дополнительных настроек, применяемых во время генерации.
 
 Для первого теста нужны обычная выбранная в Fooocus базовая модель, текстовый prompt и одна фотография лица. Поле **`Upload a photo of your face`** обязательно, когда установлен флажок `Enabled`. Используйте фото, где лицо достаточно крупное, резкое и не закрыто посторонними предметами. Если детектор не находит лица, генерация срывается с сообщением `Reference Image: No face detected.`
 
@@ -151,7 +151,7 @@ Upload a separate pose image with a visible face. Leave IdentityNet and the adap
 
 ## Короткий первый запуск
 
-1. Откройте **`Extensions` → `in generation` → `InstantID`**.
+1. Откройте **`Extentions` → `in generation` → `InstantID`**.
 2. Загрузите лицо в **`Upload a photo of your face`**. Для начала лучше выбрать одиночный снимок с хорошо различимым лицом.
 3. Не загружайте пока референс позы. Без него модуль возьмёт лицо и за основу идентичности, и за ориентир ключевых точек.
 4. Включите **`Enabled`**.
