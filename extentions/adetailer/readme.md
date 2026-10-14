@@ -200,7 +200,7 @@ The value `None` means "do not process this tab". The internal check skips the t
 
 ### Difference between YOLO and MediaPipe
 
-For YOLO, the code calls Ultralytics and gets a bounding box, confidence, and, if it is a segmentation model, a more precise mask. If there is no segmentation mask, a rectangular mask based on the bounding box is used. [8]
+For YOLO, the code calls Ultralytics and gets a bounding box, confidence, and, if it is a segmentation model, a more precise mask. If there is no segmentation mask, a rectangular mask based on the bounding box is used.
 
 For MediaPipe, special functions are used:
 
@@ -209,13 +209,644 @@ For MediaPipe, special functions are used:
 - `mediapipe_face_mesh` — mask along the face contour;
 - `mediapipe_face_mesh_eyes_only` — eye masks.
 
-MediaPipe Mesh does not use a standard face rectangle: the code builds a polygon based on landmarks. For eyes, separate areas are formed along the contour of the left and right eye. [9]
+MediaPipe Mesh does not use a standard face rectangle: the code builds a polygon based on landmarks. For eyes, separate areas are formed along the contour of the left and right eye.
 
 ### **ADetailer detector classes**
 
 This field is hidden for standard detectors and becomes available for YOLO World models.
 
 Enter classes separated by commas. For example:
+```
+person, bicycle, dog
+```
+
+
+If the field is left empty, the model's standard set of classes is used. For regular face, hand, and person models, this field does not change the detector.
+
+### **ad_prompt (1)**
+
+This is the prompt applied during the Inpaint of the found area. The field is empty by default.
+
+If left empty, the main Fooocus prompt is used.
+
+If you only need to correct a face, you can write, for example:
+```
+highly detailed face, natural eyes, realistic skin, symmetrical features
+```
+
+For hands:
+```
+anatomically correct hands, five fingers, natural pose, detailed skin
+```
+
+
+Do not describe the entire scene in this field if only local correction is required. A short prompt related to the object being corrected is usually easier to control.
+
+### **ad_negative_prompt (1)**
+
+This is the negative prompt for local Inpaint. The field is empty by default.
+
+If left empty, the main Fooocus negative prompt is used.
+
+Example for a face:
+```
+blurry face, asymmetry, deformed eyes, duplicate features, extra facial features
+```
+
+Example for hands:
+```
+extra fingers, fused fingers, missing fingers, malformed hands, blurry hands
+```
+
+### The **[PROMPT]** Token
+
+You can use the special token `[PROMPT]` in the local prompt. It is replaced by the main Fooocus prompt.
+
+For example:
+```
+[PROMPT], detailed realistic face, natural skin
+```
+
+In the negative prompt, `[PROMPT]` is replaced by the main negative prompt.
+
+This allows you to keep the description of the entire scene and add local requirements for the object.
+
+### The **[SEP]** Token
+
+If the prompt has multiple parts separated by `[SEP]`, they are distributed to the found masks in order.
+
+For example:
+```
+young woman face [SEP] old man face
+```
+
+If two faces are found, the first part will be applied to the first mask, and the second to the second. If there are fewer parts, the last part is repeated for the remaining masks. If there are more parts, the extra parts are not used.
+
+The same rule applies to the negative prompt. If the prompt is empty, the main prompt is used.
+
+### The **[SKIP]** Token
+
+If the prompt for a specific mask is `[SKIP]`, this mask does not undergo Inpaint.
+
+This is convenient when the detector has found multiple objects, but not all of them need to be corrected.
+
+Important: `[SKIP]` does not forbid detection. It only skips the subsequent Inpaint for the selected mask.
+
+## Detection Section
+
+Open the **Detection** accordion to configure the filtering of found objects.
+
+### **Detection model confidence threshold**
+
+Range: `0.0` to `1.0`. Step: `0.01`. Standard value: `0.3`.
+
+The detector returns a confidence score for each object. Objects with a score below the set threshold do not proceed further.
+
+A lower value allows finding more objects but increases the risk of false positives. A higher value leaves only more confident detections but may miss a small, turned, or partially hidden face.
+
+Start with the value `0.3`. If a face is not found, try `0.2`. If the detector captures extra items, increase the threshold to `0.4–0.6`.
+
+### **Method to filter top k masks by (confidence or area)**
+
+Two options are available:
+
+- `Area`;
+- `Confidence`.
+
+This parameter is used only in conjunction with **Mask only the top k**.
+
+`Area` keeps the largest bounding boxes. This is convenient when you need to process the largest faces or hands.
+
+`Confidence` keeps objects with the highest detector confidence. This is convenient when there are multiple objects in the frame, but priority should be given to the most obvious ones.
+
+The standard value is `Area`.
+
+### **Mask only the top k (0 to disable)**
+
+Range: `0` to `10`. Standard value: `0`.
+
+`0` disables the limit: all found masks that passed the other filters are used.
+
+The value `1` leaves only one object. The value `2` leaves two objects, and so on.
+
+Which specific objects remain depends on the **Method to filter top k masks by**. With `Area`, the code selects the largest bounding boxes. With `Confidence`, it selects the most confident ones.
+
+For one main face, it is often useful to set `1`. For a group portrait, leave `0` or set the number equal to the expected number of faces.
+
+### **Mask min area ratio**
+
+Range: `0.0–1.0`. Step: `0.001`. Standard value: `0.0`.
+
+This parameter compares the area of the object's bounding box to the area of the entire image.
+
+`0.0` does not discard small objects based on this criterion. If you set, for example, `0.01`, objects occupying less than 1% of the image area will be discarded.
+
+This is useful for excluding tiny faces or random distant objects in the background. For a large portrait, leave it at `0.0`.
+
+### **Mask max area ratio**
+
+Range: `0.0–1.0`. Step: `0.001`. Standard value: `1.0`.
+
+This parameter discards objects that occupy too large a proportion of the image.
+
+For example, the value `0.5` will keep only objects with a bounding box area of no more than half the image area. The standard `1.0` practically does not limit the size.
+
+This filter is useful if the person model mistakenly captures almost the entire frame, but for normal face correction, it is better not to change it.
+
+Min/max filtering is performed before the top k limit.
+
+## Mask Preprocessing Section
+
+This section alters masks after detection and before Inpaint.
+
+The order of application in the code is as follows:
+
+1. x and y offset;
+2. mask expansion or shrinking;
+3. merging and/or inverting masks.
+
+### **Mask x(→) offset**
+
+Range: `-200` to `200`. Step: `1`. Standard value: `0`.
+
+Shifts the mask horizontally. A positive value moves it to the right, a negative value to the left.
+
+Use a small shift if the detector systematically captures the area next to the object or, conversely, fails to cover the required side. Large values can move the mask completely off the object.
+
+### **Mask y(↑) offset**
+
+Range: `-200` to `200`. Step: `1`. Standard value: `0`.
+
+In the user label, the arrow points upward for a positive value. 
+
+Practically, a positive value should be checked as an upward shift, and a negative value as a downward shift. Start with small values, for example, `±5` or `±10`.
+
+### **Mask erosion (-) / dilation (+)**
+
+Range: `-128` to `128`. Step: `4`. Standard value: `4`.
+
+This is the expansion or shrinking of the mask:
+
+- a positive value `+` expands the mask;
+- a negative value `-` shrinks the mask;
+- `0` leaves the size unchanged.
+
+An expanded mask captures more surrounding pixels. This can help if the detector cuts off the chin, fingers, or hair edges, but too much expansion can alter the background.
+
+Shrinking reduces interference with the surrounding area but may leave part of the object uncorrected.
+
+### **Mask merge mode**
+
+Available options:
+
+- `None`;
+- `Merge`;
+- `Merge and Invert`.
+
+#### `None`
+
+Each mask is processed separately. If the detector found three faces, Fooocus performs three sequential local Inpaints with the same selected prompt or with different parts separated by `[SEP]`.
+
+This is the main option if objects need different prompt settings.
+
+#### `Merge`
+
+All masks are merged into one. Fooocus performs a single Inpaint over the combined area.
+
+This is useful when several close areas should be changed together. However, separate objects can no longer be processed with different prompts via independent passes.
+
+#### `Merge and Invert`
+
+First, all masks are merged, then inverted. As a result, the processing area becomes the opposite of the found objects.
+
+Use this option with caution. It is not needed for normal face correction: it forces Inpaint to work *around* objects, not inside them.
+
+## Inpainting Section
+
+The settings in this section control the local redrawing of found masks.
+
+### **Method**
+
+Three modes are available in the list:
+
+- `Inpaint or Outpaint (default)`;
+- `Improve Detail (face, hand, eyes, etc.)`;
+- `Modify Content (add objects, change background, etc.)`.
+
+The standard mode is determined by the general Fooocus setting.
+
+#### `Inpaint or Outpaint (default)`
+
+Universal mode for local correction. Use it if you need to replace or redraw a found face, hand, or other area.
+
+#### `Improve Detail (face, hand, eyes, etc.)`
+
+Mode for improving details of faces, hands, and eyes. When selected, the UI automatically changes related parameters:
+
+- disables **ADetailer Disable initial latent**;
+- sets **Inpaint Engine** to `None`;
+- sets denoising strength to `0.5`;
+- sets **Inpaint Respective Field** to `0.0`.
+
+The value `0.0` means processing only the mask area.
+
+#### `Modify Content (add objects, change background, etc.)`
+
+Mode for stronger content changes. When selected, the UI automatically:
+
+- enables **ADetailer Disable initial latent**;
+- returns the selected **Inpaint Engine** version;
+- sets denoising strength to `1.0`;
+- sets **Inpaint Respective Field** to `0.0`.
+
+If you need to carefully restore a face, start with `Improve Detail`. If you need to replace the content of an area, use `Modify Content`.
+
+### **ADetailer Disable initial latent**
+
+Standard value: off.
+
+When enabled, the initial latent is not used in local Inpaint. This can provide a more independent redrawing of the area, but sometimes reduces resemblance to the original fragment.
+
+The value changes automatically when selecting **Method**:
+
+- `Improve Detail` sets it to `False`;
+- `Modify Content` sets it to `True`;
+- normal mode returns it to `False`.
+
+### **Inpaint Engine**
+
+Available:
+
+- `None`;
+- `v1`;
+- `v2.5`;
+- `v2.6`.
+
+Standard value: `v2.6`.
+
+This is the Fooocus inpaint model version. It is recommended to use `Quality` or `Speed` performance when choosing an engine, because performance LoRAs with this mode are not applied optimally.
+
+For `Improve Detail`, the UI automatically selects `None`. For normal mode and `Modify Content`, the currently selected engine version is used unless changed by the user.
+
+### **Inpaint denoising strength**
+
+Range: `0.0–1.0`. Step: `0.01`. In the visible interface, the standard value is `1`.
+
+This parameter determines how strongly the local area will be changed relative to the source image.
+
+- a lower value better preserves original details;
+- a higher value gives the generator more freedom to change the area.
+
+For careful face correction, it is usually worth starting with `0.3–0.5`. For full content replacement, use a higher value.
+
+Since Adetailer usually processes a local mask, the main meaning of this parameter is the strength of change in the found area.
+
+### **Inpaint Respective Field**
+
+Range: `0.0–1.0`. Step: `0.01`. Standard value is `0.618` in normal mode.
+
+This parameter determines what area around the mask participates in Inpaint:
+
+- `0.0` corresponds to processing only the mask;
+- `1.0` corresponds to processing the entire image;
+- an intermediate value processes the mask and some surrounding area.
+
+A large value gives the generator more context but may change the surrounding background. A small value better limits interference to the object area.
+
+For a face, start with `0.0–0.4` if the background must remain unchanged. For complex transitions of hair, clothing, or lighting, try `0.5–0.7`.
+
+## Separate CFG Scale
+
+### **ADetailer use separate CFG scale**
+
+Standard value: off.
+
+When the checkbox is off, Adetailer uses the general Fooocus CFG scale. When enabled, a separate **ADetailer CFG scale** slider becomes available.
+
+### **ADetailer CFG scale**
+
+Range: `0.0–30.0`. Step: `0.5`. Standard value: `7.0`.
+
+This parameter affects how strictly the local Inpaint follows the prompt.
+
+A higher value usually pushes the image more toward the text description but can make the result less similar to the original area. A lower value softer preserves the original features.
+
+A separate value is applied only when **ADetailer use separate CFG scale** is enabled. After the tab finishes, the previous general CFG scale is restored for subsequent operations.
+
+## Separate Checkpoint Model
+
+### **Use separate checkpoint**
+
+Standard value: off.
+
+When the checkbox is off, local Inpaint uses the same checkpoint as the main run.
+
+When enabled, the **ADetailer checkpoint** list becomes available.
+
+### **ADetailer checkpoint**
+
+The first item in the list is `Use same checkpoint`, followed by available Fooocus checkpoint files.
+
+If the **Use separate checkpoint** checkbox is checked, but `Use same checkpoint` is left in the list, the working branch does not change the base model. If a specific checkpoint is selected, it is used for the current Adetailer tab, after which the original checkpoint is restored.
+
+This is useful if the main checkpoint is good at creating the scene, but another is better at drawing faces or hands. However, loading an additional model increases time and VRAM consumption.
+
+## Separate Sampler and Scheduler
+
+### **Use separate sampler** and **Use separate scheduler**
+
+Standard value: off.
+
+When enabled, **ADetailer sampler** and **ADetailer scheduler** become interactive.
+
+### **ADetailer sampler**
+
+The first option is `Use same sampler`, followed by Fooocus samplers, including standard options like `euler`, `dpmpp_2m`, and others present in the current build.
+
+If `Use same sampler` is selected, the main sampler is preserved. If a specific sampler is selected, it applies only to the local Adetailer processing.
+
+### **ADetailer scheduler**
+
+The first option is `Use same scheduler`, followed by Fooocus schedulers, for example, `normal`, `karras`, `exponential`, `sgm_uniform`, `simple`, `ddim_uniform`, `lcm`, `turbo`, `align_your_steps`, `tcd`, `edm_playground_v2.5`, and `beta57`.
+
+The scheduler is applied separately only when **Use separate sampler** is enabled. If `Use same scheduler` is selected, the working code leaves the main scheduler.
+
+For the first launch, leave the general sampler and scheduler. Separate values are needed if you already know that local correction works better with a different combination.
+
+## Mask Debugging
+
+In the advanced Fooocus settings, there is a checkbox:
+
+> **Debug ADetailer Masks**
+
+It is not located inside a specific detector tab. When enabled, Fooocus shows a preview of detection and masks during processing, and saves intermediate results according to general output settings.
+
+Use it if the result looks incorrect:
+
+- the mask does not hit the face;
+- the detector captures the background;
+- the wrong object is selected;
+- the face is found but not redrawn.
+
+Combined with **Only detect**, this mode allows checking detection without Inpaint.
+
+## How to Configure Adetailer for Faces
+
+### Soft correction of one face
+
+1. Enable **Adetailer**.
+2. In the first tab, enable **Enable this tab (1)**.
+3. Select `face_yolov8n.pt`.
+4. Set confidence to around `0.3`.
+5. Leave **Mask only the top k** at `0` if there are multiple faces in the image.
+6. Select **Improve Detail (face, hand, eyes, etc.)**.
+7. Start with a denoising strength of around `0.4–0.5`.
+8. Set **Inpaint Respective Field** to around `0.0–0.3`.
+9. In the prompt, add `[PROMPT], detailed realistic face, natural eyes` or leave the field empty to use the main prompt.
+10. Start generation.
+
+### Processing only the largest face
+
+Use:
+
+- **Method to filter top k masks by:** `Area`;
+- **Mask only the top k:** `1`.
+
+Thus, Adetailer will keep the largest bounding box. This mode is convenient for portraits where small faces might be in the background.
+
+### Processing the most confidently found face
+
+Use:
+
+- **Method to filter top k masks by:** `Confidence`;
+- **Mask only the top k:** `1`.
+
+Thus, priority will be given to the detection with the highest confidence, not necessarily the largest one.
+
+### Correcting a group of faces
+
+Leave **Mask only the top k** at `0`. If all faces need the same prompt, you can leave **Mask merge mode** at `None` and process them sequentially. If the faces are closely located and should change together, try `Merge`.
+
+## How to Configure Adetailer for Hands
+
+1. Enable a separate tab.
+2. Select `hand_yolov8n.pt` for lighter processing or `hand_yolov8s.pt` for a larger detector.
+3. Start with confidence `0.3`.
+4. If fingers are cut off, increase **Mask erosion (-) / dilation (+)** from `4` to `8–16`.
+5. Use a prompt like `anatomically correct hands, five fingers, natural pose`.
+6. For strong hand replacement, increase denoising strength, but check a small result first.
+
+The hand detector can find multiple areas. If you need to fix only one, use top k or separate the prompt via `[SEP]`.
+
+## How to Configure Eyes
+
+For narrow eye correction, select `mediapipe_face_mesh_eyes_only.pt`.
+
+This detector builds masks along the eye contours, not the entire face. Therefore, when correcting eye color or shape, it is better to use a small **Inpaint Respective Field** and moderate denoising strength.
+
+If the mask is too small, do not start with strong expansion. Try a small positive value for **Mask erosion (-) / dilation (+)** and enable **Debug ADetailer Masks** to see the actual area.
+
+## How to Use YOLO World
+
+Select one of the `yolov8...-worldv2.pt` detectors. After this, the **ADetailer detector classes** field will appear.
+
+Enter classes separated by commas in English, for example:
+```
+hat, glasses, backpack
+```
+
+
+YOLO World is convenient when you need to fix an object for which there is no separate standard model. Accuracy depends on the model quality and class formulation, so always check the result via **Only detect** or **Debug ADetailer Masks**.
+
+## How to Tell if the Wrong Mask is Selected
+
+Symptoms of an incorrect mask:
+
+- the background around the face changes;
+- only part of the object is corrected;
+- the face or hand does not change;
+- multiple unwanted objects change at once;
+- the result looks like a large new insert.
+
+Safe check order:
+
+1. Enable **Only detect**.
+2. Enable **Debug ADetailer Masks**.
+3. Raise or lower the confidence.
+4. Use **Mask min area ratio** to remove objects that are too small.
+5. Use **Mask max area ratio** to exclude overly large erroneous areas.
+6. Limit the number of objects via **Mask only the top k**.
+7. Adjust dilation or offsets.
+8. Only after this, return to normal Inpaint mode.
+
+## What Happens with Multiple Active Detectors
+
+Fooocus processes each active detector for each image sequentially.
+
+If face and hands are enabled, the order is roughly:
+
+1. face detection and Inpaint;
+2. the result with the corrected face becomes the input;
+3. hand detection and Inpaint;
+4. the final result is returned to the user.
+
+If Upscale or Variation is enabled, it is added as a separate pass before the first or after the last tab according to **Order of Processing**.
+
+Processing time grows with the number of images, active tabs, and found masks. If one detector finds five faces, local Inpaint may be executed for each mask separately in `None` mode.
+
+## Model and Detector Download
+
+On the first launch, model download may take some time. This is normal. If the model did not download, check your internet connection and available disk space.
+
+## Results and Saving
+
+Adetailer does not create a separate gallery or ZIP archive of results. It alters the image in the current Fooocus workflow.
+
+After normal generation, the result is displayed in the standard Fooocus gallery. When using an uploaded image, the outcome is also returned via the normal generation result.
+
+Intermediate images may be shown if **Debug ADetailer Masks** or **Only detect** are enabled. The exact set of displayed intermediate results depends on general Fooocus settings, including disabling intermediate results and saving only the final image.
+
+If multiple tabs are enabled and the user has a custom setting to save only the final enhanced image, intermediate passes may not be saved in the gallery. The last result remains the outcome of the chain.
+
+Adetailer does not create a separate file with a fixed suffix for each mask, nor does it pack results into a ZIP. Therefore, do not look for the result in a separate batch processing folder.
+
+## Recommended Settings by Task
+
+### Face on a portrait
+
+Use `face_yolov8n.pt` or `face_yolov8s.pt`, confidence `0.3`, `Mask only the top k = 1`, mode `Improve Detail`, denoising strength `0.4–0.5`, and Respective Field `0.0–0.3`.
+
+### All faces on a group photo
+
+Use a face model, leave top k at `0`, do not invert the mask, and leave the main prompt empty if the main prompt already describes the people.
+
+### Hands
+
+Use `hand_yolov8n.pt` or `hand_yolov8s.pt`, a prompt with anatomical constraints, and a small positive dilation if finger boundaries are cut off.
+
+### Eyes
+
+Use `mediapipe_face_mesh_eyes_only.pt`, moderate denoising strength, and a small Respective Field. Check the mask via debugging before running strong Inpaint.
+
+### Replacing area content
+
+Use `Modify Content`, denoising strength `1.0`, and a separate prompt. This mode changes the object more strongly and may affect the surroundings, so increase mask limitation only gradually.
+
+### Correcting only the found area
+
+Use `Improve Detail` or normal Inpaint, Respective Field closer to `0.0`, without mask inversion and without large dilation.
+
+## Troubleshooting
+
+### Adetailer does not start
+
+Check three conditions:
+
+- the general **Adetailer** toggle is enabled;
+- at least one **Enable this tab** is enabled;
+- a model is selected in this tab, not `None`.
+
+### Image generates, but the face is not corrected
+
+Probable causes:
+
+- the detector did not find the face;
+- confidence is too high;
+- the mask was filtered by ratio parameters;
+- **Only detect** is enabled;
+- the prompt equals `[SKIP]`;
+- the mask became empty after erosion.
+
+Enable **Only detect** and **Debug ADetailer Masks**, lower confidence to `0.2–0.3`, and check the preview.
+
+### The wrong face is corrected
+
+Set **Mask only the top k = 1** and choose the method `Area` or `Confidence`. If you need to select a face by position, this version of the user sorting toggle does not have it: the code uses fixed left-to-right sorting before processing. Therefore, for precise selection, use top k, ratio filters, or `[SEP]` and `[SKIP]`.
+
+### Detector captures the background
+
+Increase confidence. For small random objects, use **Mask min area ratio**, for example, `0.01`. For too large erroneous masks, limit **Mask max area ratio**.
+
+### Mask is too small
+
+Increase **Mask erosion (-) / dilation (+)** to `8` or `12`. If the object is offset, try a small x/y offset.
+
+### Mask is too large
+
+Decrease dilation or set a negative value, for example, `-4`. Decrease Respective Field so Inpaint refers less to the surrounding area.
+
+### Mask shifted to the side
+
+Check **Mask x(→) offset** and **Mask y(↑) offset**. Return both values to `0`, then change only one parameter at a time by 5–10 points.
+
+### All found areas merge unexpectedly
+
+Check **Mask merge mode**. With `Merge`, all masks turn into one. With `Merge and Invert`, the processing area is inverted. For independent correction, select `None`.
+
+### Local area changed too much
+
+Decrease denoising strength, Respective Field, and CFG. Check if `Modify Content` is selected, which by code automatically sets the change strength to `1.0`.
+
+### Local area barely changed
+
+Increase denoising strength or use a more suitable prompt. Ensure the mask actually covers the object and `[SKIP]` is not enabled.
+
+### Prompt tab disappeared
+
+This is expected if **Order of Processing** is set to `Before First Enhancement`. The field is shown only for `After Last Enhancement`.
+
+### Separate CFG does not work
+
+Check if **ADetailer use separate CFG scale** is enabled. The slider itself is inactive by default and applies only after checking the box.
+
+### Separate checkpoint does not work
+
+Check if **Use separate checkpoint** is enabled, and if a specific checkpoint is selected instead of `Use same checkpoint`.
+
+### Processing takes too long
+
+Decrease the number of active tabs, disable unnecessary Upscale or Variation, limit top_k, and use a light model like `face_yolov8n.pt` or `hand_yolov8n.pt`.
+
+### Not enough VRAM
+
+Disable separate checkpoint if it is not needed. Decrease the number of active detectors and do not enable multiple heavy models simultaneously. For the first test, use one light model and one object.
+
+## Safe Configuration Order
+
+To avoid changing too many parameters at once, use the following sequence:
+
+1. Select one active tab.
+2. Check the model via **Only detect**.
+3. Enable **Debug ADetailer Masks**.
+4. Adjust confidence.
+5. If necessary, limit top k.
+6. Check min/max area ratio.
+7. Adjust dilation.
+8. Select Method.
+9. Adjust denoising strength and Respective Field.
+10. Add a local prompt.
+11. Run normal Inpaint.
+12. Only after a successful result, add a second tab or a separate model.
+
+## Quick Reference
+
+- Adetailer automatically detects objects and corrects them via local Inpaint.
+- Main application areas: faces, eyes, hands, people, and custom YOLO World classes.
+- Processing is performed after normal generation or for **one** uploaded image.
+- The first detector tab is enabled by default, the rest are disabled.
+- Only a tab with **Enable this tab** checked and a selected model is active simultaneously.
+- `Only detect` shows detection without Inpaint.
+- Empty prompt and negative prompt inherit the main Fooocus fields.
+- `[PROMPT]` adds the main prompt, `[SEP]` separates prompts by masks, `[SKIP]` skips a specific mask.
+- Confidence regulates the detector's confidence filter.
+- Top k limits the number of objects.
+- Area ratio discards areas that are too small or too large.
+- Dilation expands the mask, erosion shrinks it.
+- `Merge` combines masks, `Merge and Invert` additionally inverts them.
+- **Improve Detail** is suitable for faces, hands, and eyes.
+- **Modify Content** is intended for strong content replacement.
+- Separate CFG, checkpoint, and sampler work only after enabling the corresponding checkboxes.
+- Adetailer does not create a separate ZIP with results: the outcome appears in the standard Fooocus gallery.
 
 ## Что делает Adetailer
 ([Read in English](#what-adetailer-does))
@@ -419,7 +1050,7 @@ Adetailer поддерживает два практических сценар�
 
 ### Разница между YOLO и MediaPipe
 
-Для YOLO код вызывает Ultralytics и получает bounding box, уверенность и, если модель сегментационная, более точную маску. Если сегментационной маски нет, используется прямоугольная маска по bounding box. [8]
+Для YOLO код вызывает Ultralytics и получает bounding box, уверенность и, если модель сегментационная, более точную маску. Если сегментационной маски нет, используется прямоугольная маска по bounding box. 
 
 Для MediaPipe используются специальные функции:
 
@@ -428,7 +1059,7 @@ Adetailer поддерживает два практических сценар�
 - `mediapipe_face_mesh` — маска по контуру лица;
 - `mediapipe_face_mesh_eyes_only` — маски глаз.
 
-MediaPipe Mesh не использует обычный прямоугольник лица: код строит полигон по landmarks. Для глаз формируются отдельные области по контуру левого и правого глаза. [9]
+MediaPipe Mesh не использует обычный прямоугольник лица: код строит полигон по landmarks. Для глаз формируются отдельные области по контуру левого и правого глаза.
 
 ### **ADetailer detector classes**
 

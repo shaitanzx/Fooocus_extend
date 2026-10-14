@@ -330,7 +330,7 @@ Range: `1`–`10`, step `1`, default value: `1`.
 
 Determines the kernel size by which the contour is expanded. The setting has an effect only when **Edge Detection** is enabled.
 
-At higher values, the outline becomes thicker and rougher. [3]
+At higher values, the outline becomes thicker and rougher.
 
 ### **Edge Color**
 
@@ -919,7 +919,7 @@ Tolerance расширяет диапазон оттенков вокруг вы
 
 Определяет размер ядра, которым контур расширяется. Настройка имеет эффект только при включённом **Edge Detection**.
 
-При больших значениях обводка становится толще и грубее. [3]
+При больших значениях обводка становится толще и грубее.
 
 ### **Edge Color**
 

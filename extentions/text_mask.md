@@ -201,7 +201,7 @@ Click the button after uploading an image and adding at least one text.
 
 If the image is not uploaded, **Upload an image first!** will appear. If there are no text objects, **Add at least one text object!** will appear.
 
-The preview appears in the **Image with text:** block. [4]
+The preview appears in the **Image with text:** block.
 
 Export includes:
 
@@ -549,7 +549,7 @@ Font Preview не является отдельным экспортом. Он �
 
 Если изображение не загружено, появится **Upload an image first!**. Если текстовых объектов нет, появится **Add at least one text object!**.
 
-Предпросмотр появляется в блоке **Image with text:**. [4]
+Предпросмотр появляется в блоке **Image with text:**.
 
 Экспорт включает:
 

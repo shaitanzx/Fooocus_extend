@@ -5,7 +5,7 @@
 
 ## Where to Open It and What is Needed
 
-1. In Fooocus Extend, expand **`Extention` → `tools` → `Civitai_helper`**. [4]
+1. In Fooocus Extend, expand **`Extention` → `tools` → `Civitai_helper`**.
 2. For regular public Civitai pages, you can start with the model URL. Some files require authorization to download. For such cases, there is a **`Civitai API key`** field and an **`Apply setting`** button at the top of the tab.
 3. If downloading requires a key, create one in your Civitai account and paste it into this field.
 4. Click **`Apply setting`** after pasting. The program will save the key in `civitai_api_key.txt` in the Fooocus Extend working folder and also use it in download requests.
@@ -136,7 +136,7 @@ For the first installation, it is safer to test Helper on a single model:
 
 ## Где открыть и что потребуется
 
-1. В Fooocus Extend раскройте **`Extention` → `tools` → `Civitai_helper`**. [4]
+1. В Fooocus Extend раскройте **`Extention` → `tools` → `Civitai_helper`**.
 2. Для обычных публичных страниц Civitai можно начать с URL модели. Некоторые файлы требуют авторизации для скачивания. Для таких случаев вверху вкладки есть поле **`Civitai API key`** и кнопка **`Apply setting`**.
 3. Если скачивание требует ключ, создайте его в аккаунте Civitai и вставьте в это поле.
 4. Нажмите **`Apply setting`** после вставки. Программа сохранит ключ в `civitai_api_key.txt` в рабочей папке Fooocus Extend, а также использует его в запросах на скачивание.

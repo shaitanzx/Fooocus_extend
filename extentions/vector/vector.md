@@ -132,7 +132,7 @@ ZIP mode exists and is intended for batch processing.
 
 Why a flat archive is needed: the code unpacks the ZIP entirely, but then Vector iterates only over regular files in the top level of its temporary folder. Nested directories are not traversed, and their images will be skipped. Files in the root are not filtered: each of them is passed as an image. A single text file or other service file in the root can stop processing with an error.
 
-Use unique base names. For example, `logo.png` and `logo.jpg` both try to create `logo.svg`; one result can overwrite the other. The same applies to two uploads with the same name: only the last copied file will remain in the temporary folder. [1] [2]
+Use unique base names. For example, `logo.png` and `logo.jpg` both try to create `logo.svg`; one result can overwrite the other. The same applies to two uploads with the same name: only the last copied file will remain in the temporary folder.
 
 ## Where Results Are Located and What You Will Download
 
@@ -305,7 +305,7 @@ SVG не заменяет сгенерированный PNG/JPEG и не доб
 
 Почему нужен именно плоский архив: код распаковывает ZIP целиком, но затем Vector перебирает только обычные файлы в верхнем уровне своей временной папки. Вложенные каталоги не обходятся и их изображения будут пропущены. Файлы в корне не фильтруются: каждый из них передаётся как картинка. Один текстовый файл или иной служебный файл в корне может остановить обработку ошибкой.
 
-Используйте уникальные базовые имена. Например, `logo.png` и `logo.jpg` оба пытаются создать `logo.svg`; один результат способен перезаписать другой. То же касается двух загрузок с одинаковым именем: во временной папке останется только последний скопированный файл. [1] [2]
+Используйте уникальные базовые имена. Например, `logo.png` и `logo.jpg` оба пытаются создать `logo.svg`; один результат способен перезаписать другой. То же касается двух загрузок с одинаковым именем: во временной папке останется только последний скопированный файл.
 
 ## Где лежат результаты и что вы скачаете
 

@@ -127,7 +127,7 @@ Higher values ​​result in less frequent repetition of the mark. This is not 
 6. Monitor the **Process preview** and notifications. For each file, a message appears in the format: `Logo/Watermark Batch: start element generation X/Y. Filename: filename`.
 7. Once processing is complete, save the result from the output area that appears. While running, **Process preview** displays the source image currently being processed rather than the final result with the overlay applied. The list of input files is processed in alphabetical order.
 
-Each result is saved as a PNG file with the suffix `_logo`. For example, `portrait.jpg` becomes `portrait_logo.png`. This suffix is ​​also used in **Watermark** mode. The output is saved in RGB format, so transparency is not preserved in the final result. [2]
+Each result is saved as a PNG file with the suffix `_logo`. For example, `portrait.jpg` becomes `portrait_logo.png`. This suffix is ​​also used in **Watermark** mode. The output is saved in RGB format, so transparency is not preserved in the final result.
 
 If **exactly one file** is processed, the finished image appears in a separate output display area, and the **Download a ZIP file** option is hidden. A ZIP archive is not automatically created for a single result.
 
@@ -306,7 +306,7 @@ Temporary folders containing working input and output files are cleared whenever
 
 Во время работы **Process preview** показывает исходное изображение, которое сейчас обрабатывается, а не уже наложенный результат. Список входных файлов обрабатывается в алфавитном порядке.
 
-Каждый результат сохраняется как PNG с суффиксом `_logo`. Например, для `portrait.jpg` получится `portrait_logo.png`. Суффикс используется и в режиме **Watermark**. Итог сохраняется в RGB, поэтому прозрачность результата не сохраняется. [2]
+Каждый результат сохраняется как PNG с суффиксом `_logo`. Например, для `portrait.jpg` получится `portrait_logo.png`. Суффикс используется и в режиме **Watermark**. Итог сохраняется в RGB, поэтому прозрачность результата не сохраняется.
 
 Если обработан **ровно один файл** - готовое изображение показывается в отдельном выходном поле изображения, а поле **Download a ZIP file** скрывается. ZIP для одного результата автоматически не создаётся.
 
