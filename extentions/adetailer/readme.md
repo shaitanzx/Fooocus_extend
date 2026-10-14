@@ -1,4 +1,224 @@
+## What Adetailer Does
+([Читать на русском языке](#что-делает-adetailer))
+
+`Adetailer` automatically finds faces, eyes, hands, people, or other objects in an image, builds masks for them, and runs local redrawing. Thanks to this, you can fix a face or hands after generation without redrawing the entire picture.
+
+The working principle consists of three stages:
+
+1. Fooocus creates an image or accepts a ready-made image.
+2. The Adetailer detector finds objects and forms masks.
+3. Fooocus performs Inpaint on the found masks with separate text and settings.
+
+In Fooocus Extend, Adetailer is combined with the **Enhance** logic. Therefore, in the interface, it uses some parameters of upscaling and variation, and the image selection tab is named **ADetailer**.
+
+## What is Important to Know in Advance
+
+Adetailer supports two practical scenarios:
+
+- processing a result that Fooocus has just generated;
+- processing **one** uploaded image via the **Use with Adetailer, skips image generation** field.
+
+In the second scenario, Fooocus skips the standard generation and proceeds directly to detection and Inpaint.
+
+## How to Enable Adetailer
+
+On the main page of Fooocus Extend, find the **Adetailer** toggle next to **Input Image** and **Enhance**.
+
+By default, the Adetailer toggle is off. After enabling it, a block with the **ADetailer** tab and extension settings appears.
+
+Inside the block, you will find:
+
+- a tab for selecting the source image;
+- the **Upscale or Variation** tab;
+- several tabs for individual detectors;
+- additional debug parameters in the advanced settings group.
+
+By default, the configuration creates five detector tabs. The first tab is enabled, the rest are disabled.
+
+## Quick First Launch After Generation
+
+This is the easiest way to check that the extension is working.
+
+1. Leave the **Adetailer** toggle off until you have filled in the main prompt and negative prompt.
+2. Enable **Adetailer**.
+3. Open the first detector tab.
+4. Ensure the **Enable this tab (1)** checkbox is checked.
+5. In the **ADetailer detector** field, select a face model, for example, `face_yolov8n.pt` or `face_yolov8s.pt`.
+6. Leave the other parameters at their default values.
+7. Start the generation.
+8. After the main image is created, Fooocus will show the stage **Processing ADetailer ...**.
+9. Wait for it to finish. The detector will find the face, after which Fooocus will redraw the found area.
+
+For the first test, it is better to use one object and one active tab. If you enable multiple detectors at once, processing will take longer, and it will be harder to determine the source of the changes.
+
+## Processing a Single Ready-Made Image
+
+In the input image block, there is the **ADetailer** tab. It contains the field:
+
+> **Use with Adetailer, skips image generation**
+
+Upload a single image there. When launched, Fooocus will skip the base generation, use the uploaded picture as the source, and proceed to Adetailer.
+
+This mode is convenient when an image was created earlier, but you need to fix a face, hands, or another object on it.
+
+Practical order:
+
+1. Enable **Adetailer**.
+2. Open the **ADetailer** tab among the input image fields.
+3. Upload one image.
+4. Fill in the detector settings.
+5. If necessary, set a separate prompt for the object being corrected.
+6. Start processing.
+
+In this mode, the main prompt is used as a fallback text if the separate Adetailer prompt field is left empty.
+
+## General Logic of Detector Tabs
+
+Each detector tab is an independent processing pass. You can enable multiple tabs and, for example, fix a face first, and then hands.
+
+Only tabs where both of the following conditions are met simultaneously are included in active processing:
+
+- the **Enable this tab (...)** checkbox is checked;
+- a model other than `None` is selected in the **ADetailer detector** field.
+
+Inactive tabs are completely skipped. If the detector does not find an object, this tab does not perform Inpaint and moves on.
+
+The order of the tabs matters. Fooocus processes them sequentially. The result of the first tab becomes the input for the next one.
+
+## Top-Level Adetailer Modes
+
+### **Only detect**
+
+The **Only detect** checkbox runs detection and shows a preview result without subsequent Inpaint.
+
+When this mode is enabled, the upscaling method is disabled, but the detector still builds masks and outputs a preview image with the markup of found objects. The actual correction of the face, hand, or other object is not performed.
+
+Use this mode if you need to check:
+
+- whether the model finds the desired object;
+- whether it captures the background;
+- how many objects will be processed;
+- whether the chosen confidence threshold is suitable.
+
+If the detection looks correct, disable **Only detect** and run the processing again.
+
+### **Upscale or Variation** Tab
+
+This is a general additional pass that can be executed along with detectors. It is not a mask detector, but alters the image using upscaling or variation methods.
+
+Parameters of this tab:
+
+- **Upscale or Variation**;
+- **Order of Processing**;
+- **Prompt**.
+
+### **Upscale or Variation:**
+
+The list contains the following options:
+
+- `Disabled`;
+- `Vary (Subtle)`;
+- `Vary (Strong)`;
+- `Upscale (1.5x)`;
+- `Upscale (2x)`;
+- `Final Upscale`.
+
+The standard value is `Disabled`. While this option is selected, a separate upscaling or variation pass is not launched.
+
+`Vary (Subtle)` and `Vary (Strong)` create variants of the source image with different degrees of change. `Upscale (1.5x)` and `Upscale (2x)` increase the image size. `Final Upscale` uses the final Fooocus upscaling mode.
+
+Do not confuse this parameter with mask-based correction. Detectors perform local Inpaint on found areas, while Upscale or Variation works as a separate pass over the image.
+
+### **Order of Processing**
+
+Two options are available:
+
+- `Before First Enhancement` is useful when you need to upscale small details first;
+- `After Last Enhancement` is useful when you need to upscale already large areas after local corrections.
+
+The standard value is `Before First Enhancement`.
+
+If `Before First Enhancement` is selected, the Upscale or Variation pass is executed before the detector tabs. If `After Last Enhancement` is selected, it is executed after the last active detector.
+
+### **Prompt**
+
+This field appears when `After Last Enhancement` is selected for **Order of Processing**.
+
+Available options:
+
+- `Original Prompts`;
+- `Last Filled Enhancement Prompts`.
+
+`Original Prompts` uses the initial prompt and negative prompt. `Last Filled Enhancement Prompts` uses the last filled prompt settings of the processing.
+
+If the processing order is set to `Before First Enhancement`, the **Prompt** field is hidden and its value does not affect the current run.
+
+## Detector Tab Settings
+
+Below are the settings located inside each numbered tab. The suffix at the end of the name depends on the tab: for example, the first tab contains `(1)`, the second contains `(2)`.
+
+### **Enable this tab (1)**
+
+Enables a specific tab. For the second tab, the label will be **Enable this tab (2)**, and so on.
+
+Standard state:
+
+- the first tab is enabled;
+- the other tabs are disabled.
+
+Even if a model is selected, it will not be processed if the tab's checkbox is unchecked. Similarly, a checked checkbox will not activate processing if the model is set to `None`.
+
+Usually, one tab is enough. Enable a second one if you need to sequentially process a different type of object, for example, a face and hands.
+
+### **ADetailer detector**
+
+This is the model responsible for finding objects:
+
+- `deepfashion2_yolov8s-seg.pt` — clothing and fashion objects;
+- `face_yolov8m.pt` — faces;
+- `face_yolov8n.pt` — lightweight face model;
+- `face_yolov8n_v2.pt` — variant of the face model;
+- `face_yolov8s.pt` — larger face model;
+- `hand_yolov8n.pt` — lightweight hand model;
+- `hand_yolov8s.pt` — larger hand model;
+- `person_yolov8m-seg.pt`, `person_yolov8n-seg.pt`, `person_yolov8s-seg.pt` — people;
+- `yolov8l-worldv2.pt`, `yolov8m-worldv2.pt`, `yolov8s-worldv2.pt`, `yolov8x-worldv2.pt` — YOLO World with class selection;
+- `mediapipe_face_full.pt`;
+- `mediapipe_face_short.pt`;
+- `mediapipe_face_mesh.pt`;
+- `mediapipe_face_mesh_eyes_only.pt`.
+
+Choose the model based on the task:
+
+- for faces, use `face_yolov8...` or MediaPipe face;
+- for hands, use `hand_yolov8...`;
+- for the whole person — `person_yolov8...-seg.pt`;
+- for free text classes — YOLO World;
+- for eyes — `mediapipe_face_mesh_eyes_only.pt`.
+
+The value `None` means "do not process this tab". The internal check skips the tab if the model equals `None` or the tab's checkbox is unchecked.
+
+### Difference between YOLO and MediaPipe
+
+For YOLO, the code calls Ultralytics and gets a bounding box, confidence, and, if it is a segmentation model, a more precise mask. If there is no segmentation mask, a rectangular mask based on the bounding box is used. [8]
+
+For MediaPipe, special functions are used:
+
+- `mediapipe_face_short` — short face detection model;
+- `mediapipe_face_full` — full face detection model;
+- `mediapipe_face_mesh` — mask along the face contour;
+- `mediapipe_face_mesh_eyes_only` — eye masks.
+
+MediaPipe Mesh does not use a standard face rectangle: the code builds a polygon based on landmarks. For eyes, separate areas are formed along the contour of the left and right eye. [9]
+
+### **ADetailer detector classes**
+
+This field is hidden for standard detectors and becomes available for YOLO World models.
+
+Enter classes separated by commas. For example:
+
 ## Что делает Adetailer
+([Read in English](#what-adetailer-does))
 
 `Adetailer` автоматически находит лица, глаза, руки, людей или другие объекты на изображении, строит для них маски и запускает локальную перерисовку. Благодаря этому можно исправить лицо или руки после генерации, не перерисовывая всю картинку.
 
