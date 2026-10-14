@@ -1,4 +1,593 @@
+## What Remove Background Does
+([Читать на русском языке](#что-делает-remove-background))
+
+`Remove Background` can separate an object from the background, make the background transparent, substitute a color, image, or video, change the object's position and appearance, and process both images and videos.
+
+## Quick First Launch: Transparent Background on an Image
+
+1. In **Input Type**, leave **Image**.
+2. Upload an image to **Foreground Image**.
+3. In **Output Type**, leave **Image**.
+4. In **Background Mode**, leave **transparent**.
+5. In **Model**, leave **u2net**.
+6. Leave the remaining settings at their default values.
+7. Click **Run GeekyRemB**.
+8. The resulting file will appear in **Result Image**. Download it from the interface and, if necessary, find a copy in the Fooocus results folder.
+
+With default settings, the object is cut out, the result remains in RGBA mode, and transparency is stored in the PNG alpha channel. This is the most straightforward scenario for testing the extension.
+
+> If you save a transparent result as a JPEG, the transparency will disappear: JPEG does not support an alpha channel, and the code converts the result to RGB before saving. For a transparent background, use **Image Format → PNG**.
+
+## How the Interface is Structured
+
+The interface is divided into left and right parts.
+
+On the left, you select the input type and file, start the processing, and set object transformations. On the right, you select the result type, background parameters, and the result window.
+
+Below, in the collapsed **Advanced Settings** section, there are parameters for background removal, chroma key, effects, and saving.
+
+Parameters are not applied equally to all combinations. For example, **Image2Video duration (sec)** is visible when working with an image, but in the actual processor, a fixed duration of 5 seconds is effectively used. Therefore, below, it is specified separately for each setting where it actually works.
+
+## Input and Output Selection
+
+### **Input Type**
+
+Options:
+
+- **Image** — shows the **Foreground Image** field and accepts a single image.
+- **Video** — shows the **Foreground Video** field and accepts a single video.
+
+Default value: **Image**.
+
+- **Foreground Image** — the source image whose foreground needs to be separated from the background. The field is active only when **Input Type → Image**.
+- **Foreground Video** — the source video. The field is active only when **Input Type → Video**.
+
+Video is processed frame by frame. The size, frame rate, and number of frames are taken from the source video. If a background video is present, its frames are adjusted to the size of the source video, and if the background video is shorter than the foreground, the background frames loop.
+
+- **Run GeekyRemB** — the button that starts processing with the current values of all visible settings. It is active in any combination of **Input Type** and **Output Type**, but a useful result will only be obtained if the corresponding input file is present.
+
+Four combinations are supported:
+
+- image → image;
+- video → video;
+- image → video;
+- video → image.
+
+They are described separately below because their duration, quality, and limitations differ.
+
+### **Output Type**
+
+Options:
+
+- **Image** — shows the **Result Image** window;
+- **Video** — shows the **Result Video** window.
+
+Default value: **Image**.
+
+## Foreground Settings
+
+These settings determine how the cut-out object is scaled, rotated, and placed on the canvas. They are available in all four input/output combinations because they are passed to the common image processor for each video frame or single picture.
+
+### **Blend Mode**
+
+Default value: **normal**. The dropdown list contains ten modes:
+
+- **normal** — standard foreground overlay;
+- **multiply** — darkening through color multiplication;
+- **screen** — lightening;
+- **overlay** — contrast overlay;
+- **soft_light** — soft lighting effect;
+- **hard_light** — harsher lighting effect;
+- **difference** — color difference;
+- **exclusion** — a softer version of difference;
+- **color_dodge** — lightening with enhancement of bright areas;
+- **color_burn** — darkening with enhancement of dark areas.
+
+Practically, this mode makes sense with **Background Mode → image**. It is in this branch that the code creates a background image array and applies the chosen blending operation. With a transparent or solid color background, the foreground is inserted in the standard way, so choosing a mode may not yield the expected effect.
+
+For a standard cutout, leave **normal**. For an object on a new background, first achieve the correct mask in `normal` mode, then experiment with `multiply` or `screen`.
+
+### **Opacity**
+
+Range: `0.0` to `1.0`, step `0.01`, default value: `1.0`.
+
+`1.0` preserves full opacity of the foreground within the mask. `0.5` makes the object half-transparent. `0.0` makes it invisible, although the background and additional effects may remain.
+
+The code applies this value to both the foreground and the mask. Therefore, decreasing **Opacity** weakens not only the object's color but also its visible area. This setting works in all modes.
+
+### **Scale**
+
+Range: `0.1`–`5.0`, step `0.1`, default value: `1.0`.
+
+Scales the original foreground and its mask before rotation and insertion into the result:
+
+- `1.0` — original size;
+- `0.5` — half the width and height;
+- `2.0` — double the width and height.
+
+The foreground is centered on the output canvas unless the position is changed. At too large a scale, the object may go beyond the canvas boundaries. This setting works for both images and each video frame.
+
+### **Aspect Ratio**
+
+The field is empty by default. The hint lists options like `16:9`, `4:3`, `1:1`, `portrait`, `landscape`, or an empty value.
+
+The code understands:
+
+- a record with a colon, e.g., `16:9`;
+- a numerical ratio, e.g., `1.7777`;
+- `4:3`, `16:9`, `21:9`, `1:1`;
+- `square`, `portrait`, `landscape`.
+
+If the field is empty or the value is not recognized, the original aspect ratio is preserved. If the value is recognized, the code first calculates the new width based on **Scale**, and then sets the height via the chosen ratio. This changes the foreground geometry and may stretch it. The setting does not change the output canvas size.
+
+For a standard cutout, leave the field empty. Use it only when you consciously want to get a different object format.
+
+### **X Position** and **Y Position**
+
+Both settings have a range from `-1000` to `1000`, step `1`, default value: `0`.
+
+They shift the foreground relative to the center of the output canvas:
+
+- positive **X Position** moves the object to the right;
+- negative **X Position** moves it to the left;
+- positive **Y Position** moves it down;
+- negative **Y Position** moves it up.
+
+They are applied after scaling and rotation. If the object goes beyond the canvas, the excess part is cropped. The settings work in all modes, but with **Background Mode → image** there is an important feature: if the dimensions of the transformed foreground differ from the background image dimensions, the code forcibly resizes the foreground to the canvas size and sets the insertion coordinates to **X Position** and **Y Position**. In such a scenario, part of the **Scale**, **Rotation**, and **Aspect Ratio** effect may be lost.
+
+### **Rotation**
+
+Range: `-360` to `360`, step `0.1`, default value: `0`.
+
+Rotation is performed with BICUBIC interpolation and image expansion, so after rotation, the foreground dimensions may increase. Rotation occurs before calculating insertion coordinates; in practice, check a small angle on a test picture.
+
+The setting works for images and for each video frame. A large angle may increase the object's area so much that the edges will be cropped.
+
+### **Flip Horizontal**
+
+Default value: disabled. When enabled, the object is mirrored left to right along with the mask.
+
+The setting works in all modes. It is useful, for example, if you need to mirror an object or character before compositing.
+
+### **Flip Vertical**
+
+Default value: disabled. When enabled, the object is mirrored top to bottom along with the mask.
+
+The setting also works in all modes.
+
+## Background Settings
+
+### **Remove Background**
+
+Default value: enabled.
+
+When this setting is enabled, the extension obtains the object's alpha mask. When disabled, the mask is forcibly filled with the value 255 across the entire image. This means the **entire source picture** is considered the object, rather than the background automatically becoming transparent.
+
+Therefore, you should disable this setting only for compositing tasks where you want to use the full rectangular source frame as the foreground, for example, when adding an entire image on top of another image. For standard background removal, leave it enabled.
+
+### **Background Mode**
+
+Options:
+
+- **transparent** — transparent canvas;
+- **color** — solid color;
+- **image** — uploaded background image;
+- **video** — uploaded background video.
+
+Default value: **transparent**.
+
+Choosing a mode shows only the field relevant to it:
+
+- **color** shows **Background Color**;
+- **image** shows **Background Image**;
+- **video** shows **Background Video**;
+- **transparent** hides all three fields.
+
+With **transparent**, the result is created as an RGBA canvas with a fully transparent background. With **color**, a canvas of the chosen size and color is created. With **image**, the background picture is stretched to the result size. With **video**, the background frame is substituted for each foreground video frame.
+
+### **Background Color**
+
+Default value: `#000000`. The field is active and visible only when **Background Mode → color**.
+
+The color is entered in HEX format, e.g., `#FFFFFF` for white or `#00FF00` for green. If the value is not a string starting with `#`, the code replaces it with black. If the HEX value has an incorrect format, black is used.
+
+The color is applied as an opaque RGBA background. To preserve transparency, choose **transparent**, not a black color.
+
+### **Background Image**
+
+The field is active and visible only when **Background Mode → image**. It accepts a single image to be used as the background.
+
+The background is scaled to the chosen result size. If you choose **Output Dimension Source → Background**, the result size is taken from this image. Otherwise, the size is usually taken from the foreground, unless custom dimensions are enabled.
+
+For background compositing, first upload an image with sufficient edge margin. If the source object has a different format, stretching the background to the canvas may change its proportions.
+
+### **Background Video**
+
+The field is active and visible only when **Background Mode → video**. It is used when processing video, as well as when converting an image to video.
+
+For foreground video, the code reads the background video frames cyclically. If the foreground clip is longer than the background, the background restarts after the last frame. Each background frame is resized to the foreground video size.
+
+When processing **Image → Video**, the background video is also passed to the processor, but the input foreground frame is first turned into a **5-second** clip at 24 frames/sec (i.e., 120 identical frames), after which processing is applied to it.
+
+## Background Removal Settings
+
+These are located inside the collapsible **Advanced Settings → Removal Settings** section.
+
+### **Model**
+
+Default value: **u2net**. Available models:
+
+- **u2net** — main universal option;
+- **u2netp** — lightweight option, usually useful when speed is important and resource requirements are lower;
+- **u2net_human_seg** — option for human segmentation;
+- **u2net_cloth_seg** — option for clothing segmentation;
+- **silueta** — silhouette model;
+- **isnet-general-use** — universal IS-Net model;
+- **isnet-anime** — option for anime and similar images.
+
+Start with `u2net`. For a portrait, try `u2net_human_seg`. For anime, `isnet-anime`. For clothing or product photography, compare the result with `isnet-general-use`.
+
+### **Output Format**
+
+Options: **RGBA** and **RGB**, default value: **RGBA**.
+
+This is the format of the internal processing result, not the file extension. **RGBA** preserves the alpha channel and is needed for a transparent background. **RGB** removes the alpha channel.
+
+If a non-PNG **Image Format** is selected in the main interface, the code additionally converts the image to RGB before saving. Therefore, the combination of `Output Format → RGBA` and `Image Format → JPEG` does not preserve transparency.
+
+For a transparent result, leave **RGBA** and save as PNG.
+
+### **Alpha Matting**
+
+Default value: disabled.
+
+Alpha Matting attempts to refine the object's boundaries, especially hair, fur, semi-transparent edges, and fine details.
+
+It works only at the mask formation stage. It does not change the background color, replace the background, or affect the object's position. For complex hair, try enabling it, but processing will take longer.
+
+### **Alpha Matting Foreground Threshold**
+
+Range: `0`–`255`, step `1`, default value: `240`.
+
+The threshold is passed only for the **Alpha Matting** mode. If Alpha Matting is disabled, changing this value does nothing.
+
+This is the threshold by which the library refines pixels confidently belonging to the foreground. Do not perceive a higher value as guaranteed to be better. Leave it at `240`, and change it only after checking the edges with Alpha Matting enabled.
+
+### **Alpha Matting Background Threshold**
+
+Range: `0`–`255`, step `1`, default value: `10`.
+
+Like the previous threshold, it is active only with **Alpha Matting**. It is passed as the confident background threshold.
+
+Start with the value `10`. If the result retains too much background around the object or, conversely, eats away the edges, change the thresholds in small steps and compare on the same file.
+
+### **Post Process Mask**
+
+Default value: disabled.
+
+When enabled, custom mask post-processing is performed. In the current extension, this setting works at the background removal stage and is not linked to separate **Mask Blur**, **Mask Expansion**, or **Feather Amount** parameters.
+
+## Chroma Key Settings
+
+Chroma key is the removal of the background by its color, such as a green or blue screen. In the extension, chroma key does not completely replace the model. First, a color range mask may be calculated, then it is combined with the model mask via a logical AND. Therefore, the color must be genuinely recognized, and the model must also highlight the required area.
+
+### **Chroma Key**
+
+Options: **none**, **green**, **blue**, **red**. Default value: **none**.
+
+- **none** — chroma key is disabled, the model mask is used;
+- **green** — searches for the green range;
+- **blue** — searches for the blue range;
+- **red** — searches for the red range.
+
+The setting is active in all modes but is only noticeable when a color matching the actual background is selected.
+
+### **Chroma Threshold**
+
+Range: `0`–`255`, step `1`, default value: `30`.
+
+The code first builds a mask based on the HSV range, then applies an OpenCV threshold. This is not a simple "color similarity percentage". The change affects which pixels of the color range will end up in the final mask.
+
+Start with `30`. If the colored background remains, try changing the value in small steps. If parts of the object of a similar color disappear, revert to less interference or disable chroma key.
+
+### **Color Tolerance**
+
+Range: `0`–`255`, step `1`, default value: `20`.
+
+Tolerance expands the range of shades around the chosen green, blue, or red color. A large value captures more similar shades but increases the risk of removing part of the object.
+
+This setting is used only when **Chroma Key** is different from `none`. For a solid green screen, start with `20`. For unevenly lit backgrounds, you can increase the value, checking the hair and object edges.
+
+## Effects
+
+### **Invert Mask**
+
+Default value: disabled.
+
+A normal mask keeps the selected object visible and makes the background transparent or replaces it with the chosen background. When enabled, the mask is inverted: the selected area becomes hidden, and the rest is preserved.
+
+This is useful if the model highlighted the wrong part of the image or if you want to get the background instead of the object. The setting works in all modes.
+
+### **Feather Amount**
+
+Range: `0`–`100`, step `1`, default value: `0`.
+
+Adds blur to the mask edge via Gaussian Blur. The higher the value, the softer the transition of the object into the background. Too high a value makes the edges blurry and reduces visual accuracy.
+
+Active in all modes and applied after mask inversion and expansion. For a portrait, start with `1`–`3` if the edge looks too harsh.
+
+### **Edge Detection**
+
+Default value: disabled.
+
+When enabled, the code builds a mask contour via Canny and overlays a colored line around the object's edge. This does not improve the selection itself but adds a decorative outline.
+
+The setting works in all modes. If you just need a transparent cutout, leave it disabled.
+
+### **Edge Thickness**
+
+Range: `1`–`10`, step `1`, default value: `1`.
+
+Determines the kernel size by which the contour is expanded. The setting has an effect only when **Edge Detection** is enabled.
+
+At higher values, the outline becomes thicker and rougher. [3]
+
+### **Edge Color**
+
+Default value: `#FFFFFF`. The setting is used only when **Edge Detection** is enabled.
+
+Specify the color in HEX format. If the value is incorrect, the code reverts to white.
+
+### **Shadow**
+
+Default value: disabled.
+
+When enabled, the code creates a black shadow based on the mask and blurs it. The shadow is added after inserting the foreground and before color correction.
+
+The shadow is especially noticeable on a colored background. On a fully transparent background, it is also created but may be perceived as a semi-transparent darkening next to the object.
+
+### **Shadow Blur**
+
+Range: `0`–`20`, step `1`, default value: `5`.
+
+The setting is active only with **Shadow**. It is used twice: to blur the shadow mask and for the final blur of the shadow layer. A large value makes the shadow wide and soft.
+
+### **Shadow Opacity**
+
+Range: `0.0`–`1.0`, step `0.1`, default value: `0.5`.
+
+The setting is active only with **Shadow**. `0.5` creates a semi-transparent black shadow, `1.0` — the densest possible within the mask.
+
+### **Color Adjustment**
+
+Default value: disabled.
+
+When enabled, **Brightness**, **Contrast**, and **Saturation** settings are applied to the final image. This is a general correction of the already assembled result, not just the foreground. Therefore, with an added background, it changes both the object and the background.
+
+### **Brightness**
+
+Range: `0.0`–`2.0`, step `0.1`, default value: `1.0`.
+
+Active only with **Color Adjustment**. `1.0` leaves brightness unchanged. Values less than `1.0` darken, greater than `1.0` lighten.
+
+### **Contrast**
+
+Range: `0.0`–`2.0`, step `0.1`, default value: `1.0`.
+
+Active only with **Color Adjustment**. `1.0` preserves the original contrast. `0.0` practically removes contrast, and values above `1.0` enhance the differences between light and dark.
+
+### **Saturation**
+
+Range: `0.0`–`2.0`, step `0.1`, default value: `1.0`.
+
+Active only with **Color Adjustment**. `0.0` makes colors completely desaturated, `1.0` preserves them, `2.0` enhances saturation.
+
+### **Mask Blur**
+
+Range: `0`–`100`, step `1`, default value: `0`.
+
+Blurs the final mask after **Feather Amount**. This also affects the object's boundary, not the image itself.
+
+If the edge is too harsh, start with a small value. A large value can make the object semi-transparent around the perimeter.
+
+### **Mask Expansion**
+
+Range: `-100` to `100`, step `1`, default value: `0`.
+
+Changes the mask size via a morphological operation:
+
+- a positive value expands the mask and can return thin edges;
+- a negative value shrinks the mask and can remove a background halo.
+
+The value is used as the size of a square kernel. With too large a positive value, the background may get inside the selection; with too large a negative value, parts of the object will disappear. The setting works in all modes.
+
+## Output Settings
+
+### **Image Format**
+
+Options: **PNG**, **JPEG**, **WEBP**. Default value: **PNG**.
+
+The setting is used when the result is an image, i.e., in **Image → Image** and **Video → Image** combinations.
+
+- **PNG** — the best option for transparency; preserves the alpha channel with `Output Format → RGBA`.
+- **JPEG** — does not support transparency; before saving, the result is converted to RGB and saved with 95 quality.
+- **WEBP** — the file extension changes to `.webp`, but the code also converts the result to RGB because any value other than PNG goes through `convert("RGB")`. Therefore, in the current implementation, you should not rely on a transparent WEBP.
+
+### **Video Format**
+
+Options: **MP4**, **AVI**, **MOV**. Default value: **MP4**.
+
+The setting applies only when outputting video, i.e., in **Video → Video** and **Image → Video** combinations.
+
+For MP4, the processor creates an intermediate MP4. For AVI and MOV, the code runs FFmpeg with the H.264 video codec and changes the result extension. The container and actual compatibility of AVI/MOV depend on FFmpeg and the player, so for the first launch, leave MP4.
+
+### **Video Quality**
+
+Range: `0`–`100`, step `1`, default value: `95`.
+
+In the current code, the setting is used only when selecting a **Video Format** other than MP4. The value is converted to CRF by the formula `20 - quality / 5`: at higher quality, CRF is lower, and the file size is usually larger.
+
+For MP4 by default, this setting is not passed to the main FFmpeg pass, so changing the slider may have no effect. Leave it at `95` unless you need to experiment with AVI or MOV.
+
+### **Use Custom Dimensions**
+
+Default value: disabled.
+
+When enabled, **Custom Width** and **Custom Height** are shown, and **Output Dimension Source** is hidden. When disabled, the opposite occurs.
+
+When the setting is enabled and both numbers are set, the code uses them as the width and height of the final canvas. These dimensions are applied to the image and video frames via the common processor. If the dimensions are too small for the object, it may be cropped.
+
+### **Custom Width** and **Custom Height**
+
+Default value for each field: `512`. The fields are active only with **Use Custom Dimensions**.
+
+Enter positive dimensions in pixels. The code converts them to integers. To keep the original size, leave **Use Custom Dimensions** disabled.
+
+### **Output Dimension Source**
+
+Options: **Foreground** and **Background**, default value: **Foreground**. The field is visible only when **Use Custom Dimensions** is disabled.
+
+- **Foreground** — canvas size is taken from the original foreground;
+- **Background** — size is taken from the background image, if uploaded.
+
+For a transparent or color background, usually use **Foreground**. For compositing onto a background picture, choose **Background** to preserve its resolution. If **Background** is selected but there is no background image, the code reverts to the foreground size. For video, the output size must still be compatible with the input video size.
+
+## Four Supported Processing Modes
+
+### Image → Image
+
+This is the main background removal mode.
+
+1. Select **Input Type → Image**.
+2. Upload a single file to **Foreground Image**.
+3. Select **Output Type → Image**.
+4. Configure the background and mask parameters.
+5. Select **Image Format**.
+6. Click **Run GeekyRemB**.
+
+The code processes one picture, saves the result to a temporary file inside the Fooocus output directory, and shows the path as **Result Image**. The file is created in the standard output directory of the Fooocus configuration.
+
+### Video → Video
+
+1. Select **Input Type → Video**.
+2. Upload a single file to **Foreground Video**.
+3. Select **Output Type → Video**.
+4. If necessary, select **Background Mode → video** and upload **Background Video**.
+5. If necessary, change **Video Format**.
+6. Click **Run GeekyRemB**.
+
+Foreground video frames are read sequentially and processed through the common background removal procedure. The background video is synchronized by frame index and loops if it is shorter. The result is first recorded via OpenCV into an intermediate MP4, then moved via FFmpeg to the output file.
+
+The audio track is not processed within the frame-by-frame removal. In the local launch function for video → video, an FFmpeg command is then executed that attempts to take the video from the processed result, and the audio and subtitles from the original foreground video. This means the sound may be preserved, but the outcome depends on the stream support of the original container and the installed FFmpeg.
+
+For the first test, use a short clip without complex sound and leave **Video Format → MP4**.
+
+### Image → Video
+
+This mode turns a single picture into a short clip.
+
+1. Select **Input Type → Image**.
+2. Upload the image.
+3. Select **Output Type → Video**.
+4. If necessary, select **Background Mode → video**.
+5. Click **Run GeekyRemB**.
+
+The actual implementation creates 120 identical frames at 24 frames/sec, i.e., a clip approximately **5 seconds** long. This is despite the presence of the **Image2Video duration (sec)** slider with a range of `0`–`600` and a default of `5`.
+
+If **video** mode is selected, a single image is used as the foreground of each frame, and the background video frames loop. If the background is transparent or colored, the identical foreground frame is processed 120 times.
+
+### Video → Image
+
+1. Select **Input Type → Video**.
+2. Upload the video.
+3. Select **Output Type → Image**.
+4. Select **Image Format**.
+5. Click **Run GeekyRemB**.
+
+The code reads **only the first frame** of the video and processes it as a regular image. This is not an export of the entire video sequence or the creation of a frame gallery. The result is saved as a single image file.
+
+## Practical Scenarios
+
+### Cut out a person into a transparent PNG
+Select **Image → Image**, **Background Mode → transparent**, enable **Remove Background**, **Model → u2net_human_seg** or `u2net`, **Output Format → RGBA**, **Image Format → PNG**. If hair edges are too rough, enable **Alpha Matting** and try a small **Feather Amount**.
+
+### Cut out a product and place on a white background
+Select **Background Mode → color**, set **Background Color → #FFFFFF**, leave **Output Dimension Source → Foreground**. Start with `Scale 1.0` and `Opacity 1.0`. If a halo remains around the edge, try slightly decreasing **Mask Expansion**, for example to `-1` or `-2`, checking that the product edges do not disappear.
+
+### Replace a green screen
+Select **Background Mode → transparent** or **image**, and in **Chroma Key** select **green**. Leave `Chroma Threshold 30` and `Color Tolerance 20` for the first test. Increase tolerance only if the background is unevenly lit. If the green color is present on clothing or the object, chroma key may remove it too; in this case, compare the result with **Chroma Key → none**.
+
+### Place an object on another image
+Select **Background Mode → image**, upload **Background Image**, select **Output Dimension Source → Background**, leave **Blend Mode → normal**. After achieving the correct composition, try **X Position**, **Y Position**, and **Scale**. Remember that in the background image branch, the code may forcibly stretch the transformed foreground to the canvas dimensions, so check complex rotation and scale combinations on a single file.
+
+### Make a short video from an image
+Select **Input Type → Image**, **Output Type → Video**, upload the picture, and leave **Video Format → MP4**. The result will be about 5 seconds, regardless of changing **Image2Video duration (sec)** in this version. If a different duration is needed, an external video editor or modification of the extension's source code is required.
+
+## What Happens to the Result
+
+Image → Image is saved as a temporary file in the Fooocus output directory with an extension corresponding to **Image Format**. For PNG, the alpha channel is used if the result remains RGBA. The result is shown in **Result Image**.
+
+Video → Video and Image → Video return a file to **Result Video**. The video is created via OpenCV and FFmpeg. When choosing MP4, this is the most tested path.
+
+Video → Image returns a single file of the first frame to **Result Image**. The remaining frames are not saved.
+
+## What Transparency Means
+
+Transparency is the image's alpha channel. In a viewer, it often looks like a checkerboard background, but the checkerboard pattern is not part of the PNG.
+
+To preserve transparency, the following are required simultaneously:
+
+- **Background Mode → transparent**;
+- **Output Format → RGBA**;
+- **Image Format → PNG**.
+
+If you choose **color**, the background becomes opaque. If you choose JPEG or another non-PNG format, the current code converts the result to RGB.
+
+## Troubleshooting
+
+### The extension does not start or the model does not download
+Check internet access on the first launch and available disk space. Select the standard `u2net` model and retry on a small image.
+
+### The entire background remains
+Ensure **Remove Background** is enabled. If it is disabled, the code specifically creates a fully white mask and considers the entire picture as the foreground. Then check the model: for a person, try `u2net_human_seg`, for anime, `isnet-anime`.
+
+### Parts of clothing or hair disappear along with the object
+Reduce chroma key interference by setting **Chroma Key → none** if a colored background is not needed. Then try a different model and enable **Alpha Matting**. Do not increase **Mask Expansion**: positive expansion may add background to the object, while negative expansion may eat away the edges.
+
+### A halo appears around the edge
+Try a small negative value for **Mask Expansion** and a small **Mask Blur** or **Feather Amount**. Check changes at 100% scale. If the halo is colored, it may be a consequence of the original background, not just the mask.
+
+### Transparent PNG turned black or white
+Check the entire chain: **Background Mode → transparent**, **Output Format → RGBA**, **Image Format → PNG**. Choosing `color` creates an opaque colored background, and JPEG cannot save an alpha channel.
+
+### The background was substituted, but the object looks stretched
+Check **Aspect Ratio** and leave the field empty. With **Background Mode → image**, the code fits the background to the canvas, and in some cases, also fits the transformed foreground to the background image dimensions. Start with **Scale 1.0**, **Rotation 0**, empty **Aspect Ratio**, and **Blend Mode → normal**.
+
+### Selecting Video → Image resulted in only one frame
+This is expected behavior. The **Video → Image** branch reads and processes only the first frame. To process the entire video, select **Output Type → Video**.
+
+### The video has no sound or AVI/MOV won't open
+Leave **Video Format → MP4** and check a short source clip. The video is assembled via OpenCV and FFmpeg, and additional streams depend on FFmpeg commands and the original container. If necessary, save the original audio track separately and merge it with the result in an external video editor.
+
+### The object is cropped at the edges
+Decrease **Scale**, cancel rotation, or change **X Position** and **Y Position**. If **Use Custom Dimensions** is used, increase **Custom Width** and **Custom Height**. Remember that the object is centered on the canvas, and any part beyond its boundaries is cropped.
+
+## Recommended Setup Order
+
+To avoid confusion, change parameters in this order:
+
+1. First, select the correct **Input Type** and **Output Type**.
+2. Determine the background: `transparent`, `color`, `image`, or `video`.
+3. Leave the standard model and check the base mask.
+4. If the mask is inaccurate, change the **Model**, then try **Alpha Matting**.
+5. If there is a colored screen, separately configure **Chroma Key** and **Color Tolerance**.
+6. Only after that, use **Mask Expansion**, **Feather Amount**, and **Mask Blur**.
+7. Then set the object's scale, position, and rotation.
+8. Finally, add the outline, shadow, color correction, and blend mode.
+9. For final saving, check the format: transparency almost always means PNG + RGBA.
+
 ## Что делает Remove Background
+([Read in English](#what-remove-background-does))
 
 `Remove Background` умеет отделять объект от фона, делать прозрачный фон, подставлять цвет, изображение или видео, менять положение и внешний вид объекта, а также обрабатывать изображения и видео.
 
