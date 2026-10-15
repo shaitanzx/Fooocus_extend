@@ -628,6 +628,7 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 v9.3.6
  1. Add Caption tool
+ 2. Buttons have been added to navigate to the description of each extension
 
 v9.3.5
  1. Eraser tool when drawing masks in Inpaint and Clear modes
