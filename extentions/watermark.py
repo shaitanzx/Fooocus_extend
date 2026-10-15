@@ -7,6 +7,7 @@ from PIL import Image
 import math
 import extentions.batch as batch
 import modules.config
+from extentions.tutorial import tutorial
 temp_dir=modules.config.temp_path+os.path.sep
 
 def calculate_logo_size(image_size, logo_original_size, target_ratio=0.1):
@@ -289,12 +290,14 @@ def watermark():
             return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
         else:
             return gr.update (visible=False),gr.update(visible=True)
+    #with gr.Row():
     with gr.Row():
         logo_mode=gr.Radio(
-                choices=["Logo", "Watermark"],
-                value="Logo",
-                label="Select Paste Mode"
-                )
+            choices=["Logo", "Watermark"],
+            value="Logo",
+            label="Select Paste Mode"
+            )
+        tutorial("watermark.md")
     with gr.Row():
         with gr.Column():
             with gr.Row():

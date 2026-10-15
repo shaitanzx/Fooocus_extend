@@ -1,0 +1,591 @@
+import os
+import time
+import logging
+from datetime import datetime
+from pathlib import Path
+from dataclasses import dataclass
+from typing import Optional
+
+from PIL import Image
+from tqdm import tqdm
+
+from .utils.download import download_models
+from .utils.image import get_image_paths
+from .utils.inference import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT_WITHOUT_WD, DEFAULT_USER_PROMPT_WITH_WD
+from .utils.inference import get_caption_file_path, LLM, Tagger, save_florence_visualization,PixAITagger
+
+DEFAULT_MODELS_SAVE_PATH = str(os.path.join(os.getcwd(), "models"))
+
+
+class IsolatedLogger:
+    
+    def __init__(self, name: str = "caption_module", level: str = "INFO", log_file: str = None):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(getattr(logging, level.upper(), logging.INFO))
+        
+        self.logger.handlers.clear()
+        
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
+        if log_file:
+            file_handler = logging.FileHandler(log_file, encoding='utf-8')
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
+        
+        self.logger.propagate = False
+
+@dataclass
+class CaptionConfig:
+    data_path: str = ""
+    recursive: bool = False
+    log_level: str = "INFO"
+    save_logs: bool = False
+    model_site: str = "huggingface"
+    models_save_path: str = DEFAULT_MODELS_SAVE_PATH
+    use_sdk_cache: bool = False
+    download_method: str = "SDK"
+    force_download: bool = False
+    skip_download: bool = False
+    caption_method: str = "wd+llm"
+    run_method: str = "sync"
+    caption_extension: str = ".txt"
+    save_caption_together: bool = False
+    save_caption_together_seperator: str = "|"
+    image_size: int = 1024
+    skip_exists: bool = False
+    not_overwrite: bool = False
+    custom_caption_save_path: Optional[str] = None
+    
+    # WD Args
+    tagger_type: str = "wd"
+    wd_config: Optional[str] = None
+    wd_model_name: Optional[str] = None
+    wd_force_use_cpu: bool = False
+    wd_caption_extension: str = ".wdcaption"
+    wd_remove_underscore: bool = False
+    wd_undesired_tags: str = ""
+    wd_tags_frequency: bool = False
+    wd_threshold: float = 0.35
+    wd_general_threshold: Optional[float] = None
+    wd_character_threshold: Optional[float] = None
+    wd_add_rating_tags_to_first: bool = False
+    wd_add_rating_tags_to_last: bool = False
+    wd_character_tags_first: bool = False
+    wd_always_first_tags: Optional[str] = None
+    wd_caption_separator: str = ", "
+    wd_tag_replacement: Optional[str] = None
+    wd_character_tag_expand: bool = False
+
+    pixai_mode: str = "simple"
+    pixai_threshold: float = 0.17
+    pixai_character_threshold: float = 0.27
+    pixai_general_threshold: float = 0.17
+    pixai_style_threshold: float = 0.17
+    pixai_copyright_threshold: float = 0.24
+    pixai_meta_threshold: float = 0.17
+    pixai_rating_threshold: float = 0.41
+    pixai_replace_underscore: bool = False
+    pixai_trailing_comma: bool = False
+    pixai_exclude_tags: str = ""
+    
+    # LLM Args
+    llm_choice: str = "llama"
+    llm_config: Optional[str] = None
+    llm_model_name: Optional[str] = None
+    llm_patch: bool = False
+    llm_use_cpu: bool = False
+    llm_dtype: str = "fp16"
+    llm_qnt: str = "none"
+    llm_caption_extension: str = ".llmcaption"
+    llm_read_wd_caption: bool = False
+    llm_caption_without_wd: bool = False
+    llm_system_prompt: str = DEFAULT_SYSTEM_PROMPT
+    llm_user_prompt: str = DEFAULT_USER_PROMPT_WITHOUT_WD
+    llm_temperature: float = 0.0
+    llm_max_tokens: int = 0
+
+    florence_task: str = "More Detailed Caption"
+    florence_text_input: str = ""
+
+class Caption:
+    def __init__(self):
+        self.use_wd = False
+
+        self.use_pixai = False
+        self.pixai_model_path = None
+
+        self.use_joy = False
+        self.use_llama = False
+        self.use_qwen = False
+        self.use_minicpm = False
+        self.use_florence = False
+
+        self.my_logger = None
+        self.wd_model_path = None
+        self.wd_tags_csv_path = None
+        self.llm_models_paths = None
+        self.my_tagger = None
+        self.my_llm = None
+
+    def check_path(self, config: CaptionConfig):
+        if not config.data_path:
+            print(f"`data_path` not defined, use `--data_path` add your datasets path!!!")
+            raise ValueError
+        if not os.path.exists(config.data_path):
+            print(f"`{config.data_path}` not exists!!!")
+            raise FileNotFoundError
+
+    def set_logger(self, config: CaptionConfig):
+
+        if config.save_logs:
+            workspace_path = os.getcwd()
+            data_dir_path = Path(config.data_path)
+            log_file_path = data_dir_path.parent if os.path.exists(data_dir_path.parent) else workspace_path
+
+            if config.custom_caption_save_path:
+                log_file_path = Path(config.custom_caption_save_path)
+
+            log_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+            if os.path.exists(data_dir_path):
+                log_name = os.path.basename(data_dir_path)
+            else:
+                print(f'{data_dir_path} NOT FOUND!!!')
+                raise FileNotFoundError
+
+            log_file = f'Caption_{log_name}_{log_time}.log' if log_name else f'test_{log_time}.log'
+            log_file = os.path.join(log_file_path, log_file) \
+                if os.path.exists(log_file_path) else os.path.join(os.getcwd(), log_file)
+        else:
+            log_file = None
+
+        self.my_logger = IsolatedLogger(
+            name="caption_module",
+            level=config.log_level,
+            log_file=log_file
+        ).logger
+        
+        self.my_logger.info(f'Log level set to "{config.log_level}"')
+        
+        if config.save_logs:
+            self.my_logger.info(f'Log file will be saved as "{log_file}".')
+
+    def download_models(self, config: CaptionConfig):
+        self.use_wd = True if config.caption_method in ["wd", "wd+llm"] else False
+        self.use_joy = True if config.caption_method in ["llm", "wd+llm"] and config.llm_choice == "joy" else False
+        self.use_llama = True if config.caption_method in ["llm", "wd+llm"] and config.llm_choice == "llama" else False
+        self.use_qwen = True if config.caption_method in ["llm", "wd+llm"] and config.llm_choice == "qwen" else False
+        self.use_minicpm = True if config.caption_method in ["llm", "wd+llm"] and config.llm_choice == "minicpm" else False
+        self.use_florence = True if config.caption_method in ["llm", "wd+llm"] and config.llm_choice == "florence" else False
+
+        if os.path.exists(Path(config.models_save_path)):
+            models_save_path = Path(config.models_save_path)
+        else:
+            self.my_logger.warning(
+                f"Models save path not defined or not exists, will download models into `{DEFAULT_MODELS_SAVE_PATH}`...")
+            models_save_path = Path(DEFAULT_MODELS_SAVE_PATH)
+
+        if self.use_wd:
+            wd_config_file = (
+                Path(config.wd_config)
+                if config.wd_config
+                else Path(__file__).parent / "configs" / "default_wd.json"
+            )
+            wd_download_result = download_models(
+                logger=self.my_logger,
+                models_type="wd",
+                args=config,
+                config_file=wd_config_file,
+                models_save_path=models_save_path,
+            )
+
+            if config.tagger_type == "pixai":
+                self.use_pixai = True
+                self.pixai_model_path = wd_download_result[0]
+                self.wd_model_path = None
+                self.wd_tags_csv_path = None
+            else:
+                self.use_pixai = False
+                self.wd_model_path, self.wd_tags_csv_path = wd_download_result
+
+        if self.use_joy:
+            llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_joy.json')
+            self.llm_models_paths = download_models(
+                logger=self.my_logger, models_type="joy", args=config,
+                config_file=llm_config_file, models_save_path=models_save_path,
+            )
+        elif self.use_llama:
+            llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_llama_3.2V.json')
+            self.llm_models_paths = download_models(
+                logger=self.my_logger, models_type="llama", args=config,
+                config_file=llm_config_file, models_save_path=models_save_path,
+            )
+        elif self.use_qwen:
+            llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_qwen2_vl.json')
+            self.llm_models_paths = download_models(
+                logger=self.my_logger, models_type="qwen", args=config,
+                config_file=llm_config_file, models_save_path=models_save_path,
+            )
+        elif self.use_minicpm:
+            llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_minicpm.json')
+            self.llm_models_paths = download_models(
+                logger=self.my_logger, models_type="minicpm", args=config,
+                config_file=llm_config_file, models_save_path=models_save_path,
+            )
+        elif self.use_florence:
+            llm_config_file = Path(config.llm_config) if config.llm_config else os.path.join(Path(__file__).parent, 'configs', 'default_florence.json')
+            self.llm_models_paths = download_models(
+                logger=self.my_logger, models_type="florence", args=config,
+                config_file=llm_config_file, models_save_path=models_save_path,
+            )
+
+    def load_models(self, config: CaptionConfig):
+        if self.use_wd:
+            if self.use_pixai:
+                self.my_tagger = PixAITagger(
+                    logger=self.my_logger,
+                    args=config,
+                    model_path=self.pixai_model_path,
+                )
+            else:
+                self.my_tagger = Tagger(
+                    logger=self.my_logger,
+                    args=config,
+                    model_path=self.wd_model_path,
+                    tags_csv_path=self.wd_tags_csv_path,
+                )
+
+            self.my_tagger.load_model()
+
+        if self.use_joy:
+            self.my_llm = LLM(logger=self.my_logger, models_type="joy", models_paths=self.llm_models_paths, args=config)
+            self.my_llm.load_model()
+
+        elif self.use_qwen:
+            self.my_llm = LLM(logger=self.my_logger, models_type="qwen", models_paths=self.llm_models_paths, args=config)
+            self.my_llm.load_model()
+
+        elif self.use_florence:
+            self.my_llm = LLM(logger=self.my_logger, models_type="florence", models_paths=self.llm_models_paths, args=config)
+            self.my_llm.load_model()
+
+    def iter_inference(self, config: CaptionConfig):
+        start_inference_time = time.monotonic()
+
+        image_paths = get_image_paths(
+            logger=self.my_logger,
+            path=Path(config.data_path),
+            recursive=config.recursive,
+        )
+        total_images = len(image_paths)
+
+        image_number_by_path = {
+            str(image_path): index
+            for index, image_path in enumerate(image_paths, start=1)
+        }
+
+        def add_progress_info(path_iterator):
+            for event in path_iterator:               
+                image_number, event_total, image_path = event
+                yield (
+                    image_number,
+                    total_images,
+                    str(image_path),
+                )
+
+        if self.use_wd and config.caption_method == "wd+llm":
+            if config.llm_user_prompt == DEFAULT_USER_PROMPT_WITHOUT_WD:
+                if not config.llm_caption_without_wd:
+                    self.my_logger.warning(
+                        "LLM user prompt not defined, using default version with wd tags..."
+                    )
+                    config.llm_user_prompt = DEFAULT_USER_PROMPT_WITH_WD
+
+            if config.run_method == "sync":
+                self.my_logger.info("Running in sync mode...")
+                pbar = tqdm(total=total_images, smoothing=0.0)
+
+                for image_number, image_path in enumerate(image_paths, start=1):
+                    try:
+                        pbar.set_description(f'Processing: {os.path.basename(image_path)}')
+
+                        wd_caption_file = get_caption_file_path(
+                            self.my_logger,
+                            data_path=config.data_path,
+                            image_path=Path(image_path),
+                            custom_caption_save_path=config.custom_caption_save_path,
+                            caption_extension=config.wd_caption_extension,
+                        )
+
+                        llm_caption_file = get_caption_file_path(
+                            self.my_logger,
+                            data_path=config.data_path,
+                            image_path=Path(image_path),
+                            custom_caption_save_path=config.custom_caption_save_path,
+                            caption_extension=(
+                                config.llm_caption_extension
+                                if config.save_caption_together
+                                else config.caption_extension
+                            ),
+                        )
+
+                        wd_will_run = not (
+                            config.skip_exists
+                            and os.path.isfile(wd_caption_file)
+                        )
+                        llm_will_run = not (
+                            config.skip_exists
+                            and os.path.isfile(llm_caption_file)
+                        )
+
+                        if wd_will_run or llm_will_run:
+                            yield image_number, total_images, str(image_path)
+
+                        image = Image.open(image_path)
+                        tag_text = ""
+                        caption = ""
+                        visualization = None
+
+                        if wd_will_run:
+                            tag_text, rating_tag_text, character_tag_text, general_tag_text = (
+                                self.my_tagger.get_tags(image=image)
+                            )
+
+                            if not (config.not_overwrite and os.path.isfile(wd_caption_file)):
+                                with open(wd_caption_file,"wt",encoding="utf-8") as f:
+                                    f.write(tag_text + "\n")
+                            else:
+                                self.my_logger.warning(
+                                    f"`not_overwrite` ENABLED!!! "
+                                    f"WD Caption file {wd_caption_file} "
+                                    f"already exist, Skip save caption."
+                                )
+
+                            self.my_logger.debug(f"Image path: {image_path}")
+                            self.my_logger.debug(f"WD Caption path: {wd_caption_file}")
+
+                            if (config.wd_model_name and config.wd_model_name.lower().startswith("wd")):
+                                self.my_logger.debug(f"WD Rating tags: {rating_tag_text}")
+                                self.my_logger.debug(f"WD Character tags: {character_tag_text}")
+
+                            self.my_logger.debug(f"WD General tags: {general_tag_text}")
+                        else:
+                            self.my_logger.warning(
+                                f"`skip_exists` ENABLED!!! "
+                                f"WD Caption file {wd_caption_file} already exists, "
+                                f"Skip save it!"
+                            )
+
+                        if llm_will_run:
+                            if self.use_florence:
+                                caption, visualization = self.my_llm.get_florence_result(
+                                    image=image,
+                                    task_name=config.florence_task,
+                                    text_input=config.florence_text_input,
+                                    max_token=config.llm_max_tokens,
+                                )
+                            else:
+                                caption = self.my_llm.get_caption(
+                                    image=image,
+                                    system_prompt=str(config.llm_system_prompt),
+                                    user_prompt=str(
+                                        config.llm_user_prompt
+                                    ).format(wd_tags=tag_text),
+                                    temperature=config.llm_temperature,
+                                    max_new_tokens=config.llm_max_tokens,
+                                )
+
+                            if not (
+                                config.not_overwrite
+                                and os.path.isfile(llm_caption_file)
+                            ):
+                                with open(llm_caption_file,"wt",encoding="utf-8") as f:
+                                    f.write(caption + "\n")
+
+                                self.my_logger.debug(f"Image path: {image_path}")
+                                self.my_logger.debug(f"LLM Caption path: {llm_caption_file}")
+                                self.my_logger.debug(f"LLM Caption content: {caption}")
+                            else:
+                                self.my_logger.warning(
+                                    f"`not_overwrite` ENABLED!!! "
+                                    f"LLM Caption file {llm_caption_file} "
+                                    f"already exist, skip save it!"
+                                )
+
+                            save_florence_visualization(
+                                visualization=visualization,
+                                caption_file=llm_caption_file,
+                                not_overwrite=config.not_overwrite,
+                            )
+
+                        else:
+                            self.my_logger.warning(
+                                f"`skip_exists` ENABLED!!! "
+                                f"LLM Caption file {llm_caption_file} "
+                                f"already exists, Skip save it!"
+                            )
+
+                        if config.save_caption_together:
+                            together_caption_file = get_caption_file_path(
+                                self.my_logger,
+                                data_path=config.data_path,
+                                image_path=Path(image_path),
+                                custom_caption_save_path=config.custom_caption_save_path,
+                                caption_extension=config.caption_extension,
+                            )
+
+                            self.my_logger.debug(
+                                "`save_caption_together` Enabled, "
+                                "will save WD tags and LLM captions in a new file "
+                                f"`{together_caption_file}`"
+                            )
+
+                            if not (config.skip_exists and os.path.isfile(together_caption_file)):
+                                if not tag_text or not caption:
+                                    self.my_logger.warning(
+                                        "WD tags or LLM Caption is null, "
+                                        "skip save them together in one file!"
+                                    )
+                                    pbar.update(1)
+                                    continue
+
+                                if not (config.not_overwrite and os.path.isfile(together_caption_file)):
+                                    with open(together_caption_file,"wt",encoding="utf-8") as f:
+                                        together_caption = (
+                                            f"{tag_text} "
+                                            f"{config.save_caption_together_seperator} "
+                                            f"{caption}"
+                                        )
+                                        f.write(together_caption + "\n")
+
+                                    self.my_logger.debug(
+                                        "Together Caption save path: "
+                                        f"{together_caption_file}"
+                                    )
+                                    self.my_logger.debug(f"Together Caption content: {together_caption}")
+                                else:
+                                    self.my_logger.warning(
+                                        "`not_overwrite` ENABLED!!! "
+                                        f"Together Caption file {together_caption_file} "
+                                        "already exist, skip save it!"
+                                    )
+                            else:
+                                self.my_logger.warning(
+                                    "`skip_exists` ENABLED!!! "
+                                    f"Together Caption file {together_caption_file} "
+                                    "already exists, skip save it!"
+                                )
+
+                    except Exception as e:
+                        self.my_logger.error(
+                            f"Failed to caption image: {image_path}, "
+                            f"skip it.\nerror info: {e}"
+                        )
+                        pbar.update(1)
+                        continue
+
+                    pbar.update(1)
+
+                pbar.close()
+
+                if config.wd_tags_frequency:
+                    sorted_tags = sorted(
+                        self.my_tagger.tag_freq.items(),
+                        key=lambda x: x[1],
+                        reverse=True,
+                    )
+                    self.my_logger.info("WD Tag frequencies:")
+                    for tag, freq in sorted_tags:
+                        self.my_logger.info(f"{tag}: {freq}")
+
+            else:
+                self.my_logger.info("Running in queue mode...")
+                pbar = tqdm(total=2, smoothing=0.0)
+
+                pbar.set_description("Processing with WD model...")
+                yield from add_progress_info(self.my_tagger.iter_inference())
+                pbar.update(1)
+
+                if self.use_joy:
+                    pbar.set_description("Processing with Joy model...")
+                elif self.use_qwen:
+                    pbar.set_description("Processing with Qwen model...")
+                elif self.use_florence:
+                    pbar.set_description("Processing with Florence model...")
+
+                yield from add_progress_info(self.my_llm.iter_inference())
+                pbar.update(1)
+                pbar.close()
+
+        else:
+            if self.use_wd:
+                yield from add_progress_info(self.my_tagger.iter_inference())
+            elif (
+                self.use_joy
+                or self.use_llama
+                or self.use_qwen
+                or self.use_minicpm
+                or self.use_florence
+            ):
+                yield from add_progress_info(self.my_llm.iter_inference())
+
+        total_inference_time = time.monotonic() - start_inference_time
+        days = total_inference_time // (24 * 3600)
+        total_inference_time %= 24 * 3600
+        hours = total_inference_time // 3600
+        total_inference_time %= 3600
+        minutes = total_inference_time // 60
+        seconds = total_inference_time % 60
+
+        days = f"{days:.0f} Day(s) " if days > 0 else ""
+        hours = (
+            f"{hours:.0f} Hour(s) "
+            if hours > 0 or (days and hours == 0)
+            else ""
+        )
+        minutes = (
+            f"{minutes:.0f} Min(s) "
+            if minutes > 0 or (hours and minutes == 0)
+            else ""
+        )
+        seconds = f"{seconds:.2f} Sec(s)"
+
+        self.my_logger.info(
+            f"All work done with in {days}{hours}{minutes}{seconds}."
+        )
+
+    def unload_models(self):
+        tagger = self.my_tagger
+        llm = self.my_llm
+
+        self.my_tagger = None
+        self.my_llm = None
+
+        try:
+            if tagger is not None:
+                tagger.unload_model()
+        finally:
+            if llm is not None:
+                llm.unload_model()
+
+        self.wd_model_path = None
+        self.wd_tags_csv_path = None
+        self.pixai_model_path = None
+        self.use_pixai = False
+        self.llm_models_paths = None
+
+        del tagger, llm
+
+        import gc
+        gc.collect()
+
+
+    def run_inference(self, config: CaptionConfig):
+        for _event in self.iter_inference(config):
+            pass

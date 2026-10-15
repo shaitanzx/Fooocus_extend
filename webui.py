@@ -73,6 +73,10 @@ import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
 import extentions.omost.main as omost
 from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
+
+import extentions.caption.gui as caption
+from extentions.tutorial import tutorial
+
 choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
 choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
 
@@ -834,8 +838,6 @@ with shared.gradio_root:
             with gr.Row(elem_classes='extend_row'):
               with gr.Accordion('Extention', open=False):
                 with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-                         
-                            
 
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
@@ -898,6 +900,7 @@ with shared.gradio_root:
                                        
                             with gr.Row():
                                 translate_enabled = gr.Checkbox(label='Enabled', value=False, elem_id='translate_enabled_el')
+                                tutorial("module_translate.md")
                             with gr.Row():
                                 gtrans = gr.Button(value="Translate")        
 
@@ -978,6 +981,9 @@ with shared.gradio_root:
                             zipf.close()
                             return zip_file                       
                         with gr.Row():
+                            tutorial("image_batch.md")  
+                        with gr.Row():
+          
                           with gr.Column():
                             with gr.Row():
                                 file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
@@ -1038,6 +1044,8 @@ with shared.gradio_root:
                             if len(batch_prompt) > 1:
                                 removed=batch_prompt.pop()
                             return batch_prompt
+                        with gr.Row():
+                            tutorial("prompt_batch.md")    
                         with gr.Row():
                                 batch_prompt=gr.Dataframe(
                                     headers=["prompt", "negative prompt"],
@@ -1110,6 +1118,8 @@ with shared.gradio_root:
                         GeekyRemBExtras.on_ui_tabs()
 
                   with gr.Tab(label='Cleaner', id='clean_tab') as clean_tab:
+                        with gr.Row():
+                            tutorial("cleaner/clean_up_tab.md")                    
                         with gr.Tab(label='Image'):
                             with gr.Row():
                                 file_in_cl,files_single_cl,image_single_cl,enable_zip_cl,file_out_cl,preview_cl,image_out_cl = batch.ui_batch()
@@ -1180,8 +1190,11 @@ with shared.gradio_root:
                 with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
-
+                  with gr.TabItem(label='Caption'):
+                        caption.gui()
                   with gr.TabItem(label='TextMask') as text_mask:
+                    with gr.Row():
+                            tutorial("text_mask.md")
                     mask=gr.HTML() 
 
                   with gr.TabItem(label='SVGcode') as svg_code:

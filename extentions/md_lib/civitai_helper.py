@@ -1,3 +1,4 @@
+from extentions.tutorial import tutorial
 import gradio as gr
 from . import md_config
 
@@ -22,6 +23,8 @@ def civitai_help():
             f.write(md_config.ch_civiai_api_key)
         return setting_log.update(value=new_setting)   
 ### with shared.gradio_root:
+ with gr.Box(elem_classes="ch_box"):
+    tutorial("md_lib/readme.md")  
  with gr.Box(elem_classes="ch_box"):
             with gr.Column(elem_classes="justify-bottom"):
                     gr.Markdown("### Settings")

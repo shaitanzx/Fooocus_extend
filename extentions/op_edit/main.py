@@ -6,6 +6,7 @@ import cv2
 from PIL import Image
 import sys
 import io
+from extentions.tutorial import tutorial
 from .body import Body
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from modules.model_loader import load_file_from_url
@@ -45,7 +46,10 @@ def ui():
         for r in li:
           for c in r:
             res.append(c)
-        return res                    
+        return res 
+
+      with gr.Row():
+        tutorial("op_edit/readme.md")                   
       with gr.Row():
         with gr.Column():
           width_ope = gr.Slider(label="width", minimum=64, maximum=2048, value=512, step=64, interactive=True)

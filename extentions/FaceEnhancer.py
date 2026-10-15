@@ -11,7 +11,7 @@ import traceback
 import math
 import time
 import ast
-
+from extentions.tutorial import tutorial
 from collections import defaultdict
 from extras.facexlib_custom.utils.misc import download_from_url
 from extras.basicsr.utils.realesrganer import RealESRGANer
@@ -1326,11 +1326,11 @@ def gui(generator):
     speed = "Fast" if tmptype == "SRVGG" else ("Slow" if any(value == tmptype for value in ("DAT", "HAT", "DRCT", "ATD", "SRFormer")) else "Normal")
     upscale_model_header = f"| Upscale Model Name | Info, Type: {tmptype}, Model execution speed: {speed} |\n|------------|------|"
     upscale_model_tables.append(upscale_model_header + "\n" + "\n".join(rows))
+    with gr.Row():
+        face_en_enabled = gr.Checkbox(label="Enabled", value=False,visible=generator)
+        tutorial("FaceEnhancer.md")    
     with gr.Row(visible=not generator):
         file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
-    with gr.Row(visible=generator):
-        face_en_enabled = gr.Checkbox(label="Enabled", value=False)
-
     with gr.Row():
         with gr.Column():
             face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")

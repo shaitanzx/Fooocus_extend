@@ -9,6 +9,7 @@ import cv2
 import PIL.Image
 import ldm_patched.modules.conds as conds
 import modules.core as core
+from extentions.tutorial import tutorial
 from .resampler import Resampler
 from .CrossAttentionPatch import Attn2Replace, instantid_attention
 
@@ -24,6 +25,7 @@ import torch.nn.functional as F
 def gui():
     with gr.Row():
         enable_instant = gr.Checkbox(label="Enabled", value=False)
+        tutorial("instantid/readme.md")      
     with gr.Row():
         with gr.Column():
             # upload face image

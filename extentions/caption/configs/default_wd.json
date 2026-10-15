@@ -1,0 +1,314 @@
+{
+  "wd-eva02-large-tagger-v3": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-eva02-large-tagger-v3",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd-vit-large-tagger-v3": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-vit-large-tagger-v3",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-vit-large-tagger-v3/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-vit-large-tagger-v3/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd-swinv2-v3": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-swinv2-tagger-v3",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd-vit-v3": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-vit-tagger-v3",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd-convnext-v3": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-convnext-tagger-v3",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-convnext-tagger-v3/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-convnext-tagger-v3/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-moat-v2": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-moat-tagger-v2",
+        "revision": "v2.0",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-moat-tagger-v2/resolve/v2.0/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-moat-tagger-v2/resolve/v2.0/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-swinv2-v2": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-swinv2-tagger-v2",
+        "revision": "v2.0",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-swinv2-tagger-v2/resolve/v2.0/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-swinv2-tagger-v2/resolve/v2.0/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-convnextv2-v2": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-convnextv2-tagger-v2",
+        "revision": "v2.0",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/v2.0/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/v2.0/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-vit-v2": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-vit-tagger-v2",
+        "revision": "v2.0",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger-v2/resolve/v2.0/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger-v2/resolve/v2.0/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-convnext-v2": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-convnext-tagger-v2",
+        "revision": "v2.0",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/v2.0/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/v2.0/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-swinv2-v2-git": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-swinv2-tagger-v2",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-swinv2-tagger-v2/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-swinv2-tagger-v2/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-convnextv2-v2-git": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-convnextv2-tagger-v2",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnextv2-tagger-v2/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-vit-v2-git": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-vit-tagger-v2",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger-v2/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger-v2/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-convnext-v2-git": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-convnext-tagger-v2",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger-v2/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-vit": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-vit-tagger",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "wd14-convnext": {
+    "huggingface": {
+      "models": {
+        "repo_id": "SmilingWolf/wd-v1-4-convnext-tagger",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger/resolve/main/model.onnx",
+          "selected_tags.csv": "https://huggingface.co/SmilingWolf/wd-v1-4-convnext-tagger/resolve/main/selected_tags.csv"
+        }
+      }
+    }
+  },
+  "Z3D-E621-Convnext": {
+    "huggingface": {
+      "models": {
+        "repo_id": "toynya/Z3D-E621-Convnext",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "model.onnx": "https://huggingface.co/toynya/Z3D-E621-Convnext/resolve/main/model.onnx",
+          "tags-selected.csv": "https://huggingface.co/toynya/Z3D-E621-Convnext/main/tags-selected.csv"
+        }
+      }
+    }
+  },
+  
+  "PixAI-Tagger-v1.0-Simple": {
+    "tagger_type": "pixai",
+    "pixai_mode": "simple",
+    "model_storage_name": "PixAI-Tagger-v1.0",
+    "pixai_defaults": {
+      "pixai_threshold": 0.17,
+      "pixai_character_threshold": 0.27,
+      "pixai_general_threshold": 0.17,
+      "pixai_style_threshold": 0.17,
+      "pixai_copyright_threshold": 0.24,
+      "pixai_meta_threshold": 0.17,
+      "pixai_rating_threshold": 0.41,
+      "pixai_replace_underscore": false,
+      "pixai_trailing_comma": false,
+      "pixai_exclude_tags": ""
+    },
+    "huggingface": {
+      "models": {
+        "repo_id": "pixai-labs/pixai-tagger-v1.0",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/config.json",
+          "model.safetensors": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/model.safetensors",
+          "preprocessor_config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/preprocessor_config.json",
+          "tagger_pipeline.py": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/tagger_pipeline.py"
+        }
+      }
+    }
+  },
+  "PixAI-Tagger-v1.0-Advanced": {
+    "tagger_type": "pixai",
+    "pixai_mode": "advanced",
+    "model_storage_name": "PixAI-Tagger-v1.0",
+    "pixai_defaults": {
+      "pixai_threshold": 0.17,
+      "pixai_character_threshold": 0.27,
+      "pixai_general_threshold": 0.17,
+      "pixai_style_threshold": 0.15,
+      "pixai_copyright_threshold": 0.24,
+      "pixai_meta_threshold": 0.17,
+      "pixai_rating_threshold": 0.41,
+      "pixai_replace_underscore": false,
+      "pixai_trailing_comma": false,
+      "pixai_exclude_tags": ""
+    },
+    "huggingface": {
+      "models": {
+        "repo_id": "pixai-labs/pixai-tagger-v1.0",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/config.json",
+          "model.safetensors": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/model.safetensors",
+          "preprocessor_config.json": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/preprocessor_config.json",
+          "tagger_pipeline.py": "https://huggingface.co/pixai-labs/pixai-tagger-v1.0/resolve/main/tagger_pipeline.py"
+        }
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+}

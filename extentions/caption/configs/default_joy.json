@@ -1,0 +1,84 @@
+{
+  "Joy-Caption-Alpha-Two-Llava": {
+    "huggingface": {
+      "llm": {
+        "repo_id": "fancyfeast/llama-joycaption-alpha-two-hf-llava",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "config.json": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/config.json",
+          "tokenizer.json": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/tokenizer_config.json",
+          "special_tokens_map.json": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/special_tokens_map.json",
+          "model.safetensors.index.json": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/model.safetensors.index.json",
+          "model-00001-of-00004.safetensors": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/model-00001-of-00004.safetensors",
+          "model-00002-of-00004.safetensors": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/model-00002-of-00004.safetensors",
+          "model-00003-of-00004.safetensors": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/model-00003-of-00004.safetensors",
+          "model-00004-of-00004.safetensors": "https://huggingface.co/fancyfeast/llama-joycaption-alpha-two-hf-llava/resolve/main/model-00004-of-00004.safetensors"
+        }
+      }
+    }
+  },
+  "Joy-Caption-Alpha-Two": {
+    "huggingface": {
+      "image_adapter": {
+        "repo_id": "fancyfeast/joy-caption-alpha-two",
+        "revision": "main",
+        "repo_type": "space",
+        "subfolder": "cgrkzexw-599808",
+        "file_list": {
+          "image_adapter.pt": "https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two/resolve/main/cgrkzexw-599808/image_adapter.pt",
+          "clip_model.pt": "https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two/resolve/main/cgrkzexw-599808/clip_model.pt"
+        }
+      },
+      "clip": {
+        "repo_id": "google/siglip-so400m-patch14-384",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "config.json": "https://huggingface.co/google/siglip-so400m-patch14-384/resolve/main/config.json",
+          "tokenizer.json": "https://huggingface.co/google/siglip-so400m-patch14-384/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/google/siglip-so400m-patch14-384/resolve/main/tokenizer_config.json",
+          "special_tokens_map.json": "https://huggingface.co/google/siglip-so400m-patch14-384/resolve/main/preprocessor_config.json",
+          "preprocessor_config.json": "https://huggingface.co/google/siglip-so400m-patch14-384/resolve/main/special_tokens_map.json",
+          "spiece.model": "https://huggingface.co/google/siglip-so400m-patch14-384/resolve/main/spiece.model",
+          "model.safetensors": "https://huggingface.co/google/siglip-so400m-patch14-384/resolve/main/model.safetensors"
+        }
+      },
+      "llm": {
+        "repo_id": "unsloth/Meta-Llama-3.1-8B-Instruct",
+        "revision": "main",
+        "repo_type": "model",
+        "subfolder": "",
+        "file_list": {
+          "config.json": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/config.json",
+          "generation_config.json": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/generation_config.json",
+          "tokenizer.json": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/tokenizer_config.json",
+          "special_tokens_map.json": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/special_tokens_map.json",
+          "model.safetensors.index.json": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/model.safetensors.index.json",
+          "model-00001-of-00004.safetensors": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/model-00001-of-00004.safetensors",
+          "model-00002-of-00004.safetensors": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/model-00002-of-00004.safetensors",
+          "model-00003-of-00004.safetensors": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/model-00003-of-00004.safetensors",
+          "model-00004-of-00004.safetensors": "https://huggingface.co/unsloth/Meta-Llama-3.1-8B-Instruct/resolve/main/model-00004-of-00004.safetensors"
+        }
+      },
+      "patch": {
+        "repo_id": "fancyfeast/joy-caption-alpha-two",
+        "revision": "main",
+        "repo_type": "space",
+        "subfolder": "cgrkzexw-599808/text_model",
+        "file_list": {
+          "tokenizer.json": "https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two/resolve/main/cgrkzexw-599808/text_model/tokenizer.json",
+          "tokenizer_config.json": "https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two/resolve/main/cgrkzexw-599808/text_model/tokenizer_config.json",
+          "special_tokens_map.json": "https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two/resolve/main/cgrkzexw-599808/text_model/special_tokens_map.json",
+          "adapter_config.json": "https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two/resolve/main/cgrkzexw-599808/text_model/adapter_config.json",
+          "adapter_model.safetensors": "https://huggingface.co/spaces/fancyfeast/joy-caption-alpha-two/resolve/main/cgrkzexw-599808/text_model/adapter_model.safetensors"
+        }
+      }
+    }
+  }  
+}

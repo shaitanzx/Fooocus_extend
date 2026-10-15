@@ -5,10 +5,7 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageColor
 import cv2
 from tqdm import tqdm
 import gradio as gr
-##from modules import script_callbacks, shared, scripts
-##from modules.paths_internal import models_path
-##from modules.processing import StableDiffusionProcessing
-##from modules.images import save_image
+from extentions.tutorial import tutorial
 import torch
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -579,8 +576,8 @@ def on_ui_tabs():
     geekyremb_max_video_length=3600
     geekyremb_max_image_size=8196
     with gr.Blocks(analytics_enabled=False) as geeky_remb_tab:
-        gr.Markdown("# GeekyRemB: Background Removal and Image/Video Manipulation")
-        
+        with gr.Row():
+            tutorial("geeky_remb.md")       
         with gr.Row():
             with gr.Column(scale=1):
                 input_type = gr.Radio(["Image", "Video"], label="Input Type", value="Image")
@@ -968,5 +965,3 @@ def run_geeky_remb(input_type, foreground_input, foreground_video, result_type, 
                 return temp_file.name, None
         return None, None
 
-#script_callbacks.on_ui_tabs(on_ui_tabs)
-#script_callbacks.on_ui_settings(on_ui_settings)

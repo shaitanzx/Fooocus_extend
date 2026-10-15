@@ -5,7 +5,7 @@ import random
 import os
 import sys
 from PIL import Image
-
+from extentions.tutorial import tutorial
 from diffusers.utils import load_image
 from diffusers import EulerDiscreteScheduler, T2IAdapter
 
@@ -43,19 +43,7 @@ def generate_image(
 
     face_detector = FaceAnalysis2(providers=['CPUExecutionProvider'],root="",allowed_modules=['detection', 'recognition'])
     face_detector.prepare(ctx_id=0, det_size=(640, 640))
-
-#try:
-#    if torch.cuda.is_available():
-#        device = "cuda"
-#    elif sys.platform == "darwin" and torch.backends.mps.is_available():
-#        device = "mps"
-#    else:
-#        device = "cpu"
-#except:
-#    device = "cpu"
     device = "cuda"
-
-
     enable_doodle_arg = False
     photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker-V2", filename="photomaker-v2.bin", local_dir="extentions/photomaker/model", repo_type="model")
 
@@ -167,9 +155,6 @@ def generate_image(
 
     generator = torch.Generator(device=device).manual_seed(seed)
 
-    #print("Start inference...")
-    #print(f"[Debug] Seed: {seed}")
-    #print(f"[Debug] Prompt: {prompt}, \n[Debug] Neg Prompt: {negative_prompt}")
     start_merge_step = int(float(style_strength_ratio) / 100 * num_steps)
     if start_merge_step > 30:
         start_merge_step = 30
@@ -240,22 +225,17 @@ def swap_to_gallery(files):
 def remove_back_to_files():
     return gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)
     
-
-
-
-
 def get_image_path_list(folder_name):
     image_basename_list = os.listdir(folder_name)
     image_path_list = sorted([os.path.join(folder_name, basename) for basename in image_basename_list])
     return image_path_list
-
-
 
 def gui():
 
     with gr.Blocks() as demo:
         with gr.Row():
             enable_pm = gr.Checkbox(label="Enabled", value=False)
+            tutorial("photomaker/readme.md")
         with gr.Row():
             gr.HTML('* You MUST USE the trigger word \"img\" in the positive prompt, eg: \"a photo of a man/woman img\"')
         with gr.Row():
