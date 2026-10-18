@@ -6,7 +6,6 @@ SDXL, SD15, SD2, SDXL_REFINER, UNSUPPORTED, UNKNOWN = (
 
 _cache = {}
 
-
 def detect_family_from_file(path):
     if path in _cache:
         return _cache[path]
@@ -29,7 +28,6 @@ def detect_family_from_file(path):
         print(f'[model_family] header detect failed: {e}')
     _cache[path] = family
     return family
-
 
 def detect_family_from_model(unet_patcher):
     from ldm_patched.modules.model_base import SDXL as _SDXL, SDXLRefiner as _Ref
