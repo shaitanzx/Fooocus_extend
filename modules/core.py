@@ -40,7 +40,11 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 class StableDiffusionModel:
     def __init__(self, unet=None, vae=None, clip=None, clip_vision=None, filename=None, vae_filename=None):
         self.unet = unet
-        self.base_family = model_family.detect_family_from_model(self.unet)
+        self.base_family = (
+            model_family.detect_family_from_model(self.unet)
+            if self.unet is not None
+            else None
+        )
 
         self.vae = vae
         self.clip = clip
