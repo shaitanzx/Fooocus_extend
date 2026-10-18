@@ -67,6 +67,10 @@ def assert_model_integrity():
     if fam not in (model_family.SDXL, model_family.SD15):
         raise NotImplementedError(
             f'Unsupported base model family: {fam}. Supported: SDXL, SD1.5 (4-channel, non-inpaint).')
+    if fam == model_family.SD15 and model_refiner.unet is not None:
+        rfam = model_family.detect_family_from_model(model_refiner.unet)
+        if rfam != model_family.SD15:
+            raise NotImplementedError('With an SD1.5 base the refiner must also be SD1.5.')
     return True
 
 
@@ -188,7 +192,13 @@ def clone_cond(conds):
         results.append([c, {"pooled_output": p}])
 
     return results
-
+@torch.no_grad()
+@torch.inference_mode()
+def refiner_cond(cond, target_model, target_clip):
+    # SD1.5 -> SD1.5: тот же CLIP-L, преобразование не нужно (иначе final_layer_norm применится дважды)
+    if current_family == model_family.SD15 and not isinstance(target_model, (SDXL, SDXLRefiner)):
+        return clone_cond(cond)
+    return clip_separate(cond, target_model=target_model, target_clip=target_clip)
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -252,8 +262,11 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
     base_path = get_file_from_folder_list(base_model_name, modules.config.paths_checkpoints)
     if model_family.detect_family_from_file(base_path) == model_family.SD15:
         if refiner_model_name != 'None':
-            print('[SD1.5] Refiner is not supported with an SD1.5 base model, disabled.')
-        refiner_model_name = 'None'
+            ref_path = get_file_from_folder_list(refiner_model_name, modules.config.paths_checkpoints)
+            ref_fam = model_family.detect_family_from_file(ref_path)
+            if ref_fam not in (model_family.SD15, model_family.UNKNOWN):
+                print(f'[SD1.5] Refiner is {ref_fam}; with an SD1.5 base only an SD1.5 refiner is supported. Refiner disabled.')
+                refiner_model_name = 'None'
         use_synthetic_refiner = False
 
 
@@ -341,7 +354,9 @@ def calculate_sigmas(sampler, model, scheduler, steps, denoise):
 @torch.inference_mode()
 def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
     assert refiner_swap_method in ['joint', 'separate', 'vae']
-
+    if current_family == model_family.SD15:
+        return final_vae, None
+        
     if final_refiner_vae is not None and final_refiner_unet is not None:
         if denoise > 0.9:
             return final_vae, final_refiner_vae
@@ -378,7 +393,26 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     assert refiner_swap_method in ['joint', 'separate', 'vae']
 
-    if final_refiner_vae is not None and final_refiner_unet is not None:
+    sd15_pair = (current_family == model_family.SD15 and final_refiner_unet is not None)
+
+    if sd15_pair:
+        # SD1.5 base + SD1.5 refiner: общее латентное пространство, VAE-конвертация не нужна
+        target_refiner_vae = None  # финальное декодирование VAE базовой модели
+        if denoise > 0.9:
+            refiner_swap_method = 'separate'
+        else:
+            refiner_swap_method = 'joint'
+            if denoise > (float(steps - switch) / float(steps)) ** 0.834:
+                target_refiner_unet = None
+                print(f'[Sampler] only use Base because of partial denoise.')
+            else:
+                positive_cond = refiner_cond(positive_cond, final_refiner_unet.model, final_clip)
+                negative_cond = refiner_cond(negative_cond, final_refiner_unet.model, final_clip)
+                target_unet, target_refiner_unet = final_refiner_unet, None
+                print(f'[Sampler] only use Refiner because of partial denoise.')
+        print(f'[Sampler] SD1.5 refiner, swap method = {refiner_swap_method}')
+    elif final_refiner_vae is not None and final_refiner_unet is not None:
+        # Refiner Use Different VAE (then it is SD15)
         # Refiner Use Different VAE (then it is SD15)
         if denoise > 0.9:
             refiner_swap_method = 'vae'
@@ -389,8 +423,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                     = final_unet, final_vae, None, None
                 print(f'[Sampler] only use Base because of partial denoise.')
             else:
-                positive_cond = clip_separate(positive_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
-                negative_cond = clip_separate(negative_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
+                positive_cond = refiner_cond(positive_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
+                negative_cond = refiner_cond(negative_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
                 target_unet, target_vae, target_refiner_unet, target_refiner_vae \
                     = final_refiner_unet, final_refiner_vae, None, None
                 print(f'[Sampler] only use Refiner because of partial denoise.')

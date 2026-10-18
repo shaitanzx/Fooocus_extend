@@ -656,10 +656,15 @@ def worker():
 
         print('[SD1.5] Compatibility overrides applied.')
 
-        # refiner не поддерживается, когда база SD1.5
+        # с SD1.5-базой допустим только SD1.5-рефайнер
         if async_task.refiner_model_name != 'None':
-            print('[SD1.5] Refiner is not supported with an SD1.5 base model, disabled.')
-        async_task.refiner_model_name = 'None'
+            ref_path = get_file_from_folder_list(async_task.refiner_model_name, modules.config.paths_checkpoints)
+            ref_fam = mf.detect_family_from_file(ref_path)
+            if ref_fam not in (mf.SD15, mf.UNKNOWN):
+                print(f'[SD1.5] Refiner is {ref_fam}; only an SD1.5 refiner works with an SD1.5 base. Refiner disabled.')
+                async_task.refiner_model_name = 'None'
+            else:
+                print('[SD1.5] SD1.5 refiner enabled.')
 
         # режимы с SDXL-LoRA: Extreme Speed, Lightning, Hyper-SD
         if async_task.performance_selection in (Performance.EXTREME_SPEED,
