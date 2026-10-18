@@ -17,7 +17,10 @@ from ldm_patched.contrib.external import VAEDecode, EmptyLatentImage, VAEEncode,
     ControlNetApplyAdvanced
 from ldm_patched.contrib.external_freelunch import FreeU_V2
 from ldm_patched.modules.sample import prepare_mask
-from modules.lora import match_lora
+from modules.lora import match_lora, detect_lora_family
+import modules.model_family as model_family
+
+
 from modules.util import get_file_from_folder_list, parse_lbw_preset, build_lbw_slot_mapping, apply_lbw_patches
 from ldm_patched.modules.lora import model_lora_keys_unet, model_lora_keys_clip
 from modules.config import path_embeddings
@@ -37,6 +40,8 @@ opModelSamplingContinuousEDM = ModelSamplingContinuousEDM()
 class StableDiffusionModel:
     def __init__(self, unet=None, vae=None, clip=None, clip_vision=None, filename=None, vae_filename=None):
         self.unet = unet
+        self.base_family = model_family.detect_family_from_model(self.unet)
+
         self.vae = vae
         self.clip = clip
         self.clip_vision = clip_vision
@@ -111,6 +116,24 @@ class StableDiffusionModel:
             if not os.path.exists(lora_filename):
                 print(f'Lora file not found: {lora_filename}')
                 continue
+
+
+            adapter_family = detect_lora_family(lora_filename)
+
+            if adapter_family is None:
+                print(
+                    f'[LoRA] Architecture is unknown for [{lora_filename}]; '
+                    'skipped to prevent cross-family loading.'
+                )
+                continue
+
+            if adapter_family != self.base_family:
+                print(
+                    f'[LoRA] Architecture mismatch: adapter={adapter_family}, '
+                    f'base model={self.base_family}; [{lora_filename}] skipped.'
+                )
+                continue
+
 
             if (start == 0 or start is None) and stop is None:
                 loras_to_load.append((lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset))

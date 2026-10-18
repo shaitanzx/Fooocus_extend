@@ -1,3 +1,54 @@
+import json
+import os
+
+from safetensors import safe_open
+def detect_lora_family(filename):
+    """
+    Возвращает 'sdxl' или 'sd15' только по явным метаданным.
+    Если архитектура неизвестна, возвращает None.
+    """
+    metadata = {}
+
+    if filename.lower().endswith(".safetensors"):
+        try:
+            with safe_open(filename, framework="pt", device="cpu") as f:
+                metadata = f.metadata() or {}
+        except Exception as e:
+            print(f"[LoRA] Cannot read metadata from {filename}: {e}")
+
+    # Резервный способ пометить файл, если в нём нет подходящих метаданных.
+    sidecar = filename + ".architecture.json"
+    if os.path.isfile(sidecar):
+        try:
+            with open(sidecar, "r", encoding="utf-8") as f:
+                sidecar_data = json.load(f)
+            metadata.update(sidecar_data)
+        except Exception as e:
+            print(f"[LoRA] Cannot read {sidecar}: {e}")
+
+    values = [
+        metadata.get("modelspec.architecture", ""),
+        metadata.get("ss_base_model_version", ""),
+        metadata.get("base_model_version", ""),
+        metadata.get("architecture", ""),
+    ]
+    text = " ".join(str(value) for value in values).lower()
+    normalized = text.replace("_", "-")
+
+    if "sdxl" in normalized or "stable-diffusion-xl" in normalized:
+        return "sdxl"
+
+    if (
+        "sd-v1" in normalized
+        or "sd1.5" in normalized
+        or "sd 1.5" in normalized
+        or "stable-diffusion-v1" in normalized
+    ):
+        return "sd15"
+
+    # Не угадываем архитектуру по имени файла или нескольким совпавшим ключам.
+    return None
+
 def match_lora(lora, to_load):
     patch_dict = {}
     loaded_keys = set()
