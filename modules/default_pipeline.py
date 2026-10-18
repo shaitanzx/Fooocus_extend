@@ -27,6 +27,7 @@ import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.instantid.instantid as instantid
 import gc
+import modules.model_family as model_family
 
 
 model_base = core.StableDiffusionModel()
@@ -38,7 +39,7 @@ final_clip = None
 final_vae = None
 final_refiner_unet = None
 final_refiner_vae = None
-
+current_family = None
 loaded_ControlNets = {}
 
 
@@ -60,14 +61,12 @@ def refresh_controlnets(model_paths):
 @torch.no_grad()
 @torch.inference_mode()
 def assert_model_integrity():
-    error_message = None
-
-    if not isinstance(model_base.unet_with_lora.model, SDXL):
-        error_message = 'You have selected base model other than SDXL. This is not supported yet.'
-
-    if error_message is not None:
-        raise NotImplementedError(error_message)
-
+    global current_family
+    fam = model_family.detect_family_from_model(model_base.unet_with_lora)
+    current_family = fam
+    if fam not in (model_family.SDXL, model_family.SD15):
+        raise NotImplementedError(
+            f'Unsupported base model family: {fam}. Supported: SDXL, SD1.5 (4-channel, non-inpaint).')
     return True
 
 
@@ -209,9 +208,10 @@ def clip_encode(texts, pool_top_k=1):
     for i, text in enumerate(texts):
         cond, pooled = clip_encode_single(final_clip, text)
         cond_list.append(cond)
-        if i < pool_top_k:
+#        if i < pool_top_k:
+#            pooled_acc += pooled
+        if i < pool_top_k and pooled is not None:
             pooled_acc += pooled
-
     return [[torch.cat(cond_list, dim=1), {"pooled_output": pooled_acc}]]
 
 
@@ -248,6 +248,15 @@ def prepare_text_encoder(async_call=True):
 def refresh_everything(refiner_model_name, base_model_name, loras,
                        base_model_additional_loras=None, use_synthetic_refiner=False, vae_name=None):
     global final_unet, final_clip, final_vae, final_refiner_unet, final_refiner_vae, final_expansion
+
+    base_path = get_file_from_folder_list(base_model_name, modules.config.paths_checkpoints)
+    if model_family.detect_family_from_file(base_path) == model_family.SD15:
+        if refiner_model_name != 'None':
+            print('[SD1.5] Refiner is not supported with an SD1.5 base model, disabled.')
+        refiner_model_name = 'None'
+        use_synthetic_refiner = False
+
+
 
     final_unet = None
     final_clip = None

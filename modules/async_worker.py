@@ -15,7 +15,7 @@ patch_all()
 class AsyncTask:
     def __init__(self, args):
         from modules.flags import Performance, MetadataScheme, ip_list, disabled
-        from modules.util import get_enabled_loras
+        from modules.util import get_enabled_loras, get_file_from_folder_list
         from modules.config import default_max_lora_number, default_adetail_tab
         import args_manager
 
@@ -376,7 +376,7 @@ def worker():
     from extras.expansion import safe_str
     from modules.util import (remove_empty_str, HWC3, resize_image, get_image_shape_ceil, set_image_shape_ceil,
                               get_shape_ceil, resample_image, erode_or_dilate, parse_lora_references_from_prompt,
-                              apply_wildcards, parse_extend_loras)
+                              apply_wildcards, parse_extend_loras, get_file_from_folder_list)
     from modules.upscaler import perform_upscale
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
@@ -641,6 +641,36 @@ def worker():
                      do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
 
         return imgs, img_paths, current_progress
+
+
+    def apply_sd15_overrides(async_task):
+        import modules.model_family as mf
+
+        base_path = get_file_from_folder_list(async_task.base_model_name, modules.config.paths_checkpoints)
+        fam = mf.detect_family_from_file(base_path)
+
+        if fam == mf.UNSUPPORTED:
+            raise NotImplementedError('SD1.5 inpaint-чекпоинты (9 каналов) и SD2.x не поддерживаются.')
+        if fam != mf.SD15:
+            return False
+
+        print('[SD1.5] Compatibility overrides applied.')
+
+        # refiner не поддерживается, когда база SD1.5
+        if async_task.refiner_model_name != 'None':
+            print('[SD1.5] Refiner is not supported with an SD1.5 base model, disabled.')
+        async_task.refiner_model_name = 'None'
+
+        # режимы с SDXL-LoRA: Extreme Speed, Lightning, Hyper-SD
+        if async_task.performance_selection in (Performance.EXTREME_SPEED,
+                                                Performance.LIGHTNING,
+                                                Performance.HYPER_SD):
+            print('[SD1.5] Extreme Speed / Lightning / Hyper-SD need SDXL LoRAs -> switched to Speed.')
+            async_task.performance_selection = Performance.SPEED
+            async_task.steps = async_task.original_steps = Performance.SPEED.steps()
+
+        return True
+
 
     def apply_patch_settings(async_task):
         patch_settings[pid] = PatchSettings(
@@ -1558,6 +1588,8 @@ def worker():
         if async_task.base_model_name == async_task.refiner_model_name:
             print(f'Refiner disabled because base model and refiner are same.')
             async_task.refiner_model_name = 'None'
+
+        apply_sd15_overrides(async_task)
 
         current_progress = 0
         if async_task.performance_selection == Performance.EXTREME_SPEED:
