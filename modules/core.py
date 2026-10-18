@@ -111,7 +111,18 @@ class StableDiffusionModel:
             if not os.path.exists(lora_filename):
                 print(f'Lora file not found: {lora_filename}')
                 continue
-
+            try:
+                import modules.model_family as mf
+                import modules.lora_family as lf
+                fam = mf.detect_family_from_model(self.unet)
+                if fam == mf.SDXL_REFINER:
+                    fam = mf.SDXL
+                ok, msg = lf.check_lora_for_family(lora_filename, fam)
+                if not ok:
+                    print(f'[LoRA] {msg}')
+                    continue
+            except Exception as e:
+                print(f'[LoRA] family check failed: {e}')
             if (start == 0 or start is None) and stop is None:
                 loras_to_load.append((lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset))
             else:
