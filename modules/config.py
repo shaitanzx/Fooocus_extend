@@ -990,7 +990,7 @@ def download_instantid():
         file_name='ip-adapter.bin'
     )  
 SD15_CONTROLNET_FILES = {
-    "canny": "control_v11p_sd15_canny_fp16.safetensors",
+    "canny": "control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
     "pose": "control_v11p_sd15_openpose_fp16.safetensors",
     "scribble": "control_v11p_sd15_scribble_fp16.safetensors",
 }
