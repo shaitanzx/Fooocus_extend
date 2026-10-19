@@ -1444,10 +1444,15 @@ def worker():
                     if async_task.is_sd15
                     else modules.config.downloading_controlnet_scribble()
                 )
+            if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
+                controlnet_cpds_path = (
+                    modules.config.downloading_controlnet_sd15("cpds")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_cpds()
+                )
 
             if not async_task.is_sd15:
-                if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
-                    controlnet_cpds_path = modules.config.downloading_controlnet_cpds()
+
                 if len(async_task.cn_tasks[flags.cn_manga]) > 0:
                     controlnet_manga_path = modules.config.downloading_controlnet_manga()
                 if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
