@@ -825,7 +825,7 @@ def worker():
         if async_task.is_sd15:
             apply_sd15_control_hints(async_task, height, width, current_progress)
         else:
-            apply_sdxl_control_hints(async_task, height, width, current_progress)
+            pass
 
         if async_task.is_sd15:
             if async_task.cn_tasks[flags.cn_ip] or async_task.cn_tasks[flags.cn_ip_face]:
