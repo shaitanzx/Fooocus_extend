@@ -465,9 +465,15 @@ def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
     outs.append(self.middle_block_out(h, emb, context))
 
     if patch_settings[pid].controlnet_softness > 0:
-        for i in range(10):
-            k = 1.0 - float(i) / 9.0
-            outs[i] = outs[i] * (1.0 - patch_settings[pid].controlnet_softness * k)
+        n = len(outs)
+        denominator = max(n - 1, 1)
+
+        for i in range(n):
+            k = 1.0 - float(i) / denominator
+            outs[i] = outs[i] * (
+                1.0 - patch_settings[pid].controlnet_softness * k
+            )
+
     return outs
 
 

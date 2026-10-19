@@ -989,6 +989,29 @@ def download_instantid():
         model_dir='extentions/instantid/checkpoints',
         file_name='ip-adapter.bin'
     )  
+SD15_CONTROLNET_FILES = {
+    "canny": "control_v11p_sd15_canny_fp16.safetensors",
+    "pose": "control_v11p_sd15_openpose_fp16.safetensors",
+    "scribble": "control_v11p_sd15_scribble_fp16.safetensors",
+}
+
+
+def downloading_controlnet_sd15(kind):
+    try:
+        file_name = SD15_CONTROLNET_FILES[kind]
+    except KeyError:
+        raise ValueError(f"Unsupported SD1.5 ControlNet kind: {kind}")
+
+    load_file_from_url(
+        url=(
+            "https://huggingface.co/"
+            "comfyanonymous/ControlNet-v1-1_fp16_safetensors/"
+            f"resolve/main/{file_name}"
+         ),
+        model_dir=path_controlnet,
+        file_name=file_name,
+    )
+    return os.path.join(path_controlnet, file_name)
 
 def downloading_controlnet_canny():
     load_file_from_url(

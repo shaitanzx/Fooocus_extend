@@ -781,8 +781,58 @@ def worker():
             img_paths.append(log(x, d, metadata_parser, async_task.output_format, task, persist_image,name_prefix=async_task.name_prefix))
 
         return img_paths
+    def apply_sd15_control_hints(async_task, height, width, current_progress):
+        """
+        Prepare SD1.5 ControlNet hints.
+
+        Canny is computed from the source image unless preprocessing is disabled.
+        OpenPose and Scribble are treated as already-prepared hint images here.
+        """
+        sd15_control_hints = (
+            (flags.cn_canny, "canny"),
+            (flags.cn_pose, "pose"),
+            (flags.cn_scribble, "scribble"),
+        )
+
+        for cn_flag, hint_type in sd15_control_hints:
+            for task in async_task.cn_tasks[cn_flag]:
+                cn_img, cn_stop, cn_weight = task
+                cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+                if hint_type == "canny" and not async_task.skipping_cn_preprocessor:
+                    cn_img = preprocessors.canny_pyramid(
+                        cn_img,
+                        async_task.canny_low_threshold,
+                        async_task.canny_high_threshold,
+                    )
+
+                # Не пропускаем карту через CPDS: это преобразование
+                # не является препроцессором OpenPose или Scribble.
+                cn_img = HWC3(cn_img)
+                task[0] = core.numpy_to_pytorch(cn_img)
+
+                if async_task.debugging_cn_preprocessor:
+                    yield_result(
+                        async_task,
+                        cn_img,
+                        current_progress,
+                        async_task.black_out_nsfw,
+                        do_not_show_finished_images=True,
+                    )
 
     def apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress):
+
+        if async_task.is_sd15:
+            apply_sd15_control_hints(async_task, height, width, current_progress)
+        else:
+            apply_sdxl_control_hints(async_task, height, width, current_progress)
+
+        if async_task.is_sd15:
+            if async_task.cn_tasks[flags.cn_ip] or async_task.cn_tasks[flags.cn_ip_face]:
+                print("[SD1.5] ImagePrompt/FaceSwap IP-Adapter is not supported; skipped.")
+            return
+
+
         for task in async_task.cn_tasks[flags.cn_canny]:
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
@@ -1388,18 +1438,47 @@ def worker():
                 async_task.mixing_image_prompt_and_inpaint:
             goals.append('cn')
             progressbar(async_task, 1, 'Downloading control models ...')
-            if len(async_task.cn_tasks[flags.cn_canny]) > 0:
-                controlnet_canny_path = modules.config.downloading_controlnet_canny()
-            if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
-                controlnet_cpds_path = modules.config.downloading_controlnet_cpds()
+                 if len(async_task.cn_tasks[flags.cn_canny]) > 0:
+                controlnet_canny_path = (
+                    modules.config.downloading_controlnet_sd15("canny")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_canny()
+                )
+
             if len(async_task.cn_tasks[flags.cn_pose]) > 0:
-                controlnet_pose_path = modules.config.downloading_controlnet_pose()
-            if len(async_task.cn_tasks[flags.cn_manga]) > 0:
-                controlnet_manga_path = modules.config.downloading_controlnet_manga()
-            if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
-                controlnet_recolor_path = modules.config.downloading_controlnet_recolor()
+                controlnet_pose_path = (
+                    modules.config.downloading_controlnet_sd15("pose")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_pose()
+                )
+
             if len(async_task.cn_tasks[flags.cn_scribble]) > 0:
-                controlnet_scribble_path = modules.config.downloading_controlnet_scribble()
+                controlnet_scribble_path = (
+                    modules.config.downloading_controlnet_sd15("scribble")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_scribble()
+                )
+
+            if not async_task.is_sd15:
+                if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
+                    controlnet_cpds_path = modules.config.downloading_controlnet_cpds()
+                if len(async_task.cn_tasks[flags.cn_manga]) > 0:
+                    controlnet_manga_path = modules.config.downloading_controlnet_manga()
+                if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
+                    controlnet_recolor_path = modules.config.downloading_controlnet_recolor()
+            else:
+                for flag, label in (
+                    (flags.cn_cpds, "CPDS"),
+                    (flags.cn_manga, "Manga Recolor"),
+                    (flags.cn_recolor, "Recolor"),
+                ):
+                    if async_task.cn_tasks[flag]:
+                        print(
+                            f"[SD1.5] {label} ControlNet is not configured "
+                            "for SD1.5 and will be skipped."
+                        )
+                        async_task.cn_tasks[flag] = []
+
             if len(async_task.cn_tasks[flags.cn_ip]) > 0:
                 clip_vision_path, ip_negative_path, ip_adapter_path = modules.config.downloading_ip_adapters('ip')
             if len(async_task.cn_tasks[flags.cn_ip_face]) > 0:
@@ -1594,7 +1673,7 @@ def worker():
             print(f'Refiner disabled because base model and refiner are same.')
             async_task.refiner_model_name = 'None'
 
-        apply_sd15_overrides(async_task)
+        async_task.is_sd15 = apply_sd15_overrides(async_task)
 
         current_progress = 0
         if async_task.performance_selection == Performance.EXTREME_SPEED:
