@@ -1454,7 +1454,7 @@ def worker():
                     controlnet_recolor_path = modules.config.downloading_controlnet_recolor()
             else:
                 for flag, label in (
-                    (flags.cn_cpds, "CPDS"),
+                    
                     (flags.cn_manga, "Manga Recolor"),
                     (flags.cn_recolor, "Recolor"),
                 ):
