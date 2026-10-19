@@ -993,7 +993,7 @@ SD15_CONTROLNET_FILES = {
     "canny": "control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
     "pose": "control_v11p_sd15_openpose_fp16.safetensors",
     "scribble": "control_v11p_sd15_scribble_fp16.safetensors",
-    "cdps": "control_lora_rank128_v11f1p_sd15_depth_fp16.safetensors",
+    "cpds": "control_lora_rank128_v11f1p_sd15_depth_fp16.safetensors",
 }
 
 
