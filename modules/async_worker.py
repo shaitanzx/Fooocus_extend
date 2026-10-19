@@ -1438,7 +1438,7 @@ def worker():
                 async_task.mixing_image_prompt_and_inpaint:
             goals.append('cn')
             progressbar(async_task, 1, 'Downloading control models ...')
-                 if len(async_task.cn_tasks[flags.cn_canny]) > 0:
+            if len(async_task.cn_tasks[flags.cn_canny]) > 0:
                 controlnet_canny_path = (
                     modules.config.downloading_controlnet_sd15("canny")
                     if async_task.is_sd15
