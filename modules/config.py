@@ -998,6 +998,7 @@ SD15_CONTROLNET_FILES = {
 
 
 def downloading_controlnet_sd15(kind):
+    print('=======================================',kind)
     try:
         file_name = SD15_CONTROLNET_FILES[kind]
     except KeyError:
