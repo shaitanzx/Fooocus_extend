@@ -782,43 +782,19 @@ def worker():
 
         return img_paths
     def apply_sd15_control_hints(async_task, height, width, current_progress):
-        """
-        Prepare SD1.5 ControlNet hints.
+        for task in async_task.cn_tasks[flags.cn_canny]:
+            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
 
-        Canny is computed from the source image unless preprocessing is disabled.
-        OpenPose and Scribble are treated as already-prepared hint images here.
-        """
-        sd15_control_hints = (
-            (flags.cn_canny, "canny"),
-            (flags.cn_pose, "pose"),
-            (flags.cn_scribble, "scribble"),
-        )
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.canny_pyramid(cn_img, async_task.canny_low_threshold,
+                                                     async_task.canny_high_threshold)
 
-        for cn_flag, hint_type in sd15_control_hints:
-            for task in async_task.cn_tasks[cn_flag]:
-                cn_img, cn_stop, cn_weight = task
-                cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-                if hint_type == "canny" and not async_task.skipping_cn_preprocessor:
-                    cn_img = preprocessors.canny_pyramid(
-                        cn_img,
-                        async_task.canny_low_threshold,
-                        async_task.canny_high_threshold,
-                    )
-
-                # Не пропускаем карту через CPDS: это преобразование
-                # не является препроцессором OpenPose или Scribble.
-                cn_img = HWC3(cn_img)
-                task[0] = core.numpy_to_pytorch(cn_img)
-
-                if async_task.debugging_cn_preprocessor:
-                    yield_result(
-                        async_task,
-                        cn_img,
-                        current_progress,
-                        async_task.black_out_nsfw,
-                        do_not_show_finished_images=True,
-                    )
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
 
     def apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress):
 
@@ -834,6 +810,7 @@ def worker():
 
 
         for task in async_task.cn_tasks[flags.cn_canny]:
+            print('------------------------------------------------------')
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
 
