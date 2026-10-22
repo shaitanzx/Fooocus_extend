@@ -816,8 +816,8 @@ def worker():
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
             
-
-            cn_img = preprocessors.canny_pyramid(cn_img, async_task.canny_low_threshold,
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.canny_pyramid(cn_img, async_task.canny_low_threshold,
                                                      async_task.canny_high_threshold)
 
             cn_img = HWC3(cn_img)
