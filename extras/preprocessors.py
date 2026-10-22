@@ -79,3 +79,34 @@ def cpds(x):
     result = density + offset
 
     return norm255(result, low=4, high=96).clip(0, 255).astype(np.uint8)
+
+def recolor_intensity(x: np.ndarray, gamma: float = 1.0) -> np.ndarray:
+    """
+    Формирует 3-канальную карту интенсивности для Recolor ControlNet.
+    Вход и выход — RGB uint8.
+    """
+    assert isinstance(x, np.ndarray)
+    assert x.ndim == 3 and x.shape[2] == 3
+
+    hsv = cv2.cvtColor(x, cv2.COLOR_RGB2HSV)
+    intensity = hsv[:, :, 2].astype(np.float32) / 255.0
+    intensity = np.power(intensity, gamma)
+    intensity = (intensity * 255.0).clip(0, 255).astype(np.uint8)
+
+    return cv2.cvtColor(intensity, cv2.COLOR_GRAY2RGB)
+
+
+def recolor_luminance(x: np.ndarray, gamma: float = 1.0) -> np.ndarray:
+    """
+    Формирует 3-канальную карту светлоты для Recolor ControlNet.
+    Вход и выход — RGB uint8.
+    """
+    assert isinstance(x, np.ndarray)
+    assert x.ndim == 3 and x.shape[2] == 3
+
+    lab = cv2.cvtColor(x, cv2.COLOR_RGB2LAB)
+    luminance = lab[:, :, 0].astype(np.float32) / 255.0
+    luminance = np.power(luminance, gamma)
+    luminance = (luminance * 255.0).clip(0, 255).astype(np.uint8)
+
+    return cv2.cvtColor(luminance, cv2.COLOR_GRAY2RGB)

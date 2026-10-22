@@ -879,8 +879,8 @@ def worker():
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
 
             if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.cpds(cn_img)
-
+                cn_img = preprocessors.recolor_intensity(cn_img)
+                
             cn_img = HWC3(cn_img)
             task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
