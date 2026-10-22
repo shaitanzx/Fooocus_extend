@@ -877,21 +877,22 @@ def worker():
             cn_img, cn_stop, cn_weight = task
             cn_img = HWC3(cn_img)
 
-            if not async_task.skipping_cn_preprocessor:
-                from controlnet_aux import HEDdetector
-                hed_detector_sd_xl = HEDdetector.from_pretrained(
-                    modules.config.path_controlnet,
-                    filename="ControlNetHED.pth",
-                    local_files_only=True
-                    )
-                hed_map = hed_detector_sd_xl(
-                    cn_img,
-                    detect_resolution=512,
-                    image_resolution=max(width, height),
-                    scribble=True,
-                    output_type="np",
+            #if not async_task.skipping_cn_preprocessor:
+            from controlnet_aux import HEDdetector
+            hed_detector_sd_xl = HEDdetector.from_pretrained(
+                modules.config.path_controlnet,
+                filename="ControlNetHED.pth",
+                local_files_only=True
                 )
-                cn_img = HWC3(np.asarray(hed_map))
+            hed_map = hed_detector_sd_xl(
+                cn_img,
+                detect_resolution=512,
+                image_resolution=max(width, height),
+                scribble=True,
+                output_type="np",
+            )
+            hed_detector_sd_xl = None
+            cn_img = HWC3(np.asarray(hed_map))
 
             cn_img = resize_image(cn_img, width=width, height=height)
             cn_img = HWC3(cn_img)
