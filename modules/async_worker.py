@@ -812,6 +812,16 @@ def worker():
             task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+        for task in async_task.cn_tasks[flags.cn_scribble]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
 
     def apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress):
 
@@ -873,39 +883,6 @@ def worker():
             task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        # for task in async_task.cn_tasks[flags.cn_scribble]:
-        #     cn_img, cn_stop, cn_weight = task
-        #     cn_img = HWC3(cn_img)
-
-        #     #if not async_task.skipping_cn_preprocessor:
-        #     from controlnet_aux import HEDdetector
-        #     hed_detector_sd_xl = HEDdetector.from_pretrained(
-        #         modules.config.path_controlnet,
-        #         filename="ControlNetHED.pth",
-        #         local_files_only=True
-        #         )
-        #     hed_map = hed_detector_sd_xl(
-        #         cn_img,
-        #         detect_resolution=512,
-        #         image_resolution=max(width, height),
-        #         scribble=True,
-        #         output_type="np",
-        #     )
-        #     hed_detector_sd_xl = None
-        #     cn_img = HWC3(np.asarray(hed_map))
-
-        #     cn_img = resize_image(cn_img, width=width, height=height)
-        #     cn_img = HWC3(cn_img)
-        #     task[0] = core.numpy_to_pytorch(cn_img)
-
-        #     if async_task.debugging_cn_preprocessor:
-        #         yield_result(
-        #             async_task,
-        #             cn_img,
-        #             current_progress,
-        #             async_task.black_out_nsfw,
-        #             do_not_show_finished_images=True,
-        #         )
         for task in async_task.cn_tasks[flags.cn_scribble]:
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
