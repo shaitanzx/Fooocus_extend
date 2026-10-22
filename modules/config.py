@@ -1049,6 +1049,11 @@ def downloading_controlnet_recolor():
 
 def downloading_controlnet_scribble():
     load_file_from_url(
+        url='https://huggingface.co/lllyasviel/Annotators/resolve/main/ControlNetHED.pth',
+        model_dir=path_controlnet,
+        file_name='ControlNetHED.pth'
+    )
+    load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/xinsir_cnnt_scribble_sdxl-1_0.safetensors',
         model_dir=path_controlnet,
         file_name='xinsir_cnnt_scribble_sdxl-1_0.safetensors'
