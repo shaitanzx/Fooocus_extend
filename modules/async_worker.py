@@ -879,7 +879,7 @@ def worker():
 
             if not async_task.skipping_cn_preprocessor:
                 from controlnet_aux import HEDdetector
-                hed_detector_sd_xl = HEDdetector.from_pretrained(os.path.join("models","contrlonet"),"lllyasviel/Annotators")
+                hed_detector_sd_xl = HEDdetector.from_pretrained(os.path.join("models","contrlonet"),"lllyasviel/Annotators/ControlNetHED.pth")
                 hed_map = hed_detector_sd_xl(
                     cn_img,
                     detect_resolution=512,
