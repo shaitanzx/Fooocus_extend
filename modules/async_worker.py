@@ -1491,7 +1491,7 @@ def worker():
                 for flag, label in (
                     
                     (flags.cn_manga, "Manga Recolor"),
-                    (flags.cn_recolor, "Recolor"),
+                    
                 ):
                     if async_task.cn_tasks[flag]:
                         print(
