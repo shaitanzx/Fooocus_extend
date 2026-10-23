@@ -1014,8 +1014,9 @@ def downloading_controlnet_sd15(kind):
 def downloading_pose_preprocessor()    
     load_file_from_url(
         url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/body_pose_model.pth",
-        model_dir=ath_controlnet,
+        model_dir=path_controlnet,
         file_name='body_pose_model.pth')
+    return os.path.join(path_controlnet, 'body_pose_model.pth')
 def downloading_controlnet_canny():
     load_file_from_url(
         url='https://huggingface.co/lllyasviel/misc/resolve/main/control-lora-canny-rank128.safetensors',

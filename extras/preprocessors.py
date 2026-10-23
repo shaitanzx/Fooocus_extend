@@ -1,7 +1,21 @@
 import cv2
 import numpy as np
+from extentions.op_edit.body import Body
+from extentions.op_edit import util as openpose_util
+from modules.config import downloading_pose_preprocessor
 
-def pose()
+def pose(x: np.ndarray) -> np.ndarray:
+    model_path = downloading_pose_preprocessor()
+    image_bgr = cv2.cvtColor(x, cv2.COLOR_RGB2BGR)
+    body_estimation = Body(model_path)
+    candidate, subset = body_estimation(image_bgr)
+    pose_bgr = np.zeros_like(image_bgr)
+    pose_bgr = openpose_util.draw_bodypose(pose_bgr,candidate,subset)
+    del body_estimation
+    gc.collect()
+    torch.cuda.empty_cache()
+    return cv2.cvtColor(pose_bgr, cv2.COLOR_BGR2RGB)
+
 
 def centered_canny(x: np.ndarray, canny_low_threshold, canny_high_threshold):
     assert isinstance(x, np.ndarray)
