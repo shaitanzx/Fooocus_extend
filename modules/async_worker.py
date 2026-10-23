@@ -1480,13 +1480,16 @@ def worker():
                     if async_task.is_sd15
                     else modules.config.downloading_controlnet_cpds()
                 )
-
+            if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
+                controlnet_recolor_path = (
+                    modules.config.downloading_controlnet_sd15("recolor")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_recolor()
+                )
             if not async_task.is_sd15:
 
                 if len(async_task.cn_tasks[flags.cn_manga]) > 0:
                     controlnet_manga_path = modules.config.downloading_controlnet_manga()
-                if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
-                    controlnet_recolor_path = modules.config.downloading_controlnet_recolor()
             else:
                 for flag, label in (
                     
