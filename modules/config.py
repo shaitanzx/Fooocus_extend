@@ -1008,9 +1008,9 @@ def downloading_controlnet_sd15(kind):
     load_file_from_url(
         url=f"{file_name}",
         model_dir=path_controlnet,
-        file_name=os.path.basename(file_name),
+        file_name=file_name.split('/')[-1],
     )
-    return os.path.join(path_controlnet, file_name)
+    return os.path.join(path_controlnet, file_name.split('/')[-1])
 
 def downloading_controlnet_canny():
     load_file_from_url(
