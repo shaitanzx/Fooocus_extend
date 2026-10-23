@@ -1006,11 +1006,9 @@ def downloading_controlnet_sd15(kind):
         raise ValueError(f"Unsupported SD1.5 ControlNet kind: {kind}")
 
     load_file_from_url(
-        url=(
-            f"{file_name}"
-         ),
+        url=f"{file_name}",
         model_dir=path_controlnet,
-        file_name=file_name,
+        file_name=os.path.basename(file_name),
     )
     return os.path.join(path_controlnet, file_name)
 
