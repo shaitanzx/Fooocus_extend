@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+def pose()
 
 def centered_canny(x: np.ndarray, canny_low_threshold, canny_high_threshold):
     assert isinstance(x, np.ndarray)
