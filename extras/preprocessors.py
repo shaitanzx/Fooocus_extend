@@ -3,6 +3,8 @@ import numpy as np
 from extentions.op_edit.body import Body
 from extentions.op_edit import util as openpose_util
 from modules.config import downloading_pose_preprocessor
+import gc
+import torch
 
 def pose(x: np.ndarray) -> np.ndarray:
     model_path = downloading_pose_preprocessor()
