@@ -990,10 +990,11 @@ def download_instantid():
         file_name='ip-adapter.bin'
     )  
 SD15_CONTROLNET_FILES = {
-    "canny": "control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
-    "pose": "control_v11p_sd15_openpose_fp16.safetensors",
-    "scribble": "control_v11p_sd15_scribble_fp16.safetensors",
-    "cpds": "control_lora_rank128_v11f1p_sd15_depth_fp16.safetensors",
+    "canny": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
+    "pose": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors",
+    "scribble": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_scribble_fp16.safetensors",
+    "cpds": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_lora_rank128_v11f1p_sd15_depth_fp16.safetensors",
+    "recolor": "https://huggingface.co/lllyasviel/sd_control_collection/resolve/main/ioclab_sd15_recolor.safetensors",
 }
 
 
@@ -1006,9 +1007,7 @@ def downloading_controlnet_sd15(kind):
 
     load_file_from_url(
         url=(
-            "https://huggingface.co/"
-            "comfyanonymous/ControlNet-v1-1_fp16_safetensors/"
-            f"resolve/main/{file_name}"
+            f"{file_name}"
          ),
         model_dir=path_controlnet,
         file_name=file_name,
