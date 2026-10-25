@@ -839,6 +839,19 @@ def worker():
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
 
+
+        for task in async_task.cn_tasks[flags.cn_manga]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.lineart_anime(cn_img)
+                
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+
     def apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress):
 
         if async_task.is_sd15:
@@ -1488,22 +1501,29 @@ def worker():
                     if async_task.is_sd15
                     else modules.config.downloading_controlnet_recolor()
                 )
-            if not async_task.is_sd15:
 
-                if len(async_task.cn_tasks[flags.cn_manga]) > 0:
-                    controlnet_manga_path = modules.config.downloading_controlnet_manga()
-            else:
-                for flag, label in (
+            if len(async_task.cn_tasks[flags.cn_manga]) > 0:
+                controlnet_manga_path = (
+                    modules.config.downloading_controlnet_sd15("manga")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_manga()
+                )
+            # if not async_task.is_sd15:
+
+            #     if len(async_task.cn_tasks[flags.cn_manga]) > 0:
+            #         controlnet_manga_path = modules.config.downloading_controlnet_manga()
+            # # else:
+            #     for flag, label in (
                     
-                    (flags.cn_manga, "Manga Recolor"),
+            #         (flags.cn_manga, "Manga Recolor"),
                     
-                ):
-                    if async_task.cn_tasks[flag]:
-                        print(
-                            f"[SD1.5] {label} ControlNet is not configured "
-                            "for SD1.5 and will be skipped."
-                        )
-                        async_task.cn_tasks[flag] = []
+            #     ):
+            #         if async_task.cn_tasks[flag]:
+            #             print(
+            #                 f"[SD1.5] {label} ControlNet is not configured "
+            #                 "for SD1.5 and will be skipped."
+            #             )
+            #             async_task.cn_tasks[flag] = []
 
             if len(async_task.cn_tasks[flags.cn_ip]) > 0:
                 clip_vision_path, ip_negative_path, ip_adapter_path = modules.config.downloading_ip_adapters('ip')
