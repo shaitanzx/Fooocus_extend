@@ -111,11 +111,20 @@ def load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path):
     sdxl_plus = sdxl and plus
 
     if plus:
-        clip_extra_context_tokens = ip_state_dict["image_proj"]["latents"].shape[1]
-        clip_embeddings_dim = ip_state_dict["image_proj"]["latents"].shape[2]
+        image_proj_state = ip_state_dict["image_proj"]
+
+        clip_extra_context_tokens = image_proj_state["latents"].shape[1]
+
+        # Размерность входных CLIP-признаков задаётся матрицей proj_in.
+        # У SD 1.5 Plus это 1280, хотя размер latents — 768.
+        clip_embeddings_dim = image_proj_state["proj_in.weight"].shape[1]
     else:
-        clip_extra_context_tokens = ip_state_dict["image_proj"]["proj.weight"].shape[0] // cross_attention_dim
+        clip_extra_context_tokens = (
+            ip_state_dict["image_proj"]["proj.weight"].shape[0]
+            // cross_attention_dim
+        )
         clip_embeddings_dim = None
+
 
     with use_patched_ops(manual_cast):
         ip_adapter = IPAdapterModel(
