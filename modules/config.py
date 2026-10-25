@@ -1084,42 +1084,67 @@ def downloading_controlnet_cpds():
     return os.path.join(path_controlnet, 'fooocus_xl_cpds_128.safetensors')
 
 
-def downloading_ip_adapters(v):
-    assert v in ['ip', 'face']
+def downloading_ip_adapters(v, is_sd15=False):
+    assert v in ["ip", "face"]
 
     results = []
 
+    # Общие для этих моделей файлы ViT-H и negative image embedding.
     load_file_from_url(
-        url='https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors',
+        url="https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors",
         model_dir=path_clip_vision,
-        file_name='clip_vision_vit_h.safetensors'
+        file_name="clip_vision_vit_h.safetensors",
     )
-    results += [os.path.join(path_clip_vision, 'clip_vision_vit_h.safetensors')]
+    results.append(
+        os.path.join(path_clip_vision, "clip_vision_vit_h.safetensors")
+    )
 
     load_file_from_url(
-        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors',
+        url="https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors",
         model_dir=path_controlnet,
-        file_name='fooocus_ip_negative.safetensors'
+        file_name="fooocus_ip_negative.safetensors",
     )
-    results += [os.path.join(path_controlnet, 'fooocus_ip_negative.safetensors')]
+    results.append(
+        os.path.join(path_controlnet, "fooocus_ip_negative.safetensors")
+    )
 
-    if v == 'ip':
-        load_file_from_url(
-            url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus_sdxl_vit-h.bin',
-            model_dir=path_controlnet,
-            file_name='ip-adapter-plus_sdxl_vit-h.bin'
-        )
-        results += [os.path.join(path_controlnet, 'ip-adapter-plus_sdxl_vit-h.bin')]
+    if v == "ip":
+        if is_sd15:
+            file_name = "ip-adapter-plus_sd15.bin"
+            url = (
+                "https://huggingface.co/h94/IP-Adapter/"
+                "resolve/main/models/ip-adapter-plus_sd15.bin"
+            )
+        else:
+            file_name = "ip-adapter-plus_sdxl_vit-h.bin"
+            url = (
+                "https://huggingface.co/lllyasviel/misc/"
+                "resolve/main/ip-adapter-plus_sdxl_vit-h.bin"
+            )
 
-    if v == 'face':
         load_file_from_url(
-            url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin',
+            url=url,
             model_dir=path_controlnet,
-            file_name='ip-adapter-plus-face_sdxl_vit-h.bin'
+            file_name=file_name,
         )
-        results += [os.path.join(path_controlnet, 'ip-adapter-plus-face_sdxl_vit-h.bin')]
+        results.append(os.path.join(path_controlnet, file_name))
+
+    elif v == "face":
+        # FaceSwap остаётся на существующей SDXL-модели.
+        file_name = "ip-adapter-plus-face_sdxl_vit-h.bin"
+        url = (
+            "https://huggingface.co/lllyasviel/misc/"
+            "resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin"
+        )
+        load_file_from_url(
+            url=url,
+            model_dir=path_controlnet,
+            file_name=file_name,
+        )
+        results.append(os.path.join(path_controlnet, file_name))
 
     return results
+
 
 def downloading_upscale_model2(model):
     if model==UPSCALE_DEFAULT_FILENAMES[0]:
