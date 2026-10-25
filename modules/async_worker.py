@@ -818,10 +818,9 @@ def worker():
         for task in async_task.cn_tasks[flags.cn_scribble]:
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-            
+
             if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.canny_pyramid(cn_img, async_task.canny_low_threshold,
-                                                     async_task.canny_high_threshold)
+                cn_img = preprocessors.scribble_hed(cn_img)
 
             cn_img = HWC3(cn_img)
             task[0] = core.numpy_to_pytorch(cn_img)
