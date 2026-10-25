@@ -1019,7 +1019,7 @@ def downloading_lineart_anime_preprocessor():
         model_dir=path_controlnet,
         file_name='netG.pth'
     )
-    return os.path.join(path_controlnet, 'ControlNetHED.pth')
+    return os.path.join(path_controlnet, 'netG.pth')
 def downloading_hed_preprocessor():
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/Annotators/resolve/main/ControlNetHED.pth",
