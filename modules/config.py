@@ -1014,7 +1014,7 @@ def downloading_controlnet_sd15(kind):
 
 def downloading_hed_preprocessor():
     load_file_from_url(
-        url="https://huggingface.co/lllyasviel/Annotatorsresolve/main/ControlNetHED.pth",
+        url="https://huggingface.co/lllyasviel/Annotators/resolve/main/ControlNetHED.pth",
         model_dir=path_controlnet,
         file_name='ControlNetHED.pth'
     )
