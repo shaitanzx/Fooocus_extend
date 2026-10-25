@@ -903,7 +903,8 @@ def worker():
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
 
-            cn_img = preprocessors.cpds(cn_img)
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.scribble_hed(cn_img)
 
             cn_img = HWC3(cn_img)
             task[0] = core.numpy_to_pytorch(cn_img)

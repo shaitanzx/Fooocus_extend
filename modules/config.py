@@ -1011,6 +1011,16 @@ def downloading_controlnet_sd15(kind):
         file_name=file_name.split('/')[-1],
     )
     return os.path.join(path_controlnet, file_name.split('/')[-1])
+
+def downloading_hed_preprocessor():
+    load_file_from_url(
+        url="https://huggingface.co/lllyasviel/Annotatorsresolve/main/ControlNetHED.pth",
+        model_dir=path_controlnet,
+        file_name='ControlNetHED.pth'
+    )
+    return os.path.join(path_controlnet, 'ControlNetHED.pth')
+
+
 def downloading_pose_preprocessor():    
     load_file_from_url(
         url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/body_pose_model.pth",

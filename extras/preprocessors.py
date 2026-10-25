@@ -2,9 +2,39 @@ import cv2
 import numpy as np
 from extentions.op_edit.body import Body
 from extentions.op_edit import util as openpose_util
-from modules.config import downloading_pose_preprocessor
+from controlnet_aux import HEDdetector
+from modules.config import downloading_pose_preprocessor, downloading_hed_preprocessor
 import gc
 import torch
+import os
+
+def scribble_hed(x: np.ndarray) -> np.ndarray:
+    model_path = downloading_hed_preprocessor()
+    detector = HEDdetector.from_pretrained(
+        os.path.dirname(model_path),
+        filename=os.path.basename(model_path))
+
+    resolution = max(x.shape[:2])
+    result = detector(
+        x,
+        detect_resolution=resolution,
+        image_resolution=resolution,
+        scribble=True,
+        output_type="np")
+
+
+    if result.shape[:2] != x.shape[:2]:
+        result = cv2.resize(
+            result,
+            (x.shape[1], x.shape[0]),
+            interpolation=cv2.INTER_NEAREST)
+
+    if result.ndim == 2:
+        result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+    del detector
+    gc.collect()
+    torch.cuda.empty_cache()
+    return result.astype(np.uint8)
 
 def pose(x: np.ndarray) -> np.ndarray:
     model_path = downloading_pose_preprocessor()
