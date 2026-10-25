@@ -3,7 +3,7 @@ import numpy as np
 from extentions.op_edit.body import Body
 from extentions.op_edit import util as openpose_util
 from controlnet_aux import HEDdetector, LineartAnimeDetector
-from modules.config import downloading_pose_preprocessor, downloading_hed_preprocessor
+from modules.config import downloading_pose_preprocessor, downloading_hed_preprocessor, downloading_lineart_anime_preprocessor
 import gc
 import torch
 import os
@@ -16,7 +16,7 @@ def lineart_anime(x: np.ndarray) -> np.ndarray:
     import gc
     import torch
 
-    model_path = downloading_linart_anime_preprocessor()
+    model_path = downloading_lineart_anime_preprocessor()
     detector = LineartAnimeDetector.from_pretrained(
         os.path.dirname(model_path),
         filename=os.path.basename(model_path))

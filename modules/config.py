@@ -1013,6 +1013,13 @@ def downloading_controlnet_sd15(kind):
     )
     return os.path.join(path_controlnet, file_name.split('/')[-1])
 
+def downloading_lineart_anime_preprocessor():
+    load_file_from_url(
+        url="https://huggingface.co/lllyasviel/Annotators/resolve/main/netG.pth",
+        model_dir=path_controlnet,
+        file_name='netG.pth'
+    )
+    return os.path.join(path_controlnet, 'ControlNetHED.pth')
 def downloading_hed_preprocessor():
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/Annotators/resolve/main/ControlNetHED.pth",
