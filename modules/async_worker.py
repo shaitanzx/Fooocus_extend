@@ -851,98 +851,36 @@ def worker():
             task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-
-    def apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress):
-
-        if async_task.is_sd15:
-            apply_sd15_control_hints(async_task, height, width, current_progress)
-        else:
-            pass
-
-        if async_task.is_sd15:
-            if async_task.cn_tasks[flags.cn_ip] or async_task.cn_tasks[flags.cn_ip_face]:
-                print("[SD1.5] ImagePrompt/FaceSwap IP-Adapter is not supported; skipped.")
-            return
-
-
-        for task in async_task.cn_tasks[flags.cn_canny]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.canny_pyramid(cn_img, async_task.canny_low_threshold,
-                                                     async_task.canny_high_threshold)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        for task in async_task.cn_tasks[flags.cn_pose]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.pose(cn_img)
-                
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        
-        for task in async_task.cn_tasks[flags.cn_manga]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.cpds(cn_img)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-
-        for task in async_task.cn_tasks[flags.cn_recolor]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.recolor_intensity(cn_img)
-                
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        for task in async_task.cn_tasks[flags.cn_scribble]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.scribble_hed(cn_img)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        for task in async_task.cn_tasks[flags.cn_cpds]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.cpds(cn_img)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+    def apply_ip_adapter_tasks(
+        async_task,
+        ip_adapter_face_path,
+        ip_adapter_path,
+        current_progress,
+    ):
         for task in async_task.cn_tasks[flags.cn_ip]:
             cn_img, cn_stop, cn_weight = task
             cn_img = HWC3(cn_img)
+            cn_img = resize_image(
+                cn_img,
+                width=224,
+                height=224,
+                resize_mode=0,
+            )
 
-            # https://github.com/tencent-ailab/IP-Adapter/blob/d580c50a291566bbf9fc7ac0f760506607297e6d/README.md?plain=1#L75
-            cn_img = resize_image(cn_img, width=224, height=224, resize_mode=0)
+            task[0] = ip_adapter.preprocess(
+                cn_img,
+                ip_adapter_path=ip_adapter_path,
+            )
 
-            task[0] = ip_adapter.preprocess(cn_img, ip_adapter_path=ip_adapter_path)
             if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
         for task in async_task.cn_tasks[flags.cn_ip_face]:
             cn_img, cn_stop, cn_weight = task
             cn_img = HWC3(cn_img)
@@ -950,15 +888,282 @@ def worker():
             if not async_task.skipping_cn_preprocessor:
                 cn_img = extras.face_crop.crop_image(cn_img)
 
-            # https://github.com/tencent-ailab/IP-Adapter/blob/d580c50a291566bbf9fc7ac0f760506607297e6d/README.md?plain=1#L75
-            cn_img = resize_image(cn_img, width=224, height=224, resize_mode=0)
+            cn_img = resize_image(
+                cn_img,
+                width=224,
+                height=224,
+                resize_mode=0,
+            )
 
-            task[0] = ip_adapter.preprocess(cn_img, ip_adapter_path=ip_adapter_face_path)
+            task[0] = ip_adapter.preprocess(
+                cn_img,
+                ip_adapter_path=ip_adapter_face_path,
+            )
+
             if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        all_ip_tasks = async_task.cn_tasks[flags.cn_ip] + async_task.cn_tasks[flags.cn_ip_face]
-        if len(all_ip_tasks) > 0:
-            pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, all_ip_tasks)
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        all_ip_tasks = (
+            async_task.cn_tasks[flags.cn_ip]
+            + async_task.cn_tasks[flags.cn_ip_face]
+        )
+
+        if all_ip_tasks:
+            pipeline.final_unet = ip_adapter.patch_model(
+                pipeline.final_unet,
+                all_ip_tasks,
+            )
+
+    def apply_control_nets(
+        async_task,
+        height,
+        ip_adapter_face_path,
+        ip_adapter_path,
+        width,
+        current_progress,
+    ):
+        def apply_ip_adapter_tasks():
+            # Обычный ImagePrompt.
+            for task in async_task.cn_tasks[flags.cn_ip]:
+                cn_img, cn_stop, cn_weight = task
+                cn_img = HWC3(cn_img)
+
+                # IP-Adapter получает квадратное изображение 224 x 224.
+                cn_img = resize_image(
+                    cn_img,
+                    width=224,
+                    height=224,
+                    resize_mode=0,
+                )
+
+                task[0] = ip_adapter.preprocess(
+                    cn_img,
+                    ip_adapter_path=ip_adapter_path,
+                )
+
+                if async_task.debugging_cn_preprocessor:
+                    yield_result(
+                        async_task,
+                        cn_img,
+                        current_progress,
+                        async_task.black_out_nsfw,
+                        do_not_show_finished_images=True,
+                    )
+
+            # FaceSwap оставлен в существующей SDXL-ветке.
+            for task in async_task.cn_tasks[flags.cn_ip_face]:
+                cn_img, cn_stop, cn_weight = task
+                cn_img = HWC3(cn_img)
+
+                if not async_task.skipping_cn_preprocessor:
+                    cn_img = extras.face_crop.crop_image(cn_img)
+
+                cn_img = resize_image(
+                    cn_img,
+                    width=224,
+                    height=224,
+                    resize_mode=0,
+                )
+
+                task[0] = ip_adapter.preprocess(
+                    cn_img,
+                    ip_adapter_path=ip_adapter_face_path,
+                )
+
+                if async_task.debugging_cn_preprocessor:
+                    yield_result(
+                        async_task,
+                        cn_img,
+                        current_progress,
+                        async_task.black_out_nsfw,
+                        do_not_show_finished_images=True,
+                    )
+
+            all_ip_tasks = (
+                async_task.cn_tasks[flags.cn_ip]
+                + async_task.cn_tasks[flags.cn_ip_face]
+            )
+
+            if all_ip_tasks:
+                pipeline.final_unet = ip_adapter.patch_model(
+                    pipeline.final_unet,
+                    all_ip_tasks,
+                )
+
+        if async_task.is_sd15:
+            # Для SD1.5 сначала готовятся обычные ControlNet hints.
+            apply_sd15_control_hints(
+                async_task,
+                height,
+                width,
+                current_progress,
+            )
+
+            # В этом варианте добавляется только ImagePrompt.
+            # SDXL FaceSwap нельзя передавать в SD1.5.
+            if async_task.cn_tasks[flags.cn_ip_face]:
+                print(
+                    "[SD1.5] FaceSwap IP-Adapter is not supported; skipped."
+                )
+                async_task.cn_tasks[flags.cn_ip_face] = []
+
+            # ImagePrompt использует SD1.5-адаптер, путь к которому
+            # должен быть выбран ранее при загрузке моделей.
+            apply_ip_adapter_tasks()
+            return
+
+        # SDXL ControlNet hints.
+        for task in async_task.cn_tasks[flags.cn_canny]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.canny_pyramid(
+                    cn_img,
+                    async_task.canny_low_threshold,
+                    async_task.canny_high_threshold,
+                )
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_pose]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.pose(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_manga]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_recolor]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.recolor_intensity(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_scribble]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.scribble_hed(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_cpds]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        # Для SDXL ImagePrompt и FaceSwap используют общую обработку.
+        apply_ip_adapter_tasks()
+
 
     def apply_vary(async_task, uov_method, denoising_strength, uov_input_image, switch, current_progress, advance_progress=False):
         if 'subtle' in uov_method:
@@ -1526,7 +1731,13 @@ def worker():
             #             async_task.cn_tasks[flag] = []
 
             if len(async_task.cn_tasks[flags.cn_ip]) > 0:
-                clip_vision_path, ip_negative_path, ip_adapter_path = modules.config.downloading_ip_adapters('ip')
+                clip_vision_path, ip_negative_path, ip_adapter_path = (
+                    modules.config.downloading_ip_adapters(
+                        "ip",
+                        is_sd15=async_task.is_sd15,
+                    )
+                )
+
             if len(async_task.cn_tasks[flags.cn_ip_face]) > 0:
                 clip_vision_path, ip_negative_path, ip_adapter_face_path = modules.config.downloading_ip_adapters(
                     'face')
