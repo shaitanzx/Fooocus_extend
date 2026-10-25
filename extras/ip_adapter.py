@@ -199,9 +199,24 @@ def preprocess(img, ip_adapter_path):
     ldm_patched.modules.model_management.load_model_gpu(ip_layers)
 
     if ip_unconds is None:
-        uncond = ip_negative.to(device=ip_adapter.load_device, dtype=ip_adapter.dtype)
-        ip_unconds = [m(uncond).cpu() for m in ip_layers.model.to_kvs]
-        entry['ip_unconds'] = ip_unconds
+        if ip_adapter.sdxl:
+            # Для SDXL оставить текущий learned negative embedding.
+            uncond = ip_negative.to(
+                device=ip_adapter.load_device,
+                dtype=ip_adapter.dtype,
+            )
+        else:
+            # Для SD1.5 создать нулевое безусловное embedding
+            # нужной размерности — такой же формы, как cond.
+            # У SD1.5 это 768 каналов; у загруженного SDXL embedding — 2048.
+            uncond = torch.zeros_like(cond)
+
+        ip_unconds = [
+            m(uncond).cpu()
+            for m in ip_layers.model.to_kvs
+        ]
+        entry["ip_unconds"] = ip_unconds
+
 
     ip_conds = [m(cond).cpu() for m in ip_layers.model.to_kvs]
 
