@@ -975,7 +975,7 @@ def download_instantid(is_sd15=False):
         file_name='scrfd_10g_bnkps.onnx'
     )
 
-        if is_sd15:
+    if is_sd15:
         instantid_files = [
             (
                 "ip-state.ckpt",
