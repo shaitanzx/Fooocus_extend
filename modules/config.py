@@ -1132,16 +1132,11 @@ def downloading_ip_adapters(v, is_sd15=False):
     elif v == "face":
         if is_sd15:
             file_name = "ip-adapter-plus-face_sd15.bin"
-            url = (
-                "https://huggingface.co/h94/IP-Adapter/"
-                "resolve/main/models/ip-adapter-plus-face_sd15.bin"
-            )
+            url = "https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.bin"
+            
         else:
             file_name = "ip-adapter-plus-face_sdxl_vit-h.bin"
-            url = (
-                "https://huggingface.co/lllyasviel/misc/"
-                "resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin"
-            )
+            url = "https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin"            
 
         load_file_from_url(
             url=url,

@@ -1005,16 +1005,6 @@ def worker():
                 current_progress,
             )
 
-            # В этом варианте добавляется только ImagePrompt.
-            # SDXL FaceSwap нельзя передавать в SD1.5.
-            # if async_task.cn_tasks[flags.cn_ip_face]:
-            #     print(
-            #         "[SD1.5] FaceSwap IP-Adapter is not supported; skipped."
-            #     )
-            #     async_task.cn_tasks[flags.cn_ip_face] = []
-
-            # ImagePrompt использует SD1.5-адаптер, путь к которому
-            # должен быть выбран ранее при загрузке моделей.
             apply_ip_adapter_tasks()
             return
 
