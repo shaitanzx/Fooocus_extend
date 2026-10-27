@@ -948,7 +948,7 @@ def downloading_sdxl_hyper_sd_lora():
         file_name=modules.flags.PerformanceLoRA.HYPER_SD.value
     )
     return modules.flags.PerformanceLoRA.HYPER_SD.value
-def download_instantid():
+def download_instantid(is_sd15=False):
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/1k3d68.onnx',
         model_dir='extentions/instantid/models/antelopev2',
@@ -973,22 +973,54 @@ def download_instantid():
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/scrfd_10g_bnkps.onnx',
         model_dir='extentions/instantid/models/antelopev2',
         file_name='scrfd_10g_bnkps.onnx'
-    ) 
-    load_file_from_url(
-        url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/config.json',
-        model_dir='extentions/instantid/checkpoints/ControlNetModel',
-        file_name='config.json'
-    )   
-    load_file_from_url(
-        url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/diffusion_pytorch_model.safetensors',
-        model_dir='extentions/instantid/checkpoints/ControlNetModel',
-        file_name='diffusion_pytorch_model.safetensors'
-    )     
-    load_file_from_url(
-        url='https://huggingface.co/InstantX/InstantID/resolve/main/ip-adapter.bin',
-        model_dir='extentions/instantid/checkpoints',
-        file_name='ip-adapter.bin'
-    )  
+    )
+
+        if is_sd15:
+        instantid_files = [
+            (
+                "ip-state.ckpt",
+                "https://huggingface.co/TheDenk/InstantID-SD1.5/"
+                "resolve/main/ip-state.ckpt",
+            ),
+            (
+                "image_proj.ckpt",
+                "https://huggingface.co/TheDenk/InstantID-SD1.5/"
+                "resolve/main/image_proj.ckpt",
+            ),
+            (
+                "controlnet.ckpt",
+                "https://huggingface.co/TheDenk/InstantID-SD1.5/"
+                "resolve/main/controlnet.ckpt",
+            ),
+        ]
+
+        for file_name, url in instantid_files:
+            load_file_from_url(
+                url=url,
+                model_dir="extentions/instantid/checkpoints/sd15",
+                file_name=file_name,
+            )
+    else:
+        # Оставить существующие SDXL-загрузки:
+        # ControlNetModel/config.json
+        # ControlNetModel/diffusion_pytorch_model.safetensors
+        # ip-adapter.bin
+
+        load_file_from_url(
+            url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/config.json',
+            model_dir='extentions/instantid/checkpoints/ControlNetModel',
+            file_name='config.json'
+        )   
+        load_file_from_url(
+            url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/diffusion_pytorch_model.safetensors',
+            model_dir='extentions/instantid/checkpoints/ControlNetModel',
+            file_name='diffusion_pytorch_model.safetensors'
+        )     
+        load_file_from_url(
+            url='https://huggingface.co/InstantX/InstantID/resolve/main/ip-adapter.bin',
+            model_dir='extentions/instantid/checkpoints',
+            file_name='ip-adapter.bin'
+        )  
 SD15_CONTROLNET_FILES = {
     "canny": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
     "pose": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors",

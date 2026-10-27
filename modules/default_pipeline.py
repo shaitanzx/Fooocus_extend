@@ -473,7 +473,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             width,
             height,
             p.start_instant,
-            p.end_instant
+            p.end_instant,
+            is_sd15=p.is_sd15
         )
 
 

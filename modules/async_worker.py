@@ -1752,7 +1752,7 @@ def worker():
             controlnet_canny_path = modules.config.downloading_controlnet_canny()
         if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
             controlnet_cpds_path = modules.config.downloading_controlnet_cpds()
-        modules.config.download_instantid()
+        modules.config.download_instantid(is_sd15=async_task.is_sd15)
 
         return controlnet_canny_path, controlnet_cpds_path
 
