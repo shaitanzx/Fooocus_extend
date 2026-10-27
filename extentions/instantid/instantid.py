@@ -26,23 +26,30 @@ import torch.nn.functional as F
 # instantid_attention() (1, 3, 5, ...). Diffusers names identify checkpoint tensors;
 # block tuples identify ldm_patched SD1.5 transformer locations.
 SD15_INSTANTID_LAYERS = [
+    # Down blocks
     ("down_blocks.0.attentions.0.transformer_blocks.0.attn2", ("input", 1, 0)),
     ("down_blocks.0.attentions.1.transformer_blocks.0.attn2", ("input", 2, 0)),
     ("down_blocks.1.attentions.0.transformer_blocks.0.attn2", ("input", 4, 0)),
     ("down_blocks.1.attentions.1.transformer_blocks.0.attn2", ("input", 5, 0)),
     ("down_blocks.2.attentions.0.transformer_blocks.0.attn2", ("input", 7, 0)),
     ("down_blocks.2.attentions.1.transformer_blocks.0.attn2", ("input", 8, 0)),
+
+    # Middle block
     ("mid_block.attentions.0.transformer_blocks.0.attn2", ("middle", 0, 0)),
-    ("up_blocks.0.attentions.0.transformer_blocks.0.attn2", ("output", 0, 0)),
-    ("up_blocks.0.attentions.1.transformer_blocks.0.attn2", ("output", 1, 0)),
-    ("up_blocks.0.attentions.2.transformer_blocks.0.attn2", ("output", 2, 0)),
+
+    # Up blocks: у SD1.5 attention начинается с up_blocks.1,
+    # поэтому соответствующие ldm_patched output block ID — 3..11.
     ("up_blocks.1.attentions.0.transformer_blocks.0.attn2", ("output", 3, 0)),
     ("up_blocks.1.attentions.1.transformer_blocks.0.attn2", ("output", 4, 0)),
     ("up_blocks.1.attentions.2.transformer_blocks.0.attn2", ("output", 5, 0)),
     ("up_blocks.2.attentions.0.transformer_blocks.0.attn2", ("output", 6, 0)),
     ("up_blocks.2.attentions.1.transformer_blocks.0.attn2", ("output", 7, 0)),
     ("up_blocks.2.attentions.2.transformer_blocks.0.attn2", ("output", 8, 0)),
+    ("up_blocks.3.attentions.0.transformer_blocks.0.attn2", ("output", 9, 0)),
+    ("up_blocks.3.attentions.1.transformer_blocks.0.attn2", ("output", 10, 0)),
+    ("up_blocks.3.attentions.2.transformer_blocks.0.attn2", ("output", 11, 0)),
 ]
+
 
 SD15_INSTANTID_DIR = "extentions/instantid/checkpoints/sd15"
 
