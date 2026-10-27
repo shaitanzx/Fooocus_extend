@@ -309,16 +309,67 @@ def load_instantid_model_sd15():
     image_proj_state = image_proj_data.get("state_dict", image_proj_data)
 
     # TheDenk checkpoints may carry a leading 'module.' prefix.
-    adapter_state = {
-        key.removeprefix("module."): value
-        for key, value in adapter_state.items()
-        if isinstance(value, torch.Tensor)
-    }
-    image_proj_state = {
-        key.removeprefix("module."): value
-        for key, value in image_proj_state.items()
-        if isinstance(value, torch.Tensor)
-    }
+    def normalize_adapter_key(key):
+        # Нормализуем возможные префиксы из разных вариантов checkpoint.
+        prefixes = (
+            "module.",
+            "unet.",
+            "model.diffusion_model.",
+            "ip_adapter.",
+        )
+
+        changed = True
+        while changed:
+            changed = False
+            for prefix in prefixes:
+                if key.startswith(prefix):
+                    key = key[len(prefix):]
+                    changed = True
+
+        # В некоторых сохранениях processor входит в имя, в других — нет.
+        key = key.replace(".processor.", ".")
+        return key
+
+    # Индексируем тензоры по нормализованным именам.
+    normalized_adapter_state = {}
+    original_keys_by_normalized_name = {}
+
+    for original_key, value in adapter_state.items():
+        if not isinstance(original_key, str) or not isinstance(value, torch.Tensor):
+            continue
+
+        normalized_key = normalize_adapter_key(original_key)
+        normalized_adapter_state[normalized_key] = value
+        original_keys_by_normalized_name[normalized_key] = original_key
+
+    ip_adapter = {}
+
+    for index, (layer_path, _) in enumerate(SD15_INSTANTID_LAYERS):
+        module_key = str(index * 2 + 1)
+
+        for projection in ("k", "v"):
+            expected_key = normalize_adapter_key(
+                f"{layer_path}.processor.to_{projection}_ip.weight"
+            )
+            tensor = normalized_adapter_state.get(expected_key)
+
+            if tensor is None:
+                related_keys = [
+                    key for key in adapter_state
+                    if isinstance(key, str)
+                    and "to_{}_ip".format(projection) in key
+                    and "up_blocks" in key
+                ]
+
+                raise KeyError(
+                    f"Не найден вес InstantID: {expected_key}\\n"
+                    f"Исходный слой: {layer_path}\\n"
+                    f"Примеры ключей checkpoint для up_blocks: "
+                    f"{related_keys[:30]}"
+                )
+
+            ip_adapter[f"{module_key}.to_{projection}_ip.weight"] = tensor
+
 
     ip_adapter = {}
     for index, (layer_path, _) in enumerate(SD15_INSTANTID_LAYERS):
