@@ -323,17 +323,7 @@ class ControlLora(ControlNet):
         return ldm_patched.modules.utils.calculate_parameters(self.control_weights) * ldm_patched.modules.model_management.dtype_size(dtype) + ControlBase.inference_memory_requirements(self, dtype)
 
 def load_controlnet(ckpt_path, model=None):
-    controlnet_data = ldm_patched.modules.utils.load_torch_file(
-        ckpt_path,
-        safe_load=True,
-    )
-
-    if (
-        isinstance(controlnet_data, dict)
-        and isinstance(controlnet_data.get("state_dict"), dict)
-    ):
-        controlnet_data = controlnet_data["state_dict"]
-
+    controlnet_data = ldm_patched.modules.utils.load_torch_file(ckpt_path, safe_load=True)
     if "lora_controlnet" in controlnet_data:
         return ControlLora(controlnet_data)
 
