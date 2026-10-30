@@ -14,7 +14,6 @@ from ldm_patched.modules.model_base import SDXL, SDXLRefiner
 from modules.sample_hijack import clip_separate
 from modules.util import get_file_from_folder_list, get_enabled_loras, apply_lbw_patches
 
-
 import copy
 from typing import Optional
 from torch import Tensor
@@ -413,7 +412,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         print(f'[Sampler] SD1.5 refiner, swap method = {refiner_swap_method}')
     elif final_refiner_vae is not None and final_refiner_unet is not None:
         # Refiner Use Different VAE (then it is SD15)
-        # Refiner Use Different VAE (then it is SD15)
         if denoise > 0.9:
             refiner_swap_method = 'vae'
         else:
@@ -768,18 +766,10 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     if transper != "None":
         mod_number = 1
         if p.is_sd15:
-            decoder_url = (
-                "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/"
-                "resolve/main/layer_sd15_vae_transparent_decoder.safetensors"
-            )
-            decoder_filename = (
-                "layer_sd15_vae_transparent_decoder.safetensors"
-            )
+            decoder_url = "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_vae_transparent_decoder.safetensors"
+            decoder_filename = "layer_sd15_vae_transparent_decoder.safetensors"
         else:
-            decoder_url = (
-                "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/"
-                "resolve/main/vae_transparent_decoder.safetensors"
-            )
+            decoder_url = "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors"
             decoder_filename = "vae_transparent_decoder.safetensors"
 
         model_path = load_file_from_url(

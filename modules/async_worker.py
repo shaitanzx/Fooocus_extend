@@ -68,15 +68,10 @@ class AsyncTask:
         self.uov_input_image = args.pop()
         self.outpaint_selections = args.pop()
 
-
         self.outpaint_width = args.pop()
         self.outpaint_shift_width = args.pop()
         self.outpaint_heighth = args.pop()
         self.outpaint_shift_heighth = args.pop()
-
-
-
-
 
         self.inpaint_input_image = args.pop()
         self.inpaint_additional_prompt = args.pop()
@@ -139,8 +134,6 @@ class AsyncTask:
         self.debugging_dino = args.pop()
         self.dino_erode_or_dilate = args.pop()
         self.debugging_enhance_masks_checkbox = args.pop()
-
-
 
         self.adetailer_checkbox = args.pop() 
         self.enhance_checkbox = args.pop()
@@ -254,7 +247,6 @@ class AsyncTask:
         self.source_index = args.pop()
         self.target_index = args.pop()
        
-
         self.enable_instant = args.pop()
 
         self.face_file_id = args.pop()
@@ -330,13 +322,6 @@ class AsyncTask:
         self.poTransPNGQuant = args.pop()
         self.transper = args.pop()
         self.uov_model = args.pop()
-
-        
-
-        
-        
-
-    
 
 async_tasks = []
 
@@ -642,7 +627,6 @@ def worker():
 
         return imgs, img_paths, current_progress
 
-
     def apply_sd15_overrides(async_task):
         import modules.model_family as mf
 
@@ -661,7 +645,7 @@ def worker():
 
         print('[SD1.5] Compatibility overrides applied.')
 
-        # с SD1.5-базой допустим только SD1.5-рефайнер
+
         if async_task.refiner_model_name != 'None':
             ref_path = get_file_from_folder_list(async_task.refiner_model_name, modules.config.paths_checkpoints)
             ref_fam = mf.detect_family_from_file(ref_path)
@@ -671,7 +655,6 @@ def worker():
             else:
                 print('[SD1.5] SD1.5 refiner enabled.')
 
-        # режимы с SDXL-LoRA: Extreme Speed, Lightning, Hyper-SD
         if async_task.performance_selection in (Performance.EXTREME_SPEED,
                                                 Performance.LIGHTNING,
                                                 Performance.HYPER_SD):
@@ -737,7 +720,6 @@ def worker():
                 d.append(('CFG Mimicking from TSNR', 'adaptive_cfg', modules.patch.patch_settings[pid].adaptive_cfg))
             if modules.patch.patch_settings[pid].type_cfg == 'CFG rescale':
                 d.append(('CFG rescale', 'rescale_cfg', modules.patch.patch_settings[pid].rescale_cfg))
-
 
             if async_task.clip_skip > 1:
                 d.append(('CLIP Skip', 'clip_skip', async_task.clip_skip))
@@ -856,74 +838,6 @@ def worker():
             task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-    # def apply_ip_adapter_tasks(
-    #     async_task,
-    #     ip_adapter_face_path,
-    #     ip_adapter_path,
-    #     current_progress,
-    # ):
-    #     for task in async_task.cn_tasks[flags.cn_ip]:
-    #         cn_img, cn_stop, cn_weight = task
-    #         cn_img = HWC3(cn_img)
-    #         cn_img = resize_image(
-    #             cn_img,
-    #             width=224,
-    #             height=224,
-    #             resize_mode=0,
-    #         )
-
-    #         task[0] = ip_adapter.preprocess(
-    #             cn_img,
-    #             ip_adapter_path=ip_adapter_path,
-    #         )
-
-    #         if async_task.debugging_cn_preprocessor:
-    #             yield_result(
-    #                 async_task,
-    #                 cn_img,
-    #                 current_progress,
-    #                 async_task.black_out_nsfw,
-    #                 do_not_show_finished_images=True,
-    #             )
-
-    #     for task in async_task.cn_tasks[flags.cn_ip_face]:
-    #         cn_img, cn_stop, cn_weight = task
-    #         cn_img = HWC3(cn_img)
-
-    #         if not async_task.skipping_cn_preprocessor:
-    #             cn_img = extras.face_crop.crop_image(cn_img)
-
-    #         cn_img = resize_image(
-    #             cn_img,
-    #             width=224,
-    #             height=224,
-    #             resize_mode=0,
-    #         )
-
-    #         task[0] = ip_adapter.preprocess(
-    #             cn_img,
-    #             ip_adapter_path=ip_adapter_face_path,
-    #         )
-
-    #         if async_task.debugging_cn_preprocessor:
-    #             yield_result(
-    #                 async_task,
-    #                 cn_img,
-    #                 current_progress,
-    #                 async_task.black_out_nsfw,
-    #                 do_not_show_finished_images=True,
-    #             )
-
-    #     all_ip_tasks = (
-    #         async_task.cn_tasks[flags.cn_ip]
-    #         + async_task.cn_tasks[flags.cn_ip_face]
-    #     )
-
-    #     if all_ip_tasks:
-    #         pipeline.final_unet = ip_adapter.patch_model(
-    #             pipeline.final_unet,
-    #             all_ip_tasks,
-    #         )
 
     def apply_control_nets(
         async_task,
@@ -934,18 +848,11 @@ def worker():
         current_progress,
     ):
         def apply_ip_adapter_tasks():
-            # Обычный ImagePrompt.
             for task in async_task.cn_tasks[flags.cn_ip]:
                 cn_img, cn_stop, cn_weight = task
                 cn_img = HWC3(cn_img)
 
-                # IP-Adapter получает квадратное изображение 224 x 224.
-                cn_img = resize_image(
-                    cn_img,
-                    width=224,
-                    height=224,
-                    resize_mode=0,
-                )
+                cn_img = resize_image(cn_img,width=224,height=224,resize_mode=0)
 
                 task[0] = ip_adapter.preprocess(
                     cn_img,
@@ -961,7 +868,6 @@ def worker():
                         do_not_show_finished_images=True,
                     )
 
-            # FaceSwap оставлен в существующей SDXL-ветке.
             for task in async_task.cn_tasks[flags.cn_ip_face]:
                 cn_img, cn_stop, cn_weight = task
                 cn_img = HWC3(cn_img)
@@ -969,12 +875,7 @@ def worker():
                 if not async_task.skipping_cn_preprocessor:
                     cn_img = extras.face_crop.crop_image(cn_img)
 
-                cn_img = resize_image(
-                    cn_img,
-                    width=224,
-                    height=224,
-                    resize_mode=0,
-                )
+                cn_img = resize_image(cn_img,width=224,height=224,resize_mode=0)
 
                 task[0] = ip_adapter.preprocess(
                     cn_img,
@@ -1002,18 +903,10 @@ def worker():
                 )
 
         if async_task.is_sd15:
-            # Для SD1.5 сначала готовятся обычные ControlNet hints.
-            apply_sd15_control_hints(
-                async_task,
-                height,
-                width,
-                current_progress,
-            )
-
+            apply_sd15_control_hints(async_task,height,width,current_progress)
             apply_ip_adapter_tasks()
             return
 
-        # SDXL ControlNet hints.
         for task in async_task.cn_tasks[flags.cn_canny]:
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(
@@ -1155,8 +1048,6 @@ def worker():
                     async_task.black_out_nsfw,
                     do_not_show_finished_images=True,
                 )
-
-        # Для SDXL ImagePrompt и FaceSwap используют общую обработку.
         apply_ip_adapter_tasks()
 
 
@@ -1196,8 +1087,6 @@ def worker():
                       inpaint_mask, inpaint_parameterized, denoising_strength, inpaint_respective_field, switch,
                       inpaint_disable_initial_latent, current_progress, skip_apply_outpaint=False,
                       advance_progress=False):
-
-
         if not skip_apply_outpaint:
             inpaint_image, inpaint_mask = apply_outpaint(async_task, inpaint_image, inpaint_mask)
 
@@ -1249,8 +1138,6 @@ def worker():
             latent_swap=latent_swap
         )
 
-        # Старый Fooocus head/patch нужен только параметризованному inpaint-пути.
-        # Native 9-channel SD1.5 checkpoint использует собственные входы UNet.
         if inpaint_parameterized:
             pipeline.final_unet = inpaint_worker.current_task.patch(
                 inpaint_head_model_path=inpaint_head_model_path,
@@ -1271,7 +1158,6 @@ def worker():
                 'concat_latent_image': latent_inpaint,
             }
         elif not inpaint_disable_initial_latent:
-            # Сохраняем прежнее поведение SDXL и обычной 4-channel SD1.5.
             initial_latent = {'samples': latent_fill}
         B, C, H, W = latent_fill.shape
         height, width = H * 8, W * 8
@@ -1727,22 +1613,6 @@ def worker():
                     if async_task.is_sd15
                     else modules.config.downloading_controlnet_manga()
                 )
-            # if not async_task.is_sd15:
-
-            #     if len(async_task.cn_tasks[flags.cn_manga]) > 0:
-            #         controlnet_manga_path = modules.config.downloading_controlnet_manga()
-            # # else:
-            #     for flag, label in (
-                    
-            #         (flags.cn_manga, "Manga Recolor"),
-                    
-            #     ):
-            #         if async_task.cn_tasks[flag]:
-            #             print(
-            #                 f"[SD1.5] {label} ControlNet is not configured "
-            #                 "for SD1.5 and will be skipped."
-            #             )
-            #             async_task.cn_tasks[flag] = []
 
             if len(async_task.cn_tasks[flags.cn_ip]) > 0:
                 clip_vision_path, ip_negative_path, ip_adapter_path = (
@@ -1822,7 +1692,7 @@ def worker():
         inpaint_parameterized = (
             inpaint_engine != 'None'
             and not getattr(async_task, 'native_sd15_inpaint', False)
-        )  # Native SD1.5 inpaint использует собственные 9-channel входы.
+        )
         initial_latent = None
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
@@ -1880,11 +1750,6 @@ def worker():
 
         del task_enhance['c'], task_enhance['uc']  # Save memory
         return current_progress, imgs[0], prompt, negative_prompt
-
-
-
-
-
 
     def enhance_upscale(all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
                         controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
@@ -2030,8 +1895,6 @@ def worker():
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
-        #if async_task.layer_enable:
-        #    async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
 
 
         print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
@@ -2039,7 +1902,6 @@ def worker():
 
         progressbar(async_task, current_progress, 'Initializing ...')
 
-        # Native 9-channel SD1.5 checkpoint требует исходное изображение и маску.
         if (
             getattr(async_task, 'native_sd15_inpaint', False)
             and 'inpaint' not in goals
@@ -2062,10 +1924,6 @@ def worker():
                         async_task.autonegativeprompt, async_task.autonegativepromptstrength, async_task.autonegativepromptenhance, 
                         async_task.base_model_obp, async_task.OBP_preset, async_task.amountoffluff, async_task.promptenhancer, 
                         async_task.presetprefix, async_task.presetsuffix)
-
-
-
-
 
             tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,
                                                          base_model_additional_loras, async_task.image_number,
@@ -2198,8 +2056,6 @@ def worker():
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
 
-
-
         all_steps = max(all_steps, 1)
 
         print(f'[Parameters] Denoising Strength = {denoising_strength}')
@@ -2235,7 +2091,6 @@ def worker():
         show_intermediate_results = len(tasks) > 1 or async_task.should_enhance
         
         persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only
-
 
         for current_task_id, task in enumerate(tasks):
             if async_task.aspect_random==True:
@@ -2385,11 +2240,9 @@ def worker():
                                          async_task.disable_intermediate_results)
                             async_task.enhance_stats[index] += 1
 
-
                         if not async_task.only_detect:                    
                             goals_adetail = ['inpaint']
                     
-
                             adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                             for n in range(len(masks)):
                                 prompt=adetail_prompt[n]
@@ -2400,8 +2253,6 @@ def worker():
                                 negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
                                 mask_binary = np.array(masks[n])
                                 mask_binary = (mask_binary > 0.5).astype(np.uint8) * 255
-
-
 
                                 try:
                                     current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
@@ -2435,16 +2286,6 @@ def worker():
 
                     if exception_result == 'break':
                         break
-
-
-
-
-
-
-
-
-
-
 
             else:
                 # inpaint for all other tabs
