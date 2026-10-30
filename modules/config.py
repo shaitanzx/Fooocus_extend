@@ -934,7 +934,7 @@ def downloading_sd15_lcm_lora():
 def downloading_sd15_hyper_sd_lora():
     file_name = 'Hyper-SD15-4steps-lora.safetensors'
     load_file_from_url(
-        url='https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-4steps-lora.safetensors',
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/Hyper-SD15-4steps-lora.safetensors',
         model_dir=paths_loras[0],
         file_name=file_name
     )
@@ -944,7 +944,7 @@ def downloading_sd15_tcd_lora():
     file_name = 'TCD-SD15-LoRA.safetensors'
 
     load_file_from_url(
-        url='https://huggingface.co/h1t/TCD-SD15-LoRA/resolve/main/pytorch_lora_weights.safetensors',
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/TCD-SD15-LoRA.safetensors',
         model_dir=paths_loras[0],
         file_name=file_name
     )
