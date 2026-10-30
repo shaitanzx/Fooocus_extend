@@ -139,6 +139,12 @@ class AttentionSharingUnit(torch.nn.Module):
         self.temporal_o = torch.nn.Linear(hidden_size, hidden_size)
 
     def forward(self, x, context=None, value=None, mask=None):
+        # UNet может выполнять вычисления в float16, тогда как checkpoint
+        # и новые модули патчера загружены в float32. Приводим обученные
+        # параметры этой attention-замены к фактическому типу входа.
+        reference = self.temporal_n.weight
+        if reference.device != x.device or reference.dtype != x.dtype:
+            self.to(device=x.device, dtype=x.dtype)
         # Fooocus calls this replacement with [batch, sequence, channels].
         # Attention Injection is single-frame, so no frame rearrangement is needed.
         context = x if context is None else context
