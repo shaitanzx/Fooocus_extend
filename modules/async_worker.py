@@ -1461,8 +1461,7 @@ def worker():
             async_task.sampler_name = 'dpmpp_sde_gpu'
             async_task.scheduler_name = 'karras'
             async_task.cfg_scale = 1.0
-        async_task.performance_loras += [
-            (hyper_lora_path, hyper_lora_weight)
+        async_task.performance_loras += [(hyper_lora_path, hyper_lora_weight)]
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in Hyper-SD mode.')
         async_task.refiner_model_name = 'None'
