@@ -921,7 +921,35 @@ def downloading_inpaint_models(v):
         patch_file = os.path.join(path_inpaint, 'inpaint_v26.fooocus.patch')
 
     return head_file, patch_file
+def downloading_sd15_lcm_lora():
+    file_name = 'lcm-lora-sdv1-5.safetensors'
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/lcm-lora-sdv1-5.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+    return file_name
 
+
+def downloading_sd15_hyper_sd_lora():
+    file_name = 'Hyper-SD15-4steps-lora.safetensors'
+    load_file_from_url(
+        url='https://huggingface.co/ByteDance/Hyper-SD/resolve/main/Hyper-SD15-4steps-lora.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+    return file_name
+
+def downloading_sd15_tcd_lora():
+    file_name = 'TCD-SD15-LoRA.safetensors'
+
+    load_file_from_url(
+        url='https://huggingface.co/h1t/TCD-SD15-LoRA/resolve/main/pytorch_lora_weights.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+
+    return file_name
 
 def downloading_sdxl_lcm_lora():
     load_file_from_url(
