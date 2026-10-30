@@ -551,7 +551,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                 )
         else:
             if p.is_sd15:
-                gr.Info(f"Transparency not support Conv Injection mode for SD1.5. Switching toAttention Injection mode.")
+                print(f"[Transparency] Conv Injection not support for SD1.5. Switching to Attention Injection mode.")
         
                 model_path = load_file_from_url(
                     url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_transparent_attn.safetensors',
@@ -567,9 +567,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
 
         if p.is_sd15:
-            from modules.transparent_attention_sd15 import (
-                apply_sd15_transparent_attention,
-            )
+            from extentions.transper.transparent_attention_sd15 import (apply_sd15_transparent_attention)
 
             apply_sd15_transparent_attention(
                 target_unet,

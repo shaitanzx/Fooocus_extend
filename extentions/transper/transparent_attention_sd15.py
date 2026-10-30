@@ -4,7 +4,7 @@ from ldm_patched.ldm.modules.attention import optimized_attention
 from ldm_patched.modules import utils as ldm_utils
 
 
-# Порядок и имена соответствуют checkpoint LayerDiffusion:
+# checkpoint LayerDiffusion:
 # hookers.layers.0 ... hookers.layers.31
 MODULE_MAPPING_SD15 = {
     0: "input_blocks.1.1.transformer_blocks.0.attn1",
@@ -139,9 +139,6 @@ class AttentionSharingUnit(torch.nn.Module):
         self.temporal_o = torch.nn.Linear(hidden_size, hidden_size)
 
     def forward(self, x, context=None, value=None, mask=None):
-        # UNet может выполнять вычисления в float16, тогда как checkpoint
-        # и новые модули патчера загружены в float32. Приводим обученные
-        # параметры этой attention-замены к фактическому типу входа.
         reference = self.temporal_n.weight
         if reference.device != x.device or reference.dtype != x.dtype:
             self.to(device=x.device, dtype=x.dtype)
