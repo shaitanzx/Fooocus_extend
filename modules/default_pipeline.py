@@ -28,7 +28,7 @@ from extentions.transper.models import TransparentVAEDecoder
 import extentions.instantid.instantid as instantid
 import gc
 import modules.model_family as model_family
-
+import gradio as gr
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -551,10 +551,12 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                 )
         else:
             if p.is_sd15:
+                gr.Info(f"Transparency not support Conv Injection mode for SD1.5. Switching toAttention Injection mode.")
+        
                 model_path = load_file_from_url(
-                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_joint.safetensors',
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_transparent_attn.safetensors',
                     model_dir=layer_model_root,
-                    file_name='layer_sd15_joint.safetensors'
+                    file_name='layer_sd15_transparent_attn.safetensors'
                 )
             else:
                 model_path = load_file_from_url(
@@ -580,13 +582,6 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                 layer_lora_model,
                 1,
             )
-
-
-
-
-
-
-        #target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
         step_index = int((len(minmax_sigmas) - 1))
         sigma_end = minmax_sigmas[step_index].item()
