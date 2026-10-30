@@ -454,6 +454,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     
     original_patches = move_tensors_to_device(copy.deepcopy(target_unet.patches), 'cpu')
     original_model_options = move_tensors_to_device(copy.deepcopy(target_unet.model_options), 'cpu')
+    original_object_patches = copy.copy(target_unet.object_patches)
 
     if p.enable_instant:
         instantid_model, control_net = None, None
@@ -562,7 +563,30 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                     file_name='layer_xl_transparent_conv.safetensors'
                 )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
-        target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
+
+        if p.is_sd15:
+            from modules.transparent_attention_sd15 import (
+                apply_sd15_transparent_attention,
+            )
+
+            apply_sd15_transparent_attention(
+                target_unet,
+                layer_lora_model,
+            )
+        else:
+
+            target_unet.load_frozen_patcher(
+                os.path.basename(model_path),
+                layer_lora_model,
+                1,
+            )
+
+
+
+
+
+
+        #target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
         step_index = int((len(minmax_sigmas) - 1))
         sigma_end = minmax_sigmas[step_index].item()
@@ -750,12 +774,33 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     
     if transper != "None":
         mod_number = 1
+        if p.is_sd15:
+            decoder_url = (
+                "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/"
+                "resolve/main/layer_sd15_vae_transparent_decoder.safetensors"
+            )
+            decoder_filename = (
+                "layer_sd15_vae_transparent_decoder.safetensors"
+            )
+        else:
+            decoder_url = (
+                "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/"
+                "resolve/main/vae_transparent_decoder.safetensors"
+            )
+            decoder_filename = "vae_transparent_decoder.safetensors"
+
         model_path = load_file_from_url(
-                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors',
-                    model_dir=layer_model_root,
-                    file_name='vae_transparent_decoder.safetensors'
-                )
-        vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(model_path))
+            url=decoder_url,
+            model_dir=layer_model_root,
+            file_name=decoder_filename,
+        )
+
+        vae_transparent_decoder = TransparentVAEDecoder(
+            ldm_patched.modules.utils.load_torch_file(
+                model_path,
+                safe_load=True,
+            )
+        )
 
         latent = sampled_latent['samples'][0]
         pixel = images[0]
@@ -771,6 +816,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     target_unet.patches = move_tensors_to_device(original_patches, main_device)
     target_unet.model_options = move_tensors_to_device(original_model_options, main_device)
+    target_unet.object_patches = original_object_patches
+    del original_object_patches
     del original_patches, original_model_options
 
     if p.enable_instant:
