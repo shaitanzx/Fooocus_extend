@@ -66,7 +66,7 @@ def assert_model_integrity():
     current_family = fam
     if fam not in (model_family.SDXL, model_family.SD15):
         raise NotImplementedError(
-            f'Unsupported base model family: {fam}. Supported: SDXL, SD1.5 (4-channel, non-inpaint).')
+            f"Unsupported base model family: {fam}. Supported: SDXL and SD1.5.")
     if fam == model_family.SD15 and model_refiner.unet is not None:
         rfam = model_family.detect_family_from_model(model_refiner.unet)
         if rfam != model_family.SD15:
