@@ -1703,7 +1703,7 @@ with shared.gradio_root:
                         with gr.Tab(label='Transparency'):
                             transper = gr.Dropdown(label='Mode',
                                     value='None',
-                                    choices=['None','Attention Injection','Conv Injection'],
+                                    choices=['None','Attention Injection','Conv Injection (SDXL only)'],
                                     interactive=True)
                     with gr.Tab(label='Inpaint'):
                         debugging_inpaint_preprocessor = gr.Checkbox(label='Debug Inpaint Preprocessing', value=False)
