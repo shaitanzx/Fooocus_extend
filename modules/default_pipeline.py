@@ -536,17 +536,31 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         print(f'[Transparency] {transper}')
 
         if transper == 'Attention Injection':
-            model_path = load_file_from_url(
-                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
-                model_dir=layer_model_root,
-                file_name='layer_xl_transparent_attn.safetensors'
-            )
+            if p.is_sd15:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_transparent_attn.safetensors',
+                    model_dir=layer_model_root,
+                    file_name='layer_sd15_transparent_attn.safetensors'
+                )
+            else:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
+                    model_dir=layer_model_root,
+                    file_name='layer_xl_transparent_attn.safetensors'
+                )
         else:
-            model_path = load_file_from_url(
-                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
-                model_dir=layer_model_root,
-                file_name='layer_xl_transparent_conv.safetensors'
-            )
+            if p.is_sd15:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_joint.safetensors',
+                    model_dir=layer_model_root,
+                    file_name='layer_sd15_joint.safetensors'
+                )
+            else:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
+                    model_dir=layer_model_root,
+                    file_name='layer_xl_transparent_conv.safetensors'
+                )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
         target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
