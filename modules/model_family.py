@@ -34,11 +34,19 @@ def detect_family_from_file(path):
 
 def detect_family_from_model(unet_patcher):
     from ldm_patched.modules.model_base import SDXL as _SDXL, SDXLRefiner as _Ref
+
     m = unet_patcher.model
     if isinstance(m, _SDXL):
         return SDXL
     if isinstance(m, _Ref):
         return SDXL_REFINER
+
+    ucfg = getattr(
+        getattr(m, "model_config", None),
+        "unet_config",
+        None
+    ) or {}
+
     if (
         ucfg.get("context_dim") == 768
         and ucfg.get("in_channels", 4) in (4, 9)

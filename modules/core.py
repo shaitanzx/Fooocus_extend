@@ -351,9 +351,8 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
     if isinstance(noise_mean, torch.Tensor):
         noise = noise + noise_mean - torch.mean(noise, dim=1, keepdim=True)
 
-    noise_mask = None
-    if "noise_mask" in latent:
-        noise_mask = latent["noise_mask"]
+    noise_mask = latent.get("noise_mask")
+    concat_latent_image = latent.get("concat_latent_image")
 
     previewer = get_previewer(model)
 
@@ -385,7 +384,8 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
                                                     last_step=last_step,
                                                     force_full_denoise=force_full_denoise, noise_mask=noise_mask,
                                                     callback=callback,
-                                                    disable_pbar=disable_pbar, seed=seed, sigmas=sigmas)
+                                                    disable_pbar=disable_pbar, seed=seed, sigmas=sigmas,
+                                                    concat_latent_image=concat_latent_image)
 
         out = latent.copy()
         out["samples"] = samples

@@ -648,9 +648,14 @@ def worker():
 
         base_path = get_file_from_folder_list(async_task.base_model_name, modules.config.paths_checkpoints)
         fam = mf.detect_family_from_file(base_path)
+        async_task.native_sd15_inpaint = mf.is_sd15_inpaint_file(base_path)
+
+        # На первом этапе native SD1.5 Inpaint используем без переключения refiner.
+        if async_task.native_sd15_inpaint:
+            async_task.refiner_model_name = 'None'
 
         if fam == mf.UNSUPPORTED:
-            raise NotImplementedError('SD1.5 inpaint-чекпоинты (9 каналов) и SD2.x не поддерживаются.')
+            raise NotImplementedError(f'Unsupported checkpoint architecture: {fam}')
         if fam != mf.SD15:
             return False
 
@@ -1239,7 +1244,13 @@ def worker():
             vae=candidate_vae,
             pixels=inpaint_pixel_fill)['samples']
         inpaint_worker.current_task.load_latent(
-            latent_fill=latent_fill, latent_mask=latent_mask, latent_swap=latent_swap)
+            latent_fill=latent_fill,
+            latent_mask=latent_mask,
+            latent_swap=latent_swap
+        )
+
+        # Старый Fooocus head/patch нужен только параметризованному inpaint-пути.
+        # Native 9-channel SD1.5 checkpoint использует собственные входы UNet.
         if inpaint_parameterized:
             pipeline.final_unet = inpaint_worker.current_task.patch(
                 inpaint_head_model_path=inpaint_head_model_path,
@@ -1247,7 +1258,20 @@ def worker():
                 inpaint_latent_mask=latent_mask,
                 model=pipeline.final_unet
             )
-        if not inpaint_disable_initial_latent:
+
+        if getattr(async_task, 'native_sd15_inpaint', False):
+            samples_for_sampling = (
+                torch.zeros_like(latent_fill)
+                if inpaint_disable_initial_latent
+                else latent_fill
+            )
+            initial_latent = {
+                'samples': samples_for_sampling,
+                'noise_mask': latent_mask,
+                'concat_latent_image': latent_inpaint,
+            }
+        elif not inpaint_disable_initial_latent:
+            # Сохраняем прежнее поведение SDXL и обычной 4-channel SD1.5.
             initial_latent = {'samples': latent_fill}
         B, C, H, W = latent_fill.shape
         height, width = H * 8, W * 8
@@ -1795,7 +1819,10 @@ def worker():
                         use_synthetic_refiner, width, show_intermediate_results=True, persist_image=True):
         base_model_additional_loras = []
         inpaint_head_model_path = None
-        inpaint_parameterized = inpaint_engine != 'None'  # inpaint_engine = None, improve detail
+        inpaint_parameterized = (
+            inpaint_engine != 'None'
+            and not getattr(async_task, 'native_sd15_inpaint', False)
+        )  # Native SD1.5 inpaint использует собственные 9-channel входы.
         initial_latent = None
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
@@ -1964,7 +1991,10 @@ def worker():
         skip_prompt_processing = False
 
         inpaint_worker.current_task = None
-        inpaint_parameterized = async_task.inpaint_engine != 'None'
+        inpaint_parameterized = (
+            async_task.inpaint_engine != 'None'
+            and not async_task.native_sd15_inpaint
+        )
         inpaint_image = None
         inpaint_mask = None
         inpaint_head_model_path = None
@@ -2008,6 +2038,16 @@ def worker():
         print(f'[Parameters] Steps = {async_task.steps} - {switch}')
 
         progressbar(async_task, current_progress, 'Initializing ...')
+
+        # Native 9-channel SD1.5 checkpoint требует исходное изображение и маску.
+        if (
+            getattr(async_task, 'native_sd15_inpaint', False)
+            and 'inpaint' not in goals
+        ):
+            raise ValueError(
+                'SD1.5 Inpaint checkpoint requires an input image and mask. '
+                'Use Inpaint/Modify mode.'
+            )
 
         loras = async_task.loras
         if not skip_prompt_processing:
