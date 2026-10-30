@@ -655,12 +655,12 @@ def worker():
             else:
                 print('[SD1.5] SD1.5 refiner enabled.')
 
-        if async_task.performance_selection in (Performance.EXTREME_SPEED,
-                                                Performance.LIGHTNING,
-                                                Performance.HYPER_SD):
-            print('[SD1.5] Extreme Speed / Lightning / Hyper-SD need SDXL LoRAs -> switched to Speed.')
-            async_task.performance_selection = Performance.SPEED
-            async_task.steps = async_task.original_steps = Performance.SPEED.steps()
+        # if async_task.performance_selection in (Performance.EXTREME_SPEED,
+        #                                         Performance.LIGHTNING,
+        #                                         Performance.HYPER_SD):
+        #     print('[SD1.5] Extreme Speed / Lightning / Hyper-SD need SDXL LoRAs -> switched to Speed.')
+        #     async_task.performance_selection = Performance.SPEED
+        #     async_task.steps = async_task.original_steps = Performance.SPEED.steps()
 
         return True
 
