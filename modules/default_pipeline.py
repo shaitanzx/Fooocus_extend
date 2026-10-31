@@ -283,7 +283,7 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
         refresh_refiner_model(refiner_model_name)
         refresh_base_model(base_model_name, vae_name)
 
-    refresh_loras(loras, base_model_additional_loras=base_model_additional_loras)
+    applied_loras = refresh_loras(loras, base_model_additional_loras=base_model_additional_loras)
     assert_model_integrity()
 
     final_unet = model_base.unet_with_lora
@@ -298,7 +298,7 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
 
     prepare_text_encoder(async_call=True)
     clear_all_caches()
-    return
+    return applied_loras
 
 
 refresh_everything(
