@@ -1480,55 +1480,27 @@ def worker():
         async_task.adm_scaler_end = 0.0
         return current_progress
 
-def set_lightning_defaults(async_task, current_progress, advance_progress=False):
-    print('Enter Lightning mode.')
-
-    if advance_progress:
-        current_progress += 1
-
-    progressbar(async_task, 1, 'Downloading Lightning components ...')
-
-    if async_task.is_sd15:
-        print('[SD1.5] Using TCD-SD15 LoRA for 4-step generation.')
-        lora_path = modules.config.downloading_sd15_tcd_lora()
-
-        async_task.performance_loras += [(lora_path, 1.0)]
-        async_task.sampler_name = 'tcd'
-        async_task.scheduler_name = 'tcd'
-        async_task.cfg_scale = 0.0
-
-        # TCD LoRA example uses guidance_scale=0.
-        # Disable CFG modifiers so CFG is not altered afterward.
-        async_task.type_cfg = 'Off'
-        async_task.adaptive_cfg = 1.0
-        async_task.rescale_cfg = 0.0
-
-        # The Lightning Performance profile is the 4-step profile.
-        async_task.steps = modules.flags.Steps.LIGHTNING.value
-
-    else:
-        lora_path = modules.config.downloading_sdxl_lightning_lora()
-        async_task.performance_loras += [(lora_path, 1.0)]
-
+    def set_lightning_defaults(async_task, current_progress, advance_progress=False):
+        print('Enter Lightning mode.')
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, 1, 'Downloading Lightning components ...')
+        async_task.performance_loras += [(modules.config.downloading_sdxl_lightning_lora(), 1.0)]
+        if async_task.refiner_model_name != 'None':
+            print(f'Refiner disabled in Lightning mode.')
+        async_task.refiner_model_name = 'None'
         async_task.sampler_name = 'euler'
         async_task.scheduler_name = 'sgm_uniform'
+        async_task.sharpness = 0.0
         async_task.cfg_scale = 1.0
         async_task.adaptive_cfg = 1.0
-        async_task.type_cfg = 'CFG Mimicking from TSNR'
-        async_task.rescale_cfg = 0.3
-
-    if async_task.refiner_model_name != 'None':
-        print('Refiner disabled in Lightning mode.')
-
-    async_task.refiner_model_name = 'None'
-    async_task.sharpness = 0.0
-    async_task.refiner_switch = 1.0
-    async_task.adm_scaler_positive = 1.0
-    async_task.adm_scaler_negative = 1.0
-    async_task.adm_scaler_end = 0.0
-
-    return current_progress
-
+        async_task.type_cfg='CFG Mimicking from TSNR'
+        async_task.rescale_cfg=0.3
+        async_task.refiner_switch = 1.0
+        async_task.adm_scaler_positive = 1.0
+        async_task.adm_scaler_negative = 1.0
+        async_task.adm_scaler_end = 0.0
+        return current_progress
 
     def set_lcm_defaults(async_task, current_progress, advance_progress=False):
         print('Enter LCM mode.')
