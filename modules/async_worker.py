@@ -1947,6 +1947,7 @@ def worker():
                     async_task, controlnet_canny_path, controlnet_cpds_path,goals)
             else:
                 print ("[InstantID] Basemodel is not SDXL. Process skipped.")
+                async_task.enable_instant = False
         # Load or unload CNs
         progressbar(async_task, current_progress, 'Loading control models ...')
         pipeline.refresh_controlnets([controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path])
