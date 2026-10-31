@@ -1490,7 +1490,13 @@ def worker():
         if advance_progress:
             current_progress += 1
         progressbar(async_task, 1, 'Downloading LCM components ...')
-        async_task.performance_loras += [(modules.config.downloading_sdxl_lcm_lora(), 1.0)]
+        if async_task.is_sd15:
+            lcm_lora_path = modules.config.downloading_sd15_lcm_lora()
+        else:
+            lcm_lora_path = modules.config.downloading_sdxl_lcm_lora()
+
+        async_task.performance_loras += [(lcm_lora_path, 1.0)]
+
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in LCM mode.')
         async_task.refiner_model_name = 'None'
