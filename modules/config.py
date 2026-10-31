@@ -922,6 +922,14 @@ def downloading_inpaint_models(v):
 
     return head_file, patch_file
 
+def downloading_sd15_lcm_lora():
+    file_name = 'lcm-lora-sdv1-5.safetensors'
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/lcm-lora-sdv1-5.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+    return file_name
 
 def downloading_sdxl_lcm_lora():
     load_file_from_url(
