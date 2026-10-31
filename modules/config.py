@@ -948,6 +948,14 @@ def downloading_sdxl_lightning_lora():
     )
     return modules.flags.PerformanceLoRA.LIGHTNING.value
 
+def downloading_sd15_hyper_sd_lora():
+    file_name = 'Hyper-SD15-4steps-lora.safetensors'
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/Hyper-SD15-4steps-lora.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+    return file_name
 
 def downloading_sdxl_hyper_sd_lora():
     load_file_from_url(
