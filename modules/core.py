@@ -214,6 +214,7 @@ def apply_freeu(model, b1, b2, s1, s2):
     return opFreeU.patch(model=model, b1=b1, b2=b2, s1=s1, s2=s2)[0]
 
 
+
 @torch.no_grad()
 @torch.inference_mode()
 def load_controlnet(ckpt_filename):
