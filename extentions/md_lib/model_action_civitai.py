@@ -498,11 +498,14 @@ def get_model_info_by_id(model_id:str) -> dict:
     #     {previews=}
     # """)
     # util.printD(msg)
-
+    default_subfolder = model.get_default_download_subfolder(
+        model_type, base_models[0] if base_models else None
+    )
     return {
         "model_info": model_info,
         "model_name": model_name,
         "model_type": model_type,
+        "default_subfolder": default_subfolder,
         "files": files,
         "filenames": filenames,
         "subfolders": subfolders,
@@ -628,7 +631,7 @@ def parse_file_info(file_info, basename):
     }
 
 
-def download_files(filename, model_folder, ver_info, headers, filetypes, dl_all, duplicate):
+def download_files(filename, model_folder, ver_info, headers, filetypes, dl_all, duplicate,vae_subfolder=""):
     """
     get download urls from files info
     some model versions have multiple files
@@ -685,6 +688,9 @@ def download_files(filename, model_folder, ver_info, headers, filetypes, dl_all,
         dl_folder = model_folder
         if dl_info["type"] == "VAE":
             dl_folder = model.vae_folder
+
+            if vae_subfolder:
+                dl_folder = os.path.join(dl_folder, vae_subfolder)
 
         # webui visible progress bar
         for result in downloader.dl_file(
@@ -861,7 +867,8 @@ def dl_model_by_input(
         headers["Authorization"] = f"Bearer {api_key}"
 
     additional = None
-    for result in download_files(filename, folder, ver_info, headers, filetypes, dl_all, duplicate):
+    for result in download_files(filename, folder, ver_info, headers, filetypes, dl_all, duplicate,vae_subfolder=subfolder):
+
         if not isinstance(result, str):
             if len(result) > 2:
                 success, output, additional = result

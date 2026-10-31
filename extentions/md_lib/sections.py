@@ -216,6 +216,7 @@ def download_section():
         }
 
         state["model_info"] = data["model_info"]
+        state["model_type"] = data["model_type"]
         state["previews"] = data["previews"]
 
         subfolders = sorted(data["subfolders"])
@@ -223,8 +224,8 @@ def download_section():
         base_models = data["base_models"]
         filenames = data["filenames"]
 
-        if subfolder == "" or subfolder not in subfolders:
-            subfolder = "/"
+        default_subfolder = data.get("default_subfolder", "/")
+        subfolder = default_subfolder
 
         for filename, base_model, version in zip(filenames, base_models, version_strs):
             state["filenames"][version] = filename
@@ -332,6 +333,11 @@ def download_section():
             ),
             dl_base_model_txtbox.update(
                 value=base_model
+            ),
+            dl_subfolder_drop.update(
+                value=model.get_default_download_subfolder(
+                    state.get("model_type"), base_model
+                )
             )
         ] + output_add
 
@@ -581,6 +587,7 @@ def download_section():
     ver_outputs = [
         dl_state, dl_filename_txtbox, dl_extension_txtbox,
         dl_preview_img, dl_preview_url, download_all_row, dl_base_model_txtbox,
+        dl_subfolder_drop,
     ] + ch_output_add
 
     dl_version_drop.change(
