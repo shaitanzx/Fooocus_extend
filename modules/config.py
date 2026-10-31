@@ -939,6 +939,16 @@ def downloading_sdxl_lcm_lora():
     )
     return modules.flags.PerformanceLoRA.EXTREME_SPEED.value
 
+def downloading_sd15_tcd_lora():
+    file_name = 'TCD-SD15-LoRA.safetensors'
+
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/TCD-SD15-LoRA.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+
+    return file_name
 
 def downloading_sdxl_lightning_lora():
     load_file_from_url(
