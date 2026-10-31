@@ -1310,10 +1310,19 @@ def worker():
         loras += async_task.performance_loras
         loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
         loras=loras + ploras + dloras
-        pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
-                                    base_model_name=async_task.base_model_name,
-                                    loras=loras, base_model_additional_loras=base_model_additional_loras,
-                                    use_synthetic_refiner=use_synthetic_refiner, vae_name=async_task.vae_name)
+        applied_loras = pipeline.refresh_everything(
+            refiner_model_name=async_task.refiner_model_name,
+            base_model_name=async_task.base_model_name,
+            loras=loras,
+            base_model_additional_loras=base_model_additional_loras,
+            use_synthetic_refiner=use_synthetic_refiner,
+            vae_name=async_task.vae_name
+        )
+        applied_lora_keys = {str(item) for item in applied_loras}
+        loras = [
+            item for item in loras
+            if str(item) in applied_lora_keys
+        ]
         pipeline.set_clip_skip(async_task.clip_skip)
         if advance_progress:
             current_progress += 1

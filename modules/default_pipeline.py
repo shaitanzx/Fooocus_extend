@@ -152,10 +152,9 @@ def refresh_loras(loras, base_model_additional_loras=None):
     if not isinstance(base_model_additional_loras, list):
         base_model_additional_loras = []
 
-    model_base.refresh_loras(loras + base_model_additional_loras)
+    applied_loras = model_base.refresh_loras(loras + base_model_additional_loras)
     model_refiner.refresh_loras(loras)
-
-    return
+    return applied_loras
 
 
 @torch.no_grad()
