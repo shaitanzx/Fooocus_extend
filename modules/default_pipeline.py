@@ -172,7 +172,6 @@ def clip_encode_single(clip, text, verbose=False):
         print(f'[CLIP Encoded] {text}')
     return result
 
-
 @torch.no_grad()
 @torch.inference_mode()
 def clone_cond(conds):
