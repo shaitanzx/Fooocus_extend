@@ -1446,14 +1446,31 @@ def worker():
         if advance_progress:
             current_progress += 1
         progressbar(async_task, current_progress, 'Downloading Hyper-SD components ...')
-        async_task.performance_loras += [(modules.config.downloading_sdxl_hyper_sd_lora(), 0.8)]
+        if async_task.is_sd15:
+            hyper_lora_path = modules.config.downloading_sd15_hyper_sd_lora()
+            hyper_lora_weight = 1.0
+
+            # Официальная 4-step SD1.5 Hyper-SD LoRA использует DDIM
+            # и CFG=0. В Fooocus ближайшее расписание — ddim_uniform.
+            async_task.sampler_name = 'ddim'
+            async_task.scheduler_name = 'ddim_uniform'
+            async_task.cfg_scale = 0.0
+        else:
+            hyper_lora_path = modules.config.downloading_sdxl_hyper_sd_lora()
+            hyper_lora_weight = 0.8
+            async_task.sampler_name = 'dpmpp_sde_gpu'
+            async_task.scheduler_name = 'karras'
+            async_task.cfg_scale = 1.0
+        async_task.performance_loras += [
+            (hyper_lora_path, hyper_lora_weight)
+        ]
+
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in Hyper-SD mode.')
         async_task.refiner_model_name = 'None'
-        async_task.sampler_name = 'dpmpp_sde_gpu'
-        async_task.scheduler_name = 'karras'
+
         async_task.sharpness = 0.0
-        async_task.cfg_scale = 1.0
+
         async_task.adaptive_cfg = 1.0
         async_task.type_cfg='CFG Mimicking from TSNR'
         async_task.rescale_cfg=0.3
