@@ -535,7 +535,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         if transper == 'Attention Injection':
             if p.is_sd15:
                 model_path = load_file_from_url(
-                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_transparent_attn.safetensors',
+                    url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_transparent_attn.safetensors',
                     model_dir=layer_model_root,
                     file_name='layer_sd15_transparent_attn.safetensors'
                 )
@@ -550,7 +550,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                 print(f"[Transparency] Conv Injection not support for SD1.5. Switching to Attention Injection mode.")
         
                 model_path = load_file_from_url(
-                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_transparent_attn.safetensors',
+                    url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_transparent_attn.safetensors',
                     model_dir=layer_model_root,
                     file_name='layer_sd15_transparent_attn.safetensors'
                 )
@@ -764,7 +764,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     if transper != "None":
         mod_number = 1
         if p.is_sd15:
-            decoder_url = "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_sd15_vae_transparent_decoder.safetensors"
+            decoder_url = "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_vae_transparent_decoder.safetensors"
             decoder_filename = "layer_sd15_vae_transparent_decoder.safetensors"
         else:
             decoder_url = "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors"
