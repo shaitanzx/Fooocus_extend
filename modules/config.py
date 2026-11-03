@@ -1017,12 +1017,12 @@ def download_instantid():
         file_name='ip-adapter.bin'
     )  
 SD15_CONTROLNET_FILES = {
-    "canny": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
-    "pose": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors",
-    "scribble": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_scribble_fp16.safetensors",
-    "cpds": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_lora_rank128_v11f1p_sd15_depth_fp16.safetensors",
-    "recolor": "https://huggingface.co/lllyasviel/sd_control_collection/resolve/main/ioclab_sd15_recolor.safetensors",
-    "manga": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15s2_lineart_anime_fp16.safetensors"
+    "canny": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
+    "pose": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_v11p_sd15_openpose_fp16.safetensors",
+    "scribble": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_v11p_sd15_scribble_fp16.safetensors",
+    "cpds": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_lora_rank128_v11f1p_sd15_depth_fp16.safetensors",
+    "recolor": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/ioclab_sd15_recolor.safetensors",
+    "manga": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_v11p_sd15s2_lineart_anime_fp16.safetensors"
 }
 
 
@@ -1137,10 +1137,7 @@ def downloading_ip_adapters(v, is_sd15=False):
     if v == "ip":
         if is_sd15:
             file_name = "ip-adapter-plus_sd15.bin"
-            url = (
-                "https://huggingface.co/h94/IP-Adapter/"
-                "resolve/main/models/ip-adapter-plus_sd15.bin"
-            )
+            url = "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/ip-adapter-plus_sd15.bin"
         else:
             file_name = "ip-adapter-plus_sdxl_vit-h.bin"
             url = (
@@ -1158,7 +1155,7 @@ def downloading_ip_adapters(v, is_sd15=False):
     elif v == "face":
         if is_sd15:
             file_name = "ip-adapter-plus-face_sd15.bin"
-            url = "https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-plus-face_sd15.bin"
+            url = "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/ip-adapter-plus-face_sd15.bin"
             
         else:
             file_name = "ip-adapter-plus-face_sdxl_vit-h.bin"
