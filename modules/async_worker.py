@@ -1458,9 +1458,6 @@ def worker():
             current_progress += 1
         progressbar(async_task, current_progress, 'Downloading Hyper-SD components ...')
         if async_task.is_sd15:
-            hyper_lora_path = modules.config.downloading_sd15_hyper_sd_lora()
-            hyper_lora_weight = 1.0
-
             # Официальная 4-step SD1.5 Hyper-SD LoRA использует DDIM
             # и CFG=0. В Fooocus ближайшее расписание — ddim_uniform.
             async_task.sampler_name = 'ddim'
@@ -1472,9 +1469,9 @@ def worker():
             async_task.sampler_name = 'dpmpp_sde_gpu'
             async_task.scheduler_name = 'karras'
             async_task.cfg_scale = 1.0
-        async_task.performance_loras += [
-            (hyper_lora_path, hyper_lora_weight)
-        ]
+            async_task.performance_loras += [
+                (hyper_lora_path, hyper_lora_weight)
+            ]
 
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in Hyper-SD mode.')
@@ -1500,8 +1497,6 @@ def worker():
         progressbar(async_task, 1, 'Downloading Lightning components ...')
 
         if async_task.is_sd15:
-            print('[SD1.5] Using TCD-SD15 LoRA for 4-step generation.')
-            lora_path = modules.config.downloading_sd15_tcd_lora() 
             async_task.sampler_name = 'tcd'
             async_task.scheduler_name = 'tcd'
             async_task.cfg_scale = 0.0
@@ -1523,7 +1518,7 @@ def worker():
             async_task.rescale_cfg = 0.3
 
 
-        async_task.performance_loras += [(lora_path, 1.0)]
+            async_task.performance_loras += [(lora_path, 1.0)]
         if async_task.refiner_model_name != 'None':
             print('Refiner disabled in Lightning mode.')
 
@@ -1542,12 +1537,9 @@ def worker():
         if advance_progress:
             current_progress += 1
         progressbar(async_task, 1, 'Downloading LCM components ...')
-        if async_task.is_sd15:
-            lcm_lora_path = modules.config.downloading_sd15_lcm_lora()
-        else:
+        if not async_task.is_sd15:
             lcm_lora_path = modules.config.downloading_sdxl_lcm_lora()
-
-        async_task.performance_loras += [(lcm_lora_path, 1.0)]
+            async_task.performance_loras += [(lcm_lora_path, 1.0)]
 
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in LCM mode.')
