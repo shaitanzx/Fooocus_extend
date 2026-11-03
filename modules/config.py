@@ -1041,14 +1041,14 @@ def downloading_controlnet_sd15(kind):
 
 def downloading_lineart_anime_preprocessor():
     load_file_from_url(
-        url="https://huggingface.co/lllyasviel/Annotators/resolve/main/netG.pth",
+        url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/preprocessors/netG.pth",
         model_dir=path_controlnet,
         file_name='netG.pth'
     )
     return os.path.join(path_controlnet, 'netG.pth')
 def downloading_hed_preprocessor():
     load_file_from_url(
-        url="https://huggingface.co/lllyasviel/Annotators/resolve/main/ControlNetHED.pth",
+        url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/preprocessors/ControlNetHED.pth",
         model_dir=path_controlnet,
         file_name='ControlNetHED.pth'
     )
