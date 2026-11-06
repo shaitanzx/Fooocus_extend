@@ -73,7 +73,7 @@ def gui():
 
 def get_or_load_instantid_controlnet():
 
-    ctrl_path = "extentions/instantid/checkpoints/ControlNetModel/diffusion_pytorch_model.safetensors"
+    ctrl_path = os.path.join(path_instantid,'checkpoints','ControlNetModel','diffusion_pytorch_model.safetensors')
     
     print(f"[InstantID CN] Loading ControlNet into memory")
     
