@@ -1042,12 +1042,12 @@ def download_instantid():
     )   
     load_file_from_url(
         url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/diffusion_pytorch_model.safetensors',
-        model_dir=model_dir=os.path.join(path_instantid,'checkpoints','ControlNetModel'),
+        model_dir=os.path.join(path_instantid,'checkpoints','ControlNetModel'),
         file_name='diffusion_pytorch_model.safetensors'
     )     
     load_file_from_url(
         url='https://huggingface.co/InstantX/InstantID/resolve/main/ip-adapter.bin',
-        model_dir=model_dir=model_dir=os.path.join(path_instantid,'checkpoints'),
+        model_dir=model_dir=os.path.join(path_instantid,'checkpoints'),
         file_name='ip-adapter.bin'
     )  
 SD15_CONTROLNET_FILES = {
