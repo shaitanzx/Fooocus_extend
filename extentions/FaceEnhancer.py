@@ -430,7 +430,7 @@ class Upscale:
                              qkv_bias=qkv_bias, qk_scale=None, ape=ape, patch_norm=patch_norm, upscale=netscale, upsampler=upsampler, resi_connection=resi_connection,)
 
         if model:
-            self.realesrganer = RealESRGANer(scale=netscale, model_path=os.path.join("models","face_enhancer", "upscale", upscale_model), model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
+            self.realesrganer = RealESRGANer(scale=netscale, model_path=os.path.join(model.config.path_face_enhancer, "upscale", upscale_model), model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
         elif upscale_model:
             import PIL
             from image_gen_aux import UpscaleWithModel
@@ -478,7 +478,7 @@ class Upscale:
                     return cv_image, None
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            upscaler = UpscaleWithModel.from_pretrained(os.path.join("models","face_enhancer", "upscale", upscale_model)).to(device)
+            upscaler = UpscaleWithModel.from_pretrained(os.path.join(model.config.path_face_enhancer, "upscale", upscale_model)).to(device)
             upscaler.__class__ = UpscaleWithModel_Gfpgan
             self.realesrganer = upscaler
 
