@@ -1027,7 +1027,7 @@ def download_instantid():
     )  
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/glintr100.onnx',
-        model_dir=model_dir=os.path.join(path_instantid,'models','antelopev2'),
+        model_dir=os.path.join(path_instantid,'models','antelopev2'),
         file_name='glintr100.onnx'
     ) 
     load_file_from_url(
