@@ -212,6 +212,7 @@ path_omost = get_dir_or_set_default('path_omost','../models/omost/')
 path_transperent = get_dir_or_set_default('path_transperent','../models/layer_model/')
 path_instantid = get_dir_or_set_default('path_instantid','../extentions/instantid/models/instantid/',make_directory=True)
 path_face_enhancer = get_dir_or_set_default('path_face_enhancer','../models/face_enhancer/')
+path_caption = get_dir_or_set_default('path_caption','../models/caption/')
 path_outputs = get_path_output()
 
 
