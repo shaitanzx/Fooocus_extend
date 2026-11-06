@@ -365,9 +365,6 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
     return final_vae, final_refiner_vae
 
-#layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
-#os.makedirs(layer_model_root, exist_ok=True)
-
 def move_tensors_to_device(obj, device):
     if isinstance(obj, torch.Tensor):
         return obj.to(device)
@@ -772,7 +769,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
         model_path = load_file_from_url(
             url=decoder_url,
-            model_dir=layer_model_root,
+            model_dir=modules.config.path_transperent,
             file_name=decoder_filename,
         )
 
