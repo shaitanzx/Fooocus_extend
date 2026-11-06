@@ -210,8 +210,8 @@ path_sam = get_dir_or_set_default('path_sam', '../models/sam/')
 path_yolo = get_dir_or_set_default('path_detection', '../models/detection/')
 path_omost = get_dir_or_set_default('path_omost','../models/omost/')
 path_transperent = get_dir_or_set_default('path_transperent','../models/layer_model/')
-path_instantid = get_dir_or_set_default('path_instantid','../models/instantid/',make_directory=True)
-#path_yolo = Path(__file__).parent.parent / "models" / "detection"
+path_instantid = get_dir_or_set_default('path_instantid','../extentions/instantid/models/instantid/',make_directory=True)
+path_face_enhancer = get_dir_or_set_default('path_face_enhancer','../models/face_enhancer/')
 path_outputs = get_path_output()
 
 

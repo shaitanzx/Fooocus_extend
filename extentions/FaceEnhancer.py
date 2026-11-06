@@ -206,7 +206,7 @@ class Upscale:
         if upscale_model == "None":
             return
         upscale_type, upscale_model = upscale_model.split(", ", 1)
-        download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("models","face_enhancer", "upscale"))
+        download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join(path_face_enhancer, "upscale"))
         self.modelInUse = f"_{os.path.splitext(upscale_model)[0]}"
         netscale = 1 if any(sub in upscale_model.lower() for sub in ("x1", "1x")) else (2 if any(sub in upscale_model.lower() for sub in ("x2", "2x")) else 4)
         model = None
@@ -215,7 +215,7 @@ class Upscale:
             # The values of the following hyperparameters are based on the research findings of the Spandrel project.
             # https://github.com/chaiNNer-org/spandrel/tree/main/libs/spandrel/spandrel/architectures
             from extras.basicsr.archs.rrdbnet_arch import RRDBNet
-            loadnet = torch.load(os.path.join("models","face_enhancer", "upscale", upscale_model), map_location=torch.device('cpu'), weights_only=True)
+            loadnet = torch.load(os.path.join(modules.config.path_face_enhancer, "upscale", upscale_model), map_location=torch.device('cpu'), weights_only=True)
             if 'params_ema' in loadnet or 'params' in loadnet:
                 loadnet = loadnet['params_ema'] if 'params_ema' in loadnet else loadnet['params']
 
@@ -486,7 +486,7 @@ class Upscale:
     def initFaceEnhancerModel(self, face_restoration, face_detection):
         if face_restoration == "None":
             return
-        model_rootpath = os.path.join("models","face_enhancer", "face")
+        model_rootpath = os.path.join(path_face_enhancer, "face")
         model_path = os.path.join(model_rootpath, face_restoration)
         download_from_url(face_models[face_restoration][0], face_restoration, model_rootpath)
         
