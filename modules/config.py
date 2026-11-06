@@ -1047,7 +1047,7 @@ def download_instantid():
     )     
     load_file_from_url(
         url='https://huggingface.co/InstantX/InstantID/resolve/main/ip-adapter.bin',
-        model_dir=model_dir=os.path.join(path_instantid,'checkpoints'),
+        model_dir=os.path.join(path_instantid,'checkpoints'),
         file_name='ip-adapter.bin'
     )  
 SD15_CONTROLNET_FILES = {
