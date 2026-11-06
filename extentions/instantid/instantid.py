@@ -9,6 +9,7 @@ import cv2
 import PIL.Image
 import ldm_patched.modules.conds as conds
 import modules.core as core
+import modules.config
 from extentions.tutorial import tutorial
 from .resampler import Resampler
 from .CrossAttentionPatch import Attn2Replace, instantid_attention
@@ -219,10 +220,10 @@ def apply(image_path, pose_path, cn_strength, ip_weight, unet_model, positive, n
           width, height,start,end):
     global instantid_model
 
-    insightface = FaceAnalysis(name='antelopev2', root='extentions/instantid', providers=['CPUExecutionProvider'])
+    insightface = FaceAnalysis(name='antelopev2', root=modules.config.path_instantid, providers=['CPUExecutionProvider'])
     insightface.prepare(ctx_id=0, det_size=(640, 640))
 
-    instantid_file = "extentions/instantid/checkpoints/ip-adapter.bin"
+    instantid_file = os.path.join(modules.config.path_instantid, 'ip-adapter.bin')
     instantid_model = load_instantid_model(instantid_file)
     combine_embeds='average'
     noise=0.35
