@@ -552,16 +552,17 @@ def worker():
                         positive_cond, negative_cond,
                         pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
 
-        if async_task.enable_pm ==True and not async_task.is_sd15:
-            imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
-                     async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
-                     async_task.sketch_image,async_task.adapter_conditioning_scale,
-                     async_task.adapter_conditioning_factor,
-                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
-                     loras,modules.config.paths_loras[0],async_task)
-        else:
+        if async_task.enable_pm ==True:
             if async_task.is_sd15:
                 print ("[Photomaker] Basemodel is not SDXL. Process skipped.")
+            else:
+                imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
+                        async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
+                        async_task.sketch_image,async_task.adapter_conditioning_scale,
+                        async_task.adapter_conditioning_factor,
+                        modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
+                        loras,modules.config.paths_loras[0],async_task)
+        else:
             imgs = pipeline.process_diffusion(
                     p=async_task,
                     positive_cond=positive_cond,

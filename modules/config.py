@@ -811,10 +811,41 @@ default_aspect_ratio = add_ratio(default_aspect_ratio)
 available_aspect_ratios_labels = [add_ratio(x) for x in available_aspect_ratios]
 
 
-# Only write config in the first launch.
-if not os.path.exists(config_path):
-    with open(config_path, "w", encoding="utf-8") as json_file:
-        json.dump({k: config_dict[k] for k in always_save_keys}, json_file, indent=4)
+# # Only write config in the first launch.
+# if not os.path.exists(config_path):
+#     with open(config_path, "w", encoding="utf-8") as json_file:
+#         json.dump({k: config_dict[k] for k in always_save_keys}, json_file, indent=4)
+
+
+# Always write config
+config_file_data = {}
+config_file_is_valid = True
+
+if os.path.exists(config_path):
+    try:
+        with open(config_path, "r", encoding="utf-8") as json_file:
+            loaded_config = json.load(json_file)
+
+        if isinstance(loaded_config, dict):
+            config_file_data = loaded_config
+        else:
+            raise ValueError("Config file must contain a JSON object")
+
+    except Exception as e:
+        print(f'Cannot update config file "{config_path}": {e}')
+        config_file_is_valid = False
+
+if config_file_is_valid:
+    config_changed = False
+
+    for key in always_save_keys:
+        if key not in config_file_data and key in config_dict:
+            config_file_data[key] = config_dict[key]
+            config_changed = True
+
+    if config_changed or not os.path.exists(config_path):
+        with open(config_path, "w", encoding="utf-8") as json_file:
+            json.dump(config_file_data, json_file, indent=4)
 
 
 # Always write tutorials.
