@@ -1037,7 +1037,7 @@ def download_instantid():
     ) 
     load_file_from_url(
         url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/config.json',
-        model_dir=model_dir=os.path.join(path_instantid,'checkpoints','ControlNetModel'),
+        model_dir=os.path.join(path_instantid,'checkpoints','ControlNetModel'),
         file_name='config.json'
     )   
     load_file_from_url(
