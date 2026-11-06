@@ -22,6 +22,10 @@ numpy==1.26.4
 #tokenizers==0.19.1
 tokenizers==0.20.3
 packaging==24.1
+
+
+pymatting==1.1.12
+
 rembg==2.0.57
 groundingdino-py==0.4.0
 segment_anything==1.0
