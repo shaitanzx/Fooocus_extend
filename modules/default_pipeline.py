@@ -365,8 +365,8 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
 
     return final_vae, final_refiner_vae
 
-layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
-os.makedirs(layer_model_root, exist_ok=True)
+#layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
+#os.makedirs(layer_model_root, exist_ok=True)
 
 def move_tensors_to_device(obj, device):
     if isinstance(obj, torch.Tensor):
@@ -536,13 +536,13 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
             if p.is_sd15:
                 model_path = load_file_from_url(
                     url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_transparent_attn.safetensors',
-                    model_dir=layer_model_root,
+                    model_dir=modules.config.path_transperent,
                     file_name='layer_sd15_transparent_attn.safetensors'
                 )
             else:
                 model_path = load_file_from_url(
                     url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
-                    model_dir=layer_model_root,
+                    model_dir=modules.config.path_transperent,
                     file_name='layer_xl_transparent_attn.safetensors'
                 )
         else:
@@ -551,13 +551,13 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         
                 model_path = load_file_from_url(
                     url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_transparent_attn.safetensors',
-                    model_dir=layer_model_root,
+                    model_dir=modules.config.path_transperent,
                     file_name='layer_sd15_transparent_attn.safetensors'
                 )
             else:
                 model_path = load_file_from_url(
                     url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
-                    model_dir=layer_model_root,
+                    model_dir=modules.config.path_transperent,
                     file_name='layer_xl_transparent_conv.safetensors'
                 )
         layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
