@@ -356,6 +356,27 @@ default_adetail_tab = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, int) and x >= 1,
     expected_type=int
 )
+legacy_adetailer_keys = ['ad_model', 'ad_confidence', 'ad_denoising_strength', 'ad_resp_field', 'ad_sam_mask', 'ad_sam_model']
+
+
+def get_adetailer_tabs(content):
+    # ADetailer settings per tab: "default_adetailer_tabs": [{"ad_model": ..., "ad_confidence": ...}, ...]
+    tabs = [dict(tab) for tab in content.get('default_adetailer_tabs') or [] if isinstance(tab, dict)]
+    # older presets keep the 1st tab in single keys: default_ad_model, default_ad_confidence, ...
+    legacy = {key: content[f'default_{key}'] for key in legacy_adetailer_keys if content.get(f'default_{key}') is not None}
+    if legacy:
+        tabs[:1] = [{**legacy, **(tabs[0] if tabs else {})}]
+    return tabs
+
+
+default_adetailer_tabs = get_adetailer_tabs(config_dict)
+default_upscaler = get_config_item_or_set_default(
+    key='default_upscaler',
+    default_value='',
+    validator=lambda x: isinstance(x, str),
+    disable_empty_as_none=True,
+    expected_type=str
+)
 default_cfg_scale = get_config_item_or_set_default(
     key='default_cfg_scale',
     default_value=7.0,
@@ -403,6 +424,12 @@ default_prompt_negative = get_config_item_or_set_default(
     disable_empty_as_none=True,
     expected_type=str
 )
+default_negative_prompt_main = get_config_item_or_set_default(
+    key='default_negative_prompt_main',
+    default_value=modules.flags.negative_prompt_main,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
 default_prompt = get_config_item_or_set_default(
     key='default_prompt',
     default_value='',
@@ -448,6 +475,36 @@ default_developer_debug_mode_checkbox = get_config_item_or_set_default(
 )
 default_image_prompt_advanced_checkbox = get_config_item_or_set_default(
     key='default_image_prompt_advanced_checkbox',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_disable_seed_increment = get_config_item_or_set_default(
+    key='default_disable_seed_increment',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_mixing_image_prompt_and_vary_upscale = get_config_item_or_set_default(
+    key='default_mixing_image_prompt_and_vary_upscale',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_mixing_image_prompt_and_inpaint = get_config_item_or_set_default(
+    key='default_mixing_image_prompt_and_inpaint',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_tile_x = get_config_item_or_set_default(
+    key='default_tile_x',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_tile_y = get_config_item_or_set_default(
+    key='default_tile_y',
     default_value=False,
     validator=lambda x: isinstance(x, bool),
     expected_type=bool
@@ -661,6 +718,24 @@ default_enhance_uov_prompt_type = get_config_item_or_set_default(
     default_value=modules.flags.enhancement_uov_prompt_type_original,
     validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
     expected_type=int
+)
+default_adetail_uov_method = get_config_item_or_set_default(
+    key='default_adetail_uov_method',
+    default_value=default_enhance_uov_method,
+    validator=lambda x: x in modules.flags.uov_list,
+    expected_type=str
+)
+default_adetail_uov_processing_order = get_config_item_or_set_default(
+    key='default_adetail_uov_processing_order',
+    default_value=default_enhance_uov_processing_order,
+    validator=lambda x: x in modules.flags.enhancement_uov_processing_order,
+    expected_type=str
+)
+default_adetail_uov_prompt_type = get_config_item_or_set_default(
+    key='default_adetail_uov_prompt_type',
+    default_value=default_enhance_uov_prompt_type,
+    validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
+    expected_type=str
 )
 default_sam_max_detections = get_config_item_or_set_default(
     key='default_sam_max_detections',
@@ -882,7 +957,31 @@ def update_files():
     upscaler_filenames = list(dict.fromkeys(UPSCALE_DEFAULT_FILENAMES + upscaler_from_disk))
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
+    check_default_models()
     return
+
+
+def check_default_models():
+    """Replace default models that are missing on disk, so a stale preset or config does not break the launch."""
+    global default_base_model_name, default_model, default_refiner_model_name, default_refiner, default_vae, default_loras
+
+    def exists(name, folders):
+        folders = folders if isinstance(folders, list) else [folders]
+        return any(os.path.isfile(os.path.join(folder, name)) for folder in folders)
+
+    if len(model_filenames) > 0 and not exists(default_base_model_name, paths_checkpoints):
+        print(f'[Config] Base model [{default_base_model_name}] not found, using [{model_filenames[0]}] instead.')
+        default_base_model_name = default_model = model_filenames[0]
+    if default_refiner_model_name != 'None' and not exists(default_refiner_model_name, paths_checkpoints):
+        print(f'[Config] Refiner model [{default_refiner_model_name}] not found, using [None] instead.')
+        default_refiner_model_name = default_refiner = 'None'
+    if default_vae != modules.flags.default_vae and not exists(default_vae, path_vae):
+        print(f'[Config] VAE [{default_vae}] not found, using [{modules.flags.default_vae}] instead.')
+        default_vae = modules.flags.default_vae
+    for i, (enabled, filename, weight) in enumerate(default_loras):
+        if filename != 'None' and not exists(filename, paths_loras):
+            print(f'[Config] LoRA [{filename}] not found, using [None] instead.')
+            default_loras[i] = [enabled, 'None', weight]
 
 
 def downloading_inpaint_models(v):

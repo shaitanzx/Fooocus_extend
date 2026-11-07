@@ -82,20 +82,23 @@ def ui(is_img2img):
             vae_list=vae_list,
         )
 
-        adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect_tur, components,ad_model_dropdowns,ad_ckpt_dropdowns = adui(num_models, is_img2img, webui_info)
+        adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect_tur, components,ad_model_dropdowns,ad_ckpt_dropdowns,ad_widgets = adui(num_models, is_img2img, webui_info)
         only_detect = only_detect_tur[0]
 
-        return adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, components,ad_model_dropdowns,ad_ckpt_dropdowns
+        return adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, components,ad_model_dropdowns,ad_ckpt_dropdowns,ad_widgets
 def sort_bboxes_from_class(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[1]
         sortby_idx = BBOX_SORTBY.index(sortby)
         return sort_bboxes(pred, sortby_idx)
-def pred_preprocessing(pred: PredictOutput, args):
+def pred_preprocessing(pred: PredictOutput, args, image=None):
         pred = filter_by_ratio(
             pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
         )
         pred = filter_k_by(pred, k=args.ad_mask_k, by=args.ad_mask_filter_method)
         pred = sort_bboxes_from_class(pred)
+        if image is not None and getattr(args, "ad_sam_mask", False) and pred.bboxes:
+            from extentions.adetailer.adetailer.sam_mask import sam_refine
+            pred = sam_refine(pred, image, getattr(args, "ad_sam_model", "vit_b") or "vit_b")
         masks = mask_preprocess(
             pred.masks,
             kernel=args.ad_dilate_erode,

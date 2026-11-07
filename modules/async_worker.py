@@ -1086,6 +1086,15 @@ def worker():
         loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
+        # parse <lora:...> tags written on extra lines (after a line break) too
+        _extra_positive_prompts = []
+        for _p in extra_positive_prompts:
+            loras, _p = parse_lora_references_from_prompt(_p, loras,
+                                                          modules.config.default_max_lora_number,
+                                                          lora_filenames=lora_filenames)
+            if _p.strip() != '':
+                _extra_positive_prompts.append(_p)
+        extra_positive_prompts = _extra_positive_prompts
         loras += async_task.performance_loras
         loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
         loras=loras + ploras + dloras
@@ -1943,7 +1952,7 @@ def worker():
                                     classes=args.ad_model_classes,
                                     device='cpu')
 
-                        masks = adetailer.pred_preprocessing(pred, args)
+                        masks = adetailer.pred_preprocessing(pred, args, image=img)
                         if len(masks) == 0:
                             print(f'[ADetailer] No detected, skipping')
                             continue

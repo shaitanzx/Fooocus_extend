@@ -68,6 +68,8 @@ class ADetailerArgs(BaseModel, extra=Extra.forbid):
     ad_x_offset: int = 0
     ad_y_offset: int = 0
     ad_mask_merge_invert: Literal["None", "Merge", "Merge and Invert"] = "None"
+    ad_sam_mask: bool = False
+    ad_sam_model: str = "vit_b"
     ad_mask_blur: NonNegativeInt = 4
     ad_denoising_strength: confloat(ge=0.0, le=1.0) = 0.4
     ad_inpaint_only_masked: bool = True
@@ -230,6 +232,8 @@ _all_args = [
     ("ad_y_offset", "ADetailer y offset"),
     ("ad_dilate_erode", "ADetailer dilate erode"),
     ("ad_mask_merge_invert", "ADetailer mask merge invert"),
+    ("ad_sam_mask", "ADetailer SAM mask"),
+    ("ad_sam_model", "ADetailer SAM model"),
     
     #!("ad_mask_blur", "ADetailer mask blur"),
     ("ad_disable_latent", "ADetailer Disable initial latent"),
