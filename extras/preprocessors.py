@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from extentions.op_edit.body import Body
 from extentions.op_edit import util as openpose_util
-#from controlnet_aux import HEDdetector, LineartAnimeDetector
 from modules.config import downloading_pose_preprocessor, downloading_hed_preprocessor, downloading_lineart_anime_preprocessor
 import gc
 import torch
