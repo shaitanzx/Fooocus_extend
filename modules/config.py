@@ -218,13 +218,10 @@ path_outputs = get_path_output()
 
 
 def get_config_item_or_set_default(key, default_value, validator, disable_empty_as_none=False, expected_type=None):
-    global config_dict, visited_keys, always_save_keys
+    global config_dict, visited_keys
 
     if key not in visited_keys:
         visited_keys.append(key)
-
-    if key not in always_save_keys:
-        always_save_keys.append(key)
     
     v = os.getenv(key)
     if v is not None:
@@ -826,69 +823,34 @@ available_aspect_ratios_labels = [add_ratio(x) for x in available_aspect_ratios]
 
 
 # Always write config
-print(f"[CONFIG DEBUG] cwd: {os.getcwd()}")
-print(f"[CONFIG DEBUG] config_path: {config_path}")
-
 config_file_data = {}
 config_file_is_valid = True
-config_exists = os.path.exists(config_path)
 
-print(f"[CONFIG DEBUG] config.txt exists: {config_exists}")
-
-if config_exists:
+if os.path.exists(config_path):
     try:
         with open(config_path, "r", encoding="utf-8") as json_file:
             loaded_config = json.load(json_file)
 
-        if not isinstance(loaded_config, dict):
+        if isinstance(loaded_config, dict):
+            config_file_data = loaded_config
+        else:
             raise ValueError("Config file must contain a JSON object")
 
-        config_file_data = loaded_config
-        print(f"[CONFIG DEBUG] Read OK. Existing keys: {len(config_file_data)}")
-        print(f"[CONFIG DEBUG] path_omost currently in file: {'path_omost' in config_file_data}")
-
     except Exception as e:
-        print(f"[CONFIG DEBUG] READ FAILED: {type(e).__name__}: {e}")
+        print(f'Cannot update config file "{config_path}": {e}')
         config_file_is_valid = False
-else:
-    print("[CONFIG DEBUG] File does not exist; will create it.")
 
 if config_file_is_valid:
-    missing_keys = [
-        key for key in always_save_keys
-        if key not in config_file_data and key in config_dict
-    ]
-    registered_but_missing_values = [
-        key for key in always_save_keys
-        if key not in config_dict
-    ]
+    config_changed = False
 
-    print(f"[CONFIG DEBUG] always_save_keys count: {len(always_save_keys)}")
-    print(f"[CONFIG DEBUG] path_omost registered for saving: {'path_omost' in always_save_keys}")
-    print(f"[CONFIG DEBUG] path_omost has a value in config_dict: {'path_omost' in config_dict}")
-    print(f"[CONFIG DEBUG] keys to add: {missing_keys}")
-    print(f"[CONFIG DEBUG] registered keys missing from config_dict: {registered_but_missing_values}")
+    for key in always_save_keys:
+        if key not in config_file_data and key in config_dict:
+            config_file_data[key] = config_dict[key]
+            config_changed = True
 
-    for key in missing_keys:
-        config_file_data[key] = config_dict[key]
-        print(f"[CONFIG DEBUG] Adding {key} = {config_dict[key]!r}")
-
-    if missing_keys or not config_exists:
-        try:
-            with open(config_path, "w", encoding="utf-8") as json_file:
-                json.dump(config_file_data, json_file, indent=4)
-
-            print(f"[CONFIG DEBUG] WRITE OK: {config_path}")
-            print(f"[CONFIG DEBUG] Keys now in file: {len(config_file_data)}")
-
-        except Exception as e:
-            print(f"[CONFIG DEBUG] WRITE FAILED: {type(e).__name__}: {e}")
-            raise
-    else:
-        print("[CONFIG DEBUG] No write needed: all registered keys are already in the file.")
-else:
-    print("[CONFIG DEBUG] Skipping config.txt update because the file could not be read as valid JSON.")
-
+    if config_changed or not os.path.exists(config_path):
+        with open(config_path, "w", encoding="utf-8") as json_file:
+            json.dump(config_file_data, json_file, indent=4)
 
 
 # Always write tutorials.
