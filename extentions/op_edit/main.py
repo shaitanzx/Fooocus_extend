@@ -85,7 +85,7 @@ def ui():
         if body_estimation is None:
           model_path_ope = modules.config.path_controlnet
           model_file_ope = os.path.join(model_path_ope, "body_pose_model.pth")
-          if not os.path.isfile(model_path_ope):
+          if not os.path.isfile(model_file_ope):
 
             load_file_from_url(
               url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/body_pose_model.pth",
