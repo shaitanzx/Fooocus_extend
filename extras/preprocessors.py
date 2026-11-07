@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from extentions.op_edit.body import Body
 from extentions.op_edit import util as openpose_util
-from controlnet_aux import HEDdetector, LineartAnimeDetector
+#from controlnet_aux import HEDdetector, LineartAnimeDetector
 from modules.config import downloading_pose_preprocessor, downloading_hed_preprocessor, downloading_lineart_anime_preprocessor
 import gc
 import torch
@@ -13,9 +13,7 @@ def lineart_anime(x: np.ndarray) -> np.ndarray:
     Извлекает anime/manga lineart для SD 1.5 Lineart Anime ControlNet.
     Вход и выход: RGB uint8.
     """
-    import gc
-    import torch
-
+    from controlnet_aux import LineartAnimeDetector
     model_path = downloading_lineart_anime_preprocessor()
     detector = LineartAnimeDetector.from_pretrained(
         os.path.dirname(model_path),
@@ -47,6 +45,7 @@ def lineart_anime(x: np.ndarray) -> np.ndarray:
 
 def scribble_hed(x: np.ndarray) -> np.ndarray:
     model_path = downloading_hed_preprocessor()
+    from controlnet_aux import HEDdetector
     detector = HEDdetector.from_pretrained(
         os.path.dirname(model_path),
         filename=os.path.basename(model_path))
