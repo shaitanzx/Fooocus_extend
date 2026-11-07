@@ -218,10 +218,13 @@ path_outputs = get_path_output()
 
 
 def get_config_item_or_set_default(key, default_value, validator, disable_empty_as_none=False, expected_type=None):
-    global config_dict, visited_keys
+    global config_dict, visited_keys, always_save_keys
 
     if key not in visited_keys:
         visited_keys.append(key)
+
+    if key not in always_save_keys:
+        always_save_keys.append(key)
     
     v = os.getenv(key)
     if v is not None:
