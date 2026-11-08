@@ -213,7 +213,7 @@ path_transperent = get_dir_or_set_default('path_transperent','../models/layer_mo
 path_instantid = get_dir_or_set_default('path_instantid','../extentions/instantid/',make_directory=True)
 path_face_enhancer = get_dir_or_set_default('path_face_enhancer','../models/face_enhancer/')
 path_caption = get_dir_or_set_default('path_caption','../models/caption/')
-path_cleaner = get_dir_or_set_default('path_cleaner','../extentions/cleaner/model/',make_directory=True)
+path_cleaner = get_dir_or_set_default('path_cleaner','../extentions/cleaner/',make_directory=True)
 path_outputs = get_path_output()
 
 
