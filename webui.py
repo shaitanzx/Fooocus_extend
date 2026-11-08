@@ -1471,7 +1471,7 @@ with shared.gradio_root:
                             return gr.update(visible=False)                    
                     with gr.Row():
                         with gr.Column():
-                            base_model = gr.Dropdown(label='Base Model (SDXL only)', choices=modules.config.model_filenames, value=modules.config.default_base_model_name, show_label=True)
+                            base_model = gr.Dropdown(label='Base Model (SDXL or SD 1.5)', choices=modules.config.model_filenames, value=modules.config.default_base_model_name, show_label=True)
                             link=model_tag(base_model)
                             base_model_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
                         with gr.Column():
@@ -1703,7 +1703,7 @@ with shared.gradio_root:
                         with gr.Tab(label='Transparency'):
                             transper = gr.Dropdown(label='Mode',
                                     value='None',
-                                    choices=['None','Attention Injection','Conv Injection'],
+                                    choices=['None','Attention Injection','Conv Injection (SDXL only)'],
                                     interactive=True)
                     with gr.Tab(label='Inpaint'):
                         debugging_inpaint_preprocessor = gr.Checkbox(label='Debug Inpaint Preprocessing', value=False)

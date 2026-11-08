@@ -6,6 +6,7 @@ import cv2
 from PIL import Image
 import sys
 import io
+import modules.config
 from extentions.tutorial import tutorial
 from .body import Body
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -82,13 +83,13 @@ def ui():
         global body_estimation
 
         if body_estimation is None:
-          model_path_ope = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')), "models", "controlnet")
-          model_file_ope = os.path.join(model_path_ope, "body_pose_model.pth")
-          if not os.path.isfile(model_path_ope):
+          #model_path_ope = modules.config.path_controlnet
+          model_file_ope = os.path.join(modules.config.path_controlnet, "body_pose_model.pth")
+          if not os.path.isfile(model_file_ope):
 
             load_file_from_url(
               url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/body_pose_model.pth",
-              model_dir=model_path_ope,
+              model_dir=modules.config.path_controlnet,
               file_name='body_pose_model.pth')
 
 

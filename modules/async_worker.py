@@ -15,7 +15,7 @@ patch_all()
 class AsyncTask:
     def __init__(self, args):
         from modules.flags import Performance, MetadataScheme, ip_list, disabled
-        from modules.util import get_enabled_loras
+        from modules.util import get_enabled_loras, get_file_from_folder_list
         from modules.config import default_max_lora_number, default_adetail_tab
         import args_manager
 
@@ -68,15 +68,10 @@ class AsyncTask:
         self.uov_input_image = args.pop()
         self.outpaint_selections = args.pop()
 
-
         self.outpaint_width = args.pop()
         self.outpaint_shift_width = args.pop()
         self.outpaint_heighth = args.pop()
         self.outpaint_shift_heighth = args.pop()
-
-
-
-
 
         self.inpaint_input_image = args.pop()
         self.inpaint_additional_prompt = args.pop()
@@ -139,8 +134,6 @@ class AsyncTask:
         self.debugging_dino = args.pop()
         self.dino_erode_or_dilate = args.pop()
         self.debugging_enhance_masks_checkbox = args.pop()
-
-
 
         self.adetailer_checkbox = args.pop() 
         self.enhance_checkbox = args.pop()
@@ -254,7 +247,6 @@ class AsyncTask:
         self.source_index = args.pop()
         self.target_index = args.pop()
        
-
         self.enable_instant = args.pop()
 
         self.face_file_id = args.pop()
@@ -331,13 +323,6 @@ class AsyncTask:
         self.transper = args.pop()
         self.uov_model = args.pop()
 
-        
-
-        
-        
-
-    
-
 async_tasks = []
 
 
@@ -376,7 +361,7 @@ def worker():
     from extras.expansion import safe_str
     from modules.util import (remove_empty_str, HWC3, resize_image, get_image_shape_ceil, set_image_shape_ceil,
                               get_shape_ceil, resample_image, erode_or_dilate, parse_lora_references_from_prompt,
-                              apply_wildcards, parse_extend_loras)
+                              apply_wildcards, parse_extend_loras, get_file_from_folder_list)
     from modules.upscaler import perform_upscale
     from modules.flags import Performance
     from modules.meta_parser import get_metadata_parser
@@ -568,12 +553,15 @@ def worker():
                         pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
 
         if async_task.enable_pm ==True:
-            imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
-                     async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
-                     async_task.sketch_image,async_task.adapter_conditioning_scale,
-                     async_task.adapter_conditioning_factor,
-                     modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
-                     loras,modules.config.paths_loras[0],async_task)
+            if async_task.is_sd15:
+                print ("[Photomaker] Basemodel is not SDXL. Process skipped.")
+            else:
+                imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
+                        async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
+                        async_task.sketch_image,async_task.adapter_conditioning_scale,
+                        async_task.adapter_conditioning_factor,
+                        modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
+                        loras,modules.config.paths_loras[0],async_task)
         else:
             imgs = pipeline.process_diffusion(
                     p=async_task,
@@ -642,6 +630,44 @@ def worker():
 
         return imgs, img_paths, current_progress
 
+    def apply_sd15_overrides(async_task):
+        import modules.model_family as mf
+
+        base_path = get_file_from_folder_list(async_task.base_model_name, modules.config.paths_checkpoints)
+        fam = mf.detect_family_from_file(base_path)
+        async_task.native_sd15_inpaint = mf.is_sd15_inpaint_file(base_path)
+
+        # На первом этапе native SD1.5 Inpaint используем без переключения refiner.
+        if async_task.native_sd15_inpaint:
+            async_task.refiner_model_name = 'None'
+
+        if fam == mf.UNSUPPORTED:
+            raise NotImplementedError(f'Unsupported checkpoint architecture: {fam}')
+        if fam != mf.SD15:
+            return False
+
+        print('[SD1.5] Compatibility overrides applied.')
+
+
+        if async_task.refiner_model_name != 'None':
+            ref_path = get_file_from_folder_list(async_task.refiner_model_name, modules.config.paths_checkpoints)
+            ref_fam = mf.detect_family_from_file(ref_path)
+            if ref_fam not in (mf.SD15, mf.UNKNOWN):
+                print(f'[SD1.5] Refiner is {ref_fam}; only an SD1.5 refiner works with an SD1.5 base. Refiner disabled.')
+                async_task.refiner_model_name = 'None'
+            else:
+                print('[SD1.5] SD1.5 refiner enabled.')
+
+        # if async_task.performance_selection in (Performance.EXTREME_SPEED,
+        #                                         Performance.LIGHTNING,
+        #                                         Performance.HYPER_SD):
+        #     print('[SD1.5] Extreme Speed / Lightning / Hyper-SD need SDXL LoRAs -> switched to Speed.')
+        #     async_task.performance_selection = Performance.SPEED
+        #     async_task.steps = async_task.original_steps = Performance.SPEED.steps()
+
+        return True
+
+
     def apply_patch_settings(async_task):
         patch_settings[pid] = PatchSettings(
             async_task.sharpness,
@@ -698,7 +724,6 @@ def worker():
             if modules.patch.patch_settings[pid].type_cfg == 'CFG rescale':
                 d.append(('CFG rescale', 'rescale_cfg', modules.patch.patch_settings[pid].rescale_cfg))
 
-
             if async_task.clip_skip > 1:
                 d.append(('CLIP Skip', 'clip_skip', async_task.clip_skip))
             d.append(('Sampler', 'sampler', async_task.sampler_name))
@@ -746,8 +771,7 @@ def worker():
             img_paths.append(log(x, d, metadata_parser, async_task.output_format, task, persist_image,name_prefix=async_task.name_prefix))
 
         return img_paths
-
-    def apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress):
+    def apply_sd15_control_hints(async_task, height, width, current_progress):
         for task in async_task.cn_tasks[flags.cn_canny]:
             cn_img, cn_stop, cn_weight = task
             cn_img = resize_image(HWC3(cn_img), width=width, height=height)
@@ -755,52 +779,6 @@ def worker():
             if not async_task.skipping_cn_preprocessor:
                 cn_img = preprocessors.canny_pyramid(cn_img, async_task.canny_low_threshold,
                                                      async_task.canny_high_threshold)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        for task in async_task.cn_tasks[flags.cn_pose]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.cpds(cn_img)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        
-        for task in async_task.cn_tasks[flags.cn_manga]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.cpds(cn_img)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-
-        for task in async_task.cn_tasks[flags.cn_recolor]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.cpds(cn_img)
-
-            cn_img = HWC3(cn_img)
-            task[0] = core.numpy_to_pytorch(cn_img)
-            if async_task.debugging_cn_preprocessor:
-                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        for task in async_task.cn_tasks[flags.cn_scribble]:
-            cn_img, cn_stop, cn_weight = task
-            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
-
-            if not async_task.skipping_cn_preprocessor:
-                cn_img = preprocessors.cpds(cn_img)
 
             cn_img = HWC3(cn_img)
             task[0] = core.numpy_to_pytorch(cn_img)
@@ -817,32 +795,264 @@ def worker():
             task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        for task in async_task.cn_tasks[flags.cn_ip]:
+        for task in async_task.cn_tasks[flags.cn_pose]:
             cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.pose(cn_img)
+                
             cn_img = HWC3(cn_img)
-
-            # https://github.com/tencent-ailab/IP-Adapter/blob/d580c50a291566bbf9fc7ac0f760506607297e6d/README.md?plain=1#L75
-            cn_img = resize_image(cn_img, width=224, height=224, resize_mode=0)
-
-            task[0] = ip_adapter.preprocess(cn_img, ip_adapter_path=ip_adapter_path)
+            task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        for task in async_task.cn_tasks[flags.cn_ip_face]:
+        for task in async_task.cn_tasks[flags.cn_scribble]:
             cn_img, cn_stop, cn_weight = task
-            cn_img = HWC3(cn_img)
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
 
             if not async_task.skipping_cn_preprocessor:
-                cn_img = extras.face_crop.crop_image(cn_img)
+                cn_img = preprocessors.scribble_hed(cn_img)
 
-            # https://github.com/tencent-ailab/IP-Adapter/blob/d580c50a291566bbf9fc7ac0f760506607297e6d/README.md?plain=1#L75
-            cn_img = resize_image(cn_img, width=224, height=224, resize_mode=0)
-
-            task[0] = ip_adapter.preprocess(cn_img, ip_adapter_path=ip_adapter_face_path)
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
             if async_task.debugging_cn_preprocessor:
                 yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
-        all_ip_tasks = async_task.cn_tasks[flags.cn_ip] + async_task.cn_tasks[flags.cn_ip_face]
-        if len(all_ip_tasks) > 0:
-            pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, all_ip_tasks)
+
+        for task in async_task.cn_tasks[flags.cn_recolor]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.recolor_intensity(cn_img)
+                
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+
+
+        for task in async_task.cn_tasks[flags.cn_manga]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.lineart_anime(cn_img)
+                
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+
+    def apply_control_nets(
+        async_task,
+        height,
+        ip_adapter_face_path,
+        ip_adapter_path,
+        width,
+        current_progress,
+    ):
+        def apply_ip_adapter_tasks():
+            for task in async_task.cn_tasks[flags.cn_ip]:
+                cn_img, cn_stop, cn_weight = task
+                cn_img = HWC3(cn_img)
+
+                cn_img = resize_image(cn_img,width=224,height=224,resize_mode=0)
+
+                task[0] = ip_adapter.preprocess(
+                    cn_img,
+                    ip_adapter_path=ip_adapter_path,
+                )
+
+                if async_task.debugging_cn_preprocessor:
+                    yield_result(
+                        async_task,
+                        cn_img,
+                        current_progress,
+                        async_task.black_out_nsfw,
+                        do_not_show_finished_images=True,
+                    )
+
+            for task in async_task.cn_tasks[flags.cn_ip_face]:
+                cn_img, cn_stop, cn_weight = task
+                cn_img = HWC3(cn_img)
+
+                if not async_task.skipping_cn_preprocessor:
+                    cn_img = extras.face_crop.crop_image(cn_img)
+
+                cn_img = resize_image(cn_img,width=224,height=224,resize_mode=0)
+
+                task[0] = ip_adapter.preprocess(
+                    cn_img,
+                    ip_adapter_path=ip_adapter_face_path,
+                )
+
+                if async_task.debugging_cn_preprocessor:
+                    yield_result(
+                        async_task,
+                        cn_img,
+                        current_progress,
+                        async_task.black_out_nsfw,
+                        do_not_show_finished_images=True,
+                    )
+
+            all_ip_tasks = (
+                async_task.cn_tasks[flags.cn_ip]
+                + async_task.cn_tasks[flags.cn_ip_face]
+            )
+
+            if all_ip_tasks:
+                pipeline.final_unet = ip_adapter.patch_model(
+                    pipeline.final_unet,
+                    all_ip_tasks,
+                )
+
+        if async_task.is_sd15:
+            apply_sd15_control_hints(async_task,height,width,current_progress)
+            apply_ip_adapter_tasks()
+            return
+
+        for task in async_task.cn_tasks[flags.cn_canny]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.canny_pyramid(
+                    cn_img,
+                    async_task.canny_low_threshold,
+                    async_task.canny_high_threshold,
+                )
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_pose]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.pose(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_manga]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_recolor]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.recolor_intensity(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_scribble]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.scribble_hed(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_cpds]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+        apply_ip_adapter_tasks()
+
 
     def apply_vary(async_task, uov_method, denoising_strength, uov_input_image, switch, current_progress, advance_progress=False):
         if 'subtle' in uov_method:
@@ -880,8 +1090,6 @@ def worker():
                       inpaint_mask, inpaint_parameterized, denoising_strength, inpaint_respective_field, switch,
                       inpaint_disable_initial_latent, current_progress, skip_apply_outpaint=False,
                       advance_progress=False):
-
-
         if not skip_apply_outpaint:
             inpaint_image, inpaint_mask = apply_outpaint(async_task, inpaint_image, inpaint_mask)
 
@@ -928,7 +1136,11 @@ def worker():
             vae=candidate_vae,
             pixels=inpaint_pixel_fill)['samples']
         inpaint_worker.current_task.load_latent(
-            latent_fill=latent_fill, latent_mask=latent_mask, latent_swap=latent_swap)
+            latent_fill=latent_fill,
+            latent_mask=latent_mask,
+            latent_swap=latent_swap
+        )
+
         if inpaint_parameterized:
             pipeline.final_unet = inpaint_worker.current_task.patch(
                 inpaint_head_model_path=inpaint_head_model_path,
@@ -936,7 +1148,19 @@ def worker():
                 inpaint_latent_mask=latent_mask,
                 model=pipeline.final_unet
             )
-        if not inpaint_disable_initial_latent:
+
+        if getattr(async_task, 'native_sd15_inpaint', False):
+            samples_for_sampling = (
+                torch.zeros_like(latent_fill)
+                if inpaint_disable_initial_latent
+                else latent_fill
+            )
+            initial_latent = {
+                'samples': samples_for_sampling,
+                'noise_mask': latent_mask,
+                'concat_latent_image': latent_inpaint,
+            }
+        elif not inpaint_disable_initial_latent:
             initial_latent = {'samples': latent_fill}
         B, C, H, W = latent_fill.shape
         height, width = H * 8, W * 8
@@ -1089,10 +1313,19 @@ def worker():
         loras += async_task.performance_loras
         loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
         loras=loras + ploras + dloras
-        pipeline.refresh_everything(refiner_model_name=async_task.refiner_model_name,
-                                    base_model_name=async_task.base_model_name,
-                                    loras=loras, base_model_additional_loras=base_model_additional_loras,
-                                    use_synthetic_refiner=use_synthetic_refiner, vae_name=async_task.vae_name)
+        applied_loras = pipeline.refresh_everything(
+            refiner_model_name=async_task.refiner_model_name,
+            base_model_name=async_task.base_model_name,
+            loras=loras,
+            base_model_additional_loras=base_model_additional_loras,
+            use_synthetic_refiner=use_synthetic_refiner,
+            vae_name=async_task.vae_name
+        )
+        applied_lora_keys = {str(item) for item in applied_loras}
+        loras = [
+            item for item in loras
+            if str(item) in applied_lora_keys
+        ]
         pipeline.set_clip_skip(async_task.clip_skip)
         if advance_progress:
             current_progress += 1
@@ -1225,14 +1458,28 @@ def worker():
         if advance_progress:
             current_progress += 1
         progressbar(async_task, current_progress, 'Downloading Hyper-SD components ...')
-        async_task.performance_loras += [(modules.config.downloading_sdxl_hyper_sd_lora(), 0.8)]
+        if async_task.is_sd15:
+            # Официальная 4-step SD1.5 Hyper-SD LoRA использует DDIM
+            # и CFG=0. В Fooocus ближайшее расписание — ddim_uniform.
+            async_task.sampler_name = 'ddim'
+            async_task.scheduler_name = 'ddim_uniform'
+            async_task.cfg_scale = 0.0
+        else:
+            hyper_lora_path = modules.config.downloading_sdxl_hyper_sd_lora()
+            hyper_lora_weight = 0.8
+            async_task.sampler_name = 'dpmpp_sde_gpu'
+            async_task.scheduler_name = 'karras'
+            async_task.cfg_scale = 1.0
+            async_task.performance_loras += [
+                (hyper_lora_path, hyper_lora_weight)
+            ]
+
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in Hyper-SD mode.')
         async_task.refiner_model_name = 'None'
-        async_task.sampler_name = 'dpmpp_sde_gpu'
-        async_task.scheduler_name = 'karras'
+
         async_task.sharpness = 0.0
-        async_task.cfg_scale = 1.0
+
         async_task.adaptive_cfg = 1.0
         async_task.type_cfg='CFG Mimicking from TSNR'
         async_task.rescale_cfg=0.3
@@ -1244,32 +1491,57 @@ def worker():
 
     def set_lightning_defaults(async_task, current_progress, advance_progress=False):
         print('Enter Lightning mode.')
+
         if advance_progress:
             current_progress += 1
+
         progressbar(async_task, 1, 'Downloading Lightning components ...')
-        async_task.performance_loras += [(modules.config.downloading_sdxl_lightning_lora(), 1.0)]
+
+        if async_task.is_sd15:
+            async_task.sampler_name = 'tcd'
+            async_task.scheduler_name = 'tcd'
+            async_task.cfg_scale = 0.0
+
+            # TCD LoRA example uses guidance_scale=0.
+            # Disable CFG modifiers so CFG is not altered afterward.
+            async_task.type_cfg = 'Off'
+            async_task.adaptive_cfg = 1.0
+            async_task.rescale_cfg = 0.0
+
+
+        else:
+            lora_path = modules.config.downloading_sdxl_lightning_lora()
+            async_task.sampler_name = 'euler'
+            async_task.scheduler_name = 'sgm_uniform'
+            async_task.cfg_scale = 1.0
+            async_task.adaptive_cfg = 1.0
+            async_task.type_cfg = 'CFG Mimicking from TSNR'
+            async_task.rescale_cfg = 0.3
+
+
+            async_task.performance_loras += [(lora_path, 1.0)]
         if async_task.refiner_model_name != 'None':
-            print(f'Refiner disabled in Lightning mode.')
+            print('Refiner disabled in Lightning mode.')
+
         async_task.refiner_model_name = 'None'
-        async_task.sampler_name = 'euler'
-        async_task.scheduler_name = 'sgm_uniform'
         async_task.sharpness = 0.0
-        async_task.cfg_scale = 1.0
-        async_task.adaptive_cfg = 1.0
-        async_task.type_cfg='CFG Mimicking from TSNR'
-        async_task.rescale_cfg=0.3
         async_task.refiner_switch = 1.0
         async_task.adm_scaler_positive = 1.0
         async_task.adm_scaler_negative = 1.0
         async_task.adm_scaler_end = 0.0
+
         return current_progress
+
 
     def set_lcm_defaults(async_task, current_progress, advance_progress=False):
         print('Enter LCM mode.')
         if advance_progress:
             current_progress += 1
         progressbar(async_task, 1, 'Downloading LCM components ...')
-        async_task.performance_loras += [(modules.config.downloading_sdxl_lcm_lora(), 1.0)]
+        if not async_task.is_sd15:
+            lcm_lora_path = modules.config.downloading_sdxl_lcm_lora()
+            async_task.performance_loras += [(lcm_lora_path, 1.0)]
+
         if async_task.refiner_model_name != 'None':
             print(f'Refiner disabled in LCM mode.')
         async_task.refiner_model_name = 'None'
@@ -1354,22 +1626,61 @@ def worker():
             goals.append('cn')
             progressbar(async_task, 1, 'Downloading control models ...')
             if len(async_task.cn_tasks[flags.cn_canny]) > 0:
-                controlnet_canny_path = modules.config.downloading_controlnet_canny()
-            if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
-                controlnet_cpds_path = modules.config.downloading_controlnet_cpds()
+                controlnet_canny_path = (
+                    modules.config.downloading_controlnet_sd15("canny")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_canny()
+                )
+
             if len(async_task.cn_tasks[flags.cn_pose]) > 0:
-                controlnet_pose_path = modules.config.downloading_controlnet_pose()
-            if len(async_task.cn_tasks[flags.cn_manga]) > 0:
-                controlnet_manga_path = modules.config.downloading_controlnet_manga()
-            if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
-                controlnet_recolor_path = modules.config.downloading_controlnet_recolor()
+                controlnet_pose_path = (
+                    modules.config.downloading_controlnet_sd15("pose")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_pose()
+                )
+
             if len(async_task.cn_tasks[flags.cn_scribble]) > 0:
-                controlnet_scribble_path = modules.config.downloading_controlnet_scribble()
+                controlnet_scribble_path = (
+                    modules.config.downloading_controlnet_sd15("scribble")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_scribble()
+                )
+            if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
+                controlnet_cpds_path = (
+                    modules.config.downloading_controlnet_sd15("cpds")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_cpds()
+                )
+            if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
+                controlnet_recolor_path = (
+                    modules.config.downloading_controlnet_sd15("recolor")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_recolor()
+                )
+
+            if len(async_task.cn_tasks[flags.cn_manga]) > 0:
+                controlnet_manga_path = (
+                    modules.config.downloading_controlnet_sd15("manga")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_manga()
+                )
+
             if len(async_task.cn_tasks[flags.cn_ip]) > 0:
-                clip_vision_path, ip_negative_path, ip_adapter_path = modules.config.downloading_ip_adapters('ip')
+                clip_vision_path, ip_negative_path, ip_adapter_path = (
+                    modules.config.downloading_ip_adapters(
+                        "ip",
+                        is_sd15=async_task.is_sd15,
+                    )
+                )
+
             if len(async_task.cn_tasks[flags.cn_ip_face]) > 0:
-                clip_vision_path, ip_negative_path, ip_adapter_face_path = modules.config.downloading_ip_adapters(
-                    'face')
+                clip_vision_path, ip_negative_path, ip_adapter_face_path = (
+                    modules.config.downloading_ip_adapters(
+                        "face",
+                        is_sd15=async_task.is_sd15,
+                    )
+                )
+
         if async_task.current_tab == 'enhance' and async_task.enhance_input_image is not None:
             goals.append('enhance')
             skip_prompt_processing = True
@@ -1429,7 +1740,10 @@ def worker():
                         use_synthetic_refiner, width, show_intermediate_results=True, persist_image=True):
         base_model_additional_loras = []
         inpaint_head_model_path = None
-        inpaint_parameterized = inpaint_engine != 'None'  # inpaint_engine = None, improve detail
+        inpaint_parameterized = (
+            inpaint_engine != 'None'
+            and not getattr(async_task, 'native_sd15_inpaint', False)
+        )
         initial_latent = None
         prompt = prepare_enhance_prompt(prompt, async_task.prompt)
         negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
@@ -1487,11 +1801,6 @@ def worker():
 
         del task_enhance['c'], task_enhance['uc']  # Save memory
         return current_progress, imgs[0], prompt, negative_prompt
-
-
-
-
-
 
     def enhance_upscale(all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
                         controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
@@ -1559,6 +1868,8 @@ def worker():
             print(f'Refiner disabled because base model and refiner are same.')
             async_task.refiner_model_name = 'None'
 
+        async_task.is_sd15 = apply_sd15_overrides(async_task)
+
         current_progress = 0
         if async_task.performance_selection == Performance.EXTREME_SPEED:
             set_lcm_defaults(async_task, current_progress, advance_progress=True)
@@ -1596,7 +1907,10 @@ def worker():
         skip_prompt_processing = False
 
         inpaint_worker.current_task = None
-        inpaint_parameterized = async_task.inpaint_engine != 'None'
+        inpaint_parameterized = (
+            async_task.inpaint_engine != 'None'
+            and not async_task.native_sd15_inpaint
+        )
         inpaint_image = None
         inpaint_mask = None
         inpaint_head_model_path = None
@@ -1623,8 +1937,12 @@ def worker():
                 goals, inpaint_head_model_path, inpaint_image, inpaint_mask, inpaint_parameterized, ip_adapter_face_path,
                 ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner)
         if async_task.enable_instant:
-            controlnet_canny_path, controlnet_cpds_path = apply_instant_cn(
-                async_task, controlnet_canny_path, controlnet_cpds_path,goals)
+            if not async_task.is_sd15:
+                controlnet_canny_path, controlnet_cpds_path = apply_instant_cn(
+                    async_task, controlnet_canny_path, controlnet_cpds_path,goals)
+            else:
+                print ("[InstantID] Basemodel is not SDXL. Process skipped.")
+                async_task.enable_instant = False
         # Load or unload CNs
         progressbar(async_task, current_progress, 'Loading control models ...')
         pipeline.refresh_controlnets([controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path])
@@ -1632,14 +1950,21 @@ def worker():
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
         async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
-        #if async_task.layer_enable:
-        #    async_task.vae_encoder_ld, async_task.vae_decoder_ld, async_task.model_ld = layer.prepare_layer(async_task.method_ld)
 
 
         print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
         print(f'[Parameters] Steps = {async_task.steps} - {switch}')
 
         progressbar(async_task, current_progress, 'Initializing ...')
+
+        if (
+            getattr(async_task, 'native_sd15_inpaint', False)
+            and 'inpaint' not in goals
+        ):
+            raise ValueError(
+                'SD1.5 Inpaint checkpoint requires an input image and mask. '
+                'Use Inpaint/Modify mode.'
+            )
 
         loras = async_task.loras
         if not skip_prompt_processing:
@@ -1654,10 +1979,6 @@ def worker():
                         async_task.autonegativeprompt, async_task.autonegativepromptstrength, async_task.autonegativepromptenhance, 
                         async_task.base_model_obp, async_task.OBP_preset, async_task.amountoffluff, async_task.promptenhancer, 
                         async_task.presetprefix, async_task.presetsuffix)
-
-
-
-
 
             tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,
                                                          base_model_additional_loras, async_task.image_number,
@@ -1790,8 +2111,6 @@ def worker():
             enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
             all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
 
-
-
         all_steps = max(all_steps, 1)
 
         print(f'[Parameters] Denoising Strength = {denoising_strength}')
@@ -1827,7 +2146,6 @@ def worker():
         show_intermediate_results = len(tasks) > 1 or async_task.should_enhance
         
         persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only
-
 
         for current_task_id, task in enumerate(tasks):
             if async_task.aspect_random==True:
@@ -1977,11 +2295,9 @@ def worker():
                                          async_task.disable_intermediate_results)
                             async_task.enhance_stats[index] += 1
 
-
                         if not async_task.only_detect:                    
                             goals_adetail = ['inpaint']
                     
-
                             adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
                             for n in range(len(masks)):
                                 prompt=adetail_prompt[n]
@@ -1992,8 +2308,6 @@ def worker():
                                 negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
                                 mask_binary = np.array(masks[n])
                                 mask_binary = (mask_binary > 0.5).astype(np.uint8) * 255
-
-
 
                                 try:
                                     current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
@@ -2027,16 +2341,6 @@ def worker():
 
                     if exception_result == 'break':
                         break
-
-
-
-
-
-
-
-
-
-
 
             else:
                 # inpaint for all other tabs

@@ -1,6 +1,4 @@
-""" -*- coding: UTF-8 -*-
-Handle model operations
-"""
+
 import glob
 import os
 import json
@@ -47,6 +45,25 @@ folders = {
 # Separate because the above is used for detecting supported models
 # in other features
 vae_folder = md_config.path_vae
+SD15_BASE_MODELS = {"sd 1.4", "sd 1.5"}
+SD15_MODEL_TYPES = {"ckp", "lora", "lycoris", "vae", "ti"}
+
+def is_sd15_base_model(base_model):
+    """Return whether a Civitai base model belongs to the SD1.x family."""
+    if not isinstance(base_model, str):
+        return False
+
+    normalized = " ".join(base_model.strip().lower().split())
+
+    return bool(re.match(r"^sd\s*1\.[45](?:$|[\s_-])", normalized))
+
+
+def get_default_download_subfolder(model_type, base_model):
+    """Select the default download subfolder for a model version."""
+    if model_type in SD15_MODEL_TYPES and is_sd15_base_model(base_model):
+        return "/sd15"
+
+    return "/"
 
 
 class VersionMismatchException(Exception):

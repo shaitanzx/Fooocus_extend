@@ -1,7 +1,7 @@
 ## What PhotoMaker Does
 ([Читать на русском языке](#что-делает-photomaker))
 
-`PhotoMaker` creates a new image based on a text description and one or more photos of a person. It extracts facial features from the references and uses them during generation. This is not an insertion of the original photo or exact photomontage: the result is a new image, so the resemblance and style change along with the settings, prompt, and base model.
+`PhotoMaker` (works only with SDXL models) creates a new image based on a text description and one or more photos of a person. It extracts facial features from the references and uses them during generation. This is not an insertion of the original photo or exact photomontage: the result is a new image, so the resemblance and style change along with the settings, prompt, and base model.
 
 ## Before You Start
 
@@ -95,7 +95,7 @@ Keep `img` right after defining the person, for example: `portrait of an Asian w
 ## Что делает PhotoMaker
 ([Read in English](#what-photomaker-does))
 
-`PhotoMaker` создаёт новое изображение по текстовому описанию и одной или нескольким фотографиям человека. Он извлекает признаки лица из референсов и использует их при генерации. Это не вставка исходной фотографии и не точный фотомонтаж: результат — новое изображение, поэтому сходство и стиль меняются вместе с настройками, prompt и базовой моделью.
+`PhotoMaker` (работает только с моделями SDXL) создаёт новое изображение по текстовому описанию и одной или нескольким фотографиям человека. Он извлекает признаки лица из референсов и использует их при генерации. Это не вставка исходной фотографии и не точный фотомонтаж: результат — новое изображение, поэтому сходство и стиль меняются вместе с настройками, prompt и базовой моделью.
 
 ## Перед началом
 

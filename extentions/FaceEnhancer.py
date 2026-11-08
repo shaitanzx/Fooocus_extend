@@ -206,7 +206,7 @@ class Upscale:
         if upscale_model == "None":
             return
         upscale_type, upscale_model = upscale_model.split(", ", 1)
-        download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join("models","face_enhancer", "upscale"))
+        download_from_url(upscale_models[upscale_model][0], upscale_model, os.path.join(modules.config.path_face_enhancer, "upscale"))
         self.modelInUse = f"_{os.path.splitext(upscale_model)[0]}"
         netscale = 1 if any(sub in upscale_model.lower() for sub in ("x1", "1x")) else (2 if any(sub in upscale_model.lower() for sub in ("x2", "2x")) else 4)
         model = None
@@ -215,7 +215,7 @@ class Upscale:
             # The values of the following hyperparameters are based on the research findings of the Spandrel project.
             # https://github.com/chaiNNer-org/spandrel/tree/main/libs/spandrel/spandrel/architectures
             from extras.basicsr.archs.rrdbnet_arch import RRDBNet
-            loadnet = torch.load(os.path.join("models","face_enhancer", "upscale", upscale_model), map_location=torch.device('cpu'), weights_only=True)
+            loadnet = torch.load(os.path.join(modules.config.path_face_enhancer, "upscale", upscale_model), map_location=torch.device('cpu'), weights_only=True)
             if 'params_ema' in loadnet or 'params' in loadnet:
                 loadnet = loadnet['params_ema'] if 'params_ema' in loadnet else loadnet['params']
 
@@ -430,7 +430,7 @@ class Upscale:
                              qkv_bias=qkv_bias, qk_scale=None, ape=ape, patch_norm=patch_norm, upscale=netscale, upsampler=upsampler, resi_connection=resi_connection,)
 
         if model:
-            self.realesrganer = RealESRGANer(scale=netscale, model_path=os.path.join("models","face_enhancer", "upscale", upscale_model), model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
+            self.realesrganer = RealESRGANer(scale=netscale, model_path=os.path.join(modules.config.path_face_enhancer, "upscale", upscale_model), model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
         elif upscale_model:
             import PIL
             from image_gen_aux import UpscaleWithModel
@@ -478,7 +478,7 @@ class Upscale:
                     return cv_image, None
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            upscaler = UpscaleWithModel.from_pretrained(os.path.join("models","face_enhancer", "upscale", upscale_model)).to(device)
+            upscaler = UpscaleWithModel.from_pretrained(os.path.join(modules.config.path_face_enhancer, "upscale", upscale_model)).to(device)
             upscaler.__class__ = UpscaleWithModel_Gfpgan
             self.realesrganer = upscaler
 
@@ -486,7 +486,7 @@ class Upscale:
     def initFaceEnhancerModel(self, face_restoration, face_detection):
         if face_restoration == "None":
             return
-        model_rootpath = os.path.join("models","face_enhancer", "face")
+        model_rootpath = os.path.join(modules.config.path_face_enhancer, "face")
         model_path = os.path.join(model_rootpath, face_restoration)
         download_from_url(face_models[face_restoration][0], face_restoration, model_rootpath)
         
@@ -560,9 +560,9 @@ class Upscale:
 
                     self.face_analyser = getFaceAnalyser("buffalo_l", ['CPUExecutionProvider'])
 
-                    model_rootpath = os.path.join("models","face_enhancer")
-                    model_path = os.path.join(model_rootpath, "inswapper_128.onnx")
-                    download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", model_rootpath)
+                    #model_rootpath = os.path.join("models","face_enhancer")
+                    model_path = os.path.join(modules.config.path_face_enhancer, "inswapper_128.onnx")
+                    download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", modules.config.path_face_enhancer)
                     
                     self.face_swapper = getFaceSwapModel(model_path)
 

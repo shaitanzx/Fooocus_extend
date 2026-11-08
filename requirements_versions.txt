@@ -18,10 +18,15 @@ onnx==1.18.0
 #onnxruntime-gpu==1.22.0
 onnxruntime==1.18.1
 timm==1.0.7
+#timm==0.9.10
 numpy==1.26.4
 #tokenizers==0.19.1
 tokenizers==0.20.3
 packaging==24.1
+
+
+pymatting==1.1.12
+
 rembg==2.0.57
 groundingdino-py==0.4.0
 segment_anything==1.0

@@ -5,6 +5,19 @@ import inspect
 import ldm_patched.modules.utils
 import ldm_patched.modules.model_management
 
+def get_nested_attr(obj, path):
+    for name in path.split("."):
+        obj = getattr(obj, name)
+    return obj
+
+
+def set_nested_attr(obj, path, value):
+    parts = path.split(".")
+    for name in parts[:-1]:
+        obj = getattr(obj, name)
+    setattr(obj, parts[-1], value)
+
+
 class ModelPatcher:
     def __init__(self, model, load_device, offload_device, size=0, current_device=None, weight_inplace_update=False):
         self.size = size
@@ -176,10 +189,10 @@ class ModelPatcher:
 
     def patch_model(self, device_to=None, patch_weights=True):
         for k in self.object_patches:
-            old = getattr(self.model, k)
+            old = get_nested_attr(self.model, k)
             if k not in self.object_patches_backup:
                 self.object_patches_backup[k] = old
-            setattr(self.model, k, self.object_patches[k])
+            set_nested_attr(self.model, k, self.object_patches[k])
 
         if patch_weights:
             model_sd = self.model_state_dict()
@@ -352,7 +365,7 @@ class ModelPatcher:
 
         keys = list(self.object_patches_backup.keys())
         for k in keys:
-            setattr(self.model, k, self.object_patches_backup[k])
+            set_nested_attr(self.model, k, self.object_patches_backup[k])
 
         self.object_patches_backup = {}
     def append_model_option(self, k, v, ensure_uniqueness=False):

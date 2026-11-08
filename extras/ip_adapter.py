@@ -111,11 +111,20 @@ def load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path):
     sdxl_plus = sdxl and plus
 
     if plus:
-        clip_extra_context_tokens = ip_state_dict["image_proj"]["latents"].shape[1]
-        clip_embeddings_dim = ip_state_dict["image_proj"]["latents"].shape[2]
+        image_proj_state = ip_state_dict["image_proj"]
+
+        clip_extra_context_tokens = image_proj_state["latents"].shape[1]
+
+        # Размерность входных CLIP-признаков задаётся матрицей proj_in.
+        # У SD 1.5 Plus это 1280, хотя размер latents — 768.
+        clip_embeddings_dim = image_proj_state["proj_in.weight"].shape[1]
     else:
-        clip_extra_context_tokens = ip_state_dict["image_proj"]["proj.weight"].shape[0] // cross_attention_dim
+        clip_extra_context_tokens = (
+            ip_state_dict["image_proj"]["proj.weight"].shape[0]
+            // cross_attention_dim
+        )
         clip_embeddings_dim = None
+
 
     with use_patched_ops(manual_cast):
         ip_adapter = IPAdapterModel(
@@ -190,9 +199,24 @@ def preprocess(img, ip_adapter_path):
     ldm_patched.modules.model_management.load_model_gpu(ip_layers)
 
     if ip_unconds is None:
-        uncond = ip_negative.to(device=ip_adapter.load_device, dtype=ip_adapter.dtype)
-        ip_unconds = [m(uncond).cpu() for m in ip_layers.model.to_kvs]
-        entry['ip_unconds'] = ip_unconds
+        if ip_adapter.sdxl:
+            # Для SDXL оставить текущий learned negative embedding.
+            uncond = ip_negative.to(
+                device=ip_adapter.load_device,
+                dtype=ip_adapter.dtype,
+            )
+        else:
+            # Для SD1.5 создать нулевое безусловное embedding
+            # нужной размерности — такой же формы, как cond.
+            # У SD1.5 это 768 каналов; у загруженного SDXL embedding — 2048.
+            uncond = torch.zeros_like(cond)
+
+        ip_unconds = [
+            m(uncond).cpu()
+            for m in ip_layers.model.to_kvs
+        ]
+        entry["ip_unconds"] = ip_unconds
+
 
     ip_conds = [m(cond).cpu() for m in ip_layers.model.to_kvs]
 
@@ -263,22 +287,81 @@ def patch_model(model, tasks):
         if key not in to["patches_replace"]["attn2"]:
             to["patches_replace"]["attn2"][key] = make_attn_patcher(number)
 
-    number = 0
+    # number = 0
 
-    for id in [4, 5, 7, 8]:
-        block_indices = range(2) if id in [4, 5] else range(10)
-        for index in block_indices:
-            set_model_patch_replace(new_model, number, ("input", id, index))
-            number += 1
+    # for id in [4, 5, 7, 8]:
+    #     block_indices = range(2) if id in [4, 5] else range(10)
+    #     for index in block_indices:
+    #         set_model_patch_replace(new_model, number, ("input", id, index))
+    #         number += 1
 
-    for id in range(6):
-        block_indices = range(2) if id in [3, 4, 5] else range(10)
-        for index in block_indices:
-            set_model_patch_replace(new_model, number, ("output", id, index))
-            number += 1
+    # for id in range(6):
+    #     block_indices = range(2) if id in [3, 4, 5] else range(10)
+    #     for index in block_indices:
+    #         set_model_patch_replace(new_model, number, ("output", id, index))
+    #         number += 1
 
-    for index in range(10):
-        set_model_patch_replace(new_model, number, ("middle", 0, index))
-        number += 1
+    # for index in range(10):
+    #     set_model_patch_replace(new_model, number, ("middle", 0, index))
+    #     number += 1
+
+    # return new_model
+
+    # tasks[0] имеет вид:
+    # ((ip_conds, ip_unconds), stop, weight)
+    # В conds есть пары K/V для каждого cross-attention блока.
+    kv_count = len(tasks[0][0][0])
+
+    if kv_count == len(SD_V12_CHANNELS):
+        # SD 1.5: 16 cross-attention блоков, по K/V на каждый.
+        block_keys = (
+            [("input", i) for i in [1, 2, 4, 5, 7, 8]]
+            + [("output", i) for i in [3, 4, 5, 6, 7, 8, 9, 10, 11]]
+            + [("middle", 0)]
+        )
+
+    elif kv_count == len(SD_XL_CHANNELS):
+        # SDXL: существующее расположение и порядок блоков проекта.
+        block_keys = []
+
+        for block_id in [4, 5, 7, 8]:
+            depth = range(2) if block_id in [4, 5] else range(10)
+            block_keys.extend(
+                ("input", block_id, index)
+                for index in depth
+            )
+
+        for block_id in range(6):
+            depth = range(2) if block_id in [3, 4, 5] else range(10)
+            block_keys.extend(
+                ("output", block_id, index)
+                for index in depth
+            )
+
+        block_keys.extend(
+            ("middle", 0, index)
+            for index in range(10)
+        )
+
+    else:
+        raise ValueError(
+            f"Unsupported IP-Adapter K/V count: {kv_count}. "
+            "Expected SD1.5 or SDXL adapter weights."
+        )
+
+    expected_layers = kv_count // 2
+    if len(block_keys) != expected_layers:
+        raise ValueError(
+            f"IP-Adapter mapping mismatch: {len(block_keys)} blocks "
+            f"for {expected_layers} K/V pairs."
+        )
+
+    for ip_index, key in enumerate(block_keys):
+        set_model_patch_replace(
+            new_model,
+            ip_index,
+            key,
+        )
 
     return new_model
+

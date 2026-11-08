@@ -1,5 +1,87 @@
 import cv2
 import numpy as np
+from extentions.op_edit.body import Body
+from extentions.op_edit import util as openpose_util
+from modules.config import downloading_pose_preprocessor, downloading_hed_preprocessor, downloading_lineart_anime_preprocessor
+import gc
+import torch
+import os
+
+def lineart_anime(x: np.ndarray) -> np.ndarray:
+    """
+    Извлекает anime/manga lineart для SD 1.5 Lineart Anime ControlNet.
+    Вход и выход: RGB uint8.
+    """
+    from controlnet_aux import LineartAnimeDetector
+    model_path = downloading_lineart_anime_preprocessor()
+    detector = LineartAnimeDetector.from_pretrained(
+        os.path.dirname(model_path),
+        filename=os.path.basename(model_path))
+
+
+    resolution = max(x.shape[:2])
+    result = detector(
+        x,
+        detect_resolution=resolution,
+        image_resolution=resolution,
+        output_type="np",
+    )
+
+    if result.shape[:2] != x.shape[:2]:
+        result = cv2.resize(
+            result,
+            (x.shape[1], x.shape[0]),
+            interpolation=cv2.INTER_NEAREST,
+        )
+
+    if result.ndim == 2:
+        result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+    del detector
+    gc.collect()
+    torch.cuda.empty_cache()
+    return result.astype(np.uint8)
+
+
+def scribble_hed(x: np.ndarray) -> np.ndarray:
+    model_path = downloading_hed_preprocessor()
+    from controlnet_aux import HEDdetector
+    detector = HEDdetector.from_pretrained(
+        os.path.dirname(model_path),
+        filename=os.path.basename(model_path))
+
+    resolution = max(x.shape[:2])
+    result = detector(
+        x,
+        detect_resolution=resolution,
+        image_resolution=resolution,
+        scribble=True,
+        output_type="np")
+
+
+    if result.shape[:2] != x.shape[:2]:
+        result = cv2.resize(
+            result,
+            (x.shape[1], x.shape[0]),
+            interpolation=cv2.INTER_NEAREST)
+
+    if result.ndim == 2:
+        result = cv2.cvtColor(result, cv2.COLOR_GRAY2RGB)
+    del detector
+    gc.collect()
+    torch.cuda.empty_cache()
+    return result.astype(np.uint8)
+
+def pose(x: np.ndarray) -> np.ndarray:
+    model_path = downloading_pose_preprocessor()
+    image_bgr = cv2.cvtColor(x, cv2.COLOR_RGB2BGR)
+    body_estimation = Body(model_path)
+    candidate, subset = body_estimation(image_bgr)
+    pose_bgr = np.zeros_like(image_bgr)
+    pose_bgr = openpose_util.draw_bodypose(pose_bgr,candidate,subset)
+    del body_estimation
+    gc.collect()
+    torch.cuda.empty_cache()
+    return cv2.cvtColor(pose_bgr, cv2.COLOR_BGR2RGB)
 
 
 def centered_canny(x: np.ndarray, canny_low_threshold, canny_high_threshold):
@@ -79,3 +161,34 @@ def cpds(x):
     result = density + offset
 
     return norm255(result, low=4, high=96).clip(0, 255).astype(np.uint8)
+
+def recolor_intensity(x: np.ndarray, gamma: float = 1.0) -> np.ndarray:
+    """
+    Формирует 3-канальную карту интенсивности для Recolor ControlNet.
+    Вход и выход — RGB uint8.
+    """
+    assert isinstance(x, np.ndarray)
+    assert x.ndim == 3 and x.shape[2] == 3
+
+    hsv = cv2.cvtColor(x, cv2.COLOR_RGB2HSV)
+    intensity = hsv[:, :, 2].astype(np.float32) / 255.0
+    intensity = np.power(intensity, gamma)
+    intensity = (intensity * 255.0).clip(0, 255).astype(np.uint8)
+
+    return cv2.cvtColor(intensity, cv2.COLOR_GRAY2RGB)
+
+
+def recolor_luminance(x: np.ndarray, gamma: float = 1.0) -> np.ndarray:
+    """
+    Формирует 3-канальную карту светлоты для Recolor ControlNet.
+    Вход и выход — RGB uint8.
+    """
+    assert isinstance(x, np.ndarray)
+    assert x.ndim == 3 and x.shape[2] == 3
+
+    lab = cv2.cvtColor(x, cv2.COLOR_RGB2LAB)
+    luminance = lab[:, :, 0].astype(np.float32) / 255.0
+    luminance = np.power(luminance, gamma)
+    luminance = (luminance * 255.0).clip(0, 255).astype(np.uint8)
+
+    return cv2.cvtColor(luminance, cv2.COLOR_GRAY2RGB)

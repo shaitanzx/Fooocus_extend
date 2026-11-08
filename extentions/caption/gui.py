@@ -549,7 +549,7 @@ def gui():
                 ARGS = caption.CaptionConfig()
             
             config = ARGS
-            config.models_save_path = str(os.path.join("models", "caption"))
+            config.models_save_path = str(modules.config.path_caption)
             config.log_level = "INFO"
             config.caption_method = str(caption_method_value).lower()
             config.llm_choice = str(llm_choice_value).lower()

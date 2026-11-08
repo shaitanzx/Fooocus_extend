@@ -45,6 +45,7 @@ class StableDiffusionModel:
         self.unet_with_lora = unet
         self.clip_with_lora = clip
         self.visited_loras = ''
+        self.applied_loras = []
 
         self.lora_key_map_unet = {}
         self.lora_key_map_clip = {}
@@ -63,12 +64,14 @@ class StableDiffusionModel:
         assert isinstance(loras, list)
 
         if self.visited_loras == str(loras):
-            return
+            return self.applied_loras
 
         self.visited_loras = str(loras)
 
         if self.unet is None:
-            return
+            self.applied_loras = []
+            return self.applied_loras
+
 
         print(f'Request to load LoRAs {str(loras)} for model [{self.filename}].')
         self._lbw_slot_map = build_lbw_slot_mapping(self.lora_key_map_unet)
@@ -79,6 +82,7 @@ class StableDiffusionModel:
         range_idx = 0
 
         loras_to_load = []
+        applied_loras = []
 
         for item in loras:
             if len(item) == 2:
@@ -111,9 +115,30 @@ class StableDiffusionModel:
             if not os.path.exists(lora_filename):
                 print(f'Lora file not found: {lora_filename}')
                 continue
+            try:
+                import modules.model_family as mf
+                import modules.lora_family as lf
+
+                fam = mf.detect_family_from_model(self.unet)
+
+                if fam == mf.SDXL_REFINER:
+                    fam = mf.SDXL
+
+                ok, msg = lf.check_lora_for_family(lora_filename, fam)
+
+                if not ok:
+                    print(f'[LoRA] {msg}')
+                    continue
+
+            except Exception as e:
+                print(f'[LoRA] family check failed: {e}')
+
+            applied_loras.append(item)
 
             if (start == 0 or start is None) and stop is None:
-                loras_to_load.append((lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset))
+                loras_to_load.append(
+                    (lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset)
+                )
             else:
                 self._lbw_step_ranges[range_idx] = (lora_filename, te_weight, unet_weight, lbw_preset, lbwe_preset, start, stop)
                 range_idx += 1
@@ -179,12 +204,15 @@ class StableDiffusionModel:
                 print(f"  #{idx}: {os.path.basename(fn)} | te={te} unet={unet} | range=[{start}-{stop}] | lbw={lbw} lbwe={lbwe}", flush=True)
         else:
             print("[Dynamic LORA] No dynamic ranges configured.", flush=True)
+        self.applied_loras = applied_loras
+        return self.applied_loras
 
 
 @torch.no_grad()
 @torch.inference_mode()
 def apply_freeu(model, b1, b2, s1, s2):
     return opFreeU.patch(model=model, b1=b1, b2=b2, s1=s1, s2=s2)[0]
+
 
 
 @torch.no_grad()
@@ -340,9 +368,8 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
     if isinstance(noise_mean, torch.Tensor):
         noise = noise + noise_mean - torch.mean(noise, dim=1, keepdim=True)
 
-    noise_mask = None
-    if "noise_mask" in latent:
-        noise_mask = latent["noise_mask"]
+    noise_mask = latent.get("noise_mask")
+    concat_latent_image = latent.get("concat_latent_image")
 
     previewer = get_previewer(model)
 
@@ -374,7 +401,8 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
                                                     last_step=last_step,
                                                     force_full_denoise=force_full_denoise, noise_mask=noise_mask,
                                                     callback=callback,
-                                                    disable_pbar=disable_pbar, seed=seed, sigmas=sigmas)
+                                                    disable_pbar=disable_pbar, seed=seed, sigmas=sigmas,
+                                                    concat_latent_image=concat_latent_image)
 
         out = latent.copy()
         out["samples"] = samples

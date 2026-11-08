@@ -10,6 +10,7 @@ from threading import Thread
 import ldm_patched.modules.model_management as mm
 import modules.default_pipeline as pipeline
 import modules.core as core
+import modules.config as config
 import gc
 import torch
 from extentions.tutorial import tutorial
@@ -150,14 +151,14 @@ def chat_fn(message: str, history: list, seed:int, temperature: float, top_p: fl
 
         llm_model = AutoModelForCausalLM.from_pretrained(
             f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),
+            cache_dir=config.path_omost,
             torch_dtype=torch.bfloat16,
             device_map="auto",
             token=None,        
         )
         llm_tokenizer = AutoTokenizer.from_pretrained(
             f"lllyasviel/{model_base}",
-            cache_dir=os.path.join("models","omost"),
+            cache_dir=config.path_omost,
             token=None
         )
         llm_name = model_base
@@ -230,7 +231,7 @@ def model_loading(llm_name):
  
     llm_model = AutoModelForCausalLM.from_pretrained(
         llm_name,
-        cache_dir=os.path.join("models","omost"), 
+        cache_dir=config.path_omost, 
         torch_dtype=torch.bfloat16,
         device_map="auto",
         token=None,
@@ -238,7 +239,7 @@ def model_loading(llm_name):
     )
     llm_tokenizer = AutoTokenizer.from_pretrained(
         llm_name,
-        cache_dir=os.path.join("models","omost"), 
+        cache_dir=config.path_omost, 
         token=None
     )
     return gr.update(visible=False)

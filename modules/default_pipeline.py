@@ -14,7 +14,6 @@ from ldm_patched.modules.model_base import SDXL, SDXLRefiner
 from modules.sample_hijack import clip_separate
 from modules.util import get_file_from_folder_list, get_enabled_loras, apply_lbw_patches
 
-
 import copy
 from typing import Optional
 from torch import Tensor
@@ -27,7 +26,8 @@ import ldm_patched.modules.utils
 from extentions.transper.models import TransparentVAEDecoder
 import extentions.instantid.instantid as instantid
 import gc
-
+import modules.model_family as model_family
+import gradio as gr
 
 model_base = core.StableDiffusionModel()
 model_refiner = core.StableDiffusionModel()
@@ -38,7 +38,7 @@ final_clip = None
 final_vae = None
 final_refiner_unet = None
 final_refiner_vae = None
-
+current_family = None
 loaded_ControlNets = {}
 
 
@@ -60,14 +60,16 @@ def refresh_controlnets(model_paths):
 @torch.no_grad()
 @torch.inference_mode()
 def assert_model_integrity():
-    error_message = None
-
-    if not isinstance(model_base.unet_with_lora.model, SDXL):
-        error_message = 'You have selected base model other than SDXL. This is not supported yet.'
-
-    if error_message is not None:
-        raise NotImplementedError(error_message)
-
+    global current_family
+    fam = model_family.detect_family_from_model(model_base.unet_with_lora)
+    current_family = fam
+    if fam not in (model_family.SDXL, model_family.SD15):
+        raise NotImplementedError(
+            f"Unsupported base model family: {fam}. Supported: SDXL and SD1.5.")
+    if fam == model_family.SD15 and model_refiner.unet is not None:
+        rfam = model_family.detect_family_from_model(model_refiner.unet)
+        if rfam != model_family.SD15:
+            raise NotImplementedError('With an SD1.5 base the refiner must also be SD1.5.')
     return True
 
 
@@ -150,10 +152,9 @@ def refresh_loras(loras, base_model_additional_loras=None):
     if not isinstance(base_model_additional_loras, list):
         base_model_additional_loras = []
 
-    model_base.refresh_loras(loras + base_model_additional_loras)
+    applied_loras = model_base.refresh_loras(loras + base_model_additional_loras)
     model_refiner.refresh_loras(loras)
-
-    return
+    return applied_loras
 
 
 @torch.no_grad()
@@ -170,7 +171,6 @@ def clip_encode_single(clip, text, verbose=False):
     if verbose:
         print(f'[CLIP Encoded] {text}')
     return result
-
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -189,7 +189,13 @@ def clone_cond(conds):
         results.append([c, {"pooled_output": p}])
 
     return results
-
+@torch.no_grad()
+@torch.inference_mode()
+def refiner_cond(cond, target_model, target_clip):
+    # SD1.5 -> SD1.5: тот же CLIP-L, преобразование не нужно (иначе final_layer_norm применится дважды)
+    if current_family == model_family.SD15 and not isinstance(target_model, (SDXL, SDXLRefiner)):
+        return clone_cond(cond)
+    return clip_separate(cond, target_model=target_model, target_clip=target_clip)
 
 @torch.no_grad()
 @torch.inference_mode()
@@ -209,9 +215,10 @@ def clip_encode(texts, pool_top_k=1):
     for i, text in enumerate(texts):
         cond, pooled = clip_encode_single(final_clip, text)
         cond_list.append(cond)
-        if i < pool_top_k:
+#        if i < pool_top_k:
+#            pooled_acc += pooled
+        if i < pool_top_k and pooled is not None:
             pooled_acc += pooled
-
     return [[torch.cat(cond_list, dim=1), {"pooled_output": pooled_acc}]]
 
 
@@ -249,6 +256,18 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
                        base_model_additional_loras=None, use_synthetic_refiner=False, vae_name=None):
     global final_unet, final_clip, final_vae, final_refiner_unet, final_refiner_vae, final_expansion
 
+    base_path = get_file_from_folder_list(base_model_name, modules.config.paths_checkpoints)
+    if model_family.detect_family_from_file(base_path) == model_family.SD15:
+        if refiner_model_name != 'None':
+            ref_path = get_file_from_folder_list(refiner_model_name, modules.config.paths_checkpoints)
+            ref_fam = model_family.detect_family_from_file(ref_path)
+            if ref_fam not in (model_family.SD15, model_family.UNKNOWN):
+                print(f'[SD1.5] Refiner is {ref_fam}; with an SD1.5 base only an SD1.5 refiner is supported. Refiner disabled.')
+                refiner_model_name = 'None'
+        use_synthetic_refiner = False
+
+
+
     final_unet = None
     final_clip = None
     final_vae = None
@@ -263,7 +282,7 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
         refresh_refiner_model(refiner_model_name)
         refresh_base_model(base_model_name, vae_name)
 
-    refresh_loras(loras, base_model_additional_loras=base_model_additional_loras)
+    applied_loras = refresh_loras(loras, base_model_additional_loras=base_model_additional_loras)
     assert_model_integrity()
 
     final_unet = model_base.unet_with_lora
@@ -278,7 +297,7 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
 
     prepare_text_encoder(async_call=True)
     clear_all_caches()
-    return
+    return applied_loras
 
 
 refresh_everything(
@@ -332,7 +351,9 @@ def calculate_sigmas(sampler, model, scheduler, steps, denoise):
 @torch.inference_mode()
 def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
     assert refiner_swap_method in ['joint', 'separate', 'vae']
-
+    if current_family == model_family.SD15:
+        return final_vae, None
+        
     if final_refiner_vae is not None and final_refiner_unet is not None:
         if denoise > 0.9:
             return final_vae, final_refiner_vae
@@ -343,9 +364,6 @@ def get_candidate_vae(steps, switch, denoise=1.0, refiner_swap_method='joint'):
                 return final_refiner_vae, None
 
     return final_vae, final_refiner_vae
-
-layer_model_root = os.path.join(os.path.dirname(modules.config.path_vae), 'layer_model')
-os.makedirs(layer_model_root, exist_ok=True)
 
 def move_tensors_to_device(obj, device):
     if isinstance(obj, torch.Tensor):
@@ -369,7 +387,25 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     assert refiner_swap_method in ['joint', 'separate', 'vae']
 
-    if final_refiner_vae is not None and final_refiner_unet is not None:
+    sd15_pair = (current_family == model_family.SD15 and final_refiner_unet is not None)
+
+    if sd15_pair:
+        # SD1.5 base + SD1.5 refiner: общее латентное пространство, VAE-конвертация не нужна
+        target_refiner_vae = None  # финальное декодирование VAE базовой модели
+        if denoise > 0.9:
+            refiner_swap_method = 'separate'
+        else:
+            refiner_swap_method = 'joint'
+            if denoise > (float(steps - switch) / float(steps)) ** 0.834:
+                target_refiner_unet = None
+                print(f'[Sampler] only use Base because of partial denoise.')
+            else:
+                positive_cond = refiner_cond(positive_cond, final_refiner_unet.model, final_clip)
+                negative_cond = refiner_cond(negative_cond, final_refiner_unet.model, final_clip)
+                target_unet, target_refiner_unet = final_refiner_unet, None
+                print(f'[Sampler] only use Refiner because of partial denoise.')
+        print(f'[Sampler] SD1.5 refiner, swap method = {refiner_swap_method}')
+    elif final_refiner_vae is not None and final_refiner_unet is not None:
         # Refiner Use Different VAE (then it is SD15)
         if denoise > 0.9:
             refiner_swap_method = 'vae'
@@ -380,8 +416,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
                     = final_unet, final_vae, None, None
                 print(f'[Sampler] only use Base because of partial denoise.')
             else:
-                positive_cond = clip_separate(positive_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
-                negative_cond = clip_separate(negative_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
+                positive_cond = refiner_cond(positive_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
+                negative_cond = refiner_cond(negative_cond, target_model=final_refiner_unet.model, target_clip=final_clip)
                 target_unet, target_vae, target_refiner_unet, target_refiner_vae \
                     = final_refiner_unet, final_refiner_vae, None, None
                 print(f'[Sampler] only use Refiner because of partial denoise.')
@@ -411,6 +447,7 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     
     original_patches = move_tensors_to_device(copy.deepcopy(target_unet.patches), 'cpu')
     original_model_options = move_tensors_to_device(copy.deepcopy(target_unet.model_options), 'cpu')
+    original_object_patches = copy.copy(target_unet.object_patches)
 
     if p.enable_instant:
         instantid_model, control_net = None, None
@@ -493,19 +530,49 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
         print(f'[Transparency] {transper}')
 
         if transper == 'Attention Injection':
-            model_path = load_file_from_url(
-                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
-                model_dir=layer_model_root,
-                file_name='layer_xl_transparent_attn.safetensors'
+            if p.is_sd15:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_transparent_attn.safetensors',
+                    model_dir=modules.config.path_transperent,
+                    file_name='layer_sd15_transparent_attn.safetensors'
+                )
+            else:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_attn.safetensors',
+                    model_dir=modules.config.path_transperent,
+                    file_name='layer_xl_transparent_attn.safetensors'
+                )
+        else:
+            if p.is_sd15:
+                print(f"[Transparency] Conv Injection not support for SD1.5. Switching to Attention Injection mode.")
+        
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_transparent_attn.safetensors',
+                    model_dir=modules.config.path_transperent,
+                    file_name='layer_sd15_transparent_attn.safetensors'
+                )
+            else:
+                model_path = load_file_from_url(
+                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
+                    model_dir=modules.config.path_transperent,
+                    file_name='layer_xl_transparent_conv.safetensors'
+                )
+        layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
+
+        if p.is_sd15:
+            from extentions.transper.transparent_attention_sd15 import (apply_sd15_transparent_attention)
+
+            apply_sd15_transparent_attention(
+                target_unet,
+                layer_lora_model,
             )
         else:
-            model_path = load_file_from_url(
-                url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/layer_xl_transparent_conv.safetensors',
-                model_dir=layer_model_root,
-                file_name='layer_xl_transparent_conv.safetensors'
+
+            target_unet.load_frozen_patcher(
+                os.path.basename(model_path),
+                layer_lora_model,
+                1,
             )
-        layer_lora_model = ldm_patched.modules.utils.load_torch_file(model_path, safe_load=True)
-        target_unet.load_frozen_patcher(os.path.basename(model_path), layer_lora_model, 1)
 
         step_index = int((len(minmax_sigmas) - 1))
         sigma_end = minmax_sigmas[step_index].item()
@@ -693,12 +760,25 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
     
     if transper != "None":
         mod_number = 1
+        if p.is_sd15:
+            decoder_url = "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/transparency/layer_sd15_vae_transparent_decoder.safetensors"
+            decoder_filename = "layer_sd15_vae_transparent_decoder.safetensors"
+        else:
+            decoder_url = "https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors"
+            decoder_filename = "vae_transparent_decoder.safetensors"
+
         model_path = load_file_from_url(
-                    url='https://huggingface.co/LayerDiffusion/layerdiffusion-v1/resolve/main/vae_transparent_decoder.safetensors',
-                    model_dir=layer_model_root,
-                    file_name='vae_transparent_decoder.safetensors'
-                )
-        vae_transparent_decoder = TransparentVAEDecoder(ldm_patched.modules.utils.load_torch_file(model_path))
+            url=decoder_url,
+            model_dir=modules.config.path_transperent,
+            file_name=decoder_filename,
+        )
+
+        vae_transparent_decoder = TransparentVAEDecoder(
+            ldm_patched.modules.utils.load_torch_file(
+                model_path,
+                safe_load=True,
+            )
+        )
 
         latent = sampled_latent['samples'][0]
         pixel = images[0]
@@ -714,6 +794,8 @@ def process_diffusion(p, positive_cond, negative_cond, steps, switch, width, hei
 
     target_unet.patches = move_tensors_to_device(original_patches, main_device)
     target_unet.model_options = move_tensors_to_device(original_model_options, main_device)
+    target_unet.object_patches = original_object_patches
+    del original_object_patches
     del original_patches, original_model_options
 
     if p.enable_instant:

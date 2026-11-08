@@ -86,7 +86,7 @@ def clip_separate_after_preparation(cond, target_model=None, target_clip=None):
 
 @torch.no_grad()
 @torch.inference_mode()
-def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas, model_options={}, latent_image=None, denoise_mask=None, callback=None, disable_pbar=False, seed=None):
+def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas, model_options={}, latent_image=None, denoise_mask=None, callback=None, disable_pbar=False, seed=None, concat_latent_image=None):
     global current_refiner
 
     positive = positive[:]
@@ -104,8 +104,8 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         latent_image = model.process_latent_in(latent_image)
 
     if hasattr(model, 'extra_conds'):
-        positive = encode_model_conds(model.extra_conds, positive, noise, device, "positive", latent_image=latent_image, denoise_mask=denoise_mask)
-        negative = encode_model_conds(model.extra_conds, negative, noise, device, "negative", latent_image=latent_image, denoise_mask=denoise_mask)
+        positive = encode_model_conds(model.extra_conds, positive, noise, device, "positive", latent_image=latent_image, denoise_mask=denoise_mask, concat_latent_image=concat_latent_image)
+        negative = encode_model_conds(model.extra_conds, negative, noise, device, "negative", latent_image=latent_image, denoise_mask=denoise_mask, concat_latent_image=concat_latent_image)
 
     #make sure each cond area has an opposite one with the same area
     for c in positive:
@@ -125,8 +125,8 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         positive_refiner = clip_separate_after_preparation(positive, target_model=current_refiner.model)
         negative_refiner = clip_separate_after_preparation(negative, target_model=current_refiner.model)
 
-        positive_refiner = encode_model_conds(current_refiner.model.extra_conds, positive_refiner, noise, device, "positive", latent_image=latent_image, denoise_mask=denoise_mask)
-        negative_refiner = encode_model_conds(current_refiner.model.extra_conds, negative_refiner, noise, device, "negative", latent_image=latent_image, denoise_mask=denoise_mask)
+        positive_refiner = encode_model_conds(current_refiner.model.extra_conds, positive_refiner, noise, device, "positive", latent_image=latent_image, denoise_mask=denoise_mask, concat_latent_image=concat_latent_image)
+        negative_refiner = encode_model_conds(current_refiner.model.extra_conds, negative_refiner, noise, device, "negative", latent_image=latent_image, denoise_mask=denoise_mask, concat_latent_image=concat_latent_image)
 
     def refiner_switch():
         cleanup_additional_models(set(get_models_from_cond(positive, "control") + get_models_from_cond(negative, "control")))

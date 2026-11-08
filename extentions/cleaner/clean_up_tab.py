@@ -13,8 +13,8 @@ import io
 
 
 
-EXTENSION_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(EXTENSION_PATH, "cleaner","model")
+
+MODEL_PATH = os.path.join(modules.config.path_cleaner,"model")
 temp_dir=modules.config.temp_path+os.path.sep
 
 def get_first_image(image_files):

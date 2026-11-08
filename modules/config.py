@@ -41,7 +41,7 @@ try:
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as json_file:
             config_dict.update(json.load(json_file))
-            always_save_keys = list(config_dict.keys())
+            #always_save_keys = list(config_dict.keys())
 except Exception as e:
     print(f'Failed to load config file "{config_path}" . The reason is: {str(e)}')
     print('Please make sure that:')
@@ -207,7 +207,13 @@ path_fooocus_expansion = get_dir_or_set_default('path_fooocus_expansion', '../mo
 path_wildcards = get_dir_or_set_default('path_wildcards', '../wildcards/')
 path_safety_checker = get_dir_or_set_default('path_safety_checker', '../models/safety_checker/')
 path_sam = get_dir_or_set_default('path_sam', '../models/sam/')
-path_yolo = Path(__file__).parent.parent / "models" / "detection"
+path_yolo = get_dir_or_set_default('path_detection', '../models/detection/')
+path_omost = get_dir_or_set_default('path_omost','../models/omost/')
+path_transperent = get_dir_or_set_default('path_transperent','../models/layer_model/')
+path_instantid = get_dir_or_set_default('path_instantid','../extentions/instantid/',make_directory=True)
+path_face_enhancer = get_dir_or_set_default('path_face_enhancer','../models/face_enhancer/')
+path_caption = get_dir_or_set_default('path_caption','../models/caption/')
+path_cleaner = get_dir_or_set_default('path_cleaner','../extentions/cleaner/',make_directory=True)
 path_outputs = get_path_output()
 
 
@@ -810,10 +816,42 @@ default_aspect_ratio = add_ratio(default_aspect_ratio)
 available_aspect_ratios_labels = [add_ratio(x) for x in available_aspect_ratios]
 
 
-# Only write config in the first launch.
-if not os.path.exists(config_path):
-    with open(config_path, "w", encoding="utf-8") as json_file:
-        json.dump({k: config_dict[k] for k in always_save_keys}, json_file, indent=4)
+# # Only write config in the first launch.
+# if not os.path.exists(config_path):
+#     with open(config_path, "w", encoding="utf-8") as json_file:
+#         json.dump({k: config_dict[k] for k in always_save_keys}, json_file, indent=4)
+
+
+# Always write config
+# Save only path settings to config.txt.
+loaded_config = {}
+config_file_exists = os.path.exists(config_path)
+config_file_is_valid = True
+
+if config_file_exists:
+    try:
+        with open(config_path, "r", encoding="utf-8") as json_file:
+            loaded_config = json.load(json_file)
+
+        if not isinstance(loaded_config, dict):
+            raise ValueError("Config file must contain a JSON object")
+
+    except Exception as e:
+        print(f'Cannot update config file "{config_path}": {e}')
+        config_file_is_valid = False
+
+if config_file_is_valid:
+    path_config_data = {
+        key: config_dict[key]
+        for key in always_save_keys
+        if key in config_dict
+    }
+
+    # Обновит отсутствующие пути и удалит из файла старые непутевые параметры.
+    if path_config_data != loaded_config or not config_file_exists:
+        with open(config_path, "w", encoding="utf-8") as json_file:
+            json.dump(path_config_data, json_file, indent=4)
+
 
 
 # Always write tutorials.
@@ -922,6 +960,14 @@ def downloading_inpaint_models(v):
 
     return head_file, patch_file
 
+def downloading_sd15_lcm_lora():
+    file_name = 'lcm-lora-sdv1-5.safetensors'
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/lcm-lora-sdv1-5.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+    return file_name
 
 def downloading_sdxl_lcm_lora():
     load_file_from_url(
@@ -931,6 +977,16 @@ def downloading_sdxl_lcm_lora():
     )
     return modules.flags.PerformanceLoRA.EXTREME_SPEED.value
 
+def downloading_sd15_tcd_lora():
+    file_name = 'TCD-SD15-LoRA.safetensors'
+
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/TCD-SD15-LoRA.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+
+    return file_name
 
 def downloading_sdxl_lightning_lora():
     load_file_from_url(
@@ -940,6 +996,14 @@ def downloading_sdxl_lightning_lora():
     )
     return modules.flags.PerformanceLoRA.LIGHTNING.value
 
+def downloading_sd15_hyper_sd_lora():
+    file_name = 'Hyper-SD15-4steps-lora.safetensors'
+    load_file_from_url(
+        url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/sd1/Hyper-SD15-4steps-lora.safetensors',
+        model_dir=paths_loras[0],
+        file_name=file_name
+    )
+    return file_name
 
 def downloading_sdxl_hyper_sd_lora():
     load_file_from_url(
@@ -951,45 +1015,89 @@ def downloading_sdxl_hyper_sd_lora():
 def download_instantid():
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/1k3d68.onnx',
-        model_dir='extentions/instantid/models/antelopev2',
+        model_dir=os.path.join(path_instantid,'models','antelopev2'),
         file_name='1k3d68.onnx'
     )
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/2d106det.onnx',
-        model_dir='extentions/instantid/models/antelopev2',
+        model_dir=os.path.join(path_instantid,'models','antelopev2'),
         file_name='2d106det.onnx'
     )
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/genderage.onnx',
-        model_dir='extentions/instantid/models/antelopev2',
+        model_dir=os.path.join(path_instantid,'models','antelopev2'),
         file_name='genderage.onnx'
     )  
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/glintr100.onnx',
-        model_dir='extentions/instantid/models/antelopev2',
+        model_dir=os.path.join(path_instantid,'models','antelopev2'),
         file_name='glintr100.onnx'
     ) 
     load_file_from_url(
         url='https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/antelopev2/scrfd_10g_bnkps.onnx',
-        model_dir='extentions/instantid/models/antelopev2',
+        model_dir=os.path.join(path_instantid,'models','antelopev2'),
         file_name='scrfd_10g_bnkps.onnx'
     ) 
     load_file_from_url(
         url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/config.json',
-        model_dir='extentions/instantid/checkpoints/ControlNetModel',
+        model_dir=os.path.join(path_instantid,'checkpoints','ControlNetModel'),
         file_name='config.json'
     )   
     load_file_from_url(
         url='https://huggingface.co/InstantX/InstantID/resolve/main/ControlNetModel/diffusion_pytorch_model.safetensors',
-        model_dir='extentions/instantid/checkpoints/ControlNetModel',
+        model_dir=os.path.join(path_instantid,'checkpoints','ControlNetModel'),
         file_name='diffusion_pytorch_model.safetensors'
     )     
     load_file_from_url(
         url='https://huggingface.co/InstantX/InstantID/resolve/main/ip-adapter.bin',
-        model_dir='extentions/instantid/checkpoints',
+        model_dir=os.path.join(path_instantid,'checkpoints'),
         file_name='ip-adapter.bin'
     )  
+SD15_CONTROLNET_FILES = {
+    "canny": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_lora_rank128_v11p_sd15_canny_fp16.safetensors",
+    "pose": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_v11p_sd15_openpose_fp16.safetensors",
+    "scribble": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_v11p_sd15_scribble_fp16.safetensors",
+    "cpds": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_lora_rank128_v11f1p_sd15_depth_fp16.safetensors",
+    "recolor": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/ioclab_sd15_recolor.safetensors",
+    "manga": "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/control_v11p_sd15s2_lineart_anime_fp16.safetensors"
+}
 
+
+def downloading_controlnet_sd15(kind):
+    try:
+        file_name = SD15_CONTROLNET_FILES[kind]
+    except KeyError:
+        raise ValueError(f"Unsupported SD1.5 ControlNet kind: {kind}")
+
+    load_file_from_url(
+        url=f"{file_name}",
+        model_dir=path_controlnet,
+        file_name=file_name.split('/')[-1],
+    )
+    return os.path.join(path_controlnet, file_name.split('/')[-1])
+
+def downloading_lineart_anime_preprocessor():
+    load_file_from_url(
+        url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/preprocessors/netG.pth",
+        model_dir=path_controlnet,
+        file_name='netG.pth'
+    )
+    return os.path.join(path_controlnet, 'netG.pth')
+def downloading_hed_preprocessor():
+    load_file_from_url(
+        url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/preprocessors/ControlNetHED.pth",
+        model_dir=path_controlnet,
+        file_name='ControlNetHED.pth'
+    )
+    return os.path.join(path_controlnet, 'ControlNetHED.pth')
+
+
+def downloading_pose_preprocessor():    
+    load_file_from_url(
+        url="https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/body_pose_model.pth",
+        model_dir=path_controlnet,
+        file_name='body_pose_model.pth')
+    return os.path.join(path_controlnet, 'body_pose_model.pth')
 def downloading_controlnet_canny():
     load_file_from_url(
         url='https://huggingface.co/lllyasviel/misc/resolve/main/control-lora-canny-rank128.safetensors',
@@ -1039,42 +1147,66 @@ def downloading_controlnet_cpds():
     return os.path.join(path_controlnet, 'fooocus_xl_cpds_128.safetensors')
 
 
-def downloading_ip_adapters(v):
-    assert v in ['ip', 'face']
+def downloading_ip_adapters(v, is_sd15=False):
+    assert v in ["ip", "face"]
 
     results = []
 
+    # Общие для этих моделей файлы ViT-H и negative image embedding.
     load_file_from_url(
-        url='https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors',
+        url="https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors",
         model_dir=path_clip_vision,
-        file_name='clip_vision_vit_h.safetensors'
+        file_name="clip_vision_vit_h.safetensors",
     )
-    results += [os.path.join(path_clip_vision, 'clip_vision_vit_h.safetensors')]
+    results.append(
+        os.path.join(path_clip_vision, "clip_vision_vit_h.safetensors")
+    )
 
     load_file_from_url(
-        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors',
+        url="https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors",
         model_dir=path_controlnet,
-        file_name='fooocus_ip_negative.safetensors'
+        file_name="fooocus_ip_negative.safetensors",
     )
-    results += [os.path.join(path_controlnet, 'fooocus_ip_negative.safetensors')]
+    results.append(
+        os.path.join(path_controlnet, "fooocus_ip_negative.safetensors")
+    )
 
-    if v == 'ip':
-        load_file_from_url(
-            url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus_sdxl_vit-h.bin',
-            model_dir=path_controlnet,
-            file_name='ip-adapter-plus_sdxl_vit-h.bin'
-        )
-        results += [os.path.join(path_controlnet, 'ip-adapter-plus_sdxl_vit-h.bin')]
+    if v == "ip":
+        if is_sd15:
+            file_name = "ip-adapter-plus_sd15.bin"
+            url = "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/ip-adapter-plus_sd15.bin"
+        else:
+            file_name = "ip-adapter-plus_sdxl_vit-h.bin"
+            url = (
+                "https://huggingface.co/lllyasviel/misc/"
+                "resolve/main/ip-adapter-plus_sdxl_vit-h.bin"
+            )
 
-    if v == 'face':
         load_file_from_url(
-            url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin',
+            url=url,
             model_dir=path_controlnet,
-            file_name='ip-adapter-plus-face_sdxl_vit-h.bin'
+            file_name=file_name,
         )
-        results += [os.path.join(path_controlnet, 'ip-adapter-plus-face_sdxl_vit-h.bin')]
+        results.append(os.path.join(path_controlnet, file_name))
+
+    elif v == "face":
+        if is_sd15:
+            file_name = "ip-adapter-plus-face_sd15.bin"
+            url = "https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/controlnets/ip-adapter-plus-face_sd15.bin"
+            
+        else:
+            file_name = "ip-adapter-plus-face_sdxl_vit-h.bin"
+            url = "https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin"            
+
+        load_file_from_url(
+            url=url,
+            model_dir=path_controlnet,
+            file_name=file_name,
+        )
+        results.append(os.path.join(path_controlnet, file_name))
 
     return results
+
 
 def downloading_upscale_model2(model):
     if model==UPSCALE_DEFAULT_FILENAMES[0]:
@@ -1146,3 +1278,23 @@ def downloading_cleaner(model_dir):
         file_name='big-lama.safetensors'
     )
     return os.path.join(model_dir, 'big-lama.safetensors')
+
+def download_groundingdino_bert() -> str:
+    from huggingface_hub import snapshot_download
+    path=os.path.join(path_inpaint, 'bert-base-uncased')
+    os.makedirs(path, exist_ok=True)
+    snapshot_download(
+        repo_id="google-bert/bert-base-uncased",
+        local_dir=path,
+        allow_patterns=[
+            "config.json",
+            "tokenizer_config.json",
+            "vocab.txt",
+            "tokenizer.json",
+            "special_tokens_map.json",
+            "model.safetensors",
+            "pytorch_model.bin",
+        ],
+    )
+
+    return path

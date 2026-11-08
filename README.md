@@ -3,12 +3,12 @@ I would like to point out that this fork can be run both locally on your compute
 Let's look at everything in order. 
 
 **Full list of differences from the original Fooocus**
-
+0. Native support SD1.5 models
 1. Modules running during generation
    - OneButtonPrompt - prompt generator with many settings
    - Prompt Translate
-   - PhotoMaker - generating images with a reference face
-   - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT)
+   - PhotoMaker - generating images with a reference face (only SDXL)
+   - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT) (only SDXL)
    - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
    - Vector - vector image generation
 2. Additional modules
@@ -66,6 +66,13 @@ Tunnel - select launch tunnel. When it happens that gradio stops working for som
 Memory patch - adds a few keys to the launch bar that allow you to optimise your graphics card if you are using the free version of Google Colab. If you have paid access, this item can be disabled
 GoogleDrive output - connects your GoogleDisk and save all of your generation directly to it.
 
+**Specifics of using SD1.5 models**
+- Only LoRAs designed for SD1.5 can be used with SD1.5 models.
+- SD1.5 models can serve as refiners for both SDXL and SD1.5; however, if the base model is an SD1.5 model, the refiner must also be an SD1.5 model.
+- For InpaintImprove/Outpaint modes, you must use SD1.5 Inpaint models.
+- InstantID and Photomaker does not work with SD1.5 models (it is skipped in the generation pipeline).
+- When loading SD1.5 models via the Civitai Helper extension, an `sd15` subfolder is suggested.
+
 ![image](https://github.com/user-attachments/assets/323f6311-bbb4-477f-860d-3cfecae5d89b)
 
 The **“Extensions”** panel is divided into three groups:
@@ -102,7 +109,7 @@ This is where you can control the generation of negative prompts
 
 Allows to translate both positive and negative prompts from any language into English, both before generation and directly during generation.
 
-**PhotoMaker** (works only in the local version)
+**PhotoMaker** (works only in the local version) (only SDXL)
 
 ![image](https://github.com/user-attachments/assets/e15a668a-53aa-4607-a7ed-7d277a3726de)
 
@@ -111,7 +118,7 @@ Upload a photo of your face - your reference face should be uploaded here.
 **Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 4 minutes.**
 
 
-**InstantID**
+**InstantID** (only for SDXL)
 
 <img width="975" height="528" alt="image" src="https://github.com/user-attachments/assets/3bb5d9d0-5053-4147-a9d9-828f2efbd4d2" />
 
@@ -625,6 +632,12 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.4.0
+ 1. Native support SD1.5 models
+ 2. Add OpenPose preprocessor
+ 3. Add Manga preprocessor
+ 4. Downloading BERT model in folder with models
 
 v9.3.6
  1. Add Caption tool
