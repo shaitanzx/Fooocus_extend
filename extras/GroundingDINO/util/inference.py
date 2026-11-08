@@ -33,7 +33,7 @@ class GroundingDinoModel(Model):
                 url="https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth",
                 file_name='groundingdino_swint_ogc.pth',
                 model_dir=path_inpaint)
-            modules.config.download_groundingdino_bert()
+            download_groundingdino_bert()
 
             model = load_model(model_config_path=self.config_file, model_checkpoint_path=filename)
 
