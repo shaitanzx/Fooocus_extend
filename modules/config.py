@@ -1277,3 +1277,23 @@ def downloading_cleaner(model_dir):
         file_name='big-lama.safetensors'
     )
     return os.path.join(model_dir, 'big-lama.safetensors')
+
+def download_groundingdino_bert() -> str:
+    from huggingface_hub import snapshot_download
+    path=os.path.join(path_inpaint, 'bert-base-uncased')
+    os.makedirs(path, exist_ok=True)
+    snapshot_download(
+        repo_id="google-bert/bert-base-uncased",
+        local_dir=path,
+        allow_patterns=[
+            "config.json",
+            "tokenizer_config.json",
+            "vocab.txt",
+            "tokenizer.json",
+            "special_tokens_map.json",
+            "model.safetensors",
+            "pytorch_model.bin",
+        ],
+    )
+
+    return path
