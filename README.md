@@ -7,8 +7,8 @@ Let's look at everything in order.
 1. Modules running during generation
    - OneButtonPrompt - prompt generator with many settings
    - Prompt Translate
-   - PhotoMaker - generating images with a reference face
-   - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT)
+   - PhotoMaker - generating images with a reference face (only SDXL)
+   - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT) (only SDXL)
    - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
    - Vector - vector image generation
 2. Additional modules
@@ -109,7 +109,7 @@ This is where you can control the generation of negative prompts
 
 Allows to translate both positive and negative prompts from any language into English, both before generation and directly during generation.
 
-**PhotoMaker** (works only in the local version)
+**PhotoMaker** (works only in the local version) (only SDXL)
 
 ![image](https://github.com/user-attachments/assets/e15a668a-53aa-4607-a7ed-7d277a3726de)
 
@@ -118,7 +118,7 @@ Upload a photo of your face - your reference face should be uploaded here.
 **Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 4 minutes.**
 
 
-**InstantID**
+**InstantID** (only for SDXL)
 
 <img width="975" height="528" alt="image" src="https://github.com/user-attachments/assets/3bb5d9d0-5053-4147-a9d9-828f2efbd4d2" />
 
