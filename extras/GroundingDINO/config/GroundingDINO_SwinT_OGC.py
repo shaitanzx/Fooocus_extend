@@ -1,4 +1,5 @@
 import modules.config
+import os
 
 batch_size = 1
 modelname = "groundingdino"
@@ -33,7 +34,7 @@ dn_bbox_coef = 1.0
 embed_init_tgt = True
 dn_labelbook_size = 2000
 max_text_len = 256
-text_encoder_type = modules.config.path_groundingdino_bert
+text_encoder_type = os.path.join(modules.config.path_inpaint, 'bert-base-uncased')
 use_text_enhancer = True
 use_fusion_layer = True
 use_checkpoint = True
