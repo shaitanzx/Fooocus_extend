@@ -1,3 +1,9 @@
+v9.4.0
+ 1. Native support SD1.5 models
+ 2. Add OpenPose preprocessor
+ 3. Add Manga preprocessor
+ 4. Downloading BERT model in folder with models
+
 v9.3.6
  1. Add Caption tool
  2. Buttons have been added to navigate to the description of each extension

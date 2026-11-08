@@ -3,7 +3,7 @@ I would like to point out that this fork can be run both locally on your compute
 Let's look at everything in order. 
 
 **Full list of differences from the original Fooocus**
-
+0. Native support SD1.5 models
 1. Modules running during generation
    - OneButtonPrompt - prompt generator with many settings
    - Prompt Translate
@@ -65,6 +65,13 @@ Fooocus Theme - select a theme - light or dark.
 Tunnel - select launch tunnel. When it happens that gradio stops working for some reason, you can choose cloudflared tunnel. However, the generation is a bit slower
 Memory patch - adds a few keys to the launch bar that allow you to optimise your graphics card if you are using the free version of Google Colab. If you have paid access, this item can be disabled
 GoogleDrive output - connects your GoogleDisk and save all of your generation directly to it.
+
+**Specifics of using SD1.5 models**
+- Only LoRAs designed for SD1.5 can be used with SD1.5 models.
+- SD1.5 models can serve as refiners for both SDXL and SD1.5; however, if the base model is an SD1.5 model, the refiner must also be an SD1.5 model.
+- For InpaintImprove/Outpaint modes, you must use SD1.5 Inpaint models.
+- InstantID does not work with SD1.5 models (it is skipped in the generation pipeline).
+- When loading SD1.5 models via the Civitai Helper extension, an `sd15` subfolder is suggested.
 
 ![image](https://github.com/user-attachments/assets/323f6311-bbb4-477f-860d-3cfecae5d89b)
 
@@ -625,6 +632,12 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.4.0
+ 1. Native support SD1.5 models
+ 2. Add OpenPose preprocessor
+ 3. Add Manga preprocessor
+ 4. Downloading BERT model in folder with models
 
 v9.3.6
  1. Add Caption tool
