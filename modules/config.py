@@ -41,7 +41,7 @@ try:
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as json_file:
             config_dict.update(json.load(json_file))
-            always_save_keys = list(config_dict.keys())
+            #always_save_keys = list(config_dict.keys())
 except Exception as e:
     print(f'Failed to load config file "{config_path}" . The reason is: {str(e)}')
     print('Please make sure that:')
@@ -823,17 +823,17 @@ available_aspect_ratios_labels = [add_ratio(x) for x in available_aspect_ratios]
 
 
 # Always write config
-config_file_data = {}
+# Save only path settings to config.txt.
+loaded_config = {}
+config_file_exists = os.path.exists(config_path)
 config_file_is_valid = True
 
-if os.path.exists(config_path):
+if config_file_exists:
     try:
         with open(config_path, "r", encoding="utf-8") as json_file:
             loaded_config = json.load(json_file)
 
-        if isinstance(loaded_config, dict):
-            config_file_data = loaded_config
-        else:
+        if not isinstance(loaded_config, dict):
             raise ValueError("Config file must contain a JSON object")
 
     except Exception as e:
@@ -841,16 +841,17 @@ if os.path.exists(config_path):
         config_file_is_valid = False
 
 if config_file_is_valid:
-    config_changed = False
+    path_config_data = {
+        key: config_dict[key]
+        for key in always_save_keys
+        if key in config_dict
+    }
 
-    for key in always_save_keys:
-        if key not in config_file_data and key in config_dict:
-            config_file_data[key] = config_dict[key]
-            config_changed = True
-
-    if config_changed or not os.path.exists(config_path):
+    # Обновит отсутствующие пути и удалит из файла старые непутевые параметры.
+    if path_config_data != loaded_config or not config_file_exists:
         with open(config_path, "w", encoding="utf-8") as json_file:
-            json.dump(config_file_data, json_file, indent=4)
+            json.dump(path_config_data, json_file, indent=4)
+
 
 
 # Always write tutorials.
