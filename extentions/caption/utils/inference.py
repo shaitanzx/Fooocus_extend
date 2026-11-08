@@ -875,103 +875,174 @@ class LLM:
                                                                   clean_up_tokenization_spaces=False)[0]
                 content = content.strip()
             else:
-                image = image_process(image, target_size=int(self.args.image_size))
-                self.logger.debug(f"Resized image shape: {image.shape}")
-                image = image_process_image(image)
+                if self.models_type == "qwen":
+                    # Qwen2-VL performs its own image preprocessing. Keep the
+                    # original aspect ratio and pass both modalities explicitly.
+                    image = image.convert("RGB")
 
-                if self.models_type == "minicpm":
-                    self.logger.debug(f'Using system prompt:{system_prompt}')
-                    self.logger.debug(f'Using user prompt:{user_prompt}')
-                    messages = [{'role': 'user', 'content': [image, f'{user_prompt}']}]
-                    if temperature == 0 and max_new_tokens == 0:
-                        max_new_tokens = 2048
-                        self.logger.warning(f'LLM temperature and max_new_tokens not set, only '
-                                            f'using default max_new_tokens value {max_new_tokens}')
-                        params = {
-                            'num_beams': 3,
-                            'repetition_penalty': 1.2,
-                            "max_new_tokens": max_new_tokens
-                        }
-                    else:
-                        if temperature == 0:
-                            temperature = 0.7
-                            self.logger.warning(f'LLM temperature not set, using default value {temperature}')
-                        else:
-                            self.logger.debug(f'LLM temperature is {temperature}')
-                        if max_new_tokens == 0:
-                            max_new_tokens = 2048
-                            self.logger.warning(f'LLM max_new_tokens not set, using default value {max_new_tokens}')
-                        else:
-                            self.logger.debug(f'LLM max_new_tokens is {max_new_tokens}')
-                        params = {
-                            'top_p': 0.8,
-                            'top_k': 100,
-                            'temperature': temperature,
-                            'repetition_penalty': 1.05,
-                            "max_new_tokens": max_new_tokens
-                        }
-                    params["max_inp_length"] = 4352
-                    content = self.llm.chat(image=image, msgs=messages, tokenizer=self.llm_tokenizer,
-                                            system_prompt=system_prompt if system_prompt else None,
-                                            sampling=False, stream=False, **params)
-
-                else:
+                    messages = []
                     if system_prompt:
-                        if self.models_type == "llama" and self.args.llm_patch and self.llm_patch_path:
-                            system_prompt = f"LLAMA GUARD TURNED OFF>>>{system_prompt}"
-                        messages = [
-                            {'role': 'system', 'content': f'{system_prompt}'},
-                            {'role': 'user', 'content': [
-                                {'type': 'image'},
-                                {'type': 'text', 'text': f'{user_prompt}'}]
-                             }
-                        ]
-                    else:
-                        self.logger.warning("System prompt NOT FOUND! Processing with out it.")
-                        messages = [
-                            {'role': 'user', 'content': [
-                                {'type': 'image'},
-                                {'type': 'text', 'text': f'{user_prompt}'}]
-                             }
-                        ]
-                    self.logger.debug(f"\nChat_template:\n{messages}")
-                    input_text = self.llm_processor.apply_chat_template(messages, add_generation_prompt=True)
-                    inputs = self.llm_processor(image, input_text,
-                                                add_special_tokens=False,
-                                                padding=True,
-                                                return_tensors="pt").to(self.llm.device)
-                    # Generate caption
-                    self.logger.debug(f'LLM temperature is {temperature}')
-                    self.logger.debug(f'LLM max_new_tokens is {max_new_tokens}')
-                    if temperature == 0 and max_new_tokens == 0:
-                        max_new_tokens = 300
-                        self.logger.warning(f'LLM temperature and max_new_tokens not set, only '
-                                            f'using default max_new_tokens value {max_new_tokens}')
-                        params = {}
-                    else:
-                        if temperature == 0:
-                            temperature = 0.5
-                            self.logger.warning(f'LLM temperature not set, using default value {temperature}')
-                        else:
-                            self.logger.debug(f'LLM temperature is {temperature}')
-                        if max_new_tokens == 0:
-                            max_new_tokens = 2048
-                            self.logger.warning(f'LLM max_new_tokens not set, using default value {max_new_tokens}')
-                        else:
-                            self.logger.debug(f'LLM max_new_tokens is {max_new_tokens}')
-                        params = {
-                            'do_sample': True,
-                            'top_k': 10,
-                            'temperature': temperature,
-                        }
+                        messages.append({
+                            "role": "system",
+                            "content": str(system_prompt),
+                        })
+                    messages.append({
+                        "role": "user",
+                        "content": [
+                            {"type": "image"},
+                            {"type": "text", "text": str(user_prompt)},
+                        ],
+                    })
 
-                    output = self.llm.generate(**inputs, max_new_tokens=max_new_tokens, **params)
-                    content = self.llm_processor.decode(output[0][inputs["input_ids"].shape[-1]:],
-                                                        skip_special_tokens=True, clean_up_tokenization_spaces=True)
+                    text_prompt = self.llm_processor.apply_chat_template(
+                        messages,
+                        tokenize=False,
+                        add_generation_prompt=True,
+                    )
+                    inputs = self.llm_processor(
+                        text=[text_prompt],
+                        images=[image],
+                        padding=True,
+                        return_tensors="pt",
+                    ).to(self.llm.device)
+
+                    self.logger.debug(
+                        "Qwen input tokens: %s; input keys: %s",
+                        inputs["input_ids"].shape[-1],
+                        list(inputs.keys()),
+                    )
+                    self.logger.debug("Qwen prompt: %s", text_prompt)
+
+                    generation_max_new_tokens = int(max_new_tokens or 300)
+                    with torch.inference_mode():
+                        output = self.llm.generate(
+                            **inputs,
+                            max_new_tokens=generation_max_new_tokens,
+                            do_sample=False,
+                        )
+
+                    prompt_length = inputs["input_ids"].shape[-1]
+                    generated_ids = output[:, prompt_length:]
+                    content = self.llm_processor.batch_decode(
+                        generated_ids,
+                        skip_special_tokens=True,
+                        clean_up_tokenization_spaces=True,
+                    )[0].strip()
+
+                    self.logger.debug(
+                        "Qwen generated token count: %s",
+                        generated_ids.shape[-1],
+                    )
+                    self.logger.debug("Qwen decoded caption: %r", content)
+                    if not content:
+                        self.logger.error(
+                            "Qwen generated an empty caption. Check model, prompt, "
+                            "processor inputs, and generation output."
+                        )
+                        raise RuntimeError(
+                            "Qwen вернул пустое описание. Подробности есть в логе caption."
+                        )
+                else:
+                    image = image_process(image, target_size=int(self.args.image_size))
+                    self.logger.debug(f"Resized image shape: {image.shape}")
+                    image = image_process_image(image)
+
+                    if self.models_type == "minicpm":
+                        self.logger.debug(f'Using system prompt:{system_prompt}')
+                        self.logger.debug(f'Using user prompt:{user_prompt}')
+                        messages = [{'role': 'user', 'content': [image, f'{user_prompt}']}]
+                        if temperature == 0 and max_new_tokens == 0:
+                            max_new_tokens = 2048
+                            self.logger.warning(f'LLM temperature and max_new_tokens not set, only '
+                                                f'using default max_new_tokens value {max_new_tokens}')
+                            params = {
+                                'num_beams': 3,
+                                'repetition_penalty': 1.2,
+                                "max_new_tokens": max_new_tokens
+                            }
+                        else:
+                            if temperature == 0:
+                                temperature = 0.7
+                                self.logger.warning(f'LLM temperature not set, using default value {temperature}')
+                            else:
+                                self.logger.debug(f'LLM temperature is {temperature}')
+                            if max_new_tokens == 0:
+                                max_new_tokens = 2048
+                                self.logger.warning(f'LLM max_new_tokens not set, using default value {max_new_tokens}')
+                            else:
+                                self.logger.debug(f'LLM max_new_tokens is {max_new_tokens}')
+                            params = {
+                                'top_p': 0.8,
+                                'top_k': 100,
+                                'temperature': temperature,
+                                'repetition_penalty': 1.05,
+                                "max_new_tokens": max_new_tokens
+                            }
+                        params["max_inp_length"] = 4352
+                        content = self.llm.chat(image=image, msgs=messages, tokenizer=self.llm_tokenizer,
+                                                system_prompt=system_prompt if system_prompt else None,
+                                                sampling=False, stream=False, **params)
+
+                    else:
+                        if system_prompt:
+                            if self.models_type == "llama" and self.args.llm_patch and self.llm_patch_path:
+                                system_prompt = f"LLAMA GUARD TURNED OFF>>>{system_prompt}"
+                            messages = [
+                                {'role': 'system', 'content': f'{system_prompt}'},
+                                {'role': 'user', 'content': [
+                                    {'type': 'image'},
+                                    {'type': 'text', 'text': f'{user_prompt}'}]
+                                 }
+                            ]
+                        else:
+                            self.logger.warning("System prompt NOT FOUND! Processing with out it.")
+                            messages = [
+                                {'role': 'user', 'content': [
+                                    {'type': 'image'},
+                                    {'type': 'text', 'text': f'{user_prompt}'}]
+                                 }
+                            ]
+                        self.logger.debug(f"\nChat_template:\n{messages}")
+                        input_text = self.llm_processor.apply_chat_template(messages, add_generation_prompt=True)
+                        inputs = self.llm_processor(image, input_text,
+                                                    add_special_tokens=False,
+                                                    padding=True,
+                                                    return_tensors="pt").to(self.llm.device)
+                        # Generate caption
+                        self.logger.debug(f'LLM temperature is {temperature}')
+                        self.logger.debug(f'LLM max_new_tokens is {max_new_tokens}')
+                        if temperature == 0 and max_new_tokens == 0:
+                            max_new_tokens = 300
+                            self.logger.warning(f'LLM temperature and max_new_tokens not set, only '
+                                                f'using default max_new_tokens value {max_new_tokens}')
+                            params = {}
+                        else:
+                            if temperature == 0:
+                                temperature = 0.5
+                                self.logger.warning(f'LLM temperature not set, using default value {temperature}')
+                            else:
+                                self.logger.debug(f'LLM temperature is {temperature}')
+                            if max_new_tokens == 0:
+                                max_new_tokens = 2048
+                                self.logger.warning(f'LLM max_new_tokens not set, using default value {max_new_tokens}')
+                            else:
+                                self.logger.debug(f'LLM max_new_tokens is {max_new_tokens}')
+                            params = {
+                                'do_sample': True,
+                                'top_k': 10,
+                                'temperature': temperature,
+                            }
+
+                        output = self.llm.generate(**inputs, max_new_tokens=max_new_tokens, **params)
+                        content = self.llm_processor.decode(output[0][inputs["input_ids"].shape[-1]:],
+                                                            skip_special_tokens=True, clean_up_tokenization_spaces=True)
+
+            if self.models_type == "qwen":
+                return str(content).strip()
 
             content_list = str(content).split(".")
             unique_content = list(dict.fromkeys(content_list))
-            unique_content = '.'.join(unique_content)
+            unique_content = ".".join(unique_content)
             return unique_content
 
     def iter_inference(self):
