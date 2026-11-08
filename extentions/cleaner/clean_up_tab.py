@@ -15,7 +15,6 @@ import io
 
 
 MODEL_PATH = os.path.join(modules.config.path_cleaner,"model")
-os.makedirs(MODEL_PATH, exist_ok=True)
 temp_dir=modules.config.temp_path+os.path.sep
 
 def get_first_image(image_files):
