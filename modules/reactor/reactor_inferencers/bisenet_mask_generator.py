@@ -6,6 +6,7 @@ import sys
 # import modules.shared as shared
 import numpy as np
 import torch
+from modules.config import path_face_enhancer
 from torchvision.transforms.functional import normalize
 from .mask_generator import MaskGenerator
 #sys.path.append(os.path.abspath('extras'))
@@ -16,7 +17,7 @@ from extras.facexlib_custom.utils.misc import img2tensor
 
 class BiSeNetMaskGenerator(MaskGenerator):
     def __init__(self) -> None:
-        self.mask_model = init_parsing_model(device="cuda",model_rootpath=os.path.join("models", "face_enhancer", "face"))
+        self.mask_model = init_parsing_model(device="cuda",model_rootpath=os.path.join(path_face_enhancer,"face"))
 
     def name(self):
         return "BiSeNet"
