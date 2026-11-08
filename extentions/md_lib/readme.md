@@ -48,7 +48,7 @@ In the **`Download Model`** block, select the **`Single`** tab. This is the main
 
 1. In **`Civitai URL`**, paste the link to the model page and click **`Get Model Info by Civitai Url`**. For a Civitai version page, you can use a link with the version ID. After loading the information, the name, type, base model, versions, folder, and available files will appear.
 2. Select **`Model Version`**. After receiving the data, the first version returned by Civitai is selected by default. For a link to a specific version, the corresponding version will be selected if the URL contains its ID.
-3. Check **`Sub-folder`**. By default, the root folder `/` is selected. The list also shows existing subfolders inside the folder of this type.
+3. Check **`Sub-folder`**. If you have specified the SD1.5 model, the `sd15` subfolder is suggested; otherwise, the root folder is suggested. The list also shows existing subfolders inside the folder of this type.
 4. Choose how to handle existing files, then check the list of file types that will be downloaded.
 5. Optionally change the name in **`Rename Model`**. Then click **`3. Download Model`** and wait for a completion or error message.
 
@@ -180,7 +180,7 @@ For the first installation, it is safer to test Helper on a single model:
 
 1. В **`Civitai URL`** вставьте ссылку на страницу модели и нажмите **`Get Model Info by Civitai Url`**. Для страницы версии Civitai можно использовать ссылку с ID версии. После загрузки сведений появятся имя, тип, базовая модель, версии, папка и доступные файлы.
 2. Выберите **`Model Version`**. После получения данных по умолчанию выбирается первая версия, которую вернул Civitai. Для ссылки на конкретную версию будет выбрана соответствующая версия, если URL содержит её ID.
-3. Проверьте **`Sub-folder`**. По умолчанию выбрана корневая папка `/`. В списке также показаны существующие подпапки внутри папки данного типа.
+3. Проверьте **`Sub-folder`**. Если вы указали модель SD1.5, то предлагается подпапка sd15, в противном случае будет предлгается корневая папка. В списке также показаны существующие подпапки внутри папки данного типа.
 4. Выберите, как поступать с существующим файлом, затем проверьте список типов файлов, которые будут загружаться.
 5. При желании измените имя в **`Rename Model`**. Затем нажмите **`3. Download Model`** и дождитесь сообщения о завершении или ошибке.
 

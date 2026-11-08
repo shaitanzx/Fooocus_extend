@@ -1,7 +1,7 @@
 ## What InstantID is For
 ([Читать на русском языке](#для-чего-нужен-instantid))
 
-`InstantID` helps create new images while preserving a person's recognizability from a single face photo. You describe the desired scene with text, upload a photo of the person, and Fooocus uses their facial features. Optionally, you can upload a separate photo with the desired pose: in this case, the identity is taken from the first image, while the facial and compositional guide comes from the second.
+`InstantID` (works only with SDXL models) helps create new images while preserving a person's recognizability from a single face photo. You describe the desired scene with text, upload a photo of the person, and Fooocus uses their facial features. Optionally, you can upload a separate photo with the desired pose: in this case, the identity is taken from the first image, while the facial and compositional guide comes from the second.
 
 This is not a tool for direct insertion or pixel-perfect copying of the original face. It generates a new image, so the resemblance depends on the original photo, the model, the text description, and the control strength. InstantID selects the **largest detected face** in the photo. Working with multiple faces simultaneously is not supported.
 
@@ -135,7 +135,7 @@ Upload a separate pose image with a visible face. Leave IdentityNet and the adap
 ## Для чего нужен InstantID
 ([Read in English](#what-instantid-is-for))
 
-`InstantID` помогает создавать новые изображения с сохранением узнаваемости человека по одной фотографии лица. Вы описываете желаемый кадр текстом, загружаете фотографию человека, а Fooocus использует её признаки лица. При желании можно отдельно загрузить фотографию с нужной позой: тогда идентичность берётся из первого снимка, а ориентир лица и композиции — из второго.
+`InstantID` (работает только с моделями SDXL) помогает создавать новые изображения с сохранением узнаваемости человека по одной фотографии лица. Вы описываете желаемый кадр текстом, загружаете фотографию человека, а Fooocus использует её признаки лица. При желании можно отдельно загрузить фотографию с нужной позой: тогда идентичность берётся из первого снимка, а ориентир лица и композиции — из второго.
 
 Это не инструмент для прямой вставки или копирования исходного лица пиксель-в-пиксель. Он генерирует новое изображение, поэтому сходство зависит от исходного снимка, модели, текстового описания и силы управления. InstantID выбирает **самое крупное обнаруженное лицо** на снимке. Работа с несколькими лицами одновременно не поддерживается.
 

@@ -70,7 +70,7 @@ GoogleDrive output - connects your GoogleDisk and save all of your generation di
 - Only LoRAs designed for SD1.5 can be used with SD1.5 models.
 - SD1.5 models can serve as refiners for both SDXL and SD1.5; however, if the base model is an SD1.5 model, the refiner must also be an SD1.5 model.
 - For InpaintImprove/Outpaint modes, you must use SD1.5 Inpaint models.
-- InstantID does not work with SD1.5 models (it is skipped in the generation pipeline).
+- InstantID and Photomaker does not work with SD1.5 models (it is skipped in the generation pipeline).
 - When loading SD1.5 models via the Civitai Helper extension, an `sd15` subfolder is suggested.
 
 ![image](https://github.com/user-attachments/assets/323f6311-bbb4-477f-860d-3cfecae5d89b)
