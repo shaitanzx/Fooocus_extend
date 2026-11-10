@@ -585,18 +585,49 @@ with shared.gradio_root:
                                         )
 
                                     mask, _, _, _ = generate_mask_from_image(image, mask_model, extras, sam_options)
+                                    if mask is None:
+                                        return None
+
+                                    # Приводим результат к двумерной маске H x W.
                                     m = np.asarray(mask)
+
                                     if m.ndim == 3:
                                         m = m[:, :, 0]
+
+                                    # Приводим bool/float-маски к диапазону uint8 0..255.
                                     if m.dtype == bool:
-                                        m = (m * 255).astype(np.uint8)
+                                        m = (m.astype(np.uint8) * 255)
+
                                     elif m.dtype != np.uint8:
-                                        m = (m.astype(np.float32) * 255).astype(np.uint8) if m.max() <= 1.0 else m.astype(np.uint8)
+                                        m = m.astype(np.float32)
 
-                                    # RGBA: все каналы = m (белый непрозрачный где маска, прозрачно вне)
+                                        if m.size > 0 and m.max() <= 1.0:
+                                            m = m * 255.0
+
+                                        m = np.clip(m, 0, 255).astype(np.uint8)
+
+                                    # Маска для Gradio sketch должна быть RGBA:
+                                    #
+                                    # RGB   — белая область маски;
+                                    # alpha — видимость области маски;
+                                    # вне маски все значения равны 0.
                                     mask_rgba = np.dstack([m, m, m, m])
+                                    mask_rgba = np.ascontiguousarray(mask_rgba)
 
-                                    return {"image": np.ascontiguousarray(image['image']),"mask": np.ascontiguousarray(mask_rgba)}
+                                    # Вход Image(tool="sketch") обычно является словарём.
+                                    # Сохраняем исходную подложку отдельно от маски.
+                                    if isinstance(image, dict):
+                                        base_image = image.get('image')
+                                    else:
+                                        base_image = image
+
+                                    if base_image is None:
+                                        return None
+
+                                    return {
+                                        "image": np.ascontiguousarray(image["image"]),
+                                        "mask": np.ascontiguousarray(mask_rgba),
+                                    }
 
 
                                 inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
@@ -1928,7 +1959,8 @@ with shared.gradio_root:
                                            inpaint_mask_dino_prompt_text, inpaint_mask_sam_model,
                                            inpaint_mask_box_threshold, inpaint_mask_text_threshold,
                                            inpaint_mask_sam_max_detections, dino_erode_or_dilate, debugging_dino],
-                                   outputs=inpaint_mask_image, show_progress=True, queue=True)
+                                   outputs=inpaint_mask_image, show_progress=True, queue=True) \
+                                   .then(fn=lambda x: None,inputs=inpaint_mask_image,outputs=None,_js="apply_generated_mask",queue=False,show_progress=False)
 
         ctrls = [currentTask, generate_image_grid]
         ctrls += [
