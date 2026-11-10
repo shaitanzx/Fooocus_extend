@@ -586,7 +586,7 @@ with shared.gradio_root:
 
                                     mask, _, _, _ = generate_mask_from_image(image, mask_model, extras, sam_options)
 
-                                    return {"image": image,"mask": mask}
+                                    return {"image": np.ascontiguousarray(image),"mask": np.ascontiguousarray(mask)}
 
 
                                 inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
