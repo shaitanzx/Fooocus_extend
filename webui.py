@@ -588,42 +588,25 @@ with shared.gradio_root:
                                     if mask is None:
                                         return None
 
-                                    # Приводим результат к двумерной маске H x W.
                                     m = np.asarray(mask)
-
                                     if m.ndim == 3:
                                         m = m[:, :, 0]
-
-                                    # Приводим bool/float-маски к диапазону uint8 0..255.
                                     if m.dtype == bool:
                                         m = (m.astype(np.uint8) * 255)
-
                                     elif m.dtype != np.uint8:
                                         m = m.astype(np.float32)
-
                                         if m.size > 0 and m.max() <= 1.0:
                                             m = m * 255.0
-
                                         m = np.clip(m, 0, 255).astype(np.uint8)
 
-                                    # Маска для Gradio sketch должна быть RGBA:
-                                    #
-                                    # RGB   — белая область маски;
-                                    # alpha — видимость области маски;
-                                    # вне маски все значения равны 0.
                                     mask_rgba = np.dstack([m, m, m, m])
                                     mask_rgba = np.ascontiguousarray(mask_rgba)
-
-                                    # Вход Image(tool="sketch") обычно является словарём.
-                                    # Сохраняем исходную подложку отдельно от маски.
                                     if isinstance(image, dict):
                                         base_image = image.get('image')
                                     else:
                                         base_image = image
-
                                     if base_image is None:
                                         return None
-
                                     return {
                                         "image": np.ascontiguousarray(image["image"]),
                                         "mask": np.ascontiguousarray(mask_rgba),

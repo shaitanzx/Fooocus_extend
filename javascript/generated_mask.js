@@ -1,13 +1,6 @@
 (function () {
     "use strict";
 
-    /*
-     * Состояние текущей сгенерированной маски.
-     *
-     * history[0] — только сгенерированная маска;
-     * history[1] — маска + первая ручная линия;
-     * history[2] — маска + первая и вторая ручные линии.
-     */
     let generatedMaskSource = null;
     let maskHistory = [];
 
@@ -206,9 +199,6 @@
             return;
         }
 
-        /*
-         * Не добавляем одно и то же состояние несколько раз.
-         */
         if (currentState === lastCapturedState) {
             return;
         }
@@ -223,10 +213,6 @@
     }
 
     function scheduleCaptureAfterDrawing() {
-        /*
-         * Gradio рисует линию после pointer/mouse event.
-         * Поэтому считываем canvas с небольшой задержкой.
-         */
         setTimeout(() => {
             requestAnimationFrame(() => {
                 captureCurrentMaskState();
@@ -247,9 +233,6 @@
 
         const interfaceCanvas = elements.interfaceCanvas;
 
-        /*
-         * Основной вариант для Gradio.
-         */
         interfaceCanvas.addEventListener(
             "pointerdown",
             function (event) {
@@ -283,10 +266,6 @@
             true
         );
 
-        /*
-         * Запасной вариант для браузеров/сборок,
-         * в которых canvas использует mouse events.
-         */
         interfaceCanvas.addEventListener(
             "mouseup",
             function () {
@@ -336,23 +315,11 @@
                     return;
                 }
 
-                /*
-                 * Сначала штатный Gradio undo удаляет последнюю
-                 * линию и очищает mask canvas.
-                 *
-                 * Затем мы восстанавливаем предыдущий полный
-                 * снимок canvas.
-                 */
                 setTimeout(() => {
                     requestAnimationFrame(() => {
                         requestAnimationFrame(async () => {
                             if (maskHistory.length > 1) {
-                                /*
-                                 * Удаляем последнее состояние:
-                                 *
-                                 * [mask, mask+line1, mask+line2]
-                                 * → [mask, mask+line1]
-                                 */
+
                                 maskHistory.pop();
 
                                 const previousState =
@@ -370,11 +337,7 @@
                                     maskHistory.length
                                 );
                             } else if (maskHistory.length === 1) {
-                                /*
-                                 * После отмены всех ручных линий
-                                 * следующее Undo удаляет базовую
-                                 * сгенерированную маску.
-                                 */
+
                                 maskHistory = [];
                                 generatedMaskSource = null;
                                 lastCapturedState = null;
@@ -412,10 +375,7 @@
         elements.clearButton.addEventListener(
             "click",
             function () {
-                /*
-                 * Кнопка Clear должна удалить маску полностью,
-                 * включая сохранённую историю.
-                 */
+
                 setTimeout(() => {
                     generatedMaskSource = null;
                     maskHistory = [];
@@ -443,10 +403,6 @@
             return;
         }
 
-        /*
-         * Этот обработчик ставится только один раз на конкретную
-         * кнопку. Для надёжности используем свойство элемента.
-         */
         if (elements.removeImageButton.__generatedMaskHandler) {
             return;
         }
@@ -517,9 +473,6 @@
 
         initializeRepeatedly();
 
-        /*
-         * Ждём, пока Gradio завершит обновление компонента.
-         */
         setTimeout(async () => {
             try {
                 const loaded =
@@ -535,10 +488,6 @@
                     return;
                 }
 
-                /*
-                 * Сохраняем первый снимок:
-                 * только сгенерированная маска.
-                 */
                 const baseState = getMaskCanvasData();
 
                 if (baseState) {
@@ -562,19 +511,11 @@
         return value;
     }
 
-    /*
-     * Вызывается из webui.py через _js:
-     *
-     * _js="apply_generated_mask"
-     */
     window.apply_generated_mask = function (value) {
         applyGeneratedMask(value);
         return value;
     };
 
-    /*
-     * Диагностика из DevTools.
-     */
     window.getGeneratedMaskDebugState = function () {
         return {
             hasGeneratedMask: Boolean(generatedMaskSource),
@@ -589,9 +530,6 @@
         };
     };
 
-    /*
-     * Полный ручной сброс состояния.
-     */
     window.resetGeneratedMaskState = function () {
         generatedMaskSource = null;
         maskHistory = [];
