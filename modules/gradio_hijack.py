@@ -322,6 +322,11 @@ class Image(
         """
         if y is None:
             return None
+        if isinstance(y, dict):
+            return {
+                "image": self.postprocess(y.get("image")),
+                "mask": self.postprocess(y.get("mask")),
+            }        
         if isinstance(y, np.ndarray):
             return processing_utils.encode_array_to_base64(y)
         elif isinstance(y, _Image.Image):

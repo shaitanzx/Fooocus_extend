@@ -585,8 +585,18 @@ with shared.gradio_root:
                                         )
 
                                     mask, _, _, _ = generate_mask_from_image(image, mask_model, extras, sam_options)
+                                    m = np.asarray(mask)
+                                    if m.ndim == 3:
+                                        m = m[:, :, 0]
+                                    if m.dtype == bool:
+                                        m = (m * 255).astype(np.uint8)
+                                    elif m.dtype != np.uint8:
+                                        m = (m.astype(np.float32) * 255).astype(np.uint8) if m.max() <= 1.0 else m.astype(np.uint8)
 
-                                    return {"image": np.ascontiguousarray(image),"mask": np.ascontiguousarray(mask)}
+                                    # RGBA: все каналы = m (белый непрозрачный где маска, прозрачно вне)
+                                    mask_rgba = np.dstack([m, m, m, m])
+
+                                    return {"image": np.ascontiguousarray(image['image']),"mask": np.ascontiguousarray(mask_rgba)}
 
 
                                 inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
