@@ -1,17 +1,29 @@
 (function () {
     "use strict";
 
+    /*
+     * Состояние текущей сгенерированной маски.
+     *
+     * history[0] — только сгенерированная маска;
+     * history[1] — маска + первая ручная линия;
+     * history[2] — маска + первая и вторая ручные линии.
+     */
     let generatedMaskSource = null;
-    let manualLineCount = 0;
-    let undoHandlerInstalled = false;
-    let drawingHandlersInstalled = false;
-    let restoringMask = false;
+    let maskHistory = [];
+
+    let initializedRoot = null;
+    let initializedInterfaceCanvas = null;
+    let initializedUndoButton = null;
+    let initializedClearButton = null;
+
+    let strokeInProgress = false;
+    let lastCapturedState = null;
 
     function getRoot() {
         return gradioApp().querySelector("#inpaint_mask_canvas");
     }
 
-    function getCanvases() {
+    function getComponentElements() {
         const root = getRoot();
 
         if (!root) {
@@ -19,10 +31,34 @@
         }
 
         return {
-            root,
-            mask: root.querySelector('canvas[key="mask"]'),
-            interface: root.querySelector('canvas[key="interface"]'),
-            drawing: root.querySelector('canvas[key="drawing"]'),
+            root: root,
+
+            maskCanvas: root.querySelector(
+                'canvas[key="mask"]'
+            ),
+
+            drawingCanvas: root.querySelector(
+                'canvas[key="drawing"]'
+            ),
+
+            interfaceCanvas: root.querySelector(
+                'canvas[key="interface"]'
+            ),
+
+            undoButton: root.querySelector(
+                'button[aria-label="Undo"], ' +
+                '[role="button"][aria-label="Undo"]'
+            ),
+
+            clearButton: root.querySelector(
+                'button[aria-label="Clear"], ' +
+                '[role="button"][aria-label="Clear"]'
+            ),
+
+            removeImageButton: root.querySelector(
+                'button[aria-label="Remove Image"], ' +
+                '[role="button"][aria-label="Remove Image"]'
+            )
         };
     }
 
@@ -42,18 +78,41 @@
         }
 
         if (typeof mask === "object") {
-            return mask.url || mask.path || mask.name || null;
+            return (
+                mask.url ||
+                mask.path ||
+                mask.name ||
+                null
+            );
         }
 
         return null;
     }
 
-    function clearCanvas(canvas) {
-        if (!canvas) {
+    function loadImage(source) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+
+            image.onload = function () {
+                resolve(image);
+            };
+
+            image.onerror = function (error) {
+                reject(error);
+            };
+
+            image.src = source;
+        });
+    }
+
+    function clearMaskCanvas() {
+        const elements = getComponentElements();
+
+        if (!elements || !elements.maskCanvas) {
             return;
         }
 
-        const context = canvas.getContext("2d");
+        const context = elements.maskCanvas.getContext("2d");
 
         if (!context) {
             return;
@@ -62,156 +121,215 @@
         context.clearRect(
             0,
             0,
-            canvas.width,
-            canvas.height
+            elements.maskCanvas.width,
+            elements.maskCanvas.height
         );
     }
 
-    function loadImage(source) {
-        return new Promise((resolve, reject) => {
-            const image = new Image();
+    function getMaskCanvasData() {
+        const elements = getComponentElements();
 
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-            image.src = source;
-        });
-    }
-
-    async function restoreGeneratedMask() {
-        if (!generatedMaskSource || restoringMask) {
-            return;
-        }
-
-        const canvases = getCanvases();
-
-        if (!canvases || !canvases.mask) {
-            return;
-        }
-
-        restoringMask = true;
-
-        try {
-            const image = await loadImage(generatedMaskSource);
-            const canvas = canvases.mask;
-            const context = canvas.getContext("2d");
-
-            if (!context) {
-                return;
-            }
-
-            context.save();
-            context.globalCompositeOperation = "source-over";
-
-            context.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-            context.drawImage(
-                image,
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-            context.restore();
-
-            console.log(
-                "[GeneratedMask] Base mask restored after undo."
-            );
-        } catch (error) {
-            console.error(
-                "[GeneratedMask] Cannot restore base mask:",
-                error
-            );
-        } finally {
-            restoringMask = false;
-        }
-    }
-
-    function registerManualDrawingTracking() {
-        if (drawingHandlersInstalled) {
-            return;
-        }
-
-        const canvases = getCanvases();
-
-        if (!canvases || !canvases.interface) {
-            return;
-        }
-
-        const interfaceCanvas = canvases.interface;
-
-        /*
-         * В Gradio верхним canvas, который принимает мышь,
-         * является canvas[key="interface"], а не mask.
-         */
-        interfaceCanvas.addEventListener(
-            "mousedown",
-            function (event) {
-                if (event.button !== 0) {
-                    return;
-                }
-
-                if (restoringMask) {
-                    return;
-                }
-
-                manualLineCount += 1;
-
-                console.log(
-                    "[GeneratedMask] Manual lines:",
-                    manualLineCount
-                );
-            },
-            true
-        );
-
-        /*
-         * Если пользователь полностью удалил изображение
-         * или компонент был очищен, счётчик нужно сбросить.
-         */
-        interfaceCanvas.addEventListener(
-            "mouseleave",
-            function () {
-                // Только визуальное событие. Счётчик не меняем.
-            },
-            true
-        );
-
-        drawingHandlersInstalled = true;
-    }
-
-    function findUndoButton() {
-        const root = getRoot();
-
-        if (!root) {
+        if (!elements || !elements.maskCanvas) {
             return null;
         }
 
+        return elements.maskCanvas.toDataURL("image/png");
+    }
+
+    async function drawSourceToMaskCanvas(source) {
+        const elements = getComponentElements();
+
+        if (!elements || !elements.maskCanvas) {
+            return false;
+        }
+
+        const image = await loadImage(source);
+        const canvas = elements.maskCanvas;
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+            return false;
+        }
+
+        context.save();
+
+        context.globalCompositeOperation = "source-over";
+
+        context.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        context.drawImage(
+            image,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        context.restore();
+
+        return true;
+    }
+
+    async function restoreHistoryState(dataUrl) {
+        if (!dataUrl) {
+            clearMaskCanvas();
+            return;
+        }
+
+        try {
+            await drawSourceToMaskCanvas(dataUrl);
+
+            console.log(
+                "[GeneratedMask] Restored history state."
+            );
+        } catch (error) {
+            console.error(
+                "[GeneratedMask] Failed to restore history state:",
+                error
+            );
+        }
+    }
+
+    async function captureCurrentMaskState() {
+        if (!generatedMaskSource) {
+            return;
+        }
+
+        const currentState = getMaskCanvasData();
+
+        if (!currentState) {
+            return;
+        }
+
         /*
-         * IconButton Gradio обычно содержит aria-label="Undo".
+         * Не добавляем одно и то же состояние несколько раз.
          */
-        return root.querySelector(
-            'button[aria-label="Undo"], [role="button"][aria-label="Undo"]'
+        if (currentState === lastCapturedState) {
+            return;
+        }
+
+        lastCapturedState = currentState;
+        maskHistory.push(currentState);
+
+        console.log(
+            "[GeneratedMask] Saved state. History length:",
+            maskHistory.length
         );
     }
 
-    function installUndoHandler() {
-        if (undoHandlerInstalled) {
+    function scheduleCaptureAfterDrawing() {
+        /*
+         * Gradio рисует линию после pointer/mouse event.
+         * Поэтому считываем canvas с небольшой задержкой.
+         */
+        setTimeout(() => {
+            requestAnimationFrame(() => {
+                captureCurrentMaskState();
+            });
+        }, 80);
+    }
+
+    function installDrawingTracking(elements) {
+        if (
+            !elements ||
+            !elements.interfaceCanvas ||
+            elements.interfaceCanvas === initializedInterfaceCanvas
+        ) {
             return;
         }
 
-        const undoButton = findUndoButton();
+        initializedInterfaceCanvas = elements.interfaceCanvas;
 
-        if (!undoButton) {
+        const interfaceCanvas = elements.interfaceCanvas;
+
+        /*
+         * Основной вариант для Gradio.
+         */
+        interfaceCanvas.addEventListener(
+            "pointerdown",
+            function (event) {
+                if (event.button !== undefined && event.button !== 0) {
+                    return;
+                }
+
+                strokeInProgress = true;
+            },
+            true
+        );
+
+        interfaceCanvas.addEventListener(
+            "pointerup",
+            function () {
+                if (!strokeInProgress) {
+                    return;
+                }
+
+                strokeInProgress = false;
+                scheduleCaptureAfterDrawing();
+            },
+            true
+        );
+
+        interfaceCanvas.addEventListener(
+            "pointercancel",
+            function () {
+                strokeInProgress = false;
+            },
+            true
+        );
+
+        /*
+         * Запасной вариант для браузеров/сборок,
+         * в которых canvas использует mouse events.
+         */
+        interfaceCanvas.addEventListener(
+            "mouseup",
+            function () {
+                if (!strokeInProgress) {
+                    return;
+                }
+
+                strokeInProgress = false;
+                scheduleCaptureAfterDrawing();
+            },
+            true
+        );
+
+        interfaceCanvas.addEventListener(
+            "touchend",
+            function () {
+                if (!strokeInProgress) {
+                    return;
+                }
+
+                strokeInProgress = false;
+                scheduleCaptureAfterDrawing();
+            },
+            true
+        );
+
+        console.log(
+            "[GeneratedMask] Drawing tracking installed."
+        );
+    }
+
+    function installUndoHandler(elements) {
+        if (
+            !elements ||
+            !elements.undoButton ||
+            elements.undoButton === initializedUndoButton
+        ) {
             return;
         }
 
-        undoButton.addEventListener(
+        initializedUndoButton = elements.undoButton;
+
+        elements.undoButton.addEventListener(
             "click",
             function () {
                 if (!generatedMaskSource) {
@@ -219,113 +337,283 @@
                 }
 
                 /*
-                 * Сначала Gradio штатно удалит последнюю линию
-                 * и очистит mask canvas.
+                 * Сначала штатный Gradio undo удаляет последнюю
+                 * линию и очищает mask canvas.
                  *
-                 * Поэтому восстанавливаем базовую маску
-                 * после завершения обработчика Gradio.
+                 * Затем мы восстанавливаем предыдущий полный
+                 * снимок canvas.
                  */
-                if (manualLineCount > 0) {
-                    manualLineCount -= 1;
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(async () => {
+                            if (maskHistory.length > 1) {
+                                /*
+                                 * Удаляем последнее состояние:
+                                 *
+                                 * [mask, mask+line1, mask+line2]
+                                 * → [mask, mask+line1]
+                                 */
+                                maskHistory.pop();
 
-                    setTimeout(() => {
-                        restoreGeneratedMask();
-                    }, 0);
+                                const previousState =
+                                    maskHistory[maskHistory.length - 1];
 
-                    console.log(
-                        "[GeneratedMask] Undo manual line. Remaining:",
-                        manualLineCount
-                    );
-                } else {
-                    /*
-                     * Все ручные линии уже отменены.
-                     * Следующий Undo должен удалить и сгенерированную маску.
-                     */
-                    generatedMaskSource = null;
+                                lastCapturedState = previousState;
 
-                    const canvases = getCanvases();
+                                await restoreHistoryState(
+                                    previousState
+                                );
 
-                    if (canvases) {
-                        clearCanvas(canvases.mask);
-                    }
+                                console.log(
+                                    "[GeneratedMask] Undo manual line. " +
+                                    "Remaining states:",
+                                    maskHistory.length
+                                );
+                            } else if (maskHistory.length === 1) {
+                                /*
+                                 * После отмены всех ручных линий
+                                 * следующее Undo удаляет базовую
+                                 * сгенерированную маску.
+                                 */
+                                maskHistory = [];
+                                generatedMaskSource = null;
+                                lastCapturedState = null;
 
-                    console.log(
-                        "[GeneratedMask] Base generated mask removed."
-                    );
-                }
+                                clearMaskCanvas();
+
+                                console.log(
+                                    "[GeneratedMask] " +
+                                    "Generated mask removed."
+                                );
+                            }
+                        });
+                    });
+                }, 180);
             },
             true
         );
 
-        undoHandlerInstalled = true;
+        console.log(
+            "[GeneratedMask] Undo handler installed."
+        );
     }
 
-    function initializeComponent(attempt = 0) {
-        registerManualDrawingTracking();
-        installUndoHandler();
-
+    function installClearHandler(elements) {
         if (
-            (!drawingHandlersInstalled || !undoHandlerInstalled) &&
-            attempt < 50
+            !elements ||
+            !elements.clearButton ||
+            elements.clearButton === initializedClearButton
         ) {
-            setTimeout(() => {
-                initializeComponent(attempt + 1);
-            }, 100);
+            return;
         }
+
+        initializedClearButton = elements.clearButton;
+
+        elements.clearButton.addEventListener(
+            "click",
+            function () {
+                /*
+                 * Кнопка Clear должна удалить маску полностью,
+                 * включая сохранённую историю.
+                 */
+                setTimeout(() => {
+                    generatedMaskSource = null;
+                    maskHistory = [];
+                    lastCapturedState = null;
+
+                    console.log(
+                        "[GeneratedMask] Clear pressed. " +
+                        "History reset."
+                    );
+                }, 100);
+            },
+            true
+        );
+
+        console.log(
+            "[GeneratedMask] Clear handler installed."
+        );
     }
 
-    window.apply_generated_mask = function (value) {
-        const maskSource = getMaskSource(value);
-
-        if (!maskSource) {
-            return value;
+    function installRemoveImageHandler(elements) {
+        if (
+            !elements ||
+            !elements.removeImageButton
+        ) {
+            return;
         }
 
         /*
-         * Новая сгенерированная маска начинает новый цикл undo.
+         * Этот обработчик ставится только один раз на конкретную
+         * кнопку. Для надёжности используем свойство элемента.
          */
-        generatedMaskSource = maskSource;
-        manualLineCount = 0;
+        if (elements.removeImageButton.__generatedMaskHandler) {
+            return;
+        }
 
+        elements.removeImageButton.__generatedMaskHandler = true;
+
+        elements.removeImageButton.addEventListener(
+            "click",
+            function () {
+                setTimeout(() => {
+                    generatedMaskSource = null;
+                    maskHistory = [];
+                    lastCapturedState = null;
+
+                    console.log(
+                        "[GeneratedMask] Image removed. " +
+                        "History reset."
+                    );
+                }, 100);
+            },
+            true
+        );
+    }
+
+    function initializeComponent() {
+        const elements = getComponentElements();
+
+        if (!elements) {
+            return;
+        }
+
+        installDrawingTracking(elements);
+        installUndoHandler(elements);
+        installClearHandler(elements);
+        installRemoveImageHandler(elements);
+
+        initializedRoot = elements.root;
+    }
+
+    function initializeRepeatedly(attempt = 0) {
         initializeComponent();
 
-        setTimeout(async () => {
-            await restoreGeneratedMask();
-            initializeComponent();
+        if (attempt >= 50) {
+            return;
+        }
+
+        setTimeout(() => {
+            initializeRepeatedly(attempt + 1);
         }, 100);
+    }
 
-        console.log(
-            "[GeneratedMask] New base mask registered."
-        );
+    async function applyGeneratedMask(value) {
+        const maskSource = getMaskSource(value);
 
+        if (!maskSource) {
+            console.warn(
+                "[GeneratedMask] value.mask is empty.",
+                value
+            );
+
+            return value;
+        }
+
+        generatedMaskSource = maskSource;
+        maskHistory = [];
+        lastCapturedState = null;
+        strokeInProgress = false;
+
+        initializeRepeatedly();
+
+        /*
+         * Ждём, пока Gradio завершит обновление компонента.
+         */
+        setTimeout(async () => {
+            try {
+                const loaded =
+                    await drawSourceToMaskCanvas(
+                        generatedMaskSource
+                    );
+
+                if (!loaded) {
+                    console.warn(
+                        "[GeneratedMask] Mask canvas is not ready."
+                    );
+
+                    return;
+                }
+
+                /*
+                 * Сохраняем первый снимок:
+                 * только сгенерированная маска.
+                 */
+                const baseState = getMaskCanvasData();
+
+                if (baseState) {
+                    maskHistory = [baseState];
+                    lastCapturedState = baseState;
+                }
+
+                console.log(
+                    "[GeneratedMask] Base mask registered. " +
+                    "History length:",
+                    maskHistory.length
+                );
+            } catch (error) {
+                console.error(
+                    "[GeneratedMask] Cannot apply generated mask:",
+                    error
+                );
+            }
+        }, 250);
+
+        return value;
+    }
+
+    /*
+     * Вызывается из webui.py через _js:
+     *
+     * _js="apply_generated_mask"
+     */
+    window.apply_generated_mask = function (value) {
+        applyGeneratedMask(value);
         return value;
     };
 
     /*
-     * Позволяет вручную сбросить состояние из консоли:
-     *
-     * window.reset_generated_mask_state()
+     * Диагностика из DevTools.
      */
-    window.reset_generated_mask_state = function () {
+    window.getGeneratedMaskDebugState = function () {
+        return {
+            hasGeneratedMask: Boolean(generatedMaskSource),
+            historyLength: maskHistory.length,
+            initialized: Boolean(initializedRoot),
+            drawingTracking:
+                Boolean(initializedInterfaceCanvas),
+            undoTracking:
+                Boolean(initializedUndoButton),
+            clearTracking:
+                Boolean(initializedClearButton)
+        };
+    };
+
+    /*
+     * Полный ручной сброс состояния.
+     */
+    window.resetGeneratedMaskState = function () {
         generatedMaskSource = null;
-        manualLineCount = 0;
+        maskHistory = [];
+        lastCapturedState = null;
+        strokeInProgress = false;
 
-        const canvases = getCanvases();
-
-        if (canvases) {
-            clearCanvas(canvases.mask);
-        }
+        clearMaskCanvas();
 
         console.log(
             "[GeneratedMask] State reset."
         );
     };
 
-    onUiLoaded(function () {
-        initializeComponent();
-    });
+    if (typeof onUiLoaded === "function") {
+        onUiLoaded(function () {
+            initializeRepeatedly();
+        });
+    }
 
-    onAfterUiUpdate(function () {
-        initializeComponent();
-    });
+    if (typeof onAfterUiUpdate === "function") {
+        onAfterUiUpdate(function () {
+            initializeComponent();
+        });
+    }
 })();
