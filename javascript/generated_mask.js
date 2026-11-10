@@ -1,22 +1,16 @@
 (function () {
     "use strict";
 
-    let generatedMaskSource = null;
-    let maskHistory = [];
-
+    let virtualDrawing = false;
     let initializedRoot = null;
-    let initializedInterfaceCanvas = null;
-    let initializedUndoButton = null;
-    let initializedClearButton = null;
-
-    let strokeInProgress = false;
-    let lastCapturedState = null;
 
     function getRoot() {
-        return gradioApp().querySelector("#inpaint_mask_canvas");
+        return gradioApp().querySelector(
+            "#inpaint_mask_canvas"
+        );
     }
 
-    function getComponentElements() {
+    function getElements() {
         const root = getRoot();
 
         if (!root) {
@@ -24,38 +18,28 @@
         }
 
         return {
-            root: root,
+            root,
 
             maskCanvas: root.querySelector(
                 'canvas[key="mask"]'
-            ),
-
-            drawingCanvas: root.querySelector(
-                'canvas[key="drawing"]'
             ),
 
             interfaceCanvas: root.querySelector(
                 'canvas[key="interface"]'
             ),
 
-            undoButton: root.querySelector(
-                'button[aria-label="Undo"], ' +
-                '[role="button"][aria-label="Undo"]'
+            drawingCanvas: root.querySelector(
+                'canvas[key="drawing"]'
             ),
 
             clearButton: root.querySelector(
                 'button[aria-label="Clear"], ' +
                 '[role="button"][aria-label="Clear"]'
-            ),
-
-            removeImageButton: root.querySelector(
-                'button[aria-label="Remove Image"], ' +
-                '[role="button"][aria-label="Remove Image"]'
             )
         };
     }
 
-    function getMaskSource(value) {
+    function getSource(value) {
         if (!value || typeof value !== "object") {
             return null;
         }
@@ -82,6 +66,12 @@
         return null;
     }
 
+    function delay(milliseconds) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, milliseconds);
+        });
+    }
+
     function loadImage(source) {
         return new Promise((resolve, reject) => {
             const image = new Image();
@@ -98,460 +88,612 @@
         });
     }
 
-    function clearMaskCanvas() {
-        const elements = getComponentElements();
+    function getBrushRadius(canvas) {
+        /*
+         * Пытаемся взять реальный размер кисти из настроек Gradio.
+         */
+        const root = getRoot();
 
-        if (!elements || !elements.maskCanvas) {
-            return;
+        if (root) {
+            const brushInput = root.querySelector(
+                'input[aria-label="Brush radius"]'
+            );
+
+            if (brushInput) {
+                const value = Number(
+                    brushInput.value
+                );
+
+                if (
+                    Number.isFinite(value) &&
+                    value > 0
+                ) {
+                    return value / 2;
+                }
+            }
         }
 
-        const context = elements.maskCanvas.getContext("2d");
-
-        if (!context) {
-            return;
-        }
-
-        context.clearRect(
-            0,
-            0,
-            elements.maskCanvas.width,
-            elements.maskCanvas.height
+        /*
+         * Запасной размер кисти.
+         */
+        return Math.max(
+            8,
+            Math.min(
+                canvas.width,
+                canvas.height
+            ) * 0.025
         );
     }
 
-    function getMaskCanvasData() {
-        const elements = getComponentElements();
+    function normalizeMaskToCanvas(
+        image,
+        width,
+        height
+    ) {
+        /*
+         * Временный canvas. Он НЕ является
+         * canvas[key="mask"] компонента.
+         */
+        const sourceCanvas =
+            document.createElement("canvas");
 
-        if (!elements || !elements.maskCanvas) {
+        sourceCanvas.width = width;
+        sourceCanvas.height = height;
+
+        const sourceContext =
+            sourceCanvas.getContext("2d", {
+                willReadFrequently: true
+            });
+
+        if (!sourceContext) {
             return null;
         }
 
-        return elements.maskCanvas.toDataURL("image/png");
-    }
-
-    async function drawSourceToMaskCanvas(source) {
-        const elements = getComponentElements();
-
-        if (!elements || !elements.maskCanvas) {
-            return false;
-        }
-
-        const image = await loadImage(source);
-        const canvas = elements.maskCanvas;
-        const context = canvas.getContext("2d");
-
-        if (!context) {
-            return false;
-        }
-
-        context.save();
-
-        context.globalCompositeOperation = "source-over";
-
-        context.clearRect(
+        sourceContext.clearRect(
             0,
             0,
-            canvas.width,
-            canvas.height
+            width,
+            height
         );
 
-        context.drawImage(
+        sourceContext.drawImage(
             image,
             0,
             0,
-            canvas.width,
-            canvas.height
+            width,
+            height
         );
 
-        context.restore();
+        const imageData = sourceContext.getImageData(
+            0,
+            0,
+            width,
+            height
+        );
 
-        return true;
+        const pixels = imageData.data;
+
+        /*
+         * Бинарная маска:
+         *
+         * true  — здесь нужно рисовать кистью;
+         * false — прозрачная область.
+         */
+        const active = new Uint8Array(
+            width * height
+        );
+
+        let hasAlpha = false;
+
+        for (let i = 3; i < pixels.length; i += 4) {
+            if (pixels[i] > 5) {
+                hasAlpha = true;
+                break;
+            }
+        }
+
+        for (
+            let y = 0;
+            y < height;
+            y += 1
+        ) {
+            for (
+                let x = 0;
+                x < width;
+                x += 1
+            ) {
+                const pixelIndex =
+                    (y * width + x) * 4;
+
+                const red = pixels[pixelIndex];
+                const green = pixels[pixelIndex + 1];
+                const blue = pixels[pixelIndex + 2];
+                const alpha = pixels[pixelIndex + 3];
+
+                /*
+                 * Для RGBA-маски используем alpha.
+                 * Если alpha полностью отсутствует,
+                 * используем яркость RGB.
+                 */
+                const isMaskPixel = hasAlpha
+                    ? alpha > 10
+                    : (
+                        red > 10 ||
+                        green > 10 ||
+                        blue > 10
+                    );
+
+                if (isMaskPixel) {
+                    active[y * width + x] = 1;
+                }
+            }
+        }
+
+        return {
+            canvas: sourceCanvas,
+            active,
+            width,
+            height
+        };
     }
 
-    async function restoreHistoryState(dataUrl) {
-        if (!dataUrl) {
-            clearMaskCanvas();
-            return;
+    function getRunsForRow(
+        active,
+        width,
+        y,
+        minimumRunLength
+    ) {
+        const runs = [];
+        let runStart = -1;
+
+        for (
+            let x = 0;
+            x < width;
+            x += 1
+        ) {
+            const activePixel =
+                active[y * width + x] !== 0;
+
+            if (activePixel && runStart < 0) {
+                runStart = x;
+            }
+
+            const isLastPixel =
+                x === width - 1;
+
+            if (
+                runStart >= 0 &&
+                (!activePixel || isLastPixel)
+            ) {
+                const runEnd = activePixel && isLastPixel
+                    ? x
+                    : x - 1;
+
+                if (
+                    runEnd - runStart + 1 >=
+                    minimumRunLength
+                ) {
+                    runs.push({
+                        start: runStart,
+                        end: runEnd
+                    });
+                }
+
+                runStart = -1;
+            }
         }
+
+        return runs;
+    }
+
+    function buildStrokePoints(
+        normalizedMask,
+        brushRadius
+    ) {
+        const {
+            active,
+            width,
+            height
+        } = normalizedMask;
+
+        /*
+         * Чем меньше rowStep, тем точнее заполнение,
+         * но тем больше будет mousemove-событий.
+         */
+        const rowStep = Math.max(
+            2,
+            Math.floor(brushRadius * 0.65)
+        );
+
+        const minimumRunLength = Math.max(
+            2,
+            Math.floor(brushRadius * 0.5)
+        );
+
+        const points = [];
+        let rowNumber = 0;
+
+        for (
+            let y = 0;
+            y < height;
+            y += rowStep
+        ) {
+            const runs = getRunsForRow(
+                active,
+                width,
+                y,
+                minimumRunLength
+            );
+
+            if (runs.length === 0) {
+                continue;
+            }
+
+            const leftToRight =
+                rowNumber % 2 === 0;
+
+            const orderedRuns =
+                leftToRight
+                    ? runs
+                    : runs.slice().reverse();
+
+            for (
+                let i = 0;
+                i < orderedRuns.length;
+                i += 1
+            ) {
+                const run = orderedRuns[i];
+
+                if (leftToRight) {
+                    points.push({
+                        x: run.start,
+                        y
+                    });
+
+                    points.push({
+                        x: run.end,
+                        y
+                    });
+                } else {
+                    points.push({
+                        x: run.end,
+                        y
+                    });
+
+                    points.push({
+                        x: run.start,
+                        y
+                    });
+                }
+            }
+
+            rowNumber += 1;
+        }
+
+        return points;
+    }
+
+    function canvasPointToClientPoint(
+        canvas,
+        point
+    ) {
+        const rect =
+            canvas.getBoundingClientRect();
+
+        return {
+            clientX:
+                rect.left +
+                point.x *
+                rect.width /
+                canvas.width,
+
+            clientY:
+                rect.top +
+                point.y *
+                rect.height /
+                canvas.height
+        };
+    }
+
+    function createMouseEvent(
+        type,
+        canvas,
+        point,
+        buttons
+    ) {
+        const clientPoint =
+            canvasPointToClientPoint(
+                canvas,
+                point
+            );
+
+        return new MouseEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+
+            clientX: clientPoint.clientX,
+            clientY: clientPoint.clientY,
+
+            button: 0,
+            buttons,
+
+            /*
+             * Для координатных расчётов Gradio
+             * также задаём screen/client значения.
+             */
+            screenX: clientPoint.clientX,
+            screenY: clientPoint.clientY
+        });
+    }
+
+    async function clearPreviousGradioLines(
+        elements
+    ) {
+        /*
+         * Кнопка Clear вызывает штатный
+         * sketch.clear_mask(), который очищает
+         * внутренний массив lines[].
+         */
+        if (elements.clearButton) {
+            elements.clearButton.click();
+
+            /*
+             * Даём Svelte/Gradio завершить redraw.
+             */
+            await delay(100);
+        }
+    }
+
+    async function drawMaskAsOneGradioLine(
+        maskSource
+    ) {
+        if (virtualDrawing) {
+            console.warn(
+                "[VirtualMask] Drawing is already running."
+            );
+
+            return false;
+        }
+
+        const elements = getElements();
+
+        if (
+            !elements ||
+            !elements.maskCanvas ||
+            !elements.interfaceCanvas
+        ) {
+            console.error(
+                "[VirtualMask] Required canvases not found."
+            );
+
+            return false;
+        }
+
+        virtualDrawing = true;
 
         try {
-            await drawSourceToMaskCanvas(dataUrl);
+            const maskImage =
+                await loadImage(maskSource);
+
+            const maskCanvas =
+                elements.maskCanvas;
+
+            const interfaceCanvas =
+                elements.interfaceCanvas;
+
+            const brushRadius =
+                getBrushRadius(maskCanvas);
+
+            const normalizedMask =
+                normalizeMaskToCanvas(
+                    maskImage,
+                    maskCanvas.width,
+                    maskCanvas.height
+                );
+
+            if (!normalizedMask) {
+                return false;
+            }
+
+            const points = buildStrokePoints(
+                normalizedMask,
+                brushRadius
+            );
+
+            if (points.length < 2) {
+                console.warn(
+                    "[VirtualMask] Mask contains no drawable area."
+                );
+
+                return false;
+            }
 
             console.log(
-                "[GeneratedMask] Restored history state."
+                "[VirtualMask] Starting one synthetic stroke.",
+                {
+                    points: points.length,
+                    brushRadius,
+                    width: maskCanvas.width,
+                    height: maskCanvas.height
+                }
             );
-        } catch (error) {
-            console.error(
-                "[GeneratedMask] Failed to restore history state:",
-                error
+
+            /*
+             * Один mousedown.
+             *
+             * С этого момента Gradio создаёт один
+             * внутренний points[] для одной линии.
+             */
+            interfaceCanvas.dispatchEvent(
+                createMouseEvent(
+                    "mousedown",
+                    interfaceCanvas,
+                    points[0],
+                    1
+                )
             );
-        }
-    }
 
-    async function captureCurrentMaskState() {
-        if (!generatedMaskSource) {
-            return;
-        }
+            /*
+             * Много mousemove, но mouseup будет только один —
+             * после окончания всей маски.
+             */
+            for (
+                let i = 1;
+                i < points.length;
+                i += 1
+            ) {
+                const currentPoint = points[i];
 
-        const currentState = getMaskCanvasData();
+                interfaceCanvas.dispatchEvent(
+                    createMouseEvent(
+                        "mousemove",
+                        interfaceCanvas,
+                        currentPoint,
+                        1
+                    )
+                );
 
-        if (!currentState) {
-            return;
-        }
-
-        if (currentState === lastCapturedState) {
-            return;
-        }
-
-        lastCapturedState = currentState;
-        maskHistory.push(currentState);
-
-        console.log(
-            "[GeneratedMask] Saved state. History length:",
-            maskHistory.length
-        );
-    }
-
-    function scheduleCaptureAfterDrawing() {
-        setTimeout(() => {
-            requestAnimationFrame(() => {
-                captureCurrentMaskState();
-            });
-        }, 80);
-    }
-
-    function installDrawingTracking(elements) {
-        if (
-            !elements ||
-            !elements.interfaceCanvas ||
-            elements.interfaceCanvas === initializedInterfaceCanvas
-        ) {
-            return;
-        }
-
-        initializedInterfaceCanvas = elements.interfaceCanvas;
-
-        const interfaceCanvas = elements.interfaceCanvas;
-
-        interfaceCanvas.addEventListener(
-            "pointerdown",
-            function (event) {
-                if (event.button !== undefined && event.button !== 0) {
-                    return;
+                /*
+                 * Небольшая пауза нужна не для логики Gradio,
+                 * а чтобы пользователь видел виртуальное рисование.
+                 *
+                 * Поставьте 0 для максимально быстрой генерации.
+                 */
+                if (i % 4 === 0) {
+                    await delay(2);
                 }
+            }
 
-                strokeInProgress = true;
-            },
-            true
-        );
+            const lastPoint =
+                points[points.length - 1];
 
-        interfaceCanvas.addEventListener(
-            "pointerup",
-            function () {
-                if (!strokeInProgress) {
-                    return;
-                }
+            /*
+             * Один mouseup.
+             *
+             * Здесь Gradio сохранит всю виртуальную
+             * маску как один элемент lines[].
+             */
+            interfaceCanvas.dispatchEvent(
+                createMouseEvent(
+                    "mouseup",
+                    interfaceCanvas,
+                    lastPoint,
+                    0
+                )
+            );
 
-                strokeInProgress = false;
-                scheduleCaptureAfterDrawing();
-            },
-            true
-        );
+            /*
+             * Даём Gradio выполнить saveLine()
+             * и dispatch("change").
+             */
+            await delay(100);
 
-        interfaceCanvas.addEventListener(
-            "pointercancel",
-            function () {
-                strokeInProgress = false;
-            },
-            true
-        );
+            console.log(
+                "[VirtualMask] One synthetic stroke completed."
+            );
 
-        interfaceCanvas.addEventListener(
-            "mouseup",
-            function () {
-                if (!strokeInProgress) {
-                    return;
-                }
-
-                strokeInProgress = false;
-                scheduleCaptureAfterDrawing();
-            },
-            true
-        );
-
-        interfaceCanvas.addEventListener(
-            "touchend",
-            function () {
-                if (!strokeInProgress) {
-                    return;
-                }
-
-                strokeInProgress = false;
-                scheduleCaptureAfterDrawing();
-            },
-            true
-        );
-
-        console.log(
-            "[GeneratedMask] Drawing tracking installed."
-        );
-    }
-
-    function installUndoHandler(elements) {
-        if (
-            !elements ||
-            !elements.undoButton ||
-            elements.undoButton === initializedUndoButton
-        ) {
-            return;
+            return true;
+        } finally {
+            virtualDrawing = false;
         }
-
-        initializedUndoButton = elements.undoButton;
-
-        elements.undoButton.addEventListener(
-            "click",
-            function () {
-                if (!generatedMaskSource) {
-                    return;
-                }
-
-                setTimeout(() => {
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(async () => {
-                            if (maskHistory.length > 1) {
-
-                                maskHistory.pop();
-
-                                const previousState =
-                                    maskHistory[maskHistory.length - 1];
-
-                                lastCapturedState = previousState;
-
-                                await restoreHistoryState(
-                                    previousState
-                                );
-
-                                console.log(
-                                    "[GeneratedMask] Undo manual line. " +
-                                    "Remaining states:",
-                                    maskHistory.length
-                                );
-                            } else if (maskHistory.length === 1) {
-
-                                maskHistory = [];
-                                generatedMaskSource = null;
-                                lastCapturedState = null;
-
-                                clearMaskCanvas();
-
-                                console.log(
-                                    "[GeneratedMask] " +
-                                    "Generated mask removed."
-                                );
-                            }
-                        });
-                    });
-                }, 180);
-            },
-            true
-        );
-
-        console.log(
-            "[GeneratedMask] Undo handler installed."
-        );
-    }
-
-    function installClearHandler(elements) {
-        if (
-            !elements ||
-            !elements.clearButton ||
-            elements.clearButton === initializedClearButton
-        ) {
-            return;
-        }
-
-        initializedClearButton = elements.clearButton;
-
-        elements.clearButton.addEventListener(
-            "click",
-            function () {
-
-                setTimeout(() => {
-                    generatedMaskSource = null;
-                    maskHistory = [];
-                    lastCapturedState = null;
-
-                    console.log(
-                        "[GeneratedMask] Clear pressed. " +
-                        "History reset."
-                    );
-                }, 100);
-            },
-            true
-        );
-
-        console.log(
-            "[GeneratedMask] Clear handler installed."
-        );
-    }
-
-    function installRemoveImageHandler(elements) {
-        if (
-            !elements ||
-            !elements.removeImageButton
-        ) {
-            return;
-        }
-
-        if (elements.removeImageButton.__generatedMaskHandler) {
-            return;
-        }
-
-        elements.removeImageButton.__generatedMaskHandler = true;
-
-        elements.removeImageButton.addEventListener(
-            "click",
-            function () {
-                setTimeout(() => {
-                    generatedMaskSource = null;
-                    maskHistory = [];
-                    lastCapturedState = null;
-
-                    console.log(
-                        "[GeneratedMask] Image removed. " +
-                        "History reset."
-                    );
-                }, 100);
-            },
-            true
-        );
-    }
-
-    function initializeComponent() {
-        const elements = getComponentElements();
-
-        if (!elements) {
-            return;
-        }
-
-        installDrawingTracking(elements);
-        installUndoHandler(elements);
-        installClearHandler(elements);
-        installRemoveImageHandler(elements);
-
-        initializedRoot = elements.root;
-    }
-
-    function initializeRepeatedly(attempt = 0) {
-        initializeComponent();
-
-        if (attempt >= 50) {
-            return;
-        }
-
-        setTimeout(() => {
-            initializeRepeatedly(attempt + 1);
-        }, 100);
     }
 
     async function applyGeneratedMask(value) {
-        const maskSource = getMaskSource(value);
+        const maskSource = getSource(value);
 
         if (!maskSource) {
             console.warn(
-                "[GeneratedMask] value.mask is empty.",
+                "[VirtualMask] value.mask is empty.",
                 value
             );
 
             return value;
         }
 
-        generatedMaskSource = maskSource;
-        maskHistory = [];
-        lastCapturedState = null;
-        strokeInProgress = false;
+        const elements = getElements();
 
-        initializeRepeatedly();
+        if (!elements) {
+            console.error(
+                "[VirtualMask] Inpaint mask component not found."
+            );
 
-        setTimeout(async () => {
-            try {
-                const loaded =
-                    await drawSourceToMaskCanvas(
-                        generatedMaskSource
-                    );
+            return value;
+        }
 
-                if (!loaded) {
-                    console.warn(
-                        "[GeneratedMask] Mask canvas is not ready."
-                    );
+        initializedRoot = elements.root;
 
-                    return;
-                }
+        /*
+         * Важно:
+         *
+         * 1. не рисуем mask напрямую через drawImage()
+         *    в canvas[key="mask"];
+         *
+         * 2. сначала очищаем старые линии через
+         *    штатную кнопку Clear;
+         *
+         * 3. затем создаём одну synthetic line.
+         */
+        await clearPreviousGradioLines(elements);
 
-                const baseState = getMaskCanvasData();
-
-                if (baseState) {
-                    maskHistory = [baseState];
-                    lastCapturedState = baseState;
-                }
-
-                console.log(
-                    "[GeneratedMask] Base mask registered. " +
-                    "History length:",
-                    maskHistory.length
-                );
-            } catch (error) {
-                console.error(
-                    "[GeneratedMask] Cannot apply generated mask:",
-                    error
-                );
-            }
-        }, 250);
+        await drawMaskAsOneGradioLine(
+            maskSource
+        );
 
         return value;
     }
 
+    /*
+     * Функция вызывается из webui.py:
+     *
+     * .then(
+     *     fn=lambda: None,
+     *     inputs=inpaint_mask_image,
+     *     outputs=None,
+     *     _js="apply_generated_mask"
+     * )
+     */
     window.apply_generated_mask = function (value) {
-        applyGeneratedMask(value);
+        /*
+         * Не возвращаем Promise наружу как значение компонента.
+         * Gradio получает исходный value, а сама отрисовка
+         * выполняется асинхронно в браузере.
+         */
+        applyGeneratedMask(value).catch((error) => {
+            console.error(
+                "[VirtualMask] Failed to draw generated mask:",
+                error
+            );
+        });
+
         return value;
     };
 
-    window.getGeneratedMaskDebugState = function () {
+    window.getVirtualMaskDebugState = function () {
+        const elements = getElements();
+
         return {
-            hasGeneratedMask: Boolean(generatedMaskSource),
-            historyLength: maskHistory.length,
             initialized: Boolean(initializedRoot),
-            drawingTracking:
-                Boolean(initializedInterfaceCanvas),
-            undoTracking:
-                Boolean(initializedUndoButton),
-            clearTracking:
-                Boolean(initializedClearButton)
+            virtualDrawing,
+            hasMaskCanvas: Boolean(
+                elements && elements.maskCanvas
+            ),
+            hasInterfaceCanvas: Boolean(
+                elements && elements.interfaceCanvas
+            ),
+            hasClearButton: Boolean(
+                elements && elements.clearButton
+            )
         };
-    };
-
-    window.resetGeneratedMaskState = function () {
-        generatedMaskSource = null;
-        maskHistory = [];
-        lastCapturedState = null;
-        strokeInProgress = false;
-
-        clearMaskCanvas();
-
-        console.log(
-            "[GeneratedMask] State reset."
-        );
     };
 
     if (typeof onUiLoaded === "function") {
         onUiLoaded(function () {
-            initializeRepeatedly();
-        });
-    }
+            const elements = getElements();
 
-    if (typeof onAfterUiUpdate === "function") {
-        onAfterUiUpdate(function () {
-            initializeComponent();
+            if (elements) {
+                initializedRoot = elements.root;
+            }
         });
     }
 })();
