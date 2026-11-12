@@ -2091,13 +2091,13 @@ with shared.gradio_root:
             with open(save_path, "w", encoding="utf-8") as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
 
-            gr.Info(f"Preset {name} saved.")
+            gr.Info(f"Preset '{name}' saved.")
             return
         def delete_preset (preset):
             if preset !='initial' and preset !='default':
                 try:
                     os.remove('presets/' + preset + '.json')
-                    gr.Info(f"Preset {preset} deleted.")
+                    gr.Info(f"Preset '{preset}' deleted.")
                 except Exception as e:
                     print(f"Error: {e}")  
             else:
