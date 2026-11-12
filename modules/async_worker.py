@@ -77,11 +77,40 @@ class AsyncTask:
         self.inpaint_additional_prompt = args.pop()
         self.inpaint_mask_image_upload = args.pop()
 
+
         if isinstance(self.inpaint_mask_image_upload, dict):
             generated_mask = self.inpaint_mask_image_upload['mask']
 
             if generated_mask is not None:
-                self.inpaint_mask_image_upload['image'] = generated_mask        
+                generated_mask = np.asarray(generated_mask)
+
+                # Приводим двухмерную маску к H x W x 3,
+                # потому что оригинальный backend-блок ожидает ndim == 3.
+                if generated_mask.ndim == 2:
+                    generated_mask = np.stack(
+                        [generated_mask, generated_mask, generated_mask],
+                        axis=2
+                    )
+
+                # Если пришёл RGBA, используем alpha-канал.
+                elif generated_mask.ndim == 3 and generated_mask.shape[2] == 4:
+                    alpha = generated_mask[:, :, 3]
+                    generated_mask = np.stack(
+                        [alpha, alpha, alpha],
+                        axis=2
+                    )
+
+                # Если пришёл RGB, оставляем как есть.
+                elif not (
+                    generated_mask.ndim == 3
+                    and generated_mask.shape[2] == 3
+                ):
+                    generated_mask = None
+
+            # В дальнейшем backend получает не dict,
+            # а только саму advanced mask.
+            self.inpaint_mask_image_upload = generated_mask
+     
 
         self.disable_preview = args.pop()
         self.disable_intermediate_results = args.pop()
