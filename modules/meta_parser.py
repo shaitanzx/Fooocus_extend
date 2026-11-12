@@ -158,6 +158,10 @@ def get_steps(key: str, fallback: str | None, source_dict: dict, results: list, 
 def get_resolution(key: str, fallback: str | None, source_dict: dict, results: list, default=None):
     try:
         h = source_dict.get(key, source_dict.get(fallback, default))
+
+        if h == 'Random':
+            results.extend(['Random', -1, -1])
+            return
         width, height = eval(h)
         formatted = modules.config.add_ratio(f'{width}*{height}')
         if formatted in modules.config.available_aspect_ratios_labels:
@@ -283,7 +287,14 @@ def parse_meta_from_preset(preset_content):
                 loras = items[settings_key]
             for index, lora in enumerate(loras[:modules.config.default_max_lora_number]):
                 preset_prepared[f'lora_combined_{index + 1}'] = ' : '.join(map(str, lora))
+
         elif settings_key == "default_aspect_ratio":
+            if (items.get(settings_key) or getattr(modules.config, settings_key)) == 'Random':
+                preset_prepared[meta_key] = 'Random'
+                continue
+
+
+
             if settings_key in items and items[settings_key] is not None:
                 default_aspect_ratio = items[settings_key]
                 width, height = default_aspect_ratio.split('*')
