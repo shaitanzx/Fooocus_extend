@@ -1316,6 +1316,21 @@ def worker():
         loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
+
+        _extra_positive_prompts = []
+
+        for extra_prompt in extra_positive_prompts:
+            loras, extra_prompt = parse_lora_references_from_prompt(
+                extra_prompt,
+                loras,
+                modules.config.default_max_lora_number,
+                lora_filenames=lora_filenames,
+            )
+
+            if extra_prompt.strip():
+                _extra_positive_prompts.append(extra_prompt)
+
+        extra_positive_prompts = _extra_positive_prompts        
         loras += async_task.performance_loras
         loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
         loras=loras + ploras + dloras
