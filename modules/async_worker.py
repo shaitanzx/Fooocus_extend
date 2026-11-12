@@ -1,4 +1,6 @@
 import threading
+import os
+import time
 
 from extras.inpaint_mask import generate_mask_from_image, SAMOptions
 import modules.config
@@ -8,7 +10,7 @@ import sys
 import random
 import numpy as np
 from PIL import Image
-import os
+
 
 patch_all()
 
