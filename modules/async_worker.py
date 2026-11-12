@@ -1,6 +1,4 @@
 import threading
-import os
-import time
 
 from extras.inpaint_mask import generate_mask_from_image, SAMOptions
 import modules.config
@@ -10,7 +8,6 @@ import sys
 import random
 import numpy as np
 from PIL import Image
-
 
 patch_all()
 
@@ -80,132 +77,11 @@ class AsyncTask:
         self.inpaint_additional_prompt = args.pop()
         self.inpaint_mask_image_upload = args.pop()
 
-
-        debug_prefix = f'inpaint_task_debug_{os.getpid()}_{time.time_ns()}'
-
-        def debug_value(label, value):
-            print(f'[InpaintTaskDebug] {label}: type={type(value)}', flush=True)
-
-            if value is None:
-                print(f'[InpaintTaskDebug] {label}: None', flush=True)
-                return
-
-            if isinstance(value, dict):
-                print(
-                    f'[InpaintTaskDebug] {label}: keys={list(value.keys())}',
-                    flush=True
-                )
-                return
-
-            if isinstance(value, np.ndarray):
-                if value.size == 0:
-                    print(
-                        f'[InpaintTaskDebug] {label}: EMPTY shape={value.shape}',
-                        flush=True
-                    )
-                    return
-
-                print(
-                    f'[InpaintTaskDebug] {label}: '
-                    f'shape={value.shape}, dtype={value.dtype}, '
-                    f'min={value.min()}, max={value.max()}, '
-                    f'mean={float(value.mean()):.4f}, '
-                    f'nonzero={np.count_nonzero(value)}, '
-                    f'above127={np.count_nonzero(value > 127)}',
-                    flush=True
-                )
-                return
-
-            print(f'[InpaintTaskDebug] {label}: value={value!r}', flush=True)
-
-        def save_debug_image(label, value):
-            if not isinstance(value, np.ndarray) or value.size == 0:
-                print(
-                    f'[InpaintTaskDebug] {label}: not saved '
-                    f'(not a non-empty ndarray)',
-                    flush=True
-                )
-                return
-
-            try:
-                os.makedirs(modules.config.path_outputs, exist_ok=True)
-                image = value
-
-                if image.ndim == 3 and image.shape[2] == 4:
-                    image = image[:, :, 3]
-                elif image.ndim == 3:
-                    image = np.mean(image.astype(np.float32), axis=2)
-
-                image = np.clip(image, 0, 255).astype(np.uint8)
-                path = os.path.join(
-                    modules.config.path_outputs,
-                    f'{debug_prefix}_{label}.png'
-                )
-                Image.fromarray(image, mode='L').save(path)
-                print(f'[InpaintTaskDebug] {label}: saved {path}', flush=True)
-            except Exception as error:
-                print(
-                    f'[InpaintTaskDebug] {label}: save failed: {error}',
-                    flush=True
-                )
-
-        debug_value(
-            'inpaint_mask_image_upload AFTER args.pop',
-            self.inpaint_mask_image_upload
-        )
-
         if isinstance(self.inpaint_mask_image_upload, dict):
-            save_debug_image(
-                'input_image',
-                self.inpaint_mask_image_upload.get('image')
-            )
-            save_debug_image(
-                'input_mask',
-                self.inpaint_mask_image_upload['mask']
-            )
-
             generated_mask = self.inpaint_mask_image_upload['mask']
-            debug_value('generated_mask BEFORE normalization', generated_mask)
-            save_debug_image('mask_before_normalization', generated_mask)
 
             if generated_mask is not None:
-                generated_mask = np.asarray(generated_mask)
-
-                # Приводим двухмерную маску к H x W x 3,
-                # потому что оригинальный backend-блок ожидает ndim == 3.
-                if generated_mask.ndim == 2:
-                    generated_mask = np.stack(
-                        [generated_mask, generated_mask, generated_mask],
-                        axis=2
-                    )
-
-                # Если пришёл RGBA, используем alpha-канал.
-                elif generated_mask.ndim == 3 and generated_mask.shape[2] == 4:
-                    alpha = generated_mask[:, :, 3]
-                    generated_mask = np.stack(
-                        [alpha, alpha, alpha],
-                        axis=2
-                    )
-
-                # Если пришёл RGB, оставляем как есть.
-                elif not (
-                    generated_mask.ndim == 3
-                    and generated_mask.shape[2] == 3
-                ):
-                    generated_mask = None
-
-            debug_value('generated_mask AFTER normalization', generated_mask)
-            save_debug_image('mask_after_normalization', generated_mask)
-
-            # В дальнейшем backend получает не dict,
-            # а только саму advanced mask.
-            self.inpaint_mask_image_upload = generated_mask
-
-        debug_value(
-            'self.inpaint_mask_image_upload FINAL',
-            self.inpaint_mask_image_upload
-        )
-     
+                self.inpaint_mask_image_upload['image'] = generated_mask        
 
         self.disable_preview = args.pop()
         self.disable_intermediate_results = args.pop()
