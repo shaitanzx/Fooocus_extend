@@ -77,6 +77,12 @@ class AsyncTask:
         self.inpaint_additional_prompt = args.pop()
         self.inpaint_mask_image_upload = args.pop()
 
+        if isinstance(self.inpaint_mask_image_upload, dict):
+            generated_mask = self.inpaint_mask_image_upload['mask']
+
+            if generated_mask is not None:
+                self.inpaint_mask_image_upload['image'] = generated_mask        
+
         self.disable_preview = args.pop()
         self.disable_intermediate_results = args.pop()
         self.disable_seed_increment = args.pop()
