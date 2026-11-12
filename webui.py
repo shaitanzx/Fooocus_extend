@@ -1,2301 +1,2575 @@
-import gradio as gr
-import random
-import os
-import json
-import time
-import shared
-import modules.config
-import fooocus_version
-import modules.html
-import modules.async_worker as worker
-import modules.constants as constants
-import modules.flags as flags
-import modules.gradio_hijack as grh
-import modules.style_sorter as style_sorter
-import modules.meta_parser
-import args_manager
-import copy
-import requests
-import launch
-import re
-import urllib.request
-import zipfile
 import threading
-import math
-import numpy as np
-import pandas as pd
-import importlib
-from extras.inpaint_mask import SAMOptions
 
-from modules.sdxl_styles import legal_style_names
-from modules.private_logger import get_current_html_path
-from modules.ui_gradio_extensions import reload_javascript
-from modules.auth import auth_enabled, check_auth
-from extentions.module_translate import translate, GoogleTranslator
-from urllib.parse import urlparse, parse_qs, unquote
-from modules.model_loader import load_file_from_url
+from extras.inpaint_mask import generate_mask_from_image, SAMOptions
 import modules.config
-from rembg import remove
+from modules.patch import PatchSettings, patch_settings, patch_all
+import modules.config
+import sys
+import os
+import random
+import numpy as np
 from PIL import Image
-from gradio.components import label
-from modules.util import is_json
-from modules.launch_util import delete_folder_content
 
-from extentions.md_lib import civitai_helper
-from extentions.md_lib import md_config
-
-from extentions import wildcards
+patch_all()
 
 
-from extentions.op_edit import main as op_editor
-from pathlib import Path
-import io
-import cv2
-from extentions import xyz_grid as xyz
-from extentions import geeky_remb as GeekyRemBExtras
+class AsyncTask:
+    def __init__(self, args):
+        from modules.flags import Performance, MetadataScheme, ip_list, disabled
+        from modules.util import get_enabled_loras, get_file_from_folder_list
+        from modules.config import default_max_lora_number, default_adetail_tab
+        import args_manager
 
-from modules.extra_utils import get_files_from_folder
-import chardet
+        self.args = args.copy()
+        self.yields = []
+        self.results = []
+        self.model_fallback_notices = []
+
+        self.last_stop = False
+        self.processing = False
+
+        self.performance_loras = []
+
+        if len(args) == 0:
+            return
+
+        args.reverse()
+        self.generate_image_grid = args.pop()
+        self.prompt = args.pop()
+        self.negative_prompt = args.pop()
+        self.style_selections = args.pop()
+
+        self.performance_selection = Performance(args.pop())
+        self.steps = args.pop()
+        self.original_steps = self.steps
+
+        self.aspect_ratios_selection = args.pop()
+        if self.aspect_ratios_selection=='Random':
+            self.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
+            self.aspect_random=True
+        else:
+            self.aspect_random=False
+
+        self.image_number = args.pop()
+        self.output_format = args.pop()
+        self.seed = int(args.pop())
+        self.read_wildcards_in_order = args.pop()
+        self.sharpness = args.pop()
+        self.cfg_scale = args.pop()
+        self.base_model_name = args.pop()
+        self.refiner_model_name = args.pop()
+        self.refiner_switch = args.pop()
+
+        checkpoint_folders = modules.config.paths_checkpoints
+
+        # Отсутствующий refiner отключаем.
+        if self.refiner_model_name != 'None':
+            refiner_path = get_file_from_folder_list(
+                self.refiner_model_name,
+                checkpoint_folders
+            )
+
+            if not os.path.isfile(refiner_path):
+                message = (
+                    f'Refiner [{self.refiner_model_name}] не найден; '
+                    'refiner отключён.'
+                )
+                print(f'[AsyncTask] {message}')
+                self.model_fallback_notices.append(message)
+                self.refiner_model_name = 'None'
+
+        # Если базовая модель отсутствует, сначала используем модель
+        # preset, загруженного при запуске приложения.
+        base_model_path = get_file_from_folder_list(
+            self.base_model_name,
+            checkpoint_folders
+        )
+
+        if not os.path.isfile(base_model_path):
+            preset_model_name = modules.config.default_base_model_name
+            preset_model_path = get_file_from_folder_list(
+                preset_model_name,
+                checkpoint_folders
+            )
+
+            if os.path.isfile(preset_model_path):
+                message = (
+                    f'Базовая модель [{self.base_model_name}] не найдена; '
+                    f'используется модель preset [{preset_model_name}].'
+                )
+                print(f'[AsyncTask] {message}')
+                self.model_fallback_notices.append(message)
+                self.base_model_name = preset_model_name
+
+            else:
+                # model_filenames содержит также относительные пути из подпапок.
+                available_models = [
+                    name for name in modules.config.model_filenames
+                    if os.path.isfile(
+                        get_file_from_folder_list(name, checkpoint_folders)
+                    )
+                ]
+
+                if available_models:
+                    replacement_model = random.choice(available_models)
+                    message = (
+                        f'Базовая модель [{self.base_model_name}] и модель preset '
+                        f'[{preset_model_name}] не найдены; '
+                        f'случайно выбрана [{replacement_model}].'
+                    )
+                    print(f'[AsyncTask] {message}')
+                    self.model_fallback_notices.append(message)
+                    self.base_model_name = replacement_model
 
 
-from extentions import FaceEnhancer
-import extentions.instantid.instantid as instantid
-import extentions.photomaker.app as photomaker
+        self.lora_list = []
+        for _ in range(default_max_lora_number):
+            lora_tuple = (bool(args.pop()),str(args.pop()),float(args.pop()))
+            self.lora_list.append(lora_tuple)
+        self.loras = get_enabled_loras(self.lora_list)
+        self.input_image_checkbox = args.pop()
+        self.current_tab = args.pop()
+        self.uov_method = args.pop()
+        self.uov_input_image = args.pop()
+        self.outpaint_selections = args.pop()
 
-from extentions.obp.scripts import onebuttonprompt as ob_prompt
-from extentions import tile_roll
-from extentions.vector import vector
+        self.outpaint_width = args.pop()
+        self.outpaint_shift_width = args.pop()
+        self.outpaint_heighth = args.pop()
+        self.outpaint_shift_heighth = args.pop()
 
-import extentions.batch as batch
-import extentions.watermark as watermark
+        self.inpaint_input_image = args.pop()
+        self.inpaint_additional_prompt = args.pop()
+        self.inpaint_mask_image_upload = args.pop()
 
-import extentions.adetailer.scripts.adetailer as adetailer
-import extentions.cleaner.clean_up_tab as cleaner
-import extentions.omost.main as omost
-from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
+        if isinstance(self.inpaint_mask_image_upload, dict):
+            generated_mask = self.inpaint_mask_image_upload['mask']
 
-import extentions.caption.gui as caption
-from extentions.tutorial import tutorial
+            if generated_mask is not None:
+                self.inpaint_mask_image_upload['image'] = generated_mask        
 
-choices_ar1=["Any", "1:1", "3:2", "4:3", "4:5", "16:9"]
-choices_ar2=["Any", "1:1", "2:3", "3:4", "5:4", "9:16"]
+        self.disable_preview = args.pop()
+        self.disable_intermediate_results = args.pop()
+        self.disable_seed_increment = args.pop()
+        self.black_out_nsfw = args.pop()
+        self.adm_scaler_positive = args.pop()
+        self.adm_scaler_negative = args.pop()
+        self.adm_scaler_end = args.pop()
+        self.type_cfg = args.pop()
+        self.rescale_cfg = args.pop()
+        self.adaptive_cfg = args.pop()
+        self.clip_skip = args.pop()
+        self.sampler_name = args.pop()
+        self.scheduler_name = args.pop()
+        self.vae_name = args.pop()
+        self.overwrite_step = args.pop()
+        self.overwrite_switch = args.pop()
+        self.overwrite_width = args.pop()
+        self.overwrite_height = args.pop()
+        self.overwrite_vary_strength = args.pop()
+        self.overwrite_upscale_strength = args.pop()
+        self.mixing_image_prompt_and_vary_upscale = args.pop()
+        self.mixing_image_prompt_and_inpaint = args.pop()
+        self.debugging_cn_preprocessor = args.pop()
+        self.skipping_cn_preprocessor = args.pop()
+        self.canny_low_threshold = args.pop()
+        self.canny_high_threshold = args.pop()
+        self.refiner_swap_method = args.pop()
+        self.controlnet_softness = args.pop()
+        self.freeu_enabled = args.pop()
+        self.freeu_b1 = args.pop()
+        self.freeu_b2 = args.pop()
+        self.freeu_s1 = args.pop()
+        self.freeu_s2 = args.pop()
+        self.debugging_inpaint_preprocessor = args.pop()
+        self.inpaint_disable_initial_latent = args.pop()
+        self.inpaint_engine = args.pop()
+        self.inpaint_strength = args.pop()
+        self.inpaint_respective_field = args.pop()
+        self.inpaint_advanced_masking_checkbox = args.pop()
+        self.invert_mask_checkbox = args.pop()
+        self.inpaint_erode_or_dilate = args.pop()
+        self.save_final_enhanced_image_only = args.pop() if not args_manager.args.disable_image_log else False
+        self.save_metadata_to_images = args.pop() if not args_manager.args.disable_metadata else False
+        self.metadata_scheme = MetadataScheme(
+            args.pop()) if not args_manager.args.disable_metadata else MetadataScheme.FOOOCUS
 
-ar_def=[1,1]
-swap_def=False
-finished_batch=False
-temp_batch_dir=modules.config.temp_path+os.path.sep
-def html_load(url,file):
-        return gr.update(value=f'''
-                                <iframe id='text_mask'
-                                src = '{url}/file={file}'
-                                width = '100%'
-                                height = '1080px'></iframe>''')
-def omost_gen(currentTask, canvas_outputs, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model):
-    if canvas_outputs is None:
-        gr.Warning('Omost: canvas is empty. Generate a scene in the chat first.')
+        self.cn_tasks = {x: [] for x in ip_list}
+        for _ in range(modules.config.default_controlnet_image_count):
+            cn_img = args.pop()
+            cn_stop = args.pop()
+            cn_weight = args.pop()
+            cn_type = args.pop()
+            if cn_img is not None:
+                self.cn_tasks[cn_type].append([cn_img, cn_stop, cn_weight])
+        self.debugging_dino = args.pop()
+        self.dino_erode_or_dilate = args.pop()
+        self.debugging_enhance_masks_checkbox = args.pop()
+
+        self.adetailer_checkbox = args.pop() 
+        self.enhance_checkbox = args.pop()
+        self.adetail_input_image = args.pop()
+        self.adetail_uov_method = args.pop()
+        self.adetail_uov_processing_order = args.pop()
+        self.adetail_uov_prompt_type = args.pop()
+        self.ad_component = [args.pop() for _ in range(default_adetail_tab)]
+        if self.adetailer_checkbox:
+            self.enhance_input_image = self.adetail_input_image
+            self.enhance_uov_method = self.adetail_uov_method
+            self.enhance_uov_processing_order = self.adetail_uov_processing_order
+            self.enhance_uov_prompt_type = self.adetail_uov_prompt_type
+            self.enhance_ctrls = self.ad_component
+            args.pop()
+            args.pop()
+            args.pop()
+            args.pop()
+            for _ in range(modules.config.default_enhance_tabs*16):
+                args.pop()
+            self.enhance_checkbox = self.adetailer_checkbox
+            self.should_enhance = self.adetailer_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
+        else:
+            self.enhance_input_image = args.pop()
+            self.enhance_uov_method = args.pop()
+            self.enhance_uov_processing_order = args.pop()
+            self.enhance_uov_prompt_type = args.pop()
+            self.enhance_ctrls = []
+            for _ in range(modules.config.default_enhance_tabs):
+                enhance_enabled = args.pop()
+                enhance_mask_dino_prompt_text = args.pop()
+                enhance_prompt = args.pop()
+                enhance_negative_prompt = args.pop()
+                enhance_mask_model = args.pop()
+                enhance_mask_cloth_category = args.pop()
+                enhance_mask_sam_model = args.pop()
+                enhance_mask_text_threshold = args.pop()
+                enhance_mask_box_threshold = args.pop()
+                enhance_mask_sam_max_detections = args.pop()
+                enhance_inpaint_disable_initial_latent = args.pop()
+                enhance_inpaint_engine = args.pop()
+                enhance_inpaint_strength = args.pop()
+                enhance_inpaint_respective_field = args.pop()
+                enhance_inpaint_erode_or_dilate = args.pop()
+                enhance_mask_invert = args.pop()
+                if enhance_enabled:
+                    self.enhance_ctrls.append([
+                        enhance_mask_dino_prompt_text,
+                        enhance_prompt,
+                        enhance_negative_prompt,
+                        enhance_mask_model,
+                        enhance_mask_cloth_category,
+                        enhance_mask_sam_model,
+                        enhance_mask_text_threshold,
+                        enhance_mask_box_threshold,
+                        enhance_mask_sam_max_detections,
+                        enhance_inpaint_disable_initial_latent,
+                        enhance_inpaint_engine,
+                        enhance_inpaint_strength,
+                        enhance_inpaint_respective_field,
+                        enhance_inpaint_erode_or_dilate,
+                        enhance_mask_invert
+                    ])
+            self.should_enhance = self.enhance_checkbox and (self.enhance_uov_method != disabled.casefold() or len(self.enhance_ctrls) > 0)
+
+        self.images_to_enhance_count = 0
+        self.enhance_stats = {}
+        self.only_detect = args.pop()
+        if self.adetailer_checkbox and self.only_detect:
+            self.enhance_uov_method = disabled.casefold()
+        self.debugging_adetailer_masks_checkbox=args.pop()
+        self.save_final_adetail_image_only = self.save_final_enhanced_image_only 
+        #!self.x_type = args.pop()
+        #!self.x_values = args.pop()
+        #!self.x_values_dropdown = args.pop()
+        #!self.y_type = args.pop()
+        #!self.y_values = args.pop()
+        #!self.y_values_dropdown = args.pop()
+        #!self.z_type = args.pop()
+        #!self.z_values = args.pop()
+        #!self.z_values_dropdown = args.pop()
+        #!self.draw_legend = args.pop()
+        #!self.include_lone_images = args.pop()
+        #!self.include_sub_grids = args.pop()
+        #!self.no_fixed_seeds = args.pop()
+        #!self.vary_seeds_x = args.pop()
+        #!self.vary_seeds_y = args.pop()
+        #!self.vary_seeds_z = args.pop()
+        #!self.margin_size = args.pop()
+        #!self.csv_mode = args.pop()
+        #!self.grid_theme = args.pop()
+        #!self.always_random = args.pop()
+
+        self.translate_enabled = args.pop()
+        self.srcTrans = args.pop()
+        self.toTrans = args.pop()
+        self.original_prompt = args.pop()
+        self.original_negative = args.pop()
+        self.name_prefix = args.pop().strip().replace(" ", "_")
+
+        self.face_en_enabled = args.pop()
+        self.face_model = args.pop()
+        self.upscale_model = args.pop()
+        self.face_detection_only_center = args.pop()
+        self.face_detection_threshold = args.pop()
+        self.face_temp = args.pop()
+        self.face_detection = args.pop()
+        self.upscale_scale = args.pop()
+        self.image_generetor_face = args.pop()
+        self.enable_swap = args.pop()
+        self.source_index = args.pop()
+        self.target_index = args.pop()
+       
+        self.enable_instant = args.pop()
+
+        self.face_file_id = args.pop()
+        self.pose_file_id = args.pop()
+        if self.enable_instant and self.pose_file_id is None:
+            self.pose_file_id = np.array(Image.open(self.face_file_id))
+        self.identitynet_strength_ratio = args.pop()
+        self.adapter_strength_ratio = args.pop()        
+        self.start_instant = args.pop()
+        self.end_instant = args.pop()
+        self.canny_instant = args.pop()
+        self.canny_stop = args.pop()
+        self.canny_weight = args.pop()
+        self.cpds_instant = args.pop()
+        self.cdps_stop = args.pop()
+        self.cpds_weight = args.pop()
+        
+        if self.enable_instant:
+            if self.pose_file_id is not None:
+                if self.canny_instant:
+                    self.cn_tasks['PyraCanny'].append([self.pose_file_id, self.canny_stop, self.canny_weight])
+                if self.cpds_instant:
+                    self.cn_tasks['CPDS'].append([self.pose_file_id, self.cdps_stop, self.cpds_weight])
+        self.enable_pm = args.pop()
+        self.files_pm = args.pop()
+        self.style_strength_ratio = args.pop()
+        self.use_doodle = args.pop()
+        self.sketch_image = args.pop()
+        self.adapter_conditioning_scale = args.pop()
+        self.adapter_conditioning_factor = args.pop()
+
+        self.enable_obp = args.pop()
+        self.insanitylevel = args.pop()
+        self.subject = args.pop()
+        self.artist = args.pop()
+        self.imagetype = args.pop()
+        self.prefixprompt = args.pop()
+        self.suffixprompt = args.pop()
+        self.promptcompounderlevel = args.pop()
+        self.ANDtoggle = args.pop()
+        self.silentmode = args.pop()
+        self.antistring = args.pop()
+        self.seperator = args.pop()
+        self.givensubject = args.pop()
+        self.smartsubject = args.pop()
+        self.giventypeofimage = args.pop()
+        self.imagemodechance = args.pop()
+        self.chosengender = args.pop()
+        self.chosensubjectsubtypeobject = args.pop()
+        self.chosensubjectsubtypehumanoid = args.pop()
+        self.chosensubjectsubtypeconcept = args.pop()
+        self.promptvariantinsanitylevel = args.pop()
+        self.givenoutfit = args.pop()
+        self.autonegativeprompt = args.pop()
+        self.autonegativepromptstrength = args.pop()
+        self.autonegativepromptenhance = args.pop()
+        self.base_model_obp = args.pop()
+        self.OBP_preset = args.pop()
+        self.amountoffluff = args.pop()
+        self.promptenhancer = args.pop()
+        self.presetprefix = args.pop()
+        self.presetsuffix = args.pop()
+        self.iteration_number = int(args.pop())
+        self.rnd_iteration = args.pop()
+        self.seed_random = args.pop()
+        self.tile_x = args.pop()
+        self.tile_y = args.pop()
+        self.poKeepPnm = args.pop()
+        self.poThreshold = args.pop()
+        self.poTransPNG = args.pop()
+        self.poTransPNGEps = args.pop()
+        self.poDoVector = args.pop()
+        self.poTransPNGQuant = args.pop()
+        self.transper = args.pop()
+        self.uov_model = args.pop()
+
+async_tasks = []
+
+
+class EarlyReturnException(BaseException):
+    pass
+
+
+def worker():
+    global async_tasks
+
+    import os
+    import traceback
+    import math
+    import numpy as np
+    import torch
+    import time
+    import shared
+    import random
+    import copy
+    import cv2
+    import modules.default_pipeline as pipeline
+    import modules.core as core
+    import modules.flags as flags
+    import modules.patch
+    import ldm_patched.modules.model_management
+    import extras.preprocessors as preprocessors
+    import modules.inpaint_worker as inpaint_worker
+    import modules.constants as constants
+    import extras.ip_adapter as ip_adapter
+    import extras.face_crop
+    import fooocus_version
+
+    from extras.censor import default_censor
+    from modules.sdxl_styles import apply_style, get_random_style, fooocus_expansion, apply_arrays, random_style_name
+    from modules.private_logger import log
+    from extras.expansion import safe_str
+    from modules.util import (remove_empty_str, HWC3, resize_image, get_image_shape_ceil, set_image_shape_ceil,
+                              get_shape_ceil, resample_image, erode_or_dilate, parse_lora_references_from_prompt,
+                              apply_wildcards, parse_extend_loras, get_file_from_folder_list)
+    from modules.upscaler import perform_upscale
+    from modules.flags import Performance
+    from modules.meta_parser import get_metadata_parser
+    from PIL import Image
+    
+    import extentions.photomaker.app as photomaker
+    from extentions.obp.scripts import onebuttonprompt as ob_prompt
+    from extentions.vector import vector as vector
+    import extentions.adetailer.scripts.adetailer as adetailer
+    from types import SimpleNamespace
+    from pathlib import Path
+    import re
+    from extentions.module_translate import translate
+    from extentions import FaceEnhancer
+
+    pid = os.getpid()
+    print(f'Started worker with PID {pid}')
+
+    try:
+        async_gradio_app = shared.gradio_root
+        flag = f'''App started successful. Use the app with {str(async_gradio_app.local_url)} or {str(async_gradio_app.server_name)}:{str(async_gradio_app.server_port)}'''
+        if async_gradio_app.share:
+            flag += f''' or {async_gradio_app.share_url}'''
+        print(flag)
+    except Exception as e:
+        print(e)
+
+    def progressbar(async_task, number, text):
+        print(f'[Fooocus] {text}')
+        async_task.yields.append(['preview', (number, text, None)])
+
+    def yield_result(async_task, imgs, progressbar_index, black_out_nsfw, censor=True, do_not_show_finished_images=False):
+        if not isinstance(imgs, list):
+            imgs = [imgs]
+
+        if censor and (modules.config.default_black_out_nsfw or black_out_nsfw):
+            progressbar(async_task, progressbar_index, 'Checking for NSFW content ...')
+            imgs = default_censor(imgs)
+
+        async_task.results = async_task.results + imgs
+
+        if do_not_show_finished_images:
+            return
+
+        async_task.yields.append(['results', async_task.results])
+        return
+    def format_lora_params(n, w, te, unet, lbw, lbwe, start, stop):
+        parts = [n]
+
+        if w is not None: parts.append(f"w={w}")
+        if te is not None: parts.append(f"te={te}")
+        if unet is not None: parts.append(f"unet={unet}")
+
+        if lbw: parts.append(f"lbw={lbw}")
+        if lbwe: parts.append(f"lbwe={lbwe}")
+
+        if start is not None: parts.append(f"start={start}")
+        if stop is not None: parts.append(f"stop={stop}")
+
+        return " | ".join(parts)
+    def build_image_wall(async_task):
+        results = []
+
+        if len(async_task.results) < 2:
+            return
+
+        for img in async_task.results:
+            if isinstance(img, str) and os.path.exists(img):
+                img = cv2.imread(img)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            if not isinstance(img, np.ndarray):
+                return
+            if img.ndim != 3:
+                return
+            results.append(img)
+
+        H, W, C = results[0].shape
+
+        for img in results:
+            Hn, Wn, Cn = img.shape
+            if H != Hn:
+                return
+            if W != Wn:
+                return
+            if C != Cn:
+                return
+
+        cols = float(len(results)) ** 0.5
+        cols = int(math.ceil(cols))
+        rows = float(len(results)) / float(cols)
+        rows = int(math.ceil(rows))
+
+        wall = np.zeros(shape=(H * rows, W * cols, C), dtype=np.uint8)
+
+        for y in range(rows):
+            for x in range(cols):
+                if y * cols + x < len(results):
+                    img = results[y * cols + x]
+                    wall[y * H:y * H + H, x * W:x * W + W, :] = img
+
+        # must use deep copy otherwise gradio is super laggy. Do not use list.append() .
+        async_task.results = async_task.results + [wall]
+        d = [('', 'grid', 'GRID')]
+        if getattr(async_task, 'omost_canvas', None) is not None:
+            d.append(('Omost Last Input', 'omost_last_input', async_task.omost_last_input))
+            d.append(('Omost model', 'omost_model', async_task.omost_last_input))
+            d.append(('Omost Temperature', 'omost_temperature', async_task.omost_temperature))
+            d.append(('Omost Top P', 'omost_top_p', async_task.omost_top_p))
+            d.append(('Omost Max New Tokens', 'omost_max_new_tokens', async_task.omost_max_new_tokens))
+            d.append(('Omost seed', 'omost_seed', async_task.omost_seed))
+        else: 
+            d.append(('Prompt', 'prompt', async_task.prompt))
+        d.append(('Negative Prompt', 'negative_prompt', async_task.negative_prompt))
+        d.append(('Styles', 'styles',async_task.style_selections))
+        d.append(('Performance', 'performance', async_task.performance_selection.value))
+        d.append(('Steps', 'steps', async_task.steps))
+        d.append(('Resolution', 'resolution', async_task.aspect_ratios_selection))
+        d.append(('Guidance Scale', 'guidance_scale', async_task.cfg_scale))
+        d.append(('Sharpness', 'sharpness', async_task.sharpness))
+        d.append(('ADM Guidance', 'adm_guidance', str((
+                     async_task.adm_scaler_positive,
+                     async_task.adm_scaler_negative,
+                     async_task.adm_scaler_end))))
+        d.append(('Base Model', 'base_model', async_task.base_model_name))
+        d.append(('VAE', 'vae', async_task.vae_name))
+        d.append(('Refiner Model', 'refiner_model', async_task.refiner_model_name))
+        d.append(('Refiner Switch', 'refiner_switch', async_task.refiner_switch))
+
+        if async_task.refiner_model_name != 'None':
+                if async_task.overwrite_switch > 0:
+                    d.append(('Overwrite Switch', 'overwrite_switch', async_task.overwrite_switch))
+                if async_task.refiner_swap_method != flags.refiner_swap_method:
+                    d.append(('Refiner Swap Method', 'refiner_swap_method', async_task.refiner_swap_method))
+        if async_task.clip_skip > 1:
+            d.append(('CLIP Skip', 'clip_skip', async_task.clip_skip))
+            d.append(('Sampler', 'sampler', async_task.sampler_name))
+            d.append(('Scheduler', 'scheduler', async_task.scheduler_name))
+            d.append(('VAE', 'vae', async_task.vae_name))
+
+        if async_task.freeu_enabled:
+                d.append(('FreeU', 'freeu',
+                          str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
+
+        lora_index=0
+        for li, item in enumerate(loras):
+            if len(item) == 2:
+                n, w = item
+                if n != 'None':
+                    d.append((f'LoRA {lora_index + 1}', f'lora_combined_{lora_index + 1}', f'{n} : {w}'))
+                    lora_index +=1
+        lora_index = 0
+        for li, item in enumerate(loras):
+            if len(item) == 8:
+                n, w, te, unet, lbw, lbwe, start, stop = item
+                if n != 'None':
+                    params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
+                    d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
+                    lora_index +=1
+        if async_task.face_en_enabled:
+            d.append(('FaceEnhancer face model', 'face_model', async_task.face_model))
+            d.append(('FaceEnhancer upscale model', 'upscale_model', async_task.upscale_model))
+            d.append(('FaceEnhancer upscale scale', 'upscale_scale', async_task.upscale_scale))
+            d.append(('FaceEnhancer face detection', 'face_detection', async_task.face_detection))
+            d.append(('FaceEnhancer face detection only center', 'face_detection_only_center', async_task.face_detection_only_center))
+            d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))       
+        log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True, name_prefix=async_task.name_prefix)
         return
 
-    if not canvas_outputs.get('bag_of_conditions'):
-        gr.Warning('Omost: canvas has no conditions.')
-        return
+    def process_task(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path,
+                     controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, current_task_id,
+                     denoising_strength, final_scheduler_name, goals, initial_latent, steps, switch, positive_cond,
+                     negative_cond, task, loras, tiled, use_expansion, width, height, base_progress, preparation_steps,
+                     total_count, show_intermediate_results, persist_image=True):
+        
+        if async_task.last_stop is not False:
+            ldm_patched.modules.model_management.interrupt_current_processing()
+        if 'cn' in goals:
+            for cn_flag, cn_path in [
+                (flags.cn_canny, controlnet_canny_path),
+                (flags.cn_cpds, controlnet_cpds_path),
+                (flags.cn_pose, controlnet_pose_path),
+                (flags.cn_recolor, controlnet_recolor_path),
+                (flags.cn_scribble, controlnet_scribble_path),
+                (flags.cn_manga, controlnet_manga_path)
+            ]:
+                for cn_img, cn_stop, cn_weight in async_task.cn_tasks[cn_flag]:
+                    positive_cond, negative_cond = core.apply_controlnet(
+                        positive_cond, negative_cond,
+                        pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
 
-    p = copy.deepcopy(currentTask)
-
-    currentTask.omost_canvas = canvas_outputs
-    currentTask.omost_temperature = omost_temperature
-    currentTask.omost_top_p = omost_top_p
-    currentTask.omost_max_new_tokens = omost_max_new_tokens
-    currentTask.omost_seed = omost_seed
-    currentTask.omost_last_input = omost_last_input
-    currentTask.omost_model = omost_model
-
-
-    print(f"[Omost] Starting generation via Fooocus core")
-    gr.Info('[Omost] Rendering via Fooocus core')
-
-    yield from generate_clicked(currentTask)
-
-
-
-def xyz_plot_gen(currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random):
-    p = copy.deepcopy(currentTask)
-    p.generate_image_grid=False
-    p.image_number=1
-    p.prompt=currentTask.original_prompt
-    p.negative_prompt=currentTask.original_negative
-    xyz_results,xyz_task,x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs=xyz.run(p,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme) 
-    temp_var=[]
-    xyz_len = len(xyz_task)
-    for i, p in enumerate(xyz_task):
-        p.results+=temp_var
-        print(f"\033[91m[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}:\033[0m")
-        gr.Info(f"[X/Y/Z Plot] Image Generation {i + 1}/{xyz_len}") 
-        if always_random:
-            p.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-        currentTask.__dict__ = p.__dict__.copy()
-        yield from generate_clicked(currentTask)
-        if currentTask.last_stop == 'stop':
-            print('User stopped')
-            break
-        temp_var=currentTask.results
-    del temp_var
-    if currentTask.last_stop != 'stop':     
-        gr.Info(f"[X/Y/Z Plot] Grid generation") 
-        xyz.draw_grid(x_labels,y_labels,z_labels,list_size,ix,iy,iz,xs,ys,zs,currentTask,xyz_results,grid_theme,margin_size,draw_legend)  
-    return
-
-def civitai_helper_nsfw(black_out_nsfw):
-  md_config.ch_nsfw_threshold=black_out_nsfw
-  return
-civitai_helper_nsfw(modules.config.default_black_out_nsfw)
-def get_task(*args):
-    args = list(args)
-    args.pop(0)
-    return worker.AsyncTask(args=args)
-def image_batch(currentTask,ratio_scale,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode):
-    batch_path=modules.config.temp_path+os.path.sep+"batch_images"
-    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
-    batch_all=len(batch_files)
-    passed=1
-    temp_var=[]
-    p = copy.deepcopy(currentTask)
-    check=currentTask.input_image_checkbox
-    for f_name in batch_files:
-        currentTask.results=temp_var
-        img = Image.open(batch_path+os.path.sep+f_name)
-        if not currentTask.input_image_checkbox:
-            currentTask.cn_tasks = {x: [] for x in flags.ip_list}
-        if image_action == 'Upscale': 
-            currentTask.uov_input_image=np.array(img)
-            currentTask.uov_method = upscale_mode
-            currentTask.current_tab = 'uov'
+        if async_task.enable_pm ==True:
+            if async_task.is_sd15:
+                print ("[Photomaker] Basemodel is not SDXL. Process skipped.")
+            else:
+                imgs=photomaker.generate_image(async_task.files_pm,task,width,height,steps,
+                        async_task.style_strength_ratio,async_task.cfg_scale,async_task.use_doodle,
+                        async_task.sketch_image,async_task.adapter_conditioning_scale,
+                        async_task.adapter_conditioning_factor,
+                        modules.config.paths_checkpoints[0]+os.sep+async_task.base_model_name,
+                        loras,modules.config.paths_loras[0],async_task)
         else:
-            currentTask.current_tab = 'ip'
-            width, height = img.size
-            if ratio_scale=="to ORIGINAL":
-                aspect = math.gcd(width, height)
-                currentTask.aspect_ratios_selection = f'{width}×{height} <span style="color: grey;"> ∣ {width // aspect}:{height // aspect}</span>'
-            if ratio_scale=="to OUTPUT":
-                new_width, new_height = currentTask.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
-                new_width = int(new_width)
-                new_height = int(new_height)
-                ratio_scale = min(float(new_width) / width, float(new_height) / height)
-                w = int(width * ratio_scale)
-                h = int(height * ratio_scale)
-                img = img.resize((w, h), Image.LANCZOS)
-            currentTask.cn_tasks[image_mode].append([np.array(img), ip_stop_batch, ip_weight_batch])
-        print (f"\033[91m[Images QUEUE] {passed} / {batch_all}. Filename: {f_name} \033[0m")
-        gr.Info(f"Image Batch: start element generation {passed}/{batch_all}. Filename: {f_name}") 
-        passed+=1
-        currentTask.input_image_checkbox=True       
-        yield from generate_clicked(currentTask)
-        if currentTask.last_stop == 'stop':
-            print('User stopped')
-            break
-        temp_var=currentTask.results
-        currentTask.cn_tasks=p.cn_tasks
-        if p.seed_random:
-          currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-    currentTask.input_image_checkbox=check
-    del temp_var
-    return
-def prompt_batch(currentTask,batch_prompt,positive_batch,negative_batch):
-    batch_prompt.reverse()
-    batch_len=len(batch_prompt)
-    passed=1
-    temp_var=[]
-    p = copy.deepcopy(currentTask)
-    while batch_prompt:    
-        currentTask.results=temp_var
-        print (f"\033[91m[Prompts QUEUE] Element #{passed}/{batch_len} \033[0m")
-        gr.Info(f"Prompt Batch: start element generation {passed}/{batch_len}") 
-        one_batch_args=batch_prompt.pop()
-        if positive_batch=='Prefix':
-            currentTask.prompt= p.prompt + ' ' + one_batch_args[0]
-        elif positive_batch=='Suffix':
-            currentTask.prompt= one_batch_args[0] + ' ' + p.prompt
+            imgs = pipeline.process_diffusion(
+                    p=async_task,
+                    positive_cond=positive_cond,
+                    negative_cond=negative_cond,
+                    steps=steps,
+                    switch=switch,
+                    width=width,
+                    height=height,
+                    image_seed=task['task_seed'],
+                    callback=callback,
+                    sampler_name=async_task.sampler_name,
+                    scheduler_name=final_scheduler_name,
+                    latent=initial_latent,
+                    denoise=denoising_strength,
+                    tiled=tiled,
+                    cfg_scale=async_task.cfg_scale,
+                    refiner_swap_method=async_task.refiner_swap_method,
+                    disable_preview=async_task.disable_preview,
+                    tile_x=async_task.tile_x,
+                    tile_y=async_task.tile_y,
+                    transper=async_task.transper
+                )
+        
+        del positive_cond, negative_cond  # Save memory
+        if inpaint_worker.current_task is not None:
+            imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
+
+        current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
+
+
+        if async_task.face_en_enabled:
+            progressbar(async_task, current_progress, 'FaceEnhancer in progress ...')
+            temp_imgs = FaceEnhancer.upscale.inference(imgs,async_task.face_model,async_task.upscale_model,
+                    async_task.upscale_scale,async_task.face_detection,
+                    async_task.face_detection_threshold,async_task.face_detection_only_center,
+                    async_task.enable_swap,async_task.image_generetor_face,async_task.source_index,
+                    async_task.target_index)
+            imgs[-1 if not async_task.face_temp else len(imgs):] = temp_imgs
+        
+        if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
+            progressbar(async_task, current_progress, 'Checking for NSFW content ...')
+            imgs = default_censor(imgs)
+
+        if async_task.poDoVector:
+            image = Image.fromarray(imgs[-1])
+            if async_task.poTransPNG:
+                progressbar(async_task, current_progress, f'Transparenting image ...')
+                image = vector.trans(image,async_task.poTransPNGQuant,async_task.poTransPNGEps)
+
+                _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+                if async_task.poKeepPnm:
+                    image_png = np.array(image)
+                    imgs.append(image_png)
+
+            progressbar(async_task, current_progress, f'Vectorization image ...')
+            _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            vector.save_svg(image,async_task.poThreshold,filename)
+
+        progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
+        img_paths = save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image)
+        yield_result(async_task, img_paths, current_progress, async_task.black_out_nsfw, False,
+                     do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
+
+        return imgs, img_paths, current_progress
+
+    def apply_sd15_overrides(async_task):
+        import modules.model_family as mf
+
+        base_path = get_file_from_folder_list(async_task.base_model_name, modules.config.paths_checkpoints)
+        fam = mf.detect_family_from_file(base_path)
+        async_task.native_sd15_inpaint = mf.is_sd15_inpaint_file(base_path)
+
+        # На первом этапе native SD1.5 Inpaint используем без переключения refiner.
+        if async_task.native_sd15_inpaint:
+            async_task.refiner_model_name = 'None'
+
+        if fam == mf.UNSUPPORTED:
+            raise NotImplementedError(f'Unsupported checkpoint architecture: {fam}')
+        if fam != mf.SD15:
+            return False
+
+        print('[SD1.5] Compatibility overrides applied.')
+
+
+        if async_task.refiner_model_name != 'None':
+            ref_path = get_file_from_folder_list(async_task.refiner_model_name, modules.config.paths_checkpoints)
+            ref_fam = mf.detect_family_from_file(ref_path)
+            if ref_fam not in (mf.SD15, mf.UNKNOWN):
+                print(f'[SD1.5] Refiner is {ref_fam}; only an SD1.5 refiner works with an SD1.5 base. Refiner disabled.')
+                async_task.refiner_model_name = 'None'
+            else:
+                print('[SD1.5] SD1.5 refiner enabled.')
+
+        # if async_task.performance_selection in (Performance.EXTREME_SPEED,
+        #                                         Performance.LIGHTNING,
+        #                                         Performance.HYPER_SD):
+        #     print('[SD1.5] Extreme Speed / Lightning / Hyper-SD need SDXL LoRAs -> switched to Speed.')
+        #     async_task.performance_selection = Performance.SPEED
+        #     async_task.steps = async_task.original_steps = Performance.SPEED.steps()
+
+        return True
+
+
+    def apply_patch_settings(async_task):
+        patch_settings[pid] = PatchSettings(
+            async_task.sharpness,
+            async_task.adm_scaler_end,
+            async_task.adm_scaler_positive,
+            async_task.adm_scaler_negative,
+            async_task.controlnet_softness,
+            async_task.adaptive_cfg,
+            async_task.type_cfg,
+            async_task.rescale_cfg
+        )
+
+    def save_and_log(async_task, height, imgs, task, use_expansion, width, loras, persist_image=True) -> list:
+        img_paths = []
+        for x in imgs:
+
+            d=[]
+            if getattr(async_task, 'omost_canvas', None) is not None:
+                d.append(('Omost Last Input', 'omost_last_input', async_task.omost_last_input))
+                d.append(('Omost Temperature', 'omost_temperature', async_task.omost_temperature))
+                d.append(('Omost Top P', 'omost_top_p', async_task.omost_top_p))
+                d.append(('Omost Max New Tokens', 'omost_max_new_tokens', async_task.omost_max_new_tokens))
+                d.append(('Omost seed', 'omost_seed', async_task.omost_seed))
+            else: 
+                d.append(('Prompt', 'prompt', task['log_positive_prompt']))
+
+
+            d.append(('Negative Prompt', 'negative_prompt', task['log_negative_prompt']))
+            d.append(('Fooocus V2 Expansion', 'prompt_expansion', task['expansion']))
+            d.append(('Styles', 'styles',
+                  str(task['styles'] if not use_expansion else [fooocus_expansion] + task['styles'])))
+            d.append(('Performance', 'performance', async_task.performance_selection.value))
+            d.append(('Steps', 'steps', async_task.steps))
+            d.append(('Resolution', 'resolution', str((width, height))))
+            d.append(('Guidance Scale', 'guidance_scale', async_task.cfg_scale))
+            d.append(('Sharpness', 'sharpness', async_task.sharpness))
+            d.append(('ADM Guidance', 'adm_guidance', str((
+                     modules.patch.patch_settings[pid].positive_adm_scale,
+                     modules.patch.patch_settings[pid].negative_adm_scale,
+                     modules.patch.patch_settings[pid].adm_scaler_end))))
+            d.append(('Base Model', 'base_model', async_task.base_model_name))
+            d.append(('Refiner Model', 'refiner_model', async_task.refiner_model_name))
+            d.append(('Refiner Switch', 'refiner_switch', async_task.refiner_switch))
+
+            if async_task.refiner_model_name != 'None':
+                if async_task.overwrite_switch > 0:
+                    d.append(('Overwrite Switch', 'overwrite_switch', async_task.overwrite_switch))
+                if async_task.refiner_swap_method != flags.refiner_swap_method:
+                    d.append(('Refiner Swap Method', 'refiner_swap_method', async_task.refiner_swap_method))
+            d.append(('CFG control type', 'type_cfg', modules.patch.patch_settings[pid].type_cfg))
+
+            if modules.patch.patch_settings[pid].type_cfg == 'CFG Mimicking from TSNR':
+                d.append(('CFG Mimicking from TSNR', 'adaptive_cfg', modules.patch.patch_settings[pid].adaptive_cfg))
+            if modules.patch.patch_settings[pid].type_cfg == 'CFG rescale':
+                d.append(('CFG rescale', 'rescale_cfg', modules.patch.patch_settings[pid].rescale_cfg))
+
+            if async_task.clip_skip > 1:
+                d.append(('CLIP Skip', 'clip_skip', async_task.clip_skip))
+            d.append(('Sampler', 'sampler', async_task.sampler_name))
+            d.append(('Scheduler', 'scheduler', async_task.scheduler_name))
+            d.append(('VAE', 'vae', async_task.vae_name))
+            d.append(('Seed', 'seed', str(task['task_seed'])))
+
+            if async_task.freeu_enabled:
+                d.append(('FreeU', 'freeu',
+                          str((async_task.freeu_b1, async_task.freeu_b2, async_task.freeu_s1, async_task.freeu_s2))))
+            lora_index=0
+            for li, item in enumerate(loras):
+                if len(item) == 2:
+                    n, w = item
+                    if n != 'None':
+                        d.append((f'LoRA {lora_index + 1}', f'lora_combined_{lora_index + 1}', f'{n} : {w}'))
+                        lora_index +=1
+            lora_index = 0
+            for li, item in enumerate(loras):
+                if len(item) == 8:
+                    n, w, te, unet, lbw, lbwe, start, stop = item
+                    if n != 'None':
+                        params_str = format_lora_params(n, w, te, unet, lbw, lbwe, start, stop)
+                        d.append((f'Dynamic LoRA {lora_index + 1}', f'lora_dynamic_{lora_index + 1}', params_str))
+                        lora_index +=1
+            if async_task.face_en_enabled:
+                d.append(('FaceEnhancer face model', 'face_model', async_task.face_model))
+                d.append(('FaceEnhancer upscale model', 'upscale_model', async_task.upscale_model))
+                d.append(('FaceEnhancer upscale scale', 'upscale_scale', async_task.upscale_scale))
+                d.append(('FaceEnhancer face detection', 'face_detection', async_task.face_detection))
+                d.append(('FaceEnhancer face detection only center', 'face_detection_only_center', async_task.face_detection_only_center))
+                d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))
+                
+                
+            metadata_parser = None
+            if async_task.save_metadata_to_images:
+                metadata_parser = modules.meta_parser.get_metadata_parser(async_task.metadata_scheme)
+                metadata_parser.set_data(task['log_positive_prompt'], task['positive'],
+                                         task['log_negative_prompt'], task['negative'],
+                                         async_task.steps, async_task.base_model_name, async_task.refiner_model_name,
+                                         loras, async_task.vae_name)
+            d.append(('Metadata Scheme', 'metadata_scheme',
+                      async_task.metadata_scheme.value if async_task.save_metadata_to_images else async_task.save_metadata_to_images))
+            d.append(('Version', 'version', 'Fooocus ' + fooocus_version.version))
+            img_paths.append(log(x, d, metadata_parser, async_task.output_format, task, persist_image,name_prefix=async_task.name_prefix))
+
+        return img_paths
+    def apply_sd15_control_hints(async_task, height, width, current_progress):
+        for task in async_task.cn_tasks[flags.cn_canny]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.canny_pyramid(cn_img, async_task.canny_low_threshold,
+                                                     async_task.canny_high_threshold)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+        for task in async_task.cn_tasks[flags.cn_cpds]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+        for task in async_task.cn_tasks[flags.cn_pose]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.pose(cn_img)
+                
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+        for task in async_task.cn_tasks[flags.cn_scribble]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.scribble_hed(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+
+        for task in async_task.cn_tasks[flags.cn_recolor]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.recolor_intensity(cn_img)
+                
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+
+
+        for task in async_task.cn_tasks[flags.cn_manga]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(HWC3(cn_img), width=width, height=height)
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.lineart_anime(cn_img)
+                
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+            if async_task.debugging_cn_preprocessor:
+                yield_result(async_task, cn_img, current_progress, async_task.black_out_nsfw, do_not_show_finished_images=True)
+
+    def apply_control_nets(
+        async_task,
+        height,
+        ip_adapter_face_path,
+        ip_adapter_path,
+        width,
+        current_progress,
+    ):
+        def apply_ip_adapter_tasks():
+            for task in async_task.cn_tasks[flags.cn_ip]:
+                cn_img, cn_stop, cn_weight = task
+                cn_img = HWC3(cn_img)
+
+                cn_img = resize_image(cn_img,width=224,height=224,resize_mode=0)
+
+                task[0] = ip_adapter.preprocess(
+                    cn_img,
+                    ip_adapter_path=ip_adapter_path,
+                )
+
+                if async_task.debugging_cn_preprocessor:
+                    yield_result(
+                        async_task,
+                        cn_img,
+                        current_progress,
+                        async_task.black_out_nsfw,
+                        do_not_show_finished_images=True,
+                    )
+
+            for task in async_task.cn_tasks[flags.cn_ip_face]:
+                cn_img, cn_stop, cn_weight = task
+                cn_img = HWC3(cn_img)
+
+                if not async_task.skipping_cn_preprocessor:
+                    cn_img = extras.face_crop.crop_image(cn_img)
+
+                cn_img = resize_image(cn_img,width=224,height=224,resize_mode=0)
+
+                task[0] = ip_adapter.preprocess(
+                    cn_img,
+                    ip_adapter_path=ip_adapter_face_path,
+                )
+
+                if async_task.debugging_cn_preprocessor:
+                    yield_result(
+                        async_task,
+                        cn_img,
+                        current_progress,
+                        async_task.black_out_nsfw,
+                        do_not_show_finished_images=True,
+                    )
+
+            all_ip_tasks = (
+                async_task.cn_tasks[flags.cn_ip]
+                + async_task.cn_tasks[flags.cn_ip_face]
+            )
+
+            if all_ip_tasks:
+                pipeline.final_unet = ip_adapter.patch_model(
+                    pipeline.final_unet,
+                    all_ip_tasks,
+                )
+
+        if async_task.is_sd15:
+            apply_sd15_control_hints(async_task,height,width,current_progress)
+            apply_ip_adapter_tasks()
+            return
+
+        for task in async_task.cn_tasks[flags.cn_canny]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.canny_pyramid(
+                    cn_img,
+                    async_task.canny_low_threshold,
+                    async_task.canny_high_threshold,
+                )
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_pose]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.pose(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_manga]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_recolor]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.recolor_intensity(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_scribble]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.scribble_hed(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+
+        for task in async_task.cn_tasks[flags.cn_cpds]:
+            cn_img, cn_stop, cn_weight = task
+            cn_img = resize_image(
+                HWC3(cn_img),
+                width=width,
+                height=height,
+            )
+
+            if not async_task.skipping_cn_preprocessor:
+                cn_img = preprocessors.cpds(cn_img)
+
+            cn_img = HWC3(cn_img)
+            task[0] = core.numpy_to_pytorch(cn_img)
+
+            if async_task.debugging_cn_preprocessor:
+                yield_result(
+                    async_task,
+                    cn_img,
+                    current_progress,
+                    async_task.black_out_nsfw,
+                    do_not_show_finished_images=True,
+                )
+        apply_ip_adapter_tasks()
+
+
+    def apply_vary(async_task, uov_method, denoising_strength, uov_input_image, switch, current_progress, advance_progress=False):
+        if 'subtle' in uov_method:
+            denoising_strength = 0.5
+        if 'strong' in uov_method:
+            denoising_strength = 0.85
+        if async_task.overwrite_vary_strength > 0:
+            denoising_strength = async_task.overwrite_vary_strength
+        shape_ceil = get_image_shape_ceil(uov_input_image)
+        if shape_ceil < 1024:
+            print(f'[Vary] Image is resized because it is too small.')
+            shape_ceil = 1024
+        elif shape_ceil > 2048:
+            print(f'[Vary] Image is resized because it is too big.')
+            shape_ceil = 2048
+        uov_input_image = set_image_shape_ceil(uov_input_image, shape_ceil)
+        initial_pixels = core.numpy_to_pytorch(uov_input_image)
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, 'VAE encoding ...')
+        candidate_vae, _ = pipeline.get_candidate_vae(
+            steps=async_task.steps,
+            switch=switch,
+            denoise=denoising_strength,
+            refiner_swap_method=async_task.refiner_swap_method
+        )
+        initial_latent = core.encode_vae(vae=candidate_vae, pixels=initial_pixels)
+        B, C, H, W = initial_latent['samples'].shape
+        width = W * 8
+        height = H * 8
+        print(f'Final resolution is {str((width, height))}.')
+        return uov_input_image, denoising_strength, initial_latent, width, height, current_progress
+
+    def apply_inpaint(async_task, initial_latent, inpaint_head_model_path, inpaint_image,
+                      inpaint_mask, inpaint_parameterized, denoising_strength, inpaint_respective_field, switch,
+                      inpaint_disable_initial_latent, current_progress, skip_apply_outpaint=False,
+                      advance_progress=False):
+        if not skip_apply_outpaint:
+            inpaint_image, inpaint_mask = apply_outpaint(async_task, inpaint_image, inpaint_mask)
+
+        inpaint_worker.current_task = inpaint_worker.InpaintWorker(
+            image=inpaint_image,
+            mask=inpaint_mask,
+            use_fill=denoising_strength > 0.99,
+            k=inpaint_respective_field,
+            uov=async_task.uov_model
+        )
+        if async_task.debugging_inpaint_preprocessor:
+            yield_result(async_task, inpaint_worker.current_task.visualize_mask_processing(), 100,
+                         async_task.black_out_nsfw, do_not_show_finished_images=True)
+            raise EarlyReturnException
+
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, 'VAE Inpaint encoding ...')
+        inpaint_pixel_fill = core.numpy_to_pytorch(inpaint_worker.current_task.interested_fill)
+        inpaint_pixel_image = core.numpy_to_pytorch(inpaint_worker.current_task.interested_image)
+        inpaint_pixel_mask = core.numpy_to_pytorch(inpaint_worker.current_task.interested_mask)
+        candidate_vae, candidate_vae_swap = pipeline.get_candidate_vae(
+            steps=async_task.steps,
+            switch=switch,
+            denoise=denoising_strength,
+            refiner_swap_method=async_task.refiner_swap_method
+        )
+        latent_inpaint, latent_mask = core.encode_vae_inpaint(
+            mask=inpaint_pixel_mask,
+            vae=candidate_vae,
+            pixels=inpaint_pixel_image)
+        latent_swap = None
+        if candidate_vae_swap is not None:
+            if advance_progress:
+                current_progress += 1
+            progressbar(async_task, current_progress, 'VAE SD15 encoding ...')
+            latent_swap = core.encode_vae(
+                vae=candidate_vae_swap,
+                pixels=inpaint_pixel_fill)['samples']
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, 'VAE encoding ...')
+        latent_fill = core.encode_vae(
+            vae=candidate_vae,
+            pixels=inpaint_pixel_fill)['samples']
+        inpaint_worker.current_task.load_latent(
+            latent_fill=latent_fill,
+            latent_mask=latent_mask,
+            latent_swap=latent_swap
+        )
+
+        if inpaint_parameterized:
+            pipeline.final_unet = inpaint_worker.current_task.patch(
+                inpaint_head_model_path=inpaint_head_model_path,
+                inpaint_latent=latent_inpaint,
+                inpaint_latent_mask=latent_mask,
+                model=pipeline.final_unet
+            )
+
+        if getattr(async_task, 'native_sd15_inpaint', False):
+            samples_for_sampling = (
+                torch.zeros_like(latent_fill)
+                if inpaint_disable_initial_latent
+                else latent_fill
+            )
+            initial_latent = {
+                'samples': samples_for_sampling,
+                'noise_mask': latent_mask,
+                'concat_latent_image': latent_inpaint,
+            }
+        elif not inpaint_disable_initial_latent:
+            initial_latent = {'samples': latent_fill}
+        B, C, H, W = latent_fill.shape
+        height, width = H * 8, W * 8
+        final_height, final_width = inpaint_worker.current_task.image.shape[:2]
+        print(f'Final resolution is {str((final_width, final_height))}, latent is {str((width, height))}.')
+
+        return denoising_strength, initial_latent, width, height, current_progress
+
+    def apply_outpaint(async_task, inpaint_image, inpaint_mask):
+        if len(async_task.outpaint_selections) > 0:
+            H, W, C = inpaint_image.shape
+            if 'resolution' in async_task.outpaint_selections:
+
+                new_W = async_task.outpaint_width
+                new_H = async_task.outpaint_heighth
+                shift_x = async_task.outpaint_shift_width
+                shift_y = async_task.outpaint_shift_heighth
+                
+                pad_left = shift_x
+                pad_right = new_W - W - shift_x
+                pad_top = shift_y
+                pad_bottom = new_H - H - shift_y
+                
+                inpaint_image = np.pad(inpaint_image,[[pad_top, pad_bottom], [pad_left, pad_right], [0, 0]],mode='edge')
+
+                inpaint_mask = np.pad(inpaint_mask,[[pad_top, pad_bottom], [pad_left, pad_right]],mode='constant',constant_values=255) 
+
+            else:                   
+                if 'top' in async_task.outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[int(H * 0.3), 0], [0, 0]], mode='constant',
+                                        constant_values=255)
+                if 'bottom' in async_task.outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, int(H * 0.3)], [0, 0]], mode='constant',
+                                        constant_values=255)
+
+                H, W, C = inpaint_image.shape
+                if 'left' in async_task.outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[0, 0], [int(W * 0.3), 0], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [int(W * 0.3), 0]], mode='constant',
+                                        constant_values=255)
+                if 'right' in async_task.outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[0, 0], [0, int(W * 0.3)], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [0, int(W * 0.3)]], mode='constant',
+                                        constant_values=255)
+
+            inpaint_image = np.ascontiguousarray(inpaint_image.copy())
+            inpaint_mask = np.ascontiguousarray(inpaint_mask.copy())
+            async_task.inpaint_strength = 1.0
+            async_task.inpaint_respective_field = 1.0
+        return inpaint_image, inpaint_mask
+
+    def apply_upscale(async_task, uov_input_image, uov_method, switch, current_progress, advance_progress=False):
+        H, W, C = uov_input_image.shape
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, f'Upscaling image from {str((W, H))} ...')
+        uov_input_image = perform_upscale(uov_input_image,async_task.uov_model)
+        print(f'Image upscaled.')
+        if 'final' in uov_method:
+            return True, uov_input_image, None, None, None, None, None, current_progress
+        if '1.5x' in uov_method:
+            f = 1.5
+        elif '2x' in uov_method:
+            f = 2.0
         else:
-            currentTask.prompt=one_batch_args[0]
-        if negative_batch=='Prefix':
-            currentTask.negative_prompt= p.negative_prompt + ' ' + one_batch_args[1]
-        elif negative_batch=='Suffix':
-            currentTask.negative_prompt= one_batch_args[1] + ' ' + p.negative_prompt
+            f = 1.0
+        shape_ceil = get_shape_ceil(H * f, W * f)
+        if shape_ceil < 1024:
+            print(f'[Upscale] Image is resized because it is too small.')
+            uov_input_image = set_image_shape_ceil(uov_input_image, 1024)
+            shape_ceil = 1024
         else:
-            currentTask.negative_prompt=one_batch_args[1]
-        if len(currentTask.prompt)>0:
-            yield from generate_clicked(currentTask)
-            if currentTask.last_stop == 'stop':
-                print('User stopped')
-                break        
-        temp_var=currentTask.results
-        if p.seed_random:
-            currentTask.seed=int (random.randint(constants.MIN_SEED, constants.MAX_SEED))
-        passed+=1
-    return 
+            uov_input_image = resample_image(uov_input_image, width=W * f, height=H * f)
+        image_is_super_large = shape_ceil > 2800
+        if 'fast' in uov_method:
+            direct_return = True
+        elif image_is_super_large:
+            print('Image is too large. Directly returned the SR image. '
+                  'Usually directly return SR image at 4K resolution '
+                  'yields better results than SDXL diffusion.')
+            direct_return = True
+        else:
+            direct_return = False
+        if direct_return:
+            return direct_return, uov_input_image, None, None, None, None, None, current_progress
+
+        tiled = True
+        denoising_strength = 0.382
+        if async_task.overwrite_upscale_strength > 0:
+            denoising_strength = async_task.overwrite_upscale_strength
+        initial_pixels = core.numpy_to_pytorch(uov_input_image)
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, 'VAE encoding ...')
+        candidate_vae, _ = pipeline.get_candidate_vae(
+            steps=async_task.steps,
+            switch=switch,
+            denoise=denoising_strength,
+            refiner_swap_method=async_task.refiner_swap_method
+        )
+        initial_latent = core.encode_vae(
+            vae=candidate_vae,
+            pixels=initial_pixels, tiled=True)
+        B, C, H, W = initial_latent['samples'].shape
+        width = W * 8
+        height = H * 8
+        print(f'Final resolution is {str((width, height))}.')
+        return direct_return, uov_input_image, denoising_strength, initial_latent, tiled, width, height, current_progress
+
+    def apply_overrides(async_task, steps, height, width):
+        if async_task.overwrite_step > 0:
+            steps = async_task.overwrite_step
+        switch = int(round(async_task.steps * async_task.refiner_switch))
+        if async_task.overwrite_switch > 0:
+            switch = async_task.overwrite_switch
+        if async_task.overwrite_width > 0:
+            width = async_task.overwrite_width
+        if async_task.overwrite_height > 0:
+            height = async_task.overwrite_height
+        return steps, switch, width, height
+
+    def process_prompt(async_task, prompt, negative_prompt, base_model_additional_loras, image_number, disable_seed_increment, use_expansion, use_style,
+                       use_synthetic_refiner, current_progress, advance_progress=False):
+        
+        if async_task.translate_enabled:
+            prompt, negative_prompt = translate(prompt, prompt_neg=negative_prompt, srcTrans=async_task.srcTrans, toTrans=async_task.toTrans)
+            async_task.negative_prompt = negative_prompt
+        
+        prompts = remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')
+        negative_prompts = remove_empty_str([safe_str(p) for p in negative_prompt.splitlines()], default='')
+        prompt = prompts[0]
+        negative_prompt = negative_prompts[0]
+        if prompt == '':
+            # disable expansion when empty since it is not meaningful and influences image prompt
+            use_expansion = False
+        extra_positive_prompts = prompts[1:] if len(prompts) > 1 else []
+        extra_negative_prompts = negative_prompts[1:] if len(negative_prompts) > 1 else []
+        
+        
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, 'Loading models ...')
+        lora_filenames = modules.util.remove_performance_lora(modules.config.lora_filenames,
+                                                              async_task.performance_selection)
+        loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
+                                                          modules.config.default_max_lora_number,
+                                                          lora_filenames=lora_filenames)
+
+        _extra_positive_prompts = []
+
+        for extra_prompt in extra_positive_prompts:
+            loras, extra_prompt = parse_lora_references_from_prompt(
+                extra_prompt,
+                loras,
+                modules.config.default_max_lora_number,
+                lora_filenames=lora_filenames,
+            )
+
+            if extra_prompt.strip():
+                _extra_positive_prompts.append(extra_prompt)
+
+        extra_positive_prompts = _extra_positive_prompts        
+        loras += async_task.performance_loras
+        loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
+        loras=loras + ploras + dloras
+        applied_loras = pipeline.refresh_everything(
+            refiner_model_name=async_task.refiner_model_name,
+            base_model_name=async_task.base_model_name,
+            loras=loras,
+            base_model_additional_loras=base_model_additional_loras,
+            use_synthetic_refiner=use_synthetic_refiner,
+            vae_name=async_task.vae_name
+        )
+        applied_lora_keys = {str(item) for item in applied_loras}
+        loras = [
+            item for item in loras
+            if str(item) in applied_lora_keys
+        ]
+        pipeline.set_clip_skip(async_task.clip_skip)
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, 'Processing prompts ...')
+        tasks = []
+        for i in range(image_number):
+            if disable_seed_increment:
+                task_seed = async_task.seed % (constants.MAX_SEED + 1)
+            else:
+                task_seed = (async_task.seed + i) % (constants.MAX_SEED + 1)  # randint is inclusive, % is not
+
+            task_rng = random.Random(task_seed)  # may bind to inpaint noise in the future
+            task_prompt = apply_wildcards(prompt, task_rng, i, async_task.read_wildcards_in_order)
+            task_prompt = apply_arrays(task_prompt, i)
+            task_negative_prompt = apply_wildcards(negative_prompt, task_rng, i, async_task.read_wildcards_in_order)
+            task_extra_positive_prompts = [apply_wildcards(pmt, task_rng, i, async_task.read_wildcards_in_order) for pmt
+                                           in
+                                           extra_positive_prompts]
+            task_extra_negative_prompts = [apply_wildcards(pmt, task_rng, i, async_task.read_wildcards_in_order) for pmt
+                                           in
+                                           extra_negative_prompts]
+
+            positive_basic_workloads = []
+            negative_basic_workloads = []
+
+            task_styles = async_task.style_selections.copy()
+            if use_style:
+                placeholder_replaced = False
+
+                for j, s in enumerate(task_styles):
+                    if s == random_style_name:
+                        s = get_random_style(task_rng)
+                        task_styles[j] = s
+                    p, n, style_has_placeholder = apply_style(s, positive=task_prompt)
+                    if style_has_placeholder:
+                        placeholder_replaced = True
+                    positive_basic_workloads = positive_basic_workloads + p
+                    negative_basic_workloads = negative_basic_workloads + n
+
+                if not placeholder_replaced:
+                    positive_basic_workloads = [task_prompt] + positive_basic_workloads
+            else:
+                positive_basic_workloads.append(task_prompt)
+
+            negative_basic_workloads.append(task_negative_prompt)  # Always use independent workload for negative.
+
+            positive_basic_workloads = positive_basic_workloads + task_extra_positive_prompts
+            negative_basic_workloads = negative_basic_workloads + task_extra_negative_prompts
+
+            positive_basic_workloads = remove_empty_str(positive_basic_workloads, default=task_prompt)
+            negative_basic_workloads = remove_empty_str(negative_basic_workloads, default=task_negative_prompt)
+
+            tasks.append(dict(
+                task_seed=task_seed,
+                task_prompt=task_prompt,
+                task_negative_prompt=task_negative_prompt,
+                positive=positive_basic_workloads,
+                negative=negative_basic_workloads,
+                expansion='',
+                c=None,
+                uc=None,
+                positive_top_k=len(positive_basic_workloads),
+                negative_top_k=len(negative_basic_workloads),
+                log_positive_prompt='\n'.join([task_prompt] + task_extra_positive_prompts),
+                log_negative_prompt='\n'.join([task_negative_prompt] + task_extra_negative_prompts),
+                styles=task_styles
+            ))
+        if use_expansion:
+            if advance_progress:
+                current_progress += 1
+            for i, t in enumerate(tasks):
+
+                progressbar(async_task, current_progress, f'Preparing Fooocus text #{i + 1} ...')
+                expansion = pipeline.final_expansion(t['task_prompt'], t['task_seed'])
+                print(f'[Prompt Expansion] {expansion}')
+                t['expansion'] = expansion
+                t['positive'] = copy.deepcopy(t['positive']) + [expansion]  # Deep copy.
+        if advance_progress:
+            current_progress += 1
+        for i, t in enumerate(tasks):
+            progressbar(async_task, current_progress, f'Encoding positive #{i + 1} ...')
+            t['c'] = pipeline.clip_encode(texts=t['positive'], pool_top_k=t['positive_top_k'])
+        if advance_progress:
+            current_progress += 1
+        for i, t in enumerate(tasks):
+            if abs(float(async_task.cfg_scale) - 1.0) < 1e-4:
+                t['uc'] = pipeline.clone_cond(t['c'])
+            else:
+                progressbar(async_task, current_progress, f'Encoding negative #{i + 1} ...')
+                t['uc'] = pipeline.clip_encode(texts=t['negative'], pool_top_k=t['negative_top_k'])
+        return tasks, use_expansion, loras, current_progress
+
+    def apply_freeu(async_task):
+        print(f'FreeU is enabled!')
+        pipeline.final_unet = core.apply_freeu(
+            pipeline.final_unet,
+            async_task.freeu_b1,
+            async_task.freeu_b2,
+            async_task.freeu_s1,
+            async_task.freeu_s2
+        )
+
+    def patch_discrete(unet, scheduler_name):
+        return core.opModelSamplingDiscrete.patch(unet, scheduler_name, False)[0]
+
+    def patch_edm(unet, scheduler_name):
+        return core.opModelSamplingContinuousEDM.patch(unet, scheduler_name, 120.0, 0.002)[0]
+
+    def patch_samplers(async_task):
+        final_scheduler_name = async_task.scheduler_name
+
+        if async_task.scheduler_name in ['lcm', 'tcd']:
+            final_scheduler_name = 'sgm_uniform'
+            if pipeline.final_unet is not None:
+                pipeline.final_unet = patch_discrete(pipeline.final_unet, async_task.scheduler_name)
+            if pipeline.final_refiner_unet is not None:
+                pipeline.final_refiner_unet = patch_discrete(pipeline.final_refiner_unet, async_task.scheduler_name)
+
+        elif async_task.scheduler_name == 'edm_playground_v2.5':
+            final_scheduler_name = 'karras'
+            if pipeline.final_unet is not None:
+                pipeline.final_unet = patch_edm(pipeline.final_unet, async_task.scheduler_name)
+            if pipeline.final_refiner_unet is not None:
+                pipeline.final_refiner_unet = patch_edm(pipeline.final_refiner_unet, async_task.scheduler_name)
+
+        return final_scheduler_name
+
+    def set_hyper_sd_defaults(async_task, current_progress, advance_progress=False):
+        print('Enter Hyper-SD mode.')
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, current_progress, 'Downloading Hyper-SD components ...')
+        if async_task.is_sd15:
+            # Официальная 4-step SD1.5 Hyper-SD LoRA использует DDIM
+            # и CFG=0. В Fooocus ближайшее расписание — ddim_uniform.
+            async_task.sampler_name = 'ddim'
+            async_task.scheduler_name = 'ddim_uniform'
+            async_task.cfg_scale = 0.0
+        else:
+            hyper_lora_path = modules.config.downloading_sdxl_hyper_sd_lora()
+            hyper_lora_weight = 0.8
+            async_task.sampler_name = 'dpmpp_sde_gpu'
+            async_task.scheduler_name = 'karras'
+            async_task.cfg_scale = 1.0
+            async_task.performance_loras += [
+                (hyper_lora_path, hyper_lora_weight)
+            ]
+
+        if async_task.refiner_model_name != 'None':
+            print(f'Refiner disabled in Hyper-SD mode.')
+        async_task.refiner_model_name = 'None'
+
+        async_task.sharpness = 0.0
+
+        async_task.adaptive_cfg = 1.0
+        async_task.type_cfg='CFG Mimicking from TSNR'
+        async_task.rescale_cfg=0.3
+        async_task.refiner_switch = 1.0
+        async_task.adm_scaler_positive = 1.0
+        async_task.adm_scaler_negative = 1.0
+        async_task.adm_scaler_end = 0.0
+        return current_progress
+
+    def set_lightning_defaults(async_task, current_progress, advance_progress=False):
+        print('Enter Lightning mode.')
+
+        if advance_progress:
+            current_progress += 1
+
+        progressbar(async_task, 1, 'Downloading Lightning components ...')
+
+        if async_task.is_sd15:
+            async_task.sampler_name = 'tcd'
+            async_task.scheduler_name = 'tcd'
+            async_task.cfg_scale = 0.0
+
+            # TCD LoRA example uses guidance_scale=0.
+            # Disable CFG modifiers so CFG is not altered afterward.
+            async_task.type_cfg = 'Off'
+            async_task.adaptive_cfg = 1.0
+            async_task.rescale_cfg = 0.0
 
 
-def generate_clicked(task: worker.AsyncTask):
-    import ldm_patched.modules.model_management as model_management
+        else:
+            lora_path = modules.config.downloading_sdxl_lightning_lora()
+            async_task.sampler_name = 'euler'
+            async_task.scheduler_name = 'sgm_uniform'
+            async_task.cfg_scale = 1.0
+            async_task.adaptive_cfg = 1.0
+            async_task.type_cfg = 'CFG Mimicking from TSNR'
+            async_task.rescale_cfg = 0.3
 
-    with model_management.interrupt_processing_mutex:
-        model_management.interrupt_processing = False
-    # outputs=[progress_html, progress_window, progress_gallery, gallery]
 
-    if len(task.args) == 0:
-        return
+            async_task.performance_loras += [(lora_path, 1.0)]
+        if async_task.refiner_model_name != 'None':
+            print('Refiner disabled in Lightning mode.')
 
-    execution_start_time = time.perf_counter()
-    finished = False
+        async_task.refiner_model_name = 'None'
+        async_task.sharpness = 0.0
+        async_task.refiner_switch = 1.0
+        async_task.adm_scaler_positive = 1.0
+        async_task.adm_scaler_negative = 1.0
+        async_task.adm_scaler_end = 0.0
 
-    yield gr.update(visible=True, value=modules.html.make_progress_html(1, 'Waiting for task to start ...')), \
-        gr.update(visible=True, value=None), \
-        gr.update(visible=False, value=None), \
-        gr.update(visible=False)
+        return current_progress
 
-    worker.async_tasks.append(task)
 
-    while not finished:
-        time.sleep(0.01)
-        if len(task.yields) > 0:
-            flag, product = task.yields.pop(0)
-            if flag == 'preview':
+    def set_lcm_defaults(async_task, current_progress, advance_progress=False):
+        print('Enter LCM mode.')
+        if advance_progress:
+            current_progress += 1
+        progressbar(async_task, 1, 'Downloading LCM components ...')
+        if not async_task.is_sd15:
+            lcm_lora_path = modules.config.downloading_sdxl_lcm_lora()
+            async_task.performance_loras += [(lcm_lora_path, 1.0)]
 
-                # help bad internet connection by skipping duplicated preview
-                if len(task.yields) > 0:  # if we have the next item
-                    if task.yields[0][0] == 'preview':   # if the next item is also a preview
-                        # print('Skipped one preview for better internet connection.')
+        if async_task.refiner_model_name != 'None':
+            print(f'Refiner disabled in LCM mode.')
+        async_task.refiner_model_name = 'None'
+        async_task.sampler_name = 'lcm'
+        async_task.scheduler_name = 'lcm'
+        async_task.sharpness = 0.0
+        async_task.cfg_scale = 1.0
+        async_task.adaptive_cfg = 1.0
+        async_task.type_cfg='CFG Mimicking from TSNR'
+        async_task.rescale_cfg=0.3
+        async_task.refiner_switch = 1.0
+        async_task.adm_scaler_positive = 1.0
+        async_task.adm_scaler_negative = 1.0
+        async_task.adm_scaler_end = 0.0
+        return current_progress
+    def apply_image_input(async_task, base_model_additional_loras, clip_vision_path, controlnet_canny_path,
+                          controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, 
+                          controlnet_manga_path, goals, inpaint_head_model_path, inpaint_image, inpaint_mask,
+                          inpaint_parameterized,  ip_adapter_face_path, ip_adapter_path, ip_negative_path,
+                          skip_prompt_processing, use_synthetic_refiner):
+        if (async_task.current_tab == 'uov' or (
+                async_task.current_tab == 'ip' and async_task.mixing_image_prompt_and_vary_upscale)) \
+                and async_task.uov_method != flags.disabled.casefold() and async_task.uov_input_image is not None:
+            async_task.uov_input_image, skip_prompt_processing, async_task.steps = prepare_upscale(
+                async_task, goals, async_task.uov_input_image, async_task.uov_method, async_task.performance_selection,
+                async_task.steps, 1, skip_prompt_processing=skip_prompt_processing)
+        if (async_task.current_tab == 'inpaint' or (
+                async_task.current_tab == 'ip' and async_task.mixing_image_prompt_and_inpaint)) \
+                and isinstance(async_task.inpaint_input_image, dict):
+            inpaint_image = async_task.inpaint_input_image['image']
+            inpaint_mask = async_task.inpaint_input_image['mask'][:, :, 0]
+
+            if async_task.inpaint_advanced_masking_checkbox:
+                if isinstance(async_task.inpaint_mask_image_upload, dict):
+                    if (isinstance(async_task.inpaint_mask_image_upload['image'], np.ndarray)
+                            and isinstance(async_task.inpaint_mask_image_upload['mask'], np.ndarray)
+                            and async_task.inpaint_mask_image_upload['image'].ndim == 3):
+                        async_task.inpaint_mask_image_upload = np.maximum(
+                            async_task.inpaint_mask_image_upload['image'],
+                            async_task.inpaint_mask_image_upload['mask'])
+                if isinstance(async_task.inpaint_mask_image_upload,
+                              np.ndarray) and async_task.inpaint_mask_image_upload.ndim == 3:
+                    H, W, C = inpaint_image.shape
+                    async_task.inpaint_mask_image_upload = resample_image(async_task.inpaint_mask_image_upload,
+                                                                          width=W, height=H)
+                    async_task.inpaint_mask_image_upload = np.mean(async_task.inpaint_mask_image_upload, axis=2)
+                    async_task.inpaint_mask_image_upload = (async_task.inpaint_mask_image_upload > 127).astype(
+                        np.uint8) * 255
+                    inpaint_mask = np.maximum(inpaint_mask, async_task.inpaint_mask_image_upload)
+
+            if int(async_task.inpaint_erode_or_dilate) != 0:
+                inpaint_mask = erode_or_dilate(inpaint_mask, async_task.inpaint_erode_or_dilate)
+
+            if async_task.invert_mask_checkbox:
+                inpaint_mask = 255 - inpaint_mask
+
+            inpaint_image = HWC3(inpaint_image)
+            if isinstance(inpaint_image, np.ndarray) and isinstance(inpaint_mask, np.ndarray) \
+                    and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
+                modules.config.downloading_upscale_model2(async_task.uov_model)
+                if inpaint_parameterized:
+                    progressbar(async_task, 1, 'Downloading inpainter ...')
+                    inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
+                        async_task.inpaint_engine)
+                    base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+                    print(f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
+                    if async_task.refiner_model_name == 'None':
+                        use_synthetic_refiner = True
+                        async_task.refiner_switch = 0.8
+                else:
+                    inpaint_head_model_path, inpaint_patch_model_path = None, None
+                    print(f'[Inpaint] Parameterized inpaint is disabled.')
+                if async_task.inpaint_additional_prompt != '':
+                    if async_task.prompt == '':
+                        async_task.prompt = async_task.inpaint_additional_prompt
+                    else:
+                        async_task.prompt = async_task.inpaint_additional_prompt + '\n' + async_task.prompt
+                goals.append('inpaint')
+        if async_task.current_tab == 'ip' or \
+                async_task.mixing_image_prompt_and_vary_upscale or \
+                async_task.mixing_image_prompt_and_inpaint:
+            goals.append('cn')
+            progressbar(async_task, 1, 'Downloading control models ...')
+            if len(async_task.cn_tasks[flags.cn_canny]) > 0:
+                controlnet_canny_path = (
+                    modules.config.downloading_controlnet_sd15("canny")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_canny()
+                )
+
+            if len(async_task.cn_tasks[flags.cn_pose]) > 0:
+                controlnet_pose_path = (
+                    modules.config.downloading_controlnet_sd15("pose")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_pose()
+                )
+
+            if len(async_task.cn_tasks[flags.cn_scribble]) > 0:
+                controlnet_scribble_path = (
+                    modules.config.downloading_controlnet_sd15("scribble")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_scribble()
+                )
+            if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
+                controlnet_cpds_path = (
+                    modules.config.downloading_controlnet_sd15("cpds")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_cpds()
+                )
+            if len(async_task.cn_tasks[flags.cn_recolor]) > 0:
+                controlnet_recolor_path = (
+                    modules.config.downloading_controlnet_sd15("recolor")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_recolor()
+                )
+
+            if len(async_task.cn_tasks[flags.cn_manga]) > 0:
+                controlnet_manga_path = (
+                    modules.config.downloading_controlnet_sd15("manga")
+                    if async_task.is_sd15
+                    else modules.config.downloading_controlnet_manga()
+                )
+
+            if len(async_task.cn_tasks[flags.cn_ip]) > 0:
+                clip_vision_path, ip_negative_path, ip_adapter_path = (
+                    modules.config.downloading_ip_adapters(
+                        "ip",
+                        is_sd15=async_task.is_sd15,
+                    )
+                )
+
+            if len(async_task.cn_tasks[flags.cn_ip_face]) > 0:
+                clip_vision_path, ip_negative_path, ip_adapter_face_path = (
+                    modules.config.downloading_ip_adapters(
+                        "face",
+                        is_sd15=async_task.is_sd15,
+                    )
+                )
+
+        if async_task.current_tab == 'enhance' and async_task.enhance_input_image is not None:
+            goals.append('enhance')
+            skip_prompt_processing = True
+            async_task.enhance_input_image = HWC3(async_task.enhance_input_image)
+        if async_task.current_tab == 'adetail' and async_task.enhance_input_image is not None:
+            goals.append('enhance')
+            skip_prompt_processing = True
+
+        return base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner
+    def apply_instant_cn(async_task,controlnet_canny_path,controlnet_cpds_path,goals):
+        goals.append('cn')
+        progressbar(async_task, 1, 'Downloading control models ...')
+        if len(async_task.cn_tasks[flags.cn_canny]) > 0:
+            controlnet_canny_path = modules.config.downloading_controlnet_canny()
+        if len(async_task.cn_tasks[flags.cn_cpds]) > 0:
+            controlnet_cpds_path = modules.config.downloading_controlnet_cpds()
+        modules.config.download_instantid()
+
+        return controlnet_canny_path, controlnet_cpds_path
+
+    def prepare_upscale(async_task, goals, uov_input_image, uov_method, performance, steps, current_progress,
+                        advance_progress=False, skip_prompt_processing=False):
+        uov_input_image = HWC3(uov_input_image)
+        if 'vary' in uov_method:
+            goals.append('vary')
+        elif 'upscale' in uov_method:
+            goals.append('upscale')
+            if 'final' in uov_method:
+                skip_prompt_processing = True
+                steps = 0
+            else:
+                steps = performance.steps_uov()
+
+            if advance_progress:
+                current_progress += 1
+            modules.config.downloading_upscale_model2(async_task.uov_model)
+        return uov_input_image, skip_prompt_processing, steps
+
+    def prepare_enhance_prompt(prompt: str, fallback_prompt: str):
+        if safe_str(prompt) == '' or len(remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')) == 0:
+            prompt = fallback_prompt
+
+        return prompt
+
+    def stop_processing(async_task, processing_start_time):
+        async_task.processing = False
+        processing_time = time.perf_counter() - processing_start_time
+        print(f'Processing time (total): {processing_time:.2f} seconds')
+
+    def process_enhance(all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
+                        controlnet_manga_path,
+                        current_progress, current_task_id, denoising_strength, inpaint_disable_initial_latent,
+                        inpaint_engine, inpaint_respective_field, inpaint_strength,
+                        prompt, negative_prompt, final_scheduler_name, goals, height, img, mask,
+                        preparation_steps, steps, switch, tiled, total_count, use_expansion, use_style,
+                        use_synthetic_refiner, width, show_intermediate_results=True, persist_image=True):
+        base_model_additional_loras = []
+        inpaint_head_model_path = None
+        inpaint_parameterized = (
+            inpaint_engine != 'None'
+            and not getattr(async_task, 'native_sd15_inpaint', False)
+        )
+        initial_latent = None
+        prompt = prepare_enhance_prompt(prompt, async_task.prompt)
+        negative_prompt = prepare_enhance_prompt(negative_prompt, async_task.negative_prompt)
+
+        if 'vary' in goals:
+            img, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
+                async_task, async_task.enhance_uov_method, denoising_strength, img, switch, current_progress)
+        if 'upscale' in goals:
+            direct_return, img, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
+                async_task, img, async_task.enhance_uov_method, switch, current_progress)
+            if direct_return:
+                d = [('Final Upscale', 'upscale_fast', async_task.uov_model)]
+                if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
+                    progressbar(async_task, current_progress, 'Checking for NSFW content ...')
+                    img = default_censor(img)
+                progressbar(async_task, current_progress, f'Saving image {current_task_id + 1}/{total_count} to system ...')
+                uov_image_path = log(img, d, output_format=async_task.output_format, persist_image=persist_image,name_prefix=async_task.name_prefix)
+                yield_result(async_task, uov_image_path, current_progress, async_task.black_out_nsfw, False,
+                             do_not_show_finished_images=not show_intermediate_results or async_task.disable_intermediate_results)
+                return current_progress, img, prompt, negative_prompt
+
+        if 'inpaint' in goals and inpaint_parameterized:
+            progressbar(async_task, current_progress, 'Downloading inpainter ...')
+            inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
+                inpaint_engine)
+            if inpaint_patch_model_path not in base_model_additional_loras:
+                base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+        progressbar(async_task, current_progress, 'Preparing enhance prompts ...')
+        # positive and negative conditioning aren't available here anymore, process prompt again
+        tasks_enhance, use_expansion, loras, current_progress = process_prompt(
+            async_task, prompt, negative_prompt, base_model_additional_loras, 1, True,
+            use_expansion, use_style, use_synthetic_refiner, current_progress)
+        task_enhance = tasks_enhance[0]
+        # TODO could support vary, upscale and CN in the future
+        # if 'cn' in goals:
+        #     apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width)
+        if async_task.freeu_enabled:
+            apply_freeu(async_task)
+        patch_samplers(async_task)
+        if 'inpaint' in goals:
+            
+            denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(
+                async_task, None, inpaint_head_model_path, img, mask,
+                inpaint_parameterized, inpaint_strength,
+                inpaint_respective_field, switch, inpaint_disable_initial_latent,
+                current_progress, True)
+        imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
+                                                         controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, 
+                                                         controlnet_scribble_path, controlnet_manga_path, current_task_id, denoising_strength,
+                                                         final_scheduler_name, goals, initial_latent, steps, switch,
+                                                         task_enhance['c'], task_enhance['uc'], task_enhance, loras,
+                                                         tiled, use_expansion, width, height, current_progress,
+                                                         preparation_steps, total_count, show_intermediate_results,
+                                                         persist_image)
+
+        del task_enhance['c'], task_enhance['uc']  # Save memory
+        return current_progress, imgs[0], prompt, negative_prompt
+
+    def enhance_upscale(all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
+                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
+                        current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, enhance_steps,
+                        prompt, negative_prompt, final_scheduler_name, height, img, preparation_steps, switch, tiled,
+                        total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image=True):
+        # reset inpaint worker to prevent tensor size issues and not mix upscale and inpainting
+        inpaint_worker.current_task = None
+
+        current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_upscaling + done_steps_inpainting))
+        goals_enhance = []
+        img, skip_prompt_processing, steps = prepare_upscale(
+            async_task, goals_enhance, img, async_task.enhance_uov_method, async_task.performance_selection,
+            enhance_steps, current_progress)
+        steps, _, _, _ = apply_overrides(async_task, steps, height, width)
+        exception_result = ''
+        if len(goals_enhance) > 0:
+            try:
+                current_progress, img, prompt, negative_prompt = process_enhance(
+                    all_steps, async_task, callback, controlnet_canny_path,
+                    controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
+                    controlnet_manga_path,
+                    current_progress, current_task_id, denoising_strength, False,
+                    'None', 0.0, 0.0, prompt, negative_prompt, final_scheduler_name,
+                    goals_enhance, height, img, None, preparation_steps, steps, switch, tiled, total_count,
+                    use_expansion, use_style, use_synthetic_refiner, width, persist_image=persist_image)
+
+            except ldm_patched.modules.model_management.InterruptProcessingException:
+                if async_task.last_stop == 'skip':
+                    print('User skipped')
+                    async_task.last_stop = False
+                    # also skip all enhance steps for this image, but add the steps to the progress bar
+                    if async_task.enhance_uov_processing_order == flags.enhancement_uov_before:
+                        done_steps_inpainting += len(async_task.enhance_ctrls) * enhance_steps
+                    exception_result = 'continue'
+                else:
+                    print('User stopped')
+                    exception_result = 'break'
+            finally:
+                done_steps_upscaling += steps
+        return current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result
+
+
+    @torch.no_grad()
+    @torch.inference_mode()
+    def handler(async_task: AsyncTask):
+        preparation_start_time = time.perf_counter()
+        
+        async_task.processing = True
+
+        async_task.outpaint_selections = [o.lower() for o in async_task.outpaint_selections]
+        base_model_additional_loras = []
+        async_task.uov_method = async_task.uov_method.casefold()
+        async_task.enhance_uov_method = async_task.enhance_uov_method.casefold()
+
+        if fooocus_expansion in async_task.style_selections:
+            use_expansion = True
+            async_task.style_selections.remove(fooocus_expansion)
+        else:
+            use_expansion = False
+
+        use_style = len(async_task.style_selections) > 0
+
+        if async_task.base_model_name == async_task.refiner_model_name:
+            print(f'Refiner disabled because base model and refiner are same.')
+            async_task.refiner_model_name = 'None'
+
+        async_task.is_sd15 = apply_sd15_overrides(async_task)
+
+        current_progress = 0
+        if async_task.performance_selection == Performance.EXTREME_SPEED:
+            set_lcm_defaults(async_task, current_progress, advance_progress=True)
+        elif async_task.performance_selection == Performance.LIGHTNING:
+            set_lightning_defaults(async_task, current_progress, advance_progress=True)
+        elif async_task.performance_selection == Performance.HYPER_SD:
+            set_hyper_sd_defaults(async_task, current_progress, advance_progress=True)
+        if async_task.type_cfg != 'Off':
+            if async_task.type_cfg == 'CFG Mimicking from TSNR':
+                print(f'[Parameters] Adaptive CFG = {async_task.adaptive_cfg}')
+            else:
+                print(f'[Parameters] CFG rescale= {async_task.rescale_cfg}')
+        else:
+            print(f'[Parameters] CFG control = Disable')        
+        print(f'[Parameters] CLIP Skip = {async_task.clip_skip}')
+        print(f'[Parameters] Sharpness = {async_task.sharpness}')
+        print(f'[Parameters] ControlNet Softness = {async_task.controlnet_softness}')
+        print(f'[Parameters] ADM Scale = '
+              f'{async_task.adm_scaler_positive} : '
+              f'{async_task.adm_scaler_negative} : '
+              f'{async_task.adm_scaler_end}')
+        print(f'[Parameters] Seed = {async_task.seed}')
+
+        apply_patch_settings(async_task)
+
+        print(f'[Parameters] CFG = {async_task.cfg_scale}')
+
+        initial_latent = None
+        denoising_strength = 1.0
+        tiled = False
+
+        width, height = async_task.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
+        width, height = int(width), int(height)
+
+        skip_prompt_processing = False
+
+        inpaint_worker.current_task = None
+        inpaint_parameterized = (
+            async_task.inpaint_engine != 'None'
+            and not async_task.native_sd15_inpaint
+        )
+        inpaint_image = None
+        inpaint_mask = None
+        inpaint_head_model_path = None
+
+        use_synthetic_refiner = False
+
+        controlnet_canny_path = None
+        controlnet_cpds_path = None
+        controlnet_pose_path = None
+        controlnet_recolor_path = None
+        controlnet_scribble_path = None
+        controlnet_manga_path = None
+        clip_vision_path, ip_negative_path, ip_adapter_path, ip_adapter_face_path = None, None, None, None
+
+        goals = []
+        tasks = []
+        current_progress = 1
+
+
+        if async_task.input_image_checkbox:
+            base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, inpaint_head_model_path, inpaint_image, inpaint_mask, ip_adapter_face_path, ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner = apply_image_input(
+                async_task, base_model_additional_loras, clip_vision_path, controlnet_canny_path, controlnet_cpds_path,
+                controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path, 
+                goals, inpaint_head_model_path, inpaint_image, inpaint_mask, inpaint_parameterized, ip_adapter_face_path,
+                ip_adapter_path, ip_negative_path, skip_prompt_processing, use_synthetic_refiner)
+        if async_task.enable_instant:
+            if not async_task.is_sd15:
+                controlnet_canny_path, controlnet_cpds_path = apply_instant_cn(
+                    async_task, controlnet_canny_path, controlnet_cpds_path,goals)
+            else:
+                print ("[InstantID] Basemodel is not SDXL. Process skipped.")
+                async_task.enable_instant = False
+        # Load or unload CNs
+        progressbar(async_task, current_progress, 'Loading control models ...')
+        pipeline.refresh_controlnets([controlnet_canny_path, controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path])
+        ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
+        ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
+
+        async_task.steps, switch, width, height = apply_overrides(async_task, async_task.steps, height, width)
+
+
+        print(f'[Parameters] Sampler = {async_task.sampler_name} - {async_task.scheduler_name}')
+        print(f'[Parameters] Steps = {async_task.steps} - {switch}')
+
+        progressbar(async_task, current_progress, 'Initializing ...')
+
+        if (
+            getattr(async_task, 'native_sd15_inpaint', False)
+            and 'inpaint' not in goals
+        ):
+            raise ValueError(
+                'SD1.5 Inpaint checkpoint requires an input image and mask. '
+                'Use Inpaint/Modify mode.'
+            )
+
+        loras = async_task.loras
+        if not skip_prompt_processing:
+            if async_task.enable_obp:
+                async_task.prompt,async_task.negative_prompt = ob_prompt.run(async_task.insanitylevel, async_task.subject, async_task.artist, 
+                        async_task.imagetype, async_task.prefixprompt,async_task.suffixprompt,async_task.negative_prompt, 
+                        async_task.promptcompounderlevel, async_task.ANDtoggle, async_task.silentmode, async_task.prompt, 
+                        async_task.antistring,async_task.seperator, async_task.givensubject, async_task.smartsubject, 
+                        async_task.giventypeofimage, async_task.imagemodechance, async_task.chosengender, 
+                        async_task.chosensubjectsubtypeobject, async_task.chosensubjectsubtypehumanoid, 
+                        async_task.chosensubjectsubtypeconcept, async_task.promptvariantinsanitylevel, async_task.givenoutfit, 
+                        async_task.autonegativeprompt, async_task.autonegativepromptstrength, async_task.autonegativepromptenhance, 
+                        async_task.base_model_obp, async_task.OBP_preset, async_task.amountoffluff, async_task.promptenhancer, 
+                        async_task.presetprefix, async_task.presetsuffix)
+
+            tasks, use_expansion, loras, current_progress = process_prompt(async_task, async_task.prompt, async_task.negative_prompt,
+                                                         base_model_additional_loras, async_task.image_number,
+                                                         async_task.disable_seed_increment, use_expansion, use_style,
+                                                         use_synthetic_refiner, current_progress, advance_progress=True)
+        if getattr(async_task, 'omost_canvas', None) is not None and not skip_prompt_processing and tasks:
+            print(f"\033[92m[Omost] Canvas detected! Overriding standard conditioning...\033[0m")
+            try:
+                from extentions.omost.cond_builder import all_conds_from_canvas
+                
+                clip = pipeline.final_clip
+                
+                pos_results, neg_results, pos_pooler, neg_pooler = all_conds_from_canvas(
+                    clip, async_task.omost_canvas, async_task.negative_prompt
+                )
+                
+                for t in tasks:
+                    t['c'] = []
+                    for cond, mask in pos_results:
+                        t['c'].append([cond, {
+                            "pooled_output": pos_pooler,
+                            "mask": mask,
+                            "width": width,
+                            "height": height,
+                            "crop_w": 0, "crop_h": 0,
+                            "target_width": width, "target_height": height,
+                        }])
+                    
+                    t['uc'] = []
+                    for cond, mask in neg_results:
+                        t['uc'].append([cond, {
+                            "pooled_output": neg_pooler,
+                            "mask": mask,
+                            "width": width,
+                            "height": height,
+                            "crop_w": 0, "crop_h": 0,
+                            "target_width": width, "target_height": height,
+                        }])
+                    
+                    print(f"[Omost] Task conditioned. Positive regions: {len(t['c'])}, Negative regions: {len(t['uc'])}")
+            
+            except Exception as e:  # ← 12 пробелов, на одном уровне с try
+                print(f"\033[91m[Omost] ERROR during conditioning: {e}\033[0m")
+                import traceback
+                traceback.print_exc()
+                print("\033[91m[Omost] Falling back to standard prompt conditioning.\033[0m")
+
+
+
+        if len(goals) > 0:
+            current_progress += 1
+            progressbar(async_task, current_progress, 'Image processing ...')
+        if async_task.adetailer_checkbox:
+            async_task.enhance_ctrls = adetailer.enabler(async_task.enhance_ctrls)            
+        should_enhance = async_task.enhance_checkbox and (async_task.enhance_uov_method != flags.disabled.casefold() or len(async_task.enhance_ctrls) > 0)
+
+        if 'vary' in goals:
+            async_task.uov_input_image, denoising_strength, initial_latent, width, height, current_progress = apply_vary(
+                async_task, async_task.uov_method, denoising_strength, async_task.uov_input_image, switch,
+                current_progress)
+
+        if 'upscale' in goals:
+            direct_return, async_task.uov_input_image, denoising_strength, initial_latent, tiled, width, height, current_progress = apply_upscale(
+                async_task, async_task.uov_input_image, async_task.uov_method, switch, current_progress,
+                advance_progress=True)
+            if direct_return:
+                d = [('Final Upscale', 'upscale_fast', async_task.uov_model)]
+                if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
+                    progressbar(async_task, 100, 'Checking for NSFW content ...')
+                    async_task.uov_input_image = default_censor(async_task.uov_input_image)
+                progressbar(async_task, 100, 'Saving image to system ...')
+                uov_input_image_path = log(async_task.uov_input_image, d, output_format=async_task.output_format,name_prefix=async_task.name_prefix)
+                yield_result(async_task, uov_input_image_path, 100, async_task.black_out_nsfw, False,
+                             do_not_show_finished_images=True)
+                return
+
+        if 'inpaint' in goals:
+            try:
+                denoising_strength, initial_latent, width, height, current_progress = apply_inpaint(async_task,
+                                                                                                    initial_latent,
+                                                                                                    inpaint_head_model_path,
+                                                                                                    inpaint_image,
+                                                                                                    inpaint_mask,
+                                                                                                    inpaint_parameterized,
+                                                                                                    async_task.inpaint_strength,
+                                                                                                    async_task.inpaint_respective_field,
+                                                                                                    switch,
+                                                                                                    async_task.inpaint_disable_initial_latent,
+                                                                                                    current_progress,
+                                                                                                    advance_progress=True)
+            except EarlyReturnException:
+                return
+
+        if 'cn' in goals:
+            apply_control_nets(async_task, height, ip_adapter_face_path, ip_adapter_path, width, current_progress)
+            if async_task.debugging_cn_preprocessor:
+                return
+
+        if async_task.freeu_enabled:
+            apply_freeu(async_task)
+
+        # async_task.steps can have value of uov steps here when upscale has been applied
+        steps, _, _, _ = apply_overrides(async_task, async_task.steps, height, width)
+ 
+        images_to_enhance = []
+
+        if 'enhance' in goals:
+            async_task.image_number = 1
+            images_to_enhance += [async_task.enhance_input_image]
+            height, width, _ = async_task.enhance_input_image.shape
+            # input image already provided, processing is skipped
+            steps = 0
+            yield_result(async_task, async_task.enhance_input_image, current_progress, async_task.black_out_nsfw, False,
+                         async_task.disable_intermediate_results)
+
+        all_steps = steps * async_task.image_number
+
+        if async_task.enhance_checkbox and async_task.enhance_uov_method != flags.disabled.casefold():
+            enhance_upscale_steps = async_task.performance_selection.steps()
+            if 'upscale' in async_task.enhance_uov_method:
+                if 'final' in async_task.enhance_uov_method:
+                    enhance_upscale_steps = 0
+                else:
+                    enhance_upscale_steps = async_task.performance_selection.steps_uov()
+            enhance_upscale_steps, _, _, _ = apply_overrides(async_task, enhance_upscale_steps, height, width)
+            enhance_upscale_steps_total = async_task.image_number * enhance_upscale_steps
+            all_steps += enhance_upscale_steps_total
+
+        if async_task.enhance_checkbox and len(async_task.enhance_ctrls) != 0:
+            enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
+            all_steps += async_task.image_number * len(async_task.enhance_ctrls) * enhance_steps
+
+        all_steps = max(all_steps, 1)
+
+        print(f'[Parameters] Denoising Strength = {denoising_strength}')
+
+        if isinstance(initial_latent, dict) and 'samples' in initial_latent:
+            log_shape = initial_latent['samples'].shape
+        else:
+            log_shape = f'Image Space {(height, width)}'
+
+        print(f'[Parameters] Initial Latent shape: {log_shape}')
+
+        preparation_time = time.perf_counter() - preparation_start_time
+        print(f'Preparation time: {preparation_time:.2f} seconds')
+
+        final_scheduler_name = patch_samplers(async_task)
+        print(f'Using {final_scheduler_name} scheduler.')
+
+        async_task.yields.append(['preview', (current_progress, 'Moving model to GPU ...', None)])
+
+        processing_start_time = time.perf_counter()
+
+        preparation_steps = current_progress
+        total_count = async_task.image_number
+
+        def callback(step, x0, x, total_steps, y):
+            if step == 0:
+                async_task.callback_steps = 0
+            async_task.callback_steps += (100 - preparation_steps) / float(all_steps)
+            async_task.yields.append(['preview', (
+                int(current_progress + async_task.callback_steps),
+                f'Sampling step {step + 1}/{total_steps}, image {current_task_id + 1}/{total_count} ...', y)])
+
+        show_intermediate_results = len(tasks) > 1 or async_task.should_enhance
+        
+        persist_image = not async_task.should_enhance or not async_task.save_final_enhanced_image_only
+
+        for current_task_id, task in enumerate(tasks):
+            if async_task.aspect_random==True:
+                async_task.aspect_ratios_selection = random.choice(modules.config.available_aspect_ratios_labels[:-1])
+                width, height = async_task.aspect_ratios_selection.replace('×', ' ').split(' ')[:2]
+                width, height = int(width), int(height)
+            progressbar(async_task, current_progress, f'Preparing task {current_task_id + 1}/{async_task.image_number} ...')
+            execution_start_time = time.perf_counter()
+
+            try:
+                imgs, img_paths, current_progress = process_task(all_steps, async_task, callback, controlnet_canny_path,
+                                                                 controlnet_cpds_path, controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,
+                                                                 controlnet_manga_path, current_task_id,
+                                                                 denoising_strength, final_scheduler_name, goals,
+                                                                 initial_latent, async_task.steps, switch, task['c'],
+                                                                 task['uc'], task, loras, tiled, use_expansion, width,
+                                                                 height, current_progress, preparation_steps,
+                                                                 async_task.image_number, show_intermediate_results,
+                                                                 persist_image)
+
+                current_progress = int(preparation_steps + (100 - preparation_steps) / float(all_steps) * async_task.steps * (current_task_id + 1))
+                images_to_enhance += imgs
+
+            except ldm_patched.modules.model_management.InterruptProcessingException:
+                if async_task.last_stop == 'skip':
+                    print('User skipped')
+                    async_task.last_stop = False
+                    continue
+                else:
+                    print('User stopped')
+                    break
+
+            del task['c'], task['uc']  # Save memory
+            execution_time = time.perf_counter() - execution_start_time
+            print(f'Generating and saving time: {execution_time:.2f} seconds')
+
+        if not async_task.should_enhance:
+
+            stop_processing(async_task, processing_start_time)
+            return
+        if async_task.adetailer_checkbox:
+            progressbar(async_task, current_progress, 'Processing ADetailer ...')
+        else:
+            progressbar(async_task, current_progress, 'Processing enhance ...')
+
+
+        active_enhance_tabs = len(async_task.enhance_ctrls)
+
+        should_process_enhance_uov = async_task.enhance_uov_method != flags.disabled.casefold()
+        enhance_uov_before = False
+        enhance_uov_after = False
+        if should_process_enhance_uov:
+            active_enhance_tabs += 1
+            enhance_uov_before = async_task.enhance_uov_processing_order == flags.enhancement_uov_before
+            enhance_uov_after = async_task.enhance_uov_processing_order == flags.enhancement_uov_after
+        total_count = len(images_to_enhance) * active_enhance_tabs
+        async_task.images_to_enhance_count = len(images_to_enhance)
+        base_progress = current_progress
+        current_task_id = -1
+        done_steps_upscaling = 0
+        done_steps_inpainting = 0
+        enhance_steps, _, _, _ = apply_overrides(async_task, async_task.original_steps, height, width)
+        exception_result = None
+            
+        for index, img in enumerate(images_to_enhance):
+            async_task.enhance_stats[index] = 0
+            enhancement_image_start_time = time.perf_counter()
+
+            last_enhance_prompt = async_task.prompt
+            last_enhance_negative_prompt = async_task.negative_prompt
+
+            if enhance_uov_before:
+                current_task_id += 1
+                persist_image = not async_task.save_final_enhanced_image_only or active_enhance_tabs == 0
+                current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result = enhance_upscale(
+                    all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path,
+                    controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path, controlnet_manga_path,
+                    current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, enhance_steps,
+                    async_task.prompt, async_task.negative_prompt, final_scheduler_name, height, img, preparation_steps,
+                    switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner, width, persist_image)
+                async_task.enhance_stats[index] += 1
+
+                if exception_result == 'continue':
+                    continue
+                elif exception_result == 'break':
+                    break
+            if async_task.adetailer_checkbox:
+                    from extentions.adetailer.aaaaaa.helper import disable_safe_unpickle
+                    adetailer_image_start_time = time.perf_counter()
+
+                # inpaint for all other tabs
+                    for n, arg_s in enumerate(async_task.enhance_ctrls):
+                        current_task_id += 1
+                        current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_inpainting))
+                        progressbar(async_task, current_progress, f'Preparing ADetailer {current_task_id + 1}/{total_count} ...')
+                        adetailer_task_start_time = time.perf_counter()
+                        is_last_adetailer_for_image = (current_task_id + 1) % active_enhance_tabs == 0
+                        persist_image = not async_task.save_final_adetail_image_only or is_last_adetailer_for_image  
+                        args = SimpleNamespace(**arg_s)
+
+                        def is_mediapipe_model(args):
+                            return args.ad_model.lower().removesuffix('.pt').startswith('mediapipe')
+                        is_mediapipe = is_mediapipe_model(args)
+                        if is_mediapipe:
+                            pred = adetailer.mediapipe_predict(args.ad_model.removesuffix('.pt'), img if isinstance(img, Image.Image) else Image.fromarray(img), args.ad_confidence)
+                        else:
+                            ad_model = adetailer.download_yola(args.ad_model)
+                            with disable_safe_unpickle():
+                                pred = adetailer.ultralytics_predict(
+                                    ad_model,
+                                    image=img if isinstance(img, Image.Image) else Image.fromarray(img),
+                                    confidence=args.ad_confidence,
+                                    classes=args.ad_model_classes,
+                                    device='cpu')
+
+                        masks = adetailer.pred_preprocessing(pred, args)
+                        if len(masks) == 0:
+                            print(f'[ADetailer] No detected, skipping')
+                            continue
+                        aditail_copy = (
+                            async_task.base_model_name,
+                            async_task.sampler_name,
+                            async_task.scheduler_name,
+                            async_task.inpaint_strength,
+                            async_task.inpaint_respective_field,
+                            async_task.inpaint_engine,
+                            async_task.cfg_scale,
+                            async_task.clip_skip,
+                            async_task.inpaint_disable_initial_latent 
+                            )
+                        if args.ad_use_checkpoint and args.ad_checkpoint != "Use same checkpoint":
+                            async_task.base_model_name = args.ad_checkpoint
+                        if args.ad_use_sampler:
+                            if args.ad_sampler != "Use same sampler":
+                                async_task.sampler_name = args.ad_sampler
+                            if args.ad_scheduler != "Use same scheduler":
+                                async_task.scheduler_name = args.ad_scheduler
+                        async_task.inpaint_strength  = args.ad_denoising_strength
+                        async_task.inpaint_respective_field  = args.ad_resp_field
+                        async_task.inpaint_engine  = args.ad_inpaint_engine
+                        if args.ad_use_cfg_scale :
+                            async_task.cfg_scale  = args.ad_cfg_scale
+                        async_task.inpaint_disable_initial_latent = args.ad_disable_latent
+                        if async_task.debugging_adetailer_masks_checkbox or async_task.only_detect:
+                            async_task.yields.append(['preview', (current_progress, 'Loading ...', pred.preview)])
+                            yield_result(async_task, np.array(pred.preview), current_progress, async_task.black_out_nsfw, False,
+                                         async_task.disable_intermediate_results)
+                            async_task.enhance_stats[index] += 1
+
+                        if not async_task.only_detect:                    
+                            goals_adetail = ['inpaint']
+                    
+                            adetail_prompt, adetail_negative_prompt = adetailer.prompt_cut(args.ad_prompt,args.ad_negative_prompt,len(masks))
+                            for n in range(len(masks)):
+                                prompt=adetail_prompt[n]
+                                negative=adetail_negative_prompt[n]
+                                if re.match(r"^\s*\[SKIP\]\s*$", prompt):
+                                    continue
+                                prompt = prompt.replace("[PROMPT]", async_task.prompt)
+                                negative = negative.replace("[PROMPT]", async_task.negative_prompt+' ')
+                                mask_binary = np.array(masks[n])
+                                mask_binary = (mask_binary > 0.5).astype(np.uint8) * 255
+
+                                try:
+                                    current_progress, img, aadetail_prompt_processed, adetail_negative_prompt_processed = process_enhance(
+                                        all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                                        controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                                        current_progress, current_task_id, denoising_strength, async_task.inpaint_disable_initial_latent,
+                                        async_task.inpaint_engine, async_task.inpaint_respective_field, async_task.inpaint_strength,
+                                        prompt, negative, final_scheduler_name, goals_adetail, height, np.array(img), mask_binary,
+                                        preparation_steps, enhance_steps, switch, tiled, total_count, use_expansion, use_style,
+                                        use_synthetic_refiner, width, persist_image=persist_image)
+                                    async_task.enhance_stats[index] += 1
+                                except ldm_patched.modules.model_management.InterruptProcessingException:
+                                    if async_task.last_stop == 'skip':
+                                        print('User skipped')
+                                        async_task.last_stop = False
+                                        continue
+                                    else:
+                                        print('User stopped')
+                                        exception_result = 'break'
+                                        break
+                                finally:
+                                    done_steps_inpainting += enhance_steps
+
+                        async_task.base_model_name, async_task.sampler_name, async_task.scheduler_name,async_task.inpaint_strength,async_task.inpaint_respective_field,async_task.inpaint_engine,async_task.cfg_scale,async_task.clip_skip,async_task.inpaint_disable_initial_latent = aditail_copy
+                        adetail_task_time = time.perf_counter() - adetailer_task_start_time
+                        print(f'ADetailer time: {adetail_task_time:.2f} seconds')
+                    del pred
+
+                    adetail_image_time = time.perf_counter() - adetailer_image_start_time
+                    print(f'Adetailer image time: {adetail_image_time:.2f} seconds')
+
+                    if exception_result == 'break':
+                        break
+
+            else:
+                # inpaint for all other tabs
+                for enhance_mask_dino_prompt_text, enhance_prompt, enhance_negative_prompt, enhance_mask_model, enhance_mask_cloth_category, enhance_mask_sam_model, enhance_mask_text_threshold, enhance_mask_box_threshold, enhance_mask_sam_max_detections, enhance_inpaint_disable_initial_latent, enhance_inpaint_engine, enhance_inpaint_strength, enhance_inpaint_respective_field, enhance_inpaint_erode_or_dilate, enhance_mask_invert in async_task.enhance_ctrls:
+                    current_task_id += 1
+                    current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * (done_steps_upscaling + done_steps_inpainting))
+                    progressbar(async_task, current_progress, f'Preparing enhancement {current_task_id + 1}/{total_count} ...')
+                    enhancement_task_start_time = time.perf_counter()
+                    is_last_enhance_for_image = (current_task_id + 1) % active_enhance_tabs == 0 and not enhance_uov_after
+                    persist_image = not async_task.save_final_enhanced_image_only or is_last_enhance_for_image
+
+                    extras = {}
+                    if enhance_mask_model == 'sam':
+                        print(f'[Enhance] Searching for "{enhance_mask_dino_prompt_text}"')
+                    elif enhance_mask_model == 'u2net_cloth_seg':
+                        extras['cloth_category'] = enhance_mask_cloth_category
+
+                    mask, dino_detection_count, sam_detection_count, sam_detection_on_mask_count = generate_mask_from_image(
+                        img, mask_model=enhance_mask_model, extras=extras, sam_options=SAMOptions(
+                            dino_prompt=enhance_mask_dino_prompt_text,
+                            dino_box_threshold=enhance_mask_box_threshold,
+                            dino_text_threshold=enhance_mask_text_threshold,
+                            dino_erode_or_dilate=async_task.dino_erode_or_dilate,
+                            dino_debug=async_task.debugging_dino,
+                            max_detections=enhance_mask_sam_max_detections,
+                            model_type=enhance_mask_sam_model,
+                        ))
+                    if len(mask.shape) == 3:
+                        mask = mask[:, :, 0]
+
+                    if int(enhance_inpaint_erode_or_dilate) != 0:
+                        mask = erode_or_dilate(mask, enhance_inpaint_erode_or_dilate)
+
+                    if enhance_mask_invert:
+                        mask = 255 - mask
+
+                    if async_task.debugging_enhance_masks_checkbox:
+                        async_task.yields.append(['preview', (current_progress, 'Loading ...', mask)])
+                        yield_result(async_task, mask, current_progress, async_task.black_out_nsfw, False,
+                                     async_task.disable_intermediate_results)
+                        async_task.enhance_stats[index] += 1
+
+                    print(f'[Enhance] {dino_detection_count} boxes detected')
+                    print(f'[Enhance] {sam_detection_count} segments detected in boxes')
+                    print(f'[Enhance] {sam_detection_on_mask_count} segments applied to mask')
+
+                    if enhance_mask_model == 'sam' and (dino_detection_count == 0 or not async_task.debugging_dino and sam_detection_on_mask_count == 0):
+                        print(f'[Enhance] No "{enhance_mask_dino_prompt_text}" detected, skipping')
                         continue
 
-                percentage, title, image = product
-                yield gr.update(visible=True, value=modules.html.make_progress_html(percentage, title)), \
-                    gr.update(visible=True, value=image) if image is not None else gr.update(), \
-                    gr.update(), \
-                    gr.update(visible=False)
-            if flag == 'results':
-                yield gr.update(visible=True), \
-                    gr.update(visible=True), \
-                    gr.update(visible=True, value=product), \
-                    gr.update(visible=False)
-            if flag == 'finish':
-                if not args_manager.args.disable_enhance_output_sorting:
-                    product = sort_enhance_images(product, task)
-
-                yield gr.update(visible=False), \
-                    gr.update(visible=False), \
-                    gr.update(visible=False), \
-                    gr.update(visible=True, value=product)
-                finished = True
-
-                # delete Fooocus temp images, only keep gradio temp images
-                if args_manager.args.disable_image_log:
-                    for filepath in product:
-                        if isinstance(filepath, str) and os.path.exists(filepath):
-                            os.remove(filepath)
-
-    execution_time = time.perf_counter() - execution_start_time
-    print(f'Total time: {execution_time:.2f} seconds')
-    return
-
-
-def sort_enhance_images(images, task):
-    if not task.should_enhance or len(images) <= task.images_to_enhance_count:
-        return images
-
-    sorted_images = []
-    walk_index = task.images_to_enhance_count
-
-    for index, enhanced_img in enumerate(images[:task.images_to_enhance_count]):
-        sorted_images.append(enhanced_img)
-        if index not in task.enhance_stats:
-            continue
-        target_index = walk_index + task.enhance_stats[index]
-        if walk_index < len(images) and target_index <= len(images):
-            sorted_images += images[walk_index:target_index]
-        walk_index += task.enhance_stats[index]
-
-    return sorted_images
-
-
-def inpaint_mode_change(mode, inpaint_engine_version):
-    assert mode in modules.flags.inpaint_options
-
-    # inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
-    # inpaint_disable_initial_latent, inpaint_engine,
-    # inpaint_strength, inpaint_respective_field
-
-    if mode == modules.flags.inpaint_option_detail:
-        return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False),
-            gr.Dataset.update(visible=True, samples=modules.config.example_inpaint_prompts),
-            False, 'None', 0.5, 0.0
-        ]
-
-    if inpaint_engine_version == 'empty':
-        inpaint_engine_version = modules.config.default_inpaint_engine_version
-
-    if mode == modules.flags.inpaint_option_modify:
-        return [
-            gr.update(visible=True), gr.update(visible=False, value=[]),gr.update(visible=False),gr.update(visible=False),
-            gr.Dataset.update(visible=False, samples=modules.config.example_inpaint_prompts),
-            True, inpaint_engine_version, 1.0, 0.0
-        ]
-
-    return [
-        gr.update(visible=False, value=''), gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),
-        gr.Dataset.update(visible=False, samples=modules.config.example_inpaint_prompts),
-        False, inpaint_engine_version, 1.0, 0.618
-    ]
-
-
-reload_javascript()
-
-title = f'Fooocus {fooocus_version.version}'
-
-
-
-if isinstance(args_manager.args.preset, str):
-    title += ' ' + args_manager.args.preset
-
-shared.gradio_root = gr.Blocks(title=title).queue()
-
-with shared.gradio_root:
-    state_topbar = gr.State({})
-    currentTask = gr.State(worker.AsyncTask(args=[]))
-    inpaint_engine_state = gr.State('empty')
-    text_mask_file=gr.Textbox(value='extentions/text_mask.html',visible=False)
-    svgcode_file=gr.Textbox(value="extentions/vector/svgcode/index.html",visible=False)
-    url_display = gr.Textbox(visible=False)
-
-    shared.gradio_root.load(
-       None,[],url_display,
-       _js="() => { const url = new URL(window.location.href); return url.origin; }"       )
-    with gr.Row():
-        with gr.Column(scale=2):
-            with gr.Row():
-                progress_window = grh.Image(label='Preview', show_label=False, visible=True, height=768,
-                                            elem_classes=['main_view'],value=f'css/logo{random.randint(1,5)}.png')
-                progress_gallery = gr.Gallery(label='Finished Images', show_label=True, object_fit='contain',
-                                              height=768, visible=False, elem_classes=['main_view', 'image_gallery'])
-            progress_html = gr.HTML(value=modules.html.make_progress_html(32, 'Progress 32%'), visible=False,
-                                    elem_id='progress-bar', elem_classes='progress-bar')
-            gallery = gr.Gallery(label='Gallery', show_label=False, object_fit='contain', visible=False, height=768,
-                                 elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                                 elem_id='final_gallery')
-            with gr.Row():
-                with gr.Column(scale=17):
-                    with gr.Row():
-                        prompt = gr.Textbox(show_label=False, placeholder="Type prompt here or paste parameters.", elem_id='positive_prompt',
-                                        autofocus=True, lines=3
-                                        )
-                    with gr.Row():
-                        new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
-                                        autofocus=False, lines=3, visible=modules.flags.negative_prompt_main,
-                                        value=modules.config.default_prompt_negative
-                                        )
-    
-
-                    default_prompt = modules.config.default_prompt
-                    if isinstance(default_prompt, str) and default_prompt != '':
-                        shared.gradio_root.load(lambda: default_prompt, outputs=prompt)
-
-                with gr.Column(scale=3, min_width=0):
-                    generate_button = gr.Button(label="Generate", value="Generate", elem_classes='type_row', elem_id='generate_button', visible=True)
-                    reset_button = gr.Button(label="Reconnect", value="Reconnect", elem_classes='type_row', elem_id='reset_button', visible=False)
-                    load_parameter_button = gr.Button(label="Load Parameters", value="Load Parameters", elem_classes='type_row', elem_id='load_parameter_button', visible=False)
-                    skip_button = gr.Button(label="Skip", value="Skip", elem_classes='type_row_half', elem_id='skip_button', visible=False)
-                    stop_button = gr.Button(label="Stop", value="Stop", elem_classes='type_row_half', elem_id='stop_button', visible=False)
-
-                    def stop_clicked(currentTask):
-                        import ldm_patched.modules.model_management as model_management
-                        currentTask.last_stop = 'stop'
-                        global finished_batch
-                        finished_batch=True
-                        if (currentTask.processing):
-                            model_management.interrupt_current_processing()
-                        return currentTask
-
-                    def skip_clicked(currentTask):
-                        import ldm_patched.modules.model_management as model_management
-                        currentTask.last_stop = 'skip'
-                        if (currentTask.processing):
-                            model_management.interrupt_current_processing()
-                        return currentTask
-
-                    stop_button.click(stop_clicked, inputs=currentTask, outputs=currentTask, queue=False, show_progress=False, _js='cancelGenerateForever')
-                    skip_button.click(skip_clicked, inputs=currentTask, outputs=currentTask, queue=False, show_progress=False)
-            with gr.Accordion(label='Wildcards', visible=True, open=False) as prompt_wildcards:
-                wildcards_list = gr.Dataset(components=[prompt], label='Wildcards:', samples=wildcards.get_wildcards_samples(), visible=True, samples_per_page=14)
-                with gr.Accordion(label='Words/phrases of wildcard', visible=True, open=False) as words_in_wildcard:
-                    wildcard_tag_name_selection = gr.Dataset(components=[prompt], label='Words/phrases:', samples=wildcards.get_words_of_wildcard_samples(), visible=True, samples_per_page=30, type='index')
-                wildcards_list.click(wildcards.add_wildcards_and_array_to_prompt, inputs=[wildcards_list, prompt, state_topbar], outputs=[prompt, wildcard_tag_name_selection, words_in_wildcard], show_progress=False, queue=False)
-                wildcard_tag_name_selection.click(wildcards.add_word_to_prompt, inputs=[wildcards_list, wildcard_tag_name_selection, prompt], outputs=prompt, show_progress=False, queue=False)
-                wildcards_array = [prompt_wildcards, words_in_wildcard, wildcards_list, wildcard_tag_name_selection]
-                wildcards_array_show =lambda x: [gr.update(visible=True)] * 2 + [gr.Dataset.update(visible=True, samples=wildcards.get_wildcards_samples()), gr.Dataset.update(visible=True, samples=wildcards.get_words_of_wildcard_samples(x["wildcard_in_wildcards"]))]
-                wildcards_array_hidden = [gr.update(visible=False)] * 2 + [gr.Dataset.update(visible=False, samples=wildcards.get_wildcards_samples()), gr.Dataset.update(visible=False, samples=wildcards.get_words_of_wildcard_samples())]
-                gr.HTML('* \"Wildcards\" is powered by SimpleSDXL. <a href="https://github.com/metercai/SimpleSDXL" target="_blank">\U0001F4D4 Document</a>')
-
-            with gr.Row(elem_classes='advanced_check_row'):
-                input_image_checkbox = gr.Checkbox(label='Input Image', value=modules.config.default_image_prompt_checkbox, container=False, elem_classes='min_check')
-                enhance_checkbox = gr.Checkbox(label='Enhance', value=modules.config.default_enhance_checkbox, container=False, elem_classes='min_check')
-                adetailer_checkbox = gr.Checkbox(label='Adetailer', value=modules.config.default_adetailer_checkbox, container=False, elem_classes='min_check')
-            with gr.Row(elem_classes='advanced_check_row'):
-                advanced_checkbox = gr.Checkbox(label='Advanced', value=modules.config.default_advanced_checkbox, container=False, elem_classes='min_check')
-            with gr.Row(visible=modules.config.default_image_prompt_checkbox) as image_input_panel:
-                with gr.Tabs(selected=modules.config.default_selected_image_input_tab_id):
-                    with gr.Tab(label='Upscale or Variation', id='uov_tab') as uov_tab:
-                        with gr.Row():
-                            with gr.Column():
-                                uov_input_image = grh.Image(label='Image', source='upload', type='numpy', show_label=False)
-                            with gr.Column():
-                                with gr.Row():
-                                    uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list, value=modules.config.default_uov_method)
-                                with gr.Row():
-                                    uov_model = gr.Dropdown(choices=modules.config.upscaler_filenames, value=modules.config.upscaler_filenames[0], label='Model')
-                                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/390" target="_blank">\U0001F4D4 Documentation</a>')
-                    with gr.Tab(label='Image Prompt', id='ip_tab') as ip_tab:
-                        with gr.Row():
-                            ip_images = []
-                            ip_types = []
-                            ip_stops = []
-                            ip_weights = []
-                            ip_ctrls = []
-                            ip_ad_cols = []
-                            for image_count in range(modules.config.default_controlnet_image_count):
-                                image_count += 1
-                                with gr.Column():
-                                    ip_image = grh.Image(label='Image', source='upload', type='numpy', show_label=False, height=300, value=modules.config.default_ip_images[image_count])
-                                    ip_images.append(ip_image)
-                                    ip_ctrls.append(ip_image)
-                                    with gr.Column(visible=modules.config.default_image_prompt_advanced_checkbox) as ad_col:
-                                        with gr.Row():
-                                            ip_stop = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=modules.config.default_ip_stop_ats[image_count])
-                                            ip_stops.append(ip_stop)
-                                            ip_ctrls.append(ip_stop)
-
-                                            ip_weight = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=modules.config.default_ip_weights[image_count])
-                                            ip_weights.append(ip_weight)
-                                            ip_ctrls.append(ip_weight)
-
-                                        ip_type = gr.Radio(label='Type', choices=flags.ip_list, value=modules.config.default_ip_types[image_count], container=False)
-                                        ip_types.append(ip_type)
-                                        ip_ctrls.append(ip_type)
-
-                                        ip_type.change(lambda x: flags.default_parameters[x], inputs=[ip_type], outputs=[ip_stop, ip_weight], queue=False, show_progress=False)
-                                    ip_ad_cols.append(ad_col)
-                        ip_advanced = gr.Checkbox(label='Advanced', value=modules.config.default_image_prompt_advanced_checkbox, container=False)
-                        gr.HTML('* \"Image Prompt\" is powered by Fooocus Image Mixture Engine (v1.0.1). <a href="https://github.com/lllyasviel/Fooocus/discussions/557" target="_blank">\U0001F4D4 Documentation</a>')
-
-                        def ip_advance_checked(x):
-                            return [gr.update(visible=x)] * len(ip_ad_cols) + \
-                                [flags.default_ip] * len(ip_types) + \
-                                [flags.default_parameters[flags.default_ip][0]] * len(ip_stops) + \
-                                [flags.default_parameters[flags.default_ip][1]] * len(ip_weights)
-
-                        ip_advanced.change(ip_advance_checked, inputs=ip_advanced,
-                                           outputs=ip_ad_cols + ip_types + ip_stops + ip_weights,
-                                           queue=False, show_progress=False)
-
-                    with gr.Tab(label='Inpaint or Outpaint', id='inpaint_tab') as inpaint_tab:
-                        with gr.Row():
-                            with gr.Column():
-                                inpaint_input_image = grh.Image(label='Image', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas', show_label=False)
-                                                              
-                                inpaint_advanced_masking_checkbox = gr.Checkbox(label='Enable Advanced Masking Features', value=modules.config.default_inpaint_advanced_masking_checkbox)
-                                inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.config.default_inpaint_method, label='Method')
-                                inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
-                                outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom', 'Resolution'], value=[], label='Outpaint Direction')
-                                with gr.Row(visible=False) as outpaint_res:
-
-                                    with gr.Column():
-                                        outpaint_width = gr.Slider(label="outpaint width", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
-                                        outpaint_width_min = gr.Textbox(value='', visible=False)
-                                        outpaint_heighth = gr.Slider(label="outpaint height", minimum=0, maximum=2048, step=2, value=1024, interactive=True, visible=True)
-                                        outpaint_heighth_min = gr.Textbox(value='', visible=False)
-                                    with gr.Column():
-                                        outpaint_shift_width = gr.Slider(label="outpaint shift width", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
-                                        outpaint_shift_heighth = gr.Slider(label="outpaint shift height", minimum=0, maximum=0, step=1, value=0, interactive=True, visible=True, scale=4)
-                                example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
-                                                                     label='Additional Prompt Quick List',
-                                                                     components=[inpaint_additional_prompt],
-                                                                     visible=False)
-                                def outpaint_resolution_value(image):
-                                    image = image.get('image')
-                                    height, width = image.shape[:2]
-                                    return gr.update(minimum=width, value=width), gr.update(minimum=height, value=height),gr.update(value=width), gr.update(value=height),gr.update(maximum=0, value=0),gr.update(maximum=0, value=0)
-                                def outpaint_shifting_width(resolution,resolution_min):
-                                    shift_max=resolution-int(resolution_min)
-                                    shift_center=int(shift_max/2)
-                                    return gr.update(maximum=shift_max,value=shift_center)
-                                def outpaint_resolution_selector(value):
-                                    if 'Resolution' in value:
-                                        return gr.update(visible=True)
-                                    return gr.update(visible=False)
-
-                                outpaint_width.release(outpaint_shifting_width, inputs=[outpaint_width,outpaint_width_min],outputs=outpaint_shift_width,show_progress=False)
-                                outpaint_heighth.release(outpaint_shifting_width, inputs=[outpaint_heighth,outpaint_heighth_min],outputs=outpaint_shift_heighth,show_progress=False)
-                                inpaint_input_image.upload(fn=outpaint_resolution_value,inputs=inpaint_input_image,outputs=[outpaint_width,outpaint_heighth,outpaint_width_min,outpaint_heighth_min,outpaint_shift_heighth, outpaint_shift_width],show_progress=True, queue=False)    
-                                outpaint_selections.change(fn=outpaint_resolution_selector,inputs=outpaint_selections,outputs=outpaint_res,show_progress=False, queue=False)
-                                gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Documentation</a>')
-                                example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
-
-                            with gr.Column(visible=modules.config.default_inpaint_advanced_masking_checkbox) as inpaint_mask_generation_col:
-                                inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", mask_opacity=1, elem_id='inpaint_mask_canvas')
-                                invert_mask_checkbox = gr.Checkbox(label='Invert Mask When Generating', value=modules.config.default_invert_mask_checkbox)
-                                inpaint_mask_model = gr.Dropdown(label='Mask generation model',
-                                                                 choices=flags.inpaint_mask_models,
-                                                                 value=modules.config.default_inpaint_mask_model)
-                                inpaint_mask_cloth_category = gr.Dropdown(label='Cloth category',
-                                                             choices=flags.inpaint_mask_cloth_category,
-                                                             value=modules.config.default_inpaint_mask_cloth_category,
-                                                             visible=False)
-                                inpaint_mask_dino_prompt_text = gr.Textbox(label='Detection prompt', value='', visible=False, info='Use singular whenever possible', placeholder='Describe what you want to detect.')
-                                example_inpaint_mask_dino_prompt_text = gr.Dataset(
-                                    samples=modules.config.example_enhance_detection_prompts,
-                                    label='Detection Prompt Quick List',
-                                    components=[inpaint_mask_dino_prompt_text],
-                                    visible=modules.config.default_inpaint_mask_model == 'sam')
-                                example_inpaint_mask_dino_prompt_text.click(lambda x: x[0],
-                                                                            inputs=example_inpaint_mask_dino_prompt_text,
-                                                                            outputs=inpaint_mask_dino_prompt_text,
-                                                                            show_progress=False, queue=False)
-
-                                with gr.Accordion("Advanced options", visible=False, open=False) as inpaint_mask_advanced_options:
-                                    inpaint_mask_sam_model = gr.Dropdown(label='SAM model', choices=flags.inpaint_mask_sam_model, value=modules.config.default_inpaint_mask_sam_model)
-                                    inpaint_mask_box_threshold = gr.Slider(label="Box Threshold", minimum=0.0, maximum=1.0, value=0.3, step=0.05)
-                                    inpaint_mask_text_threshold = gr.Slider(label="Text Threshold", minimum=0.0, maximum=1.0, value=0.25, step=0.05)
-                                    inpaint_mask_sam_max_detections = gr.Slider(label="Maximum number of detections", info="Set to 0 to detect all", minimum=0, maximum=10, value=modules.config.default_sam_max_detections, step=1, interactive=True)
-                                generate_mask_button = gr.Button(value='Generate mask from image')
-
-                                def generate_mask(image, mask_model, cloth_category, dino_prompt_text, sam_model, box_threshold, text_threshold, sam_max_detections, dino_erode_or_dilate, dino_debug):
-                                    from extras.inpaint_mask import generate_mask_from_image
-
-                                    extras = {}
-                                    sam_options = None
-                                    if mask_model == 'u2net_cloth_seg':
-                                        extras['cloth_category'] = cloth_category
-                                    elif mask_model == 'sam':
-                                        sam_options = SAMOptions(
-                                            dino_prompt=dino_prompt_text,
-                                            dino_box_threshold=box_threshold,
-                                            dino_text_threshold=text_threshold,
-                                            dino_erode_or_dilate=dino_erode_or_dilate,
-                                            dino_debug=dino_debug,
-                                            max_detections=sam_max_detections,
-                                            model_type=sam_model
-                                        )
-
-                                    mask, _, _, _ = generate_mask_from_image(image, mask_model, extras, sam_options)
-                                    if mask is None:
-                                        return None
-
-                                    m = np.asarray(mask)
-                                    if m.ndim == 3:
-                                        m = m[:, :, 0]
-                                    if m.dtype == bool:
-                                        m = (m.astype(np.uint8) * 255)
-                                    elif m.dtype != np.uint8:
-                                        m = m.astype(np.float32)
-                                        if m.size > 0 and m.max() <= 1.0:
-                                            m = m * 255.0
-                                        m = np.clip(m, 0, 255).astype(np.uint8)
-
-                                    mask_rgba = np.dstack([m, m, m, m])
-                                    mask_rgba = np.ascontiguousarray(mask_rgba)
-                                    if isinstance(image, dict):
-                                        base_image = image.get('image')
-                                    else:
-                                        base_image = image
-                                    if base_image is None:
-                                        return None
-                                    return {
-                                        "image": np.ascontiguousarray(image["image"]),
-                                        "mask": np.ascontiguousarray(mask_rgba),
-                                    }
-
-
-                                inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
-                                                                    [gr.update(visible=x == 'sam')] * 2 +
-                                                                    [gr.Dataset.update(visible=x == 'sam',
-                                                                                       samples=modules.config.example_enhance_detection_prompts)],
-                                                          inputs=inpaint_mask_model,
-                                                          outputs=[inpaint_mask_cloth_category,
-                                                                   inpaint_mask_dino_prompt_text,
-                                                                   inpaint_mask_advanced_options,
-                                                                   example_inpaint_mask_dino_prompt_text],
-                                                          queue=False, show_progress=False)
-                            
-                    with gr.Tab(label='Describe', id='describe_tab') as describe_tab:
-                        with gr.Row():
-                            with gr.Column():
-                                describe_input_image = grh.Image(label='Image', source='upload', type='numpy', show_label=False)
-                            with gr.Column():
-                                describe_methods = gr.CheckboxGroup(
-                                    label='Content Type',
-                                    choices=flags.describe_types,
-                                    value=modules.config.default_describe_content_type)
-                                describe_apply_styles = gr.Checkbox(label='Apply Styles', value=modules.config.default_describe_apply_prompts_checkbox)
-                                describe_btn = gr.Button(value='Describe this Image into Prompt')
-                                describe_image_size = gr.Textbox(label='Image Size and Recommended Size', elem_id='describe_image_size', visible=False)
-                                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/1363" target="_blank">\U0001F4D4 Documentation</a>')
-
-                                def trigger_show_image_properties(image):
-                                    value = modules.util.get_image_size_info(image, modules.flags.sdxl_aspect_ratios[:-2])
-                                    return gr.update(value=value, visible=True)
-
-                                describe_input_image.upload(trigger_show_image_properties, inputs=describe_input_image,
-                                                            outputs=describe_image_size, show_progress=False, queue=False)
-
-                    with gr.Tab(label='Enhance', id='enhance_tab') as enhance_tab:
-                        with gr.Row():
-                            with gr.Column():
-                                enhance_input_image = grh.Image(label='Use with Enhance, skips image generation', source='upload', type='numpy')
-                                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/3281" target="_blank">\U0001F4D4 Documentation</a>')
-
-
-
-
-                    with gr.Tab(label='ADetailer', id='adetail_tab') as adetail_tab:
-                        with gr.Row():
-                            with gr.Column():
-                                adetail_input_image = gr.Image(label='Use with Adetailer, skips image generation', source='upload', type='numpy',image_mode='RGB')
-
-                    with gr.Tab(label='Metadata', id='metadata_tab') as metadata_tab:
-                        with gr.Column():
-                            metadata_input_image = grh.Image(label='For images created by Fooocus', source='upload', type='pil')
-                            metadata_json = gr.JSON(label='Metadata')
-                            metadata_import_button = gr.Button(value='Apply Metadata')
-
-                        def trigger_metadata_preview(file):
-                            parameters, metadata_scheme = modules.meta_parser.read_info_from_image(file)
-
-                            results = {}
-                            if parameters is not None:
-                                results['parameters'] = parameters
-
-                            if isinstance(metadata_scheme, flags.MetadataScheme):
-                                results['metadata_scheme'] = metadata_scheme.value
-
-                            return results
-
-                        metadata_input_image.upload(trigger_metadata_preview, inputs=metadata_input_image,
-                                                    outputs=metadata_json, queue=False, show_progress=True)
-
-                    
-
-
-
-
-            with gr.Row(visible=modules.config.default_enhance_checkbox) as enhance_input_panel:
-                with gr.Tabs():
-                    with gr.Tab(label='Upscale or Variation'):
-                        with gr.Row():
-                            with gr.Column():
-                                enhance_uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list,
-                                                              value=modules.config.default_enhance_uov_method,interactive=True)
-                                enhance_uov_processing_order = gr.Radio(label='Order of Processing',
-                                                                        info='Use before to enhance small details and after to enhance large areas.',
-                                                                        choices=flags.enhancement_uov_processing_order,
-                                                                        value=modules.config.default_enhance_uov_processing_order)
-                                enhance_uov_prompt_type = gr.Radio(label='Prompt',
-                                                                   info='Choose which prompt to use for Upscale or Variation.',
-                                                                   choices=flags.enhancement_uov_prompt_types,
-                                                                   value=modules.config.default_enhance_uov_prompt_type,
-                                                                   visible=modules.config.default_enhance_uov_processing_order == flags.enhancement_uov_after,
-                                                                   interactive=True)
-
-                                enhance_uov_processing_order.change(lambda x: gr.update(visible=x == flags.enhancement_uov_after),
-                                                                    inputs=enhance_uov_processing_order,
-                                                                    outputs=enhance_uov_prompt_type,
-                                                                    queue=False, show_progress=False)
-                                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/3281" target="_blank">\U0001F4D4 Documentation</a>')
-                    enhance_ctrls = []
-                    enhance_inpaint_mode_ctrls = []
-                    enhance_inpaint_engine_ctrls = []
-                    enhance_inpaint_update_ctrls = []
-                    for index in range(modules.config.default_enhance_tabs):
-                        with gr.Tab(label=f'#{index + 1}') as enhance_tab_item:
-                            enhance_enabled = gr.Checkbox(label='Enable', value=False, elem_classes='min_check',
-                                                          container=False)
-
-                            enhance_mask_dino_prompt_text = gr.Textbox(label='Detection prompt',
-                                                                       info='Use singular whenever possible',
-                                                                       placeholder='Describe what you want to detect.',
-                                                                       interactive=True,
-                                                                       visible=modules.config.default_enhance_inpaint_mask_model == 'sam')
-                            example_enhance_mask_dino_prompt_text = gr.Dataset(
-                                samples=modules.config.example_enhance_detection_prompts,
-                                label='Detection Prompt Quick List',
-                                components=[enhance_mask_dino_prompt_text],
-                                visible=modules.config.default_enhance_inpaint_mask_model == 'sam')
-                            example_enhance_mask_dino_prompt_text.click(lambda x: x[0],
-                                                                        inputs=example_enhance_mask_dino_prompt_text,
-                                                                        outputs=enhance_mask_dino_prompt_text,
-                                                                        show_progress=False, queue=False)
-
-                            enhance_prompt = gr.Textbox(label="Enhancement positive prompt",
-                                                        placeholder="Uses original prompt instead if empty.",
-                                                        elem_id='enhance_prompt')
-                            enhance_negative_prompt = gr.Textbox(label="Enhancement negative prompt",
-                                                                 placeholder="Uses original negative prompt instead if empty.",
-                                                                 elem_id='enhance_negative_prompt')
-
-                            with gr.Accordion("Detection", open=False):
-                                enhance_mask_model = gr.Dropdown(label='Mask generation model',
-                                                                 choices=flags.inpaint_mask_models,
-                                                                 value=modules.config.default_enhance_inpaint_mask_model)
-                                enhance_mask_cloth_category = gr.Dropdown(label='Cloth category',
-                                                                          choices=flags.inpaint_mask_cloth_category,
-                                                                          value=modules.config.default_inpaint_mask_cloth_category,
-                                                                          visible=modules.config.default_enhance_inpaint_mask_model == 'u2net_cloth_seg',
-                                                                          interactive=True)
-
-                                with gr.Accordion("SAM Options",
-                                                  visible=modules.config.default_enhance_inpaint_mask_model == 'sam',
-                                                  open=False) as sam_options:
-                                    enhance_mask_sam_model = gr.Dropdown(label='SAM model',
-                                                                         choices=flags.inpaint_mask_sam_model,
-                                                                         value=modules.config.default_inpaint_mask_sam_model,
-                                                                         interactive=True)
-                                    enhance_mask_box_threshold = gr.Slider(label="Box Threshold", minimum=0.0,
-                                                                           maximum=1.0, value=0.3, step=0.05,
-                                                                           interactive=True)
-                                    enhance_mask_text_threshold = gr.Slider(label="Text Threshold", minimum=0.0,
-                                                                            maximum=1.0, value=0.25, step=0.05,
-                                                                            interactive=True)
-                                    enhance_mask_sam_max_detections = gr.Slider(label="Maximum number of detections",
-                                                                                info="Set to 0 to detect all",
-                                                                                minimum=0, maximum=10,
-                                                                                value=modules.config.default_sam_max_detections,
-                                                                                step=1, interactive=True)
-
-                            with gr.Accordion("Inpaint", visible=True, open=False):
-                                enhance_inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options,
-                                                                   value=modules.config.default_inpaint_method,
-                                                                   label='Method', interactive=True)
-                                enhance_inpaint_disable_initial_latent = gr.Checkbox(
-                                    label='Disable initial latent in inpaint', value=False)
-                                enhance_inpaint_engine = gr.Dropdown(label='Inpaint Engine',
-                                                                     value=modules.config.default_inpaint_engine_version,
-                                                                     choices=flags.inpaint_engine_versions,
-                                                                     info='Version of Fooocus inpaint model. If set, use performance Quality or Speed (no performance LoRAs) for best results.')
-                                enhance_inpaint_strength = gr.Slider(label='Inpaint Denoising Strength',
-                                                                     minimum=0.0, maximum=1.0, step=0.001,
-                                                                     value=1.0,
-                                                                     info='Same as the denoising strength in A1111 inpaint. '
-                                                                          'Only used in inpaint, not used in outpaint. '
-                                                                          '(Outpaint always use 1.0)')
-                                enhance_inpaint_respective_field = gr.Slider(label='Inpaint Respective Field',
-                                                                             minimum=0.0, maximum=1.0, step=0.001,
-                                                                             value=0.618,
-                                                                             info='The area to inpaint. '
-                                                                                  'Value 0 is same as "Only Masked" in A1111. '
-                                                                                  'Value 1 is same as "Whole Image" in A1111. '
-                                                                                  'Only used in inpaint, not used in outpaint. '
-                                                                                  '(Outpaint always use 1.0)')
-                                enhance_inpaint_erode_or_dilate = gr.Slider(label='Mask Erode or Dilate',
-                                                                            minimum=-64, maximum=64, step=1, value=0,
-                                                                            info='Positive value will make white area in the mask larger, '
-                                                                                 'negative value will make white area smaller. '
-                                                                                 '(default is 0, always processed before any mask invert)')
-                                enhance_mask_invert = gr.Checkbox(label='Invert Mask', value=False)
-
-                            gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/3281" target="_blank">\U0001F4D4 Documentation</a>')
-
-                        enhance_ctrls += [
-                            enhance_enabled,
-                            enhance_mask_dino_prompt_text,
-                            enhance_prompt,
-                            enhance_negative_prompt,
-                            enhance_mask_model,
-                            enhance_mask_cloth_category,
-                            enhance_mask_sam_model,
-                            enhance_mask_text_threshold,
-                            enhance_mask_box_threshold,
-                            enhance_mask_sam_max_detections,
-                            enhance_inpaint_disable_initial_latent,
-                            enhance_inpaint_engine,
-                            enhance_inpaint_strength,
-                            enhance_inpaint_respective_field,
-                            enhance_inpaint_erode_or_dilate,
-                            enhance_mask_invert
-                        ]
-
-                        enhance_inpaint_mode_ctrls += [enhance_inpaint_mode]
-                        enhance_inpaint_engine_ctrls += [enhance_inpaint_engine]
-
-                        enhance_inpaint_update_ctrls += [[
-                            enhance_inpaint_mode, enhance_inpaint_disable_initial_latent, enhance_inpaint_engine,
-                            enhance_inpaint_strength, enhance_inpaint_respective_field
-                        ]]
-
-                        enhance_inpaint_mode.change(inpaint_mode_change, inputs=[enhance_inpaint_mode, inpaint_engine_state], outputs=[
-                            inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
-                            enhance_inpaint_disable_initial_latent, enhance_inpaint_engine,
-                            enhance_inpaint_strength, enhance_inpaint_respective_field
-                        ], show_progress=False, queue=False)
-
-                        enhance_mask_model.change(
-                            lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
-                                      [gr.update(visible=x == 'sam')] * 2 +
-                                      [gr.Dataset.update(visible=x == 'sam',
-                                                         samples=modules.config.example_enhance_detection_prompts)],
-                            inputs=enhance_mask_model,
-                            outputs=[enhance_mask_cloth_category, enhance_mask_dino_prompt_text, sam_options,
-                                     example_enhance_mask_dino_prompt_text],
-                            queue=False, show_progress=False)
-            with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
-                with gr.Tabs():
-                    adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
-            switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
-            down_js = "() => {viewer_to_bottom();}"
-
-            input_image_checkbox.change(lambda x: gr.update(visible=x), inputs=input_image_checkbox,
-                                        outputs=image_input_panel, queue=False, show_progress=False, _js=switch_js)
-
-            ip_advanced.change(lambda: None, queue=False, show_progress=False, _js=down_js)
-            current_tab = gr.Textbox(value='uov', visible=False)
-            uov_tab.select(lambda: 'uov', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            inpaint_tab.select(lambda: 'inpaint', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            adetail_tab.select(lambda: 'adetail', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            ip_tab.select(lambda: 'ip', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            describe_tab.select(lambda: 'desc', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            with gr.Row(elem_classes='extend_row'):
-              with gr.Accordion('Extention', open=False):
-                with gr.Accordion('in generation', open=False,elem_classes="nested-accordion") as gen_acc:
-
-                        with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
-                            toggle_btn = gr.Button(value="ENG / RUS")
-                            def toggle_html(current_html):
-                                # Определяем, какой файл сейчас загружен (можно по наличию русских букв или просто переключать)
-                                en_path = Path(__file__).parent / "dlora.html"
-                                ru_path = Path(__file__).parent / "dlora_rus.html"
-        
-                                # Простая эвристика: если в HTML есть слово "Dynamic" - значит английский
-                                if "lang=EN" in current_html and "lang=RU" not in current_html:
-                                # Переключаем на русский
-                                    return ru_path.read_text(encoding="utf-8")
-                                else:
-                                # Переключаем на английский
-                                    return en_path.read_text(encoding="utf-8")
-                                # Загружаем начальную версию
-                            en_path = Path(__file__).parent / "dlora.html"
-                            initial_html = en_path.read_text(encoding="utf-8")
-    
-                            html_display = gr.HTML(value=initial_html)
-                            
-                            toggle_btn.click(
-                                fn=toggle_html,
-                                inputs=html_display,
-                                outputs=[html_display]
-                                )
-
-
-
-                        with gr.TabItem(label='OneButtonPrompt') as obp_tab:
-                            (enable_obp,prompt1,prompt2,prompt3,prompt4,prompt5,
-                                prompt1toprompt,prompt2toprompt,prompt3toprompt,prompt4toprompt,prompt5toprompt,
-                                insanitylevel,subject, artist, imagetype, prefixprompt,
-                                suffixprompt, promptcompounderlevel, ANDtoggle, silentmode, 
-                                antistring, seperator, givensubject, smartsubject, 
-                                giventypeofimage, imagemodechance, chosengender, chosensubjectsubtypeobject, 
-                                chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept, 
-                                promptvariantinsanitylevel, givenoutfit, autonegativeprompt, 
-                                autonegativepromptstrength, autonegativepromptenhance, base_model_obp, 
-                                OBP_preset, amountoffluff, promptenhancer, 
-                                presetprefix, presetsuffix,iteration_number,rnd_iteration)=ob_prompt.ui()
-                            prompt1toprompt.click(ob_prompt.prompt2prompt, inputs=prompt1, outputs=prompt)
-                            prompt2toprompt.click(ob_prompt.prompt2prompt, inputs=prompt2, outputs=prompt)
-                            prompt3toprompt.click(ob_prompt.prompt2prompt, inputs=prompt3, outputs=prompt)
-                            prompt4toprompt.click(ob_prompt.prompt2prompt, inputs=prompt4, outputs=prompt)
-                            prompt5toprompt.click(ob_prompt.prompt2prompt, inputs=prompt5, outputs=prompt)
-
-                            
-                        with gr.TabItem(label='Prompt Translate') as promp_tr_tab:
-                            langs_sup = GoogleTranslator().get_supported_languages(as_dict=True)
-                            langs_sup = list(langs_sup.values())
-
-                            def change_lang(src, dest):
-                                if src != 'auto' and src != dest:
-                                    return [src, dest]
-                                return ['en','auto']
-                        
-                            def show_viewtrans(checkbox):
-                                return {viewstrans: gr.update(visible=checkbox)} 
-                                       
-                            with gr.Row():
-                                translate_enabled = gr.Checkbox(label='Enabled', value=False, elem_id='translate_enabled_el')
-                                tutorial("module_translate.md")
-                            with gr.Row():
-                                gtrans = gr.Button(value="Translate")        
-
-                                srcTrans = gr.Dropdown(['auto']+langs_sup, value='auto', label='From', interactive=True)
-                                toTrans = gr.Dropdown(langs_sup, value='en', label='To', interactive=True)
-                                change_src_to = gr.Button(value="🔃")
-                            
-                            with gr.Row():
-                                adv_trans = gr.Checkbox(label='See translated prompts after click Generate', value=False)          
-                            
-                            with gr.Box(visible=False) as viewstrans:
-                                gr.Markdown('Tranlsated prompt & negative prompt')
-                                with gr.Row():
-                                    p_tr = gr.Textbox(label='Prompt translate', show_label=False, value='', lines=2, placeholder='Translated text prompt')
-
-                                with gr.Row():            
-                                    p_n_tr = gr.Textbox(label='Negative Translate', show_label=False, value='', lines=2, placeholder='Translated negative text prompt')             
-                            gr.HTML('* \"Prompt Translate\" is powered by AlekPet. <a href="https://github.com/AlekPet/Fooocus_Extensions_AlekPet" target="_blank">\U0001F4D4 Document</a>')
-                        with gr.TabItem(label='Photomaker') as photomaker_tab:
-                            enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor = photomaker.gui()
-                        with gr.TabItem(label='InstantID') as instantid_tab:
-                            enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight=instantid.gui()                          
-                        with gr.TabItem(label='FaceEnhancer'):
-                            face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index = FaceEnhancer.gui(True)  
-
-                        with gr.TabItem(label='Vector'):
-                            poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
-
-                def gen_acc_name(obp,translate, photomaker, instant, face_enhancer,vector):
-                    enabled_modules = [
-                        ('OneButtonPrompt', obp),
-                        ('PromptTranslate', translate),
-                        ('PhotoMaker', photomaker),
-                        ('InstantID', instant),
-                        ('FaceEnhancer', face_enhancer),
-                        ('Vector', vector)
-                        ]
-                    active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
-                    main_name = "in generation"
-                    if active_modules:
-                        main_name += f" — {', '.join(active_modules)}"   
-                    return gr.update(label=main_name)
-                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,face_en_enabled,poDoVector]
-                poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-
-                face_en_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-                enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-
-                with gr.Accordion('modules', open=False,elem_classes="nested-accordion"):
-
-                  with gr.TabItem(label='omost'):
-                        omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model = omost.gui()
-   
-                  with gr.TabItem(label='Image Batch') as im_batch:
-                        def clear_single(image):
-                            return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
-                        def single_image(single_upload):
-                            if len(single_upload) == 1:
-                                return gr.update (value=single_upload[0].name,visible=True),gr.update(visible=False)
-                            else:
-                                return gr.update (visible=False),gr.update(visible=True)
-                        def clear_dirs():
-                            result=delete_folder_content(modules.config.path_outputs, '')
-                        def output_zip():
-                            directory=modules.config.path_outputs
-                            temp_dir=modules.config.temp_path+os.path.sep+"batch_images"
-                            _, _, filename = modules.util.generate_temp_filename(folder=directory)
-                            name, ext = os.path.splitext(filename)
-                            zip_file = os.path.join(temp_dir, f"output_{name[:-5]}.zip")
-                            with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                                for root, dirs, files in os.walk(directory):
-                                    for file in files:
-                                        file_path = os.path.join(root, file)
-                                        zipf.write(file_path, arcname=os.path.relpath(file_path, directory))
-                            zipf.close()
-                            return zip_file                       
-                        with gr.Row():
-                            tutorial("image_batch.md")  
-                        with gr.Row():
-          
-                          with gr.Column():
-                            with gr.Row():
-                                file_in=gr.File(label="Upload a ZIP file",file_count='single',file_types=['.zip'],visible=False,height=260)
-                                files_single = gr.Files(label="Drag (Select) 1 or more reference images",
-                                            file_types=["image"],visible=True,interactive=True,height=260)  
-                                image_single=gr.Image(label="Reference image",visible=False,height=260,interactive=True,type="filepath")                          
-                            with gr.Row():
-                                enable_zip = gr.Checkbox(label="Upload ZIP-file", value=False)
-                            def update_radio(value):
-                              return gr.update(value=value)
-                            ratio = gr.Radio(label='Scale method:', choices=['NOT scale','to ORIGINAL','to OUTPUT'], value='NOT scale', interactive=True)
-                          with gr.Column():
-                            image_action = gr.Dropdown(choices=['Image Prompt','Upscale'], value='Image Prompt', label='Action',interactive=True)
-                            image_mode = gr.Dropdown(choices=flags.ip_list, value=flags.ip_list[0], label='Method',interactive=True)
-                            ip_stop_batch = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=flags.default_parameters[image_mode.value][0],interactive=True)
-                            ip_weight_batch = gr.Slider(label='Weight', minimum=0.0, maximum=2.0, step=0.001, value=flags.default_parameters[image_mode.value][1],interactive=True)
-                            upscale_mode = gr.Dropdown(choices=flags.uov_list, value=flags.uov_list[0], label='Method',interactive=True,visible=False)
-                          with gr.Column():
-                            file_out=gr.File(label="Download a ZIP file", file_count='single',height=260)
-                        with gr.Row():
-                          batch_start = gr.Button(value='Start batch', visible=True)
-                          save_output = gr.Button(value='Output --> ZIP')
-                          clear_output = gr.Button(value='Clear Output')
-                        with gr.Row():
-                          gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
-                        with gr.Row(visible=False):
-                            ext_dir=gr.Textbox(value='batch_images',visible=False)
-                            #out_dir=gr.Textbox(value=modules.config.path_outputs,visible=False) 
-                        def image_action_change(image_action):
-                            if image_action=='Image Prompt':
-                              return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
-                            else:
-                              return gr.update(visible=False),gr.update(visible=False),gr.update(visible=False),gr.update(visible=True)
-                        def image_mode_change(image_mode):
-                            ip_stop_batch=flags.default_parameters[image_mode][0]
-                            ip_weight_batch=flags.default_parameters[image_mode][1]
-                            return gr.update(value=ip_stop_batch), gr.update(value=ip_weight_batch)
-                        enable_zip.change(lambda x: (gr.update(visible=x),gr.update(visible=not x)), inputs=enable_zip,
-                                        outputs=[file_in,files_single], queue=False)
-                        image_single.clear(fn=clear_single,inputs=image_single,outputs=[image_single,files_single],show_progress=False)
-                        files_single.upload(fn=single_image,inputs=files_single,outputs=[image_single,files_single],show_progress=False)
- 
-                        image_action.change(image_action_change, inputs=[image_action], outputs=[image_mode,ip_stop_batch,ip_weight_batch,upscale_mode],queue=False, show_progress=False)
-                        image_mode.change(image_mode_change,inputs=[image_mode],outputs=[ip_stop_batch,ip_weight_batch],queue=False, show_progress=False)
- 
-                        clear_output.click(lambda: (gr.update(interactive=False)),outputs=[clear_output]) \
-                                    .then(fn=clear_dirs) \
-                                    .then(lambda: (gr.update(interactive=True)),outputs=[clear_output])
-                        save_output.click(lambda: (gr.update(interactive=False)),outputs=[save_output]) \
-                                    .then(fn=output_zip, outputs=[file_out]) \
-                                    .then(lambda: (gr.update(interactive=True)),outputs=[save_output])
-
-                  with gr.TabItem(label='Prompt Batch') as pr_batch:
-                        def prompt_clearer(batch_prompt):
-                            batch_prompt=[{'prompt': '', 'negative prompt': ''}]
-                            return batch_prompt
-                        def prompts_delete(batch_prompt):
-                            if len(batch_prompt) > 1:
-                                removed=batch_prompt.pop()
-                            return batch_prompt
-                        with gr.Row():
-                            tutorial("prompt_batch.md")    
-                        with gr.Row():
-                                batch_prompt=gr.Dataframe(
-                                    headers=["prompt", "negative prompt"],
-                                    datatype=["str", "str"],
-                                    row_count=1, wrap=True,
-                                    col_count=(2, "fixed"), type="array", interactive=True,
-                                    elem_id="dataframe_batch")
-                        with gr.Row():
-                                positive_batch = gr.Radio(label='Base positive prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
-                                negative_batch = gr.Radio(label='Base negative prompt:', choices=['None','Prefix','Suffix'], value='None', interactive=True)
-                        with gr.Row():
-                                prompt_delete=gr.Button(value="Delete last row")
-                                prompt_clear=gr.Button(value="Clear Batch")
-                                prompt_start=gr.Button(value="Start batch", visible=True)
-                        with gr.Row():
-                                pos_only=gr.Checkbox(label='only positive prompts', value=True, elem_classes='min_check')
-                                prompt_load=upload_button = gr.UploadButton(label="Load prompts from file",file_count="single",scale=4)
-                        with gr.Row():
-                                gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
-                        def loader_prompt(file,pos_only):
-                            with open(file.name, 'rb') as f:
-                                raw_data = f.read(1000)
-                                result = chardet.detect(raw_data)
-                                encoding = result['encoding']
-                            with open(file.name, 'r', encoding=encoding) as f:
-                                lines = [line.strip() for line in f.readlines()]
-                                data = []
-                                i = 0
-                                if not pos_only:  
-                                    
-                                    while i < len(lines):
-                                        if lines[i] == "":
-                                            i += 1
-                                            continue
-                                        if i + 1 < len(lines) and lines[i + 1] != "":
-                                            data.append([lines[i], lines[i + 1]])
-                                            i += 2
-                                        else:
-                                            data.append([lines[i], ""])
-                                            i += 1
-                                   
-                                else:
-                                    while i< len(lines):
-                                        if lines[i] == "":
-                                            i += 1
-                                            continue
-                                        else:
-                                            data.append([lines[i], ""])
-                                            i += 1
-                            df = pd.DataFrame(data, columns=["prompt", "negative prompt"])
-                            return df
-                        prompt_delete.click(prompts_delete,inputs=batch_prompt,outputs=batch_prompt)
-                        prompt_clear.click(prompt_clearer,inputs=batch_prompt,outputs=batch_prompt)
-                        prompt_load.upload(lambda: gr.update(interactive=False), outputs=prompt_load) \
-                                .then (fn=loader_prompt,inputs=[upload_button,pos_only],outputs=batch_prompt) \
-                                .then (lambda: gr.update(interactive=True), outputs=prompt_load)
-
-                        
-                  with gr.TabItem(label=xyz.title()) as xyz_plot:
-                    x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random = xyz.ui()
-                    xyz_start=gr.Button(value="Start xyz",visible=True)
-                    gr.HTML('* \"X/Y/Z Plot\" is powered by zer0TF. <a href="https://github.com/zer0TF/xyz_plot_script" target="_blank">\U0001F4D4 Document</a>')
-                    gr.HTML('* Modification and adaptation for Fooocus is powered by Shahmatist^RMDA')
-
-
-
-                  with gr.TabItem(label='FaceEnhancer'):
-                        FaceEnhancer.gui(False)                
-                  with gr.TabItem(label='Remove Background') as rembg_tab:
-                        GeekyRemBExtras.on_ui_tabs()
-
-                  with gr.Tab(label='Cleaner', id='clean_tab') as clean_tab:
-                        with gr.Row():
-                            tutorial("cleaner/clean_up_tab.md")                    
-                        with gr.Tab(label='Image'):
-                            with gr.Row():
-                                file_in_cl,files_single_cl,image_single_cl,enable_zip_cl,file_out_cl,preview_cl,image_out_cl = batch.ui_batch()
-                            with gr.Row():
-                                init_img_with_mask = grh.Image(label='First Image', source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_canvas', show_label=False,visible=False,interactive=True)
-                            with gr.Row():
-                                image_mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
-                            with gr.Row():
-                                image_mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
-                            with gr.Row():
-                                clean_image_button = gr.Button("Clean Up",visible=True)
-                            with gr.Row():                                
-                                result_gallery = gr.Gallery(label='Clean result', show_label=True, object_fit='contain', visible=False, height=768,
-                                    elem_classes=['resizable_area', 'main_view', 'image_gallery'],
-                                    elem_id='cleaner_gallery',
-                                    preview=True,
-                                    allow_preview=True,
-                                    show_download_button=True)
-                            with gr.Row(visible=False):
-                                ext_dir_cl=gr.Textbox(value='batch_cleaner',visible=False) 
-                            files_single_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_image_button]) \
-                                .then(fn=cleaner.get_first_image, inputs=files_single_cl, outputs=init_img_with_mask) 
-                            file_in_cl.upload(lambda: (gr.update(visible=True),gr.update(visible=True)),outputs=[init_img_with_mask,clean_image_button]) \
-                                .then(fn=cleaner.get_first_image_zip, inputs=file_in_cl, outputs=init_img_with_mask)  
-                            image_mask_check.change(lambda x: gr.update(visible=x), inputs=image_mask_check,
-                                outputs=image_mask_load, queue=False, show_progress=False)
-                            clean_image_button.click(lambda: (gr.update(interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[clean_image_button,file_out_cl,image_out_cl]) \
-                                .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
-                                .then(fn=batch.unzip_file,inputs=[file_in_cl,files_single_cl,enable_zip_cl,ext_dir_cl]) \
-                                .then(fn=cleaner.process_image, inputs=[init_img_with_mask,image_mask_check,image_mask_load],outputs=[preview_cl,result_gallery,file_out_cl],show_progress=False) \
-                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out_cl,preview_cl],show_progress=False) \
-                                .then(fn=batch.output_zip_image, outputs=[image_out_cl,file_out_cl]) \
-                                .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True)),outputs=[clean_image_button,result_gallery])  
-                        with gr.Tab(label='Video'):
-                            with gr.Row():
-                                with gr.Column():
-                                    video_files = gr.Files(label="Drag (Select) 1 or more video files",file_count="multiple",
-                                            file_types=["video"],visible=True,interactive=True)
-                                    progress_video = gr.Textbox(label="Process",visible=False)
-                                    download_video_cl=gr.File(label="Download a videofiles", file_count='multiple',height=260,visible=True)
-                                with gr.Column():  
-                                    first_video = gr.Video(label="First video", source='upload',visible=False,interactive=True)
-                            with gr.Row(): 
-                                clean_frame = grh.Image(label='First Frame',visible=False, source='upload', type='pil', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='cleaner_video_canvas', show_label=True,interactive=True)
-                            with gr.Row():
-                                mask_check = gr.Checkbox(label='Add Mask', value=False, container=False, elem_classes='min_check')  
-                            with gr.Row():
-                                mask_load = grh.Image(label='Add mask',visible=False, source='upload', type='pil', height=500, show_label=True,interactive=True)
-                            with gr.Row():
-                                clean_button_video = gr.Button("Clean Up", visible=False)
-                            with gr.Row(visible=False):
-                                ext_dir_video_cl=gr.Textbox(value='batch_cleaner_video',visible=False)
-                        mask_check.change(lambda x: gr.update(visible=x), inputs=mask_check,
-                                        outputs=mask_load, queue=False, show_progress=False)
-                        
-                        
-                        
-                        video_files.upload(lambda: (gr.update(visible=True),gr.update(visible=True),gr.update(visible=True)),outputs=[first_video,clean_frame,clean_button_video]) \
-                            .then(fn=cleaner.get_first_frame, inputs=video_files, outputs=[first_video,clean_frame])  
-                        clean_button_video.click(lambda: (gr.update(visible=True),gr.update(interactive=False),gr.update(visible=False)),outputs=[progress_video,clean_button_video,download_video_cl]) \
-                            .then(fn=batch.clear_dirs,inputs=ext_dir_cl) \
-                            .then(cleaner.video_clean_process,inputs=[video_files,clean_frame,mask_check,mask_load],outputs=[progress_video,download_video_cl]) \
-                            .then(lambda: (gr.update(interactive=True),gr.update(visible=True)),outputs=[clean_button_video,download_video_cl])
-
-                  with gr.TabItem(label='Vector'):
-                            vector.ui_module()
-
-                with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
-                  with gr.TabItem(label='Civitai_helper') as download_tab:
-                        civitai_helper.civitai_help()
-                  with gr.TabItem(label='Caption'):
-                        caption.gui()
-                  with gr.TabItem(label='TextMask') as text_mask:
-                    with gr.Row():
-                            tutorial("text_mask.md")
-                    mask=gr.HTML() 
-
-                  with gr.TabItem(label='SVGcode') as svg_code:
-                    with gr.Row():
-                        svg=gr.HTML()
-                    with gr.Row():
-                        gr.HTML('* \"SVGcode\" is powered by Thomas Steiner. <a href="https://web.dev/case-studies/svgcode" target="_blank">\U0001F4D4 Document</a>') 
-                  with gr.TabItem(label='Roller'):
-                        tile_roll.start()
-                  with gr.TabItem(label=op_editor.title(), elem_id='op_edit_tab') as op_edit_tab:
-                    op_editor.ui()
-                  with gr.TabItem(label='Logo'):
-                    watermark.watermark()
-                  with gr.TabItem(label='Photopea') as photopea_tab:
-                    PHOTOPEA_MAIN_URL = 'https://www.photopea.com/'
-                    PHOTOPEA_IFRAME_ID = 'webui-photopea-iframe'
-                    PHOTOPEA_IFRAME_HEIGHT = '800px'
-                    PHOTOPEA_IFRAME_WIDTH = '100%'
-                    PHOTOPEA_IFRAME_LOADED_EVENT = 'onPhotopeaLoaded'
-
-                    def get_photopea_url_params():
-                      return '#%7B%22resources%22:%5B%22data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIAAQMAAADOtka5AAAAAXNSR0IB2cksfwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAANQTFRF////p8QbyAAAADZJREFUeJztwQEBAAAAgiD/r25IQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfBuCAAAB0niJ8AAAAABJRU5ErkJggg==%22%5D%7D'
-
-                    with gr.Row():
-                          photopea = gr.HTML(
-                            f'''
-                            <iframe id='{PHOTOPEA_IFRAME_ID}' 
-                            src = '{PHOTOPEA_MAIN_URL}{get_photopea_url_params()}' 
-                            width = '{PHOTOPEA_IFRAME_WIDTH}' 
-                            height = '{PHOTOPEA_IFRAME_HEIGHT}'
-                            onload = '{PHOTOPEA_IFRAME_LOADED_EVENT}(this)'>'''
-                          )
-                    with gr.Row():
-                          gr.HTML('* \"Photopea\" is powered by Photopea API. <a href="https://www.photopea.com/api" target="_blank">\U0001F4D4 Document</a>')
-            svg_code.select(html_load,inputs=[url_display,svgcode_file],outputs=svg,queue=False, show_progress=False)
-            text_mask.select(html_load,inputs=[url_display,text_mask_file],outputs=mask,queue=False, show_progress=False)
-            enhance_tab.select(lambda: 'enhance', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            metadata_tab.select(lambda: 'metadata', outputs=current_tab, queue=False, _js=down_js, show_progress=False)
-            enhance_checkbox.change(lambda x: (gr.update(visible=x), gr.update(value=False) if x else gr.update()),
-                        inputs=enhance_checkbox,outputs=[enhance_input_panel, adetailer_checkbox],queue=False, show_progress=False)
-            adetailer_checkbox.change(lambda x: (gr.update(visible=x), gr.update(value=False) if x else gr.update()),
-                        inputs=adetailer_checkbox,outputs=[adetailer_input_panel, enhance_checkbox],queue=False, show_progress=False)
-
-        with gr.Column(scale=1, visible=modules.config.default_advanced_checkbox) as advanced_column:
-            with gr.Tab(label='Settings'):
-                if not args_manager.args.disable_preset_selection:
-                    preset_selection = gr.Dropdown(label='Preset',
-                                                   choices=modules.config.available_presets,
-                                                   value=args_manager.args.preset if args_manager.args.preset else "initial",
-                                                   interactive=True)
-
-                performance_selection = gr.Radio(label='Performance',
-                                                 choices=flags.Performance.values(),
-                                                 value=modules.config.default_performance,
-                                                 elem_classes=['performance_selection'])
-                steps_slider = gr.Slider(minimum=1,maximum=100,step=1,value=flags.Performance(modules.config.default_performance).steps(),label='Steps', interactive=True)                                 
-
-                with gr.Accordion(label='Aspect Ratios', open=False, elem_id='aspect_ratios_accordion') as aspect_ratios_accordion:
-                    aspect_ratios_selection = gr.Radio(label='Aspect Ratios', show_label=False,
-                                                       choices=modules.config.available_aspect_ratios_labels,
-                                                       value=modules.config.default_aspect_ratio,
-                                                       info='width × height',
-                                                       elem_classes='aspect_ratios_news')
-                    
-
-                    aspect_ratios_selection.change(lambda x: None, inputs=aspect_ratios_selection, queue=False, show_progress=False, _js='(x)=>{refresh_aspect_ratios_label(x);}')
-                    shared.gradio_root.load(lambda x: None, inputs=aspect_ratios_selection, queue=False, show_progress=False, _js='(x)=>{refresh_aspect_ratios_label(x);}')
-                    width_ar = gr.Slider(minimum=64,maximum=2048,step=8,value=512,label='Width', interactive=True)
-                    height_ar = gr.Slider(minimum=64,maximum=2048,step=8,value=512,label='Height',interactive=True)
-                    lock_ar = gr.Dropdown(choices=choices_ar1,value="Any",label="AspectRatio", show_label=True,interactive=True)
-                    swap = gr.Button(value='Portrait', visible=True)
-                    set_ar = gr.Button(value='Set', visible=True)
-
-                    def locker(lock,width,height):
-                        global ar_def, swap_def
-                        if lock == "Any":
-                          interact1, interact2 = True, True
+                    goals_enhance = ['inpaint']
+
+                    try:
+                        current_progress, img, enhance_prompt_processed, enhance_negative_prompt_processed = process_enhance(
+                            all_steps, async_task, callback, controlnet_canny_path, controlnet_cpds_path, 
+                            controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                            current_progress, current_task_id, denoising_strength, enhance_inpaint_disable_initial_latent,
+                            enhance_inpaint_engine, enhance_inpaint_respective_field, enhance_inpaint_strength,
+                            enhance_prompt, enhance_negative_prompt, final_scheduler_name, goals_enhance, height, img, mask,
+                            preparation_steps, enhance_steps, switch, tiled, total_count, use_expansion, use_style,
+                            use_synthetic_refiner, width, persist_image=persist_image)
+                        async_task.enhance_stats[index] += 1
+
+                        if (should_process_enhance_uov and async_task.enhance_uov_processing_order == flags.enhancement_uov_after
+                                and async_task.enhance_uov_prompt_type == flags.enhancement_uov_prompt_type_last_filled):
+                            if enhance_prompt_processed != '':
+                                last_enhance_prompt = enhance_prompt_processed
+                            if enhance_negative_prompt_processed != '':
+                                last_enhance_negative_prompt = enhance_negative_prompt_processed
+
+                    except ldm_patched.modules.model_management.InterruptProcessingException:
+                        if async_task.last_stop == 'skip':
+                            print('User skipped')
+                            async_task.last_stop = False
+                            continue
                         else:
-                          new_width, new_height = lock.replace(':', ' ').split(' ')[:2]
-                          ar_def=[int (new_width), int (new_height)]
-                          if swap_def:
-                            width = round (height / ar_def[1] * ar_def[0])
-                            interact1, interact2 = False, True
-                          else:
-                            height=round (width / ar_def[0] * ar_def[1])
-                            interact1, interact2 = True, False
-                        return gr.update (interactive=interact1, value=width), gr.update (interactive=interact2, value=height)
-                    def swap_ar(lock,width,height):
-                        global swap_def, ar_def
-                        swap_def=not swap_def
-                        ar_def[0], ar_def[1] = ar_def[1], ar_def[0]
-                        width, height = height, width                       
-                        if swap_def:
-                          choices=choices_ar2
-                          interact1, interact2 = False, True
-                          name='Landscape'
-                        else: 
-                          choices=choices_ar1
-                          interact1, interact2 = True, False
-                          name = 'Portrait'
-                        if lock != "Any":
-                          ratio_x, ratio_y = lock.replace(':', ' ').split(' ')[:2]
-                          lock=str(ratio_y)+":"+str(ratio_x) 
-                          interact1, interact2 = True, False
-                        if lock == "Any":
-                          interact1, interact2 = True, True
-                        return gr.update (choices=choices, value=lock),gr.update (value=width, interactive=interact1),gr.update (value=height, interactive=interact2),gr.update (value=name)
-                    def w_slide(lock,width,height):
-                        global ar_def
-                        if lock != "Any":
-                          height=width / ar_def[0] * ar_def[1]
-                        return gr.update (value=height)
-                    def h_slide(lock,width,height):
-                        global ar_def
-                        if lock != "Any":
-                          width=height / ar_def[1] * ar_def[0]
-                        return gr.update (value=width)
-                    def set_to_ar(aspect_ratios_selection,width,height): 
-                        g = math.gcd(width, height)
-                        selector=f'{width}×{height}  \U00002223 {width // g}:{height // g}'
-                        if aspect_ratios_selection==modules.config.available_aspect_ratios_labels[-2]:
-                          previos_aspect=selector
-                        else:
-                          previos_aspect=aspect_ratios_selection
-                        modules.config.available_aspect_ratios_labels[-2]=selector
-                        return gr.update (choices=modules.config.available_aspect_ratios_labels, value=previos_aspect)
-                swap.click(swap_ar,inputs=[lock_ar,width_ar,height_ar],outputs=[lock_ar,width_ar,height_ar,swap],show_progress=False)
-                lock_ar.change(locker, inputs=[lock_ar,width_ar,height_ar],outputs=[width_ar, height_ar],show_progress=False)
-                width_ar.release(w_slide,inputs=[lock_ar,width_ar,height_ar],outputs=[height_ar],show_progress=False)
-                height_ar.release(h_slide,inputs=[lock_ar,width_ar,height_ar],outputs=[width_ar],show_progress=False)
-                set_ar.click(set_to_ar,inputs=[aspect_ratios_selection,width_ar,height_ar],outputs=aspect_ratios_selection,show_progress=False)
+                            print('User stopped')
+                            exception_result = 'break'
+                            break
+                    finally:
+                        done_steps_inpainting += enhance_steps
 
-                image_number = gr.Slider(label='Image Number', minimum=1, maximum=modules.config.default_max_image_number, step=1, value=modules.config.default_image_number)
+                    enhancement_task_time = time.perf_counter() - enhancement_task_start_time
+                    print(f'Enhancement time: {enhancement_task_time:.2f} seconds')
 
-                output_format = gr.Radio(label='Output Format',
-                                         choices=flags.OutputFormat.list(),
-                                         value=modules.config.default_output_format)
+                if exception_result == 'break':
+                    break
 
-                name_prefix = gr.Textbox(label='Filename Prefix', show_label=True)
-
-                negative_prompt = gr.Textbox(label='Negative Prompt', show_label=True, placeholder="Type prompt here.",
-                                             info='Describing what you do not want to see.', lines=2,
-                                             elem_id='negative_prompt',
-                                             value=modules.config.default_prompt_negative,
-                                             visible=not modules.flags.negative_prompt_main)
-                new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main page",
-                        value=modules.flags.negative_prompt_main)
-                seed_random = gr.Checkbox(label='Random', value=True)
-                image_seed = gr.Textbox(label='Seed', value=0, max_lines=1, visible=False) # workaround for https://github.com/gradio-app/gradio/issues/5354
-
-                def random_checked(r):
-                    return gr.update(visible=not r)
-
-                def refresh_seed(r, seed_string):
-                    if r:
-                        return random.randint(constants.MIN_SEED, constants.MAX_SEED)
-                    else:
-                        try:
-                            seed_value = int(seed_string)
-                            if constants.MIN_SEED <= seed_value <= constants.MAX_SEED:
-                                return seed_value
-                        except ValueError:
-                            pass
-                        return random.randint(constants.MIN_SEED, constants.MAX_SEED)
-
-                seed_random.change(random_checked, inputs=[seed_random], outputs=[image_seed],
-                                   queue=False, show_progress=False)
-
-                def update_history_link():
-                    if args_manager.args.disable_image_log:
-                        return gr.update(value='')
-
-                    return gr.update(value=f'<a href="file={get_current_html_path(output_format)}" target="_blank">\U0001F4DA History Log</a>')
-
-                history_link = gr.HTML()
-                shared.gradio_root.load(update_history_link, outputs=history_link, queue=False, show_progress=False)
-
-            with gr.Tab(label='Styles', elem_classes=['style_selections_tab']):
-                style_sorter.try_load_sorted_styles(
-                    style_names=legal_style_names,
-                    default_selected=modules.config.default_styles)
-                def style_load(file):
-                    folder='sdxl_styles'
-                    file_name = os.path.basename(file.name)
-                    save_path = os.path.join(folder, file_name)
-                    with open(file.name, "rb") as source_file:
-                        with open(save_path, "wb") as target_file:
-                            target_file.write(source_file.read())
-                    style_sorter.all_styles=[]
-                    styles_path = os.path.join(os.path.dirname(__file__), 'sdxl_styles/')
-                    modules.sdxl_styles.styles = {}
-                    
-                    styles_files = get_files_from_folder(styles_path, ['.json'])
-
-                    for x in ['sdxl_styles_fooocus.json',
-                              'sdxl_styles_sai.json',
-                              'sdxl_styles_mre.json',
-                              'sdxl_styles_twri.json',
-                              'sdxl_styles_diva.json',
-                              'sdxl_styles_marc_k3nt3l.json']:
-                          if x in styles_files:
-                              styles_files.remove(x)
-                              styles_files.append(x)
-
-                    for styles_file in styles_files:
-                      try:
-                        with open(os.path.join(styles_path, styles_file), encoding='utf-8') as f:
-                            for entry in json.load(f):
-                                name = modules.sdxl_styles.normalize_key(entry['name'])
-                                prompt = entry['prompt'] if 'prompt' in entry else ''
-                                negative_prompt = entry['negative_prompt'] if 'negative_prompt' in entry else ''
-                                modules.sdxl_styles.styles[name] = (prompt, negative_prompt)
-                      except Exception as e:
-                            print(str(e))
-                            print(f'Failed to load style file {styles_file}')
-
-                    style_keys = list(modules.sdxl_styles.styles.keys())
-                    fooocus_expansion = 'Fooocus V2'
-                    random_style_name = 'Random Style'
-                    modules.sdxl_styles.legal_style_names = [fooocus_expansion, random_style_name] + style_keys
-                    style_sorter.try_load_sorted_styles(
-                        style_names=modules.sdxl_styles.legal_style_names,
-                        default_selected=modules.config.default_styles)
-                    importlib.reload(xyz)
-                    return gr.update(choices=copy.deepcopy(style_sorter.all_styles))
-                style_search_bar = gr.Textbox(show_label=False, container=False,
-                                              placeholder="\U0001F50E Type here to search styles ...",
-                                              value="",
-                                              label='Search Styles')
-                style_selections = gr.CheckboxGroup(show_label=False, container=False,
-                                                    choices=copy.deepcopy(style_sorter.all_styles),
-                                                    value=copy.deepcopy(modules.config.default_styles),
-                                                    label='Selected Styles',
-                                                    elem_classes=['style_selections'])
-                gradio_receiver_style_selections = gr.Textbox(elem_id='gradio_receiver_style_selections', visible=False)
-                style_loader = gr.UploadButton(label="Load file of styles",file_count="single",file_types=['.json'])
-                shared.gradio_root.load(lambda: gr.update(choices=copy.deepcopy(style_sorter.all_styles)),
-                                        outputs=style_selections)
-                style_loader.upload(lambda: gr.update(interactive=False), outputs=style_loader) \
-                        .then(fn=style_load,inputs=style_loader,outputs=style_selections) \
-                        .then(lambda: gr.update(interactive=True), outputs=style_loader)
-                style_search_bar.change(style_sorter.search_styles,
-                                        inputs=[style_selections, style_search_bar],
-                                        outputs=style_selections,
-                                        queue=False,
-                                        show_progress=False).then(
-                    lambda: None, _js='()=>{refresh_style_localization();}')
-
-                gradio_receiver_style_selections.input(style_sorter.sort_styles,
-                                                       inputs=style_selections,
-                                                       outputs=style_selections,
-                                                       queue=False,
-                                                       show_progress=False).then(
-                    lambda: None, _js='()=>{refresh_style_localization();}')
-
-            with gr.Tab(label='Models'):
-                with gr.Group():
-                    def model_tag(filename_sft):
-                        filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
-                        if filename_value == 'None':
-                            return gr.update(visible=False)
-                        try:
-                            filename = os.path.join(modules.config.paths_checkpoints[0], filename_value[:filename_value.rfind('.')] + ".civitai.info")
-                            with open(filename, "r", encoding="utf-8") as file:
-                                content = file.read()
-                                json_data = re.search(r'\{.*\}', content, re.DOTALL).group()
-                            data = json.loads(json_data)
-                            model_id = str(data.get("modelId"))
-                            version_id = str(data.get("id"))
-                            return gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Checkpoint Page on CivitAI</a>')
-                            #f'{trained_words}'
-                        except Exception as e:
-                            print(f"Error loading Model tags: {e}")
-                            return gr.update(visible=False)                    
-                    with gr.Row():
-                        with gr.Column():
-                            base_model = gr.Dropdown(label='Base Model (SDXL or SD 1.5)', choices=modules.config.model_filenames, value=modules.config.default_base_model_name, show_label=True)
-                            link=model_tag(base_model)
-                            base_model_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
-                        with gr.Column():
-                            refiner_model = gr.Dropdown(label='Refiner (SDXL or SD 1.5)', choices=['None'] + modules.config.model_filenames, value=modules.config.default_refiner_model_name, show_label=True)
-                            link=model_tag(refiner_model)
-                            refiner_link=gr.HTML(value=link.get("value",""),visible=link.get("visible", False))
-
-                    refiner_switch = gr.Slider(label='Refiner Switch At', minimum=0.1, maximum=1.0, step=0.0001,
-                                               info='Use 0.4 for SD1.5 realistic models; '
-                                                    'or 0.667 for SD1.5 anime models; '
-                                                    'or 0.8 for XL-refiners; '
-                                                    'or any value for switching two SDXL models.',
-                                               value=modules.config.default_refiner_switch,
-                                               visible=modules.config.default_refiner_model_name != 'None')
-                    base_model.change(model_tag, inputs=base_model, outputs=base_model_link,queue=False)
-                    refiner_model.change(model_tag, inputs=refiner_model, outputs=refiner_link,queue=False) \
-                        .then(lambda x: gr.update(visible=x != 'None'),
-                                    inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
-
-                with gr.Tab(label='LoRAs'):
-                    ###################
-                    with gr.Group():
-                        def lora_tag(filename_sft):
-                            filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
-                            if filename_value == 'None':
-                                return gr.update(visible=False),gr.update(visible=False)
-                            try:
-                                filename = os.path.join(modules.config.paths_loras[0], filename_value[:filename_value.rfind('.')] + ".civitai.info")
-                                with open(filename, "r", encoding="utf-8") as file:
-                                    content = file.read()
-                                    json_data = re.search(r'\{.*\}', content, re.DOTALL).group()
-                                data = json.loads(json_data)
-                                trained_words = data.get("trainedWords", [])
-                                quoted_tags = [f'"{tag.strip()}"' for tag in trained_words]
-                                trained_words = ", ".join(quoted_tags)
-                                line_count = max(1, len(trained_words) // 50 + 1)
-                                model_id = str(data.get("modelId"))
-                                version_id = str(data.get("id"))
-                                return gr.update(visible=True,value=trained_words,lines=line_count),gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
-                                #f'{trained_words}'
-                            except Exception as e:
-                                print(f"Error loading LORA tags: {e}")
-                                return gr.update(visible=False),gr.update(visible=False)
-
-
-                        lora_len = gr.Slider(label='Loraslen', minimum=0.0, maximum=100.0, step=1, value=modules.config.default_max_lora_number, visible=False)
-                        lora_ctrls = []
-
-                        for i, (enabled, filename, weight) in enumerate(modules.config.default_loras):
-                            initial_tag, initial_page = lora_tag(filename)
-                            with gr.Row():
-                                lora_enabled = gr.Checkbox(label='Enable', value=enabled,
-                                                           elem_classes=['lora_enable', 'min_check'], scale=1)
-                                lora_model = gr.Dropdown(label=f'LoRA {i + 1}',
-                                                         choices=['None'] + modules.config.lora_filenames, value=filename,
-                                                         elem_classes='lora_model', scale=5)
-                                lora_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
-                                                        maximum=modules.config.default_loras_max_weight, step=0.01, value=weight,
-                                                        elem_classes='lora_weight', scale=5)
-                                lora_link=gr.HTML(value=initial_page.get("value",""),visible=initial_page.get("visible", False))
-                            with gr.Row():
-                            
-                                lora_tag_mark = gr.Textbox(label='Trigger word(s)',
-                                      value=initial_tag.get("value", ""),
-                                      visible=initial_tag.get("visible", False),
-                                      lines=initial_tag.get("lines", 2),
-                                      max_lines=10,
-                                      interactive=False
-                                      )
-                        
-                            lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
-                            lora_ctrls += [lora_enabled, lora_model, lora_weight]
-                #########################
-                with gr.Tab(label='Embeddings'):
-                    def emb_change(name,weight):
-                        if name == "None":
-                            return gr.update(visible=False)
-                        return gr.update(value=f'(embedding:{os.path.splitext(name)[0]}:{weight})',visible=True)
-                    emb_model = gr.Dropdown(label='Embeddings',
-                        choices=['None'] + modules.config.emb_filenames, value='None',interactive=True,
-                        elem_classes='lora_model', scale=5)
-                    emb_weight = gr.Slider(label='Weight', minimum=modules.config.default_loras_min_weight,
-                        maximum=modules.config.default_loras_max_weight, step=0.01, value=1,
-                        elem_classes='lora_weight', scale=5,interactive=True)
-                    emb_tag = gr.Textbox(label='Embedding Tag',
-                        value="",
-                        visible=False,
-                        lines=1,
-                        max_lines=2,
-                        interactive=False
-                        )     
-                    emb_model.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag],queue=False)   
-                    emb_weight.change(emb_change,inputs=[emb_model,emb_weight],outputs=[emb_tag],queue=False)             
-                with gr.Row():
-                    refresh_files = gr.Button(label='Refresh', value='\U0001f504 Refresh All Files', variant='secondary', elem_classes='refresh_button')
-            with gr.Tab(label='Advanced'):
-                guidance_scale = gr.Slider(label='Guidance Scale', minimum=1.0, maximum=30.0, step=0.01,
-                                           value=modules.config.default_cfg_scale,
-                                           info='Higher value means style is cleaner, vivider, and more artistic.')
-                sharpness = gr.Slider(label='Image Sharpness', minimum=0.0, maximum=30.0, step=0.001,
-                                      value=modules.config.default_sample_sharpness,
-                                      info='Higher value means image and texture are sharper.')
-                gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/117" target="_blank">\U0001F4D4 Documentation</a>')
+            if enhance_uov_after:
+                current_task_id += 1
+                # last step in enhance, always save
+                persist_image = True
+                current_task_id, done_steps_inpainting, done_steps_upscaling, img, exception_result = enhance_upscale(
+                    all_steps, async_task, base_progress, callback, controlnet_canny_path, controlnet_cpds_path, 
+                    controlnet_pose_path, controlnet_recolor_path, controlnet_scribble_path,controlnet_manga_path,
+                    current_task_id, denoising_strength, done_steps_inpainting, done_steps_upscaling, enhance_steps,
+                    last_enhance_prompt, last_enhance_negative_prompt, final_scheduler_name, height, img,
+                    preparation_steps, switch, tiled, total_count, use_expansion, use_style, use_synthetic_refiner,
+                    width, persist_image)
+                async_task.enhance_stats[index] += 1
                 
-                dev_mode = gr.Checkbox(label='Developer Debug Mode', value=modules.config.default_developer_debug_mode_checkbox, container=False)
+                if exception_result == 'continue':
+                    continue
+                elif exception_result == 'break':
+                    break
 
-                with gr.Column(visible=modules.config.default_developer_debug_mode_checkbox) as dev_tools:
-                    with gr.Tab(label='Debug Tools'):
-                        adm_scaler_positive = gr.Slider(label='Positive ADM Guidance Scaler', minimum=0.1, maximum=3.0,
-                                                        step=0.001, value=1.5, info='The scaler multiplied to positive ADM (use 1.0 to disable). ')
-                        adm_scaler_negative = gr.Slider(label='Negative ADM Guidance Scaler', minimum=0.1, maximum=3.0,
-                                                        step=0.001, value=0.8, info='The scaler multiplied to negative ADM (use 1.0 to disable). ')
-                        adm_scaler_end = gr.Slider(label='ADM Guidance End At Step', minimum=0.0, maximum=1.0,
-                                                   step=0.001, value=0.3,
-                                                   info='When to end the guidance from positive/negative ADM. ')
+            enhancement_image_time = time.perf_counter() - enhancement_image_start_time
+            print(f'Enhancement image time: {enhancement_image_time:.2f} seconds')
 
-                        refiner_swap_method = gr.Dropdown(label='Refiner swap method', value=flags.refiner_swap_method,
-                                                          choices=['joint', 'separate', 'vae'])
-                        type_cfg = gr.Radio(label='CFG control type',choices=['CFG Mimicking from TSNR','CFG rescale','Off'], value=modules.config.default_type_cfg)
-                        rescale_cfg = gr.Slider(label='CFG rescale', minimum=0, maximum=1, step=0.01,
-                                                 value=modules.config.default_rescale_cfg,visible=False,interactive=True)
-                        adaptive_cfg = gr.Slider(label='CFG Mimicking from TSNR', minimum=1.0, maximum=30.0, step=0.01,
-                                                 value=modules.config.default_cfg_tsnr,visible=True,
-                                                 info='Enabling Fooocus\'s implementation of CFG mimicking for TSNR '
-                                                      '(effective when real CFG > mimicked CFG).')
-                        def cfg_select(cfg):
-                            scale = (cfg == 'CFG rescale')
-                            adaptive = (cfg == 'CFG Mimicking from TSNR')
-                            return gr.update(visible=scale), gr.update(visible=adaptive)
-                        type_cfg.change(cfg_select,inputs=type_cfg,outputs=[rescale_cfg,adaptive_cfg])
-                        clip_skip = gr.Slider(label='CLIP Skip', minimum=1, maximum=flags.clip_skip_max, step=1,
-                                                 value=modules.config.default_clip_skip,
-                                                 info='Bypass CLIP layers to avoid overfitting (use 1 to not skip any layers, 2 is recommended).')
-                        sampler_name = gr.Dropdown(label='Sampler', choices=flags.sampler_list,
-                                                   value=modules.config.default_sampler)
-                        scheduler_name = gr.Dropdown(label='Scheduler', choices=flags.scheduler_list,
-                                                     value=modules.config.default_scheduler)
-                        vae_name = gr.Dropdown(label='VAE', choices=[modules.flags.default_vae] + modules.config.vae_filenames,
-                                                     value=modules.config.default_vae, show_label=True)
-
-                        generate_image_grid = gr.Checkbox(label='Generate and Save Image Grid for Each Batch',
-                                                          info='(Experimental) This may cause performance problems on some computers and certain internet conditions.',
-                                                          value=False)
-
-                        overwrite_step = gr.Slider(label='Forced Overwrite of Sampling Step',
-                                                   minimum=-1, maximum=200, step=1,
-                                                   value=modules.config.default_overwrite_step,
-                                                   info='Set as -1 to disable. For developer debugging.')
-                        overwrite_switch = gr.Slider(label='Forced Overwrite of Refiner Switch Step',
-                                                     minimum=-1, maximum=200, step=1,
-                                                     value=modules.config.default_overwrite_switch,
-                                                     info='Set as -1 to disable. For developer debugging.')
-                        overwrite_width = gr.Slider(label='Forced Overwrite of Generating Width',
-                                                    minimum=-1, maximum=2048, step=1, value=-1,
-                                                    info='Set as -1 to disable. For developer debugging. '
-                                                         'Results will be worse for non-standard numbers that SDXL is not trained on.')
-                        overwrite_height = gr.Slider(label='Forced Overwrite of Generating Height',
-                                                     minimum=-1, maximum=2048, step=1, value=-1,
-                                                     info='Set as -1 to disable. For developer debugging. '
-                                                          'Results will be worse for non-standard numbers that SDXL is not trained on.')
-                        overwrite_vary_strength = gr.Slider(label='Forced Overwrite of Denoising Strength of "Vary"',
-                                                            minimum=-1, maximum=1.0, step=0.001, value=-1,
-                                                            info='Set as negative number to disable. For developer debugging.')
-                        overwrite_upscale_strength = gr.Slider(label='Forced Overwrite of Denoising Strength of "Upscale"',
-                                                               minimum=-1, maximum=1.0, step=0.001,
-                                                               value=modules.config.default_overwrite_upscale,
-                                                               info='Set as negative number to disable. For developer debugging.')
-
-                        disable_preview = gr.Checkbox(label='Disable Preview', value=modules.config.default_black_out_nsfw,
-                                                      interactive=not modules.config.default_black_out_nsfw,
-                                                      info='Disable preview during generation.')
-                        disable_intermediate_results = gr.Checkbox(label='Disable Intermediate Results',
-                                                      value=flags.Performance.has_restricted_features(modules.config.default_performance),
-                                                      info='Disable intermediate results during generation, only show final gallery.')
-
-                        disable_seed_increment = gr.Checkbox(label='Disable seed increment',
-                                                             info='Disable automatic seed increment when image number is > 1.',
-                                                             value=False)
-                        read_wildcards_in_order = gr.Checkbox(label="Read wildcards in order", value=False)
-
-                        black_out_nsfw = gr.Checkbox(label='Black Out NSFW', value=modules.config.default_black_out_nsfw,
-                                                     interactive=not modules.config.default_black_out_nsfw,
-                                                     info='Use black image if NSFW is detected.')
-
-                        black_out_nsfw.change(lambda x: gr.update(value=x, interactive=not x),
-                                              inputs=black_out_nsfw, outputs=disable_preview, queue=False,
-                                                         show_progress=False)
-                        black_out_nsfw.change(civitai_helper_nsfw,inputs=black_out_nsfw)
-
-
-                        if not args_manager.args.disable_image_log:
-                            save_final_enhanced_image_only = gr.Checkbox(label='Save only final enhanced/ADetailer image',
-                                                                         value=modules.config.default_save_only_final_enhanced_image)
-
-                        if not args_manager.args.disable_metadata:
-                            save_metadata_to_images = gr.Checkbox(label='Save Metadata to Images', value=modules.config.default_save_metadata_to_images,
-                                                                  info='Adds parameters to generated images allowing manual regeneration.')
-                            metadata_scheme = gr.Radio(label='Metadata Scheme', choices=flags.metadata_scheme, value=modules.config.default_metadata_scheme,
-                                                       info='Image Prompt parameters are not included. Use png and a1111 for compatibility with Civitai.',
-                                                       visible=modules.config.default_save_metadata_to_images)
-
-                            save_metadata_to_images.change(lambda x: gr.update(visible=x), inputs=[save_metadata_to_images], outputs=[metadata_scheme],
-                                                           queue=False, show_progress=False)
-
-                    with gr.Tab(label='Control'):
-                        debugging_cn_preprocessor = gr.Checkbox(label='Debug Preprocessors', value=False,
-                                                                info='See the results from preprocessors.')
-                        skipping_cn_preprocessor = gr.Checkbox(label='Skip Preprocessors', value=False,
-                                                               info='Do not preprocess images. (Inputs are already canny/depth/cropped-face/etc.)')
-
-                        mixing_image_prompt_and_vary_upscale = gr.Checkbox(label='Mixing Image Prompt and Vary/Upscale',
-                                                                           value=False)
-                        mixing_image_prompt_and_inpaint = gr.Checkbox(label='Mixing Image Prompt and Inpaint',
-                                                                      value=False)
-
-                        controlnet_softness = gr.Slider(label='Softness of ControlNet', minimum=0.0, maximum=1.0,
-                                                        step=0.001, value=0.25,
-                                                        info='Similar to the Control Mode in A1111 (use 0.0 to disable). ')
-
-                        with gr.Tab(label='Canny'):
-                            canny_low_threshold = gr.Slider(label='Canny Low Threshold', minimum=1, maximum=255,
-                                                            step=1, value=64)
-                            canny_high_threshold = gr.Slider(label='Canny High Threshold', minimum=1, maximum=255,
-                                                             step=1, value=128)
-                        
-                        with gr.Tab(label='Tiled'):
-                            tile_x = gr.Checkbox(label='Tiled X', value=False)
-                            tile_y = gr.Checkbox(label='Tiled Y', value=False)
-                        with gr.Tab(label='Transparency'):
-                            transper = gr.Dropdown(label='Mode',
-                                    value='None',
-                                    choices=['None','Attention Injection','Conv Injection (SDXL only)'],
-                                    interactive=True)
-                    with gr.Tab(label='Inpaint'):
-                        debugging_inpaint_preprocessor = gr.Checkbox(label='Debug Inpaint Preprocessing', value=False)
-                        debugging_enhance_masks_checkbox = gr.Checkbox(label='Debug Enhance Masks', value=False,
-                                                                       info='Show enhance masks in preview and final results')
-                        debugging_adetailer_masks_checkbox = gr.Checkbox(label='Debug ADetailer Masks', value=False,
-                                                                       info='Show ADetailer masks in preview and final results')
-                        debugging_dino = gr.Checkbox(label='Debug GroundingDINO', value=False,
-                                                     info='Use GroundingDINO boxes instead of more detailed SAM masks')
-                        inpaint_disable_initial_latent = gr.Checkbox(label='Disable initial latent in inpaint', value=False)
-                        inpaint_engine = gr.Dropdown(label='Inpaint Engine',
-                                                     value=modules.config.default_inpaint_engine_version,
-                                                     choices=flags.inpaint_engine_versions,
-                                                     info='Version of Fooocus inpaint model. If set, use performance Quality or Speed (no performance LoRAs) for best results.')
-                        inpaint_strength = gr.Slider(label='Inpaint Denoising Strength',
-                                                     minimum=0.0, maximum=1.0, step=0.001, value=1.0,
-                                                     info='Same as the denoising strength in A1111 inpaint. '
-                                                          'Only used in inpaint, not used in outpaint. '
-                                                          '(Outpaint always use 1.0)')
-                        inpaint_respective_field = gr.Slider(label='Inpaint Respective Field',
-                                                             minimum=0.0, maximum=1.0, step=0.001, value=0.618,
-                                                             info='The area to inpaint. '
-                                                                  'Value 0 is same as "Only Masked" in A1111. '
-                                                                  'Value 1 is same as "Whole Image" in A1111. '
-                                                                  'Only used in inpaint, not used in outpaint. '
-                                                                  '(Outpaint always use 1.0)')
-                        inpaint_erode_or_dilate = gr.Slider(label='Mask Erode or Dilate',
-                                                            minimum=-64, maximum=64, step=1, value=0,
-                                                            info='Positive value will make white area in the mask larger, '
-                                                                 'negative value will make white area smaller. '
-                                                                 '(default is 0, always processed before any mask invert)')
-                        dino_erode_or_dilate = gr.Slider(label='GroundingDINO Box Erode or Dilate',
-                                                         minimum=-64, maximum=64, step=1, value=0,
-                                                         info='Positive value will make white area in the mask larger, '
-                                                              'negative value will make white area smaller. '
-                                                              '(default is 0, processed before SAM)')
-
-                        inpaint_mask_color = gr.ColorPicker(label='Inpaint/Clean brush color', value='#FFFFFF', elem_id='inpaint_brush_color')
-
-                        inpaint_ctrls = [debugging_inpaint_preprocessor, inpaint_disable_initial_latent, inpaint_engine,
-                                         inpaint_strength, inpaint_respective_field,
-                                         inpaint_advanced_masking_checkbox, invert_mask_checkbox, inpaint_erode_or_dilate]
-
-                        inpaint_advanced_masking_checkbox.change(lambda x: [gr.update(visible=x)] * 2,
-                                                                 inputs=inpaint_advanced_masking_checkbox,
-                                                                 outputs=[inpaint_mask_image, inpaint_mask_generation_col],
-                                                                 queue=False, show_progress=False)
-
-                        inpaint_mask_color.change(lambda x: (gr.update(brush_color=x), gr.update(brush_color=x), gr.update(brush_color=x)), inputs=inpaint_mask_color,
-                                                  outputs=[inpaint_input_image,init_img_with_mask,clean_frame],
-                                                  queue=False, show_progress=False)
-
-                    with gr.Tab(label='FreeU'):
-                        freeu_enabled = gr.Checkbox(label='Enabled', value=False)
-                        freeu_b1 = gr.Slider(label='B1', minimum=0, maximum=2, step=0.01, value=1.01)
-                        freeu_b2 = gr.Slider(label='B2', minimum=0, maximum=2, step=0.01, value=1.02)
-                        freeu_s1 = gr.Slider(label='S1', minimum=0, maximum=4, step=0.01, value=0.99)
-                        freeu_s2 = gr.Slider(label='S2', minimum=0, maximum=4, step=0.01, value=0.95)
-                        freeu_ctrls = [freeu_enabled, freeu_b1, freeu_b2, freeu_s1, freeu_s2]
-
-                    with gr.Tab(label='Paths and Presets'):
-                      def process_path(path):
-                          if '\\' in path:
-                              return path.replace('\\', '\\')
-                          else:
-                              return path
-
-                      path_checkpoints_set = gr.Textbox(label='Checkpoints path', value=process_path(', '.join(modules.config.paths_checkpoints)), show_label=True, interactive=True)
-                      path_loras_set = gr.Textbox(label='Loras path', value=process_path(', '.join(modules.config.paths_loras)), show_label=True, interactive=True)
-                      path_embeddings_set = gr.Textbox(label='Embeddings path', value=(modules.config.path_embeddings), show_label=True, interactive=True)
-                      path_vae_set = gr.Textbox(label='VAE path', value=process_path(modules.config.path_vae), show_label=True, interactive=True)
-                      path_outputs_set = gr.Textbox(label='Outputs path', value=process_path(modules.config.path_outputs), show_label=True, interactive=True)
-                      path_change=gr.Button(value='Apply change paths')
-                      preset_name = gr.Textbox(label='Filename new preset', show_label=True, interactive=True)
-                      save_preset_button=gr.Button(value='Save preset')
-                
-                      preset_have = gr.Dropdown(label='Preset',
-                                                   choices=modules.config.available_presets,
-                                                   value=args_manager.args.preset if args_manager.args.preset else "initial",
-                                                   interactive=True)
-                      delete_preset_button=gr.Button(value='Delete preset')
-
-                def dev_mode_checked(r):
-                    return gr.update(visible=r)
-
-
-                dev_mode.change(dev_mode_checked, inputs=[dev_mode], outputs=[dev_tools],
-                                queue=False, show_progress=False)
-
-                def update_ad_model_choices():
-                    models=[gr.update(choices = modules.config.yolo_filenames) for _ in range(modules.config.default_adetail_tab)]
-                    ckpt=[gr.update(choices=["Use same checkpoint"]+modules.config.model_filenames) for _ in range(modules.config.default_adetail_tab)]
-
-                    return models + ckpt
-
-                    
-
-                def refresh_files_clicked():
-                    modules.config.update_files()
-                    results = [gr.update(choices=modules.config.model_filenames)]
-                    results += [gr.update(choices=['None'] + modules.config.emb_filenames)]
-                    results += [gr.update(choices=['None'] + modules.config.model_filenames)]
-                    results += [gr.update(choices=[flags.default_vae] + modules.config.vae_filenames)]
-                    results += [gr.update(choices=modules.config.upscaler_filenames)]
-                    if not args_manager.args.disable_preset_selection:
-                        results += [gr.update(choices=modules.config.available_presets)]
-                    for i in range(modules.config.default_max_lora_number):
-                        results += [gr.update(interactive=True),
-                                    gr.update(choices=['None'] + modules.config.lora_filenames), gr.update()]
-                    
-                    return results
-
-                refresh_files_output = [base_model, emb_model, refiner_model, vae_name, uov_model]
-                if not args_manager.args.disable_preset_selection:
-                    refresh_files_output += [preset_selection]
-                refresh_files.click(refresh_files_clicked, [], refresh_files_output + lora_ctrls,
-                                    queue=False, show_progress=False) \
-                                    .then(update_ad_model_choices,inputs=[],outputs=ad_model_dropdowns+ad_ckpt_dropdowns)
-
-        state_is_generating = gr.State(False)
-
-        load_data_outputs = [advanced_checkbox, image_number, prompt, negative_prompt, style_selections,
-                             performance_selection, overwrite_step, overwrite_switch, aspect_ratios_selection,
-                             overwrite_width, overwrite_height, guidance_scale, sharpness, adm_scaler_positive,
-                             adm_scaler_negative, adm_scaler_end, refiner_swap_method, adaptive_cfg, rescale_cfg, type_cfg, clip_skip,
-                             base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, vae_name,
-                             seed_random, image_seed, inpaint_engine, inpaint_engine_state,
-                             inpaint_mode] + enhance_inpaint_mode_ctrls + [generate_button,
-                             load_parameter_button] + freeu_ctrls + lora_ctrls
-
-        if not args_manager.args.disable_preset_selection:
-            def preset_selection_change(preset, is_generating, inpaint_mode):
-                preset_content = modules.config.try_get_preset_content(preset) if preset != 'initial' else {}
-                preset_prepared = modules.meta_parser.parse_meta_from_preset(preset_content)
-                default_model = preset_prepared.get('base_model')
-                previous_default_models = preset_prepared.get('previous_default_models', [])
-                checkpoint_downloads = preset_prepared.get('checkpoint_downloads', {})
-                embeddings_downloads = preset_prepared.get('embeddings_downloads', {})
-                lora_downloads = preset_prepared.get('lora_downloads', {})
-                vae_downloads = preset_prepared.get('vae_downloads', {})
-                preset_prepared['base_model'], preset_prepared['checkpoint_downloads'] = launch.download_models(
-                    default_model, previous_default_models, checkpoint_downloads, embeddings_downloads, lora_downloads,
-                    vae_downloads)
-                if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
-                    del preset_prepared['prompt']
-
-                return modules.meta_parser.load_parameter_button_click(json.dumps(preset_prepared), is_generating, inpaint_mode)
-
-
-            def inpaint_engine_state_change(inpaint_engine_version, *args):
-                if inpaint_engine_version == 'empty':
-                    inpaint_engine_version = modules.config.default_inpaint_engine_version
-
-                result = []
-                for inpaint_mode in args:
-                    if inpaint_mode != modules.flags.inpaint_option_detail:
-                        result.append(gr.update(value=inpaint_engine_version))
-                    else:
-                        result.append(gr.update())
-
-                return result
-
-            preset_selection.change(preset_selection_change, inputs=[preset_selection, state_is_generating, inpaint_mode], outputs=load_data_outputs, queue=False, show_progress=True) \
-                .then(fn=style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False) \
-                .then(lambda: None, _js='()=>{refresh_style_localization();}') \
-                .then(inpaint_engine_state_change, inputs=[inpaint_engine_state] + enhance_inpaint_mode_ctrls, outputs=enhance_inpaint_engine_ctrls, queue=False, show_progress=False)
-
-        performance_selection.change(lambda x: [gr.update(interactive=not flags.Performance.has_restricted_features(x))] * 11 +
-                                               [gr.update(visible=not flags.Performance.has_restricted_features(x))] * 1 +
-                                               [gr.update(value=flags.Performance.has_restricted_features(x))] * 1 +
-                                               [gr.update(value=flags.Performance(x).steps())],
-                                     inputs=performance_selection,
-                                     outputs=[
-                                         guidance_scale, sharpness, adm_scaler_end, adm_scaler_positive,
-                                         adm_scaler_negative, refiner_switch, refiner_model, sampler_name,
-                                         scheduler_name, adaptive_cfg, refiner_swap_method, negative_prompt, disable_intermediate_results, steps_slider
-                                     ], queue=False, show_progress=False)
-
-        output_format.input(lambda x: gr.update(output_format=x), inputs=output_format)
-
-        advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, advanced_column,
-                                 queue=False, show_progress=False) \
-            .then(fn=lambda: None, _js='refresh_grid_delayed', queue=False, show_progress=False)
-        def seeTranlateAfterClick(adv_trans, prompt, negative_prompt="", srcTrans="auto", toTrans="en"):
-            if(adv_trans):
-                positive, negative = translate(prompt, negative_prompt, srcTrans, toTrans)
-                return [positive, negative]   
-            return ["", ""]
+        stop_processing(async_task, processing_start_time)
         
-        gtrans.click(translate, inputs=[prompt, negative_prompt, srcTrans, toTrans], outputs=[prompt, negative_prompt])
-        gtrans.click(translate, inputs=[prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr])
+        return
+
+    while True:
+        time.sleep(0.01)
         
-        change_src_to.click(change_lang, inputs=[srcTrans,toTrans], outputs=[toTrans,srcTrans])
-        adv_trans.change(show_viewtrans, inputs=adv_trans, outputs=[viewstrans])
-
-        inpaint_mode.change(inpaint_mode_change, inputs=[inpaint_mode, inpaint_engine_state], outputs=[
-            inpaint_additional_prompt, outpaint_selections,outpaint_width,outpaint_heighth, example_inpaint_prompts,
-            inpaint_disable_initial_latent, inpaint_engine,
-            inpaint_strength, inpaint_respective_field
-        ], show_progress=False, queue=False)
-
-        # load configured default_inpaint_method
-        default_inpaint_ctrls = [inpaint_mode, inpaint_disable_initial_latent, inpaint_engine, inpaint_strength, inpaint_respective_field]
-        for mode, disable_initial_latent, engine, strength, respective_field in [default_inpaint_ctrls] + enhance_inpaint_update_ctrls:
-            shared.gradio_root.load(inpaint_mode_change, inputs=[mode, inpaint_engine_state], outputs=[
-                inpaint_additional_prompt, outpaint_selections, outpaint_width, outpaint_heighth, example_inpaint_prompts, disable_initial_latent,
-                engine, strength, respective_field
-            ], show_progress=False, queue=False)
-
-        generate_mask_button.click(fn=generate_mask,
-                                   inputs=[inpaint_input_image, inpaint_mask_model, inpaint_mask_cloth_category,
-                                           inpaint_mask_dino_prompt_text, inpaint_mask_sam_model,
-                                           inpaint_mask_box_threshold, inpaint_mask_text_threshold,
-                                           inpaint_mask_sam_max_detections, dino_erode_or_dilate, debugging_dino],
-                                   outputs=inpaint_mask_image, show_progress=True, queue=True) \
-                                   .then(fn=lambda x: None,inputs=inpaint_mask_image,outputs=None,_js="apply_generated_mask",queue=False,show_progress=False)
-
-        ctrls = [currentTask, generate_image_grid]
-        ctrls += [
-            prompt, negative_prompt, style_selections,
-            performance_selection, steps_slider, aspect_ratios_selection, image_number, output_format, image_seed,
-            read_wildcards_in_order, sharpness, guidance_scale
-        ]
-
-        ctrls += [base_model, refiner_model, refiner_switch] + lora_ctrls
-        ctrls += [input_image_checkbox, current_tab]
-        ctrls += [uov_method, uov_input_image]
-        ctrls += [outpaint_selections, outpaint_width, outpaint_shift_width, outpaint_heighth, outpaint_shift_heighth] 
-        ctrls += [inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
-        ctrls += [disable_preview, disable_intermediate_results, disable_seed_increment, black_out_nsfw]
-        ctrls += [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, type_cfg, rescale_cfg, adaptive_cfg, clip_skip]
-        ctrls += [sampler_name, scheduler_name, vae_name]
-        ctrls += [overwrite_step, overwrite_switch, overwrite_width, overwrite_height, overwrite_vary_strength]
-        ctrls += [overwrite_upscale_strength, mixing_image_prompt_and_vary_upscale, mixing_image_prompt_and_inpaint]
-        ctrls += [debugging_cn_preprocessor, skipping_cn_preprocessor, canny_low_threshold, canny_high_threshold]
-        ctrls += [refiner_swap_method, controlnet_softness]
-        ctrls += freeu_ctrls
-        ctrls += inpaint_ctrls
-
-        if not args_manager.args.disable_image_log:
-            ctrls += [save_final_enhanced_image_only]
-
-        if not args_manager.args.disable_metadata:
-            ctrls += [save_metadata_to_images, metadata_scheme]
-
-        ctrls += ip_ctrls
-        ctrls += [debugging_dino, dino_erode_or_dilate, debugging_enhance_masks_checkbox]
-
-        ctrls += [adetailer_checkbox,enhance_checkbox]
-        ctrls += [adetail_input_image, adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type]
-        ctrls += ad_component
-        ctrls += [enhance_input_image, enhance_uov_method, enhance_uov_processing_order, enhance_uov_prompt_type]
-        ctrls += enhance_ctrls
-
-        ctrls += [only_detect,debugging_adetailer_masks_checkbox]
-
-        
-        
-        
-
-        def parse_meta(raw_prompt_txt, is_generating):
-            loaded_json = None
-            if is_json(raw_prompt_txt):
-                loaded_json = json.loads(raw_prompt_txt)
-
-            if loaded_json is None:
-                if is_generating:
-                    return gr.update(), gr.update(), gr.update()
-                else:
-                    return gr.update(), gr.update(visible=True), gr.update(visible=False)
-
-            return json.dumps(loaded_json), gr.update(visible=False), gr.update(visible=True)
-
-        prompt.input(parse_meta, inputs=[prompt, state_is_generating], outputs=[prompt, generate_button, load_parameter_button], queue=False, show_progress=False)
-
-        load_parameter_button.click(modules.meta_parser.load_parameter_button_click, inputs=[prompt, state_is_generating, inpaint_mode], outputs=load_data_outputs, queue=False, show_progress=False)
-
-        def trigger_metadata_import(file, state_is_generating):
-            parameters, metadata_scheme = modules.meta_parser.read_info_from_image(file)
-            if parameters is None:
-                print('Could not find metadata in the image!')
-                parsed_parameters = {}
-            else:
-                metadata_parser = modules.meta_parser.get_metadata_parser(metadata_scheme)
-                parsed_parameters = metadata_parser.to_json(parameters)
-
-            return modules.meta_parser.load_parameter_button_click(parsed_parameters, state_is_generating, inpaint_mode)
-
-        metadata_import_button.click(trigger_metadata_import, inputs=[metadata_input_image, state_is_generating], outputs=load_data_outputs, queue=False, show_progress=True) \
-            .then(style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False)
-        
-        #!ctrls += [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random]
-        ctrls += [translate_enabled, srcTrans, toTrans, prompt, negative_prompt]
-        ctrls += [name_prefix]
-        ctrls += [face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index]
-        ctrls += [enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight]
-        ctrls += [enable_pm,files,style_strength_ratio,enable_doodle,sketch_image,adapter_conditioning_scale,adapter_conditioning_factor]
-        ctrls += [enable_obp,insanitylevel,subject, artist, imagetype, prefixprompt,suffixprompt,]
-        ctrls += [promptcompounderlevel, ANDtoggle, silentmode, antistring]
-        ctrls += [seperator, givensubject, smartsubject, giventypeofimage, imagemodechance, chosengender]
-        ctrls += [chosensubjectsubtypeobject,chosensubjectsubtypehumanoid, chosensubjectsubtypeconcept]
-        ctrls += [promptvariantinsanitylevel, givenoutfit, autonegativeprompt,autonegativepromptstrength]
-        ctrls += [autonegativepromptenhance, base_model_obp,OBP_preset, amountoffluff, promptenhancer]
-        ctrls += [presetprefix, presetsuffix,iteration_number,rnd_iteration]
-        ctrls += [seed_random]
-        ctrls += [tile_x,tile_y]
-        ctrls += [poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant]
-        ctrls += [transper]
-
-        ctrls += [uov_model]
-
-
-        def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
-            if translate_enabled:
-                  workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
-            return workprompt
-
-        def to_dict(obj):
-            return obj.__dict__
-        def get_value(value):
-            return value
-        def save_preset(*args):
-            argsList = list(args)
-            loras_len=argsList.pop()
-            ctrl=[]
-            for _ in range(loras_len):
-                temp_list = []
-                for _ in range(3):
-                    temp_list.append(argsList.pop())
-                temp_list.reverse()
-                ctrl.append(temp_list)
-            ctrl.reverse()
-            name=argsList.pop()
-            args = tuple(argsList)
-            args = list(args)
-            args.pop(0)
-            p=worker.AsyncTask(args=args)
-            data ={}
-            data["base_model"]=p.base_model_name
-            data["default_refiner"]=p.refiner_model_name
-            data["default_refiner_switch"]=p.refiner_switch
-            data["default_loras"]=ctrl
-            data["default_cfg_scale"]=p.cfg_scale
-            data["default_sample_sharpness"]=p.sharpness
-            data["default_type_cfg"] = p.type_cfg
-            data["default_rescale_cfg"] = p.rescale_cfg
-            data["default_cfg_tsnr"]=p.adaptive_cfg
-            data["default_clip_skip"]=p.clip_skip
-            data["default_sampler"]=p.sampler_name
-            data["default_scheduler"]=p.scheduler_name
-            data["default_overwrite_step"]=p.overwrite_step
-            data["default_overwrite_switch"]=p.overwrite_switch
-            data["default_performance"]=p.performance_selection.value
-            data["default_image_number"]=p.image_number
-            data["default_prompt_negative"]=p.negative_prompt
-            data["default_styles"]=p.style_selections
-            data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
-            data["default_vae"]=p.vae_name
-            #data["default_inpaint_engine_version"]=p.inpaint_engine
-            save_path = 'presets/' + name + '.json'
-            with open(save_path, "w", encoding="utf-8") as json_file:
-                json.dump(data, json_file, ensure_ascii=False, indent=4)
-
-            gr.Info(f"Preset '{name}' saved.")
-            return
-        def delete_preset (preset):
-            if preset !='initial' and preset !='default':
-                try:
-                    os.remove('presets/' + preset + '.json')
-                    gr.Info(f"Preset '{preset}' deleted.")
-                except Exception as e:
-                    print(f"Error: {e}")  
-            else:
-                print(f"Do not delete '{preset}'.")
-            return
-        save_preset_button.click(save_preset,inputs=ctrls + [preset_name] + lora_ctrls + [lora_len]) \
-	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
-	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name,preset_have])
-        delete_preset_button.click(delete_preset,inputs=preset_have) \
-	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
-	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
-
-        
-        def reverse_path(path):
-            if '\\' in path:
-                return path.replace('\\', '\\\\')
-            else:
-                return path
-
-        def path_change_action(path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set):
-            conf_path = "config.txt"
-            with open(conf_path, "r", encoding="utf-8") as file:
-                data = json.load(file)
-            data["path_checkpoints"] =path_checkpoints_set.split(',')
-            data["path_loras"] = path_loras_set.split(',')
-            data["path_embeddings"] = path_embeddings_set
-            data["path_vae"] = path_vae_set
-            data["path_outputs"] = path_outputs_set
-            with open(conf_path, "w", encoding="utf-8") as file:
-                json.dump(data, file, indent=4, ensure_ascii=False)
-
-
-            modules.config.paths_checkpoints=reverse_path(path_checkpoints_set.split(','))
-            modules.config.paths_loras=reverse_path(path_loras_set.split(','))
-            modules.config.path_embeddings=reverse_path(path_embeddings_set)
-            modules.config.path_vae=reverse_path(path_vae_set)
-            modules.config.path_outputs=reverse_path(path_outputs_set)
-            return
-
-        path_change.click(path_change_action, inputs=[path_checkpoints_set,path_loras_set,path_embeddings_set,path_vae_set,path_outputs_set]) \
-            .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False)
-
-        new_negative_checkbox.change(lambda x: (gr.update(visible=x), gr.update(visible=not x)),
-                inputs=[new_negative_checkbox],outputs=[new_negative_prompt, negative_prompt],queue=False, show_progress=False)
-        new_negative_prompt.blur(lambda x: gr.update(value=x),inputs=[new_negative_prompt],
-                    outputs=[negative_prompt],queue=False, show_progress=False)
-
-        negative_prompt.change(lambda x: gr.update(value=x),inputs=[negative_prompt],
-                    outputs=[new_negative_prompt])        
-        xyz_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[xyz_start, stop_button, generate_button, gallery, state_is_generating]) \
-            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-            .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=xyz_plot_gen, inputs=[currentTask,x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, vary_seeds_x, vary_seeds_y, vary_seeds_z, margin_size, csv_mode,grid_theme,always_random], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), False),
-                  outputs=[xyz_start,generate_button, stop_button, state_is_generating]) \
-            .then(fn=update_history_link, outputs=history_link) \
-            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        omost_render.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True),gr.update(visible=False, interactive=False), [], True),
-                              outputs=[omost_render, skip_button, stop_button, generate_button, gallery, state_is_generating]) \
-            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-            .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=omost_gen, inputs=[currentTask, omost_canvas, omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False),gr.update(visible=False, interactive=False), False),
-                  outputs=[omost_render,generate_button, skip_button,stop_button, state_is_generating]) \
-            .then(fn=update_history_link, outputs=history_link) \
-            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
-        prompt_button.click(lambda: (gr.update(interactive=False)),outputs=[prompt_button]) \
-            .then(fn=omost2prompt,inputs=[prompt_agress,prompt_code],outputs=prompt) \
-            .then(lambda: (gr.update(interactive=True)),outputs=[prompt_button])
-
-
-
+        if len(async_tasks) > 0:
+            task = async_tasks.pop(0)
             
-        generate_button.click(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-            .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-            .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-            .then(fn=generate_clicked, inputs=currentTask, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(fn=seeTranlateAfterClick, inputs=[adv_trans, prompt, negative_prompt, srcTrans, toTrans], outputs=[p_tr, p_n_tr]) \
-            .then(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[generate_button, stop_button, skip_button, state_is_generating]) \
-            .then(fn=update_history_link, outputs=history_link) \
-            .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+            try:
+                handler(task)
+                if task.enable_obp:
+                    task.iteration_number-=1
+                    if task.iteration_number != 0:
+                        if task.rnd_iteration:
+                            task.seed=random.randint(constants.MIN_SEED, constants.MAX_SEED)
+                        async_tasks.insert(0, task)
+                        time.sleep(0.01)
+                        continue
 
-        batch_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[batch_start,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-              .then(fn=batch.clear_dirs,inputs=ext_dir) \
-              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip,ext_dir]) \
-              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-              .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=image_batch, inputs=[currentTask,ratio,image_action,image_mode,ip_stop_batch,ip_weight_batch,upscale_mode], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[batch_start,generate_button, stop_button, skip_button, state_is_generating])
-
-        prompt_start.click(lambda: (gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(interactive=False),gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True),
-                              outputs=[prompt_load,prompt_start,prompt_delete,prompt_clear,batch_prompt,stop_button, skip_button, generate_button, gallery, state_is_generating]) \
-              .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
-              .then(fn=get_task, inputs=ctrls, outputs=currentTask) \
-              .then(fn=prompt_batch,inputs=[currentTask,batch_prompt,positive_batch,negative_batch], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-              .then(lambda: (gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(interactive=True),gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False),
-                  outputs=[prompt_load,prompt_start,batch_prompt,prompt_delete,prompt_clear,generate_button, stop_button, skip_button, state_is_generating]) \
-              .then(fn=update_history_link, outputs=history_link) \
-              .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
+                if task.generate_image_grid:
+                    build_image_wall(task)
+                task.yields.append(['finish', task.results])
+                pipeline.prepare_text_encoder(async_call=True)
+            except:
+                traceback.print_exc()
+                task.yields.append(['finish', task.results])
+            finally:
+                if pid in modules.patch.patch_settings:
+                    del modules.patch.patch_settings[pid]
+    pass
 
 
-        reset_button.click(lambda: [worker.AsyncTask(args=[]), False, gr.update(visible=True, interactive=True)] +
-                                   [gr.update(visible=False)] * 6 +
-                                   [gr.update(visible=True, value=[])],
-                           outputs=[currentTask, state_is_generating, generate_button,
-                                    reset_button, stop_button, skip_button,
-                                    progress_html, progress_window, progress_gallery, gallery],
-                           queue=False)
-
-        for notification_file in ['notification.ogg', 'notification.mp3']:
-            if os.path.exists(notification_file):
-                gr.Audio(interactive=False, value=notification_file, elem_id='audio_notification', visible=False)
-                break
-
-        def trigger_describe(modes, img, apply_styles):
-            describe_prompts = []
-            styles = set()
-
-            if flags.describe_type_photo in modes:
-                from extras.interrogate import default_interrogator as default_interrogator_photo
-                describe_prompts.append(default_interrogator_photo(img))
-                styles.update(["Fooocus V2", "Fooocus Enhance", "Fooocus Sharp"])
-
-            if flags.describe_type_anime in modes:
-                from extras.wd14tagger import default_interrogator as default_interrogator_anime
-                describe_prompts.append(default_interrogator_anime(img))
-                styles.update(["Fooocus V2", "Fooocus Masterpiece"])
-
-            if len(styles) == 0 or not apply_styles:
-                styles = gr.update()
-            else:
-                styles = list(styles)
-
-            if len(describe_prompts) == 0:
-                describe_prompt = gr.update()
-            else:
-                describe_prompt = ', '.join(describe_prompts)
-
-            return describe_prompt, styles
-
-        describe_btn.click(trigger_describe, inputs=[describe_methods, describe_input_image, describe_apply_styles],
-                           outputs=[prompt, style_selections], show_progress=True, queue=True) \
-            .then(fn=style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False) \
-            .then(lambda: None, _js='()=>{refresh_style_localization();}')
-
-        if args_manager.args.enable_auto_describe_image:
-            def trigger_auto_describe(mode, img, prompt, apply_styles):
-                # keep prompt if not empty
-                if prompt == '':
-                    return trigger_describe(mode, img, apply_styles)
-                return gr.update(), gr.update()
-
-            uov_input_image.upload(trigger_auto_describe, inputs=[describe_methods, uov_input_image, prompt, describe_apply_styles],
-                                   outputs=[prompt, style_selections], show_progress=True, queue=True) \
-                .then(fn=style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False) \
-                .then(lambda: None, _js='()=>{refresh_style_localization();}')
-
-            enhance_input_image.upload(lambda: gr.update(value=True), outputs=enhance_checkbox, queue=False, show_progress=False) \
-                .then(trigger_auto_describe, inputs=[describe_methods, enhance_input_image, prompt, describe_apply_styles],
-                      outputs=[prompt, style_selections], show_progress=True, queue=True) \
-                .then(fn=style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False) \
-                .then(lambda: None, _js='()=>{refresh_style_localization();}')
-    gr.HTML("""
-    <div style="text-align: center;">
-        <p>We are in <a href="https://t.me/+xlhhGmrz9SlmYzg6" target="_blank">Telegram</a></p>
-        
-    </div>
-    """)
-    gr.HTML("""
-        <div style="text-align: center;">
-            <p>Original code by <a href="https://github.com/lllyasviel/Fooocus" target="_blank">lllyasviel and other contributors.</a> Forked and extended by <a href="https://github.com/shaitanzx">Shahmatist^RMDA.</a> Logo by 𝓐𝓵𝓮𝔁 ☭ 𝓜𝓮</p>        
-        </div>
-        """)
-
-
-    
-  
-def dump_default_english_config():
-    from modules.localization import dump_english_config
-    dump_english_config(grh.all_components)
-
-
-# dump_default_english_config()
-
-shared.gradio_root.launch(
-    inbrowser=args_manager.args.in_browser,
-    server_name=args_manager.args.listen,
-    server_port=args_manager.args.port,
-    share=args_manager.args.share,
-    auth=check_auth if (args_manager.args.share or args_manager.args.listen) and auth_enabled else None,
-    allowed_paths=[modules.config.path_outputs],
-    blocked_paths=[constants.AUTH_FILENAME]
-)
-
+threading.Thread(target=worker, daemon=True).start()
 
 
