@@ -1573,42 +1573,228 @@ def worker():
                 and isinstance(async_task.inpaint_input_image, dict):
             inpaint_image = async_task.inpaint_input_image['image']
             inpaint_mask = async_task.inpaint_input_image['mask'][:, :, 0]
+            print(
+                '[InpaintDebug] ---------- apply_image_input ----------',
+                flush=True
+            )
+
+            debug_mask(
+                'inpaint_input_image',
+                async_task.inpaint_input_image
+            )
+
+            debug_mask(
+                'inpaint_image',
+                inpaint_image
+            )
+
+            debug_mask(
+                'initial inpaint_mask',
+                inpaint_mask
+            )
+
+            print(
+                '[InpaintDebug] advanced masking:',
+                async_task.inpaint_advanced_masking_checkbox,
+                flush=True
+            )
+
+            debug_mask(
+                'inpaint_mask_image_upload BEFORE advanced processing',
+                async_task.inpaint_mask_image_upload
+            )
+
+            def debug_mask(name, value):
+                print(f'[InpaintDebug] {name}: type={type(value)}', flush=True)
+
+                if value is None:
+                    print(f'[InpaintDebug] {name}: value is None', flush=True)
+                    return
+
+                if isinstance(value, dict):
+                    print(
+                        f'[InpaintDebug] {name}: '
+                        f'dict keys={list(value.keys())}',
+                        flush=True
+                    )
+
+                    for key in ('image', 'mask'):
+                        if key not in value:
+                            print(
+                                f'[InpaintDebug] {name}.{key}: MISSING',
+                                flush=True
+                            )
+                            continue
+
+                        debug_mask(
+                            f'{name}.{key}',
+                            value[key]
+                        )
+
+                    return
+
+                if isinstance(value, np.ndarray):
+                    if value.size == 0:
+                        print(
+                            f'[InpaintDebug] {name}: '
+                            f'empty ndarray, shape={value.shape}',
+                            flush=True
+                        )
+                        return
+
+                    print(
+                        f'[InpaintDebug] {name}: '
+                        f'shape={value.shape}, '
+                        f'dtype={value.dtype}, '
+                        f'min={value.min()}, '
+                        f'max={value.max()}, '
+                        f'mean={value.mean():.4f}, '
+                        f'nonzero={np.count_nonzero(value)}, '
+                        f'pixels={value.shape[0] * value.shape[1] '
+                        f'if value.ndim >= 2 else value.size}',
+                        flush=True
+                    )
+
+                    if value.ndim >= 2:
+                        if value.ndim == 2:
+                            nonempty_pixels = np.count_nonzero(value > 127)
+                        else:
+                            nonempty_pixels = np.count_nonzero(
+                                np.any(value > 127, axis=2)
+                            )
+
+                        print(
+                            f'[InpaintDebug] {name}: '
+                            f'pixels_above_127={nonempty_pixels}',
+                            flush=True
+                        )
+
+                    return
+
+                print(
+                    f'[InpaintDebug] {name}: value={value!r}',
+                    flush=True
+                )
 
             if async_task.inpaint_advanced_masking_checkbox:
-                if isinstance(async_task.inpaint_mask_image_upload, dict):
+                advanced_mask = async_task.inpaint_mask_image_upload
 
-                    # if (isinstance(async_task.inpaint_mask_image_upload['image'], np.ndarray)
-                    #         and isinstance(async_task.inpaint_mask_image_upload['mask'], np.ndarray)
-                    #         and async_task.inpaint_mask_image_upload['image'].ndim == 3):
-                    #     async_task.inpaint_mask_image_upload = np.maximum(
-                    #         async_task.inpaint_mask_image_upload['image'],
-                    #         async_task.inpaint_mask_image_upload['mask'])
+                debug_mask(
+                    'advanced input',
+                    advanced_mask
+                )
 
-                    async_task.inpaint_mask_image_upload = async_task.inpaint_mask_image_upload.get('mask')
-
-                if isinstance(async_task.inpaint_mask_image_upload,
-                            np.ndarray) and async_task.inpaint_mask_image_upload.ndim == 3:
-                    H, W, C = inpaint_image.shape
-
-                    async_task.inpaint_mask_image_upload = resample_image(
-                        async_task.inpaint_mask_image_upload,
-                        width=W,
-                        height=H
+                if isinstance(advanced_mask, dict):
+                    print(
+                        '[InpaintDebug] advanced input is dict; '
+                        'extracting only .mask',
+                        flush=True
                     )
 
-                    async_task.inpaint_mask_image_upload = np.mean(
-                        async_task.inpaint_mask_image_upload,
-                        axis=2
+                    advanced_mask = advanced_mask.get('mask')
+
+                debug_mask(
+                    'advanced mask after dict extraction',
+                    advanced_mask
+                )
+
+                if advanced_mask is None:
+                    print(
+                        '[InpaintDebug] RESULT: advanced mask is EMPTY',
+                        flush=True
                     )
 
-                    async_task.inpaint_mask_image_upload = (
-                        async_task.inpaint_mask_image_upload > 127
-                    ).astype(np.uint8) * 255
-
-                    inpaint_mask = np.maximum(
-                        inpaint_mask,
-                        async_task.inpaint_mask_image_upload
+                elif not isinstance(advanced_mask, np.ndarray):
+                    print(
+                        '[InpaintDebug] RESULT: advanced mask has '
+                        f'unsupported type {type(advanced_mask)}',
+                        flush=True
                     )
+
+                elif advanced_mask.size == 0:
+                    print(
+                        '[InpaintDebug] RESULT: advanced mask ndarray is EMPTY',
+                        flush=True
+                    )
+
+                else:
+                    H, W = inpaint_image.shape[:2]
+
+                    print(
+                        '[InpaintDebug] target image size:',
+                        f'height={H}, width={W}',
+                        flush=True
+                    )
+
+                    if advanced_mask.ndim == 3:
+                        print(
+                            '[InpaintDebug] converting advanced mask '
+                            f'from shape={advanced_mask.shape} to grayscale',
+                            flush=True
+                        )
+
+                        advanced_mask = np.mean(
+                            advanced_mask.astype(np.float32),
+                            axis=2
+                        )
+
+                    elif advanced_mask.ndim != 2:
+                        print(
+                            '[InpaintDebug] unsupported advanced mask ndim:',
+                            advanced_mask.ndim,
+                            flush=True
+                        )
+
+                        advanced_mask = None
+
+                    if advanced_mask is not None:
+                        debug_mask(
+                            'advanced mask before resize',
+                            advanced_mask
+                        )
+
+                        advanced_mask = resample_image(
+                            advanced_mask,
+                            width=W,
+                            height=H
+                        )
+
+                        debug_mask(
+                            'advanced mask after resize',
+                            advanced_mask
+                        )
+
+                        advanced_mask = (
+                            advanced_mask > 127
+                        ).astype(np.uint8) * 255
+
+                        debug_mask(
+                            'advanced mask after threshold',
+                            advanced_mask
+                        )
+
+                        if np.any(advanced_mask > 127):
+                            print(
+                                '[InpaintDebug] RESULT: advanced mask is NON-EMPTY',
+                                flush=True
+                            )
+
+                            inpaint_mask = np.maximum(
+                                inpaint_mask,
+                                advanced_mask
+                            )
+                        else:
+                            print(
+                                '[InpaintDebug] RESULT: advanced mask is EMPTY '
+                                'after threshold',
+                                flush=True
+                            )
+
+                debug_mask(
+                    'final inpaint_mask after advanced masking',
+                    inpaint_mask
+                )
+
 
 
             if int(async_task.inpaint_erode_or_dilate) != 0:
@@ -1618,6 +1804,35 @@ def worker():
                 inpaint_mask = 255 - inpaint_mask
 
             inpaint_image = HWC3(inpaint_image)
+
+
+            print(
+                '[InpaintDebug] FINAL CHECK:',
+                flush=True
+            )
+
+            debug_mask(
+                'final inpaint_image',
+                inpaint_image
+            )
+
+            debug_mask(
+                'final inpaint_mask',
+                inpaint_mask
+            )
+
+            print(
+                '[InpaintDebug] final mask non-empty:',
+                bool(
+                    isinstance(inpaint_mask, np.ndarray) and
+                    inpaint_mask.size > 0 and
+                    np.any(inpaint_mask > 127)
+                ),
+                flush=True
+            )
+
+
+
             if isinstance(inpaint_image, np.ndarray) and isinstance(inpaint_mask, np.ndarray) \
                     and (np.any(inpaint_mask > 127) or len(async_task.outpaint_selections) > 0):
                 modules.config.downloading_upscale_model2(async_task.uov_model)
