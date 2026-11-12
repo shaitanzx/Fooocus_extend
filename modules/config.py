@@ -2,6 +2,7 @@ import os
 import json
 import math
 import numbers
+import random
 
 import args_manager
 import tempfile
@@ -907,6 +908,37 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
         files += get_files_from_folder(folder, extensions, name_filter)
 
     return files
+def check_default_models():
+    """Replace default models that are missing on disk, so a stale preset or config does not break the launch."""
+    global default_base_model_name, default_model
+    global default_refiner_model_name, default_refiner
+    global default_vae, default_loras
+
+    def exists(name, folders):
+        folders = folders if isinstance(folders, list) else [folders]
+        return any(
+            os.path.isfile(os.path.join(folder, name))
+            for folder in folders
+        )
+
+    if model_filenames and not exists(default_base_model_name, paths_checkpoints):
+        replacement_model = random.choice(model_filenames)
+        print(f'[Config] Base model [{default_base_model_name}] not found, randomly using [{replacement_model}] instead.')
+        default_base_model_name = default_model = replacement_model
+
+    if default_refiner_model_name != 'None' and not exists(default_refiner_model_name, paths_checkpoints):
+        print(f'[Config] Refiner model [{default_refiner_model_name}] not found, using [None] instead.')
+        default_refiner_model_name = default_refiner = 'None'
+
+    if default_vae != modules.flags.default_vae and not exists(default_vae, path_vae):
+        print(f'[Config] VAE [{default_vae}] not found, using [{modules.flags.default_vae}] instead.')
+        default_vae = modules.flags.default_vae
+
+    for i, (enabled, filename, weight) in enumerate(default_loras):
+        if filename != 'None' and not exists(filename, paths_loras):
+            print(f'[Config] LoRA [{filename}] not found, using [None] instead.')
+            default_loras[i] = [enabled, 'None', weight]
+
 
 def update_files():
     global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames, upscaler_filenames,emb_filenames
@@ -920,6 +952,7 @@ def update_files():
     upscaler_filenames = list(dict.fromkeys(UPSCALE_DEFAULT_FILENAMES + upscaler_from_disk))
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
+    check_default_models()
     return
 
 
