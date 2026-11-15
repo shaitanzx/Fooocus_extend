@@ -63,6 +63,9 @@ def prepare_environment():
                     if platform.system() == 'Windows':
                         python_version = f"cp{sys.version_info.major}{sys.version_info.minor}"
                         line=f'wheel/insightface-0.7.3-{python_version}-{python_version}-win_amd64.whl'
+                    if platform.system() == 'Linux':
+                        python_version = f"cp{sys.version_info.major}{sys.version_info.minor}"
+                        line=f'wheel/insightface-0.7.3-{python_version}-{python_version}-linux_x86_64.whl'
                 if 'onnxruntime-gpu' in line:
                     if platform.system() == 'Darwin':
                         continue
