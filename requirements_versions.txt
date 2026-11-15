@@ -20,7 +20,7 @@ onnxruntime==1.18.1
 timm==1.0.7
 #timm==0.9.10
 numpy==1.26.4
-cython-3.1.2.dist-info
+cython==3.1.2
 #tokenizers==0.19.1
 tokenizers==0.20.3
 packaging==24.1
