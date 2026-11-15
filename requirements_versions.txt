@@ -37,6 +37,7 @@ piexif==1.1.3
 sentencepiece==0.2.0
 opencv-python==4.8.1.78
 chardet==5.2.0
+albumentations==2.0.8
 insightface==0.7.3
 pydantic==2.11.5
 lpips==0.1.4
