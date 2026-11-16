@@ -62,7 +62,7 @@ class AsyncTask:
 
         checkpoint_folders = modules.config.paths_checkpoints
 
-        # Отсутствующий refiner отключаем.
+        # Если выбранного refiner нет на диске, отключаем его.
         if self.refiner_model_name != 'None':
             refiner_path = get_file_from_folder_list(
                 self.refiner_model_name,
@@ -78,15 +78,16 @@ class AsyncTask:
                 self.model_fallback_notices.append(message)
                 self.refiner_model_name = 'None'
 
-        # Если базовая модель отсутствует, сначала используем модель
-        # preset, загруженного при запуске приложения.
+        # Проверяем выбранную для задачи базовую модель.
         base_model_path = get_file_from_folder_list(
             self.base_model_name,
             checkpoint_folders
         )
 
+
         if not os.path.isfile(base_model_path):
-            preset_model_name = modules.config.default_base_model_name
+            # Сначала пробуем базовую модель текущего preset.
+            preset_model_name = modules.config.default_preset_model
             preset_model_path = get_file_from_folder_list(
                 preset_model_name,
                 checkpoint_folders
@@ -95,14 +96,15 @@ class AsyncTask:
             if os.path.isfile(preset_model_path):
                 message = (
                     f'Базовая модель [{self.base_model_name}] не найдена; '
-                    f'используется модель preset [{preset_model_name}].'
+                    f'используется модель текущего preset [{preset_model_name}].'
                 )
                 print(f'[AsyncTask] {message}')
                 self.model_fallback_notices.append(message)
                 self.base_model_name = preset_model_name
 
             else:
-                # model_filenames содержит также относительные пути из подпапок.
+                # Если модели текущего preset тоже нет, берём случайный
+                # checkpoint из списка, включая относительные пути из подпапок.
                 available_models = [
                     name for name in modules.config.model_filenames
                     if os.path.isfile(
@@ -113,13 +115,21 @@ class AsyncTask:
                 if available_models:
                     replacement_model = random.choice(available_models)
                     message = (
-                        f'Базовая модель [{self.base_model_name}] и модель preset '
-                        f'[{preset_model_name}] не найдены; '
+                        f'Базовая модель [{self.base_model_name}] и модель '
+                        f'текущего preset [{preset_model_name}] не найдены; '
                         f'случайно выбрана [{replacement_model}].'
                     )
                     print(f'[AsyncTask] {message}')
                     self.model_fallback_notices.append(message)
                     self.base_model_name = replacement_model
+                else:
+                    message = (
+                        f'Базовая модель [{self.base_model_name}] и модель '
+                        f'текущего preset [{preset_model_name}] не найдены; '
+                        'в папках checkpoints нет доступных моделей.'
+                    )
+                    print(f'[AsyncTask] {message}')
+                    self.model_fallback_notices.append(message)
 
 
         self.lora_list = []
