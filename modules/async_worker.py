@@ -112,24 +112,16 @@ class AsyncTask:
                     )
                 ]
 
-                if available_models:
-                    replacement_model = random.choice(available_models)
-                    message = (
-                        f'Базовая модель [{self.base_model_name}] и модель '
-                        f'текущего preset [{preset_model_name}] не найдены; '
-                        f'случайно выбрана [{replacement_model}].'
-                    )
-                    print(f'[AsyncTask] {message}')
-                    self.model_fallback_notices.append(message)
-                    self.base_model_name = replacement_model
-                else:
-                    message = (
-                        f'Базовая модель [{self.base_model_name}] и модель '
-                        f'текущего preset [{preset_model_name}] не найдены; '
-                        'в папках checkpoints нет доступных моделей.'
-                    )
-                    print(f'[AsyncTask] {message}')
-                    self.model_fallback_notices.append(message)
+                replacement_model = random.choice(available_models)
+
+                message = (
+                    f'Базовая модель [{self.base_model_name}] и модель '
+                    f'текущего preset [{preset_model_name}] не найдены; '
+                    f'случайно выбрана [{replacement_model}].'
+                )
+                print(f'[AsyncTask] {message}')
+                self.model_fallback_notices.append(message)
+                self.base_model_name = replacement_model
 
 
         self.lora_list = []
