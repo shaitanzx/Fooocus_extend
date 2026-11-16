@@ -285,6 +285,7 @@ default_base_model_name = default_model = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, str),
     expected_type=str
 )
+default_preset_model = default_base_model_name
 previous_default_models = get_config_item_or_set_default(
     key='previous_default_models',
     default_value=[],
