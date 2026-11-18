@@ -413,7 +413,10 @@ legacy_adetailer_keys = [
     'ad_confidence',
     'ad_denoising_strength',
     'ad_resp_field',
+    'ad_sam_mask',
+    'ad_sam_model',
 ]
+
 
 
 def get_adetailer_tabs(content):

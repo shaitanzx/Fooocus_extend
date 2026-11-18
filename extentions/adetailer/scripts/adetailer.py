@@ -90,21 +90,47 @@ def sort_bboxes_from_class(pred: PredictOutput) -> PredictOutput:
         sortby = BBOX_SORTBY[1]
         sortby_idx = BBOX_SORTBY.index(sortby)
         return sort_bboxes(pred, sortby_idx)
-def pred_preprocessing(pred: PredictOutput, args):
-        pred = filter_by_ratio(
-            pred, low=args.ad_mask_min_ratio, high=args.ad_mask_max_ratio
-        )
-        pred = filter_k_by(pred, k=args.ad_mask_k, by=args.ad_mask_filter_method)
-        pred = sort_bboxes_from_class(pred)
-        masks = mask_preprocess(
-            pred.masks,
-            kernel=args.ad_dilate_erode,
-            x_offset=args.ad_x_offset,
-            y_offset=args.ad_y_offset,
-            merge_invert=args.ad_mask_merge_invert,
+def pred_preprocessing(
+    pred: PredictOutput,
+    args,
+    image=None,
+):
+    pred = filter_by_ratio(
+        pred,
+        low=args.ad_mask_min_ratio,
+        high=args.ad_mask_max_ratio,
+    )
+    pred = filter_k_by(
+        pred,
+        k=args.ad_mask_k,
+        by=args.ad_mask_filter_method,
+    )
+    pred = sort_bboxes_from_class(pred)
+
+    if (
+        image is not None
+        and getattr(args, "ad_sam_mask", False)
+        and pred.bboxes
+    ):
+        from extentions.adetailer.adetailer.sam_mask import sam_refine
+
+        model_type = getattr(args, "ad_sam_model", "vit_b") or "vit_b"
+        pred = sam_refine(
+            pred,
+            image=image,
+            model_type=model_type,
         )
 
-        return masks
+    masks = mask_preprocess(
+        pred.masks,
+        kernel=args.ad_dilate_erode,
+        x_offset=args.ad_x_offset,
+        y_offset=args.ad_y_offset,
+        merge_invert=args.ad_mask_merge_invert,
+    )
+
+    return masks
+
 def enabler(ad_component):
     tabs = [item for item in ad_component if isinstance(item, dict)]
     valid_tabs = [

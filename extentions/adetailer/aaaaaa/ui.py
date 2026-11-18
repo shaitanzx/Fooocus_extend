@@ -314,6 +314,42 @@ def detection(w: Widgets, n: int, is_img2img: bool):
 
 def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
     eid = partial(elem_id, n=n, is_img2img=is_img2img)
+    sam_choices = list(modules.flags.inpaint_mask_sam_model)
+
+    with gr.Group():
+        with gr.Row():
+            w.ad_sam_mask = gr.Checkbox(
+                label="Refine mask with SAM" + suffix(n),
+                value=tab_default(n, "ad_sam_mask", False),
+                visible=True,
+                elem_id=eid("ad_sam_mask"),
+                info=(
+                    "Use Segment Anything to refine the detector's "
+                    "bounding-box mask into an object-shaped mask."
+                ),
+            )
+
+            w.ad_sam_model = gr.Dropdown(
+                label="SAM model" + suffix(n),
+                choices=sam_choices,
+                value=tab_default(
+                    n,
+                    "ad_sam_model",
+                    "vit_b",
+                    sam_choices,
+                ),
+                visible=True,
+                interactive=w.ad_sam_mask.value,
+                elem_id=eid("ad_sam_model"),
+                info="vit_b is the recommended starting point; vit_l and vit_h use more VRAM.",
+            )
+
+        w.ad_sam_mask.change(
+            lambda enabled: gr_interactive(enabled),
+            inputs=w.ad_sam_mask,
+            outputs=w.ad_sam_model,
+            queue=False,
+        )
 
     with gr.Group():
         with gr.Row():
