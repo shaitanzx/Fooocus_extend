@@ -83,25 +83,11 @@ def elem_id(item_id: str, n: int, is_img2img: bool) -> str:
 
 def state_init(w: Widgets) -> dict[str, Any]:
     return {attr: getattr(w, attr).value for attr in ALL_ARGS.attrs}
-
-def tab_default(n, attr, stock, choices=None):
+def tab_default(n: int, attr: str, stock: Any, choices: list | None = None) -> Any:
+    # value of the n-th tab from the config/preset key default_adetailer_tabs
     tabs = modules.config.default_adetailer_tabs
     value = tabs[n].get(attr) if n < len(tabs) else None
-
-    if value is None:
-        result = stock
-    elif choices is not None and value not in choices:
-        result = stock
-    else:
-        result = value
-
-    if attr in ("ad_model", "ad_prompt"):
-        print(
-            f"[ADetailer UI] tab={n + 1}, "
-            f"field={attr}, stored={value!r}, shown={result!r}"
-        )
-
-    return result
+    return stock if value is None or choices is not None and value not in choices else value
 
 
 

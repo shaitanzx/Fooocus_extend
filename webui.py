@@ -1974,7 +1974,6 @@ with shared.gradio_root:
 
         if not args_manager.args.disable_preset_selection:
             def preset_selection_change(preset, is_generating, inpaint_mode):
-                print(f'[PRESET CHANGE] callback fired: {preset!r}')
                 preset_content = modules.config.try_get_preset_content(preset) if preset != 'initial' else {}
                 preset_prepared = modules.meta_parser.parse_meta_from_preset(preset_content)
                 default_model = preset_prepared.get('base_model')
