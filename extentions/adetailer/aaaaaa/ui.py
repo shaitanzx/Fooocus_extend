@@ -89,12 +89,20 @@ def tab_default(n, attr, stock, choices=None):
     value = tabs[n].get(attr) if n < len(tabs) else None
 
     if value is None:
-        return stock
+        result = stock
+    elif choices is not None and value not in choices:
+        result = stock
+    else:
+        result = value
 
-    if choices is not None and value not in choices:
-        return stock
+    if attr in ("ad_model", "ad_prompt"):
+        print(
+            f"[ADetailer UI] tab={n + 1}, "
+            f"field={attr}, stored={value!r}, shown={result!r}"
+        )
 
-    return value
+    return result
+
 
 
 def adui(
