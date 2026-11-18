@@ -2344,50 +2344,121 @@ with shared.gradio_root:
             return obj.__dict__
         def get_value(value):
             return value
-        def save_preset(*args):
-            argsList = list(args)
-            loras_len=argsList.pop()
-            ctrl=[]
-            for _ in range(loras_len):
-                temp_list = []
-                for _ in range(3):
-                    temp_list.append(argsList.pop())
-                temp_list.reverse()
-                ctrl.append(temp_list)
-            ctrl.reverse()
-            name=argsList.pop()
-            args = tuple(argsList)
-            args = list(args)
+
+        def save_preset(name, *args):
+            name = re.sub(
+                r'[\\/:*?"<>|\x00-\x1f]',
+                '',
+                str(name or ''),
+            ).strip(' .')
+
+            if name == '' or name == 'initial':
+                gr.Warning('Enter a preset name.')
+                return gr.update()
+
+            # Первые аргументы соответствуют preset_save_ctrls.
+            preset_values = dict(zip(preset_save_ctrls, args))
+            args = args[len(preset_save_ctrls):]
+
+            # Далее идут Method ADetailer для отдельных вкладок.
+            ad_inpaint_modes = args[:len(ad_widgets)]
+            args = args[len(ad_widgets):]
+
+            # Затем значения дополнительного словаря.
+            extra_values = dict(zip(extra_ctrls, args))
+            args = list(args[len(extra_ctrls):])
+
+            # Не сохранять конкретный seed, когда включён Random.
+            if extra_values.get('seed_random', True):
+                extra_values.pop('image_seed', None)
+
+            # Остальные args нужны для формирования AsyncTask.
             args.pop(0)
-            p=worker.AsyncTask(args=args)
-            data ={}
-            data["base_model"]=p.base_model_name
-            data["default_refiner"]=p.refiner_model_name
-            data["default_refiner_switch"]=p.refiner_switch
-            data["default_loras"]=ctrl
-            data["default_cfg_scale"]=p.cfg_scale
-            data["default_sample_sharpness"]=p.sharpness
-            data["default_type_cfg"] = p.type_cfg
-            data["default_rescale_cfg"] = p.rescale_cfg
-            data["default_cfg_tsnr"]=p.adaptive_cfg
-            data["default_clip_skip"]=p.clip_skip
-            data["default_sampler"]=p.sampler_name
-            data["default_scheduler"]=p.scheduler_name
-            data["default_overwrite_step"]=p.overwrite_step
-            data["default_overwrite_switch"]=p.overwrite_switch
-            data["default_performance"]=p.performance_selection.value
-            data["default_image_number"]=p.image_number
-            data["default_prompt_negative"]=p.negative_prompt
-            data["default_styles"]=p.style_selections
-            data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
-            data["default_vae"]=p.vae_name
-            #data["default_inpaint_engine_version"]=p.inpaint_engine
-            save_path = 'presets/' + name + '.json'
-            with open(save_path, "w", encoding="utf-8") as json_file:
+            p = worker.AsyncTask(args=args)
+
+            save_path = os.path.join('presets', name + '.json')
+
+            # При перезаписи существующего preset не теряем
+            # ключи, которые не формируются из UI ниже.
+            if os.path.exists(save_path):
+                data = modules.config.try_get_preset_content(name)
+            else:
+                data = {}
+
+            data['base_model'] = data['default_model'] = p.base_model_name
+            data['default_refiner'] = p.refiner_model_name
+            data['default_refiner_switch'] = p.refiner_switch
+            data['default_loras'] = [list(lora) for lora in p.lora_list]
+            data['default_cfg_scale'] = p.cfg_scale
+            data['default_sample_sharpness'] = p.sharpness
+            data['default_type_cfg'] = p.type_cfg
+            data['default_rescale_cfg'] = p.rescale_cfg
+            data['default_cfg_tsnr'] = p.adaptive_cfg
+            data['default_clip_skip'] = p.clip_skip
+            data['default_sampler'] = p.sampler_name
+            data['default_scheduler'] = p.scheduler_name
+            data['default_overwrite_step'] = p.overwrite_step
+            data['default_overwrite_switch'] = p.overwrite_switch
+            data['default_performance'] = p.performance_selection.value
+            data['default_image_number'] = p.image_number
+            data['default_prompt'] = p.prompt
+            data['default_prompt_negative'] = p.negative_prompt
+            data['default_styles'] = p.style_selections
+
+            if p.aspect_random:
+                data['default_aspect_ratio'] = 'Random'
+            else:
+                data['default_aspect_ratio'] = (
+                    re.sub(r'×', '*', p.aspect_ratios_selection)
+                    .split('∣')[0]
+                    .strip()
+                )
+
+            data['default_vae'] = p.vae_name
+            data['default_output_format'] = p.output_format
+
+            # Значения из preset_ctrls.
+            data.update(preset_values)
+
+            # Прочие настройки интерфейса.
+            data['default_extra_settings'] = extra_values
+
+            # FreeU настраивается отдельно от AsyncTask.
+            data['default_freeu'] = (
+                [p.freeu_b1, p.freeu_b2, p.freeu_s1, p.freeu_s2]
+                if p.freeu_enabled
+                else None
+            )
+
+            # ADetailer хранится отдельным словарём для каждой вкладки.
+            data['default_adetailer_tabs'] = [
+                {
+                    **{
+                        key: value
+                        for key, value in tab.items()
+                        if key != 'is_api'
+                    },
+                    'inpaint_mode': mode,
+                }
+                for tab, mode in zip(p.ad_component, ad_inpaint_modes)
+            ]
+
+            # Удалить прежние одиночные ADetailer-поля,
+            # если они перенесены в default_adetailer_tabs.
+            for key in modules.config.legacy_adetailer_keys:
+                data.pop('default_' + key, None)
+
+            with open(save_path, 'w', encoding='utf-8') as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
 
-            gr.Info(f"Preset '{name}' saved.")
-            return
+            modules.config.update_presets()
+            print(f'Preset saved: {os.path.abspath(save_path)}')
+            gr.Info(f'Preset saved: {name}')
+            return gr.update(value=name)
+
+
+
+
         def delete_preset (preset):
             if preset !='initial' and preset !='default':
                 try:
@@ -2398,9 +2469,10 @@ with shared.gradio_root:
             else:
                 print(f"Do not delete '{preset}'.")
             return
-        save_preset_button.click(save_preset,inputs=ctrls + [preset_name] + lora_ctrls + [lora_len]) \
-	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
-	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name,preset_have])
+        save_preset_button.click(save_preset,inputs=([preset_name] + preset_save_inputs + list(extra_ctrls.values()) + ctrls),outputs=preset_name) \
+            .then(refresh_files_clicked,[],refresh_files_output + lora_ctrls,queue=False,show_progress=False) \
+            .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name, preset_have])
+
         delete_preset_button.click(delete_preset,inputs=preset_have) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
 	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
