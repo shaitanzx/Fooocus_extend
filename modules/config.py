@@ -407,26 +407,7 @@ default_adetail_tab = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, int) and x >= 1,
     expected_type=int
 )
-default_adetail_uov_method = get_config_item_or_set_default(
-    key='default_adetail_uov_method',
-    default_value=default_enhance_uov_method,
-    validator=lambda x: x in modules.flags.uov_list,
-    expected_type=str
-)
 
-default_adetail_uov_processing_order = get_config_item_or_set_default(
-    key='default_adetail_uov_processing_order',
-    default_value=default_enhance_uov_processing_order,
-    validator=lambda x: x in modules.flags.enhancement_uov_processing_order,
-    expected_type=str
-)
-
-default_adetail_uov_prompt_type = get_config_item_or_set_default(
-    key='default_adetail_uov_prompt_type',
-    default_value=default_enhance_uov_prompt_type,
-    validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
-    expected_type=str
-)
 legacy_adetailer_keys = [
     'ad_model',
     'ad_confidence',
@@ -764,6 +745,26 @@ default_enhance_uov_prompt_type = get_config_item_or_set_default(
     default_value=modules.flags.enhancement_uov_prompt_type_original,
     validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
     expected_type=int
+)
+default_adetail_uov_method = get_config_item_or_set_default(
+    key='default_adetail_uov_method',
+    default_value=default_enhance_uov_method,
+    validator=lambda x: x in modules.flags.uov_list,
+    expected_type=str
+)
+
+default_adetail_uov_processing_order = get_config_item_or_set_default(
+    key='default_adetail_uov_processing_order',
+    default_value=default_enhance_uov_processing_order,
+    validator=lambda x: x in modules.flags.enhancement_uov_processing_order,
+    expected_type=str
+)
+
+default_adetail_uov_prompt_type = get_config_item_or_set_default(
+    key='default_adetail_uov_prompt_type',
+    default_value=default_enhance_uov_prompt_type,
+    validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
+    expected_type=str
 )
 default_sam_max_detections = get_config_item_or_set_default(
     key='default_sam_max_detections',
