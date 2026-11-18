@@ -84,6 +84,18 @@ def elem_id(item_id: str, n: int, is_img2img: bool) -> str:
 def state_init(w: Widgets) -> dict[str, Any]:
     return {attr: getattr(w, attr).value for attr in ALL_ARGS.attrs}
 
+def tab_default(n, attr, stock, choices=None):
+    tabs = modules.config.default_adetailer_tabs
+    value = tabs[n].get(attr) if n < len(tabs) else None
+
+    if value is None:
+        return stock
+
+    if choices is not None and value not in choices:
+        return stock
+
+    return value
+
 
 def adui(
     num_models: int,
@@ -94,6 +106,7 @@ def adui(
 
         ad_model_dropdowns = []
         ad_ckpt_dropdown =[]
+        ad_widgets = []
 
         eid = partial(elem_id, n=0, is_img2img=is_img2img)
         with gr.Group():
@@ -111,16 +124,16 @@ def adui(
                     with gr.Row():
                         with gr.Column():
                             adetail_uov_method = gr.Radio(label='Upscale or Variation:', choices=modules.flags.uov_list,
-                                                              value=modules.config.default_enhance_uov_method)
+                                                              value=modules.config.default_adetail_uov_method)
                             adetail_uov_processing_order = gr.Radio(label='Order of Processing',
                                                                         info='Use before to enhance small details and after to enhance large areas.',
                                                                         choices=modules.flags.enhancement_uov_processing_order,
-                                                                        value=modules.config.default_enhance_uov_processing_order)
+                                                                        value=modules.config.default_adetail_uov_processing_order)
                             adetail_uov_prompt_type = gr.Radio(label='Prompt',
                                                                    info='Choose which prompt to use for Upscale or Variation.',
                                                                    choices=modules.flags.enhancement_uov_prompt_types,
-                                                                   value=modules.config.default_enhance_uov_prompt_type,
-                                                                   visible=modules.config.default_enhance_uov_processing_order == modules.flags.enhancement_uov_after)
+                                                                   value=modules.config.default_adetail_uov_prompt_type,
+                                                                   visible=modules.config.default_adetail_uov_processing_order== modules.flags.enhancement_uov_after)
 
                             adetail_uov_processing_order.change(lambda x: gr.update(visible=x == modules.flags.enhancement_uov_after),
                                                                     inputs=adetail_uov_processing_order,
@@ -128,13 +141,14 @@ def adui(
                                                                     queue=False, show_progress=False)
                 for n in range(num_models):
                     with gr.Tab(ordinal(n + 1)):
-                        state,ad_model_dd, ad_ckpt_dd = one_ui_group(
+                        state, ad_model_dd, ad_ckpt_dd, widgets = one_ui_group(
                             n=n,
                             is_img2img=is_img2img,
                             webui_info=webui_info,
                         )
                     ad_model_dropdowns.append(ad_model_dd)
                     ad_ckpt_dropdown.append(ad_ckpt_dd)
+                    ad_widgets.append(widgets)
                     states.append(state)
                     #!infotext_fields.extend(infofields)
 
@@ -142,8 +156,7 @@ def adui(
         components = [*states]
         with gr.Row():
             gr.HTML('* \"ADetailer\" is powered by Bing-su. <a href="https://github.com/Bing-su/adetailer" target="_blank">\U0001F4D4 Document</a>')
-        return  adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, components,ad_model_dropdowns,ad_ckpt_dropdown
-
+        return adetail_uov_method,adetail_uov_processing_order,adetail_uov_prompt_type,only_detect,components,ad_model_dropdowns,ad_ckpt_dropdown,ad_widgets
 
 def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
     w = Widgets()
@@ -155,7 +168,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         with gr.Row(variant="compact"):
             w.ad_tab_enable = gr.Checkbox(
                 label=f"Enable this tab ({ordinal(n + 1)})",
-                value=True if n==0 else False,
+                value=tab_default(n, "ad_tab_enable", n == 0),
                 visible=True,
                 elem_id=eid("ad_tab_enable"),
             )
@@ -164,7 +177,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
             w.ad_model = gr.Dropdown(
                 label="ADetailer detector" + suffix(n),
                 choices=model_choices,
-                value=model_choices[0],
+                value=tab_default(n, "ad_model", model_choices[0], model_choices),
                 visible=True,
                 type="value",
                 elem_id=eid("ad_model"),
@@ -174,8 +187,8 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
         with gr.Row():
             w.ad_model_classes = gr.Textbox(
                 label="ADetailer detector classes" + suffix(n),
-                value="",
-                visible=False,
+                value=tab_default(n, "ad_model_classes", ""),
+                visible="-world" in tab_default(n, "ad_model", model_choices[0], model_choices),
                 elem_id=eid("ad_model_classes"),
             )
 
@@ -191,7 +204,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
     with gr.Group():
         with gr.Row(elem_id=eid("ad_toprow_prompt")):
             w.ad_prompt = gr.Textbox(
-                value="",
+                value=tab_default(n, "ad_prompt", ""),
                 label="ad_prompt" + suffix(n),
                 show_label=False,
                 lines=3,
@@ -203,7 +216,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
 
         with gr.Row(elem_id=eid("ad_toprow_negative_prompt")):
             w.ad_negative_prompt = gr.Textbox(
-                value="",
+                value=tab_default(n, "ad_negative_prompt", ""),
                 label="ad_negative_prompt" + suffix(n),
                 show_label=False,
                 lines=2,
@@ -244,7 +257,12 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
     all_inputs = [state, *w.tolist()]
 
 
-    return state, w.ad_model, w.ad_checkpoint 
+    return (state,w.ad_model,w.ad_checkpoint,
+        {
+            attr: getattr(w, attr)
+            for attr in (*ALL_ARGS.attrs, "inpaint_mode")
+        },
+    )
 
 
 def detection(w: Widgets, n: int, is_img2img: bool):
@@ -257,13 +275,13 @@ def detection(w: Widgets, n: int, is_img2img: bool):
                 minimum=0.0,
                 maximum=1.0,
                 step=0.01,
-                value=0.3,
+                value=tab_default(n, "ad_confidence", 0.3),
                 visible=True,
                 elem_id=eid("ad_confidence"),
             )
             w.ad_mask_filter_method = gr.Radio(
                 choices=["Area", "Confidence"],
-                value="Area",
+                value=tab_default(n, "ad_mask_filter_method", "Area", ["Area", "Confidence"]),
                 label="Method to filter top k masks by (confidence or area)"
                 + suffix(n),
                 visible=True,
@@ -274,7 +292,7 @@ def detection(w: Widgets, n: int, is_img2img: bool):
                 minimum=0,
                 maximum=10,
                 step=1,
-                value=0,
+                value=tab_default(n, "ad_mask_k", 0),
                 visible=True,
                 elem_id=eid("ad_mask_k"),
             )
@@ -285,7 +303,7 @@ def detection(w: Widgets, n: int, is_img2img: bool):
                 minimum=0.0,
                 maximum=1.0,
                 step=0.001,
-                value=0.0,
+                value=tab_default(n, "ad_mask_min_ratio", 0.0),
                 visible=True,
                 elem_id=eid("ad_mask_min_ratio"),
             )
@@ -294,7 +312,7 @@ def detection(w: Widgets, n: int, is_img2img: bool):
                 minimum=0.0,
                 maximum=1.0,
                 step=0.001,
-                value=1.0,
+                value=tab_default(n, "ad_mask_max_ratio", 1.0),
                 visible=True,
                 elem_id=eid("ad_mask_max_ratio"),
             )
@@ -311,7 +329,7 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                     minimum=-200,
                     maximum=200,
                     step=1,
-                    value=0,
+                    value=tab_default(n, "ad_x_offset", 0),
                     visible=True,
                     elem_id=eid("ad_x_offset"),
                 )
@@ -320,7 +338,7 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                     minimum=-200,
                     maximum=200,
                     step=1,
-                    value=0,
+                    value=tab_default(n, "ad_y_offset", 0),
                     visible=True,
                     elem_id=eid("ad_y_offset"),
                 )
@@ -331,7 +349,7 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                     minimum=-128,
                     maximum=128,
                     step=4,
-                    value=4,
+                    value=tab_default(n, "ad_dilate_erode", 4),
                     visible=True,
                     elem_id=eid("ad_dilate_erode"),
                 )
@@ -340,7 +358,7 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
             w.ad_mask_merge_invert = gr.Radio(
                 label="Mask merge mode" + suffix(n),
                 choices=MASK_MERGE_INVERT,
-                value="None",
+                value=tab_default(n, "ad_mask_merge_invert", "None", MASK_MERGE_INVERT),
                 elem_id=eid("ad_mask_merge_invert"),
                 info="None: do nothing, Merge: merge masks, Merge and Invert: merge all masks and invert",
             )
@@ -352,12 +370,12 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
         with gr.Column(variant="compact"):
             with gr.Row():
                 w.inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options,
-                                    value=modules.config.default_inpaint_method,
+                                    value=tab_default(n,"inpaint_mode",modules.config.default_inpaint_method,modules.flags.inpaint_options,),
                                     label='Method'+ suffix(n), interactive=True)
             with gr.Row():
                 w.ad_disable_latent = gr.Checkbox(
                                     label="ADetailer Disable initial latent" + suffix(n),
-                                    value=False,
+                                    value=tab_default(n, "ad_disable_latent", False),
                                     visible=True,
                                     elem_id=eid("ad_disable_latent"))
 
@@ -366,7 +384,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 w.ad_inpaint_engine = gr.Dropdown(
                     label="Inpaint Engine" + suffix(n),
                     choices=modules.flags.inpaint_engine_versions,
-                    value=modules.config.default_inpaint_engine_version,
+                    value=tab_default(n,"ad_inpaint_engine",modules.config.default_inpaint_engine_version,modules.flags.inpaint_engine_versions,),
                     visible=True,
                     interactive=True,
                     elem_id=eid("ad_inpaint_engine"),
@@ -380,7 +398,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     minimum=0.0,
                     maximum=1.0,
                     step=0.01,
-                    value=1,
+                    value=tab_default(n, "ad_denoising_strength", 1),
                     visible=True,
                     interactive=True,
                     elem_id=eid("ad_denoising_strength"),
@@ -397,7 +415,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     minimum=0.0,
                     maximum=1.0,
                     step=0.01,
-                    value=0.618,
+                    value=tab_default(n, "ad_resp_field", 0.618),
                     visible=True,
                     interactive=True,
                     elem_id=eid("ad_resp_field"),
@@ -434,7 +452,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
             with gr.Column(variant="compact"):
                 w.ad_use_cfg_scale = gr.Checkbox(
                     label="ADetailer use separate CFG scale" + suffix(n),
-                    value=False,
+                    value=tab_default(n, "ad_use_cfg_scale", False),
                     visible=True,
                     elem_id=eid("ad_use_cfg_scale"),
                 )
@@ -443,8 +461,8 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     minimum=0.0,
                     maximum=30.0,
                     step=0.5,
-                    value=7.0,
-                    visible=True,
+                    value=tab_default(n, "ad_cfg_scale", 7.0),
+                    interactive=w.ad_use_cfg_scale.value,
                     interactive=False,
                     elem_id=eid("ad_cfg_scale"),
                 )
@@ -460,7 +478,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
             with gr.Column(variant="compact"):
                 w.ad_use_clip_skip = gr.Checkbox(
                     label="Use separate CLIP skip" + suffix(n),
-                    value=False,
+                    value=tab_default(n, "ad_use_clip_skip", False),
                     visible=True,
                     interactive=True,
                     elem_id=eid("ad_use_clip_skip"),
@@ -471,10 +489,9 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     minimum=1,
                     maximum=12,
                     step=1,
-                    value=1,
-                    visible=True,
-                    elem_id=eid("ad_clip_skip"),
-                    interactive=False
+                    value=tab_default(n, "ad_clip_skip", 1),
+                    interactive=w.ad_use_clip_skip.value,
+                    elem_id=eid("ad_clip_skip")
                 )
 
                 w.ad_use_clip_skip.change(
@@ -489,22 +506,23 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
     with gr.Group():   
         with gr.Row():
             with gr.Column(variant="compact"):
+                ckpts = ["Use same checkpoint", *webui_info.checkpoints_list]
                 w.ad_use_checkpoint = gr.Checkbox(
                     label="Use separate checkpoint" + suffix(n),
-                    value=False,
+                    value=tab_default(n, "ad_use_checkpoint", False),
                     visible=True,
                     elem_id=eid("ad_use_checkpoint"),
                 )
 
-                ckpts = ["Use same checkpoint", *webui_info.checkpoints_list]
+
 
                 w.ad_checkpoint = gr.Dropdown(
                     label="ADetailer checkpoint" + suffix(n),
                     choices=ckpts,
-                    value=ckpts[0],
+                    value=tab_default(n, "ad_checkpoint", ckpts[0], ckpts),
+                    interactive=w.ad_use_checkpoint.value,
                     visible=True,
-                    elem_id=eid("ad_checkpoint"),
-                    interactive=False
+                    elem_id=eid("ad_checkpoint"),   
                 )
                 w.ad_use_checkpoint.change(
                     lambda value: (gr_interactive(value)),
@@ -515,7 +533,7 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
         with gr.Row(), gr.Column(variant="compact"):
             w.ad_use_sampler = gr.Checkbox(
                 label="Use separate sampler" + suffix(n),
-                value=False,
+                value=tab_default(n, "ad_use_sampler", False),
                 visible=True,
                 elem_id=eid("ad_use_sampler"),
             )
@@ -529,10 +547,10 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 w.ad_sampler = gr.Dropdown(
                     label="ADetailer sampler" + suffix(n),
                     choices=sampler_names,
-                    value=sampler_names[0],
+                    value=tab_default(n, "ad_sampler", sampler_names[0], sampler_names),
+                    interactive=w.ad_use_sampler.value,
                     visible=True,
-                    elem_id=eid("ad_sampler"),
-                    interactive=False
+                    elem_id=eid("ad_sampler")
                 )
 
                 scheduler_names = [
@@ -542,10 +560,10 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                 w.ad_scheduler = gr.Dropdown(
                     label="ADetailer scheduler" + suffix(n),
                     choices=scheduler_names,
-                    value=scheduler_names[0],
+                    value=tab_default(n, "ad_scheduler", scheduler_names[0], scheduler_names),
+                    interactive=w.ad_use_sampler.value,
                     visible=len(scheduler_names) > 1,
-                    elem_id=eid("ad_scheduler"),
-                    interactive=False
+                    elem_id=eid("ad_scheduler")
                 )
 
                 w.ad_use_sampler.change(

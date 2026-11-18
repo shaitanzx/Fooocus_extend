@@ -396,8 +396,8 @@ with shared.gradio_root:
                                         )
                     with gr.Row():
                         new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
-                                        autofocus=False, lines=3, visible=modules.flags.negative_prompt_main,
-                                        value=modules.config.default_prompt_negative
+                                        autofocus=False, lines=3, visible=modules.config.default_negative_prompt_main,
+                                        value=modules.config.default_negative_prompt_main
                                         )
     
 
@@ -457,7 +457,14 @@ with shared.gradio_root:
                                 with gr.Row():
                                     uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list, value=modules.config.default_uov_method)
                                 with gr.Row():
-                                    uov_model = gr.Dropdown(choices=modules.config.upscaler_filenames, value=modules.config.upscaler_filenames[0], label='Model')
+                                    uov_model = gr.Dropdown(
+                                        choices=modules.config.upscaler_filenames,
+                                        value=(
+                                                modules.config.default_upscaler
+                                            if modules.config.default_upscaler in modules.config.upscaler_filenames
+                                            else modules.config.upscaler_filenames[0]
+                                        ),                                      
+                                        label='Model')
                                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/390" target="_blank">\U0001F4D4 Documentation</a>')
                     with gr.Tab(label='Image Prompt', id='ip_tab') as ip_tab:
                         with gr.Row():
@@ -852,7 +859,7 @@ with shared.gradio_root:
                             queue=False, show_progress=False)
             with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
                 with gr.Tabs():
-                    adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
+                    adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns,ad_widgets = adetailer.ui(is_img2img=True)
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
@@ -1370,9 +1377,9 @@ with shared.gradio_root:
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
                                              value=modules.config.default_prompt_negative,
-                                             visible=not modules.flags.negative_prompt_main)
+                                             visible=not modules.flags.negative_prompt_main,)
                 new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main page",
-                        value=modules.flags.negative_prompt_main)
+                        value=modules.flags.negative_prompt_main,)
                 seed_random = gr.Checkbox(label='Random', value=True)
                 image_seed = gr.Textbox(label='Seed', value=0, max_lines=1, visible=False) # workaround for https://github.com/gradio-app/gradio/issues/5354
 
@@ -1680,7 +1687,7 @@ with shared.gradio_root:
 
                         disable_seed_increment = gr.Checkbox(label='Disable seed increment',
                                                              info='Disable automatic seed increment when image number is > 1.',
-                                                             value=False)
+                                                             value=modules.config.default_disable_seed_increment)
                         read_wildcards_in_order = gr.Checkbox(label="Read wildcards in order", value=False)
 
                         black_out_nsfw = gr.Checkbox(label='Black Out NSFW', value=modules.config.default_black_out_nsfw,
@@ -1714,9 +1721,9 @@ with shared.gradio_root:
                                                                info='Do not preprocess images. (Inputs are already canny/depth/cropped-face/etc.)')
 
                         mixing_image_prompt_and_vary_upscale = gr.Checkbox(label='Mixing Image Prompt and Vary/Upscale',
-                                                                           value=False)
+                                                                           value=modules.config.default_mixing_image_prompt_and_vary_upscale)
                         mixing_image_prompt_and_inpaint = gr.Checkbox(label='Mixing Image Prompt and Inpaint',
-                                                                      value=False)
+                                                                      value=modules.config.default_mixing_image_prompt_and_inpaint)
 
                         controlnet_softness = gr.Slider(label='Softness of ControlNet', minimum=0.0, maximum=1.0,
                                                         step=0.001, value=0.25,
@@ -1729,8 +1736,8 @@ with shared.gradio_root:
                                                              step=1, value=128)
                         
                         with gr.Tab(label='Tiled'):
-                            tile_x = gr.Checkbox(label='Tiled X', value=False)
-                            tile_y = gr.Checkbox(label='Tiled Y', value=False)
+                            tile_x = gr.Checkbox(label='Tiled X', value=modules.config.default_tile_x)
+                            tile_y = gr.Checkbox(label='Tiled Y', value=modules.config.default_tile_y)
                         with gr.Tab(label='Transparency'):
                             transper = gr.Dropdown(label='Mode',
                                     value='None',
@@ -1864,6 +1871,103 @@ with shared.gradio_root:
                              seed_random, image_seed, inpaint_engine, inpaint_engine_state,
                              inpaint_mode] + enhance_inpaint_mode_ctrls + [generate_button,
                              load_parameter_button] + freeu_ctrls + lora_ctrls
+        # Controls outside load_data_outputs:
+        # save them to presets and apply them when a preset is selected.
+        preset_ctrls = {
+            'default_negative_prompt_main': new_negative_checkbox,
+            'default_upscaler': uov_model,
+            'default_overwrite_upscale': overwrite_upscale_strength,
+            'default_enhance_uov_method': enhance_uov_method,
+            'default_enhance_uov_processing_order': enhance_uov_processing_order,
+            'default_enhance_uov_prompt_type': enhance_uov_prompt_type,
+            'default_adetail_uov_method': adetail_uov_method,
+            'default_adetail_uov_processing_order': adetail_uov_processing_order,
+            'default_adetail_uov_prompt_type': adetail_uov_prompt_type,
+            'default_image_prompt_checkbox': input_image_checkbox,
+            'default_enhance_checkbox': enhance_checkbox,
+            'default_adetailer_checkbox': adetailer_checkbox,
+            'default_developer_debug_mode_checkbox': dev_mode,
+            'default_image_prompt_advanced_checkbox': ip_advanced,
+            'default_inpaint_advanced_masking_checkbox': inpaint_advanced_masking_checkbox,
+            'default_invert_mask_checkbox': invert_mask_checkbox,
+            'default_black_out_nsfw': black_out_nsfw,
+            'default_disable_seed_increment': disable_seed_increment,
+            'default_mixing_image_prompt_and_vary_upscale': mixing_image_prompt_and_vary_upscale,
+            'default_mixing_image_prompt_and_inpaint': mixing_image_prompt_and_inpaint,
+            'default_tile_x': tile_x,
+            'default_tile_y': tile_y,
+            'default_output_format': output_format,
+            'default_uov_method': uov_method,
+            'default_inpaint_mask_model': inpaint_mask_model,
+            'default_inpaint_mask_cloth_category': inpaint_mask_cloth_category,
+            'default_inpaint_mask_sam_model': inpaint_mask_sam_model,
+        }
+        preset_outputs = (
+            list(preset_ctrls.values())
+            + [
+                component
+                for widgets in ad_widgets
+                for component in widgets.values()
+            ]
+        )
+
+        # Эти дополнительные значения не входят в load_data_outputs.
+        preset_save_ctrls = {
+            **preset_ctrls,
+            'default_advanced_checkbox': advanced_checkbox,
+            'default_inpaint_method': inpaint_mode,
+        }
+
+        preset_save_inputs = (
+            list(preset_save_ctrls.values())
+            + [widgets['inpaint_mode'] for widgets in ad_widgets]
+        )
+        def preset_updates(preset_content):
+            # Дополнительные настройки, не обрабатываемые основным loader.
+            values = [
+                preset_content.get(key)
+                for key in preset_ctrls
+            ]
+
+            # ADetailer: значения отдельно для каждой вкладки.
+            tabs = modules.config.get_adetailer_tabs(preset_content)
+
+            for n, widgets in enumerate(ad_widgets):
+                tab = {
+                    'inpaint_mode': preset_content.get('default_inpaint_method'),
+                    **(tabs[n] if n < len(tabs) else {}),
+                }
+
+                values.extend(
+                    tab.get(attr)
+                    for attr in widgets
+                )
+
+            results = []
+
+            for component, value in zip(preset_outputs, values):
+                choices = [
+                    item[1] if isinstance(item, tuple) else item
+                    for item in (getattr(component, 'choices', None) or [])
+                ]
+
+                # При отсутствии ключа или допустимого выбора сохраняем
+                # текущее значение компонента.
+                if value is None or (choices and value not in choices):
+                    value = component.value
+
+                results.append(gr.update(value=value))
+
+            return results
+
+        if not args_manager.args.disable_image_log:
+            preset_ctrls['default_save_only_final_enhanced_image'] = (
+                save_final_enhanced_image_only
+            )
+
+        if not args_manager.args.disable_metadata:
+            preset_ctrls['default_save_metadata_to_images'] = save_metadata_to_images
+            preset_ctrls['default_metadata_scheme'] = metadata_scheme
 
         if not args_manager.args.disable_preset_selection:
             def preset_selection_change(preset, is_generating, inpaint_mode):
@@ -1882,7 +1986,24 @@ with shared.gradio_root:
                 if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
                     del preset_prepared['prompt']
 
-                return modules.meta_parser.load_parameter_button_click(json.dumps(preset_prepared), is_generating, inpaint_mode)
+                freeu = preset_content.get(
+                    'default_freeu',
+                    modules.config.config_dict.get('default_freeu'),
+                )
+
+                if isinstance(freeu, list) and len(freeu) == 4:
+                    preset_prepared['freeu'] = str(freeu)
+
+                results = modules.meta_parser.load_parameter_button_click(
+                    json.dumps(preset_prepared),
+                    is_generating,
+                    inpaint_mode,
+                )
+
+                if isinstance(preset_content.get('default_advanced_checkbox'), bool):
+                    results[0] = preset_content['default_advanced_checkbox']
+
+                return results + preset_updates(preset_content)
 
 
             def inpaint_engine_state_change(inpaint_engine_version, *args):
@@ -1898,7 +2019,7 @@ with shared.gradio_root:
 
                 return result
 
-            preset_selection.change(preset_selection_change, inputs=[preset_selection, state_is_generating, inpaint_mode], outputs=load_data_outputs, queue=False, show_progress=True) \
+            preset_selection.change(preset_selection_change, inputs=[preset_selection, state_is_generating, inpaint_mode], outputs=load_data_outputs + preset_outputs, queue=False, show_progress=True) \
                 .then(fn=style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False) \
                 .then(lambda: None, _js='()=>{refresh_style_localization();}') \
                 .then(inpaint_engine_state_change, inputs=[inpaint_engine_state] + enhance_inpaint_mode_ctrls, outputs=enhance_inpaint_engine_ctrls, queue=False, show_progress=False)
@@ -2046,12 +2167,178 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
+        setting_types = (gr.Checkbox,gr.Slider,gr.Number,gr.Radio,gr.Dropdown,gr.Textbox,gr.CheckboxGroup)
+
+        ctrl_names = {
+            id(component): name
+            for name, component in globals().items()
+            if isinstance(component, setting_types)
+        }
+
+        per_tab = len(enhance_ctrls) // modules.config.default_enhance_tabs
+
+        enhance_names = (
+            [
+                ctrl_names.get(id(component))
+                for component in enhance_ctrls[-per_tab:]
+            ]
+            + ['enhance_inpaint_mode']
+        )
+
+        for n in range(modules.config.default_enhance_tabs):
+            tab_components = (
+                enhance_ctrls[n * per_tab:(n + 1) * per_tab]
+                + [enhance_inpaint_mode_ctrls[n]]
+            )
+
+            for component, name in zip(tab_components, enhance_names):
+                if name is not None:
+                    ctrl_names[id(component)] = f'{name}_{n + 1}'
+
+        derived = [
+            inpaint_disable_initial_latent,
+            inpaint_strength,
+            inpaint_respective_field,
+            disable_preview,
+            disable_intermediate_results,
+            current_tab,
+        ] + [
+            component
+            for tab in enhance_inpaint_update_ctrls
+            for component in tab[1:]
+        ]
+
+        extra_skip = {
+            id(component)
+            for component in (
+                load_data_outputs
+                + list(preset_save_ctrls.values())
+                + preset_outputs
+                + ip_ctrls
+                + derived
+            )
+        }
+
+        # Эти компоненты должны остаться допустимыми для default_extra_settings.
+        extra_skip -= {
+            id(component)
+            for component in enhance_inpaint_mode_ctrls + [seed_random, image_seed]
+        }
+
+        extra_ctrls = {}
+
+        extra_candidates = (
+            ctrls
+            + enhance_inpaint_mode_ctrls
+            + [
+                inpaint_mask_dino_prompt_text,
+                inpaint_mask_box_threshold,
+                inpaint_mask_text_threshold,
+                inpaint_mask_sam_max_detections,
+                adv_trans,
+            ]
+        )
+
+        for component in extra_candidates:
+            if (
+                isinstance(component, setting_types)
+                and id(component) not in extra_skip
+                and id(component) in ctrl_names
+            ):
+                extra_ctrls.setdefault(ctrl_names[id(component)], component)
+
+        def setting_valid(component, value):
+            if value is None:
+                return False
+
+            if isinstance(component, gr.Checkbox):
+                return isinstance(value, bool)
+
+            if isinstance(component, (gr.Slider, gr.Number)):
+                return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+            choices = [
+                item[1] if isinstance(item, tuple) else item
+                for item in (getattr(component, 'choices', None) or [])
+            ]
+
+            if (
+                isinstance(component, gr.CheckboxGroup)
+                or getattr(component, 'multiselect', False)
+            ):
+                return (
+                    isinstance(value, list)
+                    and all(item in choices for item in value)
+                )
+
+            if choices and not getattr(component, 'allow_custom_value', False):
+                return value in choices
+
+            return isinstance(value, str)
+
+        launch_extra = (
+            modules.config.config_dict.get('default_extra_settings') or {}
+        )
+
+        for name, component in extra_ctrls.items():
+            value = launch_extra.get(name)
+
+            if setting_valid(component, value):
+                component.value = value
+
+        launch_freeu = modules.config.config_dict.get('default_freeu')
+
+        if isinstance(launch_freeu, list) and len(launch_freeu) == 4:
+            for component, value in zip(freeu_ctrls, [True] + launch_freeu):
+                component.value = value
+        if not args_manager.args.disable_preset_selection:
+            def preset_extra_change(preset):
+                preset_content = (
+                    modules.config.try_get_preset_content(preset)
+                    if preset != 'initial'
+                    else {}
+                )
+
+                extra = preset_content.get('default_extra_settings') or {}
+                method = preset_content.get('default_inpaint_method')
+
+                results = [
+                    gr.update(
+                        value=(
+                            method
+                            if method in flags.inpaint_options
+                            else inpaint_mode.value
+                        )
+                    )
+                ]
+
+                for name, component in extra_ctrls.items():
+                    value = extra.get(name)
+
+                    if setting_valid(component, value):
+                        results.append(gr.update(value=value))
+                    else:
+                        results.append(gr.update(value=component.value))
+
+                return results
+
+            preset_selection.change(
+                preset_extra_change,
+                inputs=preset_selection,
+                outputs=[inpaint_mode] + list(extra_ctrls.values()),
+                queue=False,
+                show_progress=False,
+            )
+
+
+
 
 
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
             return workprompt
+
 
         def to_dict(obj):
             return obj.__dict__

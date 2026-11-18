@@ -265,7 +265,50 @@ def init_temp_path(path: str | None, default_path: str) -> str:
     os.makedirs(default_path, exist_ok=True)
     return default_path
 
+default_upscaler = get_config_item_or_set_default(
+    key='default_upscaler',
+    default_value='',
+    validator=lambda x: isinstance(x, str),
+    disable_empty_as_none=True,
+    expected_type=str
+)
+default_negative_prompt_main = get_config_item_or_set_default(
+    key='default_negative_prompt_main',
+    default_value=modules.flags.negative_prompt_main,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_disable_seed_increment = get_config_item_or_set_default(
+    key='default_disable_seed_increment',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_mixing_image_prompt_and_vary_upscale = get_config_item_or_set_default(
+    key='default_mixing_image_prompt_and_vary_upscale',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_mixing_image_prompt_and_inpaint = get_config_item_or_set_default(
+    key='default_mixing_image_prompt_and_inpaint',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_tile_x = get_config_item_or_set_default(
+    key='default_tile_x',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
 
+default_tile_y = get_config_item_or_set_default(
+    key='default_tile_y',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
 default_temp_path = os.path.join(tempfile.gettempdir(), 'fooocus')
 temp_path = init_temp_path(get_config_item_or_set_default(
     key='temp_path',
@@ -364,6 +407,58 @@ default_adetail_tab = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, int) and x >= 1,
     expected_type=int
 )
+default_adetail_uov_method = get_config_item_or_set_default(
+    key='default_adetail_uov_method',
+    default_value=default_enhance_uov_method,
+    validator=lambda x: x in modules.flags.uov_list,
+    expected_type=str
+)
+
+default_adetail_uov_processing_order = get_config_item_or_set_default(
+    key='default_adetail_uov_processing_order',
+    default_value=default_enhance_uov_processing_order,
+    validator=lambda x: x in modules.flags.enhancement_uov_processing_order,
+    expected_type=str
+)
+
+default_adetail_uov_prompt_type = get_config_item_or_set_default(
+    key='default_adetail_uov_prompt_type',
+    default_value=default_enhance_uov_prompt_type,
+    validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
+    expected_type=str
+)
+legacy_adetailer_keys = [
+    'ad_model',
+    'ad_confidence',
+    'ad_denoising_strength',
+    'ad_resp_field',
+]
+
+
+def get_adetailer_tabs(content):
+    """Читает новые настройки вкладок и поддерживает старые одиночные поля preset."""
+    tabs = [
+        dict(tab)
+        for tab in (content.get('default_adetailer_tabs') or [])
+        if isinstance(tab, dict)
+    ]
+
+    # Старые preset могли содержать настройки первой вкладки
+    # отдельными ключами вида default_ad_model.
+    legacy = {
+        key: content[f'default_{key}']
+        for key in legacy_adetailer_keys
+        if content.get(f'default_{key}') is not None
+    }
+
+    if legacy:
+        first_tab = tabs[0] if tabs else {}
+        tabs[:1] = [{**legacy, **first_tab}]
+
+    return tabs
+
+default_adetailer_tabs = get_adetailer_tabs(config_dict)
+
 default_cfg_scale = get_config_item_or_set_default(
     key='default_cfg_scale',
     default_value=7.0,
