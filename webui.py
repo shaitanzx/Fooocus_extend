@@ -836,7 +836,7 @@ with shared.gradio_root:
                         ]]
 
                         enhance_inpaint_mode.change(inpaint_mode_change, inputs=[enhance_inpaint_mode, inpaint_engine_state], outputs=[
-                            inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
+                            inpaint_additional_prompt, outpaint_selections, outpaint_width,outpaint_heighth,example_inpaint_prompts,
                             enhance_inpaint_disable_initial_latent, enhance_inpaint_engine,
                             enhance_inpaint_strength, enhance_inpaint_respective_field
                         ], show_progress=False, queue=False)
