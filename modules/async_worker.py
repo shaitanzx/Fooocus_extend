@@ -2338,7 +2338,7 @@ def worker():
                                     classes=args.ad_model_classes,
                                     device='cpu')
 
-                        masks = adetailer.pred_preprocessing(pred, args)
+                        masks = adetailer.pred_preprocessing(pred, args, image=img)
                         if len(masks) == 0:
                             print(f'[ADetailer] No detected, skipping')
                             continue
