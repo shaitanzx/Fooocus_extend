@@ -463,7 +463,6 @@ def inpainting(w: Widgets, n: int, is_img2img: bool, webui_info: WebuiInfo):  # 
                     step=0.5,
                     value=tab_default(n, "ad_cfg_scale", 7.0),
                     interactive=w.ad_use_cfg_scale.value,
-                    interactive=False,
                     elem_id=eid("ad_cfg_scale"),
                 )
                 w.ad_use_cfg_scale.change(
