@@ -1098,7 +1098,7 @@ with shared.gradio_root:
                                 gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
                         def loader_prompt(file,pos_only):
                             with open(file.name, 'rb') as f:
-                                raw_data = f.read(1000)
+                                raw_data = f.read()
                                 result = chardet.detect(raw_data)
                                 encoding = result['encoding']
                             with open(file.name, 'r', encoding=encoding) as f:
