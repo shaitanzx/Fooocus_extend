@@ -1373,13 +1373,13 @@ with shared.gradio_root:
 
                 name_prefix = gr.Textbox(label='Filename Prefix', show_label=True)
 
-                preset_selection_change = gr.Textbox(label='Negative Prompt', show_label=True, placeholder="Type prompt here.",
+                negative_prompt = gr.Textbox(label='Negative Prompt', show_label=True, placeholder="Type prompt here.",
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
                                              value=modules.config.default_prompt_negative,
                                              visible=not modules.flags.negative_prompt_main,)
                 new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main page",
-                        value=modules.flags.negative_prompt_main,)
+                        value=modules.flags.negative_prompt_main)
                 seed_random = gr.Checkbox(label='Random', value=True)
                 image_seed = gr.Textbox(label='Seed', value=0, max_lines=1, visible=False) # workaround for https://github.com/gradio-app/gradio/issues/5354
 
@@ -1971,9 +1971,7 @@ with shared.gradio_root:
 
         if not args_manager.args.disable_preset_selection:
             def preset_selection_change(preset, is_generating, inpaint_mode):
-
                 print(f'[PRESET CHANGE] callback fired: {preset!r}')
-
                 preset_content = modules.config.try_get_preset_content(preset) if preset != 'initial' else {}
                 preset_prepared = modules.meta_parser.parse_meta_from_preset(preset_content)
                 default_model = preset_prepared.get('base_model')
