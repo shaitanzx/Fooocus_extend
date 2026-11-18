@@ -329,7 +329,6 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                         "bounding-box mask into an object-shaped mask."
                     ),
                 )
-            with gr.Column(variant="compact"):
                 w.ad_sam_model = gr.Dropdown(
                     label="SAM model" + suffix(n),
                     choices=sam_choices,
@@ -344,16 +343,6 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                     elem_id=eid("ad_sam_model"),
                     info="vit_b is the recommended starting point; vit_l and vit_h use more VRAM.",
                 )
-
-        w.ad_sam_mask.change(
-            lambda enabled: gr_interactive(enabled),
-            inputs=w.ad_sam_mask,
-            outputs=w.ad_sam_model,
-            queue=False,
-        )
-
-    with gr.Group():
-        with gr.Row():
             with gr.Column(variant="compact"):
                 w.ad_x_offset = gr.Slider(
                     label="Mask x(→) offset" + suffix(n),
@@ -373,8 +362,6 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                     visible=True,
                     elem_id=eid("ad_y_offset"),
                 )
-
-            with gr.Column(variant="compact"):
                 w.ad_dilate_erode = gr.Slider(
                     label="Mask erosion (-) / dilation (+)" + suffix(n),
                     minimum=-128,
@@ -384,6 +371,15 @@ def mask_preprocessing(w: Widgets, n: int, is_img2img: bool):
                     visible=True,
                     elem_id=eid("ad_dilate_erode"),
                 )
+        w.ad_sam_mask.change(
+            lambda enabled: gr_interactive(enabled),
+            inputs=w.ad_sam_mask,
+            outputs=w.ad_sam_model,
+            queue=False,
+        )
+
+    
+                
 
         with gr.Row():
             w.ad_mask_merge_invert = gr.Radio(
