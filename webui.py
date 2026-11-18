@@ -1902,6 +1902,16 @@ with shared.gradio_root:
             'default_inpaint_mask_cloth_category': inpaint_mask_cloth_category,
             'default_inpaint_mask_sam_model': inpaint_mask_sam_model,
         }
+
+        if not args_manager.args.disable_image_log:
+            preset_ctrls['default_save_only_final_enhanced_image'] = (
+                save_final_enhanced_image_only
+            )
+
+        if not args_manager.args.disable_metadata:
+            preset_ctrls['default_save_metadata_to_images'] = save_metadata_to_images
+            preset_ctrls['default_metadata_scheme'] = metadata_scheme
+
         preset_outputs = (
             list(preset_ctrls.values())
             + [
@@ -1960,14 +1970,7 @@ with shared.gradio_root:
 
             return results
 
-        if not args_manager.args.disable_image_log:
-            preset_ctrls['default_save_only_final_enhanced_image'] = (
-                save_final_enhanced_image_only
-            )
 
-        if not args_manager.args.disable_metadata:
-            preset_ctrls['default_save_metadata_to_images'] = save_metadata_to_images
-            preset_ctrls['default_metadata_scheme'] = metadata_scheme
 
         if not args_manager.args.disable_preset_selection:
             def preset_selection_change(preset, is_generating, inpaint_mode):
