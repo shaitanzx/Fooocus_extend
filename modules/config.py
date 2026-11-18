@@ -121,7 +121,7 @@ def try_get_preset_content(preset):
             if os.path.exists(preset_path):
                 with open(preset_path, "r", encoding="utf-8") as json_file:
                     json_content = json.load(json_file)
-                    print(f'Loaded preset: {preset_path}')
+                    #print(f'Loaded preset: {preset_path}')
                     return json_content
             else:
                 raise FileNotFoundError
