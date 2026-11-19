@@ -1306,62 +1306,64 @@ def process_without_face(face_model,upscale_model,face_detection_only_center,fac
         img_cf.save(filename)
         passed+=1
     return gr.update(value=None,visible=False),gr.update(visible=True)
-def _image_files(directory):
+
+
+def _comparison_image_files(directory):
     if not os.path.isdir(directory):
         return []
 
-    valid_extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
-
+    supported_extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
     return sorted(
         os.path.join(directory, name)
         for name in os.listdir(directory)
         if (
             os.path.isfile(os.path.join(directory, name))
-            and os.path.splitext(name)[1].lower() in valid_extensions
+            and os.path.splitext(name)[1].lower() in supported_extensions
         )
     )
 
 
-def prepare_comparison(is_swap, is_zip):
+def prepare_comparison(is_swap, zip_image, zip_face):
+    """Populate the closed comparison accordion for exactly one result pair."""
+    accordion_hidden = gr.update(visible=False, open=False)
+
+    if zip_image or (is_swap and zip_face):
+        return gr.update(value=""), accordion_hidden
+
     target_dir = os.path.join(temp_dir, "batch_face_enhancer")
     result_dir = os.path.join(temp_dir, "batch_temp")
     source_face_dir = os.path.join(temp_dir, "batch_insw_face")
 
-    targets = _image_files(target_dir)
-    results = _image_files(result_dir)
-    source_faces = _image_files(source_face_dir)
+    targets = _comparison_image_files(target_dir)
+    results = _comparison_image_files(result_dir)
+    source_faces = _comparison_image_files(source_face_dir)
 
-    # ZIP остаётся пакетным сценарием, даже если в архиве случайно один файл.
-    if is_zip:
-        return gr.update(value="", visible=False), gr.update(visible=False)
-
-    # Слайдер показывает ровно одну пару: исходную картинку и один результат.
     if len(targets) != 1 or len(results) != 1:
-        return gr.update(value="", visible=False), gr.update(visible=False)
+        return gr.update(value=""), accordion_hidden
 
-    # При Face Swap один результат возможен только с одним файлом-источником.
     if is_swap and len(source_faces) != 1:
-        return gr.update(value="", visible=False), gr.update(visible=False)
+        return gr.update(value=""), accordion_hidden
 
     try:
-        html = imageslider.render_html(targets[0], results[0])
+        comparison_html = imageslider.render_html(targets[0], results[0])
     except Exception:
         traceback.print_exc()
-        return gr.update(value="", visible=False), gr.update(visible=False)
+        return gr.update(value=""), accordion_hidden
 
-    # Слайдер загружен, но открывается только по нажатию кнопки.
-    return gr.update(value=html, visible=False), gr.update(visible=True)
+    # Gradio 3.41.2 supports Accordion.update(open=...), so every new result
+    # reveals the accordion collapsed rather than preserving its prior state.
+    return gr.update(value=comparison_html), gr.update(visible=True, open=False)
 
 
-def clear_comparison_at_start():
-    return (
-        gr.update(visible=True, interactive=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(value="", visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-    )
+def reset_comparison():
+    """Clear stale HTML and hide/collapse comparison before starting a run."""
+    return gr.update(value=""), gr.update(visible=False, open=False)
+
+
+def hide_comparison_for_input_change(*_):
+    """Hide stale comparisons when the selected processing mode/input changes."""
+    return gr.update(visible=False, open=False)
+
 
 def gui(generator):
     
@@ -1387,22 +1389,12 @@ def gui(generator):
         tutorial("FaceEnhancer.md")    
     with gr.Row(visible=not generator):
         file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
-    with gr.Row(visible=not generator):
-        compare_button = gr.Button(
-            value="Сравнить до/после",
-            visible=False
-        )
-        show_result_button = gr.Button(
-            value="Показать результат",
-            visible=False
-        )
-
-    with gr.Row(visible=not generator):
-        compare_slider = gr.HTML(
-            value="",
-            visible=False,
-            show_label=False
-        )
+    with gr.Accordion(
+        "Сравнение до/после",
+        open=False,
+        visible=False,
+    ) as compare_accordion:
+        compare_slider = gr.HTML(value="", show_label=False)
     with gr.Row():
         with gr.Column():
             face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
@@ -1456,15 +1448,67 @@ def gui(generator):
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
         ext_dir_face=gr.Textbox(value='batch_insw_face',visible=False)
-    enable_swap.change(lambda x: [gr.update(visible=x),gr.update(visible=not x),gr.update(visible=x)], inputs=enable_swap,outputs=[swap_mode,face_en_start,face_en_start_face], queue=False, show_progress=False)
+    enable_swap.change(
+        lambda x: [
+            gr.update(visible=x),
+            gr.update(visible=not x),
+            gr.update(visible=x),
+            gr.update(visible=False, open=False),
+        ],
+        inputs=enable_swap,
+        outputs=[swap_mode, face_en_start, face_en_start_face, compare_accordion],
+        queue=False,
+        show_progress=False,
+    )
 
 
 
     enable_zip_face.change(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False)
+    enable_zip_image.change(
+        fn=hide_comparison_for_input_change,
+        inputs=enable_zip_image,
+        outputs=compare_accordion,
+        queue=False,
+        show_progress=False,
+    )
+    enable_zip_face.change(
+        fn=hide_comparison_for_input_change,
+        inputs=enable_zip_face,
+        outputs=compare_accordion,
+        queue=False,
+        show_progress=False,
+    )
+    files_single.upload(
+        fn=hide_comparison_for_input_change,
+        inputs=files_single,
+        outputs=compare_accordion,
+        queue=False,
+        show_progress=False,
+    )
+    files_single_face.upload(
+        fn=hide_comparison_for_input_change,
+        inputs=files_single_face,
+        outputs=compare_accordion,
+        queue=False,
+        show_progress=False,
+    )
+    image_single.clear(
+        fn=hide_comparison_for_input_change,
+        outputs=compare_accordion,
+        queue=False,
+        show_progress=False,
+    )
     image_single_face.clear(fn=batch.clear_single,inputs=image_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
     files_single_face.upload(fn=batch.single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
+    image_single_face.clear(
+        fn=hide_comparison_for_input_change,
+        outputs=compare_accordion,
+        queue=False,
+        show_progress=False,
+    )
 
-    face_en_start_face.click(fn=clear_comparison_at_start,outputs=[face_en_start_face,file_out,image_out,compare_slider,compare_button,show_result_button]) \
+    face_en_start_face.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start_face,file_out,image_out]) \
+              .then(fn=reset_comparison, outputs=[compare_slider, compare_accordion]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
@@ -1476,48 +1520,31 @@ def gui(generator):
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False),gr.update(visible=False)),outputs=[file_out,preview_face,preview],show_progress=False) \
               .then(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(fn=lambda is_zip: prepare_comparison(is_swap=True, is_zip=is_zip),inputs=enable_zip_image,outputs=[compare_slider, compare_button]) \
+              .then(
+                  fn=lambda zip_image, zip_face: prepare_comparison(
+                      True, zip_image, zip_face
+                  ),
+                  inputs=[enable_zip_image, enable_zip_face],
+                  outputs=[compare_slider, compare_accordion],
+              ) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start_face)
-    face_en_start.click(fn=clear_comparison_at_start,outputs=[face_en_start,file_out,image_out,compare_slider,compare_button,show_result_button]) \
+    face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
+              .then(fn=reset_comparison, outputs=[compare_slider, compare_accordion]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
               .then(fn=process_without_face, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(fn=lambda is_zip: prepare_comparison(is_swap=False, is_zip=is_zip),inputs=enable_zip_image,outputs=[compare_slider, compare_button]) \
+              .then(
+                  fn=lambda zip_image, zip_face: prepare_comparison(
+                      False, zip_image, zip_face
+                  ),
+                  inputs=[enable_zip_image, enable_zip_face],
+                  outputs=[compare_slider, compare_accordion],
+              ) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)
-    compare_button.click(
-        fn=lambda: (
-            gr.update(visible=True),   # показать ImageSlider
-            gr.update(visible=False),  # скрыть обычный результат
-            gr.update(visible=False),  # скрыть кнопку сравнения
-            gr.update(visible=True),   # показать кнопку возврата
-        ),
-        outputs=[
-            compare_slider,
-            image_out,
-            compare_button,
-            show_result_button
-        ],
-        queue=False
-    )
 
-    show_result_button.click(
-        fn=lambda: (
-            gr.update(visible=False),  # скрыть ImageSlider
-            gr.update(visible=True),   # показать обычный результат
-            gr.update(visible=True),   # вернуть кнопку сравнения
-            gr.update(visible=False),  # скрыть кнопку возврата
-        ),
-        outputs=[
-            compare_slider,
-            image_out,
-            compare_button,
-            show_result_button
-        ],
-        queue=False
-    )
 
 
 

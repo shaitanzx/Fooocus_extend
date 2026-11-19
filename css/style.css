@@ -445,11 +445,11 @@ div:has(> #positive_prompt) {
   white-space: normal !important;
   word-wrap: break-word !important;
 }
-#dataframe_batch td:nth-child(1) { 
+#dataframe_batch td:nth-child(1) {
   width: 50%;
 }
 
-/* Face Enhancer: before/after comparison */
+/* Face Enhancer before/after comparison */
 .fooocus-image-compare {
     width: 100%;
 }
@@ -457,8 +457,9 @@ div:has(> #positive_prompt) {
 .fooocus-image-compare__canvas {
     position: relative;
     width: 100%;
-    height: min(720px, 75vh);
-    min-height: 320px;
+    height: calc(100vh - 180px);
+    min-height: 360px;
+    max-height: 1400px;
     overflow: hidden;
     background: #111;
     border-radius: 8px;
@@ -477,9 +478,7 @@ div:has(> #positive_prompt) {
 }
 
 .fooocus-image-compare__after {
-    clip-path: inset(
-        0 0 0 var(--fooocus-compare-position, 50%)
-    );
+    clip-path: inset(0 0 0 var(--fooocus-compare-position, 50%));
 }
 
 .fooocus-image-compare__divider {
@@ -500,14 +499,14 @@ div:has(> #positive_prompt) {
     top: 50%;
     left: 50%;
     display: grid;
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
     place-items: center;
     border: 2px solid #fff;
     border-radius: 50%;
     color: #fff;
     background: rgba(20, 20, 20, 0.72);
-    font-size: 20px;
+    font-size: 21px;
     transform: translate(-50%, -50%);
 }
 
@@ -544,7 +543,8 @@ div:has(> #positive_prompt) {
 
 @media (max-width: 640px) {
     .fooocus-image-compare__canvas {
-        height: min(520px, 70vh);
+        height: calc(100vh - 200px);
         min-height: 280px;
     }
 }
+

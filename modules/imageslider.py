@@ -1,4 +1,4 @@
-"""HTML rendering helpers for the Face Enhancer comparison slider."""
+"""HTML renderer for the Face Enhancer before/after comparison view."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ from typing import Union
 import numpy as np
 from PIL import Image as PILImage
 
-
 ImageValue = Union[PILImage.Image, np.ndarray, str, Path]
 
 
@@ -19,17 +18,15 @@ def _to_pil_image(image: ImageValue) -> PILImage.Image:
         result = image.copy()
     elif isinstance(image, np.ndarray):
         array = np.asarray(image)
-
         if array.dtype != np.uint8:
             if (
                 np.issubdtype(array.dtype, np.floating)
                 and array.size
-                and array.max() <= 1.0
+                and array.min() >= 0
+                and array.max() <= 1
             ):
                 array = array * 255.0
-
             array = np.clip(array, 0, 255).astype(np.uint8)
-
         result = PILImage.fromarray(array)
     else:
         with PILImage.open(image) as opened:
@@ -39,22 +36,18 @@ def _to_pil_image(image: ImageValue) -> PILImage.Image:
         result = result.convert(
             "RGBA" if "transparency" in result.info else "RGB"
         )
-
     return result
 
 
 def _to_data_uri(image: ImageValue) -> str:
-    pil_image = _to_pil_image(image)
-
     buffer = BytesIO()
-    pil_image.save(buffer, format="PNG", optimize=True)
-
+    _to_pil_image(image).save(buffer, format="PNG", optimize=True)
     encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
     return f"data:image/png;base64,{encoded}"
 
 
 def render_html(before: ImageValue, after: ImageValue) -> str:
-    """Build the before/after slider markup for a Gradio HTML component."""
+    """Return self-contained before/after markup for Gradio's HTML block."""
     before_src = _to_data_uri(before)
     after_src = _to_data_uri(after)
 
@@ -63,34 +56,18 @@ def render_html(before: ImageValue, after: ImageValue) -> str:
      style="--fooocus-compare-position: 50%;">
   <div class="fooocus-image-compare__canvas">
     <img class="fooocus-image-compare__image fooocus-image-compare__before"
-         src="{before_src}"
-         alt="До обработки"
-         draggable="false">
-
+         src="{before_src}" alt="До обработки" draggable="false">
     <img class="fooocus-image-compare__image fooocus-image-compare__after"
-         src="{after_src}"
-         alt="После обработки"
-         draggable="false">
-
+         src="{after_src}" alt="После обработки" draggable="false">
     <span class="fooocus-image-compare__label
-                 fooocus-image-compare__label--before">
-      До
-    </span>
-
+                 fooocus-image-compare__label--before">До</span>
     <span class="fooocus-image-compare__label
-                 fooocus-image-compare__label--after">
-      После
-    </span>
-
+                 fooocus-image-compare__label--after">После</span>
     <span class="fooocus-image-compare__divider" aria-hidden="true">
       <span class="fooocus-image-compare__handle">↔</span>
     </span>
-
     <input class="fooocus-image-compare__range"
-           type="range"
-           min="0"
-           max="100"
-           value="50"
+           type="range" min="0" max="100" value="50"
            aria-label="Положение разделителя сравнения">
   </div>
 </div>

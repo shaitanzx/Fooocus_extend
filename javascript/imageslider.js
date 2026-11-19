@@ -1,13 +1,9 @@
 (() => {
-    if (window.fooocusImageCompareListenerInstalled) {
-        return;
-    }
-
+    if (window.fooocusImageCompareListenerInstalled) return;
     window.fooocusImageCompareListenerInstalled = true;
 
     document.addEventListener("input", (event) => {
         const input = event.target;
-
         if (
             !input ||
             !input.classList ||
@@ -17,10 +13,7 @@
         }
 
         const slider = input.closest(".fooocus-image-compare");
-
-        if (!slider) {
-            return;
-        }
+        if (!slider) return;
 
         slider.style.setProperty(
             "--fooocus-compare-position",
