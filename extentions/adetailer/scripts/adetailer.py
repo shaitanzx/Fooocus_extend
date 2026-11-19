@@ -3,15 +3,12 @@ import re
 import sys
 import os
 import traceback
-#!from collections.abc import Sequence
 from copy import copy
-#!from functools import partial
 
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import gradio as gr
 from PIL import Image, ImageChops
-#!from rich import print  # noqa: A004  Shadowing built-in 'print'
 
 import modules
 
@@ -76,8 +73,6 @@ def ui(is_img2img):
             ad_model_list=ad_model_list,
             sampler_names=sampler_names,
             scheduler_names=scheduler_names,
-            #!t2i_button=txt2img_submit_button,
-            #!i2i_button=img2img_submit_button,
             checkpoints_list=checkpoint_list,
             vae_list=vae_list,
         )

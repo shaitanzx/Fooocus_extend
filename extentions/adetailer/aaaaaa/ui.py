@@ -23,8 +23,6 @@ class WebuiInfo:
     ad_model_list: list[str]
     sampler_names: list[str]
     scheduler_names: list[str]
-    #!t2i_button: gr.Button
-    #!i2i_button: gr.Button
     checkpoints_list: list[str]
     vae_list: list[str]
 
@@ -144,7 +142,7 @@ def adui(
                     ad_ckpt_dropdown.append(ad_ckpt_dd)
                     ad_widgets.append(widgets)
                     states.append(state)
-                    #!infotext_fields.extend(infofields)
+                    
 
     # components: [bool, bool, dict, dict, ...]
         components = [*states]

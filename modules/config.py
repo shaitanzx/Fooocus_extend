@@ -420,15 +420,12 @@ legacy_adetailer_keys = [
 
 
 def get_adetailer_tabs(content):
-    """Читает новые настройки вкладок и поддерживает старые одиночные поля preset."""
     tabs = [
         dict(tab)
         for tab in (content.get('default_adetailer_tabs') or [])
         if isinstance(tab, dict)
     ]
 
-    # Старые preset могли содержать настройки первой вкладки
-    # отдельными ключами вида default_ad_model.
     legacy = {
         key: content[f'default_{key}']
         for key in legacy_adetailer_keys
@@ -890,7 +887,6 @@ possible_preset_keys = {
     "lora_downloads": "lora_downloads",
     "vae_downloads": "vae_downloads",
     "default_vae": "vae",
-    # "default_inpaint_method": "inpaint_method", # disabled so inpaint mode doesn't refresh after every preset change
     "default_inpaint_engine_version": "inpaint_engine_version",
 }
 
@@ -948,7 +944,6 @@ if config_file_is_valid:
         if key in config_dict
     }
 
-    # Обновит отсутствующие пути и удалит из файла старые непутевые параметры.
     if path_config_data != loaded_config or not config_file_exists:
         with open(config_path, "w", encoding="utf-8") as json_file:
             json.dump(path_config_data, json_file, indent=4)
@@ -1285,7 +1280,6 @@ def downloading_ip_adapters(v, is_sd15=False):
 
     results = []
 
-    # Общие для этих моделей файлы ViT-H и negative image embedding.
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors",
         model_dir=path_clip_vision,

@@ -699,7 +699,6 @@ def worker():
         fam = mf.detect_family_from_file(base_path)
         async_task.native_sd15_inpaint = mf.is_sd15_inpaint_file(base_path)
 
-        # На первом этапе native SD1.5 Inpaint используем без переключения refiner.
         if async_task.native_sd15_inpaint:
             async_task.refiner_model_name = 'None'
 
@@ -719,13 +718,6 @@ def worker():
                 async_task.refiner_model_name = 'None'
             else:
                 print('[SD1.5] SD1.5 refiner enabled.')
-
-        # if async_task.performance_selection in (Performance.EXTREME_SPEED,
-        #                                         Performance.LIGHTNING,
-        #                                         Performance.HYPER_SD):
-        #     print('[SD1.5] Extreme Speed / Lightning / Hyper-SD need SDXL LoRAs -> switched to Speed.')
-        #     async_task.performance_selection = Performance.SPEED
-        #     async_task.steps = async_task.original_steps = Performance.SPEED.steps()
 
         return True
 
@@ -1536,8 +1528,6 @@ def worker():
             current_progress += 1
         progressbar(async_task, current_progress, 'Downloading Hyper-SD components ...')
         if async_task.is_sd15:
-            # Официальная 4-step SD1.5 Hyper-SD LoRA использует DDIM
-            # и CFG=0. В Fooocus ближайшее расписание — ddim_uniform.
             async_task.sampler_name = 'ddim'
             async_task.scheduler_name = 'ddim_uniform'
             async_task.cfg_scale = 0.0
@@ -1579,8 +1569,7 @@ def worker():
             async_task.scheduler_name = 'tcd'
             async_task.cfg_scale = 0.0
 
-            # TCD LoRA example uses guidance_scale=0.
-            # Disable CFG modifiers so CFG is not altered afterward.
+
             async_task.type_cfg = 'Off'
             async_task.adaptive_cfg = 1.0
             async_task.rescale_cfg = 0.0
@@ -2097,7 +2086,7 @@ def worker():
                     
                     print(f"[Omost] Task conditioned. Positive regions: {len(t['c'])}, Negative regions: {len(t['uc'])}")
             
-            except Exception as e:  # ← 12 пробелов, на одном уровне с try
+            except Exception as e: 
                 print(f"\033[91m[Omost] ERROR during conditioning: {e}\033[0m")
                 import traceback
                 traceback.print_exc()

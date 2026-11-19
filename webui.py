@@ -880,18 +880,12 @@ with shared.gradio_root:
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
                             def toggle_html(current_html):
-                                # Определяем, какой файл сейчас загружен (можно по наличию русских букв или просто переключать)
                                 en_path = Path(__file__).parent / "dlora.html"
                                 ru_path = Path(__file__).parent / "dlora_rus.html"
-        
-                                # Простая эвристика: если в HTML есть слово "Dynamic" - значит английский
                                 if "lang=EN" in current_html and "lang=RU" not in current_html:
-                                # Переключаем на русский
                                     return ru_path.read_text(encoding="utf-8")
                                 else:
-                                # Переключаем на английский
                                     return en_path.read_text(encoding="utf-8")
-                                # Загружаем начальную версию
                             en_path = Path(__file__).parent / "dlora.html"
                             initial_html = en_path.read_text(encoding="utf-8")
     
@@ -1049,7 +1043,6 @@ with shared.gradio_root:
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
                         with gr.Row(visible=False):
                             ext_dir=gr.Textbox(value='batch_images',visible=False)
-                            #out_dir=gr.Textbox(value=modules.config.path_outputs,visible=False) 
                         def image_action_change(image_action):
                             if image_action=='Image Prompt':
                               return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
@@ -1503,7 +1496,6 @@ with shared.gradio_root:
                             model_id = str(data.get("modelId"))
                             version_id = str(data.get("id"))
                             return gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Checkpoint Page on CivitAI</a>')
-                            #f'{trained_words}'
                         except Exception as e:
                             print(f"Error loading Model tags: {e}")
                             return gr.update(visible=False)                    
@@ -1530,7 +1522,6 @@ with shared.gradio_root:
                                     inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
                 with gr.Tab(label='LoRAs'):
-                    ###################
                     with gr.Group():
                         def lora_tag(filename_sft):
                             filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
@@ -1549,7 +1540,6 @@ with shared.gradio_root:
                                 model_id = str(data.get("modelId"))
                                 version_id = str(data.get("id"))
                                 return gr.update(visible=True,value=trained_words,lines=line_count),gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
-                                #f'{trained_words}'
                             except Exception as e:
                                 print(f"Error loading LORA tags: {e}")
                                 return gr.update(visible=False),gr.update(visible=False)
@@ -1582,7 +1572,6 @@ with shared.gradio_root:
                         
                             lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
                             lora_ctrls += [lora_enabled, lora_model, lora_weight]
-                #########################
                 with gr.Tab(label='Embeddings'):
                     def emb_change(name,weight):
                         if name == "None":
@@ -1921,7 +1910,6 @@ with shared.gradio_root:
             ]
         )
 
-        # Эти дополнительные значения не входят в load_data_outputs.
         preset_save_ctrls = {
             **preset_ctrls,
             'default_advanced_checkbox': advanced_checkbox,
@@ -1933,13 +1921,11 @@ with shared.gradio_root:
             + [widgets['inpaint_mode'] for widgets in ad_widgets]
         )
         def preset_updates(preset_content):
-            # Дополнительные настройки, не обрабатываемые основным loader.
             values = [
                 preset_content.get(key)
                 for key in preset_ctrls
             ]
 
-            # ADetailer: значения отдельно для каждой вкладки.
             tabs = modules.config.get_adetailer_tabs(preset_content)
 
             for n, widgets in enumerate(ad_widgets):
@@ -1961,8 +1947,6 @@ with shared.gradio_root:
                     for item in (getattr(component, 'choices', None) or [])
                 ]
 
-                # При отсутствии ключа или допустимого выбора сохраняем
-                # текущее значение компонента.
                 if value is None or (choices and value not in choices):
                     value = component.value
 
@@ -2225,7 +2209,6 @@ with shared.gradio_root:
             )
         }
 
-        # Эти компоненты должны остаться допустимыми для default_extra_settings.
         extra_skip -= {
             id(component)
             for component in enhance_inpaint_mode_ctrls + [seed_random, image_seed]
@@ -2336,10 +2319,6 @@ with shared.gradio_root:
                 show_progress=False,
             )
 
-
-
-
-
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
@@ -2362,30 +2341,23 @@ with shared.gradio_root:
                 gr.Warning('Enter a preset name.')
                 return gr.update()
 
-            # Первые аргументы соответствуют preset_save_ctrls.
             preset_values = dict(zip(preset_save_ctrls, args))
             args = args[len(preset_save_ctrls):]
 
-            # Далее идут Method ADetailer для отдельных вкладок.
             ad_inpaint_modes = args[:len(ad_widgets)]
             args = args[len(ad_widgets):]
 
-            # Затем значения дополнительного словаря.
             extra_values = dict(zip(extra_ctrls, args))
             args = list(args[len(extra_ctrls):])
 
-            # Не сохранять конкретный seed, когда включён Random.
             if extra_values.get('seed_random', True):
                 extra_values.pop('image_seed', None)
 
-            # Остальные args нужны для формирования AsyncTask.
             args.pop(0)
             p = worker.AsyncTask(args=args)
 
             save_path = os.path.join('presets', name + '.json')
 
-            # При перезаписи существующего preset не теряем
-            # ключи, которые не формируются из UI ниже.
             if os.path.exists(save_path):
                 data = modules.config.try_get_preset_content(name)
             else:
@@ -2423,20 +2395,16 @@ with shared.gradio_root:
             data['default_vae'] = p.vae_name
             data['default_output_format'] = p.output_format
 
-            # Значения из preset_ctrls.
             data.update(preset_values)
 
-            # Прочие настройки интерфейса.
             data['default_extra_settings'] = extra_values
 
-            # FreeU настраивается отдельно от AsyncTask.
             data['default_freeu'] = (
                 [p.freeu_b1, p.freeu_b2, p.freeu_s1, p.freeu_s2]
                 if p.freeu_enabled
                 else None
             )
 
-            # ADetailer хранится отдельным словарём для каждой вкладки.
             data['default_adetailer_tabs'] = [
                 {
                     **{
@@ -2449,8 +2417,6 @@ with shared.gradio_root:
                 for tab, mode in zip(p.ad_component, ad_inpaint_modes)
             ]
 
-            # Удалить прежние одиночные ADetailer-поля,
-            # если они перенесены в default_adetailer_tabs.
             for key in modules.config.legacy_adetailer_keys:
                 data.pop('default_' + key, None)
 

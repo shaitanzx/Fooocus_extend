@@ -13,7 +13,6 @@ MAX_BOX_FILL = 0.90
 
 
 def _to_rgb_np(image) -> np.ndarray:
-    """Приводит изображение к contiguous RGB uint8 numpy-массиву."""
     if isinstance(image, Image.Image):
         return np.asarray(image.convert("RGB"))
 
@@ -37,10 +36,6 @@ def _to_rgb_np(image) -> np.ndarray:
 
 
 def load_sam_predictor(model_type: str = "vit_b"):
-    """
-    Загружает веса через уже имеющийся Fooocus downloader,
-    затем создаёт predictor с Fooocus model patcher.
-    """
     import modules.config
     from segment_anything import sam_model_registry
     from extras.sam.predictor import SamPredictor
@@ -55,10 +50,6 @@ def load_sam_predictor(model_type: str = "vit_b"):
 
 
 def free_sam_predictor(predictor) -> None:
-    """
-    Выгружает именно patcher этого SAM из model_management,
-    не удаляя из списка другие модели.
-    """
     try:
         from ldm_patched.modules import model_management
 
@@ -73,16 +64,11 @@ def free_sam_predictor(predictor) -> None:
         model_management.soft_empty_cache()
 
     except Exception as exc:
-        # Ошибка освобождения памяти не должна скрывать первичную
-        # ошибку сегментации или прерывать весь ADetailer workflow.
         print(f"[ADetailer] SAM unload warning: {exc}")
 
 
 def _point_prompts(bbox):
-    """
-    Две положительные точки внутри bbox.
-    Координаты задаются как (x, y).
-    """
+
     x1, y1, x2, y2 = bbox
     box_width = x2 - x1
     box_height = y2 - y1
@@ -95,11 +81,7 @@ def _point_prompts(bbox):
 
 
 def _choose_mask(candidates, scores, bbox, center):
-    """
-    Выбирает SAM-вариант, который содержит центр bbox.
-    Среди подходящих масок предпочитает ту, которая покрывает
-    от 20% до 90% площади bounding box, и имеет лучший SAM score.
-    """
+
     x1, y1, x2, y2 = [int(round(value)) for value in bbox]
     box_area = max((x2 - x1) * (y2 - y1), 1)
 
@@ -137,10 +119,7 @@ def _choose_mask(candidates, scores, bbox, center):
 
 
 def _fill_shape(mask: np.ndarray, convex_hull: bool = True) -> np.ndarray:
-    """
-    Заполняет внутренние пробелы в маске.
-    При convex_hull=True использует выпуклую оболочку крупнейшего контура.
-    """
+
     import cv2
 
     mask_u8 = mask.astype(np.uint8)
@@ -179,11 +158,7 @@ def sam_masks_from_bboxes(
     clip_to_bbox: bool = True,
     convex_hull: bool = True,
 ):
-    """
-    Возвращает список PIL L-масок той же длины, что и bboxes.
-    None означает, что SAM не смог получить приемлемую маску;
-    в этом случае вызывающий код оставит исходную маску детектора.
-    """
+
     from segment_anything.utils.amg import remove_small_regions
 
     if not bboxes:
@@ -192,7 +167,6 @@ def sam_masks_from_bboxes(
     image_rgb = _to_rgb_np(image)
     height, width = image_rgb.shape[:2]
 
-    # Нормализуем боксы к обычным числам Python.
     boxes_np = np.asarray(bboxes, dtype=np.float32)
     if boxes_np.ndim != 2 or boxes_np.shape[1] != 4:
         raise ValueError(f"Expected bboxes with shape [N, 4], got {boxes_np.shape}")
@@ -259,7 +233,6 @@ def sam_masks_from_bboxes(
 
         mask = mask.astype(bool)
 
-        # Убираем небольшие внутренние отверстия и отдельные островки.
         mask, _ = remove_small_regions(
             mask,
             400,
@@ -286,7 +259,6 @@ def sam_masks_from_bboxes(
         center_x = int(center[0])
         center_y = int(center[1])
 
-        # Защищаем индексы на случай bbox у границы изображения.
         center_x = min(max(center_x, 0), width - 1)
         center_y = min(max(center_y, 0), height - 1)
 
@@ -314,7 +286,6 @@ def sam_masks_from_bboxes(
 
 
 def _overlay_preview(preview, masks):
-    """Накладывает полупрозрачную magenta-заливку на preview."""
     if preview is None or not masks:
         return preview
 
@@ -337,10 +308,7 @@ def sam_refine(
     image,
     model_type: str = "vit_b",
 ) -> PredictOutput:
-    """
-    Заменяет маски детектора на SAM-маски.
-    Если SAM не сработал для конкретного объекта, сохраняет исходную маску.
-    """
+
     if not pred.bboxes:
         return pred
 
