@@ -1323,23 +1323,6 @@ def _comparison_image_files(directory):
     )
 
 
-def _register_comparison_files(*file_paths):
-    import shared
-
-    blocks = shared.gradio_root
-    current_paths = {os.path.abspath(path) for path in file_paths}
-    previous_paths = getattr(
-        blocks, "_face_enhancer_comparison_paths", set()
-    )
-    blocks.allowed_paths[:] = [
-        path for path in blocks.allowed_paths
-        if path not in previous_paths
-    ]
-    for path in current_paths:
-        if path not in blocks.allowed_paths:
-            blocks.allowed_paths.append(path)
-    blocks._face_enhancer_comparison_paths = current_paths
-    return getattr(blocks, "root_path", "")
 
 def prepare_comparison(is_swap, zip_image, zip_face):
     """Populate the closed comparison accordion for exactly one result pair."""
@@ -1363,9 +1346,11 @@ def prepare_comparison(is_swap, zip_image, zip_face):
         return gr.update(value=""), accordion_hidden
 
     try:
-        root_path = _register_comparison_files(targets[0], results[0])
+        import shared
         comparison_html = imageslider.render_html(
-            targets[0], results[0], root_path=root_path
+            targets[0],
+            results[0],
+            root_path=getattr(shared.gradio_root, "root_path", ""),
         )
     except Exception:
         traceback.print_exc()
