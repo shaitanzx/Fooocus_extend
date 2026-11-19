@@ -2,58 +2,33 @@
 
 from __future__ import annotations
 
-import base64
-from io import BytesIO
+import os
 from pathlib import Path
-from typing import Union
+from urllib.parse import quote
 
-import numpy as np
 from PIL import Image as PILImage
 
-ImageValue = Union[PILImage.Image, np.ndarray, str, Path]
+
+def _image_url_and_size(image_path: str | Path, root_path: str = "") -> tuple[str, int, int]:
+    """Build a Gradio file URL and read image dimensions without encoding pixels."""
+    absolute_path = Path(os.path.abspath(os.fspath(image_path)))
+
+    with PILImage.open(absolute_path) as image:
+        width, height = image.size
+
+    encoded_path = quote(absolute_path.as_posix(), safe="/:")
+    root_path = root_path.rstrip("/")
+    return f"{root_path}/file={encoded_path}", width, height
 
 
-def _to_pil_image(image: ImageValue) -> PILImage.Image:
-    if isinstance(image, PILImage.Image):
-        result = image.copy()
-    elif isinstance(image, np.ndarray):
-        array = np.asarray(image)
-        if array.dtype != np.uint8:
-            if (
-                np.issubdtype(array.dtype, np.floating)
-                and array.size
-                and array.min() >= 0
-                and array.max() <= 1
-            ):
-                array = array * 255.0
-            array = np.clip(array, 0, 255).astype(np.uint8)
-        result = PILImage.fromarray(array)
-    else:
-        with PILImage.open(image) as opened:
-            result = opened.copy()
-
-    if result.mode not in ("RGB", "RGBA"):
-        result = result.convert(
-            "RGBA" if "transparency" in result.info else "RGB"
-        )
-    return result
-
-
-def _to_data_uri(image: ImageValue) -> str:
-    buffer = BytesIO()
-    pil_image = image if isinstance(image, PILImage.Image) else _to_pil_image(image)
-    pil_image.save(buffer, format="PNG", optimize=True)
-    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-    return f"data:image/png;base64,{encoded}"
-
-
-def render_html(before: ImageValue, after: ImageValue) -> str:
-    """Return self-contained before/after markup for Gradio's HTML block."""
-    before_image = _to_pil_image(before)
-    after_image = _to_pil_image(after)
-    before_src = _to_data_uri(before_image)
-    after_src = _to_data_uri(after_image)
-    image_width, image_height = before_image.size
+def render_html(
+    before: str | Path,
+    after: str | Path,
+    root_path: str = "",
+) -> str:
+    """Return before/after HTML that loads both images through Gradio's file route."""
+    before_src, image_width, image_height = _image_url_and_size(before, root_path)
+    after_src, _, _ = _image_url_and_size(after, root_path)
 
     return f"""
 <div class="fooocus-image-compare"
