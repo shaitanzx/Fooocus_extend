@@ -72,7 +72,7 @@ def render_html(before: ImageValue, after: ImageValue) -> str:
       <span class="fooocus-image-compare__handle">↔</span>
     </span>
     <input class="fooocus-image-compare__range"
-           type="range" min="0" max="100" value="50"
+           type="range" min="0" max="100" step="0.01" value="50"
            aria-label="Положение разделителя сравнения">
   </div>
 </div>

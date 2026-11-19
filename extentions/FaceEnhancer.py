@@ -1360,11 +1360,6 @@ def reset_comparison():
     return gr.update(value=""), gr.update(visible=False, open=False)
 
 
-def hide_comparison_for_input_change(*_):
-    """Hide stale comparisons when the selected processing mode/input changes."""
-    return gr.update(visible=False, open=False)
-
-
 def gui(generator):
     
     rows = []
@@ -1453,10 +1448,9 @@ def gui(generator):
             gr.update(visible=x),
             gr.update(visible=not x),
             gr.update(visible=x),
-            gr.update(visible=False, open=False),
         ],
         inputs=enable_swap,
-        outputs=[swap_mode, face_en_start, face_en_start_face, compare_accordion],
+        outputs=[swap_mode, face_en_start, face_en_start_face],
         queue=False,
         show_progress=False,
     )
@@ -1464,48 +1458,9 @@ def gui(generator):
 
 
     enable_zip_face.change(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False)
-    enable_zip_image.change(
-        fn=hide_comparison_for_input_change,
-        inputs=enable_zip_image,
-        outputs=compare_accordion,
-        queue=False,
-        show_progress=False,
-    )
-    enable_zip_face.change(
-        fn=hide_comparison_for_input_change,
-        inputs=enable_zip_face,
-        outputs=compare_accordion,
-        queue=False,
-        show_progress=False,
-    )
-    files_single.upload(
-        fn=hide_comparison_for_input_change,
-        inputs=files_single,
-        outputs=compare_accordion,
-        queue=False,
-        show_progress=False,
-    )
-    files_single_face.upload(
-        fn=hide_comparison_for_input_change,
-        inputs=files_single_face,
-        outputs=compare_accordion,
-        queue=False,
-        show_progress=False,
-    )
-    image_single.clear(
-        fn=hide_comparison_for_input_change,
-        outputs=compare_accordion,
-        queue=False,
-        show_progress=False,
-    )
     image_single_face.clear(fn=batch.clear_single,inputs=image_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
     files_single_face.upload(fn=batch.single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
-    image_single_face.clear(
-        fn=hide_comparison_for_input_change,
-        outputs=compare_accordion,
-        queue=False,
-        show_progress=False,
-    )
+
 
     face_en_start_face.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start_face,file_out,image_out]) \
               .then(fn=reset_comparison, outputs=[compare_slider, compare_accordion]) \
