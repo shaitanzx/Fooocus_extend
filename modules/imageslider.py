@@ -41,19 +41,24 @@ def _to_pil_image(image: ImageValue) -> PILImage.Image:
 
 def _to_data_uri(image: ImageValue) -> str:
     buffer = BytesIO()
-    _to_pil_image(image).save(buffer, format="PNG", optimize=True)
+    pil_image = image if isinstance(image, PILImage.Image) else _to_pil_image(image)
+    pil_image.save(buffer, format="PNG", optimize=True)
     encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
     return f"data:image/png;base64,{encoded}"
 
 
 def render_html(before: ImageValue, after: ImageValue) -> str:
     """Return self-contained before/after markup for Gradio's HTML block."""
-    before_src = _to_data_uri(before)
-    after_src = _to_data_uri(after)
+    before_image = _to_pil_image(before)
+    after_image = _to_pil_image(after)
+    before_src = _to_data_uri(before_image)
+    after_src = _to_data_uri(after_image)
+    image_width, image_height = before_image.size
 
     return f"""
 <div class="fooocus-image-compare"
-     style="--fooocus-compare-position: 50%;">
+     style="--fooocus-compare-position: 50%;
+            --fooocus-compare-aspect-ratio: {image_width} / {image_height};">
   <div class="fooocus-image-compare__canvas">
     <img class="fooocus-image-compare__image fooocus-image-compare__before"
          src="{before_src}" alt="До обработки" draggable="false">
