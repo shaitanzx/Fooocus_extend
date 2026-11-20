@@ -1308,63 +1308,19 @@ def process_without_face(face_model,upscale_model,face_detection_only_center,fac
     return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
-def _comparison_image_files(directory):
-    if not os.path.isdir(directory):
-        return []
-
-    supported_extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
-    return sorted(
-        os.path.join(directory, name)
-        for name in os.listdir(directory)
-        if (
-            os.path.isfile(os.path.join(directory, name))
-            and os.path.splitext(name)[1].lower() in supported_extensions
-        )
-    )
-
-
-
 def prepare_comparison(is_swap, zip_image, zip_face):
-    """Populate the closed comparison accordion for exactly one result pair."""
-    accordion_hidden = gr.update(visible=False, open=False)
-
+    """Apply FaceEnhancer-specific rules and delegate to the shared slider."""
     if zip_image or (is_swap and zip_face):
-        return gr.update(value=""), accordion_hidden
+        return imageslider.hidden_updates()
 
     target_dir = os.path.join(temp_dir, "batch_face_enhancer")
     result_dir = os.path.join(temp_dir, "batch_temp")
     source_face_dir = os.path.join(temp_dir, "batch_insw_face")
 
-    targets = _comparison_image_files(target_dir)
-    results = _comparison_image_files(result_dir)
-    source_faces = _comparison_image_files(source_face_dir)
+    if is_swap and not imageslider.has_single_image(source_face_dir):
+        return imageslider.hidden_updates()
 
-    if len(targets) != 1 or len(results) != 1:
-        return gr.update(value=""), accordion_hidden
-
-    if is_swap and len(source_faces) != 1:
-        return gr.update(value=""), accordion_hidden
-
-    try:
-        import shared
-        comparison_html = imageslider.render_html(
-            targets[0],
-            results[0],
-            root_path=getattr(shared.gradio_root, "root_path", ""),
-        )
-    except Exception:
-        traceback.print_exc()
-        return gr.update(value=""), accordion_hidden
-
-    # Gradio 3.41.2 supports Accordion.update(open=...), so every new result
-    # reveals the accordion collapsed rather than preserving its prior state.
-    return gr.update(value=comparison_html), gr.update(visible=True, open=False)
-
-
-def reset_comparison():
-    """Clear stale HTML and hide/collapse comparison before starting a run."""
-    return gr.update(value=""), gr.update(visible=False, open=False)
-
+    return imageslider.update_from_directories(target_dir, result_dir)
 
 def gui(generator):
     
@@ -1390,12 +1346,7 @@ def gui(generator):
         tutorial("FaceEnhancer.md")    
     with gr.Row(visible=not generator):
         file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
-    with gr.Accordion(
-        "Сравнение до/после",
-        open=False,
-        visible=False,
-    ) as compare_accordion:
-        compare_slider = gr.HTML(value="", show_label=False)
+    compare_slider, compare_accordion = imageslider.create_ui()
     with gr.Row():
         with gr.Column():
             face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
@@ -1469,7 +1420,7 @@ def gui(generator):
 
 
     face_en_start_face.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start_face,file_out,image_out]) \
-              .then(fn=reset_comparison, outputs=[compare_slider, compare_accordion]) \
+              .then(fn=imageslider.reset, outputs=[compare_slider, compare_accordion]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
@@ -1490,7 +1441,7 @@ def gui(generator):
               ) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start_face)
     face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
-              .then(fn=reset_comparison, outputs=[compare_slider, compare_accordion]) \
+              .then(fn=imageslider.reset, outputs=[compare_slider, compare_accordion]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
               .then(fn=process_without_face, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap],
