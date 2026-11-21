@@ -9,6 +9,7 @@ import extentions.batch as batch
 import modules.config
 import modules.imageslider as imageslider
 from extentions.tutorial import tutorial
+import datetime
 temp_dir=modules.config.temp_path+os.path.sep
 
 def calculate_logo_size(image_size, logo_original_size, target_ratio=0.1):
@@ -268,7 +269,10 @@ def process(logo,size_ratio,margin_ratio,min_complexity_for_bg,priority1,priorit
             image_out=watermark_process(image_in,logo,opacity_water,scale_water,angle_water,spacing_x,spacing_y)
                     
         name, _ = os.path.splitext(f_name)
-        filename =  batch_temp + os.path.sep + name +'_logo.png'
+
+        current_time = datetime.datetime.now()
+        time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+        filename =  batch_temp + os.path.sep + name +f'{time_string}_logo.png'
         image_out = image_out.convert('RGB')
         image_out.save(filename)
         passed+=1
