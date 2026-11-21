@@ -67,7 +67,14 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
         return PaletteQuantizer(palette, dither=str(p["palette_dither"]), strength=float(p["dither_strength"]), serpentine=bool(p["serpentine"])).process(frame)
     if operation == "Color Depth":
         value = int(p["depth_value"])
-        levels = 2 ** value if p["depth_mode"] == "bits" else value
+        if p["depth_mode"] == "bits":
+            if not 1 <= value <= 8:
+                raise ValueError("Color Depth bits mode requires value 1-8")
+            levels = 2 ** value
+        else:
+            if not 2 <= value <= 64:
+                raise ValueError("Color Depth levels mode requires value 2-64")
+            levels = value
         return dither_frame(frame, levels, "none")
     if operation == "Dither":
         work = frame
@@ -149,7 +156,7 @@ def gui():
             serpentine = gr.Checkbox(value=True, label="Serpentine diffusion")
         with gr.Group(visible=False) as rows["depth"]:
             depth_mode = gr.Radio(["bits", "levels"], value="bits", label="Interpret value as")
-            depth_value = gr.Slider(1, 8, value=4, step=1, label="Bits / levels")
+            depth_value = gr.Slider(1, 64, value=4, step=1, label="Bits / levels")
         with gr.Group(visible=False) as rows["dither"]:
             levels = gr.Slider(2, 32, value=4, step=1, label="Levels per channel")
             dither_mode = gr.Radio(["color", "mono"], value="color", label="Mode")
@@ -167,11 +174,11 @@ def gui():
             mask_pitch = gr.Slider(1, 16, value=1, step=1, label="Pitch")
         with gr.Group(visible=False) as rows["bloom"]:
             threshold = gr.Slider(0, 1, value=0.7, step=0.05, label="Threshold")
-            radius = gr.Slider(0.05, 200, value=8, step=0.05, label="Radius")
+            radius = gr.Slider(0.5, 100, value=8, step=0.5, label="Radius")
             intensity = gr.Slider(0, 4, value=0.5, step=0.05, label="Intensity")
             blend = gr.Dropdown(BLOOM_BLENDS, value="screen", label="Blend")
         with gr.Group(visible=False) as rows["aberration"]:
-            aberration_amount = gr.Slider(0, 20, value=2, step=0.1, label="Amount")
+            aberration_amount = gr.Slider(0, 20, value=2, step=0.5, label="Amount")
             aberration_mode = gr.Dropdown(ABERRATION_MODES, value="radial", label="Mode")
         with gr.Group(visible=False) as rows["curvature"]:
             curvature_amount = gr.Slider(0, 1, value=0.15, step=0.05, label="Amount")
