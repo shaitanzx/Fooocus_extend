@@ -33,25 +33,25 @@ def render_html(before: str | Path, after: str | Path) -> str:
             --fooocus-compare-aspect-ratio: {image_width} / {image_height};">
   <div class="fooocus-image-compare__canvas">
     <img class="fooocus-image-compare__image fooocus-image-compare__before"
-         src="{before_src}" alt="До обработки" draggable="false">
+         src="{before_src}" alt="Before" draggable="false">
     <img class="fooocus-image-compare__image fooocus-image-compare__after"
-         src="{after_src}" alt="После обработки" draggable="false">
+         src="{after_src}" alt="After" draggable="false">
     <span class="fooocus-image-compare__label
-                 fooocus-image-compare__label--before">До</span>
+                 fooocus-image-compare__label--before">Before</span>
     <span class="fooocus-image-compare__label
-                 fooocus-image-compare__label--after">После</span>
+                 fooocus-image-compare__label--after">After</span>
     <span class="fooocus-image-compare__divider" aria-hidden="true">
       <span class="fooocus-image-compare__handle">↔</span>
     </span>
     <input class="fooocus-image-compare__range"
            type="range" min="0" max="100" step="0.01" value="50"
-           aria-label="Положение разделителя сравнения">
+           aria-label="Comparison separator position">
   </div>
 </div>
 """
 
 
-def create_ui(label: str = "Сравнение до/после"):
+def create_ui(label: str = "Comparison"):
     """Create the collapsed accordion and its HTML component."""
     with gr.Accordion(label, open=False, visible=False) as accordion:
         html = gr.HTML(value="", show_label=False)

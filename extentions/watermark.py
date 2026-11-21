@@ -7,6 +7,7 @@ from PIL import Image
 import math
 import extentions.batch as batch
 import modules.config
+import modules.imageslider as imageslider
 from extentions.tutorial import tutorial
 temp_dir=modules.config.temp_path+os.path.sep
 
@@ -315,6 +316,7 @@ def watermark():
                 file_out=gr.File(label="Download a ZIP file", file_count='single',height=260,visible=True)
                 preview_out=gr.Image(label="Process preview",visible=False,height=260,interactive=False)
                 image_out=gr.Image(label="",visible=False,height=260,interactive=False)
+    compare_slider, compare_accordion = imageslider.create_ui()
     with gr.Row() as logo_set:
         size_ratio = gr.Slider(label='Size Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.2,interactive=True)
         margin_ratio = gr.Slider(label='Margin Ratio', minimum=0.0, maximum=1.0, step=0.01, value=0.02,interactive=True)
@@ -355,6 +357,7 @@ def watermark():
     image_in_multi.upload(fn=single_image,inputs=image_in_multi,outputs=[image_in_single,image_in_multi],show_progress=False)
     watermark_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),
                         outputs=[watermark_start,file_out,image_out]) \
+                .then(fn=imageslider.reset, outputs=[compare_slider, compare_accordion]) \
                 .then(fn=batch.clear_dirs,inputs=ext_dir) \
                 .then(fn=batch.unzip_file,inputs=[image_in,image_in_multi,enable_zip_image,ext_dir]) \
                 .then(fn=process,
@@ -364,4 +367,5 @@ def watermark():
                         outputs=[preview_out,file_out],show_progress=False) \
                 .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview_out],show_progress=False) \
                 .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
+                .then(fn=imageslider.temp_directory_callback("batch_logo", "batch_temp"), inputs=[enable_zip_image], outputs=[compare_slider, compare_accordion]) \
                 .then(lambda: (gr.update(visible=True, interactive=True)),outputs=watermark_start)  

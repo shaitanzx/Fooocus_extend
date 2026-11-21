@@ -561,7 +561,6 @@ class Upscale:
 
                     self.face_analyser = getFaceAnalyser("buffalo_l", ['CPUExecutionProvider'])
 
-                    #model_rootpath = os.path.join("models","face_enhancer")
                     model_path = os.path.join(modules.config.path_face_enhancer, "inswapper_128.onnx")
                     download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", modules.config.path_face_enhancer)
                     
@@ -1432,13 +1431,7 @@ def gui(generator):
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False),gr.update(visible=False)),outputs=[file_out,preview_face,preview],show_progress=False) \
               .then(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(
-                  fn=lambda zip_image, zip_face: prepare_comparison(
-                      True, zip_image, zip_face
-                  ),
-                  inputs=[enable_zip_image, enable_zip_face],
-                  outputs=[compare_slider, compare_accordion],
-              ) \
+              .then(fn=lambda zip_image, zip_face: prepare_comparison(True, zip_image, zip_face),inputs=[enable_zip_image, enable_zip_face],outputs=[compare_slider, compare_accordion]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start_face)
     face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
               .then(fn=imageslider.reset, outputs=[compare_slider, compare_accordion]) \
@@ -1448,19 +1441,6 @@ def gui(generator):
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(
-                  fn=lambda zip_image, zip_face: prepare_comparison(
-                      False, zip_image, zip_face
-                  ),
-                  inputs=[enable_zip_image, enable_zip_face],
-                  outputs=[compare_slider, compare_accordion],
-              ) \
+              .then(fn=lambda zip_image, zip_face: prepare_comparison(False, zip_image, zip_face),inputs=[enable_zip_image, enable_zip_face],outputs=[compare_slider, compare_accordion]) \
               .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)
-
-
-
-
-
-
-
     return face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index
