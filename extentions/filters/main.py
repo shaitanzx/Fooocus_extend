@@ -118,11 +118,11 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
     raise ValueError(f"Unknown filter: {operation}")
 def apply_filters_to_images(
-    images,
+    image: np.ndarray,
     operations,
     params_by_operation,
 ):
-    """Apply the selected Filters chain to images already held in memory.
+    """Apply the selected Filters chain to one in-memory RGB image.
 
     This function is used only by the main generation pipeline.
 
@@ -134,50 +134,42 @@ def apply_filters_to_images(
     - create ZIP files;
     - return Gradio updates.
     """
-    processed_images = []
-
     operations = [
         operation
         for operation in (operations or [])
         if operation in FILTERS
     ]
 
-    # If the chain is empty, preserve the original images.
-    if not operations:
-        return list(images)
+    # The generation path passes one HxWxC numpy array, not a list of images.
+    # Normalize it once and always return one HxWxC numpy array.
+    current = _rgb(image)
 
-    for image_index, image in enumerate(images, start=1):
-        current = _rgb(image)
+    # If the chain is empty, preserve the image shape and numpy contract.
+    if not operations:
+        return np.clip(current, 0, 255).astype(
+            np.uint8,
+            copy=False,
+        )
+
+    print("[Filters GENERATION] image: start")
+
+    for chain_index, operation in enumerate(operations, start=1):
+        operation_params = dict(params_by_operation.get(operation, {}))
 
         print(
-            f"[Filters GENERATION] image "
-            f"{image_index}/{len(images)}: start"
+            f"[Filters GENERATION] stage "
+            f"{chain_index}/{len(operations)}; "
+            f"filter: {operation}; "
+            f"settings: {operation_params}"
         )
 
-        for chain_index, operation in enumerate(operations, start=1):
-            operation_params = dict(
-                params_by_operation.get(operation, {})
-            )
-
-            print(
-                f"[Filters GENERATION] image "
-                f"{image_index}/{len(images)}; "
-                f"stage {chain_index}/{len(operations)}; "
-                f"filter: {operation}; "
-                f"settings: {operation_params}"
-            )
-
-            current = _apply(
-                current,
-                operation,
-                **operation_params,
-            )
-
-        processed_images.append(
-            np.clip(current, 0, 255).astype(np.uint8)
+        current = _apply(
+            current,
+            operation,
+            **operation_params,
         )
 
-    return processed_images
+    return np.clip(current, 0, 255).astype(np.uint8, copy=False)
 def run_chain_batch(*slot_values):
     """Run the selected chain while preserving the existing batch file flow."""
     chain = collect_chain(list(slot_values))
