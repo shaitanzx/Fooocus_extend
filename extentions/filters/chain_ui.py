@@ -192,8 +192,7 @@ def build_chain_ui(generator):
     save_intermediate = gr.Checkbox(
         value=False,
         label="Save result after each filter",
-        info="Saves only filters before the last one; the final result is always saved.",
-        visible=not generator
+        info="Saves only filters before the last one; the final result is always saved."
     )
 
     with gr.Group():
