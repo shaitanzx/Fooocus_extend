@@ -275,7 +275,7 @@ def gui():
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
               .then(fn=lambda zip_image: prepare_comparison(zip_image),inputs=[enable_zip_image],outputs=[compare_slider, compare_accordion]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=apply_btn)
 
 
              
