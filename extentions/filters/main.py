@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 import tempfile
 from pathlib import Path
-
+import re
 import cv2
 import gradio as gr
 import numpy as np
@@ -49,14 +49,40 @@ FILTERS = (
 )
 
 def prepare_comparison(zip_image):
-    """Apply FaceEnhancer-specific rules and delegate to the shared slider."""
+    """Show Before/After using only the final result image."""
     if zip_image:
         return imageslider.hidden_updates()
 
-    target_dir = os.path.join(temp_dir, "batch_post")
+    target_dir = os.path.join(temp_dir, "batch_filters")
     result_dir = os.path.join(temp_dir, "batch_temp")
 
-    return imageslider.update_from_directories(target_dir, result_dir)
+    before_files = imageslider.image_files(target_dir)
+    result_files = imageslider.image_files(result_dir)
+
+    # Промежуточные файлы имеют вид:
+    # original2026-11-22_09-27-52_logo_chain_1.png
+    # original2026-11-22_09-27-52_logo_chain_2.png
+    intermediate_pattern = re.compile(
+        r"_chain_\d+\.[^.]+$",
+        re.IGNORECASE,
+    )
+
+    final_files = [
+        path
+        for path in result_files
+        if not intermediate_pattern.search(os.path.basename(path))
+    ]
+
+    # Comparison показываем только для одной пары:
+    # один входной файл и один финальный результат.
+    if len(before_files) != 1 or len(final_files) != 1:
+        return imageslider.hidden_updates()
+
+    return imageslider.update_pair(
+        before_files[0],
+        final_files[0],
+    )
+
 def _rgb(image: np.ndarray) -> np.ndarray:
     """Return a contiguous float32 RGB frame in the engine's [0, 255] range."""
     arr = np.asarray(image)
@@ -118,7 +144,7 @@ def run_chain_batch(*slot_values):
     params_by_operation = chain["params"]
     save_intermediate = chain["save_intermediate"]
 
-    batch_path = f"{temp_dir}batch_post"
+    batch_path = f"{temp_dir}batch_filters"
     batch_temp = f"{temp_dir}batch_temp"
     batch_files = sorted(
         name
@@ -148,7 +174,7 @@ def run_chain_batch(*slot_values):
         time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
         final_filename = os.path.join(
             batch_temp,
-            f"{name}{time_string}_logo.png",
+            f"{name}{time_string}_filters.png",
         )
 
         current = _rgb(np.array(img.convert("RGB")))
@@ -231,9 +257,9 @@ def gui():
     slot_inputs, _chain_summary = build_chain_ui()
 
     with gr.Row():
-        apply_btn = gr.Button("Start postprocessing", variant="primary")
+        apply_btn = gr.Button("Start", variant="primary")
     with gr.Row(visible=False):
-        ext_dir = gr.Textbox(value="batch_post", visible=False)
+        ext_dir = gr.Textbox(value="batch_filters", visible=False)
 
     apply_btn.click(
         lambda: (

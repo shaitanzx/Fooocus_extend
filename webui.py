@@ -74,7 +74,7 @@ import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
 import extentions.omost.main as omost
 from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
-from extentions.postprocessing import main as postprocessing_main
+from extentions.filters import main as filters_main
 import extentions.caption.gui as caption
 from extentions.tutorial import tutorial
 
@@ -989,8 +989,8 @@ with shared.gradio_root:
 
                   with gr.TabItem(label='omost'):
                         omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model = omost.gui()
-                  with gr.TabItem(label='Retro Filters'):
-                    postprocessing_main.gui()
+                  with gr.TabItem(label='Filters'):
+                    filters_main.gui()
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def clear_single(image):
                             return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
