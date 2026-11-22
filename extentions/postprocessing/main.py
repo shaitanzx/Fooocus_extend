@@ -183,6 +183,7 @@ def gui():
         file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
     with gr.Row():
         compare_slider, compare_accordion = imageslider.create_ui()
+    with gr.Row():
         operation = gr.Dropdown(FILTERS, value="Pixelize", label="Filter", interactive=True)
     # with gr.Row():
     #     with gr.Column(scale=1):
