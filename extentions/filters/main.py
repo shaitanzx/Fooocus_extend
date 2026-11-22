@@ -189,23 +189,6 @@ def run_chain_batch(*slot_values):
 
     return gr.update(value=None, visible=False), gr.update(visible=True)
 
-
-# def process(operation: str, **params: object):
-
-
-#     """Process an image and return a PIL preview plus a saved PNG path."""
-#     if image is None:
-#         raise gr.Error("Upload an image first.")
-#     result = _apply(_rgb(image), operation, **params)
-#     pil = Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), mode="RGB")
-#     out_dir = Path(modules.config.path_outputs) / "lukutar_retro"
-#     out_dir.mkdir(parents=True, exist_ok=True)
-#     fd, path = tempfile.mkstemp(prefix="retro_", suffix=".png", dir=out_dir)
-#     os.close(fd)
-#     pil.save(path, compress_level=1)
-#     return pil, path
-
-
 def _vis(operation: str):
     """Return visibility updates for parameter rows in the same order as UI."""
     groups = {
@@ -218,21 +201,23 @@ def _vis(operation: str):
     }
     return [gr.update(visible=groups[name]) for name in groups]
 
-def gui():
+def gui(generator):
     """Build the Retro Filters batch UI with a sequential chain editor."""
     with gr.Row():
-        tutorial("lukutar_retro.md")
-    with gr.Row():
+        filters_enabled = gr.Checkbox(label="Enabled", value=False,visible=generator)
+        tutorial("readme.md")
+    with gr.Row(visible=not generator):
         file_in, files_single, image_single, enable_zip_image, file_out, preview, image_out = batch.ui_batch()
-    with gr.Row():
+    with gr.Row(visible=not generator):
         compare_slider, compare_accordion = imageslider.create_ui()
     slot_inputs = build_chain_ui()
 
-    with gr.Row():
+    with gr.Row(visible=not generator):
         apply_btn = gr.Button("Start", variant="primary")
     with gr.Row(visible=False):
         ext_dir = gr.Textbox(value="batch_filters", visible=False)
-
+    with gr.Row():
+        gr.HTML('* \"Filters\" is powered by Mistress-Lukutar. <a href="https://github.com/Mistress-Lukutar/ComfyUI-LukutarRetro" target="_blank">\U0001F4D4 Document</a>')
     apply_btn.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[apply_btn, file_out, image_out]) \
         .then(fn=imageslider.reset,outputs=[compare_slider, compare_accordion]) \
         .then(fn=batch.clear_dirs,inputs=ext_dir) \

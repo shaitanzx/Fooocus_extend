@@ -989,8 +989,7 @@ with shared.gradio_root:
 
                   with gr.TabItem(label='omost'):
                         omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model = omost.gui()
-                  with gr.TabItem(label='Filters'):
-                    filters_main.gui()
+                  
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def clear_single(image):
                             return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
@@ -1219,7 +1218,8 @@ with shared.gradio_root:
 
                   with gr.TabItem(label='Vector'):
                             vector.ui_module()
-
+                  with gr.TabItem(label='Filters'):
+                            filters_main.gui(False)
                 with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
