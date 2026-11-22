@@ -196,7 +196,7 @@ def build_chain_ui():
         interactive=True,
     )
 
-    gr.Group():
+    with gr.Group():
         settings_filter = gr.Dropdown(
             choices=FILTERS,
             value=FILTERS[0],
