@@ -180,7 +180,7 @@ def collect_chain(values: list[Any]) -> dict[str, Any]:
     }
 
 
-def build_chain_ui():
+def build_chain_ui(generator):
     """Create the ordered chain selector and all real filter controls."""
     chain_filters = gr.Dropdown(
         choices=FILTERS,
@@ -193,6 +193,7 @@ def build_chain_ui():
         value=False,
         label="Save result after each filter",
         info="Saves only filters before the last one; the final result is always saved.",
+        visible=not generator
     )
 
     with gr.Group():

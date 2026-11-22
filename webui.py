@@ -959,7 +959,8 @@ with shared.gradio_root:
                         with gr.TabItem(label='FaceEnhancer'):
                             face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index = FaceEnhancer.gui(True)  
                         with gr.TabItem(label='Filters'):
-                            filters_enable = filters_main.gui(True)
+                            filters_generation_ctrls = filters_main.gui(True)
+                            filters_enable = filters_generation_ctrls[0]
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
@@ -2161,6 +2162,7 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
+        ctrls += filters_generation_ctrls
         setting_types = (gr.Checkbox,gr.Slider,gr.Number,gr.Radio,gr.Dropdown,gr.Textbox,gr.CheckboxGroup)
 
         ctrl_names = {

@@ -116,8 +116,69 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
         return vhs(frame, float(p["noise"]), float(p["chroma_bleed"]), float(p["jitter"]), float(p["band"]), int(p["seed"]), str(p["noise_mode"]))
     if operation == "LCD Dot Matrix":
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
-    raise ValueError(f"Unknown Retro filter: {operation}")
+    raise ValueError(f"Unknown filter: {operation}")
+def apply_filters_to_images(
+    images,
+    operations,
+    params_by_operation,
+):
+    """Apply the selected Filters chain to images already held in memory.
 
+    This function is used only by the main generation pipeline.
+
+    It does not:
+    - read files;
+    - write files;
+    - use batch_filters;
+    - use batch_temp;
+    - create ZIP files;
+    - return Gradio updates.
+    """
+    processed_images = []
+
+    operations = [
+        operation
+        for operation in (operations or [])
+        if operation in FILTERS
+    ]
+
+    # If the chain is empty, preserve the original images.
+    if not operations:
+        return list(images)
+
+    for image_index, image in enumerate(images, start=1):
+        current = _rgb(image)
+
+        print(
+            f"[Filters GENERATION] image "
+            f"{image_index}/{len(images)}: start"
+        )
+
+        for chain_index, operation in enumerate(operations, start=1):
+            operation_params = dict(
+                params_by_operation.get(operation, {})
+            )
+
+            print(
+                f"[Filters GENERATION] image "
+                f"{image_index}/{len(images)}; "
+                f"stage {chain_index}/{len(operations)}; "
+                f"filter: {operation}; "
+                f"settings: {operation_params}"
+            )
+
+            current = _apply(
+                current,
+                operation,
+                **operation_params,
+            )
+
+        processed_images.append(
+            np.clip(current, 0, 255).astype(np.uint8)
+        )
+
+    return processed_images
+    
 def run_chain_batch(*slot_values):
     """Run the selected chain while preserving the existing batch file flow."""
     chain = collect_chain(list(slot_values))
@@ -210,7 +271,7 @@ def gui(generator):
         file_in, files_single, image_single, enable_zip_image, file_out, preview, image_out = batch.ui_batch()
     with gr.Row(visible=not generator):
         compare_slider, compare_accordion = imageslider.create_ui()
-    slot_inputs = build_chain_ui()
+    slot_inputs = build_chain_ui(generator)
 
     with gr.Row(visible=not generator):
         apply_btn = gr.Button("Start", variant="primary")
@@ -227,4 +288,4 @@ def gui(generator):
         .then(fn=batch.output_zip_image,outputs=[image_out, file_out]) \
         .then(fn=lambda zip_image: prepare_comparison(zip_image),inputs=[enable_zip_image],outputs=[compare_slider, compare_accordion]) \
         .then(lambda: gr.update(visible=True, interactive=True),outputs=apply_btn)
-    return filters_enabled
+    return [filters_enabled, *slot_inputs]

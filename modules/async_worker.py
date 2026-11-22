@@ -385,6 +385,16 @@ class AsyncTask:
         self.transper = args.pop()
         self.uov_model = args.pop()
 
+        self.filters_enabled = args.pop()
+        self.filters_chain = args.pop()
+        self.filters_save_intermediate = args.pop()
+        self.filters_settings_filter = args.pop()
+
+        self.filters_controls = [
+            args.pop()
+            for _ in range(43)
+        ]
+
 async_tasks = []
 
 
@@ -438,6 +448,8 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
+    from extentions.filters.main import apply_filters_to_images
+    from extentions.filters.chain_ui import collect_chain
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -663,6 +675,30 @@ def worker():
                     async_task.enable_swap,async_task.image_generetor_face,async_task.source_index,
                     async_task.target_index)
             imgs[-1 if not async_task.face_temp else len(imgs):] = temp_imgs
+        if async_task.filters_enabled:
+            filters_config = collect_chain(
+                [
+                    async_task.filters_chain,
+                    async_task.filters_save_intermediate,
+                    async_task.filters_settings_filter,
+                    *async_task.filters_controls,
+                ]
+            )
+
+            operations = filters_config["operations"]
+            params_by_operation = filters_config["params"]
+
+            if operations:
+                progressbar(async_task,current_progress,"Filters in progress ...")
+                print(
+                    f"[Filters GENERATION] chain: "
+                    f"{' -> '.join(operations)}"
+                )
+                imgs = apply_filters_to_images(
+                    imgs,
+                    operations,
+                    params_by_operation,
+                )
         
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
