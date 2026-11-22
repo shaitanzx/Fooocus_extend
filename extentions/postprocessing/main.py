@@ -22,7 +22,7 @@ import modules.config
 import extentions.batch as batch
 import modules.imageslider as imageslider
 from extentions.tutorial import tutorial
-
+import datetime
 from .core.analog import DOT_SHAPES, NOISE_MODES, lcd_dot_matrix, vhs
 from .core.crt import (
     ABERRATION_MODES,
