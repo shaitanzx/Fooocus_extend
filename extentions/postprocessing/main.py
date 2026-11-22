@@ -162,7 +162,7 @@ def run_chain_batch(*slot_values):
         name, _ = os.path.splitext(f_name)
         current_time = datetime.datetime.now()
         time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
-        suf = f"{time_string}_logo.png"
+        suf = f"{time_string}_post.png"
         filename = batch_temp + os.path.sep + name + suf
         pil.save(filename)
         passed += 1
