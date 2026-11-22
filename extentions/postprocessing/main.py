@@ -144,10 +144,15 @@ def run_chain_batch(*slot_values):
 
         current = _rgb(np.array(img.convert("RGB")))
         for operation in operations:
+            operation_params = dict(params_by_operation[operation])
+            print(
+                f"[Postprocess FILTER] start: {operation}; "
+                f"settings: {operation_params}"
+            )
             current = _apply(
                 current,
                 operation,
-                **dict(params_by_operation[operation]),
+                **operation_params,
             )
 
         pil = Image.fromarray(

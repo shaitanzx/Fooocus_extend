@@ -40,17 +40,14 @@ def _summary(selected: list[str] | None) -> str:
     return "Input → " + " → ".join(selected) + " → Output"
 
 
-def _visibility(selected: list[str] | None):
-    selected = set(selected or [])
-    return [
-        gr.update(visible=name in selected)
-        for name in FILTERS
-    ]
+def _visibility(selected: str | None):
+    """Return visibility updates for the single filter-settings panel."""
+    return [gr.update(visible=name == selected) for name in FILTERS]
 
 
-def update_chain_ui(selected: list[str] | None):
-    """Update chain summary and parameter-group visibility."""
-    return [_summary(selected), *_visibility(selected)]
+def update_settings_ui(selected: str | None):
+    """Show settings only for the filter selected in the settings dropdown."""
+    return _visibility(selected)
 
 
 def _params(values: list[Any]) -> dict[str, dict[str, Any]]:
@@ -177,7 +174,9 @@ def collect_chain(values: list[Any]) -> dict[str, Any]:
     selected = list(values[0] or [])
     return {
         "operations": [name for name in selected if name in FILTERS],
-        "params": _params(values[1:]),
+        # values[1] is the settings dropdown; it selects the visible editor
+        # only and is deliberately not used to choose the chain parameters.
+        "params": _params(values[2:]),
     }
 
 
@@ -186,7 +185,7 @@ def build_chain_ui():
     gr.Markdown(
         "## Processing chain\n"
         "Select filters in the order in which they must be applied. "
-        "The selected order is preserved during processing."
+        "Chain selection only defines order; filter parameters are edited below."
     )
     chain_summary = gr.Markdown(_summary(DEFAULT_CHAIN))
     chain_filters = gr.Dropdown(
@@ -194,6 +193,14 @@ def build_chain_ui():
         value=DEFAULT_CHAIN,
         multiselect=True,
         label="Filter chain (selection order)",
+        interactive=True,
+    )
+
+    gr.Markdown("### Filter settings")
+    settings_filter = gr.Dropdown(
+        choices=FILTERS,
+        value=FILTERS[0],
+        label="Filter to configure",
         interactive=True,
     )
 
@@ -291,10 +298,10 @@ def build_chain_ui():
     groups.append(lcd_group)
     controls += [cell_size, gap_ratio, grid_dark, shape]
 
-    chain_filters.change(
-        update_chain_ui,
-        inputs=chain_filters,
-        outputs=[chain_summary, *groups],
+    settings_filter.change(
+        update_settings_ui,
+        inputs=settings_filter,
+        outputs=groups,
         show_progress=False,
     )
-    return [chain_filters, *controls], chain_summary
+    return [chain_filters, settings_filter, *controls], chain_summary
