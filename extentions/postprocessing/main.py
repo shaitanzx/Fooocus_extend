@@ -148,7 +148,7 @@ def gui():
     #         preview = gr.Image(label="Processed preview", type="pil", height=420, interactive=False)
     #         output_file = gr.File(label="Saved PNG", interactive=False)
 
-    with gr.Accordion("Filter parameters", open=True):
+    with gr.Accordion("Filter parameters", open=True, interactive=True):
         rows = {}
         with gr.Group(visible=True) as rows["pixel"]:
             pixel_size = gr.Slider(1, 128, value=8, step=1, label="Pixel size")
