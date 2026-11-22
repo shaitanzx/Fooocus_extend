@@ -134,7 +134,7 @@ def gui():
     """Build the Retro Filters tab in the visual style of Fooocus Extend."""
     with gr.Row():
         tutorial("lukutar_retro.md")
-    with gr.Row(visible=not generator):
+    with gr.Row():
         file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
     with gr.Row():
         compare_slider, compare_accordion = imageslider.create_ui()
