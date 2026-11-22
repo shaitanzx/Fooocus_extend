@@ -118,7 +118,7 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
     raise ValueError(f"Unknown filter: {operation}")
 def apply_filters_to_images(
-    images,
+    image,
     operations,
     params_by_operation,
 ):
@@ -134,7 +134,7 @@ def apply_filters_to_images(
     - create ZIP files;
     - return Gradio updates.
     """
-    processed_images = []
+    
 
     operations = [
         operation
@@ -144,41 +144,36 @@ def apply_filters_to_images(
 
     # If the chain is empty, preserve the original images.
     if not operations:
-        return list(images)
+         return np.array(image)
+    
+    current = _rgb(image)
 
-    for image_index, image in enumerate(images, start=1):
-        current = _rgb(image)
+
+
+    for chain_index, operation in enumerate(operations, start=1):
+        operation_params = dict(
+            params_by_operation.get(operation, {})
+        )
 
         print(
             f"[Filters GENERATION] image "
-            f"{image_index}/{len(images)}: start"
+            f"stage {chain_index}/{len(operations)}; "
+            f"filter: {operation}; "
+            f"settings: {operation_params}"
         )
 
-        for chain_index, operation in enumerate(operations, start=1):
-            operation_params = dict(
-                params_by_operation.get(operation, {})
-            )
-
-            print(
-                f"[Filters GENERATION] image "
-                f"{image_index}/{len(images)}; "
-                f"stage {chain_index}/{len(operations)}; "
-                f"filter: {operation}; "
-                f"settings: {operation_params}"
-            )
-
-            current = _apply(
-                current,
-                operation,
-                **operation_params,
-            )
-
-        processed_images.append(
-            np.clip(current, 0, 255).astype(np.uint8)
+        current = _apply(
+            current,
+            operation,
+            **operation_params,
         )
 
+        # processed_images.append(
+        #     np.clip(current, 0, 255).astype(np.uint8)
+        # )
+    processed_images = np.clip(current, 0, 255).astype(np.uint8)
     return processed_images
-    
+
 def run_chain_batch(*slot_values):
     """Run the selected chain while preserving the existing batch file flow."""
     chain = collect_chain(list(slot_values))

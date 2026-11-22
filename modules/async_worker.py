@@ -695,7 +695,7 @@ def worker():
                     f"{' -> '.join(operations)}"
                 )
                 temp_imgs = apply_filters_to_images(
-                    imgs[-1],
+                    Image.fromarray(imgs[-1]),
                     operations,
                     params_by_operation,
                 )
