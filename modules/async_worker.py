@@ -694,7 +694,7 @@ def worker():
                     f"[Filters GENERATION] chain: "
                     f"{' -> '.join(operations)}"
                 )
-                temp_imgs = apply_filters_to_images(
+                temp_imgs[-1] = apply_filters_to_images(
                     imgs,
                     operations,
                     params_by_operation,
