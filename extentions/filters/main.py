@@ -166,7 +166,9 @@ def apply_filters_to_images(
             operation,
             **operation_params,
         )
-
+    exit_image = Image.fromarray(
+            np.clip(current, 0, 255).astype(np.uint8),
+            mode="RGB"
     # Возвращаем один numpy-массив, а не список массивов.
     return [np.clip(
         current,
