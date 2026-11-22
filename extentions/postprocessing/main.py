@@ -208,7 +208,7 @@ def gui():
         file_in, files_single, image_single, enable_zip_image, file_out, preview, image_out = batch.ui_batch()
     with gr.Row():
         compare_slider, compare_accordion = imageslider.create_ui()
-    slot_inputs, _chain_summary = build_chain_ui()
+    slot_inputs = build_chain_ui()
 
     with gr.Row():
         apply_btn = gr.Button("Start postprocessing", variant="primary")

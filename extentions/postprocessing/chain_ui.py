@@ -187,7 +187,6 @@ def build_chain_ui():
     #     "Select filters in the order in which they must be applied. "
     #     "Chain selection only defines order; filter parameters are edited below."
     # )
-    chain_summary = gr.Markdown(_summary(DEFAULT_CHAIN))
     chain_filters = gr.Dropdown(
         choices=FILTERS,
         value=DEFAULT_CHAIN,
@@ -304,4 +303,4 @@ def build_chain_ui():
         outputs=groups,
         show_progress=False,
     )
-    return [chain_filters, settings_filter, *controls], chain_summary
+    return [chain_filters, settings_filter, *controls]
