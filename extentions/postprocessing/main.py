@@ -40,7 +40,7 @@ from .core.dither import DITHER_METHODS, dither_frame
 from .core.palettes import PALETTE_NAMES, get_palette, parse_hex_palette
 from .core.pixelize import SAMPLE_METHODS, Pixelizer
 from .core.quantize import PaletteQuantizer
-
+temp_dir=modules.config.temp_path+os.path.sep
 FILTERS = (
     "Pixelize", "Palette Quantize", "Color Depth", "Dither", "Scanlines",
     "Subpixel Mask", "Bloom", "Chromatic Aberration", "Curvature",
