@@ -205,7 +205,7 @@ def gui(generator):
     """Build the Retro Filters batch UI with a sequential chain editor."""
     with gr.Row():
         filters_enabled = gr.Checkbox(label="Enabled", value=False,visible=generator)
-        tutorial("readme.md")
+        tutorial("filters/readme.md")
     with gr.Row(visible=not generator):
         file_in, files_single, image_single, enable_zip_image, file_out, preview, image_out = batch.ui_batch()
     with gr.Row(visible=not generator):
@@ -227,3 +227,4 @@ def gui(generator):
         .then(fn=batch.output_zip_image,outputs=[image_out, file_out]) \
         .then(fn=lambda zip_image: prepare_comparison(zip_image),inputs=[enable_zip_image],outputs=[compare_slider, compare_accordion]) \
         .then(lambda: gr.update(visible=True, interactive=True),outputs=apply_btn)
+    return filters_enabled
