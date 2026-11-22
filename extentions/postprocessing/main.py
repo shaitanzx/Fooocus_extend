@@ -202,7 +202,7 @@ def gui():
             noise_mode = gr.Dropdown(NOISE_MODES, value="color", label="Noise mode",interactive=True)
         with gr.Group(visible=False) as rows["lcd"]:
             cell_size = gr.Slider(1, 64, value=8, step=1, label="Cell size",interactive=True)
-            gap_ratio = gr.Slider(0, 0.5, value=0.15, step=0.05, label="Gap ratio"),interactive=True
+            gap_ratio = gr.Slider(0, 0.5, value=0.15, step=0.05, label="Gap ratio",interactive=True)
             grid_dark = gr.Slider(0, 1, value=0.6, step=0.05, label="Grid dark",interactive=True)
             shape = gr.Dropdown(DOT_SHAPES, value="square", label="Shape",interactive=True)
     with gr.Row():
