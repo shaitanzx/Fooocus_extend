@@ -1,12 +1,4 @@
-"""Lukutar Retro Filters integration for Fooocus Extend.
-
-
-
-The image engines are kept in ``core`` and are copied from the upstream
-ComfyUI-LukutarRetro project. This module only supplies Fooocus/Gradio glue:
-one uploaded image, one selected filter, full parameter controls, preview and
-output saving. No model, checkpoint, LoRA, sampler or SD-family state is used.
-"""
+"""Lukutar Retro Filters integration for Fooocus Extend."""
 from __future__ import annotations
 
 import os
@@ -59,13 +51,7 @@ def prepare_comparison(zip_image):
     before_files = imageslider.image_files(target_dir)
     result_files = imageslider.image_files(result_dir)
 
-    # Промежуточные файлы имеют вид:
-    # original2026-11-22_09-27-52_logo_chain_1.png
-    # original2026-11-22_09-27-52_logo_chain_2.png
-    intermediate_pattern = re.compile(
-        r"_chain_\d+\.[^.]+$",
-        re.IGNORECASE,
-    )
+    intermediate_pattern = re.compile(r"_chain_\d+\.[^.]+$",re.IGNORECASE,)
 
     final_files = [
         path
@@ -73,15 +59,10 @@ def prepare_comparison(zip_image):
         if not intermediate_pattern.search(os.path.basename(path))
     ]
 
-    # Comparison показываем только для одной пары:
-    # один входной файл и один финальный результат.
     if len(before_files) != 1 or len(final_files) != 1:
         return imageslider.hidden_updates()
 
-    return imageslider.update_pair(
-        before_files[0],
-        final_files[0],
-    )
+    return imageslider.update_pair(before_files[0],final_files[0])
 
 def _rgb(image: np.ndarray) -> np.ndarray:
     """Return a contiguous float32 RGB frame in the engine's [0, 255] range."""
@@ -172,10 +153,7 @@ def run_chain_batch(*slot_values):
         name, _ = os.path.splitext(f_name)
         current_time = datetime.datetime.now()
         time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
-        final_filename = os.path.join(
-            batch_temp,
-            f"{name}{time_string}_filters.png",
-        )
+        final_filename = os.path.join(batch_temp,f"{name}_{time_string}_filters.png",)
 
         current = _rgb(np.array(img.convert("RGB")))
         for chain_index, operation in enumerate(operations, start=1):
@@ -199,37 +177,33 @@ def run_chain_batch(*slot_values):
                 intermediate_filename = (
                     f"{final_stem}_chain_{chain_index}.png"
                 )
-                print(
-                    f"[Postprocess SAVE] intermediate: "
-                    f"{intermediate_filename}"
-                )
+                
                 intermediate.save(intermediate_filename)
 
         pil = Image.fromarray(
             np.clip(current, 0, 255).astype(np.uint8),
             mode="RGB",
         )
-        print(f"[Postprocess SAVE] final: {final_filename}")
         pil.save(final_filename)
         passed += 1
 
     return gr.update(value=None, visible=False), gr.update(visible=True)
 
 
-def process(operation: str, **params: object):
+# def process(operation: str, **params: object):
 
 
-    """Process an image and return a PIL preview plus a saved PNG path."""
-    if image is None:
-        raise gr.Error("Upload an image first.")
-    result = _apply(_rgb(image), operation, **params)
-    pil = Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), mode="RGB")
-    out_dir = Path(modules.config.path_outputs) / "lukutar_retro"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    fd, path = tempfile.mkstemp(prefix="retro_", suffix=".png", dir=out_dir)
-    os.close(fd)
-    pil.save(path, compress_level=1)
-    return pil, path
+#     """Process an image and return a PIL preview plus a saved PNG path."""
+#     if image is None:
+#         raise gr.Error("Upload an image first.")
+#     result = _apply(_rgb(image), operation, **params)
+#     pil = Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), mode="RGB")
+#     out_dir = Path(modules.config.path_outputs) / "lukutar_retro"
+#     out_dir.mkdir(parents=True, exist_ok=True)
+#     fd, path = tempfile.mkstemp(prefix="retro_", suffix=".png", dir=out_dir)
+#     os.close(fd)
+#     pil.save(path, compress_level=1)
+#     return pil, path
 
 
 def _vis(operation: str):
@@ -244,8 +218,6 @@ def _vis(operation: str):
     }
     return [gr.update(visible=groups[name]) for name in groups]
 
-
-
 def gui():
     """Build the Retro Filters batch UI with a sequential chain editor."""
     with gr.Row():
@@ -254,48 +226,19 @@ def gui():
         file_in, files_single, image_single, enable_zip_image, file_out, preview, image_out = batch.ui_batch()
     with gr.Row():
         compare_slider, compare_accordion = imageslider.create_ui()
-    slot_inputs, _chain_summary = build_chain_ui()
+    slot_inputs = build_chain_ui()
 
     with gr.Row():
         apply_btn = gr.Button("Start", variant="primary")
     with gr.Row(visible=False):
         ext_dir = gr.Textbox(value="batch_filters", visible=False)
 
-    apply_btn.click(
-        lambda: (
-            gr.update(visible=True, interactive=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-        ),
-        outputs=[apply_btn, file_out, image_out],
-    ).then(
-        fn=imageslider.reset,
-        outputs=[compare_slider, compare_accordion],
-    ).then(
-        fn=batch.clear_dirs,
-        inputs=ext_dir,
-    ).then(
-        fn=batch.unzip_file,
-        inputs=[file_in, files_single, enable_zip_image, ext_dir],
-    ).then(
-        fn=run_chain_batch,
-        inputs=slot_inputs,
-        outputs=[preview, file_out],
-        show_progress=False,
-    ).then(
-        lambda: (
-            gr.update(visible=True, interactive=True),
-            gr.update(visible=False),
-        ),
-        outputs=[file_out, preview],
-    ).then(
-        fn=batch.output_zip_image,
-        outputs=[image_out, file_out],
-    ).then(
-        fn=lambda zip_image: prepare_comparison(zip_image),
-        inputs=[enable_zip_image],
-        outputs=[compare_slider, compare_accordion],
-    ).then(
-        lambda: gr.update(visible=True, interactive=True),
-        outputs=apply_btn,
-    )
+    apply_btn.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[apply_btn, file_out, image_out]) \
+        .then(fn=imageslider.reset,outputs=[compare_slider, compare_accordion]) \
+        .then(fn=batch.clear_dirs,inputs=ext_dir) \
+        .then(fn=batch.unzip_file,inputs=[file_in, files_single, enable_zip_image, ext_dir]) \
+        .then(fn=run_chain_batch,inputs=slot_inputs,outputs=[preview, file_out],show_progress=False) \
+        .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out, preview]) \
+        .then(fn=batch.output_zip_image,outputs=[image_out, file_out]) \
+        .then(fn=lambda zip_image: prepare_comparison(zip_image),inputs=[enable_zip_image],outputs=[compare_slider, compare_accordion]) \
+        .then(lambda: gr.update(visible=True, interactive=True),outputs=apply_btn)
