@@ -116,6 +116,7 @@ def run_chain_batch(*slot_values):
     chain = collect_chain(list(slot_values))
     operations = chain["operations"]
     params_by_operation = chain["params"]
+    save_intermediate = chain["save_intermediate"]
 
     batch_path = f"{temp_dir}batch_post"
     batch_temp = f"{temp_dir}batch_temp"
@@ -142,8 +143,16 @@ def run_chain_batch(*slot_values):
 
         yield gr.update(value=img, visible=True), gr.update(visible=False)
 
+        name, _ = os.path.splitext(f_name)
+        current_time = datetime.datetime.now()
+        time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+        final_filename = os.path.join(
+            batch_temp,
+            f"{name}{time_string}_logo.png",
+        )
+
         current = _rgb(np.array(img.convert("RGB")))
-        for operation in operations:
+        for chain_index, operation in enumerate(operations, start=1):
             operation_params = dict(params_by_operation[operation])
             print(
                 f"[Postprocess FILTER] start: {operation}; "
@@ -155,16 +164,27 @@ def run_chain_batch(*slot_values):
                 **operation_params,
             )
 
+            if save_intermediate and chain_index < len(operations):
+                intermediate = Image.fromarray(
+                    np.clip(current, 0, 255).astype(np.uint8),
+                    mode="RGB",
+                )
+                final_stem, _ = os.path.splitext(final_filename)
+                intermediate_filename = (
+                    f"{final_stem}_chain_{chain_index}.png"
+                )
+                print(
+                    f"[Postprocess SAVE] intermediate: "
+                    f"{intermediate_filename}"
+                )
+                intermediate.save(intermediate_filename)
+
         pil = Image.fromarray(
             np.clip(current, 0, 255).astype(np.uint8),
             mode="RGB",
         )
-        name, _ = os.path.splitext(f_name)
-        current_time = datetime.datetime.now()
-        time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
-        suf = f"{time_string}_post.png"
-        filename = batch_temp + os.path.sep + name + suf
-        pil.save(filename)
+        print(f"[Postprocess SAVE] final: {final_filename}")
+        pil.save(final_filename)
         passed += 1
 
     return gr.update(value=None, visible=False), gr.update(visible=True)
@@ -208,7 +228,7 @@ def gui():
         file_in, files_single, image_single, enable_zip_image, file_out, preview, image_out = batch.ui_batch()
     with gr.Row():
         compare_slider, compare_accordion = imageslider.create_ui()
-    slot_inputs = build_chain_ui()
+    slot_inputs, _chain_summary = build_chain_ui()
 
     with gr.Row():
         apply_btn = gr.Button("Start postprocessing", variant="primary")

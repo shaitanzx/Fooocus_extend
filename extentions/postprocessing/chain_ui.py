@@ -174,19 +174,21 @@ def collect_chain(values: list[Any]) -> dict[str, Any]:
     selected = list(values[0] or [])
     return {
         "operations": [name for name in selected if name in FILTERS],
-        # values[1] is the settings dropdown; it selects the visible editor
+        "save_intermediate": bool(values[1]),
+        # values[2] is the settings dropdown; it selects the visible editor
         # only and is deliberately not used to choose the chain parameters.
-        "params": _params(values[2:]),
+        "params": _params(values[3:]),
     }
 
 
 def build_chain_ui():
     """Create the ordered chain selector and all real filter controls."""
-    # gr.Markdown(
-    #     "## Processing chain\n"
-    #     "Select filters in the order in which they must be applied. "
-    #     "Chain selection only defines order; filter parameters are edited below."
-    # )
+    gr.Markdown(
+        "## Processing chain\n"
+        "Select filters in the order in which they must be applied. "
+        "Chain selection only defines order; filter parameters are edited below."
+    )
+    chain_summary = gr.Markdown(_summary(DEFAULT_CHAIN))
     chain_filters = gr.Dropdown(
         choices=FILTERS,
         value=DEFAULT_CHAIN,
@@ -194,108 +196,113 @@ def build_chain_ui():
         label="Filter chain (selection order)",
         interactive=True,
     )
+    save_intermediate = gr.Checkbox(
+        value=False,
+        label="Save result after each filter",
+        info="Saves only filters before the last one; the final result is always saved.",
+    )
 
-    with gr.Group():
-        settings_filter = gr.Dropdown(
-            choices=FILTERS,
-            value=FILTERS[0],
-            label="Filter to configure",
-            interactive=True,
-        )
+    gr.Markdown("### Filter settings")
+    settings_filter = gr.Dropdown(
+        choices=FILTERS,
+        value=FILTERS[0],
+        label="Filter to configure",
+        interactive=True,
+    )
 
-        groups = []
-        controls = []
+    groups = []
+    controls = []
 
-        with gr.Group(visible=True) as pixel_group:
-            pixel_size = gr.Slider(1, 128, value=8, step=1, label="Pixel size")
-            sampling = gr.Dropdown(SAMPLE_METHODS, value="mode", label="Sampling")
-            pre_blur = gr.Slider(0, 10, value=0, step=0.1, label="Pre-blur")
-        groups.append(pixel_group)
-        controls += [pixel_size, sampling, pre_blur]
+    with gr.Group(visible=True) as pixel_group:
+        pixel_size = gr.Slider(1, 128, value=8, step=1, label="Pixel size")
+        sampling = gr.Dropdown(SAMPLE_METHODS, value="mode", label="Sampling")
+        pre_blur = gr.Slider(0, 10, value=0, step=0.1, label="Pre-blur")
+    groups.append(pixel_group)
+    controls += [pixel_size, sampling, pre_blur]
 
-        with gr.Group(visible=False) as palette_group:
-            palette = gr.Dropdown(PALETTE_NAMES, value="pico8_16", label="Built-in palette")
-            custom_palette = gr.Textbox(label="Custom palette (hex colors)", lines=2)
-            palette_dither = gr.Dropdown(DITHER_METHODS, value="none", label="Dithering")
-            palette_dither_strength = gr.Slider(0, 1, value=1, step=0.05, label="Dither strength")
-            palette_serpentine = gr.Checkbox(value=True, label="Serpentine diffusion")
-        groups.append(palette_group)
-        controls += [palette, custom_palette, palette_dither, palette_dither_strength, palette_serpentine]
+    with gr.Group(visible=False) as palette_group:
+        palette = gr.Dropdown(PALETTE_NAMES, value="pico8_16", label="Built-in palette")
+        custom_palette = gr.Textbox(label="Custom palette (hex colors)", lines=2)
+        palette_dither = gr.Dropdown(DITHER_METHODS, value="none", label="Dithering")
+        palette_dither_strength = gr.Slider(0, 1, value=1, step=0.05, label="Dither strength")
+        palette_serpentine = gr.Checkbox(value=True, label="Serpentine diffusion")
+    groups.append(palette_group)
+    controls += [palette, custom_palette, palette_dither, palette_dither_strength, palette_serpentine]
 
-        with gr.Group(visible=False) as depth_group:
-            depth_mode = gr.Radio(["bits", "levels"], value="bits", label="Interpret value as")
-            depth_value = gr.Slider(1, 64, value=4, step=1, label="Bits / levels")
-        groups.append(depth_group)
-        controls += [depth_mode, depth_value]
+    with gr.Group(visible=False) as depth_group:
+        depth_mode = gr.Radio(["bits", "levels"], value="bits", label="Interpret value as")
+        depth_value = gr.Slider(1, 64, value=4, step=1, label="Bits / levels")
+    groups.append(depth_group)
+    controls += [depth_mode, depth_value]
 
-        with gr.Group(visible=False) as dither_group:
-            levels = gr.Slider(2, 32, value=4, step=1, label="Levels per channel")
-            dither_mode = gr.Radio(["color", "mono"], value="color", label="Mode")
-            dither_method = gr.Dropdown([x for x in DITHER_METHODS if x != "none"], value="bayer4", label="Method")
-            dither_strength = gr.Slider(0, 1, value=1, step=0.05, label="Strength")
-            dither_serpentine = gr.Checkbox(value=True, label="Serpentine diffusion")
-        groups.append(dither_group)
-        controls += [levels, dither_mode, dither_method, dither_strength, dither_serpentine]
+    with gr.Group(visible=False) as dither_group:
+        levels = gr.Slider(2, 32, value=4, step=1, label="Levels per channel")
+        dither_mode = gr.Radio(["color", "mono"], value="color", label="Mode")
+        dither_method = gr.Dropdown([x for x in DITHER_METHODS if x != "none"], value="bayer4", label="Method")
+        dither_strength = gr.Slider(0, 1, value=1, step=0.05, label="Strength")
+        dither_serpentine = gr.Checkbox(value=True, label="Serpentine diffusion")
+    groups.append(dither_group)
+    controls += [levels, dither_mode, dither_method, dither_strength, dither_serpentine]
 
-        with gr.Group(visible=False) as scan_group:
-            pitch = gr.Slider(1, 32, value=2, step=1, label="Pitch")
-            thickness = gr.Slider(0, 1, value=0.5, step=0.05, label="Thickness")
-            scan_strength = gr.Slider(0, 1, value=0.35, step=0.05, label="Strength")
-            offset = gr.Slider(-64, 64, value=0, step=1, label="Offset")
-            profile = gr.Dropdown(SCANLINE_PROFILES, value="hard", label="Profile")
-        groups.append(scan_group)
-        controls += [pitch, thickness, scan_strength, offset, profile]
+    with gr.Group(visible=False) as scan_group:
+        pitch = gr.Slider(1, 32, value=2, step=1, label="Pitch")
+        thickness = gr.Slider(0, 1, value=0.5, step=0.05, label="Thickness")
+        scan_strength = gr.Slider(0, 1, value=0.35, step=0.05, label="Strength")
+        offset = gr.Slider(-64, 64, value=0, step=1, label="Offset")
+        profile = gr.Dropdown(SCANLINE_PROFILES, value="hard", label="Profile")
+    groups.append(scan_group)
+    controls += [pitch, thickness, scan_strength, offset, profile]
 
-        with gr.Group(visible=False) as mask_group:
-            mask = gr.Dropdown(MASK_TYPES, value="aperture_grille", label="Mask")
-            mask_pitch = gr.Slider(1, 16, value=1, step=1, label="Pitch")
-        groups.append(mask_group)
-        controls += [mask, mask_pitch]
+    with gr.Group(visible=False) as mask_group:
+        mask = gr.Dropdown(MASK_TYPES, value="aperture_grille", label="Mask")
+        mask_pitch = gr.Slider(1, 16, value=1, step=1, label="Pitch")
+    groups.append(mask_group)
+    controls += [mask, mask_pitch]
 
-        with gr.Group(visible=False) as bloom_group:
-            threshold = gr.Slider(0, 1, value=0.7, step=0.05, label="Threshold")
-            radius = gr.Slider(0.5, 100, value=8, step=0.5, label="Radius")
-            intensity = gr.Slider(0, 4, value=0.5, step=0.05, label="Intensity")
-            blend = gr.Dropdown(BLOOM_BLENDS, value="screen", label="Blend")
-        groups.append(bloom_group)
-        controls += [threshold, radius, intensity, blend]
+    with gr.Group(visible=False) as bloom_group:
+        threshold = gr.Slider(0, 1, value=0.7, step=0.05, label="Threshold")
+        radius = gr.Slider(0.5, 100, value=8, step=0.5, label="Radius")
+        intensity = gr.Slider(0, 4, value=0.5, step=0.05, label="Intensity")
+        blend = gr.Dropdown(BLOOM_BLENDS, value="screen", label="Blend")
+    groups.append(bloom_group)
+    controls += [threshold, radius, intensity, blend]
 
-        with gr.Group(visible=False) as aberration_group:
-            aberration_amount = gr.Slider(0, 20, value=2, step=0.5, label="Amount")
-            aberration_mode = gr.Dropdown(ABERRATION_MODES, value="radial", label="Mode")
-        groups.append(aberration_group)
-        controls += [aberration_amount, aberration_mode]
+    with gr.Group(visible=False) as aberration_group:
+        aberration_amount = gr.Slider(0, 20, value=2, step=0.5, label="Amount")
+        aberration_mode = gr.Dropdown(ABERRATION_MODES, value="radial", label="Mode")
+    groups.append(aberration_group)
+    controls += [aberration_amount, aberration_mode]
 
-        with gr.Group(visible=False) as curvature_group:
-            curvature_amount = gr.Slider(0, 1, value=0.15, step=0.05, label="Amount")
-            edge_softness = gr.Slider(0, 32, value=0, step=0.5, label="Edge softness")
-        groups.append(curvature_group)
-        controls += [curvature_amount, edge_softness]
+    with gr.Group(visible=False) as curvature_group:
+        curvature_amount = gr.Slider(0, 1, value=0.15, step=0.05, label="Amount")
+        edge_softness = gr.Slider(0, 32, value=0, step=0.5, label="Edge softness")
+    groups.append(curvature_group)
+    controls += [curvature_amount, edge_softness]
 
-        with gr.Group(visible=False) as vignette_group:
-            vignette_strength = gr.Slider(0, 1, value=0.4, step=0.05, label="Strength")
-            vignette_radius = gr.Slider(0, 1, value=0.8, step=0.05, label="Radius")
-            vignette_softness = gr.Slider(0, 1, value=0.5, step=0.05, label="Softness")
-        groups.append(vignette_group)
-        controls += [vignette_strength, vignette_radius, vignette_softness]
+    with gr.Group(visible=False) as vignette_group:
+        vignette_strength = gr.Slider(0, 1, value=0.4, step=0.05, label="Strength")
+        vignette_radius = gr.Slider(0, 1, value=0.8, step=0.05, label="Radius")
+        vignette_softness = gr.Slider(0, 1, value=0.5, step=0.05, label="Softness")
+    groups.append(vignette_group)
+    controls += [vignette_strength, vignette_radius, vignette_softness]
 
-        with gr.Group(visible=False) as vhs_group:
-            noise = gr.Slider(0, 1, value=0.15, step=0.05, label="Noise")
-            chroma_bleed = gr.Slider(0, 1, value=0.5, step=0.05, label="Chroma bleed")
-            jitter = gr.Slider(0, 1, value=0.3, step=0.05, label="Jitter")
-            band = gr.Slider(0, 1, value=0.3, step=0.05, label="Band")
-            seed = gr.Slider(0, 2147483647, value=0, step=1, label="Seed (0 = random)")
-            noise_mode = gr.Dropdown(NOISE_MODES, value="color", label="Noise mode")
-        groups.append(vhs_group)
-        controls += [noise, chroma_bleed, jitter, band, seed, noise_mode]
+    with gr.Group(visible=False) as vhs_group:
+        noise = gr.Slider(0, 1, value=0.15, step=0.05, label="Noise")
+        chroma_bleed = gr.Slider(0, 1, value=0.5, step=0.05, label="Chroma bleed")
+        jitter = gr.Slider(0, 1, value=0.3, step=0.05, label="Jitter")
+        band = gr.Slider(0, 1, value=0.3, step=0.05, label="Band")
+        seed = gr.Slider(0, 2147483647, value=0, step=1, label="Seed (0 = random)")
+        noise_mode = gr.Dropdown(NOISE_MODES, value="color", label="Noise mode")
+    groups.append(vhs_group)
+    controls += [noise, chroma_bleed, jitter, band, seed, noise_mode]
 
-        with gr.Group(visible=False) as lcd_group:
-            cell_size = gr.Slider(1, 64, value=8, step=1, label="Cell size")
-            gap_ratio = gr.Slider(0, 0.5, value=0.15, step=0.05, label="Gap ratio")
-            grid_dark = gr.Slider(0, 1, value=0.6, step=0.05, label="Grid dark")
-            shape = gr.Dropdown(DOT_SHAPES, value="square", label="Shape")
-        groups.append(lcd_group)
-        controls += [cell_size, gap_ratio, grid_dark, shape]
+    with gr.Group(visible=False) as lcd_group:
+        cell_size = gr.Slider(1, 64, value=8, step=1, label="Cell size")
+        gap_ratio = gr.Slider(0, 0.5, value=0.15, step=0.05, label="Gap ratio")
+        grid_dark = gr.Slider(0, 1, value=0.6, step=0.05, label="Grid dark")
+        shape = gr.Dropdown(DOT_SHAPES, value="square", label="Shape")
+    groups.append(lcd_group)
+    controls += [cell_size, gap_ratio, grid_dark, shape]
 
     settings_filter.change(
         update_settings_ui,
@@ -303,4 +310,4 @@ def build_chain_ui():
         outputs=groups,
         show_progress=False,
     )
-    return [chain_filters, settings_filter, *controls]
+    return [chain_filters, save_intermediate, settings_filter, *controls], chain_summary
