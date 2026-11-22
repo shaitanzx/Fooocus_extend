@@ -19,6 +19,8 @@ import numpy as np
 from PIL import Image
 
 import modules.config
+import extentions.batch as batch
+import modules.imageslider as imageslider
 from extentions.tutorial import tutorial
 
 from .core.analog import DOT_SHAPES, NOISE_MODES, lcd_dot_matrix, vhs
@@ -131,16 +133,20 @@ def _vis(operation: str):
 def gui():
     """Build the Retro Filters tab in the visual style of Fooocus Extend."""
     with gr.Row():
-        gr.Markdown("## Lukutar Retro Filters\nPure image processing: pixel-art, retro palettes, CRT, LCD and VHS. No model or sampler changes.")
         tutorial("lukutar_retro.md")
+    with gr.Row(visible=not generator):
+        file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
     with gr.Row():
-        with gr.Column(scale=1):
-            source = gr.Image(label="Source image", type="numpy", image_mode="RGB", height=420)
-            operation = gr.Dropdown(FILTERS, value="Pixelize", label="Filter", interactive=True)
-            apply_btn = gr.Button("Apply Retro Filter", variant="primary")
-        with gr.Column(scale=1):
-            preview = gr.Image(label="Processed preview", type="pil", height=420, interactive=False)
-            output_file = gr.File(label="Saved PNG", interactive=False)
+        compare_slider, compare_accordion = imageslider.create_ui()
+        operation = gr.Dropdown(FILTERS, value="Pixelize", label="Filter", interactive=True)
+    # with gr.Row():
+    #     with gr.Column(scale=1):
+    #         source = gr.Image(label="Source image", type="numpy", image_mode="RGB", height=420)
+    #         operation = gr.Dropdown(FILTERS, value="Pixelize", label="Filter", interactive=True)
+    #         apply_btn = gr.Button("Apply Retro Filter", variant="primary")
+    #     with gr.Column(scale=1):
+    #         preview = gr.Image(label="Processed preview", type="pil", height=420, interactive=False)
+    #         output_file = gr.File(label="Saved PNG", interactive=False)
 
     with gr.Accordion("Filter parameters", open=True):
         rows = {}
@@ -199,7 +205,9 @@ def gui():
             gap_ratio = gr.Slider(0, 0.5, value=0.15, step=0.05, label="Gap ratio")
             grid_dark = gr.Slider(0, 1, value=0.6, step=0.05, label="Grid dark")
             shape = gr.Dropdown(DOT_SHAPES, value="square", label="Shape")
-
+    with gr.Row():
+        apply_btn = gr.Button("Apply Retro Filter", variant="primary")
+    
     visibility_outputs = list(rows.values())
     operation.change(_vis, inputs=operation, outputs=visibility_outputs, show_progress=False)
     params = [pixel_size, sampling, pre_blur, palette, custom_palette, palette_dither, dither_strength, serpentine,
@@ -219,5 +227,5 @@ def gui():
         data["dither_strength"] = data["dither_strength_2"] if op == "Dither" else data["dither_strength"]
         data["serpentine"] = data["serpentine_2"] if op == "Dither" else data["serpentine"]
         return process(image, op, **data)
-    apply_btn.click(run, inputs=[source, operation] + params, outputs=[preview, output_file], show_progress=True)
-    return source, preview, output_file
+    # apply_btn.click(run, inputs=[source, operation] + params, outputs=[preview, output_file], show_progress=True)
+    # return source, preview, output_file
