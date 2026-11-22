@@ -1,4 +1,761 @@
+## What the extension does
+([Читать на русском языке](#Что-делает-расширение))
+
+Filters applies a set of mathematical effects to images, mimicking styles such as pixel art, CRT, LCD, VHS, and those of vintage gaming systems. Processing is performed directly on the image.
+
+Each filter takes an RGB image as input, performs a single operation, and passes the result to the next filter. Consequently, filters can be used individually or combined into a sequential chain:
+
+Input → Pixelize → Palette Quantize → Scanlines → Bloom → VHS → Output
+
+The current implementation includes 12 filters:
+
+1. Pixelize
+2. Palette Quantize
+3. Color Depth
+4. Dither
+5. Scanlines
+6. Subpixel Mask
+7. Bloom
+8. Chromatic Aberration
+9. Curvature
+10. Vignette
+11. VHS
+12. LCD Dot Matrix
+
+## Interface Overview
+
+### Filter chain (selection order)
+
+This multi-select dropdown menu defines the processing sequence. The order in which items are selected determines the order in which the filters are applied.
+
+For example:
+
+Pixelize → Scanlines → Bloom
+
+means:
+
+1. The image first passes through Pixelize;
+2. The output of Pixelize is passed to Scanlines;
+3. The output of Scanlines is passed to Bloom;
+4. The output of Bloom is saved as the final result.
+
+### Save result after each filter
+
+This checkbox enables the saving of intermediate processing stages.
+
+If the chain contains only one filter, no intermediate file is created; the result is saved only as the final output.
+
+If the chain contains multiple filters, all stages preceding the final filter are saved. The final stage is always saved exclusively as the final output file.
+
+For instance, a chain of three filters will generate:
+
+### Filter to configure
+
+This dropdown menu allows you to select a specific filter to view and adjust its settings. Only one set of configuration options is displayed at any given time. Parameters are independent of whether a filter is actually included in the chain. You can configure all filters in advance and then select the ones you want to use in the `Filter chain (selection order)` section.
+
+If a filter is not included in the chain, its settings are ignored during the current execution.
+
+# Detailed Filter Settings
+
+## 1. Pixelize
+
+The `Pixelize` filter reduces the spatial detail of an image by breaking it down into square cells, then scaling it back to the original resolution using nearest-neighbor interpolation. The final image dimensions remain unchanged, but the content within each cell is rendered as a uniform color.
+
+This filter is particularly useful at the beginning of a chain—for instance, before a palette effect, a CRT mask, or an LCD dot matrix overlay.
+
+### Pixel size
+
+- Type: Integer.
+- Interface range: `1–128`.
+- Step: `1`.
+- Default value: `8`.
+- A value of `1` results in detail nearly identical to the original.
+- Higher values ​​produce larger pixels and less fine detail.
+
+### Sampling
+
+Available options:
+
+- `center` — Uses the pixel at the center of each cell. This is the fastest method and creates a rigid grid without averaging.
+- `mean` — Calculates the average color value within each cell, resulting in a smoother appearance.
+- `median` — Uses the median color value across channels. This method is effective at suppressing isolated, extremely bright or dark pixels.
+- `mode` — Selects the most frequently occurring color value. This is the default setting and is generally best suited for large areas of authentic pixel art.
+
+### Pre-blur
+
+- Range: `0–10`.
+- Step: `0.1`.
+- Default value: `0`.
+- Unit: Sigma (for Gaussian blur). A pre-blur is applied before the image is modified. This reduces fine, high-frequency details and can help mitigate moiré patterns that may arise after pixelization.
+
+A value of `0` preserves a sharp, pixel-art aesthetic. Higher values ​​soften the boundaries within the pixel cells before the final color selection takes place.
+
+### Practical Examples
+
+For a distinct pixel-art effect:
+Pixel size: 8
+Sampling: mode
+Pre-blur: 0
+
+For a photograph containing many fine details, you might try:
+Pixel size: 6–12
+Sampling: mean
+Pre-blur: 0.5–1.5
+
+
+## 2. Palette Quantize
+
+`Palette Quantize` replaces each color with the closest match from a selected, limited retro palette. The matching process is based on distance within the CIELAB color space, rather than a simple, independent comparison of RGB channels.
+
+This filter is designed to emulate the color limitations of various retro systems, such as PICO-8, Game Boy, C64, CGA, ZX Spectrum, and others.
+
+### Built-in Palettes
+
+The current UI includes the following palettes:
+- `dmg_4` — The four-color green palette of the Game Boy (DMG).
+- `pico8_16` — The standard 16-color PICO-8 palette (default setting).
+- `c64_16` — The 16-color Commodore 64 palette.
+- `cga_16` — The 16-color IBM CGA palette.
+- `zx_spectrum_15` — The 15-color ZX Spectrum palette.
+- `ega_64` — The 64-color EGA palette.
+- `nes` — The 55-color palette of the Nintendo Entertainment System (2C02).
+- `gray_4` — Four shades of gray. - `mono_1bit` — black and white.
+- `sweetie_16` — the Sweetie16 palette.
+
+Default value: `pico8_16`.
+
+### Custom palette
+
+This is a multi-line field for a custom palette. Colors are entered in a six-character hex format:
+#0f380f, #306230, #8bac0f, #9bbc0f
+
+Allowed delimiters:
+- comma;
+- semicolon;
+- space;
+- line break.
+
+Entries with or without the `#` prefix are supported.
+
+Shorthand notation like `#fff` is not supported. Each entry must consist of exactly six hex digits.
+
+If the `Custom palette` field contains a value, it completely replaces the selected `Built-in palette`. In this case, the `Built-in palette` setting is ignored.
+
+If the `Custom palette` field is left empty, the selected built-in palette is used instead.
+
+### Dithering
+
+In the Filters section, this component is called `Dithering`, while in the source node, it is referred to as `dither`. Available methods include:
+
+- `none` — no dithering;
+- `bayer2` — ordered Bayer dithering using a 2×2 matrix;
+- `bayer4` — 4×4 Bayer dithering;
+- `bayer8` — 8×8 Bayer dithering;
+- `floyd-steinberg` — Floyd–Steinberg error diffusion;
+- `atkinson` — Atkinson error diffusion.
+
+`bayer2`, `bayer4`, and `bayer8` are fast. `floyd-steinberg` and `atkinson` process the image row by row, which may take significantly longer for large images.
+
+### Dither strength
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `1`.
+
+For ordered dithering methods, this parameter adjusts the amplitude of the threshold offset. For error-diffusion methods, it controls the magnitude of the error propagated to neighboring pixels.
+
+- `0`: dithering is effectively disabled.
+- `1`: the selected method is applied at full strength.
+
+### Serpentine diffusion
+
+- Default value: enabled.
+
+When enabled, the processing direction alternates between rows. Odd-numbered rows are processed from right to left, with the error-diffusion kernel mirrored accordingly. This reduces directional banding, particularly when using the Floyd–Steinberg or Atkinson methods.
+
+For Bayer-based methods, this parameter does not play a significant role, as they do not rely on sequential error diffusion.
+
+### Practical Examples
+
+For PICO-8:
+
+Built-in palette: pico8_16
+Custom palette: empty
+Dithering: none or bayer4
+Dither strength: 1
+Serpentine diffusion: enabled
+
+
+For a monochrome, Game Boy-style result:
+
+Built-in palette: dmg_4
+Dithering: floyd-steinberg
+Dither strength: 0.5–1
+Serpentine diffusion: enabled
+
+
+## 3. Color Depth
+
+`Color Depth` performs pure posterization—it uniformly reduces the number of levels for each RGB channel. Unlike `Dither`, this filter does not introduce any dithering.
+
+### Interpret value as
+
+The `Interpret value as` component offers two modes:
+
+- `bits` — the value is interpreted as bit depth;
+- `levels` — the value is interpreted as the exact number of levels.
+
+### Bits / levels
+
+The UI features a single slider with a range of `1–64`, a step of `1`, and a default value of `4`.
+
+The valid range depends on the selected mode:
+- In `bits` mode, values ​​from `1–8` are permitted;
+- In `levels` mode, values ​​from `2–64` are permitted.
+
+In `bits` mode, the number of levels is calculated as follows:
+levels = 2 ** value
+
+Examples:
+- `1 bit` → 2 levels per channel;
+- `2 bits` → 4 levels;
+- `4 bits` → 16 levels;
+- `8 bits` → 256 levels.
+
+In `levels` mode, the value is used directly. For instance, `5` means exactly five levels per channel. If a value greater than `8` is provided in `bits` mode, the engine will throw an error. Similarly, if a value less than `2` is provided in `levels` mode, the engine will also throw an error. Therefore, it is recommended to manually keep the value within the range of `1–8` for `bits` mode, and `2–64` for `levels` mode.
+
+
+## 4. Dither
+
+`Dither` reduces the number of color levels while simultaneously applying dithering. Unlike `Palette Quantize`, it does not map the image to a fixed retro palette.
+
+### Levels per channel
+
+- Range: `2–32`.
+- Step: `1`.
+- Default value: `4`.
+
+This represents the number of quantization levels for each channel.
+A low value results in coarser posterization, while a high value preserves more shades.
+
+### Mode
+
+Available values:
+- `color` — each RGB channel is processed independently;
+- `mono` — the image is first converted to luminance using the Rec. 601 standard: Y = 0.299 R + 0.587 G + 0.114 B.
+
+The resulting luminance channel is then copied into all three channels and dithered, producing a grayscale image.
+
+Default value: `color`.
+
+### Method
+
+Available options in the UI:
+- `bayer2`;
+- `bayer4`;
+- `bayer8`;
+- `floyd-steinberg`;
+- `atkinson`.
+
+Default value: `bayer4`.
+
+The `none` method is intentionally omitted from this filter; for posterization without dithering, use `Color Depth` instead.
+
+### Strength
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `1`. `0` disables the effect of dithering, while `1` applies the algorithm at full strength.
+
+### Serpentine diffusion
+
+- Default: enabled.
+
+Primarily used by error diffusion methods. Alternating the direction of the rows reduces regular, directional artifacts.
+
+## 5. Scanlines
+
+`Scanlines` simulates the horizontal darkened lines found on CRT displays. Within each period, some lines are darkened, while others remain unchanged.
+
+### Pitch
+
+- Range: `1–32`.
+- Step: `1`.
+- Default value in the current UI: `2`.
+
+`Pitch` defines the repetition period of the pattern across the image rows.
+
+- `1`: darkening is applied to every row;
+- `2`: the pattern repeats every two rows;
+- higher values: the lines are spaced further apart.
+
+### Thickness
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value:value: `0.5`.
+
+This represents the fraction of the period that corresponds to the darkened portion.
+
+- `0`: no darkened area;
+- `0.5`: half of each period is darkened;
+- `1`: the entire period is darkened.
+
+### Strength
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.35`.
+
+This defines the maximum intensity of the line darkening.
+- `0`: no effect;
+- increasing the value makes the stripes darker.
+
+This parameter does not add white lines; instead, it reduces the brightness of the selected portion of the period.
+
+### Offset
+
+- Range: `-64 – +64`.
+- Step: `1`.
+- Default value: `0`.
+
+Shifts the phase of the pattern vertically. This parameter is useful for aligning scanlines with an existing pixel grid.
+
+### Profile
+
+Possible values:
+
+- `hard` — a sharp transition between the normal and darkened portions;
+- `soft` — a smooth, raised-cosine transition.
+
+Default value: `hard`.
+
+
+## 6. Subpixel Mask
+
+The `Subpixel Mask` simulates the phosphor mask structure of a CRT or the pixel layout of a display. The red, green, and blue channels are passed through distinct vertical stripes.
+
+To compensate for the fact that each channel occupies approximately one-third of the total area, the brightness is multiplied by three. Consequently, highly saturated areas may be subject to clipping.
+
+### Mask
+
+Available types:
+
+- `aperture_grille` — straight vertical RGB stripes;
+- `shadow_mask` — a staggered (checkerboard-like) row structure, resembling the holes in a physical CRT mask;
+- `slot_mask` — an aperture grille with every second horizontal stripe darkened. Default value: `aperture_grille`.
+
+### Pitch
+
+- Range: `1–16`.
+- Step: `1`.
+- Default value: `1`.
+
+`Pitch` defines the width of a single color subpixel stripe. The full RGB triad period is equal to:
+3 × pitch
+
+For alignment with Pixelize, it is recommended to choose a `Pixel size` that is a multiple of `3 × Pitch`.
+
+For example:
+Pixelize Pixel size: 6
+Subpixel Mask Pitch: 2
+
+---
+
+## 7. Bloom
+
+`Bloom` extracts bright areas, blurs them, and overlays the resulting glow onto the original image.
+
+First, brightness is calculated according to Rec. 601; then, pixels exceeding a certain threshold are added to a "bright mask." This mask is blurred using a Gaussian blur and blended with the original image.
+
+### Threshold
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.7`.
+
+This is the brightness threshold above which pixels contribute to the glow effect.
+
+- Low threshold: more of the image glows;
+- High threshold: only the brightest areas glow;
+- `1.0`: the bright mask is empty, and the image remains unchanged.
+
+### Radius
+
+- Range: `0.5–100`.
+- Step: `0.5`.
+- Default value: `8`.
+
+This represents the sigma value for the Gaussian blur, measured in pixels.
+
+- Small value: a compact glow;
+- Large value: a broad, soft glow.
+
+### Intensity
+
+- Range: `0–4`.
+- Step: `0.05`.
+- Default value: `0.5`.
+
+Scales the contribution of the blurred "bright mask."
+
+- `0`: no visible bloom; - values ​​around `0.5`: moderate glow;
+- higher values: intense glow with a risk of overexposure (clipping).
+
+### Blend
+
+Possible values:
+
+- `screen` — a soft, additive-like blending mode based on the "Screen" formula;
+- `add` — direct addition of brightness values.
+
+Default value: `screen`.
+
+`screen` generally produces a softer look, whereas `add` causes bright areas to reach clipping more quickly.
+
+
+## 8. Chromatic Aberration
+
+`Chromatic Aberration` shifts the red and blue color channels relative to the green channel, which remains fixed. This creates colored red-and-blue fringes, mimicking the optical aberrations found in vintage lenses or CRT displays.
+
+### Amount
+
+- Range: `0–20`.
+- Step: `0.5`.
+- Default value: `2`.
+
+The unit represents the displacement in pixels.
+
+- `0`: no change (original image);
+- increasing the value: results in wider colored fringes.
+
+### Mode
+
+- `radial` — the displacement depends on the position relative to the center of the image;
+- `linear` — the red and blue channels are shifted horizontally in opposite directions.
+
+Default value: `radial`.
+
+In `linear` mode, the red channel shifts to the right, while the blue channel shifts to the left. In `radial` mode, the colored fringes are oriented relative to the center of the image.
+
+
+## 9. Curvature
+
+`Curvature` simulates the convex, barrel-like geometry of a CRT screen. Image coordinates are remapped outward from the center, with the center point remaining stationary.
+
+The corners may extend beyond the boundaries of the original image, resulting in black areas. The midpoints along the edges are compensated for via scaling, so standard black bars should not appear along the centers of the edges.
+
+### Amount
+
+- Range: `0–1`. - Step: `0.05`.
+- Default value: `0.15`.
+
+The strength of the geometric distortion.
+
+- `0`: original geometry;
+- increasing the value: the edges bulge outward more, and the corner areas become darker.
+
+## Edge softness
+
+- Range: `0–32`.
+- Step: `0.5`.
+- Default value: `0`.
+
+The width of the smooth transition to the black area at the edges (in pixels).
+
+- `0`: a hard edge;
+- increasing the value: a soft fade to black.
+
+The image within the area is not blurred; only the transition at the edge of the distortion is affected.
+
+## 10. Vignette
+
+`Vignette` darkens the image from the center toward the edges. Internally, the engine calculates the normalized distance from the center to the current point and then applies a power curve.
+### Strength
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.4`.
+
+The maximum degree of darkening.
+
+- `0`: effect disabled;
+- increasing the value: outer areas become darker.
+
+### Radius
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.8`.
+
+The normalized distance at which the darkening begins.
+
+- small value: darkening begins closer to the center;
+- large value: the center remains unchanged over a larger area;
+- `1`: effect absent.
+
+### Softness
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.5`.
+
+Controls the steepness of the transition.
+
+Higher values ​​result in a sharper transition closer to the edges.
+
+---
+
+## 11. VHS
+
+`VHS` applies four analog effects in sequence:
+
+1. chroma bleed;
+2. horizontal line jitter;
+3. additive noise;
+4. vertical brightening band.
+
+Each sub-effect is skipped if its strength is set to zero.
+
+### Noise
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.15`.
+
+The amplitude of Gaussian noise. The internal sigma is calculated as:
+sigma = noise × 40
+
+`0` disables the noise.
+
+### Chroma bleed
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.5`.
+
+Blurs the U/V color-difference components horizontally while preserving the luminance component. This simulates color bleeding typical of VHS tapes. The kernel width depends on the value and is constrained to a range of 3–15 pixels; the width is forced to an odd number.
+
+`0` disables chroma bleed.
+
+### Jitter
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.3`.
+
+Each row of the image is shifted by a random horizontal offset. The maximum amplitude is:
+jitter × 6 pixels
+
+Edge replication is used, so the image does not wrap around to the opposite side.
+
+### Band
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.3`.
+
+Adds a vertical brightness band with a Gaussian profile. The band only brightens the image; it does not darken it. Its position is chosen randomly.
+
+### Seed
+
+- Range: `0–2147483647`.
+- Step: `1`.
+- Default value: `0`.
+
+- `0`: new randomness for every run;
+- a value greater than `0`: repeatable randomness for a given seed.
+
+This is particularly important for batch processing and comparing results. If you need the same result upon subsequent runs, set a non-zero seed.
+
+### Noise mode
+
+- `mono` — a single, shared noise plane for all RGB channels;
+- `color` — independent noise for each channel.
+
+Default value: `color`.
+
+`mono` typically resembles luminance-based television noise. `color` creates chromatic noise variations across the channels.
+
+---
+
+## 12. LCD Dot Matrix
+
+`LCD Dot Matrix` overlays a regular LCD dot-matrix structure onto the image. The filter operates at the current resolution and does not alter the image dimensions. ### Cell size
+
+- Range: `1–64`.
+- Step: `1`.
+- Default value: `8`.
+
+The side length of a single cell, in pixels.
+
+To align the LCD grid with the Pixelize effect, it is common to use matching values:
+Pixelize Pixel size = 8
+LCD Dot Matrix Cell size = 8
+
+### Gap ratio
+
+- Range: `0–0.5`.
+- Step: `0.05`.
+- Default value: `0.15`.
+
+The proportion of the gap surrounding the active area of ​​each cell.
+
+- `0`: no gap; the effect is nearly identical to the original image.
+- Increasing the value: the active dots become smaller.
+- `0.5`: the maximum gap size available via the interface.
+
+### Grid dark
+
+- Range: `0–1`.
+- Step: `0.05`.
+- Default value: `0.6`.
+
+The darkness level of the inactive area (the gaps).
+
+- `0`: the gaps are not darkened.
+- `1`: the gaps are completely black.
+
+### Shape
+
+- `square` — a square active area within each cell.
+- `round` — a circular dot.
+
+Default value: `square`.
+
+---
+
+# How to build a processing chain
+
+## Pixel-art chain
+
+Pixelize → Palette Quantize
+
+Recommended settings:
+Pixelize:
+Pixel size: 8
+Sampling: mode
+Pre-blur: 0
+
+Palette Quantize:
+Built-in palette: pico8_16
+Dithering: none or bayer4
+Dither strength: 1
+
+For a smoother-looking image, you can add a `Pre-blur` value in the range of `0.5–1.5`. ## CRT Monitor
+Pixelize → Scanlines → Subpixel Mask → Bloom → Curvature → Vignette
+
+Starting configuration:
+Pixelize:
+Pixel size: 6–9
+Sampling: mode
+Scanlines:
+Pitch: 2
+Thickness: 0.5
+Strength: 0.35
+Profile: hard
+Subpixel Mask:
+Mask: aperture_grille
+Pitch: 1
+Bloom:
+Threshold: 0.7
+Radius: 8
+Intensity: 0.5
+Blend: screen
+Curvature:
+Amount: 0.15
+Edge softness: 0–4
+Vignette:
+Strength: 0.4
+Radius: 0.8
+Softness: 0.5
+
+If the mask pattern appears too dense, increase `Subpixel Mask → Pitch`. If colored stripes become too noticeable, decrease `Pixelize → Pixel size` or remove the Subpixel Mask from the chain.
+
+## VHS Tape
+
+VHS → Bloom
+
+Starting parameters for VHS:
+Noise: 0.15
+Chroma bleed: 0.5
+Jitter: 0.3
+Band: 0.3
+Seed: 0
+Noise mode: color
+
+For a reproducible result, set the `Seed` to a specific value (e.g., `12345`). To generate a new noise pattern each time you run it, leave it set to `0`.
+
+## Black and White Image with Dithering
+
+Dither
+
+Recommended parameters:
+
+Levels per channel: 4
+Mode: mono
+Method: floyd-steinberg
+Strength: 1.0
+gth: 1
+Serpentine diffusion: enabled
+
+## LCD Screen
+
+Pixelize → LCD Dot Matrix
+
+For a matching grid pitch:
+
+Pixelize Pixel size: 8
+LCD Dot Matrix Cell size: 8
+LCD Dot Matrix Gap ratio: 0.15–0.25
+LCD Dot Matrix Grid dark: 0.6
+LCD Dot Matrix Shape: square or round
+
+
+# Input Files and Execution
+
+## Multiple Images
+
+The upload section features a field to "Drag (Select) 1 or more reference images."
+
+You can select one or more images. Once selected, click: Start.
+
+The chosen processing chain is applied to each input file.
+
+## ZIP File
+
+When "Upload ZIP-file" is enabled, the interface switches to allow for a ZIP file upload. The archive is extracted to:
+
+## Execution Order
+
+Before processing:
+
+1. `batch_post` is cleared;
+2. `batch_temp` is cleared;
+3. Standard images are copied—or a ZIP file is extracted—into `batch_post`;
+4. The extension reads the input files;
+5. Each filter in the chain is applied sequentially;
+6. Results are saved to `batch_temp`;
+7. If there are multiple results, a ZIP file is created.
+
+---
+
+# Results and Filenames
+
+Filenames consist of the original name (without the extension), the date and time of execution, and the suffix `filters`.
+
+If intermediate saving is enabled and the chain contains multiple filters, the intermediate files are assigned an additional suffix, `chain`, followed by the filter's position in the sequence.
+
+## Preview, Image Output, and ZIP
+
+During processing, the result is temporarily displayed in the "Process preview" section.
+
+If there is a single output file, it can be presented directly as an image. If there are multiple files—for instance, due to multiple input images or intermediate saves—a ZIP file is generated for download.
+
+Intermediate files are also included in the ZIP archive. When a single input image is processed with intermediate saving enabled, multiple files are generated. Following this process, a collapsed `compare` accordion appears, allowing you to compare the images from before and after processing.
+
 ## Что делает расширение
+([Read in English](#What-the-extension-does))
 
 Filters применяет к изображениям набор математических эффектов в стиле pixel art, CRT, LCD, VHS и старых игровых систем. Обработка выполняется непосредственно над изображением.
 
@@ -242,19 +999,13 @@ levels = 2 ** value
 - Значение по умолчанию: `4`.
 
 Это количество уровней квантования для каждого канала.
-
 Малое значение создаёт более грубую постеризацию. Большое значение сохраняет больше оттенков.
 
 ### Mode
 
 Доступные значения:
-
 - `color` — каждый RGB-канал обрабатывается независимо;
-- `mono` — изображение сначала переводится в яркость по Rec. 601:
-
-```text
-Y = 0.299 R + 0.587 G + 0.114 B
-```
+- `mono` — изображение сначала переводится в яркость по Rec. 601: Y = 0.299 R + 0.587 G + 0.114 B
 
 Затем один канал яркости копируется в три канала и дизерится. Результат является серым изображением.
 
@@ -263,7 +1014,6 @@ Y = 0.299 R + 0.587 G + 0.114 B
 ### Method
 
 В UI доступны:
-
 - `bayer2`;
 - `bayer4`;
 - `bayer8`;
@@ -284,12 +1034,10 @@ Y = 0.299 R + 0.587 G + 0.114 B
 
 ### Serpentine diffusion
 
-- Тип: чекбокс.
 - По умолчанию: включён.
 
 Используется прежде всего методами error diffusion. Чередование направления строк уменьшает регулярные направленные артефакты.
 
----
 
 ## 5. Scanlines
 
@@ -326,7 +1074,6 @@ Y = 0.299 R + 0.587 G + 0.114 B
 - Значение по умолчанию: `0.35`.
 
 Это максимальная степень затемнения строк.
-
 - `0`: эффект отсутствует;
 - увеличение значения делает полосы темнее.
 
@@ -334,7 +1081,7 @@ Y = 0.299 R + 0.587 G + 0.114 B
 
 ### Offset
 
-- Диапазон: `-64–64`.
+- Диапазон: `-64 – +64`.
 - Шаг: `1`.
 - Значение по умолчанию: `0`.
 
@@ -349,7 +1096,6 @@ Y = 0.299 R + 0.587 G + 0.114 B
 
 Значение по умолчанию: `hard`.
 
----
 
 ## 6. Subpixel Mask
 
@@ -374,19 +1120,13 @@ Y = 0.299 R + 0.587 G + 0.114 B
 - Значение по умолчанию: `1`.
 
 `Pitch` задаёт ширину полосы одного цветового субпикселя. Полный RGB-триадный период равен:
-
-```text
 3 × pitch
-```
 
 Для согласования с Pixelize рекомендуется выбирать `Pixel size`, кратный `3 × Pitch`.
 
 Например:
-
-```text
 Pixelize Pixel size: 6
 Subpixel Mask Pitch: 2
-```
 
 ---
 
@@ -442,7 +1182,6 @@ Subpixel Mask Pitch: 2
 
 `screen` обычно выглядит мягче, а `add` быстрее приводит яркие области к clipping.
 
----
 
 ## 8. Chromatic Aberration
 
@@ -468,7 +1207,6 @@ Subpixel Mask Pitch: 2
 
 В linear-режиме красный канал сдвигается вправо, а синий влево. В radial-режиме цветные края ориентированы относительно центра изображения.
 
----
 
 ## 9. Curvature
 
@@ -500,7 +1238,6 @@ Subpixel Mask Pitch: 2
 
 Изображение внутри области не размывается. Меняется только переход на границе искажения.
 
----
 
 ## 10. Vignette
 
@@ -535,11 +1272,7 @@ Subpixel Mask Pitch: 2
 - Шаг: `0.05`.
 - Значение по умолчанию: `0.5`.
 
-Управляет крутизной перехода. В оригинальном алгоритме показатель степени равен:
-
-```text
-1 + softness × 4
-```
+Управляет крутизной перехода.
 
 Большие значения дают более резкий переход ближе к краям.
 
@@ -563,10 +1296,7 @@ Subpixel Mask Pitch: 2
 - Значение по умолчанию: `0.15`.
 
 Амплитуда Gaussian noise. Внутренняя sigma рассчитывается как:
-
-```text
 sigma = noise × 40
-```
 
 `0` отключает шум.
 
@@ -589,10 +1319,7 @@ sigma = noise × 40
 - Значение по умолчанию: `0.3`.
 
 Каждая строка изображения сдвигается на случайное горизонтальное смещение. Максимальная амплитуда равна:
-
-```text
 jitter × 6 пикселей
-```
 
 Используется edge replication, поэтому изображение не заворачивается по кругу на противоположный край.
 
@@ -639,11 +1366,8 @@ jitter × 6 пикселей
 Размер стороны одной ячейки в пикселях.
 
 Чтобы согласовать LCD-сетку с Pixelize, обычно выбирают одинаковые значения:
-
-```text
 Pixelize Pixel size = 8
 LCD Dot Matrix Cell size = 8
-```
 
 ### Gap ratio
 
@@ -681,13 +1405,9 @@ LCD Dot Matrix Cell size = 8
 
 ## Pixel-art цепочка
 
-```text
 Pixelize → Palette Quantize
-```
 
 Рекомендуемые значения:
-
-```text
 Pixelize:
   Pixel size: 8
   Sampling: mode
@@ -697,145 +1417,92 @@ Palette Quantize:
   Built-in palette: pico8_16
   Dithering: none или bayer4
   Dither strength: 1
-```
+
 
 Для более гладкой фотографии можно добавить `Pre-blur` в диапазоне `0.5–1.5`.
 
 ## CRT Monitor
-
-```text
 Pixelize → Scanlines → Subpixel Mask → Bloom → Curvature → Vignette
-```
 
 Стартовый вариант:
-
-```text
 Pixelize:
   Pixel size: 6–9
   Sampling: mode
-
 Scanlines:
   Pitch: 2
   Thickness: 0.5
   Strength: 0.35
   Profile: hard
-
 Subpixel Mask:
   Mask: aperture_grille
   Pitch: 1
-
 Bloom:
   Threshold: 0.7
   Radius: 8
   Intensity: 0.5
   Blend: screen
-
 Curvature:
   Amount: 0.15
   Edge softness: 0–4
-
 Vignette:
   Strength: 0.4
   Radius: 0.8
   Softness: 0.5
-```
 
 Если маска выглядит слишком частой, увеличьте `Subpixel Mask → Pitch`. Если стали слишком заметны цветные полосы, уменьшите `Pixelize → Pixel size` или уберите Subpixel Mask из цепочки.
 
 ## VHS Tape
 
-```text
 VHS → Bloom
-```
 
 Стартовые параметры VHS:
-
-```text
 Noise: 0.15
 Chroma bleed: 0.5
 Jitter: 0.3
 Band: 0.3
 Seed: 0
 Noise mode: color
-```
 
 Для повторяемого результата установите, например, `Seed: 12345`. Для нового варианта шума при каждом запуске оставьте `0`.
 
 ## Чёрно-белое изображение с дизерингом
 
-```text
 Dither
-```
 
 Рекомендуемые параметры:
 
-```text
 Levels per channel: 4
 Mode: mono
 Method: floyd-steinberg
 Strength: 1
 Serpentine diffusion: включён
-```
 
 ## LCD-экран
 
-```text
 Pixelize → LCD Dot Matrix
-```
 
 Для совпадающего шага сетки:
 
-```text
 Pixelize Pixel size: 8
 LCD Dot Matrix Cell size: 8
 LCD Dot Matrix Gap ratio: 0.15–0.25
 LCD Dot Matrix Grid dark: 0.6
 LCD Dot Matrix Shape: square или round
-```
 
----
 
 # Входные файлы и запуск
 
 ## Несколько изображений
 
-В блоке загрузки используется поле:
+В блоке загрузки используется поле Drag (Select) 1 or more reference images
 
-```text
-Drag (Select) 1 or more reference images
-```
-
-Можно выбрать одно или несколько изображений. При обычной загрузке расширение копирует их в:
-
-```text
-temp_path/batch_post
-```
-
-Имена копируются из исходных имён файлов. Перед новым запуском каталог очищается.
-
-После этого нажмите:
-
-```text
-Start postprocessing
-```
+Можно выбрать одно или несколько изображений. После этого нажмите: Start
 
 Для каждого входного файла выполняется одна и та же выбранная цепочка.
 
 ## ZIP-файл
 
-При включении:
-
-```text
-Upload ZIP-file
-```
-
-интерфейс переключается на загрузку ZIP. Архив распаковывается в:
-
-```text
-temp_path/batch_post
-```
-
-Текущая batch-логика использует обычное извлечение ZIP. Файлы из распакованного каталога затем обрабатываются в отсортированном порядке имён верхнего уровня `batch_post`.
+При включении Upload ZIP-file интерфейс переключается на загрузку ZIP. Архив распаковывается в:
 
 ## Порядок выполнения
 
@@ -853,189 +1520,17 @@ temp_path/batch_post
 
 # Результаты и имена файлов
 
-Финальные результаты сохраняются в:
+В имени используются исходное имя без расширения, дата и время запуска, затем суффикс `filters`.
 
-```text
-temp_path/batch_temp
-```
-
-Для входного файла `portrait.png` финальное имя имеет текущий формат:
-
-```text
-portrait2026-11-22_09-27-52_logo.png
-```
-
-В имени используются исходное имя без расширения, дата и время запуска, затем суффикс `_logo.png`.
-
-Если включено промежуточное сохранение и в цепочке несколько фильтров, промежуточные файлы получают имена:
-
-```text
-portrait2026-11-22_09-27-52_logo_chain_1.png
-portrait2026-11-22_09-27-52_logo_chain_2.png
-```
-
-Номер является порядковым номером фильтра в цепочке и начинается с `1`.
-
-Финальный файл создаётся всегда. После последнего фильтра отдельный `_chain_N.png` не создаётся.
+Если включено промежуточное сохранение и в цепочке несколько фильтров, то промежуточные файлы получают дополнительный суффика `chain` c номером фильтра в цепочке
 
 ## Preview, Image output и ZIP
 
 Во время обработки результат временно показывается в `Process preview`.
 
-Когда в `batch_temp` один файл, он может быть выдан напрямую как изображение. Когда файлов несколько, например из-за нескольких входных изображений или промежуточных сохранений, `batch.output_zip_image()` создаёт ZIP для скачивания.
+Когда на выходе один файл, он может быть выдан напрямую как изображение. Когда файлов несколько, например из-за нескольких входных изображений или промежуточных сохранений, то создаёт ZIP для скачивания.
 
 Промежуточные файлы также входят в ZIP.
 
-## Ограничение Before/After comparison
+При одном входном изображении и включённом промежуточном сохранении оказывается несколько файлов. После такой обработки воявляется закрытый аккордеон `compare`, в котором можно сравнить изображения до и после обработки.
 
-Текущий общий `imageslider` показывает сравнение только если в каталогах до и после находится ровно по одному файлу.
-
-При одном входном изображении и включённом промежуточном сохранении в `batch_temp` оказывается несколько файлов:
-
-```text
-1 входной файл
-3 результата: chain_1, chain_2, final
-```
-
-В такой ситуации текущая проверка `imageslider.update_from_directories()` скрывает Before/After, поскольку после обработки найдено не ровно одно изображение. Это не ошибка самих фильтров. Это ограничение общей логики выбора пары сравнения.
-
-При отключённом промежуточном сохранении и одном входном изображении остаётся одна пара, поэтому сравнение может быть показано.
-
----
-
-# Логи
-
-Перед запуском каждого фильтра печатается его имя и фактические параметры:
-
-```text
-[Postprocess FILTER] start: Pixelize; settings: {...}
-```
-
-Перед сохранением промежуточного результата:
-
-```text
-[Postprocess SAVE] intermediate: ..._chain_1.png
-```
-
-Перед сохранением финального результата:
-
-```text
-[Postprocess SAVE] final: ..._logo.png
-```
-
-Лог позволяет проверить, что фильтр действительно включён в цепочку и какие настройки были переданы обработчику.
-
----
-
-# Безопасный первый запуск
-
-Для первой проверки рекомендуется использовать одно небольшое изображение и одну короткую цепочку:
-
-```text
-Filter chain:
-  Pixelize → Scanlines → Bloom
-
-Save result after each filter:
-  выключен
-```
-
-Настройки:
-
-```text
-Pixelize:
-  Pixel size: 8
-  Sampling: mode
-  Pre-blur: 0
-
-Scanlines:
-  Pitch: 2
-  Thickness: 0.5
-  Strength: 0.35
-  Offset: 0
-  Profile: hard
-
-Bloom:
-  Threshold: 0.7
-  Radius: 8
-  Intensity: 0.5
-  Blend: screen
-```
-
-Если результат подходит, включите `Save result after each filter` и повторите запуск. Тогда в ZIP появятся отдельные результаты после Pixelize и Scanlines, а финальный результат после Bloom останется отдельным файлом.
-
----
-
-# Troubleshooting
-
-## Фильтр настроен, но визуально не влияет на результат
-
-Проверьте, добавлен ли этот фильтр в `Filter chain (selection order)`. Настройка через `Filter to configure` сама по себе не включает фильтр.
-
-Также проверьте значение эффекта. Например:
-
-- `Bloom → Intensity = 0` отключает видимый bloom;
-- `Vignette → Strength = 0` отключает vignette;
-- `Chromatic Aberration → Amount = 0` оставляет изображение без цветового смещения;
-- `LCD Dot Matrix → Gap ratio = 0` или `Grid dark = 0` дают практически идентичный результат;
-- `Bloom → Threshold = 1` возвращает вход без свечения;
-- `Vignette → Radius = 1` не запускает затемнение.
-
-## Color Depth выдаёт ошибку при запуске
-
-Проверьте соответствие `Interpret value as` и `Bits / levels`:
-
-- `bits`: только `1–8`;
-- `levels`: только `2–64`.
-
-UI Slider имеет общий диапазон `1–64`, но движок применяет разные ограничения в двух режимах.
-
-## Результат слишком тёмный после Subpixel Mask
-
-Subpixel Mask компенсирует маску умножением яркости, но насыщенные участки могут клиповаться, а тип маски может визуально сильно затемнять структуру. Попробуйте:
-
-1. уменьшить `Pitch`;
-2. выбрать `aperture_grille`;
-3. убрать из цепочки одновременно слишком сильные `Scanlines` или `Vignette`;
-4. проверить порядок фильтров.
-
-## Результат слишком размытый после Pixelize
-
-Проверьте `Pre-blur`. Для жёсткого pixel-art установите `0`. Затем попробуйте `Sampling = mode` или `center`.
-
-## VHS даёт разный результат при каждом запуске
-
-Это ожидается при `Seed = 0`. Нулевой seed означает свежую случайность. Для повторяемого результата задайте ненулевое значение, например `12345`.
-
-## Не показывается Before/After
-
-Проверьте следующие условия:
-
-- не включён ли ZIP-ввод;
-- загружено ли ровно одно входное изображение;
-- включено ли промежуточное сохранение.
-
-При промежуточном сохранении в `batch_temp` находится несколько файлов, а текущий `imageslider` показывает сравнение только при ровно одном файле до и после обработки.
-
-## В ZIP несколько файлов вместо одного изображения
-
-Это ожидаемо, если:
-
-- обработано несколько входных изображений;
-- включено `Save result after each filter`.
-
-`batch.output_zip_image()` выдаёт ZIP, если в `batch_temp` найдено более одного результата.
-
----
-
-# Источники
-
-1. [Оригинальный README ComfyUI-LukutarRetro, commit `c43283c4740d7ac39cb4f3de2ac8d98fdde4a8bb`](https://github.com/Mistress-Lukutar/ComfyUI-LukutarRetro/blob/c43283c4740d7ac39cb4f3de2ac8d98fdde4a8bb/README.md) — описание алгоритмов, параметров, диапазонов и поведения оригинальных фильтров.
-2. [Оригинальный `core/pixelize.py`](https://github.com/Mistress-Lukutar/ComfyUI-LukutarRetro/blob/c43283c4740d7ac39cb4f3de2ac8d98fdde4a8bb/core/pixelize.py) — методы выборки и пикселизация.
-3. [Оригинальный `core/palettes.py`](https://github.com/Mistress-Lukutar/ComfyUI-LukutarRetro/blob/c43283c4740d7ac39cb4f3de2ac8d98fdde4a8bb/core/palettes.py) — встроенные палитры и разбор пользовательской палитры.
-4. [Оригинальный `core/dither.py`](https://github.com/Mistress-Lukutar/ComfyUI-LukutarRetro/blob/c43283c4740d7ac39cb4f3de2ac8d98fdde4a8bb/core/dither.py) — Bayer и error-diffusion методы.
-5. [Оригинальный `core/crt.py`](https://github.com/Mistress-Lukutar/ComfyUI-LukutarRetro/blob/c43283c4740d7ac39cb4f3de2ac8d98fdde4a8bb/core/crt.py) — Scanlines, Subpixel Mask, Bloom, Chromatic Aberration, Curvature и Vignette.
-6. [Оригинальный `core/analog.py`](https://github.com/Mistress-Lukutar/ComfyUI-LukutarRetro/blob/c43283c4740d7ac39cb4f3de2ac8d98fdde4a8bb/core/analog.py) — VHS и LCD Dot Matrix.
-7. Локальный UI текущего расширения: `extentions/postprocessing/chain_ui.py`.
-8. Локальная диспетчеризация и batch-обработка: `extentions/postprocessing/main.py`.
-9. Локальная файловая логика batch: `extentions/batch.py`.
-10. Локальная логика Before/After: `modules/imageslider.py`.
