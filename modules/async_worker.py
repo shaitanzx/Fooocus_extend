@@ -694,12 +694,13 @@ def worker():
                     f"[Filters GENERATION] chain: "
                     f"{' -> '.join(operations)}"
                 )
-                imgs = apply_filters_to_images(
+                temp_imgs = apply_filters_to_images(
                     imgs,
                     operations,
                     params_by_operation,
                 )
-        
+                imgs[-1 if not async_task.face_temp else len(imgs):] = temp_imgs
+                
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
@@ -715,7 +716,7 @@ def worker():
                 if async_task.poKeepPnm:
                     image_png = np.array(image)
                     imgs.append(image_png)
-
+filters_save_intermediate
             progressbar(async_task, current_progress, f'Vectorization image ...')
             _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
             os.makedirs(os.path.dirname(filename), exist_ok=True)
