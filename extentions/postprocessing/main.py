@@ -133,7 +133,7 @@ def run(op, *values):
         yield gr.update(value=img,visible=True),gr.update(visible=False)
         image=np.array(img)
 
-        result = _apply(_rgb(image), operation, **data)
+        result = _apply(_rgb(image), op, **data)
 
         pil = Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), mode="RGB")
         name, _ = os.path.splitext(f_name)
