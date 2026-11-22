@@ -47,7 +47,15 @@ FILTERS = (
     "Vignette", "VHS", "LCD Dot Matrix",
 )
 
+def prepare_comparison(zip_image):
+    """Apply FaceEnhancer-specific rules and delegate to the shared slider."""
+    if zip_image:
+        return imageslider.hidden_updates()
 
+    target_dir = os.path.join(temp_dir, "batch_post")
+    result_dir = os.path.join(temp_dir, "batch_temp")
+
+    return imageslider.update_from_directories(target_dir, result_dir) 
 def _rgb(image: np.ndarray) -> np.ndarray:
     """Return a contiguous float32 RGB frame in the engine's [0, 255] range."""
     arr = np.asarray(image)
@@ -101,9 +109,46 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
     if operation == "LCD Dot Matrix":
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
     raise ValueError(f"Unknown Retro filter: {operation}")
+def run(op, *values):
+    names = ["pixel_size", "sampling", "pre_blur", "palette", "custom_palette", "palette_dither", "dither_strength", "serpentine",
+                "depth_mode", "depth_value", "levels", "dither_mode", "dither_method", "dither_strength_2", "serpentine_2",
+                "pitch", "thickness", "scan_strength", "offset", "profile", "mask", "mask_pitch", "threshold", "radius", "intensity",
+                "blend", "aberration_amount", "aberration_mode", "curvature_amount", "edge_softness", "vignette_strength",
+                "vignette_radius", "vignette_softness", "noise", "chroma_bleed", "jitter", "band", "seed", "noise_mode",
+                "cell_size", "gap_ratio", "grid_dark", "shape"]
+    data = dict(zip(names, values))
+    data["dither_strength"] = data["dither_strength_2"] if op == "Dither" else data["dither_strength"]
+    data["serpentine"] = data["serpentine_2"] if op == "Dither" else data["serpentine"]
+
+    batch_path=f"{temp_dir}batch_post"
+    batch_temp=f"{temp_dir}batch_temp"
+    batch_files=sorted([name for name in os.listdir(batch_path) if os.path.isfile(os.path.join(batch_path, name))])
+    batch_all=len(batch_files)
+    passed=1
+    for f_name in batch_files:
+        print (f"\033[91m[Postprocess QUEUE] {passed} / {batch_all}. Filename image: {f_name} \033[0m")
+        gr.Info(f"Postprocess Batch: start element generation {passed}/{batch_all}. Filename image: {f_name}")
+        img = Image.open(batch_path+os.path.sep+f_name)
+
+        yield gr.update(value=img,visible=True),gr.update(visible=False)
+        image=np.array(img)
+
+        result = _apply(_rgb(image), operation, **data)
+
+        pil = Image.fromarray(np.clip(result, 0, 255).astype(np.uint8), mode="RGB")
+        name, _ = os.path.splitext(f_name)
+        current_time = datetime.datetime.now()
+        time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+        suf = f'{time_string}_logo.png'
+        filename =  batch_temp + os.path.sep + name + suf
+        pil.save(filename)
+        passed+=1
+    return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
-def process(image: np.ndarray, operation: str, **params: object):
+def process(operation: str, **params: object):
+
+
     """Process an image and return a PIL preview plus a saved PNG path."""
     if image is None:
         raise gr.Error("Upload an image first.")
@@ -148,7 +193,7 @@ def gui():
     #         preview = gr.Image(label="Processed preview", type="pil", height=420, interactive=False)
     #         output_file = gr.File(label="Saved PNG", interactive=False)
 
-    with gr.Accordion("Filter parameters", open=True, interactive=True):
+    with gr.Accordion("Filter parameters", open=True):
         rows = {}
         with gr.Group(visible=True) as rows["pixel"]:
             pixel_size = gr.Slider(1, 128, value=8, step=1, label="Pixel size",interactive=True)
@@ -206,8 +251,9 @@ def gui():
             grid_dark = gr.Slider(0, 1, value=0.6, step=0.05, label="Grid dark",interactive=True)
             shape = gr.Dropdown(DOT_SHAPES, value="square", label="Shape",interactive=True)
     with gr.Row():
-        apply_btn = gr.Button("Apply Retro Filter", variant="primary")
-    
+        apply_btn = gr.Button("Start postprocessing", variant="primary")
+    with gr.Row(visible=False):
+        ext_dir=gr.Textbox(value='batch_post',visible=False)
     visibility_outputs = list(rows.values())
     operation.change(_vis, inputs=operation, outputs=visibility_outputs, show_progress=False)
     params = [pixel_size, sampling, pre_blur, palette, custom_palette, palette_dither, dither_strength, serpentine,
@@ -216,16 +262,20 @@ def gui():
               blend, aberration_amount, aberration_mode, curvature_amount, edge_softness, vignette_strength,
               vignette_radius, vignette_softness, noise, chroma_bleed, jitter, band, seed, noise_mode,
               cell_size, gap_ratio, grid_dark, shape]
-    def run(image, op, *values):
-        names = ["pixel_size", "sampling", "pre_blur", "palette", "custom_palette", "palette_dither", "dither_strength", "serpentine",
-                 "depth_mode", "depth_value", "levels", "dither_mode", "dither_method", "dither_strength_2", "serpentine_2",
-                 "pitch", "thickness", "scan_strength", "offset", "profile", "mask", "mask_pitch", "threshold", "radius", "intensity",
-                 "blend", "aberration_amount", "aberration_mode", "curvature_amount", "edge_softness", "vignette_strength",
-                 "vignette_radius", "vignette_softness", "noise", "chroma_bleed", "jitter", "band", "seed", "noise_mode",
-                 "cell_size", "gap_ratio", "grid_dark", "shape"]
-        data = dict(zip(names, values))
-        data["dither_strength"] = data["dither_strength_2"] if op == "Dither" else data["dither_strength"]
-        data["serpentine"] = data["serpentine_2"] if op == "Dither" else data["serpentine"]
-        return process(image, op, **data)
+
     # apply_btn.click(run, inputs=[source, operation] + params, outputs=[preview, output_file], show_progress=True)
     # return source, preview, output_file
+    apply_btn.click(lambda: 
+             (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[apply_btn,file_out,image_out]) \
+              .then(fn=imageslider.reset, outputs=[compare_slider, compare_accordion]) \
+              .then(fn=batch.clear_dirs,inputs=ext_dir) \
+              .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
+              .then(fn=run, inputs=[operation]+params,
+                        outputs=[preview,file_out],show_progress=False) \
+              .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
+              .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
+              .then(fn=lambda zip_image: prepare_comparison(zip_image),inputs=[enable_zip_image],outputs=[compare_slider, compare_accordion]) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)
+
+
+             
