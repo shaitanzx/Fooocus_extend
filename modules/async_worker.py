@@ -600,7 +600,24 @@ def worker():
             d.append(('FaceEnhancer upscale scale', 'upscale_scale', async_task.upscale_scale))
             d.append(('FaceEnhancer face detection', 'face_detection', async_task.face_detection))
             d.append(('FaceEnhancer face detection only center', 'face_detection_only_center', async_task.face_detection_only_center))
-            d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))       
+            d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))
+        if async_task.filters_enabled:
+            _fc = collect_chain([
+                async_task.filters_chain,
+                async_task.filters_save_intermediate,
+                async_task.filters_settings_filter,
+                *async_task.filters_controls,
+            ])
+            _f_ops = _fc["operations"]
+            _f_params = _fc["params"]
+            if _f_ops:
+                _f_lines = [" -> ".join(_f_ops)]
+                _f_lines += [
+                    f"{_op}; settings: {_f_params.get(_op, {})}"
+                    for _op in _f_ops
+                ]
+                d.append(("Filters chain", "filters_chain", "\n".join(_f_lines)))
+
         log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True, name_prefix=async_task.name_prefix)
         return
 
@@ -843,7 +860,22 @@ def worker():
                 d.append(('FaceEnhancer face detection', 'face_detection', async_task.face_detection))
                 d.append(('FaceEnhancer face detection only center', 'face_detection_only_center', async_task.face_detection_only_center))
                 d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))
-                
+            if async_task.filters_enabled:
+                _fc = collect_chain([
+                    async_task.filters_chain,
+                    async_task.filters_save_intermediate,
+                    async_task.filters_settings_filter,
+                    *async_task.filters_controls,
+                ])
+                _f_ops = _fc["operations"]
+                _f_params = _fc["params"]
+                if _f_ops:
+                    _f_lines = [" -> ".join(_f_ops)]
+                    _f_lines += [
+                        f"{_op}; settings: {_f_params.get(_op, {})}"
+                        for _op in _f_ops
+                    ]
+                    d.append(("Filters chain", "filters_chain", "\n".join(_f_lines)))                
                 
             metadata_parser = None
             if async_task.save_metadata_to_images:
