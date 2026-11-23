@@ -698,6 +698,7 @@ def worker():
                     imgs,
                     operations,
                     params_by_operation,
+                    async_task.filters_save_intermediate
                 )
                 imgs[-1 if not async_task.filters_save_intermediate else len(imgs):] = temp_imgs
 

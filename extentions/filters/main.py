@@ -117,7 +117,7 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
     if operation == "LCD Dot Matrix":
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
     raise ValueError(f"Unknown filter: {operation}")
-def apply_filters_to_images(images,operations,params_by_operation):
+def apply_filters_to_images(images,operations,params_by_operation,saving):
     """Apply the selected Filters chain to one in-memory numpy image.
 
     Input:
@@ -127,6 +127,7 @@ def apply_filters_to_images(images,operations,params_by_operation):
         one processed RGB numpy array with shape (H, W, C).
     """
     image = images[-1]
+    output = []
     operations = [
         operation
         for operation in (operations or [])
@@ -157,6 +158,10 @@ def apply_filters_to_images(images,operations,params_by_operation):
                 operation,
                 **operation_params,
             )
+            out_image = np.clip(current, 0, 255).astype(np.uint8, copy=False)
+            if saving:
+                output.append(out_image)
+
         except Exception as error:
             # Изолируем сбой одного фильтра: логируем, прерываем цепочку и
             # возвращаем максимально обработанный кадр, чтобы генерация не
@@ -165,9 +170,10 @@ def apply_filters_to_images(images,operations,params_by_operation):
             print(f"[Filters GENERATION] stage {chain_index} '{operation}' failed: {error}")
             traceback.print_exc()
             break
-
+    if not saving:
+        output.append(out_image)
     # Возвращаем один numpy-массив в списке.
-    return [np.clip(current, 0, 255).astype(np.uint8, copy=False)]
+    return output
 
 def run_chain_batch(*slot_values):
     """Run the selected chain while preserving the existing batch file flow."""
