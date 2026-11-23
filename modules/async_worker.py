@@ -665,8 +665,6 @@ def worker():
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
-
-
         if async_task.face_en_enabled:
             progressbar(async_task, current_progress, 'FaceEnhancer in progress ...')
             temp_imgs = FaceEnhancer.upscale.inference(imgs,async_task.face_model,async_task.upscale_model,
@@ -684,10 +682,8 @@ def worker():
                     *async_task.filters_controls,
                 ]
             )
-
             operations = filters_config["operations"]
             params_by_operation = filters_config["params"]
-
             if operations:
                 progressbar(async_task,current_progress,"Filters in progress ...")
                 print(

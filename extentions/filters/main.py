@@ -75,7 +75,6 @@ def _rgb(image: np.ndarray) -> np.ndarray:
         arr = arr * 255.0
     return np.ascontiguousarray(np.clip(arr, 0, 255).astype(np.float32))
 
-
 def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
     """Dispatch one UI operation to the corresponding upstream engine."""
     if operation == "Pixelize":
@@ -118,14 +117,6 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
     raise ValueError(f"Unknown filter: {operation}")
 def apply_filters_to_images(images,operations,params_by_operation,saving):
-    """Apply the selected Filters chain to one in-memory numpy image.
-
-    Input:
-        image: one RGB numpy array with shape (H, W, C).
-
-    Output:
-        one processed RGB numpy array with shape (H, W, C).
-    """
     image = images[-1]
     output = []
     operations = [
@@ -134,11 +125,7 @@ def apply_filters_to_images(images,operations,params_by_operation,saving):
         if operation in FILTERS
     ]
 
-    # Нормализуем одно входное изображение.
     current = _rgb(image)
-
-    # Если цепочка пустая, возвращаем одно numpy-изображение в списке
-    # (контракт: всегда list[np.ndarray] длиной 1, как ждёт async_worker).
     if not operations:
         return [image]
 
@@ -153,26 +140,18 @@ def apply_filters_to_images(images,operations,params_by_operation,saving):
             f"settings: {operation_params}"
         )
         try:
-            current = _apply(
-                current,
-                operation,
-                **operation_params,
-            )
+            current = _apply(current,operation,**operation_params)
             out_image = np.clip(current, 0, 255).astype(np.uint8, copy=False)
             if saving:
                 output.append(out_image)
 
         except Exception as error:
-            # Изолируем сбой одного фильтра: логируем, прерываем цепочку и
-            # возвращаем максимально обработанный кадр, чтобы генерация не
-            # падала целиком (аналог try/except в FaceEnhancer.Upscale.inference).
             import traceback
             print(f"[Filters GENERATION] stage {chain_index} '{operation}' failed: {error}")
             traceback.print_exc()
             break
     if not saving:
         output.append(out_image)
-    # Возвращаем один numpy-массив в списке.
     return output
 
 def run_chain_batch(*slot_values):
@@ -201,9 +180,7 @@ def run_chain_batch(*slot_values):
             f"Postprocess Batch: start element generation "
             f"{passed}/{batch_all}. Filename image: {f_name}"
         )
-        img = Image.open(
-            os.path.join(batch_path, f_name)
-        )
+        img = Image.open(os.path.join(batch_path, f_name))
 
         yield gr.update(value=img, visible=True), gr.update(visible=False)
 
@@ -219,11 +196,7 @@ def run_chain_batch(*slot_values):
                 f"[Postprocess FILTER] start: {operation}; "
                 f"settings: {operation_params}"
             )
-            current = _apply(
-                current,
-                operation,
-                **operation_params,
-            )
+            current = _apply(current,operation,**operation_params)
 
             if save_intermediate and chain_index < len(operations):
                 intermediate = Image.fromarray(
@@ -231,16 +204,10 @@ def run_chain_batch(*slot_values):
                     mode="RGB",
                 )
                 final_stem, _ = os.path.splitext(final_filename)
-                intermediate_filename = (
-                    f"{final_stem}_chain_{chain_index}.png"
-                )
-                
+                intermediate_filename = (f"{final_stem}_chain_{chain_index}.png")
                 intermediate.save(intermediate_filename)
 
-        pil = Image.fromarray(
-            np.clip(current, 0, 255).astype(np.uint8),
-            mode="RGB",
-        )
+        pil = Image.fromarray(np.clip(current, 0, 255).astype(np.uint8),mode="RGB")
         pil.save(final_filename)
         passed += 1
 
