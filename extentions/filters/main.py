@@ -117,7 +117,7 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
     if operation == "LCD Dot Matrix":
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
     raise ValueError(f"Unknown filter: {operation}")
-def apply_filters_to_images(images,operationsparams_by_operation):
+def apply_filters_to_images(images,operations,params_by_operation):
     """Apply the selected Filters chain to one in-memory numpy image.
 
     Input:
