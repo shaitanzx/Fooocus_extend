@@ -117,11 +117,7 @@ def _apply(frame: np.ndarray, operation: str, **p: object) -> np.ndarray:
     if operation == "LCD Dot Matrix":
         return lcd_dot_matrix(frame, int(p["cell_size"]), float(p["gap_ratio"]), float(p["grid_dark"]), str(p["shape"]))
     raise ValueError(f"Unknown filter: {operation}")
-def apply_filters_to_images(
-    image: np.ndarray,
-    operations,
-    params_by_operation,
-) -> np.ndarray:
+def apply_filters_to_images(images,operationsparams_by_operation):
     """Apply the selected Filters chain to one in-memory numpy image.
 
     Input:
@@ -130,6 +126,7 @@ def apply_filters_to_images(
     Output:
         one processed RGB numpy array with shape (H, W, C).
     """
+    image = images[-1]
     operations = [
         operation
         for operation in (operations or [])
@@ -139,42 +136,39 @@ def apply_filters_to_images(
     # Нормализуем одно входное изображение.
     current = _rgb(image)
 
-    # Если цепочка пустая, возвращаем одно numpy-изображение.
+    # Если цепочка пустая, возвращаем одно numpy-изображение в списке
+    # (контракт: всегда list[np.ndarray] длиной 1, как ждёт async_worker).
     if not operations:
-        return np.clip(
-            current,
-            0,
-            255,
-        ).astype(np.uint8, copy=False)
+        return [image]
 
     print("[Filters GENERATION] image: start")
 
     for chain_index, operation in enumerate(operations, start=1):
-        operation_params = dict(
-            params_by_operation.get(operation, {})
-        )
-
+        operation_params = dict(params_by_operation.get(operation, {}))
         print(
             f"[Filters GENERATION] stage "
             f"{chain_index}/{len(operations)}; "
             f"filter: {operation}; "
             f"settings: {operation_params}"
         )
+        try:
+            current = _apply(
+                current,
+                operation,
+                **operation_params,
+            )
+        except Exception as error:
+            # Изолируем сбой одного фильтра: логируем, прерываем цепочку и
+            # возвращаем максимально обработанный кадр, чтобы генерация не
+            # падала целиком (аналог try/except в FaceEnhancer.Upscale.inference).
+            import traceback
+            print(f"[Filters GENERATION] stage {chain_index} '{operation}' failed: {error}")
+            traceback.print_exc()
+            break
 
-        current = _apply(
-            current,
-            operation,
-            **operation_params,
-        )
-    exit_image = Image.fromarray(
-            np.clip(current, 0, 255).astype(np.uint8),
-            mode="RGB"
-    # Возвращаем один numpy-массив, а не список массивов.
-    return [np.clip(
-        current,
-        0,
-        255,
-    ).astype(np.uint8, copy=False)]
+    # Возвращаем один numpy-массив в списке.
+    return [np.clip(current, 0, 255).astype(np.uint8, copy=False)]
+
 def run_chain_batch(*slot_values):
     """Run the selected chain while preserving the existing batch file flow."""
     chain = collect_chain(list(slot_values))
