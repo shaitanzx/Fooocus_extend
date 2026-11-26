@@ -1,1 +1,1 @@
-version = 'Extend v9.4.0 (base version 2.5.5)'
+version = 'Extend v9.4.1 (base version 2.5.5)'
