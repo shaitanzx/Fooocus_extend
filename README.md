@@ -179,6 +179,10 @@ Source Image Index - index of the face in the reference image. Faces are numbere
 
 Target Image Index - index of the face in the output image. This is the index of the face to be replaced in the output image. If you specify -1, all faces will be replaced.
 
+**FaceEnhancer**
+
+<img width="1056" height="526" alt="image" src="https://github.com/user-attachments/assets/4bf9b5e5-83f7-4e75-bc08-54aa55d5a0b8" />
+
 
 **Vector**
 
