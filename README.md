@@ -19,7 +19,7 @@ Let's look at everything in order.
    - Image Batch - generation with a batch of reference images
    - Prompt Batch - generating a prompt batch
    - X/Y/Z Plot - a module that allows you to generate images by changing various parameters
-   - FaceEnhancer - face enhancer, face replacementsand upscale
+   - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
    - Filters - extension for applying various filters to an image
    - Remove Background
    - Cleaner - removes small unnecessary objects from images and videos.
@@ -119,8 +119,8 @@ Allows to translate both positive and negative prompts from any language into En
 
 ![image](https://github.com/user-attachments/assets/e15a668a-53aa-4607-a7ed-7d277a3726de)
 
-The module allows you to generate an image with a reference face
-Upload a photo of your face - your reference face should be uploaded here.
+The module allows you to generate an image with a reference 
+Upload a photo of your  - your reference  should be uploaded here.
 **Unlike normal generation, this 30-step generation on Nvidia 3060 12GB takes about 4 minutes.**
 
 
@@ -129,13 +129,13 @@ Upload a photo of your face - your reference face should be uploaded here.
 <img width="975" height="528" alt="image" src="https://github.com/user-attachments/assets/3bb5d9d0-5053-4147-a9d9-828f2efbd4d2" />
 
 
-This module allows you to generate an image from a reference face image.
+This module allows you to generate an image from a reference  image.
 
-Upload a photo of your face—the reference face should be uploaded here.
+Upload a photo of your —the reference  should be uploaded here.
 
 Upload a reference pose image (optional) — the reference pose image will be uploaded here. Optional.
 
-If you don't specify a reference pose image, an image will be generated based on your request, using only the face image and the same pose as the reference image.
+If you don't specify a reference pose image, an image will be generated based on your request, using only the  image and the same pose as the reference image.
 
 IdentityNet strength (for fidelity) — is responsible for the accuracy of facial reproduction.
 
@@ -182,6 +182,19 @@ Target Image Index - index of the face in the output image. This is the index of
 **FaceEnhancer**
 
 <img width="1056" height="526" alt="image" src="https://github.com/user-attachments/assets/4bf9b5e5-83f7-4e75-bc08-54aa55d5a0b8" />
+
+
+**Filters**
+
+<img width="1142" height="468" alt="image" src="https://github.com/user-attachments/assets/2c76d0a1-3551-4d5e-8377-9a3d0e83b5aa" />
+
+This module is designed to apply retro-style effects to images. It lets you combine filters such as pixelization, palette reduction, dithering, CRT scanlines, bloom, chromatic aberration, VHS noise, and LCD dot-matrix effects into a chain. In the “in generation” panel, the chain is applied to generated images; in the standalone “modules” panel, it can be applied to uploaded images, individually or in a batch.
+
+Filter chain (selection order) – defines the sequence of filters applied to the image.
+
+Save result after each filter – saves all intermediate images generated after each filter is applied.
+
+Filter to configure – allows for the configuration of individual filters; each filter’s configuration is independent of the others.
 
 
 **Vector**
@@ -293,6 +306,12 @@ This extension allows you to make image grids to make it easier to see the diffe
 
 
 The full analog of this module in the “in generation” panel, unlike which you need to load an additional input images
+
+
+**Filters**
+
+The full analog of this module in the “in generation” panel, unlike which you need to load an additional input images
+
 
 **Remove Background**
 
