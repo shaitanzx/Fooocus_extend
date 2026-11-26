@@ -3,15 +3,17 @@ I would like to point out that this fork can be run both locally on your compute
 Let's look at everything in order. 
 
 **Full list of differences from the original Fooocus**
-0. Native support SD1.5 models
-1. Modules running during generation
+
+1. Since Google frequently updates its software environments and removes older versions, a Google Colab notebook with an independent software environment has been created. There is also a modified notebook available for running the original Fooocus.
+2. Native support SD1.5 models
+3. Modules running during generation
    - OneButtonPrompt - prompt generator with many settings
    - Prompt Translate
    - PhotoMaker - generating images with a reference face (only SDXL)
    - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT) (only SDXL)
    - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
    - Vector - vector image generation
-2. Additional modules
+4. Additional modules
    - omost - LLM code generation module for image generation
    - Image Batch - generation with a batch of reference images
    - Prompt Batch - generating a prompt batch
@@ -20,7 +22,7 @@ Let's look at everything in order.
    - Remove Background
    - Cleaner - removes small unnecessary objects from images and videos.
    - Vector - allows you to convert a raster image into a vector
-3. Tools
+5. Tools
    - Civitai Helper - A module for working with models and downloading them from Civitai
    - Caption - Image analysis, tag list generation, and text description creation.
    - TextMask - A module for overlaying text on images and generating a mask for it for subsequent generation with text
@@ -29,31 +31,33 @@ Let's look at everything in order.
    - OpenPoseEditor
    - Logo - overlaying a logo/watermark on an image
    - Photopea
-4. Select the resolution and aspect ratio of the generated image
-5. Wildcard
-6. OpenPose ControlNet
-7. Recolor ControlNet
-8. Scribble ControlNet
-9. Manga Recolor ControlNet
-10. Save Image Grid for Each Batch
-11. Filename Prefix
-12. Paths and Presets - managing paths and presets
-13. Load file of style
-14. View LoRA trigger words and view the models page on civitai.com
-15. Seamless tiling
-16. Transparency - generating images on a transparent background
-17. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
-18. Adetailer - extension for automatic masking and inpainting
-19. Support external upscalers
-20. Сhanging the number of steps
-21. Add Dynamic Lora Support (full help in panel Extentions -> in generate -> DinamicLoraHelp)
-22. The negative prompt field has been moved to the main page with the option to return it to its original location.
-23. Add cyberdelia_ralston sampler
-24. Add beta57 scheduler
-25. Add DoRA models support
-26. embedding tag constructor
-27. Eraser tool when drawing masks in Inpaint and Clear modes
-28. Resolution mode in Outpaint
+6. Select the resolution and aspect ratio of the generated image
+7. Wildcard
+8. OpenPose ControlNet
+9. Recolor ControlNet
+10. Scribble ControlNet
+11. Manga Recolor ControlNet
+12. Save Image Grid for Each Batch
+13. Filename Prefix
+14. Paths and Presets - managing paths and presets
+15. Load file of style
+16. View LoRA trigger words and view the models page on civitai.com
+17. Seamless tiling
+18. Transparency - generating images on a transparent background
+19. CFG control type (CFG Mimicking from TSNR, CFG rescale, Off)
+20. Adetailer - extension for automatic masking and inpainting
+21. Support external upscalers
+22. Сhanging the number of steps
+23. Add Dynamic Lora Support (full help in panel Extentions -> in generate -> DinamicLoraHelp)
+24. The negative prompt field has been moved to the main page with the option to return it to its original location.
+25. Add cyberdelia_ralston sampler
+26. Add beta57 scheduler
+27. Add DoRA models support
+28. embedding tag constructor
+29. Eraser tool when drawing masks in Inpaint and Clear modes
+30. Resolution mode in Outpaint
+31. A background image has been added to the window displaying the generated mask in the SAM model.
+32. Add Filtres extention
 
 **Launch**. If you will run it on a local machine, you can safely skip this item.
    
@@ -632,6 +636,17 @@ All suggestions and questions can be voiced in the [Telegram-group](https://t.me
 
 
 ***Change log***
+
+v9.4.1
+ 1. Google Colab script update for FooocusExtend and Fooocus (original)
+ 2. A background image has been added to the window displaying the generated mask in the SAM model.
+ 3. Some bug fix (THX to @RoGNeZ for code)
+ 4. Add support <lora> in all lines of prompt
+ 5. Automatic selection of a checkpoint if the selected chackpoint is missing
+ 6. Extended parameters for save preset (THX to @RoGNeZ for code)
+ 7. Add support SAM models in ADetailer (THX to @RoGNeZ for code)
+ 8. Add Imageslider in FaceEncancer and Logo extentions for compare input and out images
+ 9. Add Filtres extention
 
 v9.4.0
  1. Native support SD1.5 models
