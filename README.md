@@ -666,7 +666,7 @@ v9.4.1
  1. Google Colab script update for FooocusExtend and Fooocus (original)
  2. A background image has been added to the window displaying the generated mask in the SAM model.
  3. Some bug fix (THX to @RoGNeZ for code)
- 4. Add support <lora> in all lines of prompt
+ 4. Add support lora in all lines of prompt
  5. Automatic selection of a checkpoint if the selected chackpoint is missing
  6. Extended parameters for save preset (THX to @RoGNeZ for code)
  7. Add support SAM models in ADetailer (THX to @RoGNeZ for code)
