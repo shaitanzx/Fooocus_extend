@@ -12,6 +12,7 @@ Let's look at everything in order.
    - PhotoMaker - generating images with a reference face (only SDXL)
    - InstantID - generating images with a reference face (NATIVE FOOOCUS SUPPORT) (only SDXL)
    - FaceEnhancer - face enhancer, face replacementsand upscale in the generated image
+   - Filters - extension for applying various filters to an image
    - Vector - vector image generation
 4. Additional modules
    - omost - LLM code generation module for image generation
@@ -19,6 +20,7 @@ Let's look at everything in order.
    - Prompt Batch - generating a prompt batch
    - X/Y/Z Plot - a module that allows you to generate images by changing various parameters
    - FaceEnhancer - face enhancer, face replacementsand upscale
+   - Filters - extension for applying various filters to an image
    - Remove Background
    - Cleaner - removes small unnecessary objects from images and videos.
    - Vector - allows you to convert a raster image into a vector
