@@ -63,6 +63,9 @@ def prepare_environment():
                     if platform.system() == 'Windows':
                         python_version = f"cp{sys.version_info.major}{sys.version_info.minor}"
                         line=f'wheel/insightface-0.7.3-{python_version}-{python_version}-win_amd64.whl'
+                    if platform.system() == 'Linux':
+                        python_version = f"cp{sys.version_info.major}{sys.version_info.minor}"
+                        line=f'wheel/insightface-0.7.3-{python_version}-{python_version}-linux_x86_64.whl --no-deps'
                 if 'onnxruntime-gpu' in line:
                     if platform.system() == 'Darwin':
                         continue
@@ -160,6 +163,7 @@ def download_models(default_model, previous_default_models, checkpoint_downloads
 config.default_base_model_name, config.checkpoint_downloads = download_models(
     config.default_base_model_name, config.previous_default_models, config.checkpoint_downloads,
     config.embeddings_downloads, config.lora_downloads, config.vae_downloads)
+config.default_preset_model = config.default_base_model_name
 
 config.update_files()
 init_cache(config.model_filenames, config.paths_checkpoints, config.lora_filenames, config.paths_loras)
@@ -190,4 +194,5 @@ os.makedirs(f"{config.temp_path}{os.path.sep}batch_old_photo", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_cleaner", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_cleaner_video", exist_ok=True)
 os.makedirs(f"{config.temp_path}{os.path.sep}batch_caption", exist_ok=True)
+os.makedirs(f"{config.temp_path}{os.path.sep}batch_filters", exist_ok=True)
 from webui import *

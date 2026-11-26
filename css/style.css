@@ -445,7 +445,107 @@ div:has(> #positive_prompt) {
   white-space: normal !important;
   word-wrap: break-word !important;
 }
-#dataframe_batch td:nth-child(1) { 
+#dataframe_batch td:nth-child(1) {
   width: 50%;
+}
+
+/* Face Enhancer before/after comparison */
+.fooocus-image-compare {
+    width: 100%;
+}
+
+.fooocus-image-compare__canvas {
+    position: relative;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--fooocus-compare-aspect-ratio, 16 / 9);
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+    background: #111;
+    border-radius: 8px;
+    user-select: none;
+    touch-action: pan-y;
+}
+
+.fooocus-image-compare__image {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain !important;
+    pointer-events: none;
+}
+
+.fooocus-image-compare__after {
+    clip-path: inset(0 0 0 var(--fooocus-compare-position, 50%));
+}
+
+.fooocus-image-compare__divider {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    bottom: 0;
+    left: var(--fooocus-compare-position, 50%);
+    width: 2px;
+    background: #fff;
+    transform: translateX(-50%);
+    pointer-events: none;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+}
+
+.fooocus-image-compare__handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(20, 20, 20, 0.72);
+    font-size: 21px;
+    transform: translate(-50%, -50%);
+}
+
+.fooocus-image-compare__label {
+    position: absolute;
+    z-index: 3;
+    top: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.58);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.fooocus-image-compare__label--before {
+    left: 12px;
+}
+
+.fooocus-image-compare__label--after {
+    right: 12px;
+}
+
+.fooocus-image-compare__range {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+}
+
+@media (max-width: 640px) {
+    .fooocus-image-compare__canvas {
+        height: auto;
+        min-height: 0;
+    }
 }
 

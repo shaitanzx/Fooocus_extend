@@ -2,6 +2,7 @@ import os
 import json
 import math
 import numbers
+import random
 
 import args_manager
 import tempfile
@@ -120,7 +121,7 @@ def try_get_preset_content(preset):
             if os.path.exists(preset_path):
                 with open(preset_path, "r", encoding="utf-8") as json_file:
                     json_content = json.load(json_file)
-                    print(f'Loaded preset: {preset_path}')
+                    #print(f'Loaded preset: {preset_path}')
                     return json_content
             else:
                 raise FileNotFoundError
@@ -264,7 +265,50 @@ def init_temp_path(path: str | None, default_path: str) -> str:
     os.makedirs(default_path, exist_ok=True)
     return default_path
 
+default_upscaler = get_config_item_or_set_default(
+    key='default_upscaler',
+    default_value='',
+    validator=lambda x: isinstance(x, str),
+    disable_empty_as_none=True,
+    expected_type=str
+)
+default_negative_prompt_main = get_config_item_or_set_default(
+    key='default_negative_prompt_main',
+    default_value=modules.flags.negative_prompt_main,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_disable_seed_increment = get_config_item_or_set_default(
+    key='default_disable_seed_increment',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_mixing_image_prompt_and_vary_upscale = get_config_item_or_set_default(
+    key='default_mixing_image_prompt_and_vary_upscale',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_mixing_image_prompt_and_inpaint = get_config_item_or_set_default(
+    key='default_mixing_image_prompt_and_inpaint',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
+default_tile_x = get_config_item_or_set_default(
+    key='default_tile_x',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
 
+default_tile_y = get_config_item_or_set_default(
+    key='default_tile_y',
+    default_value=False,
+    validator=lambda x: isinstance(x, bool),
+    expected_type=bool
+)
 default_temp_path = os.path.join(tempfile.gettempdir(), 'fooocus')
 temp_path = init_temp_path(get_config_item_or_set_default(
     key='temp_path',
@@ -284,6 +328,7 @@ default_base_model_name = default_model = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, str),
     expected_type=str
 )
+default_preset_model = default_base_model_name
 previous_default_models = get_config_item_or_set_default(
     key='previous_default_models',
     default_value=[],
@@ -362,6 +407,39 @@ default_adetail_tab = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, int) and x >= 1,
     expected_type=int
 )
+
+legacy_adetailer_keys = [
+    'ad_model',
+    'ad_confidence',
+    'ad_denoising_strength',
+    'ad_resp_field',
+    'ad_sam_mask',
+    'ad_sam_model',
+]
+
+
+
+def get_adetailer_tabs(content):
+    tabs = [
+        dict(tab)
+        for tab in (content.get('default_adetailer_tabs') or [])
+        if isinstance(tab, dict)
+    ]
+
+    legacy = {
+        key: content[f'default_{key}']
+        for key in legacy_adetailer_keys
+        if content.get(f'default_{key}') is not None
+    }
+
+    if legacy:
+        first_tab = tabs[0] if tabs else {}
+        tabs[:1] = [{**legacy, **first_tab}]
+
+    return tabs
+
+default_adetailer_tabs = get_adetailer_tabs(config_dict)
+
 default_cfg_scale = get_config_item_or_set_default(
     key='default_cfg_scale',
     default_value=7.0,
@@ -668,6 +746,26 @@ default_enhance_uov_prompt_type = get_config_item_or_set_default(
     validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
     expected_type=int
 )
+default_adetail_uov_method = get_config_item_or_set_default(
+    key='default_adetail_uov_method',
+    default_value=default_enhance_uov_method,
+    validator=lambda x: x in modules.flags.uov_list,
+    expected_type=str
+)
+
+default_adetail_uov_processing_order = get_config_item_or_set_default(
+    key='default_adetail_uov_processing_order',
+    default_value=default_enhance_uov_processing_order,
+    validator=lambda x: x in modules.flags.enhancement_uov_processing_order,
+    expected_type=str
+)
+
+default_adetail_uov_prompt_type = get_config_item_or_set_default(
+    key='default_adetail_uov_prompt_type',
+    default_value=default_enhance_uov_prompt_type,
+    validator=lambda x: x in modules.flags.enhancement_uov_prompt_types,
+    expected_type=str
+)
 default_sam_max_detections = get_config_item_or_set_default(
     key='default_sam_max_detections',
     default_value=0,
@@ -789,7 +887,6 @@ possible_preset_keys = {
     "lora_downloads": "lora_downloads",
     "vae_downloads": "vae_downloads",
     "default_vae": "vae",
-    # "default_inpaint_method": "inpaint_method", # disabled so inpaint mode doesn't refresh after every preset change
     "default_inpaint_engine_version": "inpaint_engine_version",
 }
 
@@ -847,7 +944,6 @@ if config_file_is_valid:
         if key in config_dict
     }
 
-    # Обновит отсутствующие пути и удалит из файла старые непутевые параметры.
     if path_config_data != loaded_config or not config_file_exists:
         with open(config_path, "w", encoding="utf-8") as json_file:
             json.dump(path_config_data, json_file, indent=4)
@@ -907,6 +1003,37 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
         files += get_files_from_folder(folder, extensions, name_filter)
 
     return files
+def check_default_models():
+    """Replace default models that are missing on disk, so a stale preset or config does not break the launch."""
+    global default_base_model_name, default_model
+    global default_refiner_model_name, default_refiner
+    global default_vae, default_loras
+
+    def exists(name, folders):
+        folders = folders if isinstance(folders, list) else [folders]
+        return any(
+            os.path.isfile(os.path.join(folder, name))
+            for folder in folders
+        )
+
+    if model_filenames and not exists(default_base_model_name, paths_checkpoints):
+        replacement_model = random.choice(model_filenames)
+        print(f'[Config] Base model [{default_base_model_name}] not found, randomly using [{replacement_model}] instead.')
+        default_base_model_name = default_model = replacement_model
+
+    if default_refiner_model_name != 'None' and not exists(default_refiner_model_name, paths_checkpoints):
+        print(f'[Config] Refiner model [{default_refiner_model_name}] not found, using [None] instead.')
+        default_refiner_model_name = default_refiner = 'None'
+
+    if default_vae != modules.flags.default_vae and not exists(default_vae, path_vae):
+        print(f'[Config] VAE [{default_vae}] not found, using [{modules.flags.default_vae}] instead.')
+        default_vae = modules.flags.default_vae
+
+    for i, (enabled, filename, weight) in enumerate(default_loras):
+        if filename != 'None' and not exists(filename, paths_loras):
+            print(f'[Config] LoRA [{filename}] not found, using [None] instead.')
+            default_loras[i] = [enabled, 'None', weight]
+
 
 def update_files():
     global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets, yolo_filenames, upscaler_filenames,emb_filenames
@@ -920,6 +1047,7 @@ def update_files():
     upscaler_filenames = list(dict.fromkeys(UPSCALE_DEFAULT_FILENAMES + upscaler_from_disk))
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
+    check_default_models()
     return
 
 
@@ -1152,7 +1280,6 @@ def downloading_ip_adapters(v, is_sd15=False):
 
     results = []
 
-    # Общие для этих моделей файлы ViT-H и negative image embedding.
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors",
         model_dir=path_clip_vision,

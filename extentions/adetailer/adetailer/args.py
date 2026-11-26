@@ -68,6 +68,8 @@ class ADetailerArgs(BaseModel, extra=Extra.forbid):
     ad_x_offset: int = 0
     ad_y_offset: int = 0
     ad_mask_merge_invert: Literal["None", "Merge", "Merge and Invert"] = "None"
+    ad_sam_mask: bool = False
+    ad_sam_model: str = "vit_b"
     ad_mask_blur: NonNegativeInt = 4
     ad_denoising_strength: confloat(ge=0.0, le=1.0) = 0.4
     ad_inpaint_only_masked: bool = True
@@ -230,8 +232,8 @@ _all_args = [
     ("ad_y_offset", "ADetailer y offset"),
     ("ad_dilate_erode", "ADetailer dilate erode"),
     ("ad_mask_merge_invert", "ADetailer mask merge invert"),
-    
-    #!("ad_mask_blur", "ADetailer mask blur"),
+    ("ad_sam_mask", "ADetailer SAM mask"),
+    ("ad_sam_model", "ADetailer SAM model"),
     ("ad_disable_latent", "ADetailer Disable initial latent"),
     ("ad_inpaint_engine", "Inpaint Engine"),
     ("ad_denoising_strength", "ADetailer denoising strength"),
@@ -240,31 +242,11 @@ _all_args = [
     ("ad_cfg_scale", "ADetailer CFG scale"),
     ("ad_use_clip_skip", "ADetailer use separate CLIP skip"),
     ("ad_clip_skip", "ADetailer CLIP skip"),
-
-    #!("ad_inpaint_only_masked", "ADetailer inpaint only masked"),
-    #!("ad_inpaint_only_masked_padding", "ADetailer inpaint padding"),
-    #!("ad_use_inpaint_width_height", "ADetailer use inpaint width height"),
-    #!("ad_inpaint_width", "ADetailer inpaint width"),
-    #!("ad_inpaint_height", "ADetailer inpaint height"),
-    #!("ad_use_steps", "ADetailer use separate steps"),
-    #!("ad_steps", "ADetailer steps"),
-
     ("ad_use_checkpoint", "ADetailer use separate checkpoint"),
     ("ad_checkpoint", "ADetailer checkpoint"),
-    #!("ad_use_vae", "ADetailer use separate VAE"),
-    #!("ad_vae", "ADetailer VAE"),
     ("ad_use_sampler", "ADetailer use separate sampler"),
     ("ad_sampler", "ADetailer sampler"),
     ("ad_scheduler", "ADetailer scheduler"),
-    #!("ad_use_noise_multiplier", "ADetailer use separate noise multiplier"),
-    #!("ad_noise_multiplier", "ADetailer noise multiplier"),
-
-    #!("ad_restore_face", "ADetailer restore face"),
-    #!("ad_controlnet_model", "ADetailer ControlNet model"),
-    #!("ad_controlnet_module", "ADetailer ControlNet module"),
-    #!("ad_controlnet_weight", "ADetailer ControlNet weight"),
-    #!("ad_controlnet_guidance_start", "ADetailer ControlNet guidance start"),
-    #!("ad_controlnet_guidance_end", "ADetailer ControlNet guidance end"),
     
 ]
 

@@ -18,6 +18,7 @@ from extras.basicsr.utils.realesrganer import RealESRGANer
 
 import extentions.batch as batch
 import modules.config
+import modules.imageslider as imageslider
 
 import copy
 import insightface
@@ -560,7 +561,6 @@ class Upscale:
 
                     self.face_analyser = getFaceAnalyser("buffalo_l", ['CPUExecutionProvider'])
 
-                    #model_rootpath = os.path.join("models","face_enhancer")
                     model_path = os.path.join(modules.config.path_face_enhancer, "inswapper_128.onnx")
                     download_from_url("https://huggingface.co/shaitanzx/FooocusExtend/resolve/main/inswapper_128.onnx", "inswapper_128.onnx", modules.config.path_face_enhancer)
                     
@@ -1307,6 +1307,20 @@ def process_without_face(face_model,upscale_model,face_detection_only_center,fac
     return gr.update(value=None,visible=False),gr.update(visible=True)
 
 
+def prepare_comparison(is_swap, zip_image, zip_face):
+    """Apply FaceEnhancer-specific rules and delegate to the shared slider."""
+    if zip_image or (is_swap and zip_face):
+        return imageslider.hidden_updates()
+
+    target_dir = os.path.join(temp_dir, "batch_face_enhancer")
+    result_dir = os.path.join(temp_dir, "batch_temp")
+    source_face_dir = os.path.join(temp_dir, "batch_insw_face")
+
+    if is_swap and not imageslider.has_single_image(source_face_dir):
+        return imageslider.hidden_updates()
+
+    return imageslider.update_from_directories(target_dir, result_dir)
+
 def gui(generator):
     
     rows = []
@@ -1331,6 +1345,7 @@ def gui(generator):
         tutorial("FaceEnhancer.md")    
     with gr.Row(visible=not generator):
         file_in,files_single,image_single,enable_zip_image,file_out,preview, image_out = batch.ui_batch()
+    compare_slider, compare_accordion = imageslider.create_ui()
     with gr.Row():
         with gr.Column():
             face_model = gr.Dropdown([None]+list(face_models.keys()), type="value", interactive=True,value='GFPGANv1.4.pth', label='Face Restoration version', info="Face Restoration and RealESR can be freely combined in different ways, or one can be set to \"None\" to use only the other model. Face Restoration is primarily used for face restoration in real-life images, while RealESR serves as a background restoration model.")
@@ -1384,7 +1399,17 @@ def gui(generator):
     with gr.Row(visible=False):
         ext_dir=gr.Textbox(value='batch_face_enhancer',visible=False) 
         ext_dir_face=gr.Textbox(value='batch_insw_face',visible=False)
-    enable_swap.change(lambda x: [gr.update(visible=x),gr.update(visible=not x),gr.update(visible=x)], inputs=enable_swap,outputs=[swap_mode,face_en_start,face_en_start_face], queue=False, show_progress=False)
+    enable_swap.change(
+        lambda x: [
+            gr.update(visible=x),
+            gr.update(visible=not x),
+            gr.update(visible=x),
+        ],
+        inputs=enable_swap,
+        outputs=[swap_mode, face_en_start, face_en_start_face],
+        queue=False,
+        show_progress=False,
+    )
 
 
 
@@ -1392,7 +1417,9 @@ def gui(generator):
     image_single_face.clear(fn=batch.clear_single,inputs=image_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
     files_single_face.upload(fn=batch.single_image,inputs=files_single_face,outputs=[image_single_face,files_single_face],show_progress=False)
 
+
     face_en_start_face.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start_face,file_out,image_out]) \
+              .then(fn=imageslider.reset, outputs=[compare_slider, compare_accordion]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.clear_dirs,inputs=ext_dir_face) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
@@ -1404,20 +1431,16 @@ def gui(generator):
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False),gr.update(visible=False)),outputs=[file_out,preview_face,preview],show_progress=False) \
               .then(fn=batch.zip_enable,inputs=[enable_zip_face,files_single_face],outputs=[file_in_face,files_single_face,image_single_face],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start_face)  
+              .then(fn=lambda zip_image, zip_face: prepare_comparison(True, zip_image, zip_face),inputs=[enable_zip_image, enable_zip_face],outputs=[compare_slider, compare_accordion]) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start_face)
     face_en_start.click(lambda: (gr.update(visible=True, interactive=False),gr.update(visible=False),gr.update(visible=False)),outputs=[face_en_start,file_out,image_out]) \
+              .then(fn=imageslider.reset, outputs=[compare_slider, compare_accordion]) \
               .then(fn=batch.clear_dirs,inputs=ext_dir) \
               .then(fn=batch.unzip_file,inputs=[file_in,files_single,enable_zip_image,ext_dir]) \
               .then(fn=process_without_face, inputs=[face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_detection,upscale_scale,with_model_name,enable_swap],
                         outputs=[preview,file_out],show_progress=False) \
               .then(lambda: (gr.update(visible=True, interactive=True),gr.update(visible=False)),outputs=[file_out,preview],show_progress=False) \
               .then(fn=batch.output_zip_image, outputs=[image_out,file_out]) \
-              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start) 
-
-
-
-
-
-
-
+              .then(fn=lambda zip_image, zip_face: prepare_comparison(False, zip_image, zip_face),inputs=[enable_zip_image, enable_zip_face],outputs=[compare_slider, compare_accordion]) \
+              .then(lambda: (gr.update(visible=True, interactive=True)),outputs=face_en_start)
     return face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index

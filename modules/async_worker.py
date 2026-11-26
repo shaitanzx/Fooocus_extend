@@ -5,6 +5,7 @@ import modules.config
 from modules.patch import PatchSettings, patch_settings, patch_all
 import modules.config
 import sys
+import os
 import random
 import numpy as np
 from PIL import Image
@@ -22,6 +23,8 @@ class AsyncTask:
         self.args = args.copy()
         self.yields = []
         self.results = []
+        self.model_fallback_notices = []
+
         self.last_stop = False
         self.processing = False
 
@@ -57,6 +60,59 @@ class AsyncTask:
         self.refiner_model_name = args.pop()
         self.refiner_switch = args.pop()
 
+        checkpoint_folders = modules.config.paths_checkpoints
+
+        if self.refiner_model_name != 'None':
+            refiner_path = get_file_from_folder_list(self.refiner_model_name,checkpoint_folders)
+            if not os.path.isfile(refiner_path):
+                message = (
+                    f'Refiner [{self.refiner_model_name}] not found; '
+                    'refiner disabled..'
+                )
+                print(f'[AsyncTask] {message}')
+                self.model_fallback_notices.append(message)
+                self.refiner_model_name = 'None'
+
+
+        base_model_path = get_file_from_folder_list(self.base_model_name,checkpoint_folders)
+
+        if not os.path.isfile(base_model_path):
+            preset_model_name = modules.config.default_preset_model
+            preset_model_path = get_file_from_folder_list(
+                preset_model_name,
+                checkpoint_folders
+            )
+
+            if os.path.isfile(preset_model_path):
+                message = (
+                    f'Base model [{self.base_model_name}] not found; '
+                    f'using the model from the current preset'
+                    f'[{preset_model_name}].'
+                )
+                print(f'[AsyncTask] {message}')
+                self.model_fallback_notices.append(message)
+                self.base_model_name = preset_model_name
+            else:
+                available_models = [
+                    name for name in modules.config.model_filenames
+                    if os.path.isfile(
+                        get_file_from_folder_list(name, checkpoint_folders)
+                    )
+                ]
+
+                replacement_model = random.choice(available_models)
+
+                message = (
+                    f'The base model [{self.base_model_name}]'
+                    'and the model for the current preset'
+                    f'[{preset_model_name}] were not found;; '
+                    f'[{replacement_model}] has been selected.'
+                )
+                print(f'[AsyncTask] {message}')
+                self.model_fallback_notices.append(message)
+                self.base_model_name = replacement_model
+
+
         self.lora_list = []
         for _ in range(default_max_lora_number):
             lora_tuple = (bool(args.pop()),str(args.pop()),float(args.pop()))
@@ -76,6 +132,12 @@ class AsyncTask:
         self.inpaint_input_image = args.pop()
         self.inpaint_additional_prompt = args.pop()
         self.inpaint_mask_image_upload = args.pop()
+
+        if isinstance(self.inpaint_mask_image_upload, dict):
+            generated_mask = self.inpaint_mask_image_upload['mask']
+
+            if generated_mask is not None:
+                self.inpaint_mask_image_upload['image'] = generated_mask        
 
         self.disable_preview = args.pop()
         self.disable_intermediate_results = args.pop()
@@ -323,6 +385,16 @@ class AsyncTask:
         self.transper = args.pop()
         self.uov_model = args.pop()
 
+        self.filters_enabled = args.pop()
+        self.filters_chain = args.pop()
+        self.filters_save_intermediate = args.pop()
+        self.filters_settings_filter = args.pop()
+
+        self.filters_controls = [
+            args.pop()
+            for _ in range(43)
+        ]
+
 async_tasks = []
 
 
@@ -376,6 +448,8 @@ def worker():
     import re
     from extentions.module_translate import translate
     from extentions import FaceEnhancer
+    from extentions.filters.main import apply_filters_to_images
+    from extentions.filters.chain_ui import collect_chain
 
     pid = os.getpid()
     print(f'Started worker with PID {pid}')
@@ -526,7 +600,24 @@ def worker():
             d.append(('FaceEnhancer upscale scale', 'upscale_scale', async_task.upscale_scale))
             d.append(('FaceEnhancer face detection', 'face_detection', async_task.face_detection))
             d.append(('FaceEnhancer face detection only center', 'face_detection_only_center', async_task.face_detection_only_center))
-            d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))       
+            d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))
+        if async_task.filters_enabled:
+            _fc = collect_chain([
+                async_task.filters_chain,
+                async_task.filters_save_intermediate,
+                async_task.filters_settings_filter,
+                *async_task.filters_controls,
+            ])
+            _f_ops = _fc["operations"]
+            _f_params = _fc["params"]
+            if _f_ops:
+                _f_lines = [" -> ".join(_f_ops)]
+                _f_lines += [
+                    f"{_op}; settings: {_f_params.get(_op, {})}"
+                    for _op in _f_ops
+                ]
+                d.append(("Filters chain", "filters_chain", "\n".join(_f_lines)))
+
         log(wall, metadata=d, metadata_parser=None, output_format=None, task=None, persist_image=True, name_prefix=async_task.name_prefix)
         return
 
@@ -591,8 +682,6 @@ def worker():
             imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
 
         current_progress = int(base_progress + (100 - preparation_steps) / float(all_steps) * steps)
-
-
         if async_task.face_en_enabled:
             progressbar(async_task, current_progress, 'FaceEnhancer in progress ...')
             temp_imgs = FaceEnhancer.upscale.inference(imgs,async_task.face_model,async_task.upscale_model,
@@ -601,7 +690,31 @@ def worker():
                     async_task.enable_swap,async_task.image_generetor_face,async_task.source_index,
                     async_task.target_index)
             imgs[-1 if not async_task.face_temp else len(imgs):] = temp_imgs
-        
+        if async_task.filters_enabled:
+            filters_config = collect_chain(
+                [
+                    async_task.filters_chain,
+                    async_task.filters_save_intermediate,
+                    async_task.filters_settings_filter,
+                    *async_task.filters_controls,
+                ]
+            )
+            operations = filters_config["operations"]
+            params_by_operation = filters_config["params"]
+            if operations:
+                progressbar(async_task,current_progress,"Filters in progress ...")
+                print(
+                    f"[Filters GENERATION] chain: "
+                    f"{' -> '.join(operations)}"
+                )
+                temp_imgs = apply_filters_to_images(
+                    imgs,
+                    operations,
+                    params_by_operation,
+                    async_task.filters_save_intermediate
+                )
+                imgs[-1 if not async_task.filters_save_intermediate else len(imgs):] = temp_imgs
+
         if modules.config.default_black_out_nsfw or async_task.black_out_nsfw:
             progressbar(async_task, current_progress, 'Checking for NSFW content ...')
             imgs = default_censor(imgs)
@@ -617,7 +730,6 @@ def worker():
                 if async_task.poKeepPnm:
                     image_png = np.array(image)
                     imgs.append(image_png)
-
             progressbar(async_task, current_progress, f'Vectorization image ...')
             _, filename, _ = modules.util.generate_temp_filename(folder=modules.config.path_outputs)
             os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -637,7 +749,6 @@ def worker():
         fam = mf.detect_family_from_file(base_path)
         async_task.native_sd15_inpaint = mf.is_sd15_inpaint_file(base_path)
 
-        # На первом этапе native SD1.5 Inpaint используем без переключения refiner.
         if async_task.native_sd15_inpaint:
             async_task.refiner_model_name = 'None'
 
@@ -657,13 +768,6 @@ def worker():
                 async_task.refiner_model_name = 'None'
             else:
                 print('[SD1.5] SD1.5 refiner enabled.')
-
-        # if async_task.performance_selection in (Performance.EXTREME_SPEED,
-        #                                         Performance.LIGHTNING,
-        #                                         Performance.HYPER_SD):
-        #     print('[SD1.5] Extreme Speed / Lightning / Hyper-SD need SDXL LoRAs -> switched to Speed.')
-        #     async_task.performance_selection = Performance.SPEED
-        #     async_task.steps = async_task.original_steps = Performance.SPEED.steps()
 
         return True
 
@@ -756,7 +860,22 @@ def worker():
                 d.append(('FaceEnhancer face detection', 'face_detection', async_task.face_detection))
                 d.append(('FaceEnhancer face detection only center', 'face_detection_only_center', async_task.face_detection_only_center))
                 d.append(('FaceEnhancer face detection threshold', 'face_detection_threshold', async_task.face_detection_threshold))
-                
+            if async_task.filters_enabled:
+                _fc = collect_chain([
+                    async_task.filters_chain,
+                    async_task.filters_save_intermediate,
+                    async_task.filters_settings_filter,
+                    *async_task.filters_controls,
+                ])
+                _f_ops = _fc["operations"]
+                _f_params = _fc["params"]
+                if _f_ops:
+                    _f_lines = [" -> ".join(_f_ops)]
+                    _f_lines += [
+                        f"{_op}; settings: {_f_params.get(_op, {})}"
+                        for _op in _f_ops
+                    ]
+                    d.append(("Filters chain", "filters_chain", "\n".join(_f_lines)))                
                 
             metadata_parser = None
             if async_task.save_metadata_to_images:
@@ -1310,6 +1429,21 @@ def worker():
         loras, prompt = parse_lora_references_from_prompt(prompt, async_task.loras,
                                                           modules.config.default_max_lora_number,
                                                           lora_filenames=lora_filenames)
+
+        _extra_positive_prompts = []
+
+        for extra_prompt in extra_positive_prompts:
+            loras, extra_prompt = parse_lora_references_from_prompt(
+                extra_prompt,
+                loras,
+                modules.config.default_max_lora_number,
+                lora_filenames=lora_filenames,
+            )
+
+            if extra_prompt.strip():
+                _extra_positive_prompts.append(extra_prompt)
+
+        extra_positive_prompts = _extra_positive_prompts        
         loras += async_task.performance_loras
         loras, ploras, dloras, prompt = parse_extend_loras(prompt, loras, lora_filenames=lora_filenames)
         loras=loras + ploras + dloras
@@ -1459,8 +1593,6 @@ def worker():
             current_progress += 1
         progressbar(async_task, current_progress, 'Downloading Hyper-SD components ...')
         if async_task.is_sd15:
-            # Официальная 4-step SD1.5 Hyper-SD LoRA использует DDIM
-            # и CFG=0. В Fooocus ближайшее расписание — ddim_uniform.
             async_task.sampler_name = 'ddim'
             async_task.scheduler_name = 'ddim_uniform'
             async_task.cfg_scale = 0.0
@@ -1502,8 +1634,7 @@ def worker():
             async_task.scheduler_name = 'tcd'
             async_task.cfg_scale = 0.0
 
-            # TCD LoRA example uses guidance_scale=0.
-            # Disable CFG modifiers so CFG is not altered afterward.
+
             async_task.type_cfg = 'Off'
             async_task.adaptive_cfg = 1.0
             async_task.rescale_cfg = 0.0
@@ -2020,7 +2151,7 @@ def worker():
                     
                     print(f"[Omost] Task conditioned. Positive regions: {len(t['c'])}, Negative regions: {len(t['uc'])}")
             
-            except Exception as e:  # ← 12 пробелов, на одном уровне с try
+            except Exception as e: 
                 print(f"\033[91m[Omost] ERROR during conditioning: {e}\033[0m")
                 import traceback
                 traceback.print_exc()
@@ -2261,7 +2392,7 @@ def worker():
                                     classes=args.ad_model_classes,
                                     device='cpu')
 
-                        masks = adetailer.pred_preprocessing(pred, args)
+                        masks = adetailer.pred_preprocessing(pred, args, image=img)
                         if len(masks) == 0:
                             print(f'[ADetailer] No detected, skipping')
                             continue
@@ -2485,6 +2616,5 @@ def worker():
 
 
 threading.Thread(target=worker, daemon=True).start()
-
 
 

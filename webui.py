@@ -69,11 +69,12 @@ from extentions.vector import vector
 import extentions.batch as batch
 import extentions.watermark as watermark
 
+
 import extentions.adetailer.scripts.adetailer as adetailer
 import extentions.cleaner.clean_up_tab as cleaner
 import extentions.omost.main as omost
 from extentions.omost.omost_prompt_builder import process_canvas as omost2prompt
-
+from extentions.filters import main as filters_main
 import extentions.caption.gui as caption
 from extentions.tutorial import tutorial
 
@@ -244,6 +245,13 @@ def generate_clicked(task: worker.AsyncTask):
     if len(task.args) == 0:
         return
 
+    notices = getattr(task, 'model_fallback_notices', [])
+
+    if notices:
+        gr.Info('\n'.join(notices))
+        task.model_fallback_notices = []
+        
+
     execution_start_time = time.perf_counter()
     finished = False
 
@@ -389,7 +397,7 @@ with shared.gradio_root:
                                         )
                     with gr.Row():
                         new_negative_prompt = gr.Textbox(show_label=False, placeholder="Type negative prompt here.", elem_id='positive_prompt',
-                                        autofocus=False, lines=3, visible=modules.flags.negative_prompt_main,
+                                        autofocus=False, lines=3, visible=modules.config.default_negative_prompt_main,
                                         value=modules.config.default_prompt_negative
                                         )
     
@@ -450,7 +458,14 @@ with shared.gradio_root:
                                 with gr.Row():
                                     uov_method = gr.Radio(label='Upscale or Variation:', choices=flags.uov_list, value=modules.config.default_uov_method)
                                 with gr.Row():
-                                    uov_model = gr.Dropdown(choices=modules.config.upscaler_filenames, value=modules.config.upscaler_filenames[0], label='Model')
+                                    uov_model = gr.Dropdown(
+                                        choices=modules.config.upscaler_filenames,
+                                        value=(
+                                                modules.config.default_upscaler
+                                            if modules.config.default_upscaler in modules.config.upscaler_filenames
+                                            else modules.config.upscaler_filenames[0]
+                                        ),                                      
+                                        label='Model')
                                 gr.HTML('<a href="https://github.com/lllyasviel/Fooocus/discussions/390" target="_blank">\U0001F4D4 Documentation</a>')
                     with gr.Tab(label='Image Prompt', id='ip_tab') as ip_tab:
                         with gr.Row():
@@ -539,7 +554,7 @@ with shared.gradio_root:
                                 example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
 
                             with gr.Column(visible=modules.config.default_inpaint_advanced_masking_checkbox) as inpaint_mask_generation_col:
-                                inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", mask_opacity=1, elem_id='inpaint_mask_canvas')
+                                inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_mask_canvas')
                                 invert_mask_checkbox = gr.Checkbox(label='Invert Mask When Generating', value=modules.config.default_invert_mask_checkbox)
                                 inpaint_mask_model = gr.Dropdown(label='Mask generation model',
                                                                  choices=flags.inpaint_mask_models,
@@ -585,8 +600,32 @@ with shared.gradio_root:
                                         )
 
                                     mask, _, _, _ = generate_mask_from_image(image, mask_model, extras, sam_options)
+                                    if mask is None:
+                                        return None
 
-                                    return mask
+                                    m = np.asarray(mask)
+                                    if m.ndim == 3:
+                                        m = m[:, :, 0]
+                                    if m.dtype == bool:
+                                        m = (m.astype(np.uint8) * 255)
+                                    elif m.dtype != np.uint8:
+                                        m = m.astype(np.float32)
+                                        if m.size > 0 and m.max() <= 1.0:
+                                            m = m * 255.0
+                                        m = np.clip(m, 0, 255).astype(np.uint8)
+
+                                    mask_rgba = np.dstack([m, m, m, m])
+                                    mask_rgba = np.ascontiguousarray(mask_rgba)
+                                    if isinstance(image, dict):
+                                        base_image = image.get('image')
+                                    else:
+                                        base_image = image
+                                    if base_image is None:
+                                        return None
+                                    return {
+                                        "image": np.ascontiguousarray(image["image"]),
+                                        "mask": np.ascontiguousarray(mask_rgba),
+                                    }
 
 
                                 inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg')] +
@@ -805,7 +844,7 @@ with shared.gradio_root:
                         ]]
 
                         enhance_inpaint_mode.change(inpaint_mode_change, inputs=[enhance_inpaint_mode, inpaint_engine_state], outputs=[
-                            inpaint_additional_prompt, outpaint_selections, example_inpaint_prompts,
+                            inpaint_additional_prompt, outpaint_selections, outpaint_width,outpaint_heighth,example_inpaint_prompts,
                             enhance_inpaint_disable_initial_latent, enhance_inpaint_engine,
                             enhance_inpaint_strength, enhance_inpaint_respective_field
                         ], show_progress=False, queue=False)
@@ -821,7 +860,7 @@ with shared.gradio_root:
                             queue=False, show_progress=False)
             with gr.Row(visible=modules.config.default_adetailer_checkbox) as adetailer_input_panel:
                 with gr.Tabs():
-                    adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns = adetailer.ui(is_img2img=True)
+                    adetail_uov_method, adetail_uov_processing_order, adetail_uov_prompt_type, only_detect, ad_component,ad_model_dropdowns,ad_ckpt_dropdowns,ad_widgets = adetailer.ui(is_img2img=True)
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
@@ -842,18 +881,12 @@ with shared.gradio_root:
                         with gr.TabItem(label='DynamicLoraHelp') as dlora_tab:
                             toggle_btn = gr.Button(value="ENG / RUS")
                             def toggle_html(current_html):
-                                # Определяем, какой файл сейчас загружен (можно по наличию русских букв или просто переключать)
                                 en_path = Path(__file__).parent / "dlora.html"
                                 ru_path = Path(__file__).parent / "dlora_rus.html"
-        
-                                # Простая эвристика: если в HTML есть слово "Dynamic" - значит английский
                                 if "lang=EN" in current_html and "lang=RU" not in current_html:
-                                # Переключаем на русский
                                     return ru_path.read_text(encoding="utf-8")
                                 else:
-                                # Переключаем на английский
                                     return en_path.read_text(encoding="utf-8")
-                                # Загружаем начальную версию
                             en_path = Path(__file__).parent / "dlora.html"
                             initial_html = en_path.read_text(encoding="utf-8")
     
@@ -925,17 +958,20 @@ with shared.gradio_root:
                             enable_instant,face_file,pose_file_id,identitynet_strength_ratio,adapter_strength_ratio,start_instant,end_instant,canny_instant,canny_stop,canny_weight,cpds_instant,cdps_stop,cpds_weight=instantid.gui()                          
                         with gr.TabItem(label='FaceEnhancer'):
                             face_en_enabled,face_model,upscale_model,face_detection_only_center,face_detection_threshold,face_temp,face_detection,upscale_scale,image_generetor_face,enable_swap,source_index,target_index = FaceEnhancer.gui(True)  
-
+                        with gr.TabItem(label='Filters'):
+                            filters_generation_ctrls = filters_main.gui(True)
+                            filters_enable = filters_generation_ctrls[0]
                         with gr.TabItem(label='Vector'):
                             poKeepPnm, poThreshold, poTransPNG, poTransPNGEps,poDoVector,poTransPNGQuant = vector.ui()
 
-                def gen_acc_name(obp,translate, photomaker, instant, face_enhancer,vector):
+                def gen_acc_name(obp,translate, photomaker, instant, face_enhancer,filters,vector):
                     enabled_modules = [
                         ('OneButtonPrompt', obp),
                         ('PromptTranslate', translate),
                         ('PhotoMaker', photomaker),
                         ('InstantID', instant),
                         ('FaceEnhancer', face_enhancer),
+                        ('Filters', filters),
                         ('Vector', vector)
                         ]
                     active_modules = [name for name, is_enabled in enabled_modules if is_enabled]
@@ -943,12 +979,12 @@ with shared.gradio_root:
                     if active_modules:
                         main_name += f" — {', '.join(active_modules)}"   
                     return gr.update(label=main_name)
-                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,face_en_enabled,poDoVector]
+                enable_list=[enable_obp,translate_enabled,enable_pm,enable_instant,face_en_enabled,filters_enable,poDoVector]
                 poDoVector.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_obp.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_pm.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 translate_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
-
+                filters_enable.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 face_en_enabled.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
                 enable_instant.change(gen_acc_name,inputs=enable_list,outputs=[gen_acc],queue=False)
 
@@ -956,7 +992,7 @@ with shared.gradio_root:
 
                   with gr.TabItem(label='omost'):
                         omost_render, omost_canvas,prompt_button, prompt_agress,prompt_code,omost_temperature,omost_top_p,omost_max_new_tokens,omost_seed,omost_last_input,omost_model = omost.gui()
-   
+                  
                   with gr.TabItem(label='Image Batch') as im_batch:
                         def clear_single(image):
                             return gr.update(value=None,visible=False),gr.update(value=None,visible=True)
@@ -1011,7 +1047,6 @@ with shared.gradio_root:
                           gr.HTML('* "Images Batch Mode" is powered by Shahmatist^RMDA')
                         with gr.Row(visible=False):
                             ext_dir=gr.Textbox(value='batch_images',visible=False)
-                            #out_dir=gr.Textbox(value=modules.config.path_outputs,visible=False) 
                         def image_action_change(image_action):
                             if image_action=='Image Prompt':
                               return gr.update(visible=True),gr.update(visible=True),gr.update(visible=True),gr.update(visible=False)
@@ -1067,7 +1102,7 @@ with shared.gradio_root:
                                 gr.HTML('* "Prompt Batch Mode" is powered by Shahmatist^RMDA')
                         def loader_prompt(file,pos_only):
                             with open(file.name, 'rb') as f:
-                                raw_data = f.read(1000)
+                                raw_data = f.read()
                                 result = chardet.detect(raw_data)
                                 encoding = result['encoding']
                             with open(file.name, 'r', encoding=encoding) as f:
@@ -1186,7 +1221,8 @@ with shared.gradio_root:
 
                   with gr.TabItem(label='Vector'):
                             vector.ui_module()
-
+                  with gr.TabItem(label='Filters'):
+                            filters_main.gui(False)
                 with gr.Accordion('tools', open=False,elem_classes="nested-accordion"):
                   with gr.TabItem(label='Civitai_helper') as download_tab:
                         civitai_helper.civitai_help()
@@ -1339,7 +1375,7 @@ with shared.gradio_root:
                                              info='Describing what you do not want to see.', lines=2,
                                              elem_id='negative_prompt',
                                              value=modules.config.default_prompt_negative,
-                                             visible=not modules.flags.negative_prompt_main)
+                                             visible=not modules.flags.negative_prompt_main,)
                 new_negative_checkbox = gr.Checkbox(label="Show negative prompt textbox in main page",
                         value=modules.flags.negative_prompt_main)
                 seed_random = gr.Checkbox(label='Random', value=True)
@@ -1465,7 +1501,6 @@ with shared.gradio_root:
                             model_id = str(data.get("modelId"))
                             version_id = str(data.get("id"))
                             return gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Checkpoint Page on CivitAI</a>')
-                            #f'{trained_words}'
                         except Exception as e:
                             print(f"Error loading Model tags: {e}")
                             return gr.update(visible=False)                    
@@ -1492,7 +1527,6 @@ with shared.gradio_root:
                                     inputs=refiner_model, outputs=refiner_switch, show_progress=False, queue=False)
 
                 with gr.Tab(label='LoRAs'):
-                    ###################
                     with gr.Group():
                         def lora_tag(filename_sft):
                             filename_value = filename_sft.value if hasattr(filename_sft, 'value') else filename_sft
@@ -1511,7 +1545,6 @@ with shared.gradio_root:
                                 model_id = str(data.get("modelId"))
                                 version_id = str(data.get("id"))
                                 return gr.update(visible=True,value=trained_words,lines=line_count),gr.update(visible=True,value=f'<a href="https://civitai.com/models/{model_id}?modelVersionId={version_id}" target="_blank" style="display: block; text-align: center;">Model Page on CivitAI</a>')
-                                #f'{trained_words}'
                             except Exception as e:
                                 print(f"Error loading LORA tags: {e}")
                                 return gr.update(visible=False),gr.update(visible=False)
@@ -1544,7 +1577,6 @@ with shared.gradio_root:
                         
                             lora_model.change(lora_tag, inputs=lora_model, outputs=[lora_tag_mark,lora_link],queue=False)
                             lora_ctrls += [lora_enabled, lora_model, lora_weight]
-                #########################
                 with gr.Tab(label='Embeddings'):
                     def emb_change(name,weight):
                         if name == "None":
@@ -1649,7 +1681,7 @@ with shared.gradio_root:
 
                         disable_seed_increment = gr.Checkbox(label='Disable seed increment',
                                                              info='Disable automatic seed increment when image number is > 1.',
-                                                             value=False)
+                                                             value=modules.config.default_disable_seed_increment)
                         read_wildcards_in_order = gr.Checkbox(label="Read wildcards in order", value=False)
 
                         black_out_nsfw = gr.Checkbox(label='Black Out NSFW', value=modules.config.default_black_out_nsfw,
@@ -1683,9 +1715,9 @@ with shared.gradio_root:
                                                                info='Do not preprocess images. (Inputs are already canny/depth/cropped-face/etc.)')
 
                         mixing_image_prompt_and_vary_upscale = gr.Checkbox(label='Mixing Image Prompt and Vary/Upscale',
-                                                                           value=False)
+                                                                           value=modules.config.default_mixing_image_prompt_and_vary_upscale)
                         mixing_image_prompt_and_inpaint = gr.Checkbox(label='Mixing Image Prompt and Inpaint',
-                                                                      value=False)
+                                                                      value=modules.config.default_mixing_image_prompt_and_inpaint)
 
                         controlnet_softness = gr.Slider(label='Softness of ControlNet', minimum=0.0, maximum=1.0,
                                                         step=0.001, value=0.25,
@@ -1698,8 +1730,8 @@ with shared.gradio_root:
                                                              step=1, value=128)
                         
                         with gr.Tab(label='Tiled'):
-                            tile_x = gr.Checkbox(label='Tiled X', value=False)
-                            tile_y = gr.Checkbox(label='Tiled Y', value=False)
+                            tile_x = gr.Checkbox(label='Tiled X', value=modules.config.default_tile_x)
+                            tile_y = gr.Checkbox(label='Tiled Y', value=modules.config.default_tile_y)
                         with gr.Tab(label='Transparency'):
                             transper = gr.Dropdown(label='Mode',
                                     value='None',
@@ -1833,10 +1865,108 @@ with shared.gradio_root:
                              seed_random, image_seed, inpaint_engine, inpaint_engine_state,
                              inpaint_mode] + enhance_inpaint_mode_ctrls + [generate_button,
                              load_parameter_button] + freeu_ctrls + lora_ctrls
+        # Controls outside load_data_outputs:
+        # save them to presets and apply them when a preset is selected.
+        preset_ctrls = {
+            'default_negative_prompt_main': new_negative_checkbox,
+            'default_upscaler': uov_model,
+            'default_overwrite_upscale': overwrite_upscale_strength,
+            'default_enhance_uov_method': enhance_uov_method,
+            'default_enhance_uov_processing_order': enhance_uov_processing_order,
+            'default_enhance_uov_prompt_type': enhance_uov_prompt_type,
+            'default_adetail_uov_method': adetail_uov_method,
+            'default_adetail_uov_processing_order': adetail_uov_processing_order,
+            'default_adetail_uov_prompt_type': adetail_uov_prompt_type,
+            'default_image_prompt_checkbox': input_image_checkbox,
+            'default_enhance_checkbox': enhance_checkbox,
+            'default_adetailer_checkbox': adetailer_checkbox,
+            'default_developer_debug_mode_checkbox': dev_mode,
+            'default_image_prompt_advanced_checkbox': ip_advanced,
+            'default_inpaint_advanced_masking_checkbox': inpaint_advanced_masking_checkbox,
+            'default_invert_mask_checkbox': invert_mask_checkbox,
+            'default_black_out_nsfw': black_out_nsfw,
+            'default_disable_seed_increment': disable_seed_increment,
+            'default_mixing_image_prompt_and_vary_upscale': mixing_image_prompt_and_vary_upscale,
+            'default_mixing_image_prompt_and_inpaint': mixing_image_prompt_and_inpaint,
+            'default_tile_x': tile_x,
+            'default_tile_y': tile_y,
+            'default_output_format': output_format,
+            'default_uov_method': uov_method,
+            'default_inpaint_mask_model': inpaint_mask_model,
+            'default_inpaint_mask_cloth_category': inpaint_mask_cloth_category,
+            'default_inpaint_mask_sam_model': inpaint_mask_sam_model,
+        }
+
+        if not args_manager.args.disable_image_log:
+            preset_ctrls['default_save_only_final_enhanced_image'] = (
+                save_final_enhanced_image_only
+            )
+
+        if not args_manager.args.disable_metadata:
+            preset_ctrls['default_save_metadata_to_images'] = save_metadata_to_images
+            preset_ctrls['default_metadata_scheme'] = metadata_scheme
+
+        preset_outputs = (
+            list(preset_ctrls.values())
+            + [
+                component
+                for widgets in ad_widgets
+                for component in widgets.values()
+            ]
+        )
+
+        preset_save_ctrls = {
+            **preset_ctrls,
+            'default_advanced_checkbox': advanced_checkbox,
+            'default_inpaint_method': inpaint_mode,
+        }
+
+        preset_save_inputs = (
+            list(preset_save_ctrls.values())
+            + [widgets['inpaint_mode'] for widgets in ad_widgets]
+        )
+        def preset_updates(preset_content):
+            values = [
+                preset_content.get(key)
+                for key in preset_ctrls
+            ]
+
+            tabs = modules.config.get_adetailer_tabs(preset_content)
+
+            for n, widgets in enumerate(ad_widgets):
+                tab = {
+                    'inpaint_mode': preset_content.get('default_inpaint_method'),
+                    **(tabs[n] if n < len(tabs) else {}),
+                }
+
+                values.extend(
+                    tab.get(attr)
+                    for attr in widgets
+                )
+
+            results = []
+
+            for component, value in zip(preset_outputs, values):
+                choices = [
+                    item[1] if isinstance(item, tuple) else item
+                    for item in (getattr(component, 'choices', None) or [])
+                ]
+
+                if value is None or (choices and value not in choices):
+                    value = component.value
+
+                results.append(gr.update(value=value))
+
+            return results
+
+
 
         if not args_manager.args.disable_preset_selection:
             def preset_selection_change(preset, is_generating, inpaint_mode):
                 preset_content = modules.config.try_get_preset_content(preset) if preset != 'initial' else {}
+                if preset != 'initial':
+                    preset_path = os.path.abspath(f'./presets/{preset}.json')
+                    print(f'Loaded preset: {preset_path}')
                 preset_prepared = modules.meta_parser.parse_meta_from_preset(preset_content)
                 default_model = preset_prepared.get('base_model')
                 previous_default_models = preset_prepared.get('previous_default_models', [])
@@ -1847,10 +1977,28 @@ with shared.gradio_root:
                 preset_prepared['base_model'], preset_prepared['checkpoint_downloads'] = launch.download_models(
                     default_model, previous_default_models, checkpoint_downloads, embeddings_downloads, lora_downloads,
                     vae_downloads)
+                modules.config.default_preset_model = preset_prepared['base_model']
                 if 'prompt' in preset_prepared and preset_prepared.get('prompt') == '':
                     del preset_prepared['prompt']
 
-                return modules.meta_parser.load_parameter_button_click(json.dumps(preset_prepared), is_generating, inpaint_mode)
+                freeu = preset_content.get(
+                    'default_freeu',
+                    modules.config.config_dict.get('default_freeu'),
+                )
+
+                if isinstance(freeu, list) and len(freeu) == 4:
+                    preset_prepared['freeu'] = str(freeu)
+
+                results = modules.meta_parser.load_parameter_button_click(
+                    json.dumps(preset_prepared),
+                    is_generating,
+                    inpaint_mode,
+                )
+
+                if isinstance(preset_content.get('default_advanced_checkbox'), bool):
+                    results[0] = preset_content['default_advanced_checkbox']
+
+                return results + preset_updates(preset_content)
 
 
             def inpaint_engine_state_change(inpaint_engine_version, *args):
@@ -1866,7 +2014,7 @@ with shared.gradio_root:
 
                 return result
 
-            preset_selection.change(preset_selection_change, inputs=[preset_selection, state_is_generating, inpaint_mode], outputs=load_data_outputs, queue=False, show_progress=True) \
+            preset_selection.change(preset_selection_change, inputs=[preset_selection, state_is_generating, inpaint_mode], outputs=load_data_outputs + preset_outputs, queue=False, show_progress=True) \
                 .then(fn=style_sorter.sort_styles, inputs=style_selections, outputs=style_selections, queue=False, show_progress=False) \
                 .then(lambda: None, _js='()=>{refresh_style_localization();}') \
                 .then(inpaint_engine_state_change, inputs=[inpaint_engine_state] + enhance_inpaint_mode_ctrls, outputs=enhance_inpaint_engine_ctrls, queue=False, show_progress=False)
@@ -1918,7 +2066,8 @@ with shared.gradio_root:
                                            inpaint_mask_dino_prompt_text, inpaint_mask_sam_model,
                                            inpaint_mask_box_threshold, inpaint_mask_text_threshold,
                                            inpaint_mask_sam_max_detections, dino_erode_or_dilate, debugging_dino],
-                                   outputs=inpaint_mask_image, show_progress=True, queue=True)
+                                   outputs=inpaint_mask_image, show_progress=True, queue=True) \
+                                   .then(fn=lambda x: None,inputs=inpaint_mask_image,outputs=None,_js="apply_generated_mask",queue=False,show_progress=False)
 
         ctrls = [currentTask, generate_image_grid]
         ctrls += [
@@ -2013,71 +2162,295 @@ with shared.gradio_root:
         ctrls += [transper]
 
         ctrls += [uov_model]
+        ctrls += filters_generation_ctrls
+        setting_types = (gr.Checkbox,gr.Slider,gr.Number,gr.Radio,gr.Dropdown,gr.Textbox,gr.CheckboxGroup)
 
+        ctrl_names = {
+            id(component): name
+            for name, component in globals().items()
+            if isinstance(component, setting_types)
+        }
+
+        per_tab = len(enhance_ctrls) // modules.config.default_enhance_tabs
+
+        enhance_names = (
+            [
+                ctrl_names.get(id(component))
+                for component in enhance_ctrls[-per_tab:]
+            ]
+            + ['enhance_inpaint_mode']
+        )
+
+        for n in range(modules.config.default_enhance_tabs):
+            tab_components = (
+                enhance_ctrls[n * per_tab:(n + 1) * per_tab]
+                + [enhance_inpaint_mode_ctrls[n]]
+            )
+
+            for component, name in zip(tab_components, enhance_names):
+                if name is not None:
+                    ctrl_names[id(component)] = f'{name}_{n + 1}'
+
+        derived = [
+            inpaint_disable_initial_latent,
+            inpaint_strength,
+            inpaint_respective_field,
+            disable_preview,
+            disable_intermediate_results,
+            current_tab,
+        ] + [
+            component
+            for tab in enhance_inpaint_update_ctrls
+            for component in tab[1:]
+        ]
+
+        extra_skip = {
+            id(component)
+            for component in (
+                load_data_outputs
+                + list(preset_save_ctrls.values())
+                + preset_outputs
+                + ip_ctrls
+                + derived
+            )
+        }
+
+        extra_skip -= {
+            id(component)
+            for component in enhance_inpaint_mode_ctrls + [seed_random, image_seed]
+        }
+
+        extra_ctrls = {}
+
+        extra_candidates = (
+            ctrls
+            + enhance_inpaint_mode_ctrls
+            + [
+                inpaint_mask_dino_prompt_text,
+                inpaint_mask_box_threshold,
+                inpaint_mask_text_threshold,
+                inpaint_mask_sam_max_detections,
+                adv_trans,
+            ]
+        )
+
+        for component in extra_candidates:
+            if (
+                isinstance(component, setting_types)
+                and id(component) not in extra_skip
+                and id(component) in ctrl_names
+            ):
+                extra_ctrls.setdefault(ctrl_names[id(component)], component)
+
+        def setting_valid(component, value):
+            if value is None:
+                return False
+
+            if isinstance(component, gr.Checkbox):
+                return isinstance(value, bool)
+
+            if isinstance(component, (gr.Slider, gr.Number)):
+                return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+            choices = [
+                item[1] if isinstance(item, tuple) else item
+                for item in (getattr(component, 'choices', None) or [])
+            ]
+
+            if (
+                isinstance(component, gr.CheckboxGroup)
+                or getattr(component, 'multiselect', False)
+            ):
+                return (
+                    isinstance(value, list)
+                    and all(item in choices for item in value)
+                )
+
+            if choices and not getattr(component, 'allow_custom_value', False):
+                return value in choices
+
+            return isinstance(value, str)
+
+        launch_extra = (
+            modules.config.config_dict.get('default_extra_settings') or {}
+        )
+
+        for name, component in extra_ctrls.items():
+            value = launch_extra.get(name)
+
+            if setting_valid(component, value):
+                component.value = value
+
+        launch_freeu = modules.config.config_dict.get('default_freeu')
+
+        if isinstance(launch_freeu, list) and len(launch_freeu) == 4:
+            for component, value in zip(freeu_ctrls, [True] + launch_freeu):
+                component.value = value
+        if not args_manager.args.disable_preset_selection:
+            def preset_extra_change(preset):
+                preset_content = (
+                    modules.config.try_get_preset_content(preset)
+                    if preset != 'initial'
+                    else {}
+                )
+
+                extra = preset_content.get('default_extra_settings') or {}
+                method = preset_content.get('default_inpaint_method')
+
+                results = [
+                    gr.update(
+                        value=(
+                            method
+                            if method in flags.inpaint_options
+                            else inpaint_mode.value
+                        )
+                    )
+                ]
+
+                for name, component in extra_ctrls.items():
+                    value = extra.get(name)
+
+                    if setting_valid(component, value):
+                        results.append(gr.update(value=value))
+                    else:
+                        results.append(gr.update(value=component.value))
+
+                return results
+
+            preset_selection.change(
+                preset_extra_change,
+                inputs=preset_selection,
+                outputs=[inpaint_mode] + list(extra_ctrls.values()),
+                queue=False,
+                show_progress=False,
+            )
 
         def ob_translate(workprompt,translate_enabled, srcTrans, toTrans):
             if translate_enabled:
                   workprompt, _ = translate(workprompt, "", srcTrans, toTrans)
             return workprompt
 
+
         def to_dict(obj):
             return obj.__dict__
         def get_value(value):
             return value
-        def save_preset(*args):
-            argsList = list(args)
-            loras_len=argsList.pop()
-            ctrl=[]
-            for _ in range(loras_len):
-                temp_list = []
-                for _ in range(3):
-                    temp_list.append(argsList.pop())
-                temp_list.reverse()
-                ctrl.append(temp_list)
-            ctrl.reverse()
-            name=argsList.pop()
-            args = tuple(argsList)
-            args = list(args)
+
+        def save_preset(name, *args):
+            name = re.sub(
+                r'[\\/:*?"<>|\x00-\x1f]',
+                '',
+                str(name or ''),
+            ).strip(' .')
+
+            if name == '' or name == 'initial':
+                gr.Warning('Enter a preset name.')
+                return gr.update()
+
+            preset_values = dict(zip(preset_save_ctrls, args))
+            args = args[len(preset_save_ctrls):]
+
+            ad_inpaint_modes = args[:len(ad_widgets)]
+            args = args[len(ad_widgets):]
+
+            extra_values = dict(zip(extra_ctrls, args))
+            args = list(args[len(extra_ctrls):])
+
+            if extra_values.get('seed_random', True):
+                extra_values.pop('image_seed', None)
+
             args.pop(0)
-            p=worker.AsyncTask(args=args)
-            data ={}
-            data["base_model"]=p.base_model_name
-            data["default_refiner"]=p.refiner_model_name
-            data["default_refiner_switch"]=p.refiner_switch
-            data["default_loras"]=ctrl
-            data["default_cfg_scale"]=p.cfg_scale
-            data["default_sample_sharpness"]=p.sharpness
-            data["default_type_cfg"] = p.type_cfg
-            data["default_rescale_cfg"] = p.rescale_cfg
-            data["default_cfg_tsnr"]=p.adaptive_cfg
-            data["default_clip_skip"]=p.clip_skip
-            data["default_sampler"]=p.sampler_name
-            data["default_scheduler"]=p.scheduler_name
-            data["default_overwrite_step"]=p.overwrite_step
-            data["default_overwrite_switch"]=p.overwrite_switch
-            data["default_performance"]=p.performance_selection.value
-            data["default_image_number"]=p.image_number
-            data["default_prompt_negative"]=p.negative_prompt
-            data["default_styles"]=p.style_selections
-            data["default_aspect_ratio"]= re.sub(r'×', '*', p.aspect_ratios_selection).split('∣')[0].strip()
-            data["default_vae"]=p.vae_name
-            #data["default_inpaint_engine_version"]=p.inpaint_engine
-            save_path = 'presets/' + name + '.json'
-            with open(save_path, "w", encoding="utf-8") as json_file:
+            p = worker.AsyncTask(args=args)
+
+            save_path = os.path.join('presets', name + '.json')
+
+            if os.path.exists(save_path):
+                data = modules.config.try_get_preset_content(name)
+            else:
+                data = {}
+
+            data['base_model'] = data['default_model'] = p.base_model_name
+            data['default_refiner'] = p.refiner_model_name
+            data['default_refiner_switch'] = p.refiner_switch
+            data['default_loras'] = [list(lora) for lora in p.lora_list]
+            data['default_cfg_scale'] = p.cfg_scale
+            data['default_sample_sharpness'] = p.sharpness
+            data['default_type_cfg'] = p.type_cfg
+            data['default_rescale_cfg'] = p.rescale_cfg
+            data['default_cfg_tsnr'] = p.adaptive_cfg
+            data['default_clip_skip'] = p.clip_skip
+            data['default_sampler'] = p.sampler_name
+            data['default_scheduler'] = p.scheduler_name
+            data['default_overwrite_step'] = p.overwrite_step
+            data['default_overwrite_switch'] = p.overwrite_switch
+            data['default_performance'] = p.performance_selection.value
+            data['default_image_number'] = p.image_number
+            data['default_prompt'] = p.prompt
+            data['default_prompt_negative'] = p.negative_prompt
+            data['default_styles'] = p.style_selections
+
+            if p.aspect_random:
+                data['default_aspect_ratio'] = 'Random'
+            else:
+                data['default_aspect_ratio'] = (
+                    re.sub(r'×', '*', p.aspect_ratios_selection)
+                    .split('∣')[0]
+                    .strip()
+                )
+
+            data['default_vae'] = p.vae_name
+            data['default_output_format'] = p.output_format
+
+            data.update(preset_values)
+
+            data['default_extra_settings'] = extra_values
+
+            data['default_freeu'] = (
+                [p.freeu_b1, p.freeu_b2, p.freeu_s1, p.freeu_s2]
+                if p.freeu_enabled
+                else None
+            )
+
+            data['default_adetailer_tabs'] = [
+                {
+                    **{
+                        key: value
+                        for key, value in tab.items()
+                        if key != 'is_api'
+                    },
+                    'inpaint_mode': mode,
+                }
+                for tab, mode in zip(p.ad_component, ad_inpaint_modes)
+            ]
+
+            for key in modules.config.legacy_adetailer_keys:
+                data.pop('default_' + key, None)
+
+            with open(save_path, 'w', encoding='utf-8') as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
-            return
+
+            modules.config.update_presets()
+            print(f'Preset saved: {os.path.abspath(save_path)}')
+            gr.Info(f'Preset saved: {name}')
+            return gr.update(value=name)
+
+
+
+
         def delete_preset (preset):
             if preset !='initial' and preset !='default':
                 try:
                     os.remove('presets/' + preset + '.json')
+                    gr.Info(f"Preset '{preset}' deleted.")
                 except Exception as e:
                     print(f"Error: {e}")  
             else:
                 print(f"Do not delete '{preset}'.")
             return
-        save_preset_button.click(save_preset,inputs=ctrls + [preset_name] + lora_ctrls + [lora_len]) \
-	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
-	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name,preset_have])
+        save_preset_button.click(save_preset,inputs=([preset_name] + preset_save_inputs + list(extra_ctrls.values()) + ctrls),outputs=preset_name) \
+            .then(refresh_files_clicked,[],refresh_files_output + lora_ctrls,queue=False,show_progress=False) \
+            .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets)),outputs=[preset_name, preset_have])
+
         delete_preset_button.click(delete_preset,inputs=preset_have) \
 	                   .then(refresh_files_clicked, [], refresh_files_output + lora_ctrls,queue=False, show_progress=False) \
 	                   .then(lambda: (gr.update(value=''),gr.update(choices=modules.config.available_presets, value='initial')),outputs=[preset_name,preset_have])
