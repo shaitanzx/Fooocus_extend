@@ -653,7 +653,6 @@ When an image is loaded, the target resolution defaults to the image's own resol
   <tr>
     <td><a href="https://colab.research.google.com/github/shaitanzx/Fooocus_extend/blob/main/fooocus_colab.ipynb" rel="nofollow"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" data-canonical-src="https://colab.research.google.com/assets/colab-badge.svg"></a></td><td>Original Fooocus Colab</td>
   </tr>
-   <td><a href="https://kaggle.com" rel="nofollow"><img src="https://kaggle.com" alt="Open In Kaggle" data-canonical-src="https://kaggle.com"></a></td><td>Fooocus Kaggle</td>
 </table>
 
 All suggestions and questions can be voiced in the [Telegram-group](https://t.me/+xlhhGmrz9SlmYzg6)
